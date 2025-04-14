@@ -2,8 +2,8 @@
 // @name        Login reminder popup remover (developement ceased - not up to date)
 // @name:it  Rimuovi i popup di richiesta d'accesso (non aggiornato - sviluppo terminato)
 // @namespace   StephenP
-// @description Removes the nagging login popups and banners from mobile and desktop versions of Facebook, Instagram, Reddit, Twitter, Quora, Ask.fm, VK, Pinterest, Tumblr, Twitch and from the mobile versions of Youtube and TikTok.
-// @description:it Rimuovi i fastidiosi banner e popup di richiesta d'accesso dalle versioni mobile e desktop di Facebook, Instagram, Reddit, Twitter, Quora, Ask.fm, VK, Pinterest, Tumblr, Twitch e dalla versione mobile di Youtube e TikTok.
+// @description Removes the nagging login popups and banners from mobile and desktop versions of Facebook, Instagram, Reddit, Twitter, Quora, VK, Pinterest, Tumblr, Twitch and from the mobile versions of Youtube and TikTok.
+// @description:it Rimuovi i fastidiosi banner e popup di richiesta d'accesso dalle versioni mobile e desktop di Facebook, Instagram, Reddit, Twitter, Quora, VK, Pinterest, Tumblr, Twitch e dalla versione mobile di Youtube e TikTok.
 // @match     https://*.facebook.com/*
 // @exclude   https://developers.facebook.com/*
 // @exclude   https://www.instagram.com/privacy/checks/*
@@ -21,14 +21,13 @@
 // @match     https://x.com/*
 // @match     https://mobile.x.com/*
 // @match     https://*.quora.com/*
-// @match     https://ask.fm/*
 // @match     https://vk.com/*
 // @match     https://m.vk.com/*
 // @match     https://*.tumblr.com/*
 // @match     https://www.twitch.tv/*
 // @match     https://www.tiktok.com/*/video/*
 // @include   https://www.pinterest.tld/*
-// @version   2.7.19
+// @version   2.7.21
 // @grant     GM.getValue
 // @grant     GM.setValue
 // @grant     GM.registerMenuCommand
@@ -157,13 +156,10 @@ function applyUserCss(){//this function adds the css styling for removing popups
     st.textContent="#layers>.css-1dbjc4n.r-aqfbo4.r-1p0dtai.r-1d2f490.r-12vffkv.r-1xcajam.r-zchlnj>.css-1dbjc4n.r-12vffkv>.css-1dbjc4n.r-12vffkv>.css-1dbjc4n.r-l5o3uw, .css-1dbjc4n.r-1awozwy.r-14lw9ot.r-1dgieki.r-1efd50x.r-5kkj8d.r-18u37iz.r-16y2uox.r-1a1dyw.r-1swwhx3.r-1j3t67a.r-1qxgc49, .css-1dbjc4n.r-1awozwy.r-1kihuf0.r-18u37iz.r-1pi2tsx.r-1777fci.r-1pjcn9w.r-1xcajam.r-ipm5af.r-g6jmlv, .css-1dbjc4n.r-aqfbo4.r-1d2f490.r-12vffkv.r-1xcajam.r-zchlnj.r-ipm5af, .css-1dbjc4n.r-aqfbo4.r-1p0dtai.r-1d2f490{display: none !important}";
   }
   else if(document.location.href.includes("reddit.com")){
-    st.textContent="* {filter: none !important} .XPromoNSFWBlocking__warning, .XPromoNSFWBlockingModal, .xPromoChoiceBanner, .XPromoPill, .XPromoPopup, .GetAppFooter, .XPromoInFeed, .XPromoBlockingModal, .PreviewDrawer, [data-testid=bottom-cell-wrapper], shreddit-experience-tree, shreddit-comments-page-ad, xpromo-untagged-content-blocking-modal, xpromo-nsfw-blocking-modal, xpromo-new-nsfw-blocking-modal, .XPromoBottomBar, [bundlename=bottom_bar_xpromo], [bundlename=desktop_rpl_nsfw_blocking_modal], .XPromoPopupRpl, .XPromoBlockingModalRpl, xpromo-nsfw-blocking-modal-desktop, body>div[style*='inset: 0'] {display: none !important} .scroll-disabled {overflow-y: scroll !important; position: static !important} .NavFrame, body,.scroll-is-blocked {overflow-y: scroll !important} body{pointer-events: inherit !important} shreddit-app>div.fixed{position: inherit !important}";
+    st.textContent="* {filter: none !important} .XPromoNSFWBlocking__warning, .XPromoNSFWBlockingModal, .xPromoChoiceBanner, .XPromoPill, .XPromoPopup, .GetAppFooter, .XPromoInFeed, .XPromoBlockingModal, .PreviewDrawer, [data-testid=bottom-cell-wrapper], shreddit-experience-tree, shreddit-comments-page-ad, xpromo-untagged-content-blocking-modal, xpromo-nsfw-blocking-modal, xpromo-new-nsfw-blocking-modal, .XPromoBottomBar, [bundlename=bottom_bar_xpromo], [bundlename=desktop_rpl_nsfw_blocking_modal], .XPromoPopupRpl, .XPromoBlockingModalRpl, xpromo-nsfw-blocking-modal-desktop, body>div[style*='inset: 0'], [bundlename=app_selector], [paint-group=xpromo], inline-auth-landing-experience-xpromo-shell {display: none !important} .scroll-disabled {overflow-y: scroll !important; position: static !important} .NavFrame, body,.scroll-is-blocked {overflow-y: scroll !important} body{pointer-events: inherit !important} shreddit-app>div.fixed{position: inherit !important}";
   }
   else if(document.location.href.includes("quora.com/")){
     st.textContent="*, #page_wrapper {filter: none !important} .new_signup_dialog, .qu-zIndex--blocking_wall{display: none !important} body, .q-platform--mobile{overflow-y: scroll !important; overflow-x: hidden !important;} .q-sticky{position: inherit !important}";
-  }
-  else if(document.location.href.includes("https://ask.fm/")){
-    st.textContent="body{overflow-y: scroll !important} .expired-countdown::after{display: none !important}";
   }
   else if(document.location.href.includes("vk.com/")){
     st.textContent="body{overflow-y: scroll !important} .PageBottomBanner--unauth{display: none !important}";
@@ -307,9 +303,6 @@ function checkPageReady(){
     }
     else if(document.location.href.includes("mobile.x.com")){
       blockBannerTW("m");
-    }
-    else if(document.location.href.includes("https://ask.fm/")){
-      removeAskFmLoginPopup();
     }
     else if(document.location.href.includes("https://vk.com/")){
       checkVKLoginPopup("d");
@@ -558,14 +551,14 @@ function redditShadowRootPatch(){
   let blurredContainers=document.querySelectorAll("shreddit-blurred-container");
   let containers=document.querySelectorAll("xpromo-nsfw-blocking-container");
   if(containers.length>0){
-    for(c of containers){
+    for(let c of containers){
       let stl=document.createElement("STYLE");
       stl.innerHTML=".prompt {display: none !important}";
       c.shadowRoot.appendChild(stl);
     }
   }
   if(blurredContainers.length>0){
-    for(b of blurredContainers){
+    for(let b of blurredContainers){
       b.removeAttribute("blurred");
       let stl=document.createElement("STYLE");
       stl.innerHTML=" *{filter: none !important}";
@@ -704,49 +697,6 @@ function searchQuora(e) {
   if (e.key === 'Enter') {
     window.open("https://www.quora.com/search?q="+document.getElementById("search").value,"_self");
   }
-}
-function removeAskFmLoginPopup(){
-  try{
-    const closeButton=document.createElement("DIV");
-    closeButton.id="closeButton";
-    closeButton.style.padding="1em";
-    closeButton.style.right="1em";
-    closeButton.style.top="1em";
-    closeButton.style.position="absolute";
-    closeButton.textContent="X";
-    closeButton.style.borderRadius="3px";
-    closeButton.style.backgroundColor="#666666";
-    closeButton.style.color="#FFFFFF";
-    closeButton.style.cursor="pointer";
-    closeButton.addEventListener("click",function(e){document.getElementsByClassName("lightbox_overlay")[0].remove();});
-    var lightbox=document.getElementsByClassName("lightbox_overlay");
-    console.log(lightbox.length);
-    if(lightbox.length>0){
-      if(lightbox[0].getElementsByClassName("lightbox_content-conversion").length>0){
-        lightbox[0].parentNode.removeChild(lightbox[0]);
-      }
-    }
-    const callback = function(mutationsList, observer) {
-      for(const mutation of mutationsList) {
-        console.log("A");
-        for(let newNode of mutation.addedNodes){
-          if(newNode.className.includes("lightbox_overlay")){
-            if(newNode.getElementsByClassName("lightbox_content-conversion").length>0){
-              console.log("popup deleted");
-              newNode.parentNode.removeChild(newNode);
-            }
-            else{
-              newNode.appendChild(closeButton);
-            }
-          }
-        }
-      }
-    };
-    const config = { attributes: false, childList: true, subtree: true };
-    const observer = new MutationObserver(callback);
-    observer.observe(document.documentElement, config);
-  }
-  catch(err){console.log("ERROR: "+err);}
 }
 function checkVKLoginPopup(mode){
   const popups=document.getElementsByClassName("UnauthActionBoxContainer");

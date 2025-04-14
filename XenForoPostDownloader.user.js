@@ -3,13 +3,11 @@
 // @name XenForoPostDownloader
 // @namespace https://github.com/SkyCloudDev
 // @author SkyCloudDev
-// @author x111000111
-// @author backwards
 // @description Downloads images and videos from posts
-// @version 2.8.3
+// @version 3.2
 // @updateURL https://github.com/SkyCloudDev/ForumPostDownloader/raw/main/dist/build.user.js
 // @downloadURL https://github.com/SkyCloudDev/ForumPostDownloader/raw/main/dist/build.user.js
-// @icon https://simp4.jpg.church/simpcityIcon192.png
+// @icon https://simp4.host.church/simpcityIcon192.png
 // @license WTFPL; http://www.wtfpl.net/txt/copying/
 // @match https://simpcity.su/threads/*
 // @require https://unpkg.com/@popperjs/core@2
@@ -18,20 +16,37 @@
 // @require https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js
 // @require https://raw.githubusercontent.com/geraintluff/sha256/gh-pages/sha256.min.js
 // @connect self
-// @connect coomer.party
+// @connect coomer.su
 // @connect box.com
 // @connect boxcloud.com
-// @connect kemono.party
+// @connect kemono.su
 // @connect github.com
 // @connect big-taco-1img.bunkr.ru
 // @connect i-pizza.bunkr.ru
+// @connect bunkr.ac
+// @connect bunkr.ax
+// @connect bunkr.black
+// @connect bunkr.cat
+// @connect bunkr.ci
+// @connect bunkr.cr
+// @connect bunkr.fi
+// @connect bunkr.is
+// @connect bunkr.media
+// @connect bunkr.nu
+// @connect bunkr.red
 // @connect bunkr.ru
-// @connect bunkr.su
+// @connect bunkr.se
+// @connect bunkr.si
+// @connect bunkr.site
+// @connect bunkr.pk
+// @connect bunkr.ph
+// @connect bunkr.ps
 // @connect bunkr.sk
+// @connect bunkr.ws
 // @connect bunkrr.ru
 // @connect bunkrr.su
-// @connect bunkr.la
-// @connect bunkr.is
+// @connect bunkrrr.org
+// @connect bunkr-cache.se
 // @connect cyberdrop.me
 // @connect cyberdrop.cc
 // @connect cyberdrop.ch
@@ -40,15 +55,14 @@
 // @connect cyberdrop.to
 // @connect cyberfile.su
 // @connect cyberfile.me
-// @connect saint.to
+// @connect saint2.su
+// @connect saint2.pk
+// @connect saint2.cr
 // @connect redd.it
-// @connect dailystar.co.uk
-// @connect pinuderest.com
 // @connect onlyfans.com
 // @connect i.ibb.co
 // @connect ibb.co
 // @connect imagebam.com
-// @connect jpg.church
 // @connect jpg.fish
 // @connect jpg.fishing
 // @connect jpg.pet
@@ -57,14 +71,13 @@
 // @connect jpg2.su
 // @connect jpg3.su
 // @connect jpg4.su
+// @connect jpg5.su
 // @connect imgbox.com
 // @connect pixhost.to
 // @connect pomf2.lain.la
 // @connect pornhub.com
 // @connect postimg.cc
 // @connect imgvb.com
-// @connect instagram.com
-// @connect cdninstagram.com
 // @connect pixxxels.cc
 // @connect postimg.cc
 // @connect imagevenue.com
@@ -193,6 +206,8 @@ const settings = {
         },
     },
     extensions: {
+        documents: ['.txt', '.doc', '.docx', '.pdf'],
+        compressed: ['.zip', '.rar', '.7z', '.tar', '.bz2', '.gzip'],
         image: ['.jpg', '.jpeg', '.png', '.gif', '.gif', '.webp', '.jpe', '.svg', '.tif', '.tiff', '.jif'],
         video: [
             '.mpeg',
@@ -446,7 +461,8 @@ const h = {
         base: (method, url, callbacks = {}, headers = {}, data = {}, responseType = 'document') => {
             return h.promise((resolve, reject) => {
                 let responseHeaders = null;
-                http({
+                let request = null;
+                request = http({
                     url,
                     method,
                     responseType,
@@ -458,17 +474,27 @@ const h = {
                     onreadystatechange: response => {
                         if (response.readyState === 2) {
                             responseHeaders = response.responseHeaders;
+
+                            if (callbacks && callbacks.onResponseHeadersReceieved) {
+                                callbacks.onResponseHeadersReceieved({ request, response, status: response.status, responseHeaders });
+
+                                if (request) {
+                                    request.abort();
+                                    resolve({ request, response, status: response.status, responseHeaders });
+                                }
+                            }
                         }
-                        callbacks && callbacks.onStateChange && callbacks.onStateChange(response);
+
+                        callbacks && callbacks.onStateChange && callbacks.onStateChange({ request, response });
                     },
                     onprogress: response => {
-                        callbacks && callbacks.onProgress && callbacks.onProgress(response);
+                        callbacks && callbacks.onProgress && callbacks.onProgress({ request, response });
                     },
                     onload: response => {
-                        const { responseText } = response;
+                        const { responseText, status } = response;
                         const dom = response?.response;
                         callbacks && callbacks.onLoad && callbacks.onLoad(response);
-                        resolve({ source: responseText, dom, responseHeaders });
+                        resolve({ source: responseText, request, status, dom, responseHeaders });
                     },
                     onerror: error => {
                         callbacks && callbacks.onError && callbacks.onError(error);
@@ -485,7 +511,7 @@ const h = {
      * @returns {Promise<unknown>}
      */
         get: (url, callbacks = {}, headers = {}, responseType = 'document') => {
-            return h.promise(resolve => resolve(h.http.base('GET', url, callbacks, headers, {}, responseType)));
+            return h.promise(resolve => resolve(h.http.base('GET', url, callbacks, headers, null, responseType)));
         },
         /**
      * @param url
@@ -1024,25 +1050,31 @@ const ui = {
                 createZippedCheckbox: (postId, checked) => {
                     return ui.forms.createCheckbox(`settings-${postId}-zipped`, 'Zipped', checked);
                 },
-                /**
+        /**
          * @returns {string}
          */
                 createFlattenCheckbox: (postId, checked) => {
                     return ui.forms.createCheckbox(`settings-${postId}-flatten`, 'Flatten', checked);
                 },
-                /**
+        /**
          * @returns {string}
          */
                 createSkipDownloadCheckbox: (postId, checked) => {
                     return ui.forms.createCheckbox(`settings-${postId}-skip-download`, 'Skip Download', checked);
                 },
-                /**
+        /**
+         * @returns {string}
+         */
+                createVerifyBunkrLinksCheckbox: (postId, checked) => {
+                    return ui.forms.createCheckbox(`settings-${postId}-verify-bunkr-links`, 'Verify Bunkr Links', checked);
+                },
+        /**
          * @returns {string}
          */
                 createGenerateLinksCheckbox: (postId, checked) => {
                     return ui.forms.createCheckbox(`settings-${postId}-generate-links`, 'Generate Links', checked);
                 },
-                /**
+        /**
          * @returns {string}
          */
                 createGenerateLogCheckbox: (postId, checked) => {
@@ -1054,7 +1086,7 @@ const ui = {
                 createSkipDuplicatesCheckbox: (postId, checked) => {
                     return ui.forms.createCheckbox(`settings-${postId}-skip-duplicates`, 'Skip Duplicates', checked);
                 },
-                /**
+        /**
          * @param hosts
          * @param getTotalDownloadableResourcesCB
          * @returns {string}
@@ -1144,6 +1176,7 @@ const ui = {
                         ui.forms.config.post.createGenerateLinksCheckbox(postId, settings.generateLinks),
                         ui.forms.config.post.createGenerateLogCheckbox(postId, settings.generateLog),
                         ui.forms.config.post.createSkipDownloadCheckbox(postId, settings.skipDownload),
+                        ui.forms.config.post.createVerifyBunkrLinksCheckbox(postId, settings.verifyBunkrLinks),
                         ui.forms.config.post.createHostCheckboxes(postId, filterLabel, hostsHtml, parsedHosts.length > 1),
                         ui.forms.createRow(
                             '<a href="#download-page" style="color: dodgerblue; font-weight: bold"><i class="fa fa-arrow-up"></i> Show Download Page Button</a>',
@@ -1199,6 +1232,10 @@ const ui = {
                                 h.element(`#settings-${postId}-generate-links`).disabled = checked;
 
                                 setTimeout(() => (updateSettings = true), 100);
+                            });
+
+                            h.element(`#settings-${postId}-verify-bunkr-links`).addEventListener('change', e => {
+                                settings.verifyBunkrLinks = e.target.checked;
                             });
 
                             if (!window.isFF) {
@@ -1367,52 +1404,48 @@ let processing = [];
  *
  */
 const hosts = [
-    ['simpcity.su:Attachments', [/(\/attachments\/|\/data\/video\/)/]],
-    ['coomer.party:Profiles', [/coomer.party\/[~an@._-]+\/user/]],
-    ['coomer.party:image', [/(\w+\.)?coomer.party\/(data|thumbnail)/]],
-    ['jpg4.su:image', [/(simp\d+.)?jpe?g.?\.(church|fish|fishing|pet|su)\/(?!(images2\/0fya082315al2ed460420dbc052c2\.png|images2\/scc49c36a108cefc020\.png|images\/0fya082315al\.png|img\/|a\/|album\/))/, /jpe?g.?\.(church|fish|fishing|pet|su)(\/a\/|\/album\/)[~an@-_.]+<no_qs>/]],
-    ['kemono.party:direct link', [/.{2,6}\.kemono.party\/data\//]],
-    ['postimg.cc:image', [/!!https?:\/\/(www.)?i\.?(postimg|pixxxels).cc\/(.{8})/]], //[/!!https?:\/\/(www.)?postimg.cc\/(.{8})/]],
-    [
-        'ibb.co:image',
+    ['Simpcity:Attachments', [/(\/attachments\/|\/data\/video\/)/]],
+    ['Coomer:Profiles', [/coomer.su\/[~an@._-]+\/user/]],
+    ['Coomer:image', [/(\w+\.)?coomer.su\/(data|thumbnail)/]],
+    ['JPG5:image', [/(simp\d+.)?jpg\d\.(church|fish|fishing|pet|su)\/(?!(images2\/0fya082315al2ed460420dbc052c2\.png|images2\/scc49c36a108cefc020\.png|images\/0fya082315al\.png|2024\/0fya082315al84db03fa9bf467e3\.png|img\/|a\/|album\/))/, /jpe?g\d\.(church|fish|fishing|pet|su)(\/a\/|\/album\/)[~an@-_.]+<no_qs>/]],
+    ['kemono:direct link', [/.{2,6}\.kemono.su\/data\//]],
+    ['Postimg:image', [/!!https?:\/\/(www.)?i\.?(postimg|pixxxels).cc\/(.{8})/]], //[/!!https?:\/\/(www.)?postimg.cc\/(.{8})/]],
+    ['Ibb:image',
         [
             /!!(?<=href=")https?:\/\/(www.)?([a-z](\d+)?\.)?ibb\.co\/([a-zA-Z0-9_.-]){7}((?=")|\/)(([a-zA-Z0-9_.-])+(?="))?/,
             /ibb.co\/album\/[~an@_.-]+/,
         ],
     ],
-    ['i.ibb.co:direct link', [/!!(?<=data-src=")https?:\/\/(www.)?([a-z](\d+)?\.)?ibb\.co\/([a-zA-Z0-9_.-]){7}((?=")|\/)(([a-zA-Z0-9_.-])+(?="))?/]],
-    ['imagevenue.com:image', [/!!https?:\/\/(www.)?imagevenue\.com\/(.{8})/]],
-    ['imgvb:image', [/imgvb.com\/images\//, /imgvb.com\/album/]],
-    ['imgbox.com:image', [/(thumbs|images)(\d+)?.imgbox.com\//, /imgbox.com\/g\//]],
-    ['onlyfans.com:image', [/public.onlyfans.com\/files/]],
-    ['dailystar.co.uk:image', [/i(\d+)?-prod\.dailystar.co.uk\/.*?\.(jpg|jpeg|png)/]],
-    ['pinuderest.com:image', [/pinuderest.com\/wp-content\/.*?\.(jpg|jpeg|png)/]],
-    ['reddit.com:image', [/(\w+)?.redd.it/]],
-    ['pomf2.lain.la:File', [/pomf2.lain.la/]],
-    ['instagram.com:Media', [/!!https:(\/|\\\/){2}s9e.github.io(\/|\\\/)iframe(\/|\\\/)2(\/|\\\/)instagram.*?(?="|&quot;)/]],
-    ['instagram.com:Profile', [/!!instagram.com\/[~an@_.-]+|((instagram|insta):(\s+)?)@?[a-zA-Z0-9_.-]+/]],
-    ['nitter:image', [/nitter\.(.{1,20})\/pic/]],
-    ['twitter.com:image', [/([~an@.]+)?twimg.com\//]],
-    ['pixhost.to:image', [/t(\d+)?\.pixhost.to\//, /pixhost.to\/gallery\//]],
-    ['imagebam.com:image', [/imagebam.com\/(view|gallery)/]],
-    ['saint.to:video', [/(saint.to\/embed\/|([~an@]+\.)?saint.to\/videos)/]],
-    ['redgifs.com:video', [/!!redgifs.com(\/|\\\/)ifr.*?(?="|&quot;)/]],
-    [
-        'bunkr.sk:',
+    ['Ibb:direct link', [/!!(?<=data-src=")https?:\/\/(www.)?([a-z](\d+)?\.)?ibb\.co\/([a-zA-Z0-9_.-]){7}((?=")|\/)(([a-zA-Z0-9_.-])+(?="))?/]],
+    ['Imagevenue:image', [/!!https?:\/\/(www.)?imagevenue\.com\/(.{8})/]],
+    ['Imgvb:image', [/imgvb.com\/images\//, /imgvb.com\/album/]],
+    ['Imgbox:image', [/(thumbs|images)(\d+)?.imgbox.com\//, /imgbox.com\/g\//]],
+    ['Onlyfans:image', [/public.onlyfans.com\/files/]],
+    ['Reddit:image', [/(\w+)?.redd.it/]],
+    ['Pomf2:File', [/pomf2.lain.la/]],
+    ['Nitter:image', [/nitter\.(.{1,20})\/pic/]],
+    ['Twitter:image', [/([~an@.]+)?twimg.com\//]],
+    ['Pixhost:image', [/(t|img)(\d+)?\.pixhost.to\//, /pixhost.to\/gallery\//]],
+    ['Imagebam:image', [/imagebam.com\/(view|gallery)/]],
+    ['Imagebam:full embed', [/images\d.imagebam.com/]],
+    ['Saint:video', [/(saint2.(su|pk|cr)\/embed\/|([~an@]+\.)?saint2.(su|pk|cr)\/videos)/]],
+    ['Redgifs:video', [/!!redgifs.com(\/|\\\/)ifr.*?(?="|&quot;)/]],
+    ['Bunkr:',
         [
-            /!!(?<=href=")https:\/\/((stream|cdn(\d+)?)\.)?bunkrr?\.(ru|su|la|is|sk).*?(?=")|(?<=(href=")|(src="))https:\/\/((i|cdn|i-pizza|big-taco-1img)(\d+)?\.)?bunkrr?\.(ru|su|la|is|sk)\/(v\/)?.*?(?=")/,
-        ],
+            /!!(?<=href=")https:\/\/((stream|cdn(\d+)?)\.)?bunkrr?r?\.(ac|ax|black|cat|ci|cr|fi|is|media|nu|pk|ph|ps|red|ru|se|si|site|sk|ws|ru|su|org)(?!(\/a\/)).*?(?=")|(?<=(href=")|(src="))https:\/\/((i|cdn|i-pizza|big-taco-1img)(\d+)?\.)?bunkrr?r?\.(ac|ax|black|cat|ci|cr|fi|is|media|nu|pk|ph|ps|red|ru|se|si|site|sk|ws|ru|su|org)(?!(\/a\/))\/(v\/)?.*?(?=")/,
+        ]
     ],
-    ['give.xxx:Profiles', [/give.xxx\/[~an@_-]+/]],
-    ['pixeldrain.com:', [/(focus\.)?pixeldrain.com\/[lu]\//]],
-    ['gofile.com:', [/gofile.io\/d/]],
-    ['box.com:', [/m\.box\.com\//]],
-    ['yandex.ru:', [/(disk\.)?yandex\.[a-z]+/]],
-    ['cyberfile.me:', [/!!https:\/\/cyberfile.(su|me)\/\w+(\/)?(?=")/, /cyberfile.(su|me)\/folder\//]],
-    ['cyberdrop.me:', [/fs-\d+.cyberdrop.(me|to|cc|nl)\/|cyberdrop.me\/(f|e)\//, /cyberdrop.(me|to|cc|nl)\/a\//]],
-    ['pornhub.com:video', [/([~an@]+\.)?pornhub.com\/view_video/]],
-    ['noodlemagazine.com:video', [/(adult.)?noodlemagazine.com\/watch\//]],
-    ['spankbang.com:video', [/spankbang.com\/.*?\/video/]],
+    ['Bunkr:Albums', [/bunkrr?r?\.(ac|ax|black|cat|ci|cr|fi|is|media|nu|pk|ph|ps|red|ru|se|si|site|sk|ws|ru|su|org)\/a\//]],
+    ['Give.xxx:Profiles', [/give.xxx\/[~an@_-]+/]],
+    ['Pixeldrain:', [/(focus\.)?pixeldrain.com\/[lu]\//]],
+    ['Gofile:', [/gofile.io\/d/]],
+    ['Box.com:', [/m\.box\.com\//]],
+    ['Yandex:', [/(disk\.)?yandex\.[a-z]+/]],
+    ['Cyberfile:', [/!!https:\/\/cyberfile.(su|me)\/\w+(\/)?(?=")/, /cyberfile.(su|me)\/folder\//]],
+    //['Cyberdrop:', [/fs-\d+.cyberdrop.(me|to|cc|nl)\/|cyberdrop.me\/(f|e)\//, /cyberdrop.(me|to|cc|nl)\/a\//]],
+    ['Pornhub:video', [/([~an@]+\.)?pornhub.com\/view_video/]],
+    ['Noodlemagazine:video', [/(adult.)?noodlemagazine.com\/watch\//]],
+    ['Spankbang:video', [/spankbang.com\/.*?\/video/]],
 ];
 
 /**
@@ -1433,11 +1466,11 @@ const resolvers = [
         },
     ],
     [[/pomf2.lain.la/], url => url.replace(/pomf2.lain.la\/f\/(.*)\.(\w{3,4})(\?.*)?/, 'pomf2.lain.la/f/$1.$2')],
-    [[/coomer.party\/(data|thumbnail)/], url => url],
+    [[/coomer.su\/(data|thumbnail)/], url => url],
     [
-        [/coomer.party/, /:!coomer.party\/(data|thumbnail)/],
+        [/coomer.su/, /:!coomer.su\/(data|thumbnail)/],
         async (url, http) => {
-            const host = `https://coomer.party`;
+            const host = `https://coomer.su`;
 
             const profileId = url.replace(/\?.*/, '').split('/').reverse()[0];
 
@@ -1447,7 +1480,7 @@ const resolvers = [
 
             const posts = [];
 
-            console.log(`[coomer.party] Resolving profile: ${profileId}`);
+            console.log(`[coomer.su] Resolving profile: ${profileId}`);
 
             let page = 1;
 
@@ -1470,7 +1503,7 @@ const resolvers = [
                     finalURL = `${host}${nextPage.getAttribute('href')}`;
                 }
 
-                console.log(`[coomer.party] Resolved page: ${page}`);
+                console.log(`[coomer.su] Resolved page: ${page}`);
 
                 page++;
             } while (nextPage);
@@ -1523,7 +1556,7 @@ const resolvers = [
                     );
                 }
 
-                console.log(`[coomer.party] Resolved post ${index} / ${posts.length}`);
+                console.log(`[coomer.su] Resolved post ${index} / ${posts.length}`);
 
                 index++;
             }
@@ -1542,16 +1575,16 @@ const resolvers = [
             return dom.querySelector('.controls > nobr > a').getAttribute('href');
         },
     ],
-    [[/kemono.party\/data/], url => url],
+    [[/kemono.su\/data/], url => url],
     [
-        [/jpe?g.?\.(church|fish|fishing|pet|su)\//i, /:!jpe?.1\.(church|fish|fishing|pet|su)(\/a\/|\/album\/)/i],
+        [/jpg\d\.(church|fish|fishing|pet|su)\//i, /:!jpe?g\d\.(church|fish|fishing|pet|su)(\/a\/|\/album\/)/i],
         url =>
         url
         .replace('.th.', '.')
         .replace('.md.', '.')
     ],
     [
-        [/jpe?g.?\.(church|fish|fishing|pet|su)(\/a\/|\/album\/)/i],
+        [/jpe?g\d\.(church|fish|fishing|pet|su)(\/a\/|\/album\/)/i],
         async (url, http, spoilers, postId) => {
             url = url.replace(/\?.*/, '');
 
@@ -1588,7 +1621,7 @@ const resolvers = [
                         {},
                         {
                             Referer: url,
-                            Origin: 'https://jpg4.su',
+                            Origin: 'https://jpg5.su',
                             'Content-Type': 'application/x-www-form-urlencoded',
                         },
                     );
@@ -1610,7 +1643,7 @@ const resolvers = [
                 }
 
                 if (!authenticated) {
-                    log.host.error(postId, `::Could not resolve password protected album::: ${url}`, 'jpg4.su');
+                    log.host.error(postId, `::Could not resolve password protected album::: ${url}`, 'jpg5.su');
                     return null;
                 }
             }
@@ -1713,7 +1746,7 @@ const resolvers = [
             };
         },
     ],
-    [[/t(\d+)?\.pixhost.to\//, /:!pixhost.to\/gallery\//], url => url.replace(/t(\d+)\./gi, 'img$1.').replace(/thumbs\//i, 'images/')],
+    [[/(t|img)(\d+)?\.pixhost.to\//, /:!pixhost.to\/gallery\//], url => url.replace(/\/t(\d+)\./gi, 'img$1.').replace(/thumbs\//i, 'images/')],
     [
         [/pixhost.to\/gallery\//],
         async (url, http) => {
@@ -1738,103 +1771,190 @@ const resolvers = [
         },
     ],
     [
-        [/((stream|cdn(\d+)?)\.)?bunkrr?\.(ru|su|la|is|sk).*?\.|((i|cdn)(\d+)?\.)?bunkrr?\.(ru|su|la|is|sk)\/(v\/)?/i, /:!bunkrr?\.(ru|su|la|is|sk)\/a\//],
+        [/((stream|cdn(\d+)?)\.)?bunkrr?r?\.(ac|ax|black|cat|ci|cr|fi|is|media|nu|pk|ph|ps|red|ru|se|si|site|sk|ws|ru|su|org).*?\.|((i|cdn)(\d+)?\.)?bunkrr?r?\.(ac|ax|black|cat|ci|cr|fi|is|media|nu|pk|ph|ps|red|ru|se|si|site|sk|ws|ru|su|org)\/(v\/)?/i, /:!bunkrr?r?\.(ac|ax|black|cat|ci|cr|fi|is|media|nu|pk|ph|ps|red|ru|se|si|site|sk|ws|ru|su|org)\/a\//],
         async (url, http) => {
+            const extension = h.ext(url);
+            const filename = h.basename(url);
+            let matches = /bunkr\.\w+\/i/i.exec(url);
 
-            const ext = h.ext(url).toLowerCase();
+            const isImage = matches && matches.length;
+            const retrieveImageFromURL = matches && matches.length;
 
-            if (settings.extensions.image.includes(`.${ext}`)) {
-                url = url.replace(/cdn(\d+)?/, 'i$1');
-                return url;
+            let domain = null;
+
+            if (!matches || !matches.length) {
+                matches = /(?<=\/i-)\w+/.exec(url);
+
+                if (matches && matches.length) {
+                    domain = matches[0];
+                }
             }
 
-            if (settings.extensions.video.includes(`.${ext}`) && !h.contains('/v/', url)) {
-                url = url.replace(/(bunkrr?\.(ru|su|la|is|sk))\//, 'bunkrr.sk/v/');
+            const isImagExtension = settings.extensions.image.some(e => e.substring(1).toLowerCase() === extension.toLowerCase());
+
+            // The file is an image.
+            if (isImage || isImagExtension) {
+                console.log('Image');
+                if (isImagExtension) {
+                    return `https://i-${domain}.bunkr.ru/${filename}.${extension}`;
+                }
+
+                if (retrieveImageFromURL) {
+                    const { dom } = await http.get(url);
+
+                    return dom?.querySelector('.lightgallery > img')?.getAttribute('src');
+                }
             }
 
-            url = url.replace('stream.bunkr', 'bunkr').replace(/cdn(\d+)?\.bunkr/, 'bunkr');
+            // The file is a document or an archive.
+            else {
+                console.log('Doc');
+                const { dom } = await http.get(url);
+                const downloadPageURL = dom?.querySelector(`a[href^="https://get.bunkr"]`)?.href;
+                console.log(downloadPageURL);
 
-            if (['zip', 'pdf'].includes(ext) && !h.contains('/d/', url)) {
-                url = url.replace(/(bunkrr?\.(ru|su|la|is|sk))\//, 'bunkr.sk/d/');
+                if (!downloadPageURL) {
+                    return null;
+                }
+
+                const { dom: downloadPageDOM } = await http.get(downloadPageURL);
+
+                return downloadPageDOM?.querySelector('a')?.href;
             }
 
             const { dom } = await http.get(url);
 
-            let btnDownloadInit = null;
-
-            /* This gets a vid */
-            btnDownloadInit = dom.querySelector('body > main > section > div > div > div > div:nth-child(2) > div > a',);
-
-
-            if (btnDownloadInit.getAttribute('href').includes('report')){
-                const { dom } = await http.get(url);
-                /* This gets a zip, rar or pdf */
-                const btnDownload2 = dom.querySelector('body > main > section.py-8-xyz > div > div > div > div > div:nth-child(2) > a',);
-                var btnDownload = btnDownload2;
-            } else{
-                btnDownload = btnDownloadInit;
-            }
-
-            return !btnDownload ? null : btnDownload.getAttribute('href');
+            return dom?.querySelector('source')?.getAttribute('src');
         },
     ],
     [
-        [/bunkrr?\.(ru|su|la|sk)\/a\//],
-        async (url, http) => {
+        [/bunkrr?r?\.(ac|ax|black|cat|ci|cr|fi|is|media|nu|pk|ph|ps|red|ru|se|si|site|sk|ws|ru|su|org)\/a\//],
+        async (url, http, _, __, postSettings) => {
             const { dom, source } = await http.get(url);
 
-            const files = [...dom.querySelectorAll('.grid-images > div')].map(f => {
+            const containers = dom.querySelectorAll('.grid-images > div');
+
+            const files = [];
+
+            for (const f of containers) {
                 const a = f.querySelector('a');
-                const img = f.querySelector('a > img');
-                let url = `https://bunkr.sk${a.getAttribute('href')}`;
-                if (url.includes('/d/')){
-                    /* Insert zip, rar, pdf downloads here */
-                };
+                const img = f.querySelector('img');
+
+                const href = a?.href;
+
                 const extension = f.getElementsByTagName('p')[0].innerHTML.split('.').pop();
                 const filename = img?.getAttribute('src').split("/").pop().split('.').slice(0, -1).join(".");
+                const matches = /(?<=\/i-)\w+/.exec(img?.getAttribute('src'));
 
-                url = "https://temp.bunk.sk/"+filename+"."+extension;
+                let domain = null;
 
-                let name = h.basename(url).replaceAll(" ", "-");
+                if (matches && matches.length) {
+                    domain = matches[0];
+                }
 
-                let cdn = null;
+                // The file is an image.
+                if (domain && settings.extensions.image.some(e => e.substring(1).toLowerCase() === extension.toLowerCase())) {
+                    files.push(`https://i-${domain}.bunkr.ru/${filename}.${extension}`);
 
-                const src = img?.getAttribute('src');
-                if (src) {
-                    const matches = /((-)?([a-zA-Z0-9-]+))?\.bunkr/i.exec(src);
-                    if (matches && matches.length) {
-                        cdn = matches[3];
+                    continue;
+                }
+                // The file is a document or an archive.
+                if (
+                    href &&
+                    (
+                        settings.extensions.documents.some(e => e.substring(1).toLowerCase() === extension.toLowerCase()) ||
+                        settings.extensions.compressed.some(e => e.substring(1).toLowerCase() === extension.toLowerCase())
+                    )
+                ) {
+                    const { dom } = await http.get(href);
+                    const downloadPageURL = dom?.querySelector(`a[href^="https://get.bunkr"]`)?.href;
+
+                    if (!downloadPageURL) {
+                        continue;
+                    }
+
+                    const { dom: downloadPageDOM } = await http.get(downloadPageURL);
+
+                    files.push(downloadPageDOM?.querySelector('a')?.href);
+
+                    continue;
+                }
+
+                // From this point on, we assume that the file is a video.
+                // Since it's a video, the domain regex on the image url has to be passed.
+                if (!domain) {
+                    continue;
+                }
+
+                // Start off without the cached url (bunkr-cache.se).
+
+                let resolvedURL = `https://${domain}.bunkr.ru/${filename}.${extension}`;
+
+                if (domain === "fries") {
+                    const { status, dom } = await http.get(a.href);
+                    resolvedURL = dom?.querySelector('source')?.getAttribute('src');
+                }
+
+                if (postSettings.verifyBunkrLinks) {
+                    let status = null;
+
+                    try {
+                        console.log(`Verifying: ${resolvedURL}`);
+
+                        await http.get(resolvedURL, {
+                            onResponseHeadersReceieved: ({ status: s, request }) => {
+                                status = s;
+                                if (request) {
+                                    request.abort();
+                                }
+                            }
+                        });
+
+                        console.log(status === 429 || status === 200 ? `File Exists: ${resolvedURL}` : `Verification Failed. Ignoring ${resolvedURL}`);
+                    } catch (e) {
+                        continue;
+                    }
+
+                    // The file was found. We'll ignore the error as the
+                    // concurrent downloads for Bunkr are fixed to a single download.
+                    if (status === 429) {
+                        files.push(resolvedURL);
+                        continue;
+                    }
+
+                    // Bail if the file's not found or there's a server error.
+                    if (status === 404 || status.toString().substring(0, 1) === '5') {
+                        continue;
+                    }
+
+                    // Try and pull the link from the video's source tag.
+                    if (status !== 200) {
+                        const { status, dom } = await http.get(a.href);
+                        resolvedURL = dom?.querySelector('source')?.getAttribute('src');
+                    }
+
+                    if (!resolvedURL) {
+                        continue;
                     }
                 }
 
-                return {
-                    name,
-                    url,
-                    cdn,
-                    img: src,
-                };
-            });
+                files.push(resolvedURL);
 
-            const resolved = files.map(file => {
-                const fileCDN = file.cdn || '';
-                const cdn = fileCDN.includes('4') ? `i${fileCDN}` : fileCDN ;
-                let host = `https://${cdn}.bunkr.ru`;
-                return `${host}/${file.name}`;
-            });
+            }
 
-            const infoContainer = dom.querySelector('h1.text-\\[24px\\]');
+            const infoContainer = dom.querySelector('h1');
             const parts = infoContainer?.outerText
             .split('\n')
             .map(t => t.trim())
             .filter(t => t !== '');
             const OrigAlbumName = parts.length ? parts[0].trim() : url.split('/').reverse()[0];
-            const albumName = OrigAlbumName.replaceAll('/', '-');
+            const albumName = OrigAlbumName.replaceAll('/', '-').replace('&amp;', '');
 
             return {
                 dom,
                 source,
                 folderName: albumName,
-                resolved,
+                resolved: files.filter(file => file),
             };
         },
     ],
@@ -1992,9 +2112,9 @@ const resolvers = [
             const resolveAlbum = async (url, spoilers) => {
                 const contentId = url.split('/').reverse()[0];
 
-                const apiUrl = `https://api.gofile.io/getContent?contentId=${contentId}&token=${settings.hosts.goFile.token}&websiteToken=7fd94ds12fds4&cache=true`;
+                const apiUrl = `https://api.gofile.io/contents/${contentId}?wt=4fd6sg89d7s6`;
 
-                let { source } = await http.get(apiUrl);
+                let { source } = await http.get(apiUrl, {}, { 'Authorization': `Bearer ${settings.hosts.goFile.token}` });
 
                 if (h.contains('error-notFound', source)) {
                     log.host.error(postId, `::Album not found::: ${url}`, 'gofile.io');
@@ -2049,7 +2169,7 @@ const resolvers = [
             const resolved = [];
 
             const getChildAlbums = async (props, spoilers) => {
-                if (!props || props.status !== 'ok' || !props.data || !props.data.childs || !props.data.childs.length) {
+                if (!props || props.status !== 'ok' || !props.data || !props.data.children) {
                     return [];
                 }
 
@@ -2057,7 +2177,7 @@ const resolvers = [
 
                 folderName = props.data.name;
 
-                const files = props.data.contents;
+                const files = props.data.children;
 
                 for (const file in files) {
                     const obj = files[file];
@@ -2232,12 +2352,10 @@ const resolvers = [
             };
         },
     ],
-    [[/([~an@]+\.)?saint.to\/videos/], async url => url],
+    [[/([~an@]+\.)?saint2.(su|pk|cr)\/videos/], async url => url],
     [[/public.onlyfans.com\/files/], async url => url],
-    [[/dailystar.co.uk\//], async url => url],
-    [[/pinuderest.com\//], async url => url],
     [
-        [/saint.to\/embed/],
+        [/saint2.(su|pk|cr)\/embed/],
         async (url, http) => {
             const { dom } = await http.get(url);
             return dom.querySelector('source')?.getAttribute('src');
@@ -2268,6 +2386,7 @@ const resolvers = [
             let resolved ="";
             if (url.includes('fs-')){
                 url = url.replace(/(fs|img)-\d+/i, '').replace(/(to|cc|nl)-\d+/i,'me');
+
                 let { source, dom } = await http.get(url, {
                     onStateChange: response => {
                         // If it's a redirect, we'll have to fetch the new url.
@@ -2407,6 +2526,7 @@ const resolvers = [
             }
         },
     ],
+    [[/images\d.imagebam.com/], url => url],
     [[/imgvb.com\/images\//, /:!imgvb.com\/album\//], url => url.replace('.th.', '.').replace('.md.', '.')],
     [
         [/imgvb.com\/album\//],
@@ -2520,110 +2640,6 @@ const resolvers = [
             return null;
         },
     ],
-    [
-        [/instagram\.min/],
-        async (url, http) => {
-            const id = url
-            .replace(/#theme.*/gis, '')
-            .split('#')
-            .reverse()[0];
-
-            const { source, dom } = await http.get(`https://www.instagram.com/p/${id}/embed`);
-            const script = [...dom.querySelectorAll('script')].map(s => s.innerText).filter(s => h.contains('shortcode_media', s))[0];
-
-            const resolved = [];
-
-            if (script) {
-                if (h.contains('"is_video":true', script)) {
-                    let videoUrls = h.re.matchAll(/(?<=video_url":").*?(?=")/gis, script);
-                    videoUrls.forEach(v => {
-                        resolved.push(v.replace(/\\u0026/g, '&'));
-                    });
-                }
-            }
-
-            if (!resolved.length) {
-                return null;
-            }
-
-            if (resolved.length > 1) {
-                return {
-                    dom,
-                    source,
-                    folderName: null,
-                    resolved,
-                };
-            }
-
-            return resolved[0];
-        },
-    ],
-    [
-        [/instagram.com\/[a-zA-Z0-9_.-]+|((instagram|insta):(\s+)?)@?[a-zA-Z0-9_.-]+/i],
-        async (url, http) => {
-            let id;
-
-            if (/(instagram|insta):/is.test(url)) {
-                id = h.re
-                    .matchAll(/@?.*/gis, url)[0]
-                    .replace('@', '')
-                    .replace(/(instagram:|insta:)/is, '')
-                    .trim();
-            } else {
-                id = url.split('/').reverse()[0];
-            }
-
-            const headers = { 'User-Agent': 'Instagram 219.0.0.12.117 Android' };
-
-            const { source, dom } = await http.get(`https://instagram.com/${id}`, {}, headers);
-
-            const profileId = h.re.matchAll(/(?<="profile_id":")\d+/gis, source)[0];
-
-            const apiBaseUrl = `https://www.instagram.com/api/v1/feed/user/`;
-
-            const { source: response } = await h.http.get(`${apiBaseUrl}${profileId}/?count=100`, {}, headers);
-
-            const collect = async response => {
-                const props = JSON.parse(response);
-                const resolved = [];
-                if (props && props.status === 'ok' && props.num_results > 0) {
-                    const items = Object.values(props.items);
-                    for (const item of items) {
-                        if (item.product_type === 'feed') {
-                            resolved.push(item.image_versions2.candidates[0].url);
-                        } else if (item.product_type === 'carousel_container') {
-                            resolved.push(...item.carousel_media.map(m => m.image_versions2.candidates[0].url));
-                        } else if (item.product_type === 'clips') {
-                            resolved.push(item.video_versions[0].url);
-                        }
-                    }
-
-                    if (props.more_available === true && props.next_max_id) {
-                        await h.delayedResolve(3000);
-                        const { source } = await h.http.get(`${apiBaseUrl}/${profileId}/?count=100&max_id=${props.next_max_id}`, {}, headers);
-                        resolved.push(...(await collect(source)));
-                    }
-                }
-
-                return resolved;
-            };
-
-            const resolved = await collect(response);
-
-            const props = JSON.parse(response);
-
-            const folderName = props && props.user ? props.user.full_name : id;
-
-            if (resolved.length > 1) {
-                return {
-                    dom,
-                    source,
-                    folderName,
-                    resolved: resolved.map(url => url.replace(/\\u0026/g, '&')),
-                };
-            }
-        },
-    ],
     [[/(\w+)?.redd.it/], url => url.replace(/&amp;/g, '&')],
 ];
 
@@ -2724,7 +2740,7 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                 let r = null;
 
                 try {
-                    r = await h.promise(resolve => resolve(resolverCB(resource, h.http, passwords, postId)));
+                    r = await h.promise(resolve => resolve(resolverCB(resource, h.http, passwords, postId, postSettings)));
                 } catch (e) {
                     log.post.error(postId, `::Error resolving::: ${resource}`, postNumber);
                     continue;
@@ -2828,7 +2844,8 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
         const resources = resolved.filter(r => r.url);
         totalDownloadable = resources.length;
 
-        const batchLength = 2;
+        // Limit bunkr links to a single concurrent download.
+        let batchLength = resolved.some(file => /(bunkrr?\.\w+)|(bunkr-cache)/.test(file.url)) ? 1 : 2;
 
         let currentBatch = 0;
 
@@ -2857,7 +2874,7 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                 h.ui.setElProps(statusLabel, { fontWeight: 'normal' });
                 var reflink = original;
                 if (url.includes('bunkr')){
-                    reflink = "https://bunkr.sk"
+                    reflink = "https://bunkr.si"
                 }
                 if (url.includes('pomf2')){
                     reflink = "https://pomf2.lain.la"
@@ -2926,7 +2943,7 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                             basename = response.responseHeaders.match(/^content-disposition.+filename=(.+)$/im)[1].replace(/"/g, '');
                         } else if (url.includes('https://simpcity.su/attachments/')) {
                             basename = filename ? filename.name : h.basename(url).replace(/(.*)-(.{3,4})\.\d*$/i, '$1.$2');
-                        } else if (url.includes('kemono.party')) {
+                        } else if (url.includes('kemono.su')) {
                             basename = filename
                                 ? filename.name
                             : h
@@ -3223,14 +3240,14 @@ const addDownloadPageButton = () => {
  * @param postFooter
  */
 const registerPostReaction = postFooter => {
-  const hasReaction = postFooter.querySelector('.has-reaction');
-  if (!hasReaction) {
-    const reactionAnchor = postFooter.querySelector('.reaction--imageHidden');
-    if (reactionAnchor) {
-      reactionAnchor.setAttribute('href', reactionAnchor.getAttribute('href').replace('_id=1', '_id=33'));
-      reactionAnchor.click();
+    const hasReaction = postFooter.querySelector('.has-reaction');
+    if (!hasReaction) {
+        const reactionAnchor = postFooter.querySelector('.reaction--imageHidden');
+        if (reactionAnchor) {
+            reactionAnchor.setAttribute('href', reactionAnchor.getAttribute('href').replace('_id=1', '_id=33'));
+            reactionAnchor.click();
+        }
     }
-  }
 };
 
 
@@ -3318,6 +3335,7 @@ const selectedPosts = [];
                 generateLog: false,
                 skipDuplicates: false,
                 skipDownload: false,
+                verifyBunkrLinks: false,
                 output: [],
             };
 

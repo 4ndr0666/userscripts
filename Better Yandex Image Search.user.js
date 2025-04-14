@@ -4,7 +4,10 @@
 // @version      0.1
 // @description  Add fullscreen image scaling and hit down button to start quick slideshow.
 // @author       derac
-// @match        *://*yandex.com/images/*
+// @match        http*://*yandex.com/images/*
+// @match        https://yandex.com/images/*
+// @match        http*://yandex.ru/images/*
+// @match        http*://*yandex.ru/images/*
 // @grant        none
 // @downloadURL https://update.greasyfork.org/scripts/412102/Better%20Yandex%20Image%20Search.user.js
 // @updateURL https://update.greasyfork.org/scripts/412102/Better%20Yandex%20Image%20Search.meta.js

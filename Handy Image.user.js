@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name		Handy Image
-// @version		2024.07.10
+// @version		2025.04.06
 // @author		Owyn
 // @contributor	ubless607, bitst0rm
 // @namespace	handyimage
@@ -377,6 +377,8 @@
 // @match		http://filefap.com/view*
 // @match		https://imgur.com/*
 // @match		https://m.imgur.com/*
+// @exclude		https://imgur.com/a/*
+// @exclude		https://m.imgur.com/a/*
 // @match		https://motherless.com/*
 // @match		https://*.tumblr.com/image/*
 // @match		https://*.media.tumblr.com/*.*
@@ -391,14 +393,14 @@
 // @match		http://*.imgdone.com/view*
 // @match		https://*.2i.cz/i/*
 // @match		http://awesomescreenshot.com/*
-// @match		https://www.flickr.com/photos/*/*/
+// @match		https://www.flickr.com/photos/*/*/*
 // @exclude		https://www.flickr.com/photos/*/galleries/*
 // @exclude		https://www.flickr.com/photos/*/albums/*
 // @exclude		https://www.flickr.com/photos/sets/*
 // @exclude		https://www.flickr.com/photos/tags/*
 // @exclude		https://www.flickr.com/photos/page*
 // @exclude		https://www.flickr.com/photos/with*
-// @exclude		https://www.flickr.com/photos/favorites*
+// @exclude		https://www.flickr.com/photos*favorites*
 // @match		http://www.amateri.cz/g*/*
 // @match		*://*.wikipedia.org/wiki/*:*.jp*
 // @match		*://*.wikipedia.org/wiki/*:*.png
@@ -487,7 +489,7 @@
 // @match		http://konachan.net/post/show/*
 // @match		https://yande.re/post/show/*
 // @match		https://chan.sankakucomplex.com/*posts/*
-// @match		https://idol.sankakucomplex.com/*post/show/*
+// @match		https://idol.sankakucomplex.com/*posts/*
 // @match		https://yande.re/post/show/*
 // @match		http://www.zerochan.net/*
 // @match		http://imgzap.com/view*
@@ -512,8 +514,6 @@
 // @match		http://*.imgbase.online/*/*/
 // @match		http://*.picpays.ru/*/*/
 // @match		http://*.imgclover.com/image/*
-// @match		http://*.imgz.pw/share-*
-// @match		http://*.imgz.pw/ch/image/*
 // @match		*://*.imgking.co/img*
 // @match		http://ask.fm/*/photo/original
 // @match		http://*.newimagepost.com/img-*
@@ -538,15 +538,13 @@
 // @match		http://*.img24.org/full/
 // @match		http://*.pic-maniac.com/*
 // @match		https://*.instagram.com/p/*
+// @match		https://*.instagram.com/*/p/*
 // @exclude		https://instagram.com/p/*/embed/*
 // @exclude		https://*.instagram.com/p/*/embed/*
 // @match		http://*.imgsay.com/?v=*
 // @match		http://*.imgsmile.com/?v=*
 // @match		http://*.balkanelite.org/MultiHoster/view*
-// @match		https://twitter.com/*/photo/*
-// @match		https://mobile.twitter.com/*/photo/*
-// @match		https://x.com/*/photo/*
-// @match		https://mobile.x.com/*/photo/*
+// @match		https://*.x.com/*/photo/*
 // @match		http://*.icezap.com/img-*
 // @match		*://*.rapidimg.net/img-*
 // @match		http://*.imgtornado.com/img-*
@@ -604,7 +602,7 @@
 // @match		http://*.levinpic.org/*.html
 // @match		https://www.sparrowpics.com/image/*
 // @match		http://*.imgmax.com/image/*
-// @match		http://lostpix.com/?v=*
+// @match		https://lostpix.com/?v=*
 // @match		https://extraimago.com/image/*
 // @match		http://www.joblo.com/hollywood-celebrities/hottie-profile/*/image-gallery/*.jpg
 // @match		*://extraimage.net/image/
@@ -833,11 +831,7 @@
 // @match		https://imgsh.net/a/*
 // @match		*://imgqaz.online/*
 // @match		*://imgurt.online/*
-// @match		https://jpg.fish/img/*
-// @match		https://jpg1.su/img/*
-// @match		https://jpg2.su/img/*
-// @match		https://jpg3.su/img/*
-// @match		https://jpg4.su/img/*
+// @match		https://jpg5.su/img/*
 // @match		*://imgwxr.online/*
 // @match		*://imgyre.online/*
 // @match		https://pixl.li/image/*
@@ -883,10 +877,25 @@
 // @match		https://www.seaart.ai/explore/detail/*
 // @match		https://tensor.art/images/*
 // @match		https://freeimage.host/i/*
-// @match		https://rule34.paheal.net/post/view/*
 // @match		https://imgjjtr.sbs/*
 // @match		https://tezzpic.com/*.php
 // @match		https://clip2net.com/s/*
+// @match		https://4fuk.me/upload/*
+// @match		https://555fap.com/upload/*
+// @match		https://kin8-av.com/upload/*
+// @match		https://javsunday.com/upload/*
+// @match		https://*.redgifs.com/watch/*
+// @match		https://hentaicovid.com/uploads/*
+// @match		https://hentaipig.com/upload/*
+// @match		https://fikfok.net/upload/*
+// @match		https://image.javbee.me/*
+// @match		https://pixeldrain.com/u/*
+// @match		https://getapic.me/v/*
+// @match		https://3minx.com/upload/*
+// @match		https://sweetie-fox.com/upload/*
+// @match		https://porn4f.org/upload/*
+// @match		https://pixai.art/artwork/*
+// @match		https://pixai.art/video/*
 // @downloadURL https://update.greasyfork.org/scripts/109/Handy%20Image.user.js
 // @updateURL https://update.greasyfork.org/scripts/109/Handy%20Image.meta.js
 // ==/UserScript==
@@ -937,7 +946,7 @@ if(sessionStorage.length)
 		if(sessionStorage.hji.indexOf(window.location.href) != -1) // check address in case page failed to load b4
 		{
 			console.warn("Handy Image: userscript stopped itself from running INTENTIONALLY");
-			sessionStorage.removeItem("hji");
+			setTimeout(function() {sessionStorage.removeItem("hji");},1000); // for frames
 			return false;
 		}
 		sessionStorage.removeItem("hji");
@@ -970,7 +979,6 @@ let orgImgWidth;
 let orgImgHeight;
 var rescaled = 0;
 var tb = 0;
-var tg = 0;
 var timeout = 1000;
 var FireFox = ((navigator.userAgent.indexOf('Firefox') != -1) ? true : false);
 var i;
@@ -1101,9 +1109,9 @@ function onbeforeunload() // back helper
 
 function makeimage()
 {
-	if(typeof cfg_js !== "string") { console.log("waiting for settings to load to makeimage()"); window.setTimeout(function() { makeimage(); }, 2); return false;} // lets wait for stupd async
+	if(typeof cfg_js !== "string") { console.log("waiting for settings to load to makeimage()"); if(!loadCfg_callbacks.includes(makeimage)){loadCfg_callbacks.push(makeimage);} return false;} // lets wait for stupd async
 	if(cfg_direct === true){let a = protected_createElement('a'); a.setAttribute('href',i.src); a.click(); return false;}
-	let css 
+	let css
  = `:root, body
 {
 	height: 100%;
@@ -1162,21 +1170,36 @@ video::-webkit-media-controls-panel
 	}
 }
 
-function find_text_in_scripts(text, stopword, start_from_top = null, search_after_word = null, content_type = "img")
+function find_text_in_scripts(text, stopword, start_from_top = false, search_after_word = null, content_type = "img")
 {
-	let s = document.getElementsByTagName("script");
-	for(let c=0;c<s.length;c++)
+	let scripts = document.getElementsByTagName("script");
+	const searchFunc = start_from_top ? String.prototype.indexOf : String.prototype.lastIndexOf;
+	for(let n = 0; n < scripts.length; n++)
 	{
-		if(search_after_word && s[c].innerHTML.indexOf(search_after_word) != -1){s[c].innerHTML = s[c].innerHTML.substring(0, s[c].innerHTML.indexOf(search_after_word));}
-		let start_pos = start_from_top ? s[c].innerHTML.indexOf(text) : s[c].innerHTML.lastIndexOf(text);
-		if(start_pos == -1){continue;}
-		start_pos += text.length;
-		let found_content = s[c].innerHTML.substring(start_pos,s[c].innerHTML.indexOf(stopword,start_pos));
+		let foundIdx;
+		if(search_after_word)
+		{
+			foundIdx = searchFunc.call(scripts[n].innerHTML, search_after_word);
+			if(foundIdx === -1)
+			{
+				foundIdx = undefined;
+				console.debug("find_text_in_scripts(): NOT found search_after_word: ");
+				continue; // the word MUST be present
+			}
+			else
+			{
+				console.debug("find_text_in_scripts(): found search_after_word at: " + foundIdx);
+			}
+		}
+		let found_start_pos = searchFunc.call(scripts[n].innerHTML, text, foundIdx);
+		if(found_start_pos == -1){continue;} // text not found in this <script>, try next?
+		found_start_pos += text.length;
+		let found_content = scripts[n].innerHTML.substring(found_start_pos, scripts[n].innerHTML.indexOf(stopword, found_start_pos));
 		found_content = JSON.parse('"' + found_content.replace('"', '\\"') + '"'); // unescape it
 		found_content = decodeURIComponent(found_content);
 		i = protected_createElement(content_type);
 		i.src = found_content;
-		console.debug("found url in the script: " + found_content);
+		console.debug("find_text_in_scripts(): found this url: " + found_content);
 		return true;
 	}
 	return false;
@@ -1283,25 +1306,18 @@ function makeworld()
 		}
 		break;
 	case "imagebam.com":
-		//j = true;
-		i = q("a i.fa-download");
+		i = q("#continue a");
 		if(i)
 		{
-			i.src = i.parentNode.href;
+			let expires = '';
+			let date = new Date();
+			date.setTime(date.getTime() + (6 * 60 * 60 * 1000));
+			expires = "; expires=" + date.toUTCString();
+			document.cookie = "nsfw_inter=1" + expires + "; path=/";
+			i.click();
+			break
 		}
-		else
-		{
-			i = q("#continue a");
-			if(i)
-			{
-				let expires = '';
-				let date = new Date();
-				date.setTime(date.getTime() + (6 * 60 * 60 * 1000));
-				expires = "; expires=" + date.toUTCString();
-				document.cookie = "nsfw_inter=1" + expires + "; path=/";
-				i.click();
-			}
-		}
+		i = q("img.main-image");
 		break;
 	case "directupload.net":
 	case "bilderhoster.net":
@@ -1356,7 +1372,6 @@ function makeworld()
 	case "imghub.ru":
 	case "radikal.host":
 	case "imgsh.net":
-	case "jpg.fish":
 	case "pixl.li":
 	case "skr.sh":
 	case "jpg.pet":
@@ -1364,10 +1379,6 @@ function makeworld()
 	case "im.ge":
 	case "screencast.com":
 	case "picshare.ru":
-	case "jpg1.su":
-	case "jpg2.su":
-	case "jpg3.su":
-	case "jpg4.su":
 	case 'img.trafficimage.club':
 	case 'pig69.com':
 	case 'javball.com':
@@ -1386,6 +1397,14 @@ function makeworld()
 	case "seaart.ai":
 	case "freeimage.host":
 	case "clip2net.com":
+	case "4fuk.me":
+	case "555fap.com":
+	case "kin8-av.com":
+	case "javsunday.com":
+	case "hentaipig.com":
+	case "hentaicovid.com":
+	case "fikfok.net":
+	case "image.javbee.me":
 		i = document.querySelector('meta[property="og:image"], [name="og:image"]');
 		if(i)
 		{
@@ -1420,13 +1439,11 @@ function makeworld()
 			i.src = i.content.replace("w=600","w=3840"); // 4k (if available)
 		}
 		break;
-	case "mobile.twitter.com":
-	case "twitter.com":
 	case "mobile.x.com":
 	case "x.com":
 		j = true;
 		unsafeWindow.history.replaceState = unsafeWindow.console.log;
-		i = q('a[href*="/photo/' + Number(window.location.href.at(-1)) + '"] img');
+		i = q('a[href*="'+window.location.href.match("status\/([^\/]+)")[1]+'/photo/' + Number(window.location.href.at(-1)) + '"] img');
 		if(i)
 		{
 			i.src = i.src.substring(0, i.src.indexOf("&name=")) + '&name=orig';
@@ -1463,15 +1480,20 @@ function makeworld()
 		j = true;
 		i = q('img#imgItem');
 		break;
+	case "getapic.me":
+		i = q('small > a');
+		i.src = i.href;
+		break;
 	case "instagram.com":
 		j = true;
 		// find_text_in_scripts('"url":"', '"', false, '"image_versions2"')
-		if(q("header"))
+		if(q('canvas')) // comments' avatar
 		{
-			f = document.querySelectorAll("div[role=button] > div > div img")
+			f = document.querySelectorAll("div[role=button] > div > div img");
 			if(f.length === 1)
 			{
 				i = f[0];
+				filename = "by " + document.querySelector('meta[property="og:title"]').content;
 			}
 			else
 			{
@@ -1481,7 +1503,7 @@ function makeworld()
 		break;
 	case "flickr.com":
 	case "secure.flickr.com":
-		find_text_in_scripts('"displayUrl":"', '"', false, '"o":');
+		find_text_in_scripts('"descendingSizes":[{"displayUrl":"', '"', false, '');
 		break;
 	case "artstation.com":
 		j = true;
@@ -1491,6 +1513,41 @@ function makeworld()
 			i = f[0];
 			i.src = i.href;
 		}
+		break;
+	case "redgifs.com":
+		if(!j) // once
+		{
+			console.debug("HJI: setting up wrapper_JSON_parse");
+			let wrapper_JSON_parse = function (json, ...args)
+			{
+				if (typeof json === 'string' && json.includes('"gif":') && document.head && !document.head.querySelector('link[rel="handy_image"]'))
+				{
+					const parsed = wrapper_JSON_parse.originalF(json, ...args);
+					let link = protected_createElement('link');
+					link.rel = 'handy_image';
+					link.href = parsed.gif.urls.hd || parsed.gif.urls.sd;
+					document.head.appendChild(link);
+					console.debug("found redgifs url: " + link.href);
+					console.debug(parsed.gif.urls);
+					filename = "by " + parsed.gif.userName + " - " + parsed.gif.niches.join(" ") + " - " + parsed.gif.tags.join(" ");
+					unsafeWindow.JSON.parse = wrapper_JSON_parse.originalF; // doesn't work for some reason
+					return parsed;
+				}
+				return wrapper_JSON_parse.originalF(json, ...args);
+			}
+			if(FireFox && typeof exportFunction === "function")
+			{
+				wrapper_JSON_parse = exportFunction(wrapper_JSON_parse, unsafeWindow); // TM magic
+			}
+			wrapper_JSON_parse.originalF = unsafeWindow.JSON.parse;
+			unsafeWindow.JSON.parse = wrapper_JSON_parse;
+		}
+		else if(document.head)
+		{
+			i = document.head.querySelector('link[rel="handy_image"]');
+			if(i) i.src = i.href;
+		}
+		j = true;
 		break;
 	case "piczel.tv":
 		j = true;
@@ -1663,7 +1720,6 @@ function makeworld()
 	case "eazypics.net":
 	case "xtupload.com":
 	case "t.williamgates.net":
-	case "imgz.pw":
 	case "imgurx.net":
 		//i = q('img#iimg');
 		if(!find_text_in_scripts("<img src='", "'"))
@@ -1749,6 +1805,11 @@ function makeworld()
 	case "jerking.empornium.ph":
 		find_text_in_scripts('	url: "', '"', true);
 		break;
+	case "jpg5.su":
+		j = true;
+		i = q('a[download][href*=\\/]');
+		if(i) i.src = i.href;
+		break;
 	case "bilder-space.de":
 	case "imagesup.de":
 		i = q('img.picture');
@@ -1770,10 +1831,12 @@ function makeworld()
 	case "sexybabepics.net":
 	case "keepimg.com":
 	case "ibb.co":
-		i = document.head.querySelector('meta[property="og:image"]');
+		i = document.head?.querySelector('meta[property="og:image"]');
 		if(i){i.src = i.content; break;}
+	case "pixeldrain.com":
+		j = true;
 	case "pasteboard.co":
-		i = document.head.querySelector('meta[name="twitter:image"]');
+		i = document.head?.querySelector('meta[name="twitter:image"]');
 		if(i){i.src = i.content; break;}
 	case "picsee.net":
 		i = q('a[href*="/upload"]');
@@ -1810,11 +1873,12 @@ function makeworld()
 		i = q('a[href*="/images/"][href*="' + host + '/"]');
 		if(i){use_booru_tags_in_dl_filename(); i.src = i.href;}
 		break;
-	case "rule34.paheal.net":
-		j = true;
-		bUseCustomFilename = false;
-		i = q('#main_image');
-		break;
+	// case "rule34.paheal.net":
+	// 	j = true;
+	// 	bUseCustomFilename = false; // broken currently, again
+	// 	i = q('#main_image');
+	// 	if(i && i.currentSrc){i.src = i.currentSrc;}
+	// 	break;
 	case "rule34hentai.net":
 	case "danbooru.donmai.us":
 		i = q('a[download]');
@@ -1894,6 +1958,15 @@ function makeworld()
 		i = q('div.download a');
 		if(i){i.src = i.href; filename = document.title;}
 		break;
+	case "pixai.art":
+		j = true;
+		i = q('.object-contain');
+		if(!filename)
+		{
+			filename = document.title;
+			filename_ext = document.URL.indexOf("video") != -1 ? "mp4" : "webp";
+		}
+		break;
 	case "imagehost.eu":
 		i = q('a#image');
 		if(i){i.src = i.href;}
@@ -1910,6 +1983,7 @@ function makeworld()
 		if(i){i.src = i.href;}
 		break;
 	case "imageshost.ru":
+	case "lostpix.com":
 		i = q('a[href*="/img/"]');
 		if(i){i.src = i.href;}
 		break;
@@ -2192,7 +2266,6 @@ function makeworld()
 	case "thebestpichost.com":
 	case "ifotos.pl":
 	case "subeimagenes.com":
-	case "lostpix.com":
 	case "vvcap.com":
 	case "imgtrex.com":
 	case "pic-upload.de":
@@ -3022,7 +3095,7 @@ function makeworld()
 		bStopScripts = true; // actually better than the event above, blocks more stuff for some reason
 	}
 	//
-	if(tb){window.clearTimeout(tb);}
+	if(tb){clearTimeout(tb);}
 	if(is_gallery)
 	{
 		console.log("Handy Image: userscript stopped itself INTENTIONALLY, - cuz it is not just a single image on the page to fullsize but a gallery");
@@ -3062,14 +3135,14 @@ function makeworld()
 	else // try again
 	{
 		//console.warn("Didnt find image, trying again in " + timeout + " ms");
-		tb = window.setTimeout(function() { console.warn("Didnt find image, waited " + timeout + " ms to try again. page: " + window.location.href); tb=0; timeout*=2; i=0; makeworld(); }, timeout);
+		tb = setTimeout(function() { console.warn("Didnt find image, waited " + timeout + " ms to try again. page: " + window.location.href); tb=0; timeout*=2; i=0; makeworld(); }, timeout);
 	}
 }
 
 var grab_fav_tags = []; // set in Custom JS
 function use_booru_tags_in_dl_filename()
 {
-	let artist = document.querySelectorAll(".tag-type-artist a:not([href*='/books?'])[href*='tags='], .artist-tag > a, a.search-tag[itemprop='author'], a.model, .user-info-box .username > a");
+	let artist = document.querySelectorAll(".tag-type-artist a:not([href*='/books?'])[href*='tags='],.tag-type-idol a:not([href*='/books?'])[href*='tags='], .artist-tag > a, a.search-tag[itemprop='author'], a.model, .user-info-box .username > a");
 	for(let n = 0; n < artist.length; n++)
 	{
 		if(artist[n].text == "?") continue;
@@ -3093,32 +3166,37 @@ function use_booru_tags_in_dl_filename()
 			break; // just one cuz else it'd get long
 		}
 	}*/
-	let general_tags = document.querySelectorAll(".tag-type-general a:not([href*='/books?'])[href*='tags='], .tag-type-genre > a, .general-tag > a, .general-tag-list > .tag-type-0 > a.search-tag, a.search-tag, div#tagLink > a,.tags-list a");
+	let general_tags = document.querySelectorAll(".tag-link, .tag-type-general a:not([href*='/books?'])[href*='tags='], .tag-type-genre > a, .general-tag > a, .general-tag-list > .tag-type-0 > a.search-tag, a.search-tag, div#tagLink > a,.tags-list a");
+	let general_tags_text = [];
+	for(let n = 0; n < general_tags.length; n++)
+	{
+		general_tags_text.push(general_tags[n].text);
+	}
 
-	function do_grab_fav_tags()
+	function process_grabbed_tags()
 	{
 		if(typeof cfg_js !== "string")
 		{
 			console.log("waiting for async setting loading of cfg_js: " + (typeof cfg_js));
-			tg = window.setTimeout(do_grab_fav_tags, 2);
+			if(!loadCfg_callbacks.includes(process_grabbed_tags)){loadCfg_callbacks.push(process_grabbed_tags);}
 			return;
 		}
-		if(cfg_js && cfg_js.indexOf("grab_fav_tags") != -1) {grab_fav_tags = cfg_js.substring(cfg_js.indexOf("[")+1,cfg_js.indexOf("]")).replaceAll(" ", "").replaceAll("_", " ").replaceAll(/\n/g, '').replaceAll("'", "").replaceAll('"','').toLowerCase().split(",");} // load custom tags // also bypass CSP
+		if(cfg_js && cfg_js.indexOf("grab_fav_tags") != -1) {grab_fav_tags = cfg_js.substring(cfg_js.indexOf("[")+1,cfg_js.indexOf("]")).replaceAll(" ", "").replaceAll("_", " ").replaceAll(/\n/g, '').replaceAll(/(?<!\\)'/g, "").replaceAll("\\'","'").replaceAll('"','').toLowerCase().split(",");} // load custom tags // also bypass CSP
 		console.debug("your favorite tags: "+ grab_fav_tags);
 		if(grab_fav_tags.length)
 		{
-			for(let n = 0; n < general_tags.length; n++)
+			for(let n = 0; n < general_tags_text.length; n++)
 			{
-				if(general_tags[n].text == "?") continue;
-				if(grab_fav_tags.indexOf(general_tags[n].text.toLowerCase().replaceAll("_", " ")) != -1)
+				if(general_tags_text[n] == "?") continue;
+				if(grab_fav_tags.indexOf(general_tags_text[n].toLowerCase().replaceAll("_", " ")) != -1)
 				{
-					filename = general_tags[n].text.replaceAll(" ", "_") + " " +filename;
+					filename = general_tags_text[n].replaceAll(" ", "_") + " " +filename;
 				}
 			}
 		}
 		filename = filename.replaceAll("_(", " ("); // but not the space before franchise
 	}
-	do_grab_fav_tags();
+	process_grabbed_tags();
 }
 
 function onvolumechange()
@@ -3194,6 +3272,15 @@ function mousedown(event) // chrome scroll-wheel
 		event.stopImmediatePropagation();
 		return;
 	}
+}
+
+// Firefox 90- support
+if(typeof window.visualViewport === "undefined")
+{
+	window.visualViewport = {
+		get pageTop(){return window.scrollY},
+        get pageLeft(){return window.scrollX}
+	};
 }
 
 let viewHeight;
@@ -3292,7 +3379,7 @@ function rescale(oEvent, isFilling)
 	click_Y *= newToOldImgScale_Y;
 	prevScroll_X *= newToOldImgScale_X;
 	prevScroll_Y *= newToOldImgScale_Y;
-	
+
 	if(oEvent)
 	{
 		if(bZoomCenterOnCursor)
@@ -3362,7 +3449,12 @@ function autoresize()
 			changeCursor();
 		}
 		bStopScripts = false; // should be safe now, right?
-		if(cfg_js){eval(cfg_js);}
+		if(cfg_js)
+		{
+			try {
+			eval(cfg_js);
+			} catch (e) {console.warn(e);} // CSP
+		}
 	}
 	else // no onloadstart event for images, sadge
 	{
@@ -3650,6 +3742,7 @@ function cfg()
 }
 
 var loadCfg;
+var loadCfg_callbacks = [];
 if (typeof GM === 'undefined') // GM3 or native
 {
 	if (typeof GM_getValue !== "undefined")
@@ -3670,6 +3763,7 @@ if (typeof GM === 'undefined') // GM3 or native
 			cfg_vol = GM.getValue("vid_volume", "0.5");
 		}
 		loadCfg();
+		loadCfg_callbacks.forEach(function(item) {item()}); // likely not needed here
 	}
 	else
 	{
@@ -3681,14 +3775,20 @@ else
 {
 	loadCfg = async function ()
 	{
-		cfg_direct = await GM.getValue("directImage", false);
-		cfg_bgclr = await GM.getValue("bgColor", "grey");
-		cfg_fitWH = await GM.getValue("fitWH", true);
-		cfg_fitB = await GM.getValue("fitB", false);
-		cfg_fitS = await GM.getValue("fitS", true);
-		cfg_fitOS = await GM.getValue("fitOS", false);
-		cfg_js = await GM.getValue("js", "");
-		cfg_vol = await GM.getValue("vid_volume", "0.5");
+	Promise.all([
+		GM.getValue("directImage", false).then( function(result) { cfg_direct = result; } , console.error),
+		GM.getValue("bgColor", "grey").then( function(result) { cfg_bgclr = result; } , console.error),
+		GM.getValue("fitWH", true).then( function(result) { cfg_fitWH = result; } , console.error),
+		GM.getValue("fitB", false).then( function(result) { cfg_fitB = result; } , console.error),
+		GM.getValue("fitS", true).then( function(result) { cfg_fitS = result; } , console.error),
+		GM.getValue("fitOS", false).then( function(result) { cfg_fitOS = result; } , console.error),
+		GM.getValue("js", "").then( function(result) { cfg_js = result; } , console.error),
+		GM.getValue("vid_volume", "0.5").then( function(result) { cfg_vol = result; } , console.error)
+	]).then(
+		function() { console.debug("GM settings loaded"); loadCfg_callbacks.forEach(function(item) {item()}); },
+		function(error) { console.error("GM settings NOT loaded: " + error); loadCfg_callbacks.forEach(function(item) {item()}); }
+		);
 	}
+	console.debug("GM settings started loading")
 	loadCfg();
 }

@@ -1,65 +1,116 @@
 // ==UserScript==
-// @name        Greasyfork Utility Toolkit
-// @name:en     Greasyfork Utility Toolkit
-// @name:zh-CN  Greasyfork 糊裱匠
-// @name:zh-TW  Greasyfork 糊裱匠
-// @name:ja     Greasyfork ツールキット
-// @name:ko     Greasyfork 유틸리티 툴킷
-// @name:ru     Набор инструментов для Greasyfork
-// @name:de     Greasyfork Dienstprogramm-Toolkit
-// @name:fr     Toolkit utilitaire Greasyfork
-// @name:it     Kit di strumenti utilitari Greasyfork
-// @name:ar     مجموعة أدوات Greasyfork
-// @name:he     ערכת כלים Greasyfork
-// @name:vi     Bộ công cụ tiện ích Greasyfork
-// @namespace    https://greasyfork.org/zh-CN/users/1169082-%E4%BA%BA%E6%B0%91%E7%9A%84%E5%8B%A4%E5%8A%A1%E5%91%98
-// @description Providing various features for Greasyfork, including absolute time, widescreen web pages, script page enhancements, download extensions, panel fixes, and more.
-// @description:en Providing various features for Greasyfork, including absolute time, widescreen web pages, script page enhancements, download extensions, panel fixes, and more.
+// @name              Greasyfork Utility Toolkit
+// @name:zh-CN        Greasyfork 糊裱匠
 // @description:zh-CN 为 Greasyfork 提供各种使用功能，绝对时间，网页宽屏，脚本页增强，下载拓展，面板修复等一系列操作
-// @description:zh-TW 為 Greasyfork 提供各種使用功能，絕對時間，網頁寬屏，腳本頁增強，下載擴展，面板修復等一系列操作
-// @description:ja Greasyfork に絶対時間、ワイドスクリーンウェブページ、スクリプトページの強化、ダウンロード拡張、パネル修正など、さまざまな機能を提供します。
-// @description:ko Greasyfork에 절대 시간, 와이드스크린 웹 페이지, 스크립트 페이지 강화, 다운로드 확장, 패널 수정 등을 포함한 다양한 기능을 제공합니다.
-// @description:ru Предоставление различных функций для Greasyfork, включая абсолютное время, широкоформатные веб-страницы, улучшения страниц скриптов, расширения для загрузки, исправления панелей и многое другое.
-// @description:de Bereitstellung verschiedener Funktionen für Greasyfork, einschließlich absoluter Zeit, Breitbild-Webseiten, Skriptseitenerweiterungen, Download-Erweiterungen, Panelkorrekturen und mehr.
-// @description:fr Fournir diverses fonctionnalités pour Greasyfork, y compris le temps absolu, les pages Web en écran large, les améliorations de pages de scripts, les extensions de téléchargement, les correctifs de panneau, et plus encore.
-// @description:it Fornire varie funzionalità per Greasyfork, inclusi il tempo assoluto, le pagine Web widescreen, i miglioramenti delle pagine degli script, le estensioni di download, le correzioni dei pannelli e altro ancora.
-// @description:ar توفير وظائف متنوعة لـ Greasyfork، بما في ذلك الوقت المطلق، وصفحات الويب ذات الشاشة العريضة، وتعزيز صفحات النصوص البرمجية، وتوسعات التنزيل، وإصلاحات اللوحة، والمزيد.
-// @description:he מתן מגוון פונקציות עבור Greasyfork, כולל זמן מוחלט, דפי אינטרנט ברוחב מסך רחב, שיפורי דפי סקריפטים, הרחבות להורדה, תיקוני לוח ועוד.
-// @description:vi Cung cấp các tính năng khác nhau cho Greasyfork, bao gồm thời gian tuyệt đối, trang web màn hình rộng, nâng cao trang kịch bản, tiện ích mở rộng tải xuống, sửa lỗi bảng điều khiển và nhiều hơn nữa.
-// @require      https://update.greasyfork.org/scripts/498897/1404834/Toastnew.js
-// @require      https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js
-// @require      https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js
-// @require      https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js
-// @resource    atom-one-dark.css https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/atom-one-dark.min.css
-// @resource    atom-one-light.css https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/atom-one-light.min.css
-// @resource     nnfx-dark.min.css  https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/nnfx-dark.min.css
-// @resource     nnfx-light.min.css  https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/nnfx-light.min.css
-// @require      https://update.greasyfork.org/scripts/447149/1065246/checkVersion.js
-// @grant       GM_getResourceText
-// @grant        GM_registerMenuCommand
-// @grant        GM_registerMenuCommand
-// @grant        GM_setValue
-// @grant        GM_getValue
-// @grant        GM_addStyle
-// @grant        GM_setClipboard
-// @grant      GM_xmlhttpRequest
-// @compatible     chrome
-// @compatible     firefox
-// @compatible     edge
-// @compatible     opera
-// @compatible     safari
-// @version 2.2.0.19
-// @i1con          https://raw.gitmirror.com/greasyfork-org/greasyfork/main/public/images/blacklogo96.png
-// @icon         data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" version="1.1" viewBox="0 0 300 300" style="fill: %23D72323;"><path d="M200.3 269.9c-15.7 6.6-32.7 10.1-50.3 10.1-34.7 0-67.4-13.5-91.9-38.1C33.5 217.4 20 184.7 20 150s13.5-67.4 38.1-91.9C82.6 33.5 115.3 20 150 20s67.4 13.5 91.9 38.1C266.5 82.6 280 115.3 280 150c0 17.6-3.5 34.6-10 50.3 5 5 10 10.1 15.1 15.1 9.6-19.8 15-42 15-65.4C300 67.2 232.8 0 150 0S0 67.2 0 150s67.2 150 150 150c23.4 0 45.6-5.4 65.4-15-5.1-5-10.1-10.1-15.1-15.1z"/><path d="M267.8 300c-9.6-1.3-16.5-7-23.1-13.7-14.9-15.3-30.1-30.2-45.2-45.3-9.3-9.3-12-20.1-7.5-32.7.3-.8.3-2.1-.2-2.6-3.9-4.1-7.9-8-12-12.1-6.4 4-13.1 6.7-20.5 7.6-15.5 1.9-29-2.4-40.2-13.2-12.3-11.8-24.2-24-36.2-36.1-3.5-3.5-4.1-7.4-2.2-11.2 1.9-3.7 5.9-6.4 9.7-5.6 2.5.5 5.1 2 6.9 3.8 7.4 7.1 14.5 14.4 21.8 21.6.6.6 1.3 1.2 1.7 1.6l13.8-13.8c-6.2-6.1-12.6-12.5-18.9-18.9-1.9-1.9-3.8-3.7-5.6-5.6-3.8-4.2-3.7-9.7.2-13.6 3.9-3.9 9.5-4.1 13.6-.1 7.5 7.3 14.8 14.7 22.1 22.1.8.8 1.5 1.8 2.1 2.4l14.3-14.3c-2-1.8-4.5-4-6.8-6.3-6-5.9-11.9-11.8-17.8-17.8-2.7-2.7-3.7-5.9-2.4-9.6 1.4-3.9 4.2-6.3 8.3-6.9 3.4-.6 6 1 8.4 3.3l14.7 14.7c7.4 7.4 14.9 14.6 22 22.2 14.7 15.7 17 39.1 6.1 57.7-.4.7-.7 1.4-1.3 2.4 3.9 3.9 7.9 7.8 11.9 11.6.6.5 2 .6 2.8.3 12.5-4.4 23.3-1.7 32.7 7.6 15.1 15.1 30.1 30.3 45.3 45.2 6.7 6.5 12.4 13.4 13.7 23v5.8c-.2.5-.4 1.1-.5 1.6-1.8 9.5-6.6 17-15.5 21.2-3.3 1.6-6.9 2.3-10.4 3.5-1.9.2-3.8.2-5.8.2z"/><path d="M170 219.6c-2.7.7-5.4 1.2-8.2 1.5-3.1.4-6.2.6-9.2.6-17.9 0-34.2-6.6-47.2-19.2-10.2-9.8-20.2-20-30-29.8l-6.6-6.6c-9.5-9.5-11.7-22.7-5.8-34.3 4.9-9.6 14.4-16 24.5-16.6.5-6.9 3.5-13.6 8.9-18.9 5.2-5.1 11.8-8.2 18.7-8.7.2-2.5.7-4.9 1.6-7.4 3.8-10.8 12.6-18.1 23.9-20 1.5-.2 3.1-.4 4.6-.4 5.4 0 13.4 1.6 21.1 9.2 4.7 4.7 9.6 9.5 14.8 14.7 2.1 2.2 4.4 4.4 6.5 6.5 5.3 5.2 10.7 10.6 15.9 16.2 10.2 10.9 16.4 24.5 17.9 39.3.9 8.2.2 16.4-1.8 24.2h.1c12.8 0 24.7 5.1 34.7 14.8 3.6-10.9 5.6-22.6 5.6-34.7 0-60.8-49.2-110-110-110S40 89.2 40 150s49.2 110 110 110c12.1 0 23.8-2 34.7-5.6-9.8-10.1-14.8-22.1-14.7-34.8z"/></svg>
-// @author       人民的勤务员 <toniaiwanowskiskr47@gmail.com>
-// @match        https://greasyfork.org/*
-// @match        https://sleazyfork.org/*
-// @license      MIT
-// @supportURL   https://greasyfork.org/scripts/497346/feedback
-// @homepageURL  https://greasyfork.org/users/1169082
-//20240712添加网站风格
-// @downloadURL https://update.greasyfork.org/scripts/497346/Greasyfork%20%E7%B3%8A%E8%A3%B1%E5%8C%A0.user.js
-// @updateURL https://update.greasyfork.org/scripts/497346/Greasyfork%20%E7%B3%8A%E8%A3%B1%E5%8C%A0.meta.js
+// @name:ar           Greasyfork حرفي الغراء
+// @description:ar    ل Greasyfork توفير وظائف الاستخدام المختلفة，الوقت المطلق，شاشة ويب عريضة，تحسينات صفحة البرنامج النصي，تنزيل الامتداد，إصلاح اللوحة وسلسلة من العمليات
+// @name:bg           Greasyfork Майстор на лепило
+// @description:bg    за Greasyfork Осигурете различни функции за използване，абсолютно време，Уеб широкоекранен，Подобрения на страницата със скриптове，Изтегляне на разширение，Ремонт на панел и серия от операции
+// @name:cs           Greasyfork Lepidlo řemeslník
+// @description:cs    pro Greasyfork Poskytují různé uživatelské funkce，absolutní čas，Širokoúhlý web，Vylepšení stránky skriptu，Stáhnout rozšíření，Oprava panelu a řada operací
+// @name:da           Greasyfork Lim håndværker
+// @description:da    for Greasyfork Giver forskellige brugsfunktioner，absolut tid，Web widescreen，Forbedringer af scriptside，Download udvidelse，Panelreparation og en række operationer
+// @name:de           Greasyfork Kleberhandwerker
+// @description:de    für Greasyfork Stellen Sie verschiedene Nutzungsfunktionen bereit，absolute Zeit，Web-Breitbild，Verbesserungen der Skriptseite，Erweiterung herunterladen，Panel-Reparatur und eine Reihe von Operationen
+// @name:el           Greasyfork Τεχνίτης κόλλας
+// @description:el    για Greasyfork Παρέχετε διάφορες λειτουργίες χρήσης，απόλυτος χρόνος，Web ευρεία οθόνη，Βελτιώσεις σελίδας σεναρίου，Λήψη επέκτασης，Επισκευή πίνακα και μια σειρά λειτουργιών
+// @name:en           Greasyfork Glue craftsman
+// @description:en    for Greasyfork Provide various usage functions，absolute time，Web widescreen，Script page enhancements，Download extension，Panel repair and a series of operations
+// @name:eo           Greasyfork Glua metiisto
+// @description:eo    por Greasyfork Provizu diversajn uzfunkciojn，absoluta tempo，Reteja larĝa ekrano，Plibonigoj pri skriptopaĝo，Elŝutu etendon，Riparo de paneloj kaj serio de operacioj
+// @name:es           Greasyfork Artesano del pegamento
+// @description:es    para Greasyfork Proporcionar varias funciones de uso.，tiempo absoluto，pantalla ancha web，Mejoras en la página de script，Descargar extensión，Reparación de paneles y una serie de operaciones.
+// @name:fi           Greasyfork Liiman käsityöläinen
+// @description:fi    varten Greasyfork Tarjoa erilaisia käyttötoimintoja，absoluuttinen aika，Web laajakuva，Käsikirjoitussivun parannukset，Lataa laajennus，Paneelin korjaus ja sarja toimenpiteitä
+// @name:fr           Greasyfork Artisan de la colle
+// @description:fr    pour Greasyfork Fournir diverses fonctions d’utilisation，temps absolu，Web grand écran，Améliorations de la page de script，Télécharger l’extension，Réparation de panneaux et série d’opérations
+// @name:he           Greasyfork אומן דבק
+// @description:he    עֲבוּר Greasyfork לספק פונקציות שימוש שונות，זמן מוחלט，מסך רחב באינטרנט，שיפורי דפי סקריפט，הורד תוסף，תיקון לוח וסדרת פעולות
+// @name:hr           Greasyfork Majstor za ljepilo
+// @description:hr    za Greasyfork Pružite različite funkcije korištenja，apsolutno vrijeme，Web široki zaslon，Poboljšanja stranice skripte，Proširenje za preuzimanje，Popravak panela i niz operacija
+// @name:hu           Greasyfork Ragasztó iparos
+// @description:hu    számára Greasyfork Különféle használati funkciókat biztosít，abszolút idő，Web szélesvásznú，A szkriptoldal fejlesztései，Bővítmény letöltése，Paneljavítás és egy sor művelet
+// @name:id           Greasyfork Pengrajin lem
+// @description:id    untuk Greasyfork Menyediakan berbagai fungsi penggunaan，waktu mutlak，Layar lebar web，Peningkatan halaman skrip，Unduh ekstensi，Perbaikan panel dan serangkaian operasi
+// @name:it           Greasyfork Artigiano della colla
+// @description:it    per Greasyfork Fornire varie funzioni di utilizzo，tempo assoluto，Web widescreen，Miglioramenti alla pagina dello script，Scarica l’estensione，Riparazione del pannello e una serie di operazioni
+// @name:ja           Greasyfork 糊裱匠
+// @description:ja    のために Greasyfork さまざまな利用機能を提供，絶対時間，ウェブワイドスクリーン，スクリプトページの機能強化，ダウンロード拡張機能，パネル修理と一連の作業
+// @name:ka           Greasyfork წებოს ხელოსანი
+// @description:ka    ამისთვის Greasyfork უზრუნველყოს სხვადასხვა გამოყენების ფუნქციები，აბსოლუტური დრო，ვებ ფართოეკრანი，სკრიპტის გვერდის გაუმჯობესება，გაფართოების ჩამოტვირთვა，პანელის შეკეთება და ოპერაციების სერია
+// @name:ko           Greasyfork 糊裱匠
+// @description:ko    ~을 위한 Greasyfork 다양한 사용 기능 제공，절대 시간，웹 와이드스크린，스크립트 페이지 개선 사항，확장 프로그램 다운로드，패널 수리 및 일련의 작업
+// @name:nl           Greasyfork Lijm ambachtsman
+// @description:nl    voor Greasyfork Bied verschillende gebruiksfuncties，absolute tijd，Web-breedbeeld，Verbeteringen van scriptpagina’s，Extensie downloaden，Paneelreparatie en een reeks bewerkingen
+// @name:nb           Greasyfork Lim håndverker
+// @description:nb    til Greasyfork Tilby ulike bruksfunksjoner，absolutt tid，Web widescreen，Skriptsideforbedringer，Last ned utvidelse，Panelreparasjon og en rekke operasjoner
+// @name:pl           Greasyfork Mistrz klejenia
+// @description:pl    Do Greasyfork Zapewnij różne funkcje użytkowe，czas absolutny，Internet panoramiczny，Ulepszenia strony skryptowej，Pobierz rozszerzenie，Naprawa panelu i szereg operacji
+// @name:pt-BR        Greasyfork Artesão de cola
+// @description:pt-BR para Greasyfork Fornece várias funções de uso，tempo absoluto，Ecrã panorâmico da Web，Melhorias na página de script，Baixar extensão，Reparo do painel e uma série de operações
+// @name:ro           Greasyfork Meșter de lipici
+// @description:ro    pentru Greasyfork Furnizați diverse funcții de utilizare，timp absolut，Ecran lat web，Îmbunătățiri ale paginii de script，Descărcați extensia，Reparatie panouri si o serie de operatii
+// @name:ru           Greasyfork Мастер по клею
+// @description:ru    для Greasyfork Обеспечить различные функции использования，абсолютное время，Интернет широкоэкранный，Улучшения страницы скрипта，Скачать расширение，Ремонт панели и ряд операций
+// @name:sk           Greasyfork Lepidlo remeselník
+// @description:sk    pre Greasyfork Poskytujte rôzne funkcie používania，absolútny čas，Web širokouhlý，Vylepšenia stránky skriptov，Stiahnite si rozšírenie，Oprava panelov a séria operácií
+// @name:sr           Greasyfork Мајстор лепка
+// @description:sr    за Greasyfork Обезбедите различите функције коришћења，апсолутно време，Веб видесцреен，Побољшања странице скрипте，Преузмите екстензију，Поправка панела и низ операција
+// @name:sv           Greasyfork Limhantverkare
+// @description:sv    för Greasyfork Tillhandahålla olika användningsfunktioner，absolut tid，Web widescreen，Förbättringar av skriptsidor，Ladda ner tillägg，Panelreparation och en rad operationer
+// @name:th           Greasyfork ช่างกาว
+// @description:th    สำหรับ Greasyfork จัดให้มีฟังก์ชันการใช้งานต่างๆ，เวลาที่แน่นอน，เว็บไวด์สกรีน，การปรับปรุงหน้าสคริปต์，ดาวน์โหลดส่วนขยาย，การซ่อมแซมแผงและการดำเนินการต่างๆ
+// @name:tr           Greasyfork Tutkal ustası
+// @description:tr    için Greasyfork Çeşitli kullanım fonksiyonları sağlayın，mutlak zaman，Web geniş ekranı，Komut dosyası sayfası geliştirmeleri，Uzantıyı indir，Panel onarımı ve bir dizi işlem
+// @name:ug           Greasyfork يېلىم ھۈنەرۋەن
+// @description:ug    for Greasyfork ھەر خىل ئىشلىتىش ئىقتىدارلىرى بىلەن تەمىنلەڭ，مۇتلەق ۋاقىت，تور كەڭ ئېكران，قوليازما بېتىنى ياخشىلاش，كېڭەيتىلمىنى چۈشۈرۈڭ，تاختاينى رېمونت قىلىش ۋە بىر يۈرۈش مەشغۇلاتلار
+// @name:uk           Greasyfork Майстер з клею
+// @description:uk    для Greasyfork Забезпечте різноманітні функції використання，абсолютний час，Веб широкоформатний，Покращення сторінки сценарію，Завантажте розширення，Ремонт панелей та ряд операцій
+// @name:vi           Greasyfork Thợ làm keo
+// @description:vi    vì Greasyfork Cung cấp các chức năng sử dụng khác nhau，thời gian tuyệt đối，Màn hình rộng web，Cải tiến trang tập lệnh，Tải xuống tiện ích mở rộng，Sửa chữa bảng điều khiển và một loạt các hoạt động
+// @name:zh-TW        Greasyfork 膠水工匠
+// @description:zh-TW 為 Greasyfork 提供各種使用功能，絕對時間，網頁寬螢幕，腳本頁增強，下載拓展，面板修復等一系列操作
+// @name:zh-HK        Greasyfork 膠水工匠
+// @description:zh-HK 為 Greasyfork 提供各種使用功能，絕對時間，網頁寬螢幕，腳本頁增強，下載拓展，面板修復等一系列操作
+// @name:fr-CA        Greasyfork Artisan de la colle
+// @description:fr-CA pour Greasyfork Fournir diverses fonctions d’utilisation，temps absolu，Web grand écran，Améliorations de la page de script，Télécharger l’extension，Réparation de panneaux et série d’opérations
+// @namespace         https://github.com/ChinaGodMan/UserScripts
+// @description       Providing various features for Greasyfork, including absolute time, widescreen web pages, script page enhancements, download extensions, panel fixes, and more.
+// @require           https://update.greasyfork.org/scripts/498897/1404834/Toastnew.js
+// @require           https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js
+// @require           https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js
+// @require           https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js
+// @resource          atom-one-dark.css https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/atom-one-dark.min.css
+// @resource          atom-one-light.css https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/atom-one-light.min.css
+// @resource          nnfx-dark.min.css https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/nnfx-dark.min.css
+// @resource          nnfx-light.min.css https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/nnfx-light.min.css
+// @require           https://update.greasyfork.org/scripts/447149/1065246/checkVersion.js
+// @require           https://cdn.jsdelivr.net/npm/jszip@3.7.1/dist/jszip.min.js
+// @grant             GM_getResourceText
+// @grant             GM_registerMenuCommand
+// @grant             GM_registerMenuCommand
+// @grant             GM_setValue
+// @grant             GM_getValue
+// @grant             GM_addStyle
+// @grant             GM_setClipboard
+// @grant             GM_xmlhttpRequest
+// @compatible        chrome
+// @compatible        firefox
+// @compatible        edge
+// @compatible        opera
+// @compatible        safari
+// @version           2024.12.12.2116
+// @icon              data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbDpzcGFjZT0icHJlc2VydmUiIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDMwMCAzMDAiIHN0eWxlPSJmaWxsOiAjRDcyMzIzOyI+PHBhdGggZD0iTTIwMC4zIDI2OS45Yy0xNS43IDYuNi0zMi43IDEwLjEtNTAuMyAxMC4xLTM0LjcgMC02Ny40LTEzLjUtOTEuOS0zOC4xQzMzLjUgMjE3LjQgMjAgMTg0LjcgMjAgMTUwczEzLjUtNjcuNCAzOC4xLTkxLjlDODIuNiAzMy41IDExNS4zIDIwIDE1MCAyMHM2Ny40IDEzLjUgOTEuOSAzOC4xQzI2Ni41IDgyLjYgMjgwIDExNS4zIDI4MCAxNTBjMCAxNy42LTMuNSAzNC42LTEwIDUwLjMgNSA1IDEwIDEwLjEgMTUuMSAxNS4xIDkuNi0xOS44IDE1LTQyIDE1LTY1LjRDMzAwIDY3LjIgMjMyLjggMCAxNTAgMFMwIDY3LjIgMCAxNTBzNjcuMiAxNTAgMTUwIDE1MGMyMy40IDAgNDUuNi01LjQgNjUuNC0xNS01LjEtNS0xMC4xLTEwLjEtMTUuMS0xNS4xeiIvPjxwYXRoIGQ9Ik0yNjcuOCAzMDBjLTkuNi0xLjMtMTYuNS03LTIzLjEtMTMuNy0xNC45LTE1LjMtMzAuMS0zMC4yLTQ1LjItNDUuMy05LjMtOS4zLTEyLTIwLjEtNy41LTMyLjcuMy0uOC4zLTIuMS0uMi0yLjYtMy45LTQuMS03LjktOC0xMi0xMi4xLTYuNCA0LTEzLjEgNi43LTIwLjUgNy42LTE1LjUgMS45LTI5LTIuNC00MC4yLTEzLjItMTIuMy0xMS44LTI0LjItMjQtMzYuMi0zNi4xLTMuNS0zLjUtNC4xLTcuNC0yLjItMTEuMiAxLjktMy43IDUuOS02LjQgOS43LTUuNiAyLjUuNSA1LjEgMiA2LjkgMy44IDcuNCA3LjEgMTQuNSAxNC40IDIxLjggMjEuNi42LjYgMS4zIDEuMiAxLjcgMS42bDEzLjgtMTMuOGMtNi4yLTYuMS0xMi42LTEyLjUtMTguOS0xOC45LTEuOS0xLjktMy44LTMuNy01LjYtNS42LTMuOC00LjItMy43LTkuNy4yLTEzLjYgMy45LTMuOSA5LjUtNC4xIDEzLjYtLjEgNy41IDcuMyAxNC44IDE0LjcgMjIuMSAyMi4xLjguOCAxLjUgMS44IDIuMSAyLjRsMTQuMy0xNC4zYy0yLTEuOC00LjUtNC02LjgtNi4zLTYtNS45LTExLjktMTEuOC0xNy44LTE3LjgtMi43LTIuNy0zLjctNS45LTIuNC05LjYgMS40LTMuOSA0LjItNi4zIDguMy02LjkgMy40LS42IDYgMSA4LjQgMy4zbDE0LjcgMTQuN2M3LjQgNy40IDE0LjkgMTQuNiAyMiAyMi4yIDE0LjcgMTUuNyAxNyAzOS4xIDYuMSA1Ny43LS40LjctLjcgMS40LTEuMyAyLjQgMy45IDMuOSA3LjkgNy44IDExLjkgMTEuNi42LjUgMiAuNiAyLjguMyAxMi41LTQuNCAyMy4zLTEuNyAzMi43IDcuNiAxNS4xIDE1LjEgMzAuMSAzMC4zIDQ1LjMgNDUuMiA2LjcgNi41IDEyLjQgMTMuNCAxMy43IDIzdjUuOGMtLjIuNS0uNCAxLjEtLjUgMS42LTEuOCA5LjUtNi42IDE3LTE1LjUgMjEuMi0zLjMgMS42LTYuOSAyLjMtMTAuNCAzLjUtMS45LjItMy44LjItNS44LjJ6Ii8+PHBhdGggZD0iTTE3MCAyMTkuNmMtMi43LjctNS40IDEuMi04LjIgMS41LTMuMS40LTYuMi42LTkuMi42LTE3LjkgMC0zNC4yLTYuNi00Ny4yLTE5LjItMTAuMi05LjgtMjAuMi0yMC0zMC0yOS44bC02LjYtNi42Yy05LjUtOS41LTExLjctMjIuNy01LjgtMzQuMyA0LjktOS42IDE0LjQtMTYgMjQuNS0xNi42LjUtNi45IDMuNS0xMy42IDguOS0xOC45IDUuMi01LjEgMTEuOC04LjIgMTguNy04LjcuMi0yLjUuNy00LjkgMS42LTcuNCAzLjgtMTAuOCAxMi42LTE4LjEgMjMuOS0yMCAxLjUtLjIgMy4xLS40IDQuNi0uNCA1LjQgMCAxMy40IDEuNiAyMS4xIDkuMiA0LjcgNC43IDkuNiA5LjUgMTQuOCAxNC43IDIuMSAyLjIgNC40IDQuNCA2LjUgNi41IDUuMyA1LjIgMTAuNyAxMC42IDE1LjkgMTYuMiAxMC4yIDEwLjkgMTYuNCAyNC41IDE3LjkgMzkuMy45IDguMi4yIDE2LjQtMS44IDI0LjJoLjFjMTIuOCAwIDI0LjcgNS4xIDM0LjcgMTQuOCAzLjYtMTAuOSA1LjYtMjIuNiA1LjYtMzQuNyAwLTYwLjgtNDkuMi0xMTAtMTEwLTExMFM0MCA4OS4yIDQwIDE1MHM0OS4yIDExMCAxMTAgMTEwYzEyLjEgMCAyMy44LTIgMzQuNy01LjYtOS44LTEwLjEtMTQuOC0yMi4xLTE0LjctMzQuOHoiLz48L3N2Zz4=
+// @iconbak           https://github.com/ChinaGodMan/UserScripts/raw/main/docs/icon/Scripts%20Icons/RedFork.svg
+// @author            人民的勤务员 <china.qinwuyuan@gmail.com>
+// @match             https://greasyfork.org/*
+// @match             https://sleazyfork.org/*
+// @license           MIT
+// @supportURL        https://github.com/ChinaGodMan/UserScripts/issues
+// @homepageURL       https://github.com/ChinaGodMan/UserScripts
+
+// @downloadURL https://update.greasyfork.org/scripts/497346/Greasyfork%20%E8%86%A0%E6%B0%B4%E5%B7%A5%E5%8C%A0.user.js
+// @updateURL https://update.greasyfork.org/scripts/497346/Greasyfork%20%E8%86%A0%E6%B0%B4%E5%B7%A5%E5%8C%A0.meta.js
 // ==/UserScript==
 const translate = (function () {
     const userLang = location.pathname.split('/')[1]
@@ -96,15 +147,14 @@ const translate = (function () {
             'install': 'Install',
             'downloadFailed': 'Download failed',
             'dallScripts': 'All Released Scripts',
-            'JSScripts': "Number of JS Scripts:",
-            'CSSScripts': "Number of CSS Scripts:",
-            'DailyTotal': "Daily Installs:",
-            'TotalInstalls': "Total Installs:",
-            'ok': "All Scripts:",
-            'bad': "Total Bad Reviews:",
-            'good': "Total Good Reviews:",
-            'ok': "Average:",
-            'loading': "Fetching, please wait.",
+            'JSScripts': 'Number of JS Scripts:',
+            'CSSScripts': 'Number of CSS Scripts:',
+            'DailyTotal': 'Daily Installs:',
+            'TotalInstalls': 'Total Installs:',
+            'bad': 'Total Bad Reviews:',
+            'good': 'Total Good Reviews:',
+            'ok': 'Average:',
+            'loading': 'Fetching, please wait.',
             'viewauthor': 'Author',
             'viewdaily_installs': 'Daily installs',
             'tviewotal_installs': 'Total installs',
@@ -159,6 +209,8 @@ const translate = (function () {
             'beautifycodeview': 'Beautify Code View',
             'beautifycodetheme': 'Beautify Code Theme',
             'hiderrecentcomments': 'Hide Recent Comments',
+            'hiderconversations': 'Hide Home Conversations',
+            'hideuserprofile': 'Hide homepage personal description',
             'personalhomepage': 'Personal Homepage',
             'showscriptsinforum': 'Show Script Count in Forum',
             'downgradeto': 'Downgrade to:',
@@ -177,7 +229,7 @@ const translate = (function () {
             'ScriptListdouble': 'ScriptListdouble',
             'beautifyTopNav': 'BeautifyNav',
             'fixElementoption': 'Fix Sidebar',
-
+            '1169082': 'Thank you for visiting the 勤务员’s homepage'
         },
         'zh-CN': {
             'newScript': '发布新脚本',
@@ -215,7 +267,6 @@ const translate = (function () {
             'CSSScripts': 'CSS脚本数量:',
             'DailyTotal': '每日安装:',
             'TotalInstalls': '总安装:',
-            'ok': '所有脚本:',
             'bad': '总差评:',
             'good': '总好评:',
             'ok': '一般:',
@@ -274,6 +325,8 @@ const translate = (function () {
             'beautifycodeview': '美化查看代码',
             'beautifycodetheme': '美化代码主题',
             'hiderrecentcomments': '隐藏近期评论',
+            'hiderconversations': '隐藏主页私信',
+            'hideuserprofile': '隐藏主页个人说明',
             'personalhomepage': '个人主页',
             'showscriptsinforum': '显示在论坛的脚本数量',
             'downgradeto': '降级到：',
@@ -292,8 +345,7 @@ const translate = (function () {
             'ScriptListdouble': '双列显示',
             'beautifyTopNav': '美化导航栏',
             'fixElementoption': '侧边栏固定',
-
-
+            '1169082': '感谢光临勤务员的主页'
         },
         'zh-TW': {
             'newScript': '發布新腳本',
@@ -326,16 +378,15 @@ const translate = (function () {
             'errorNetwork': '下載失敗，網路錯誤或跨域問題',
             'install': '安裝',
             'downloadFailed': '下載失敗',
-            'dallScripts': "所有發布腳本",
-            'JSScripts': "JS腳本數量:",
-            'CSSScripts': "CSS腳本數量:",
-            'DailyTotal': "每日安裝:",
-            'TotalInstalls': "總安裝:",
-            'ok': "所有腳本:",
-            'bad': "總差評:",
-            'good': "總好評:",
-            'ok': "一般:",
-            'loading': "正在獲取中，請耐心等待。",
+            'dallScripts': '所有發布腳本',
+            'JSScripts': 'JS腳本數量:',
+            'CSSScripts': 'CSS腳本數量:',
+            'DailyTotal': '每日安裝:',
+            'TotalInstalls': '總安裝:',
+            'bad': '總差評:',
+            'good': '總好評:',
+            'ok': '一般:',
+            'loading': '正在獲取中，請耐心等待。',
             'viewauthor': '作者',
             'viewdaily_installs': '日安裝量',
             'viewtotal_installs': '總安裝量',
@@ -407,8 +458,7 @@ const translate = (function () {
             'useroutlines': '側邊導航',
             'ScriptListdouble': '雙列顯示',
             'beautifyTopNav': '美化導覽列',
-            'fixElementoption': '側邊欄固定',
-
+            'fixElementoption': '側邊欄固定'
         },
         'ja': {
             'newScript': '新しいスクリプトを公開する',
@@ -441,85 +491,84 @@ const translate = (function () {
             'errorNetwork': 'ダウンロードに失敗しました、ネットワークエラーまたはクロスドメインの問題が発生しました',
             'install': 'インストール',
             'downloadFailed': 'ダウンロードに失敗しました',
-            'dallScripts': "すべてのリリースされたスクリプト",
-            'JSScripts': "JSスクリプトの数:",
-            'CSSScripts': "CSSスクリプトの数:",
-            'DailyTotal': "毎日のインストール:",
-            'TotalInstalls': "総インストール数:",
-            'ok': "すべてのスクリプト:",
-            'bad': "総悪いレビュー:",
-            'good': "総良いレビュー:",
-            'ok': "平均:",
-            'loading': "取得中、お待ちください。",
-            "viewauthor": "作者",
-            "viewdaily_installs": "日ごとのインストール数",
-            "tviewotal_installs": "総インストール数",
-            "viewfan_score": "評価",
-            "viewversion": "バージョン",
-            "viewcreated_at": "作成日",
-            "viewcode_updated_at": "更新日",
-            "viewlicense": "ライセンス",
-            "viewlocale": "対応バージョン",
-            "copyto": "コードをコピー",
-            "htmlViewtotext": "ドキュメントビューを切り替え",
-            "texttohtmlView": "ウェブページビューを切り替え",
-            "Rememberme": "ログインページで「この情報を記憶する」を選択",
-            "locklang": "ウェブサイトの言語を切り替えます：",
-            "locklangset": "言語を選択後に設定をロック",
-            "openindoc": "ナビゲーションバーにこのページを追加",
-            "thisname": "Greasyfork 糊裱匠",
-            "脚本详情": "スクリプト詳細",
-            "导航栏": "ナビゲーションバー",
-            "website": "ウェブサイト",
-            "复制短链接": "短縮リンクをコピー",
-            "主页脚本添加操作": "ホームページのスクリプト追加操作",
-            "copylib": "ライブラリ宣言をコピー",
-            "barvertical": "ナビゲーションバーの配置",
-            "followsystem": "システムに従う",
-            "daymode": "デイモード",
-            "nightmode": "ナイトモード",
-            "cleariconcache": "アイコンキャッシュをクリア",
-            "expandmore": "「もっと見る」を展開",
-            "localbookmarks": "ブックマーク",
-            "scriptlist": "スクリプト一覧",
-            "oneclickreport": "ワンクリックで報告",
-            "hidereadcomments": "既読コメントを非表示",
-            "italicizereadcomments": "既読コメントを斜体にする",
-            "enableautologin": "自動ログインを有効にする",
-            "account": "アカウント",
-            "password": "パスワード",
-            "listdisplayinstallationdownload": "インストールとダウンロードを一覧表示",
-            "useoldversionlist": "旧バージョンのリストを使用",
-            "showscriptall": "すべての言語のスクリプトを表示",
-            "displaystatisticsonhomepage": "ホームページに統計を表示",
-            "beautifycontrols": "コントロールを美化",
-            "applyto": "対応バージョン",
-            "enableenhancements": "機能拡張を有効にする",
-            "openinnewwindow": "新しいウィンドウで開く",
-            "detailsapplytoopen": "詳細情報に適用して開く",
-            "forumsearch": "フォーラム検索",
-            "webpageopen": "ウェブページを開く",
-            "popupprompt": "ポップアップでの通知",
-            "displaycitationcount": "引用ファイル数を表示",
-            "beautifycodesnippets": "コードスニペットを美化",
-            "beautifycodeview": "コードの表示を美化",
-            "beautifycodetheme": "コードのテーマを美化",
-            "hiderrecentcomments": "最近のコメントを非表示",
-            "personalhomepage": "個人のホームページ",
-            "showscriptsinforum": "フォーラムでのスクリプト数を表示",
-            "downgradeto": "バージョンをダウングレードする：",
-            "reinstall": "再インストール",
-            "upgradeto": "バージョンをアップグレードする：",
-            "autologinredirect": "自動的にログインページにリダイレクトします...",
-            "nostoredaccount": "ローカルに保存されたアカウントがありません",
-            "nostoredpassword": "ローカルに保存されたパスワードがありません",
-            "getcsrftokenfailed": "CSRFトークンの取得に失敗しました",
-            "loginfailedconsole": "ログインに失敗しました。コンソールで原因を確認してください",
-            "loginsuccessredirect": "ログイン成功、1秒後に自動的にリダイレクトします",
-            "loginfailedelementnotfound": "ログインに失敗しました。要素が見つかりません",
-            "report": "報告",
-            "imageproxy": "ユーザーアップロード画像のプロキシ",
-            "useroutlines": "サイドナビゲーション",
+            'dallScripts': 'すべてのリリースされたスクリプト',
+            'JSScripts': 'JSスクリプトの数:',
+            'CSSScripts': 'CSSスクリプトの数:',
+            'DailyTotal': '毎日のインストール:',
+            'TotalInstalls': '総インストール数:',
+            'bad': '総悪いレビュー:',
+            'good': '総良いレビュー:',
+            'ok': '平均:',
+            'loading': '取得中、お待ちください。',
+            'viewauthor': '作者',
+            'viewdaily_installs': '日ごとのインストール数',
+            'tviewotal_installs': '総インストール数',
+            'viewfan_score': '評価',
+            'viewversion': 'バージョン',
+            'viewcreated_at': '作成日',
+            'viewcode_updated_at': '更新日',
+            'viewlicense': 'ライセンス',
+            'viewlocale': '対応バージョン',
+            'copyto': 'コードをコピー',
+            'htmlViewtotext': 'ドキュメントビューを切り替え',
+            'texttohtmlView': 'ウェブページビューを切り替え',
+            'Rememberme': 'ログインページで「この情報を記憶する」を選択',
+            'locklang': 'ウェブサイトの言語を切り替えます：',
+            'locklangset': '言語を選択後に設定をロック',
+            'openindoc': 'ナビゲーションバーにこのページを追加',
+            'thisname': 'Greasyfork 糊裱匠',
+            '脚本详情': 'スクリプト詳細',
+            '导航栏': 'ナビゲーションバー',
+            'website': 'ウェブサイト',
+            '复制短链接': '短縮リンクをコピー',
+            '主页脚本添加操作': 'ホームページのスクリプト追加操作',
+            'copylib': 'ライブラリ宣言をコピー',
+            'barvertical': 'ナビゲーションバーの配置',
+            'followsystem': 'システムに従う',
+            'daymode': 'デイモード',
+            'nightmode': 'ナイトモード',
+            'cleariconcache': 'アイコンキャッシュをクリア',
+            'expandmore': '「もっと見る」を展開',
+            'localbookmarks': 'ブックマーク',
+            'scriptlist': 'スクリプト一覧',
+            'oneclickreport': 'ワンクリックで報告',
+            'hidereadcomments': '既読コメントを非表示',
+            'italicizereadcomments': '既読コメントを斜体にする',
+            'enableautologin': '自動ログインを有効にする',
+            'account': 'アカウント',
+            'password': 'パスワード',
+            'listdisplayinstallationdownload': 'インストールとダウンロードを一覧表示',
+            'useoldversionlist': '旧バージョンのリストを使用',
+            'showscriptall': 'すべての言語のスクリプトを表示',
+            'displaystatisticsonhomepage': 'ホームページに統計を表示',
+            'beautifycontrols': 'コントロールを美化',
+            'applyto': '対応バージョン',
+            'enableenhancements': '機能拡張を有効にする',
+            'openinnewwindow': '新しいウィンドウで開く',
+            'detailsapplytoopen': '詳細情報に適用して開く',
+            'forumsearch': 'フォーラム検索',
+            'webpageopen': 'ウェブページを開く',
+            'popupprompt': 'ポップアップでの通知',
+            'displaycitationcount': '引用ファイル数を表示',
+            'beautifycodesnippets': 'コードスニペットを美化',
+            'beautifycodeview': 'コードの表示を美化',
+            'beautifycodetheme': 'コードのテーマを美化',
+            'hiderrecentcomments': '最近のコメントを非表示',
+            'personalhomepage': '個人のホームページ',
+            'showscriptsinforum': 'フォーラムでのスクリプト数を表示',
+            'downgradeto': 'バージョンをダウングレードする：',
+            'reinstall': '再インストール',
+            'upgradeto': 'バージョンをアップグレードする：',
+            'autologinredirect': '自動的にログインページにリダイレクトします...',
+            'nostoredaccount': 'ローカルに保存されたアカウントがありません',
+            'nostoredpassword': 'ローカルに保存されたパスワードがありません',
+            'getcsrftokenfailed': 'CSRFトークンの取得に失敗しました',
+            'loginfailedconsole': 'ログインに失敗しました。コンソールで原因を確認してください',
+            'loginsuccessredirect': 'ログイン成功、1秒後に自動的にリダイレクトします',
+            'loginfailedelementnotfound': 'ログインに失敗しました。要素が見つかりません',
+            'report': '報告',
+            'imageproxy': 'ユーザーアップロード画像のプロキシ',
+            'useroutlines': 'サイドナビゲーション'
         },
         'ko': {
             'newScript': '새 스크립트 게시',
@@ -552,16 +601,15 @@ const translate = (function () {
             'errorNetwork': '다운로드 실패, 네트워크 오류 또는 크로스도메인 문제',
             'install': '설치',
             'downloadFailed': '다운로드 실패',
-            'dallScripts': "모든 릴리스된 스크립트",
-            'JSScripts': "JS 스크립트 수:",
-            'CSSScripts': "CSS 스크립트 수:",
-            'DailyTotal': "일일 설치:",
-            'TotalInstalls': "총 설치:",
-            'ok': "모든 스크립트:",
-            'bad': "총 나쁜 리뷰:",
-            'good': "총 좋은 리뷰:",
-            'ok': "보통:",
-            'loading': "가져오는 중, 잠시 기다려 주세요."
+            'dallScripts': '모든 릴리스된 스크립트',
+            'JSScripts': 'JS 스크립트 수:',
+            'CSSScripts': 'CSS 스크립트 수:',
+            'DailyTotal': '일일 설치:',
+            'TotalInstalls': '총 설치:',
+            'bad': '총 나쁜 리뷰:',
+            'good': '총 좋은 리뷰:',
+            'ok': '보통:',
+            'loading': '가져오는 중, 잠시 기다려 주세요.'
         },
         'ru': {
             'newScript': 'Опубликовать новый скрипт',
@@ -594,16 +642,15 @@ const translate = (function () {
             'errorNetwork': 'Сбой загрузки, сетевая ошибка или проблема с кросс-доменом',
             'install': 'Установить',
             'downloadFailed': 'Сбой загрузки',
-            'dallScripts': "Все выпущенные скрипты",
-            'JSScripts': "Количество JS скриптов:",
-            'CSSScripts': "Количество CSS скриптов:",
-            'DailyTotal': "Ежедневные установки:",
-            'TotalInstalls': "Всего установок:",
-            'ok': "Все скрипты:",
-            'bad': "Всего плохих отзывов:",
-            'good': "Всего хороших отзывов:",
-            'ok': "Средний:",
-            'loading': "Получение данных, пожалуйста, подождите."
+            'dallScripts': 'Все выпущенные скрипты',
+            'JSScripts': 'Количество JS скриптов:',
+            'CSSScripts': 'Количество CSS скриптов:',
+            'DailyTotal': 'Ежедневные установки:',
+            'TotalInstalls': 'Всего установок:',
+            'bad': 'Всего плохих отзывов:',
+            'good': 'Всего хороших отзывов:',
+            'ok': 'Средний:',
+            'loading': 'Получение данных, пожалуйста, подождите.'
         },
         'de': {
             'newScript': 'Neues Skript veröffentlichen',
@@ -636,16 +683,15 @@ const translate = (function () {
             'errorNetwork': 'Download fehlgeschlagen, Netzwerkfehler oder Cross-Domain-Probleme',
             'install': 'Installieren',
             'downloadFailed': 'Download fehlgeschlagen',
-            'dallScripts': "Alle veröffentlichten Skripte",
-            'JSScripts': "Anzahl der JS-Skripte:",
-            'CSSScripts': "Anzahl der CSS-Skripte:",
-            'DailyTotal': "Tägliche Installationen:",
-            'TotalInstalls': "Gesamtinstallationen:",
-            'ok': "Alle Skripte:",
-            'bad': "Gesamtschlechte Bewertungen:",
-            'good': "Gesamtgute Bewertungen:",
-            'ok': "Durchschnitt:",
-            'loading': "Abrufen, bitte warten."
+            'dallScripts': 'Alle veröffentlichten Skripte',
+            'JSScripts': 'Anzahl der JS-Skripte:',
+            'CSSScripts': 'Anzahl der CSS-Skripte:',
+            'DailyTotal': 'Tägliche Installationen:',
+            'TotalInstalls': 'Gesamtinstallationen:',
+            'bad': 'Gesamtschlechte Bewertungen:',
+            'good': 'Gesamtgute Bewertungen:',
+            'ok': 'Durchschnitt:',
+            'loading': 'Abrufen, bitte warten.'
         },
         'fr': {
             'newScript': 'Publier un nouveau script',
@@ -678,16 +724,15 @@ const translate = (function () {
             'errorNetwork': 'Échec du téléchargement, erreur réseau ou problème de domaine croisé',
             'install': 'Installer',
             'downloadFailed': 'Échec du téléchargement',
-            'dallScripts': "Tous les scripts publiés",
-            'JSScripts': "Nombre de scripts JS:",
-            'CSSScripts': "Nombre de scripts CSS:",
-            'DailyTotal': "Installations quotidiennes:",
-            'TotalInstalls': "Total des installations:",
-            'ok': "Tous les scripts:",
-            'bad': "Total des mauvais avis:",
-            'good': "Total des bons avis:",
-            'ok': "Moyenne:",
-            'loading': "Récupération en cours, veuillez patienter."
+            'dallScripts': 'Tous les scripts publiés',
+            'JSScripts': 'Nombre de scripts JS:',
+            'CSSScripts': 'Nombre de scripts CSS:',
+            'DailyTotal': 'Installations quotidiennes:',
+            'TotalInstalls': 'Total des installations:',
+            'bad': 'Total des mauvais avis:',
+            'good': 'Total des bons avis:',
+            'ok': 'Moyenne:',
+            'loading': 'Récupération en cours, veuillez patienter.'
         },
         'it': {
             'newScript': 'Pubblica nuovo script',
@@ -720,16 +765,15 @@ const translate = (function () {
             'errorNetwork': 'Download fallito, errore di rete o problema di dominio incrociato',
             'install': 'Installa',
             'downloadFailed': 'Download fallito',
-            'dallScripts': "Tutti gli script rilasciati",
-            'JSScripts': "Numero di script JS:",
-            'CSSScripts': "Numero di script CSS:",
-            'DailyTotal': "Installazioni giornaliere:",
-            'TotalInstalls': "Installazioni totali:",
-            'ok': "Tutti gli script:",
-            'bad': "Totale recensioni negative:",
-            'good': "Totale recensioni positive:",
-            'ok': "Media:",
-            'loading': "Recupero in corso, attendere prego."
+            'dallScripts': 'Tutti gli script rilasciati',
+            'JSScripts': 'Numero di script JS:',
+            'CSSScripts': 'Numero di script CSS:',
+            'DailyTotal': 'Installazioni giornaliere:',
+            'TotalInstalls': 'Installazioni totali:',
+            'bad': 'Totale recensioni negative:',
+            'good': 'Totale recensioni positive:',
+            'ok': 'Media:',
+            'loading': 'Recupero in corso, attendere prego.'
         },
         'ar': {
             'newScript': 'نشر سكريبت جديد',
@@ -762,16 +806,15 @@ const translate = (function () {
             'errorNetwork': 'فشل التحميل، خطأ في الشبكة أو مشكلة في النطاق العابر',
             'install': 'تثبيت',
             'downloadFailed': 'فشل التحميل',
-            'dallScripts': "جميع البرامج النصية المنشورة",
-            'JSScripts': "عدد برامج JS النصية:",
-            'CSSScripts': "عدد برامج CSS النصية:",
-            'DailyTotal': "التثبيتات اليومية:",
-            'TotalInstalls': "إجمالي التثبيتات:",
-            'ok': "جميع البرامج النصية:",
-            'bad': "إجمالي التقييمات السلبية:",
-            'good': "إجمالي التقييمات الإيجابية:",
-            'ok': "متوسط:",
-            'loading': "جارٍ التحميل، يرجى الانتظار."
+            'dallScripts': 'جميع البرامج النصية المنشورة',
+            'JSScripts': 'عدد برامج JS النصية:',
+            'CSSScripts': 'عدد برامج CSS النصية:',
+            'DailyTotal': 'التثبيتات اليومية:',
+            'TotalInstalls': 'إجمالي التثبيتات:',
+            'bad': 'إجمالي التقييمات السلبية:',
+            'good': 'إجمالي التقييمات الإيجابية:',
+            'ok': 'متوسط:',
+            'loading': 'جارٍ التحميل، يرجى الانتظار.'
         },
         'he': {
             'newScript': 'פרסם סקריפט חדש',
@@ -804,58 +847,131 @@ const translate = (function () {
             'errorNetwork': 'הורדה נכשלה, בעיה ברשת או בקריאה חוצה דומיין',
             'install': 'התקן',
             'downloadFailed': 'הורדה נכשלה',
-            'dallScripts': "כל הסקריפטים שפורסמו",
-            'JSScripts': "מספר סקריפטים JS:",
-            'CSSScripts': "מספר סקריפטים CSS:",
-            'DailyTotal': "התקנות יומיות:",
-            'TotalInstalls': "סך ההתקנות:",
-            'ok': "כל הסקריפטים:",
-            'bad': "סה\"כ ביקורות רעות:",
-            'good': "סה\"כ ביקורות טובות:",
-            'ok': "ממוצע:",
-            'loading': "טוען, נא להמתין."
+            'dallScripts': 'כל הסקריפטים שפורסמו',
+            'JSScripts': 'מספר סקריפטים JS:',
+            'CSSScripts': 'מספר סקריפטים CSS:',
+            'DailyTotal': 'התקנות יומיות:',
+            'TotalInstalls': 'סך ההתקנות:',
+            'bad': 'סה"כ ביקורות רעות:',
+            'good': 'סה"כ ביקורות טובות:',
+            'ok': 'ממוצע:',
+            'loading': 'טוען, נא להמתין.'
         },
         'vi': {
-            'newScript': 'Đăng bài kịch mới',
+            'newScript': 'Đăng kịch bản mới',
             'linesOfCode': 'Số dòng mã',
             'wordCount': 'Số từ',
             'setDisplay': 'Thiết lập tùy chọn hiển thị',
-            'showJump': 'Hiển thị chuyển đến mã',
+            'showJump': 'Hiển thị nút nhảy đến mã',
             'beautifyDis': 'Tùy chọn làm đẹp trang thảo luận',
-            'AutoEnableCodeEditor': 'Tự động bật trình soạn thảo mã',
-            'showRating': 'Hiển thị xếp hạng',
-            'scriptLinNumb': 'Hiển thị số dòng mã script',
-            'ScriptListByCreat': 'Sắp xếp danh sách script theo ngày tạo',
-            'moveSidebar': 'Di chuyển ưa thích trong thanh bên',
-            'fixNavbar': 'Sửa chữa thanh điều hướng',
-            'addNewScript': 'Thêm tùy chọn đăng bài kịch mới vào thanh điều hướng',
+            'AutoEnableCodeEditor': 'Tự động bật làm đẹp trình soạn thảo mã',
+            'showRating': 'Hiển thị đánh giá',
+            'scriptLinNumb': 'Hiển thị số dòng mã kịch bản',
+            'ScriptListByCreat': 'Sắp xếp danh sách kịch bản theo ngày tạo',
+            'moveSidebar': 'Di chuyển mục yêu thích trên thanh bên lên trên',
+            'fixNavbar': 'Sửa thanh điều hướng',
+            'addNewScript': 'Thêm tùy chọn kịch bản mới vào thanh điều hướng',
             'exactDate': 'Ngày chính xác',
-            'addDownButton': 'Thêm nút tải về cho script và thư viện',
-            'jumpTo18': 'Chuyển đến script người lớn',
-            'maxView': 'Tối đa hóa xem trang web',
-            'cleanUpOld': 'Dọn dẹp bình luận script cũ hơn một số ngày nhất định',
-            'openTab': 'Mở liên kết trong tab mới',
-            'showIcon': 'Hiển thị biểu tượng script',
-            'scriptHisAddInstall': 'Thêm cài đặt vào lịch sử script',
+            'addDownButton': 'Thêm nút tải xuống vào kịch bản',
+            'jumpTo18': '🔞Nhảy đến kịch bản người lớn',
+            'maxView': 'Tối đa hóa chế độ xem trang web',
+            'cleanUpOld': 'Dọn dẹp bình luận cũ hơn số ngày',
+            'openTab': 'Mở liên kết trong tab Greasemonkey mới',
+            'showIcon': 'Hiển thị biểu tượng kịch bản',
+            'scriptHisAddInstall': 'Thêm cài đặt vào lịch sử kịch bản',
             'Settings': 'Cài đặt',
             'Close': 'Đóng',
             'inputDaysToCleanUp': 'Vui lòng nhập số ngày để dọn dẹp:',
             'download': 'Tải xuống ⇩',
             'downloading': 'Đang tải xuống...',
-            'errorCode': 'Lỗi: Tải xuống thất bại, máy chủ đã trả về mã trạng thái:',
-            'errorNetwork': 'Tải xuống thất bại, lỗi mạng hoặc vấn đề vượt miền',
+            'errorCode': 'Lỗi: Tải xuống thất bại, máy chủ trả về mã trạng thái:',
+            'errorNetwork': 'Tải xuống thất bại, lỗi mạng hoặc sự cố liên miền',
             'install': 'Cài đặt',
             'downloadFailed': 'Tải xuống thất bại',
-            'dallScripts': "Tất cả các tập lệnh đã phát hành",
-            'JSScripts': "Số lượng tập lệnh JS:",
-            'CSSScripts': "Số lượng tập lệnh CSS:",
-            'DailyTotal': "Lượt cài đặt hàng ngày:",
-            'TotalInstalls': "Tổng lượt cài đặt:",
-            'ok': "Tất cả tập lệnh:",
-            'bad': "Tổng số đánh giá xấu:",
-            'good': "Tổng số đánh giá tốt:",
-            'ok': "Trung bình:",
-            'loading': "Đang tải, vui lòng đợi."
+            'dallScripts': 'Tất cả các kịch bản đã phát hành',
+            'JSScripts': 'Số lượng kịch bản JS:',
+            'CSSScripts': 'Số lượng kịch bản CSS:',
+            'DailyTotal': 'Lượt cài đặt hàng ngày:',
+            'TotalInstalls': 'Tổng lượt cài đặt:',
+            'bad': 'Tổng số đánh giá xấu:',
+            'good': 'Tổng số đánh giá tốt:',
+            'ok': 'Trung bình:',
+            'loading': 'Đang tải, vui lòng đợi.',
+            'viewauthor': 'Tác giả',
+            'viewdaily_installs': 'Lượt cài đặt hàng ngày',
+            'tviewotal_installs': 'Tổng lượt cài đặt',
+            'viewfan_score': 'Điểm người hâm mộ',
+            'viewversion': 'Phiên bản',
+            'viewcreated_at': 'Ngày tạo',
+            'viewcode_updated_at': 'Ngày cập nhật',
+            'viewlicense': 'Giấy phép',
+            'viewlocale': 'Ngôn ngữ',
+            'copyto': 'Sao chép mã vào khay nhớ tạm.',
+            'htmlViewtotext': ' Chuyển sang chế độ xem TEXT',
+            'texttohtmlView': ' Chuyển sang chế độ xem HTML',
+            'Rememberme': 'Tự động chọn Ghi nhớ tôi trên trang đăng nhập.',
+            'locklang': 'Chuyển đổi ngôn ngữ trang web sang:',
+            'locklangset': 'Khóa ngôn ngữ sau khi bạn nhấp vào nút chuyển đổi ngôn ngữ',
+            'openindoc': 'Thêm vào thanh điều hướng để mở trang này',
+            'thisname': ' Bộ công cụ tiện ích Greasyfork',
+            '脚本详情': ' Trang chi tiết',
+            '导航栏': 'Thanh điều hướng',
+            'website': 'Cài đặt trang web',
+            '复制短链接': 'Sao chép liên kết ngắn',
+            '主页脚本添加操作': 'Thêm thao tác vào kịch bản trang chủ',
+            'copylib': 'Sao chép yêu cầu LIB',
+            'barvertical': 'Thanh điều hướng dọc',
+            'followsystem': 'Theo hệ thống',
+            'daymode': 'Chế độ ban ngày',
+            'nightmode': 'Chế độ ban đêm',
+            'cleariconcache': 'Xóa bộ nhớ cache biểu tượng',
+            'expandmore': 'Mở rộng "Thêm"',
+            'localbookmarks': 'Dấu trang',
+            'scriptlist': 'Danh sách kịch bản',
+            'oneclickreport': 'Báo cáo một cú nhấp chuột',
+            'hidereadcomments': 'Ẩn bình luận đã đọc',
+            'italicizereadcomments': 'In nghiêng bình luận đã đọc',
+            'enableautologin': 'Bật tự động đăng nhập',
+            'account': 'Tài khoản',
+            'password': 'Mật khẩu',
+            'listdisplayinstallationdownload': 'Hiển thị danh sách cài đặt tải xuống',
+            'useoldversionlist': 'Sử dụng danh sách phiên bản cũ',
+            'showscriptall': 'Hiển thị kịch bản bằng tất cả các ngôn ngữ',
+            'displaystatisticsonhomepage': 'Hiển thị thống kê trên trang chủ',
+            'beautifycontrols': 'Làm đẹp các điều khiển',
+            'applyto': 'Áp dụng cho',
+            'enableenhancements': 'Bật các cải tiến',
+            'openinnewwindow': 'Mở trong cửa sổ mới',
+            'detailsapplytoopen': 'Chi tiết áp dụng để mở',
+            'forumsearch': 'Tìm kiếm diễn đàn',
+            'webpageopen': 'Mở trang web',
+            'popupprompt': 'Nhắc nhở bật lên',
+            'displaycitationcount': 'Hiển thị số lượng trích dẫn',
+            'beautifycodesnippets': 'Làm đẹp đoạn mã',
+            'beautifycodeview': 'Làm đẹp chế độ xem mã',
+            'beautifycodetheme': 'Làm đẹp giao diện mã',
+            'hiderrecentcomments': 'Ẩn bình luận gần đây',
+            'hiderconversations': 'Ẩn các cuộc trò chuyện trên trang chủ',
+            'hideuserprofile': 'Ẩn mô tả cá nhân trên trang chủ',
+            'personalhomepage': 'Trang chủ cá nhân',
+            'showscriptsinforum': 'Hiển thị số lượng kịch bản trong diễn đàn',
+            'downgradeto': 'Hạ cấp xuống:',
+            'reinstall': 'Cài đặt lại:',
+            'upgradeto': 'Nâng cấp lên:',
+            'autologinredirect': 'Tự động chuyển hướng đến đăng nhập...',
+            'nostoredaccount': 'Không có tài khoản được lưu trữ cục bộ',
+            'nostoredpassword': 'Không có mật khẩu được lưu trữ cục bộ',
+            'getcsrftokenfailed': 'Không thể lấy mã thông báo CSRF',
+            'loginfailedconsole': 'Đăng nhập thất bại, kiểm tra bảng điều khiển để biết chi tiết',
+            'loginsuccessredirect': 'Đăng nhập thành công, chuyển hướng sau 1 giây',
+            'loginfailedelementnotfound': 'Đăng nhập thất bại, không tìm thấy phần tử',
+            'report': 'Báo cáo',
+            'useroutlines': 'phác thảo',
+            'imageproxy': 'proxy hình ảnh',
+            'ScriptListdouble': 'Danh sách kịch bản kép',
+            'beautifyTopNav': 'Làm đẹp thanh điều hướng',
+            'fixElementoption': 'Sửa thanh bên',
+            '1169082': 'Cảm ơn bạn đã ghé thăm trang chủ của 勤务员'
         }
     }
     return (id, lang = '') => {
@@ -866,127 +982,122 @@ const translate = (function () {
 }());
 (function () {
     'use strict'
-    var DEBUG = true
-    var showRating = GM_getValue('showRating', false) // 默认展示评分
-    var showSourceCode = GM_getValue('showSourceCode', false) // 默认展示源码按钮
-    var modifyRadioLabels = GM_getValue('modifyRadioLabels', false)//评论区梅花
-    var autocheck = GM_getValue('autocheck', false)//自动点击美化编辑器
-    var showtotal = GM_getValue('showtotal', false)//显示代码字数
-    var scriptwithdata = GM_getValue('scriptwithdata', true)//导航栏点击跳转时间创建
-    var scriptset = GM_getValue('scriptset', true)//侧边栏脚本上移动
-    var HeaderStyleFix = GM_getValue('HeaderStyleFix', true)//修复导航栏
-    var AbsoluteTime = GM_getValue('AbsoluteTime', false)//精确时间
-    var addbutton = GM_getValue('addbutton', true)//添加下载按钮
-    var jumpto = GM_getValue('jumpto', false)//跳转18
-    var greasymaxWidth = GM_getValue('greasymaxWidth', false)//最大窗口
-    var clearhomepage = GM_getValue('clearhomepage', true)//清理主页过期评论
-    var clearhomepagedays = GM_getValue('clearhomepagedays', false)//清理主页过期评论的天数
-    var newtabtoinstall = GM_getValue('newtabtoinstall', false)  //油猴新窗口打开
-    var viewicon = GM_getValue('viewicon', true)//查看脚本的图标
-    var installforversions = GM_getValue('installforversions', true)//下载历史版本
-    var setcopylink = GM_getValue('setcopylink', true)//复制代码
-    var sethtmlview = GM_getValue('sethtmlview', false)//脚本简介转文档查看
-    var Postlink = GM_getValue('Postlink', true)//发布新脚本
-    var remme = GM_getValue('remme', true)//在登录页自动点击记住我
-    var setlocklang = GM_getValue('setlocklang', false)// 锁点语言
-    var setopenindoc = GM_getValue('setopenindoc', true) //在导航栏添加打开设置界面
-    var buttonopen = true
-    var copyshortlink = GM_getValue('copyshortlink', true) //复制短链接
-    var cleanscriptname = GM_getValue('cleanscriptname', true) //清理脚本名称
-    var addedittohomepage = GM_getValue('addedittohomepage', true) //在主页脚本增加编辑删除安装
-    var searchingreasyfork = GM_getValue('searchingreasyfork', '1')//适用于默认打开网址
-    var usersearchingreasyfork = GM_getValue('usersearchingreasyfork', true)//启用适用于增强
-    var navigateTotab = GM_getValue('navigateTotab', true)//适用于新窗口打开
-    var showlinktotal = GM_getValue('showlinktotal', true)//适用于网站数量
-    var userhandleLocaleFilter = GM_getValue('userhandleLocaleFilter', true)//语言移除功能
-    var userapplyCustomStyles = GM_getValue('userapplyCustomStyles', false)//旧版本风格
-    var usercssto = GM_getValue('usercssto', true)//美化页面按钮等信息
-    var useHighlighting = GM_getValue('useHighlighting', true)//高亮网页文本代码
-    var useHighlighttocode = GM_getValue('useHighlighttocode', true)//高亮查看代码
-    var showinstallbutton = GM_getValue('showinstallbutton', true)//脚本列表显示安装和下载按钮
-    var addCopyButtonBeforelibScript = GM_getValue('addCopyButtonBeforelibScript', true)//库声明前增加复制
-    var wightnav = GM_getValue('wightnav', true)//对齐导航栏
-    var lockmode = GM_getValue('lockmode', '0')//高亮美化代码和代码片段锁定黑夜模式
-    var hideuserdiscussions = GM_getValue('hideuserdiscussions', false)//隐藏主页评论
-    var showresource = GM_getValue('showresource', false)//代码页面显示引用的文件数量
-    var usereport = GM_getValue('usereport', true)//讨论页面增加举报
-    var userlocalfav = GM_getValue('userlocalfav', true)//本地收藏
-    var favs = JSON.parse(GM_getValue('favs', '[]'))//本地收藏信息
-    var hidediscussionread = GM_getValue('hidediscussionread', false)//隐藏已经阅读的评论
-    var italicdiscussionread = GM_getValue('italicdiscussionread', true)//斜体已经阅读的评论
-    var shouwtotalonuserpage = GM_getValue('shouwtotalonuserpage', true)// 主页显示数量
-    var userpassword = GM_getValue('userpassword', '')// 账号密码
-    var useremail = GM_getValue('useremail', '')//  账号邮箱
-    var userautologin = GM_getValue('userautologin', false)//  使用自动登录
-    var Expandsubmenu = GM_getValue('Expandsubmenu', false)//  展开导航栏上的"更多'
-    var useroutline = GM_getValue('useroutline', true)//  使用侧边导航栏
-    var userimageproxy = GM_getValue('userimageproxy', false)//  使用图像代理
-    var scriptlistdouble = GM_getValue('scriptlistdouble', true)//  使用列表双列
-    var beautifyTopNav = GM_getValue('beautifyTopNav', true)//  美化导航栏 只在pc生效
-    var fixElementoption = GM_getValue('fixElementoption', true)//  固定油猴侧边操作栏目只在PC生效.
-    function reloadSettings() {
-        showRating = GM_getValue('showRating', false) // 默认展示评分
-        showSourceCode = GM_getValue('showSourceCode', false) // 默认展示源码按钮
-        modifyRadioLabels = GM_getValue('modifyRadioLabels', false) // 评论区梅花
-        autocheck = GM_getValue('autocheck', false) // 自动点击美化编辑器
-        showtotal = GM_getValue('showtotal', false) // 显示代码字数
-        scriptwithdata = GM_getValue('scriptwithdata', true) // 导航栏点击跳转时间创建
-        scriptset = GM_getValue('scriptset', true) // 侧边栏脚本上移动
-        HeaderStyleFix = GM_getValue('HeaderStyleFix', true) // 修复导航栏
-        AbsoluteTime = GM_getValue('AbsoluteTime', false) // 精确时间
-        addbutton = GM_getValue('addbutton', true) // 添加下载按钮
-        jumpto = GM_getValue('jumpto', false) // 跳转18
-        greasymaxWidth = GM_getValue('greasymaxWidth', false) // 最大窗口
-        clearhomepage = GM_getValue('clearhomepage', true) // 清理主页过期评论
-        clearhomepagedays = GM_getValue('clearhomepagedays', false) // 清理主页过期评论的天数
-        newtabtoinstall = GM_getValue('newtabtoinstall', false) // 油猴新窗口打开
-        viewicon = GM_getValue('viewicon', true) // 查看脚本的图标
-        installforversions = GM_getValue('installforversions', true) // 下载历史版本
-        setcopylink = GM_getValue('setcopylink', true) // 复制代码
-        sethtmlview = GM_getValue('sethtmlview', false) // 脚本简介转文档查看
-        Postlink = GM_getValue('Postlink', true) // 发布新脚本
-        remme = GM_getValue('remme', true) // 在登录页自动点击记住我
-        setlocklang = GM_getValue('setlocklang', false) // 锁点语言
-        setopenindoc = GM_getValue('setopenindoc', true) // 在导航栏添加打开设置界面
-        buttonopen = true
-        copyshortlink = GM_getValue('copyshortlink', true) // 复制短链接
-        cleanscriptname = GM_getValue('cleanscriptname', true) // 清理脚本名称
-        addedittohomepage = GM_getValue('addedittohomepage', true) // 在主页脚本增加编辑删除安装
-        searchingreasyfork = GM_getValue('searchingreasyfork', '1') // 适用于默认打开网址
-        usersearchingreasyfork = GM_getValue('usersearchingreasyfork', true) // 启用适用于增强
-        navigateTotab = GM_getValue('navigateTotab', true) // 适用于新窗口打开
-        showlinktotal = GM_getValue('showlinktotal', true) // 显示链接总数
+    //FIXME - 基本配置
+    var DEBUG = false // 控制是否启用调试模式
+    function DEBUG11() {
+        const profileLinkElement = document.querySelector('#nav-user-info > span.user-profile-link > a')
+        if (profileLinkElement) {
+            const href = profileLinkElement.getAttribute('href')
+            if (href && href.includes('1169082')) {
+                DEBUG = true
+            }
+        }
     }
-    //功能-发布新脚本链接放在导航栏
+    DEBUG11()
+    const settings = {
+        showRating: { default: false, comment: '默认展示评分' },
+        showSourceCode: { default: false, comment: '默认展示源码按钮' },
+        modifyRadioLabels: { default: false, comment: '评论区梅花' },
+        autocheck: { default: false, comment: '自动点击美化编辑器' },
+        showtotal: { default: false, comment: '显示代码字数' },
+        scriptwithdata: { default: true, comment: '导航栏点击跳转时间创建' },
+        scriptset: { default: true, comment: '侧边栏脚本上移动' },
+        HeaderStyleFix: { default: true, comment: '修复导航栏' },
+        AbsoluteTime: { default: false, comment: '精确时间' },
+        addbutton: { default: true, comment: '添加下载按钮' },
+        jumpto: { default: false, comment: '跳转18' },
+        greasymaxWidth: { default: false, comment: '最大窗口' },
+        clearhomepage: { default: true, comment: '清理主页过期评论' },
+        clearhomepagedays: { default: false, comment: '清理主页过期评论的天数' },
+        newtabtoinstall: { default: false, comment: '油猴新窗口打开' },
+        viewicon: { default: true, comment: '查看脚本的图标' },
+        installforversions: { default: true, comment: '下载历史版本' },
+        setcopylink: { default: true, comment: '复制代码' },
+        sethtmlview: { default: '', comment: '脚本简介转文档查看' },
+        Postlink: { default: true, comment: '发布新脚false本' },
+        remme: { default: true, comment: '在登录页自动点击记住我' },
+        setlocklang: { default: false, comment: '锁点语言' },
+        setopenindoc: { default: true, comment: '在导航栏添加打开设置界面' },
+        buttonopen: { default: true, comment: '' },
+        copyshortlink: { default: true, comment: '复制短链接' },
+        cleanscriptname: { default: true, comment: '清理脚本名称' },
+        addedittohomepage: { default: true, comment: '在主页脚本增加编辑删除安装' },
+        searchingreasyfork: { default: '1', comment: '适用于默认打开网址' },
+        usersearchingreasyfork: { default: true, comment: '启用适用于增强' },
+        navigateTotab: { default: true, comment: '适用于新窗口打开' },
+        showlinktotal: { default: true, comment: '适用于网站数量' },
+        userhandleLocaleFilter: { default: true, comment: '语言移除功能' },
+        userapplyCustomStyles: { default: false, comment: '旧版本风格' },
+        usercssto: { default: true, comment: '美化页面按钮等信息' },
+        useHighlighting: { default: true, comment: '高亮网页文本代码' },
+        useHighlighttocode: { default: true, comment: '高亮查看代码' },
+        showinstallbutton: { default: true, comment: '脚本列表显示安装和下载按钮' },
+        addCopyButtonBeforelibScript: { default: true, comment: '库声明前增加复制' },
+        wightnav: { default: true, comment: '对齐导航栏' },
+        lockmode: { default: '0', comment: '高亮美化代码和代码片段锁定黑夜模式' },
+        hideuserdiscussions: { default: false, comment: '隐藏主页评论' },
+        hideuserconversations: { default: false, comment: '隐藏主页私信' },
+        hideuserprofile: { default: false, comment: '隐藏用户主页简介' },
+        showresource: { default: false, comment: '代码页面显示引用的文件数量' },
+        usereport: { default: true, comment: '讨论页面增加举报' },
+        userlocalfav: { default: true, comment: '本地收藏' },
+        favs: { default: '[]', comment: '本地收藏信息', parse: JSON.parse },
+        hidediscussionread: { default: false, comment: '隐藏已经阅读的评论' },
+        italicdiscussionread: { default: true, comment: '斜体已经阅读的评论' },
+        shouwtotalonuserpage: { default: true, comment: '主页显示数量' },
+        userpassword: { default: '', comment: '账号密码' },
+        useremail: { default: '', comment: '账号邮箱' },
+        userautologin: { default: false, comment: '使用自动登录' },
+        Expandsubmenu: { default: false, comment: '展开导航栏上的"更多"' },
+        useroutline: { default: true, comment: '使用侧边导航栏' },
+        userimageproxy: { default: false, comment: '使用图像代理' },
+        scriptlistdouble: { default: true, comment: '使用列表双列' },
+        beautifyTopNav: { default: true, comment: '美化导航栏 只在pc生效' },
+        fixElementoption: { default: true, comment: '固定油猴侧边操作栏目只在PC生效' }
+    }
+    // 动态创建变量
+    Object.keys(settings).forEach(key => {
+        const setting = settings[key]
+        window[key] = setting.parse ? setting.parse(GM_getValue(key, setting.default)) : GM_getValue(key, setting.default)
+        logMessage(`${key}: ${window[key]} // ${setting.comment}`, ' ', true)
+    })
+    if (window.location.href.includes('users/1169082')) {
+        const targetElement = document.querySelector('#about-user > h2')
+        if (targetElement) {
+            targetElement.innerHTML += '<span class="badge badge-moderator">  ' + translate('1169082') + '</span>'
+        }
+    }
+    //STUB - 发布新脚本链接放在导航栏
     if (Postlink) {
         const country_code = getCountryCode()
         setTimeout(function () {
-            addNavLink(translate('newScript'), "/" + country_code + '/script_versions/new', false)
+            addNavLink(translate('newScript'), '/' + country_code + '/script_versions/new', false)
         }, 100)
     }
-    if (remme && document.querySelector("#new_user > div:nth-child(4) > label")) {
-        //功能-登录页面自动点击记住我
+    if (remme && document.querySelector('#new_user > div:nth-child(4) > label')) {
+        //STUB - 登录页面自动点击记住我
         function clickLabelsDirectly() {
             // 直接选中并点击第一个元素
-            document.querySelector("#new_user > div:nth-child(4) > label").click()
+            document.querySelector('#new_user > div:nth-child(4) > label').click()
             // 直接选中并点击第二个元素
-            document.querySelector("body > div.width-constraint > section > div > div > form > div.remember-me > label").click()
+            document.querySelector('body > div.width-constraint > section > div > div > form > div.remember-me > label').click()
         }
-        if (window.location.href.includes("users/sign_in")) {
+        if (window.location.href.includes('users/sign_in')) {
             clickLabelsDirectly()
         }
     }
     // 调用函数
-    //功能-增加图标
+    //STUB - 增加图标
     if (viewicon) {
         if (/^https:\/\/(greasy|sleazy)fork\.org\/([^/]+\/)?scripts\/([^/]+|$)/.test(window.location.href)) {
-            const installArea = document.querySelector('div#install-area')
+            // const installArea = document.querySelector('div#install-area')
+            const installArea = document.querySelector('#script-info header h2')
             if (installArea) {
                 addIcon(installArea)
             }
         }
     }
-    //功能-油猴新窗口打开
+    //STUB - 油猴新窗口打开
     if (newtabtoinstall) {
         //      installBtn.target = '_blank';
         document.querySelectorAll('a').forEach(item => {
@@ -996,84 +1107,83 @@ const translate = (function () {
             }
         })
     }
-    //功能-作者界面清理超过30天的评论
+    //STUB - 作者界面清理超过30天的评论
     if (clearhomepage) {
-        if (window.location.href.includes("users")) {
-            let items = document.querySelectorAll("#user-discussions-on-scripts-written > section > div")
+        if (window.location.href.includes('users')) {
+            let items = document.querySelectorAll('#user-discussions-on-scripts-written > section > div')
             let now = new Date()
             let num = 0
             for (let item of items) {
                 let item_time = item.querySelector('relative-time').date
                 if (now - new Date(item_time) > 24 * 3600 * 1000 * clearhomepagedays) {
-                    item.style.display = "none"
+                    item.style.display = 'none'
                     num += 1
                 }
             }
         }
     }
-    //功能-修复导航栏不在中间
+    //STUB - 修复导航栏不在中间
     if (wightnav) {
-        var e = document.getElementsByClassName("width-constraint")
-        e[0].style.maxWidth = "95%" //header
+        var e = document.getElementsByClassName('width-constraint')
+        e[0].style.maxWidth = '95%' //header
     }
-    //功能-最大化使用
+    //STUB - 最大化使用
     if (greasymaxWidth) {
         try {
-            var e = document.getElementsByClassName("width-constraint")
-            e[0].style.maxWidth = "95%" //header
-            e[1].style.maxWidth = "95%" //content
+            var max = document.getElementsByClassName('width-constraint')
+            max[0].style.maxWidth = '95%' //header
+            max[1].style.maxWidth = '95%' //content
         } catch (exp) { }
         try {
-            document.getElementById("browse-script-list").style.width = "100%"
+            document.getElementById('browse-script-list').style.width = '100%'
         } catch (exp) { } //suchergebnisse;
         try {
-            document.getElementById("user-script-list").style.width = "100%"
+            document.getElementById('user-script-list').style.width = '100%'
         } catch (exp) { } //suchergebnisse;
         try {
-            document.getElementById("script-list-option-groups").style.width = "100%"
+            document.getElementById('script-list-option-groups').style.width = '100%'
         } catch (exp) { } //sidebar;
         try {
-            document.getElementById("carbonads").style.height = "0px"
+            document.getElementById('carbonads').style.height = '0px'
         } catch (exp) { } //carbon werbung
         //try{document.getElementsByClassName("adsbygoogle")[0].style.height = "0px";}catch(exp){} //google werbung
     }
-    //功能-点击导航栏默认跳转创建日期
+    //STUB - 点击导航栏默认跳转创建日期
     if (scriptwithdata) {
-        var scriptslinks = document.getElementsByClassName("scripts-index-link")
+        var scriptslinks = document.getElementsByClassName('scripts-index-link')
         if (userhandleLocaleFilter) {
-            scriptslinks[0].firstChild.href = scriptslinks[0].firstChild.href.replace("/scripts", "/scripts?sort=created&filter_locale=0")
+            scriptslinks[0].firstChild.href = scriptslinks[0].firstChild.href.replace('/scripts', '/scripts?sort=created&filter_locale=0')
         } else {
-            scriptslinks[0].firstChild.href = scriptslinks[0].firstChild.href.replace("/scripts", "/scripts?sort=created")
+            scriptslinks[0].firstChild.href = scriptslinks[0].firstChild.href.replace('/scripts', '/scripts?sort=created')
         }
     }
-    // 功能-跳转大人
+    // STUB - 跳转大人
     if (jumpto) {
         var currentUrl = window.location.href
         const country_code = getCountryCode()
-        if (currentUrl.includes("greasyfork.org")) {
-            addNavLink("🔞", "https://sleazyfork.org/" + country_code + '/scripts')
-        } else if (currentUrl.includes("sleazyfork.org")) {
-            addNavLink("🍴", "https://greasyfork.org/" + country_code + '/scripts', false, false)
+        if (currentUrl.includes('greasyfork.org')) {
+            addNavLink('🔞', 'https://sleazyfork.org/' + country_code + '/scripts')
+        } else if (currentUrl.includes('sleazyfork.org')) {
+            addNavLink('🍴', 'https://greasyfork.org/' + country_code + '/scripts', false, false)
         }
     }
-    //功能-本地收藏夹
+    //STUB - 本地收藏夹
     function refreshFavorites() {
         favs = JSON.parse(GM_getValue('favs', '[]'))
     }
     if (userlocalfav) {
-        addNavLink(translate('localbookmarks'), "https://greasyfork.org/" + getCountryCode() + "/404?Bookmarks", true)
+        addNavLink(translate('localbookmarks'), 'https://greasyfork.org/' + getCountryCode() + '/404?Bookmarks', true)
     }
-
     function favPage() {
-        if (window.location.href == "https://greasyfork.org/" + getCountryCode() + "/404?Bookmarks") {
+        if (window.location.href == 'https://greasyfork.org/' + getCountryCode() + '/404?Bookmarks') {
             document.title = 'bookmarks'
             //  document.querySelector("body > div > section").remove()
             let scripts = JSON.parse(GM_getValue('favs', '[]'))
-            document.querySelector("body > div > section").innerHTML = `<ol id="browse-script-list" class="script-list ">`
+            document.querySelector('body > div > section').innerHTML = '<ol id="browse-script-list" class="script-list ">'
             const reverseOrder = true
             for (let script of (reverseOrder ? scripts.reverse() : scripts)) {
-                let elm = document.querySelector("#browse-script-list"),
-                    li = document.createElement("li")
+                let elm = document.querySelector('#browse-script-list'),
+                    li = document.createElement('li')
                 li.innerHTML = `
              <div class="parent-container">
             <a class="script-link" href="${script.href}">${script.title}</a>
@@ -1131,7 +1241,7 @@ const translate = (function () {
                 title: scriptTitle,
                 description: scriptDescription,
                 href: href,
-                timestamp: localTime,
+                timestamp: localTime
             }
             var index = -1,
                 val = scriptTitle,
@@ -1158,10 +1268,10 @@ const translate = (function () {
         })
     }
     function scriptPage() {
-        if (location.href.match('/scripts') && document.querySelector("#script-links")) {
-            let scriptLinks = document.querySelector("#script-links")
-            let scriptTitle = document.querySelector("#script-info > header > h2").innerText
-            let scriptDescription = document.querySelector(".script-description").innerText
+        if (location.href.match('/scripts') && document.querySelector('#script-links')) {
+            let scriptLinks = document.querySelector('#script-links')
+            let scriptTitle = document.querySelector('#script-info > header > h2').innerText
+            let scriptDescription = document.querySelector('.script-description').innerText
             let href = window.location.href
             handleScriptPage(scriptDescription, scriptTitle, scriptLinks, href)
         }
@@ -1199,12 +1309,12 @@ margin-bottom: 0;
             li.innerHTML = '<a href="#" style="text-decoration: none;">☆</a>'
         }
     }
-    // 功能-脚本名称清理 https://greasyfork.org/zh-CN/scripts/431940
+    // STUB - 脚本名称清理 https://greasyfork.org/zh-CN/scripts/431940
     const m = /(\/[^/]+\/(?:scripts|users)\/\d+)-[^/]+(\/.*)?/.exec(location.pathname)
     if (m && cleanscriptname) {
         history.replaceState({}, null, `${location.origin}${m[1]}${m[2] ?? ''}${location.search}${location.hash}`)
     }
-    // 功能-主页增加编辑  // Adds a new link plus a separator
+    // STUB - 主页增加编辑  // Adds a new link plus a separator
     //https://update.greasyfork.org/scripts/15201/Greasy%20Fork%20Links.user.js
     if (addedittohomepage && isHomepage()) {
         function insertElement(link, text, href) {
@@ -1232,27 +1342,33 @@ margin-bottom: 0;
                 addLink(link, 'Install', link.href + '/code/' + encodeURIComponent(link.innerText) + '.user.js', ' - ')
             }
             // Display number of userscripts
-            var scripts = document.querySelector("#user-script-list-section > header > h3")
+            var scripts = document.querySelector('#user-script-list-section > header > h3')
             if (scripts) {
                 scripts.innerText = `${scripts.innerText} (${items.length})`
             }
         }
     }
-    //功能-隐藏主页评论
+    //STUB - 隐藏主页评论
     if (hideuserdiscussions && isHomepage()) {
-        document.querySelector("#user-discussions").style.display = 'none'
+        document.querySelector('#user-discussions').style.display = 'none'
     }
-    // 功能-短链接复制
-    const idPrefix = "" // 根据需要设置前缀
-    if (copyshortlink && document.querySelector("#script-info")) {
+    if (hideuserconversations && isHomepage()) {
+        document.querySelector('#user-conversations').style.display = 'none'
+    }
+    if (hideuserprofile && document.querySelector('#user-profile') && isHomepage()) {
+        document.querySelector('#user-profile').style.display = 'none'
+    }
+    // STUB - 短链接复制
+    const idPrefix = '' // 根据需要设置前缀
+    if (copyshortlink && document.querySelector('#script-info')) {
         shortLink()
     }
     function shortLink() {
-        const description = document.querySelector("div#script-content")
+        const description = document.querySelector('div#script-content')
         const url = window.location.href
         const scriptId = url.match(/\/scripts\/(\d+)/)?.[1]
         if (!scriptId || !description) return
-        const id = idPrefix + "short-link"
+        const id = idPrefix + 'short-link'
         const current = document.getElementById(id)
         const short = `https://greasyfork.org/scripts/${scriptId}`
         if (current) {
@@ -1262,42 +1378,42 @@ margin-bottom: 0;
         } else {
             logMessage('shortLink', '新增短链元素', true)
             // Add the short link element
-            const p = description.insertAdjacentElement("beforebegin", document.createElement("p"))
+            const p = description.insertAdjacentElement('beforebegin', document.createElement('p'))
             p.id = id
-            p.textContent = "Short link: "
-            const link = p.appendChild(document.createElement("a"))
+            p.textContent = 'Short link: '
+            const link = p.appendChild(document.createElement('a'))
             link.href = short
             link.textContent = short
-            const copy = p.appendChild(document.createElement("a"))
-            copy.textContent = "Copy"
-            copy.style.marginLeft = "1em"
-            copy.style.cursor = "pointer"
-            copy.title = "Copy short link to clipboard"
-            copy.addEventListener("click", () => {
-                if (copy.textContent === "Copied!") return
+            const copy = p.appendChild(document.createElement('a'))
+            copy.textContent = 'Copy'
+            copy.style.marginLeft = '1em'
+            copy.style.cursor = 'pointer'
+            copy.title = 'Copy short link to clipboard'
+            copy.addEventListener('click', () => {
+                if (copy.textContent === 'Copied!') return
                 navigator.clipboard.writeText(short).then(() => {
-                    copy.textContent = "Copied!"
+                    copy.textContent = 'Copied!'
                     window.setTimeout(() => {
-                        copy.textContent = "Copy"
+                        copy.textContent = 'Copy'
                     }, 1000)
                 })
             })
         }
     }
     //webhoot
-    // 功能-导航栏增加打开设置
+    // STUB - 导航栏增加打开设置
     if (setopenindoc) {
-        addNavLink(translate('thisname'), '#', false, false, "renminde")
+        addNavLink(translate('thisname'), '#', false, false, 'renminde')
         var customClassName = 'renminde' // 自定义类名
-        var link = document.querySelector(`.${customClassName} > a`)
-        if (link) {
-            link.addEventListener('click', event => {
+        var navlink = document.querySelector(`.${customClassName} > a`)
+        if (navlink) {
+            navlink.addEventListener('click', event => {
                 event.preventDefault()
                 showSettingsModal()
             })
         }
     }
-    // 功能-评论区美化选项
+    // STUB - 评论区美化选项
     if (modifyRadioLabels) {
         if (document.location.pathname.endsWith('/feedback')) {
             var ratings = {
@@ -1331,7 +1447,7 @@ margin-bottom: 0;
         }
         //
     }
-    // 功能-代码字数
+    // STUB - 代码字数
     function get_size_from_doc(doc) {
         let t = doc.querySelector('#script-content .code-container pre').innerText
         const byteLength = new TextEncoder().encode(t).length
@@ -1339,7 +1455,7 @@ margin-bottom: 0;
         return {
             lines: t.split('\n').length,
             chars: t.length,
-            filesize: size,
+            filesize: size
         }
     }
     function handle_code_page() {
@@ -1366,9 +1482,9 @@ margin-bottom: 0;
     }
     // 封装的复制代码函数
     function copyCode() {
-        let pre = document.querySelector(".code-container > pre")
+        let pre = document.querySelector('.code-container > pre')
         if (!pre) {
-            pre = document.querySelector("pre.uglyprint")
+            pre = document.querySelector('pre.uglyprint')
         }
         //  const pre = document.querySelector(".code-container > pre");
         const codeText = pre.innerText
@@ -1379,9 +1495,9 @@ margin-bottom: 0;
                 return line.replace(/^\d+/, '')
             })
             .join('\n')
-        GM_setClipboard(codeText, "text")
+        GM_setClipboard(codeText, 'text')
     }
-    // 功能-代码复制按钮
+    // STUB - 代码复制按钮
     function copycodelink() {
         let b = document.createElement('a')
         b.href = '#'
@@ -1394,20 +1510,20 @@ margin-bottom: 0;
             Toast('Copy successful', 3000, '#0000ff', '#ffffff', 'top')
         }
         if (isMobile()) {
-            var parentElement = document.querySelector("#script-content > div.code-container")
+            var parentElement = document.querySelector('#script-content > div.code-container')
             var referenceElement = parentElement.nextElementSibling
             parentElement.insertAdjacentElement('beforebegin', b)
         } else {
             document.querySelector('#script-feedback-suggestion').appendChild(b)
         }
     }
-    // 功能-切换脚本简介greasyfork.org/scripts/471149
+    // STUB - 切换脚本简介greasyfork.org/scripts/471149
     let additionalInfoDiv = document.querySelector('#additional-info.user-content')
     if (sethtmlview && additionalInfoDiv) {
-        const htmlViewb = document.createElement("a")
-        htmlViewb.href = "#"
-        htmlViewb.className = "install-link htmlViewb"
-        htmlViewb.style.marginLeft = "0.5rem"
+        const htmlViewb = document.createElement('a')
+        htmlViewb.href = '#'
+        htmlViewb.className = 'install-link htmlViewb'
+        htmlViewb.style.marginLeft = '0.5rem'
         htmlViewb.textContent = translate('htmlViewtotext')
         htmlViewb.addEventListener('click', (event) => {
             event.preventDefault()
@@ -1429,17 +1545,17 @@ margin-bottom: 0;
             additionalInfoDiv.parentNode.insertBefore(htmlViewb, additionalInfoDiv)
         }
     }
-    // 功能-侧边栏脚本上移动
-    const findlis = document.getElementById("script-list-sort")
+    // STUB - 侧边栏脚本上移动
+    const findlis = document.getElementById('script-list-sort')
     if (scriptset && findlis) {
         var observer = new MutationObserver(function (mutationsList) {
             for (var mutation of mutationsList) {
                 if (mutation.type === 'childList') {
                     // 检查是否出现了 Script set 元素
-                    var setDiv = document.getElementById("script-list-set")
+                    var setDiv = document.getElementById('script-list-set')
                     if (setDiv) {
                         // 找到 script-list-sort 元素
-                        var sortDiv = document.getElementById("script-list-sort")
+                        var sortDiv = document.getElementById('script-list-sort')
                         // 将 setDiv 插入到 sortDiv 下面
                         sortDiv.parentNode.insertBefore(setDiv, sortDiv.nextSibling)
                         // 弹出提示
@@ -1455,17 +1571,14 @@ margin-bottom: 0;
             subtree: true
         })
     }
-    // 功能-编辑器自动美化
+    // STUB - 编辑器自动美化
     if (/\/(versions|script_versions)\/new/.test(window.location.href)) {
         if (autocheck) {
             var textarea = document.getElementById('script_version_code')
             waitForElement('#enable-source-editor-code').then(() => {
                 // 选择 enable-source-editor-code 元素
                 const checkbox = document.querySelector('#enable-source-editor-code')
-
-
                 if (checkbox && !checkbox.checked) {
-
                     checkbox.click()
                     textarea.style.height = '800px'
                     logMessage('autocheck', '自动点击完成', true)
@@ -1481,7 +1594,7 @@ margin-bottom: 0;
     })
     function handleCheckboxChange() {
         if (this.checked) {
-            let input = prompt(translate('inputDaysToCleanUp'), "30")
+            let input = prompt(translate('inputDaysToCleanUp'), '30')
             let number = parseInt(input)
             if (isNaN(number)) {
                 number = 30
@@ -1492,7 +1605,7 @@ margin-bottom: 0;
             GM_setValue('clearhomepage', false)
         }
     }
-    //功能-列表增加评分
+    //STUB - 列表增加评分各种操作按钮
     /**
      * 创建一个自定义的链接元素
      * @param {string} url - 链接的目标地址
@@ -1647,7 +1760,7 @@ margin-bottom: 0;
                 })
                 // 将安装链接添加到 article 元素的底部
                 article.appendChild(installLink)
-                if (scriptlang === "js") {
+                if (scriptlang === 'js') {
                     checkVersionInfo(`https://greasyfork.org/scripts/${scriptid}.json`, installLink, scripver)
                 } else {
                     logMessage('addInstallAndDownloadLinks', `${scriptlang}文件暂未添加检测版本`, false)
@@ -1770,8 +1883,20 @@ margin-bottom: 0;
             mutations.forEach(mutation => {
                 if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
                     mutation.addedNodes.forEach(node => {
+                        if (node.nodeType === 1 && (node.id === 'user-script-list-section' || node.id === 'browse-script-list')) {
+                            if (node.id === 'user-script-list-section') {
+                                node = node.querySelector('#user-script-list')
+                                logMessage('用户列表', '元素', true, node)
+                            }
+                            if (node.id === 'browse-script-list') {
+                                logMessage('脚本列表', '元素', true, node)
+                            }
+                            Array.from(node.children).forEach(li => {
+                                processScriptItem(li)
+                            })
+                        }
                         if (node.nodeType === 1 && (node.matches('#browse-script-list > li') || node.matches('#user-script-list > li'))) {
-                            logMessage('脚本列表', '元素', true, node)
+                            logMessage('脚本列表_规则2', '元素', true, node)
                             processScriptItem(node)
                         }
                     })
@@ -1781,7 +1906,7 @@ margin-bottom: 0;
         // 观察整个文档主体中的变化
         ScriptListobserver.observe(document.body, { childList: true, subtree: true })
     }
-    //  功能- 修复导航栏https://update.greasyfork.org/scripts/473269/GreasyFork%20Header%20Style%20Fix.user.js
+    //  STUB -  修复导航栏https://update.greasyfork.org/scripts/473269/GreasyFork%20Header%20Style%20Fix.user.js
     if (HeaderStyleFix) {
         let css = `
     /* Insert code here... */
@@ -1846,15 +1971,15 @@ margin-bottom: 0;
         }
     }
 `
-        if (typeof GM_addStyle !== "undefined") {
+        if (typeof GM_addStyle !== 'undefined') {
             GM_addStyle(css)
         } else {
-            let styleNode = document.createElement("style")
+            let styleNode = document.createElement('style')
             styleNode.appendChild(document.createTextNode(css));
-            (document.querySelector("head") || document.documentElement).appendChild(styleNode)
+            (document.querySelector('head') || document.documentElement).appendChild(styleNode)
         }
     }
-    //功能- 显示绝对时间 https://update.greasyfork.org/scripts/470348/Absolute%20Time%20on%20GreasyFork.user.js
+    //STUB -  显示绝对时间 https://update.greasyfork.org/scripts/470348/Absolute%20Time%20on%20GreasyFork.user.js
     if (AbsoluteTime) {
         let langUsed = null
         const Promise = (async () => { })().constructor
@@ -1922,7 +2047,7 @@ margin-bottom: 0;
   `
         async function fixRelativeTime(s) {
             psk = Date.now()
-            s.classList.add("absolute")
+            s.classList.add('absolute')
             s.format = 'datetime'
             await Promise.resolve().then()
             await getRafPromise().then()
@@ -1954,7 +2079,7 @@ margin-bottom: 0;
         })
         document.head.appendChild(document.createElement('style')).textContent = cssText
     }
-    //功能- 给库和脚本详情页增加下载按钮  https://greasyfork.org/users/980489
+    //STUB -  给库和脚本详情页增加下载按钮  https://greasyfork.org/users/980489
     if (addbutton && document.querySelector('div#script-feedback-suggestion')) {
         const installArea = document.querySelector('div#install-area')
         const installBtns = installArea?.querySelectorAll(':scope > a.install-link')
@@ -1980,7 +2105,7 @@ margin-bottom: 0;
         function mountLibraryDownloadButton(suggestion, libraryRequire, libraryVersion) {
             let [
                 libraryHref,
-                libraryName,
+                libraryName
             ] = libraryRequire.innerText.match(
                 /\/\/ @require (https:\/\/.+\/scripts\/\d+\/\d+\/(.*)\.js)/
             ).slice(1)
@@ -2020,7 +2145,7 @@ margin-bottom: 0;
         function mountScriptDownloadButton(
             installBtn,
             installArea,
-            installHelpLink,
+            installHelpLink
         ) {
             if (!installBtn.href) throw new Error('script href is not found')
             const linkText = installBtn.textContent.trim()
@@ -2030,8 +2155,8 @@ margin-bottom: 0;
         </svg>
          ${linkText}`
             const downloadButton = document.createElement('a')
-            downloadButton.href = "#"
-            downloadButton.className = "install-link down-code-link"
+            downloadButton.href = '#'
+            downloadButton.className = 'install-link down-code-link'
             toggleDownloadIcon(downloadButton, false)
             downloadButton.style.marginLeft = '"0.5rem'
             // suggestion.appendChild(downloadButton);
@@ -2068,8 +2193,10 @@ margin-bottom: 0;
                 timeout: 10000,
                 onload: function (r) {
                     var url = (r.responseText.match(/\n\s*\/\/\s+@icon(?:url)?\s+((?:https?:\/\/|data:image\/).+)|$/i)[1] || '').trim()
-                    if (!url)
-                        return
+                    if (!url) {
+                        url = 'https://github.com/ChinaGodMan/UserScripts/raw/main/docs/icon/Scripts%20Icons/default.png'
+                        return __addIcon(url, h2Element, true)
+                    }
                     if (!/^http:/.test(url))
                         return __addIcon(url, h2Element)
                     // download http icon and store it in script db if it's small
@@ -2100,7 +2227,7 @@ margin-bottom: 0;
                 }
             })
         }
-        function __addIcon(url, h2Element) {
+        function __addIcon(url, h2Element, NoCache = false) {
             if (!h2Element) {
                 logMessage('addIcon', '缺少附加图标的元素', false)
                 return
@@ -2111,24 +2238,31 @@ margin-bottom: 0;
         margin-left: calc(-80px - 1ex);\
         display: inline-block;\
         text-align: right"></div>')
-            var img = h2Element.appendChild(document.createElement('img'))
-            img.style.maxWidth = img.style.maxHeight = '64px'
+            var img = document.createElement('img')
+            const imgsize = '32px'
+            img.style.maxWidth = img.style.maxHeight = imgsize
             img.style.width = img.style.height = 'auto'
             img.src = url
-            const scripts = JSON.parse(GM_getValue('scriptsIcon', '{}'))
-            scripts[scriptID] = url
-            GM_setValue('scriptsIcon', JSON.stringify(scripts))
+            h2Element.insertAdjacentElement('afterbegin', img)
+            if (!NoCache) {
+                logMessage('添加图标', 'nocache,为false,进行缓存', true)
+                const scripts = JSON.parse(GM_getValue('scriptsIcon', '{}'))
+                scripts[scriptID] = url
+                GM_setValue('scriptsIcon', JSON.stringify(scripts))
+            } else {
+                logMessage('添加图标', 'nocache为true,不缓存', false)
+            }
             // GM_setValue(scriptID, url);
         }
     }
-    //功能-美化控件
+    //STUB - 美化控件
     const beautifyMarkdownCSS = 'code {\r\n font-family: Menlo, Monaco, Consolas, "Courier New", monospace;\r\n font-size: 0.85em;\r\n  color: #000;\r\n  background-color: #f0f0f0;\r\n  border-radius: 3px;\r\n padding: 0.2em 0;\r\n}\r\ntable {\r\n text-indent: initial;\r\n}\r\ntable {\r\n margin: 10px 0 15px 0;\r\n  border-collapse: collapse;\r\n  border-spacing: 0;\r\n  display: block;\r\n width: 100%;\r\n  overflow: auto;\r\n word-break: normal;\r\n word-break: keep-all;\r\n}\r\ncode,\r\npre {\r\n  color: #333;\r\n  background: 0 0;\r\n  font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;\r\n  text-align: left;\r\n white-space: pre;\r\n word-spacing: normal;\r\n word-break: normal;\r\n word-wrap: normal;\r\n  line-height: 1.4;\r\n -moz-tab-size: 8;\r\n -o-tab-size: 8;\r\n tab-size: 8;\r\n  -webkit-hyphens: none;\r\n  -moz-hyphens: none;\r\n -ms-hyphens: none;\r\n  hyphens: none;\r\n}\r\npre {\r\n  padding: 0.8em;\r\n overflow: auto;\r\n border-radius: 3px;\r\n background: #f5f5f5;\r\n}\r\n:not(pre) > code {\r\n padding: 0.1em;\r\n border-radius: 0.3em;\r\n white-space: normal;\r\n  background: #f5f5f5;\r\n}\r\nhtml body {\r\n  font-family: "Helvetica Neue", Helvetica, "Segoe UI", Arial, freesans,\r\n    sans-serif;\r\n font-size: 16px;\r\n  line-height: 1.6;\r\n color: #333;\r\n  background-color: #fff;\r\n overflow: initial;\r\n  box-sizing: border-box;\r\n word-wrap: break-word;\r\n}\r\nhtml body > :first-child {\r\n margin-top: 0;\r\n}\r\nhtml body h1,\r\nhtml body h2,\r\nhtml body h3,\r\nhtml body h4,\r\nhtml body h5,\r\nhtml body h6 {\r\n  line-height: 1.2;\r\n margin-top: 1em;\r\n  margin-bottom: 16px;\r\n  color: #000;\r\n}\r\nhtml body h1 {\r\n font-size: 2.25em;\r\n  font-weight: 300;\r\n padding-bottom: 0.3em;\r\n}\r\nhtml body h2 {\r\n font-size: 1.75em;\r\n  font-weight: 400;\r\n padding-bottom: 0.3em;\r\n}\r\nhtml body h3 {\r\n font-size: 1.5em;\r\n font-weight: 500;\r\n}\r\nhtml body h4 {\r\n  font-size: 1.25em;\r\n  font-weight: 600;\r\n}\r\nhtml body h5 {\r\n  font-size: 1.1em;\r\n font-weight: 600;\r\n}\r\nhtml body h6 {\r\n  font-size: 1em;\r\n font-weight: 600;\r\n}\r\nhtml body h1,\r\nhtml body h2,\r\nhtml body h3,\r\nhtml body h4,\r\nhtml body h5 {\r\n  font-weight: 600;\r\n}\r\nhtml body h5 {\r\n  font-size: 1em;\r\n}\r\nhtml body h6 {\r\n  color: #5c5c5c;\r\n}\r\nhtml body strong {\r\n  color: #000;\r\n}\r\nhtml body del {\r\n  color: #5c5c5c;\r\n}\r\nhtml body a:not([href]) {\r\n color: inherit;\r\n}\r\nhtml body a {\r\n text-decoration: underline;\r\n text-underline-offset: 0.2rem;\r\n}\r\nhtml body a:hover {\r\n  color: #00a3f5;\r\n}\r\nhtml body img {\r\n max-width: 100%;\r\n}\r\nhtml body > p {\r\n  margin-top: 0;\r\n  margin-bottom: 16px;\r\n  word-wrap: break-word;\r\n}\r\nhtml body > ol,\r\nhtml body > ul {\r\n  margin-bottom: 16px;\r\n}\r\nhtml body ol,\r\nhtml body ul {\r\n  padding-left: 2em;\r\n}\r\nhtml body ol.no-list,\r\nhtml body ul.no-list {\r\n  padding: 0;\r\n list-style-type: none;\r\n}\r\nhtml body ol ol,\r\nhtml body ol ul,\r\nhtml body ul ol,\r\nhtml body ul ul {\r\n  margin-top: 0;\r\n  margin-bottom: 0;\r\n}\r\nhtml body li {\r\n  margin-bottom: 0;\r\n}\r\nhtml body li.task-list-item {\r\n list-style: none;\r\n}\r\nhtml body li > p {\r\n  margin-top: 0;\r\n  margin-bottom: 0;\r\n}\r\nhtml body .task-list-item-checkbox {\r\n  margin: 0 0.2em 0.25em -1.8em;\r\n  vertical-align: middle;\r\n}\r\nhtml body .task-list-item-checkbox:hover {\r\n  cursor: pointer;\r\n}\r\nhtml body blockquote {\r\n margin: 16px 0;\r\n font-size: inherit;\r\n padding: 0 15px;\r\n  color: #5c5c5c;\r\n background-color: #f0f0f0;\r\n  border-left: 4px solid #d6d6d6 !important;\r\n}\r\nhtml body blockquote > :first-child {\r\n  margin-top: 0;\r\n}\r\nhtml body blockquote > :last-child {\r\n margin-bottom: 0;\r\n}\r\nhtml body hr {\r\n  height: 4px;\r\n  margin: 32px 0;\r\n background-color: #d6d6d6;\r\n  border: 0 none;\r\n}\r\nhtml body table {\r\n margin: 10px 0 15px 0;\r\n  border-collapse: collapse;\r\n  border-spacing: 0;\r\n  display: block;\r\n width: 100%;\r\n  overflow: auto;\r\n word-break: normal;\r\n word-break: keep-all;\r\n}\r\nhtml body table th {\r\n  font-weight: 700;\r\n color: #000;\r\n}\r\nhtml body table td,\r\nhtml body table th {\r\n  border: 1px solid #d6d6d6;\r\n  padding: 6px 13px;\r\n}\r\nhtml body dl {\r\n padding: 0;\r\n}\r\nhtml body dl dt {\r\n padding: 0;\r\n margin-top: 16px;\r\n font-size: 1em;\r\n font-style: italic;\r\n font-weight: 700;\r\n}\r\nhtml body dl dd {\r\n padding: 0 16px;\r\n  margin-bottom: 16px;\r\n}\r\nhtml body code {\r\n font-family: Menlo, Monaco, Consolas, "Courier New", monospace;\r\n font-size: 0.85em;\r\n  color: #000;\r\n  background-color: #f0f0f0;\r\n  border-radius: 3px;\r\n padding: 0.2em 0;\r\n}\r\nhtml body code::after,\r\nhtml body code::before {\r\n  letter-spacing: -0.2em;\r\n content: "\\00a0";\r\n}\r\nhtml body pre > code {\r\n padding: 0;\r\n margin: 0;\r\n  word-break: normal;\r\n white-space: pre;\r\n background: 0 0;\r\n  border: 0;\r\n}\r\nhtml body .highlight {\r\n margin-bottom: 16px;\r\n}\r\nhtml body .highlight pre,\r\nhtml body pre {\r\n padding: 1em;\r\n overflow: auto;\r\n line-height: 1.45;\r\n  border: #d6d6d6;\r\n  border-radius: 3px;\r\n}\r\nhtml body .highlight pre {\r\n  margin-bottom: 0;\r\n word-break: normal;\r\n}\r\nhtml body pre code,\r\nhtml body pre tt {\r\n display: inline;\r\n  max-width: initial;\r\n padding: 0;\r\n margin: 0;\r\n  overflow: initial;\r\n  line-height: inherit;\r\n word-wrap: normal;\r\n  background-color: transparent;\r\n  border: 0;\r\n}\r\nhtml body pre code:after,\r\nhtml body pre code:before,\r\nhtml body pre tt:after,\r\nhtml body pre tt:before {\r\n  content: normal;\r\n}\r\nhtml body blockquote,\r\nhtml body dl,\r\nhtml body ol,\r\nhtml body p,\r\nhtml body pre,\r\nhtml body ul {\r\n  margin-top: 0;\r\n  margin-bottom: 16px;\r\n}\r\nhtml body kbd {\r\n  color: #000;\r\n  border: 1px solid #d6d6d6;\r\n  border-bottom: 2px solid #c7c7c7;\r\n padding: 2px 4px;\r\n background-color: #f0f0f0;\r\n  border-radius: 3px;\r\n}\r\n@media print {\r\n  html body {\r\n   background-color: #fff;\r\n }\r\n html body h1,\r\n html body h2,\r\n html body h3,\r\n html body h4,\r\n html body h5,\r\n html body h6 {\r\n    color: #000;\r\n    page-break-after: avoid;\r\n  }\r\n html body blockquote {\r\n    color: #5c5c5c;\r\n }\r\n html body pre {\r\n   page-break-inside: avoid;\r\n }\r\n html body table {\r\n   display: table;\r\n }\r\n html body img {\r\n   display: block;\r\n   max-width: 100%;\r\n    max-height: 100%;\r\n }\r\n html body code,\r\n html body pre {\r\n   word-wrap: break-word;\r\n    white-space: pre;\r\n }\r\n}\r\n.scrollbar-style::-webkit-scrollbar {\r\n width: 8px;\r\n}\r\n.scrollbar-style::-webkit-scrollbar-track {\r\n border-radius: 10px;\r\n  background-color: transparent;\r\n}\r\n.scrollbar-style::-webkit-scrollbar-thumb {\r\n  border-radius: 5px;\r\n background-color: rgba(150, 150, 150, 0.66);\r\n  border: 4px solid rgba(150, 150, 150, 0.66);\r\n  background-clip: content-box;\r\n}\r\n'
     const beautifyButtonCSS = '/* 美化按钮 */\r\ninput[type="submit"],\r\nbutton {\r\n  display: inline-flex;\r\n justify-content: center;\r\n  align-items: center;\r\n  line-height: 1;\r\n height: 32px;\r\n white-space: nowrap;\r\n  cursor: pointer;\r\n  /* color: #606266; */\r\n text-align: center;\r\n box-sizing: border-box;\r\n outline: none;\r\n  transition: 0.1s;\r\n font-weight: 500;\r\n user-select: none;\r\n  vertical-align: middle;\r\n -webkit-appearance: none;\r\n background-color: #ffffff;\r\n  border: 1px solid #dcdfe6;\r\n  border-color: #dcdfe6;\r\n  padding: 8px 15px;\r\n  font-size: 14px;\r\n  border-radius: 4px;\r\n}\r\n\r\ninput[type="submit"]:hover,\r\ninput[type="submit"]:focus,\r\nbutton:hover,\r\nbutton:focus {\r\n color: #409eff;\r\n border-color: #c6e2ff;\r\n  background-color: #ecf5ff;\r\n  outline: none;\r\n}\r\n\r\ninput[type="url"] {\r\n  position: relative;\r\n font-size: 14px;\r\n  display: inline-flex;\r\n line-height: 32px;\r\n  box-sizing: border-box;\r\n vertical-align: middle;\r\n -webkit-appearance: none;\r\n /* color: #606266; */\r\n padding: 0;\r\n outline: none;\r\n  border: none;\r\n background: none;\r\n flex-grow: 1;\r\n align-items: center;\r\n  justify-content: center;\r\n  padding: 1px 11px;\r\n  background-color: #ffffff;\r\n  background-image: none;\r\n border-radius: 4px;\r\n cursor: text;\r\n transition: box-shadow 0.2s cubic-bezier(0.645, 0.045, 0.355, 1);\r\n transform: translateZ(0);\r\n box-shadow: 0 0 0 1px #dcdfe6 inset;\r\n\r\n  width: 100%;\r\n  width: -moz-available;\r\n  width: -webkit-fill-available;\r\n  width: fill-available;\r\n}\r\n\r\ninput[type="url"]::placeholder {\r\n color: #a8abb2;\r\n}\r\n\r\ninput[type="url"]:hover {\r\n box-shadow: 0 0 0 1px #c0c4cc inset;\r\n}\r\n\r\ninput[type="url"]:focus {\r\n  box-shadow: 0 0 0 1px #409eff inset;\r\n}\r\n'
     const beautifyRadioCSS = 'label.radio-label {\r\n font-weight: 500;\r\n position: relative;\r\n cursor: pointer;\r\n  display: inline-flex;\r\n align-items: center;\r\n  white-space: normal;\r\n  outline: none;\r\n  font-size: 14px;\r\n  user-select: none;\r\n  margin-right: 32px;\r\n height: 32px;\r\n padding: 4px;\r\n border-radius: 4px;\r\n box-sizing: border-box;\r\n}\r\nlabel:has(input[type="radio"]:checked),\r\nlabel:has(input[type="radio"]:checked) a {\r\n color: #409eff;\r\n}\r\nlabel.radio-label input[type="radio"] {\r\n margin-right: 4px;\r\n  width: 14px;\r\n  height: 14px;\r\n}\r\nlabel.radio-label input[type="radio"]:checked {\r\n -webkit-appearance: none;\r\n -moz-appearance: none;\r\n  appearance: none;\r\n border-radius: 50%;\r\n width: 14px;\r\n  height: 14px;\r\n outline: none;\r\n  border: 4px solid #409eff;\r\n  cursor: pointer;\r\n}\r\nlabel.radio-label input[type="radio"]:checked + span {\r\n color: #409eff;\r\n}\r\n'
-    const beautifyTextAreaCSS = "textarea {\r\n position: relative;\r\n display: inline-block;\r\n  width: 100%;\r\n  vertical-align: bottom;\r\n font-size: 14px;\r\n  position: relative;\r\n display: block;\r\n resize: vertical;\r\n padding: 5px 11px;\r\n  line-height: 1.5;\r\n box-sizing: border-box;\r\n width: 100%;\r\n  font-size: inherit;\r\n font-family: inherit;\r\n /* color: #606266; */\r\n background-color: #ffffff;\r\n  background-image: none;\r\n -webkit-appearance: none;\r\n box-shadow: 0 0 0 1px #dcdfe6 inset;\r\n  border-radius: 4px;\r\n transition: box-shadow 0.2s cubic-bezier(0.645, 0.045, 0.355, 1);\r\n border: none;\r\n}\r\ntextarea:focus {\r\n  outline: none;\r\n  box-shadow: 0 0 0 1px #409eff inset;\r\n}\r\n"
+    const beautifyTextAreaCSS = 'textarea {\r\n position: relative;\r\n display: inline-block;\r\n  width: 100%;\r\n  vertical-align: bottom;\r\n font-size: 14px;\r\n  position: relative;\r\n display: block;\r\n resize: vertical;\r\n padding: 5px 11px;\r\n  line-height: 1.5;\r\n box-sizing: border-box;\r\n width: 100%;\r\n  font-size: inherit;\r\n font-family: inherit;\r\n /* color: #606266; */\r\n background-color: #ffffff;\r\n  background-image: none;\r\n -webkit-appearance: none;\r\n box-shadow: 0 0 0 1px #dcdfe6 inset;\r\n  border-radius: 4px;\r\n transition: box-shadow 0.2s cubic-bezier(0.645, 0.045, 0.355, 1);\r\n border: none;\r\n}\r\ntextarea:focus {\r\n  outline: none;\r\n  box-shadow: 0 0 0 1px #409eff inset;\r\n}\r\n'
     const beautifyVersionsPageCSS = 'ul.history_versions,\r\nul.history_versions li {\r\n width: 100%;\r\n}\r\nul.history_versions li {\r\n display: flex;\r\n  flex-direction: column;\r\n margin: 25px 0px;\r\n}\r\n.diff-controls input[type="radio"]:nth-child(2) {\r\n margin-left: 5px;\r\n}\r\n.flex-align-item-center {\r\n display: flex;\r\n  align-items: center;\r\n}\r\n.script-tag {\r\n  margin-bottom: 8px;\r\n}\r\n.script-tag-version a {\r\n color: #656d76;\r\n fill: #656d76;\r\n  text-decoration: none;\r\n  width: fit-content;\r\n width: -moz-fit-content;\r\n}\r\n.script-tag-version a:hover svg {\r\n  color: #00a3f5;\r\n fill: #00a3f5;\r\n}\r\n.script-tag-version a > span {\r\n margin-left: 0.25rem;\r\n}\r\n.script-note-box-body {\r\n border-radius: 0.375rem;\r\n  border-style: solid;\r\n  border-width: max(1px, 0.0625rem);\r\n  border-color: #d0d7de;\r\n  color: #1f2328;\r\n padding: 16px;\r\n  overflow-wrap: anywhere;\r\n}\r\n.script-note-box-body p {\r\n  margin-bottom: unset;\r\n}\r\n'
     const beautifyUploadImageCSS = '/* 隐藏 添加： */\r\nlabel[for="discussion_comments_attributes_0_attachments"],\r\nlabel[for="comment_attachments"] {\r\n  display: none;\r\n}\r\ninput[type="file"] {\r\n width: 100%;\r\n  font-size: 20px;\r\n  background: #e2e2e2;\r\n  padding: 40px 0px;\r\n  border-radius: 10px;\r\n  text-align-last: center;\r\n}\r\n'
-    const compatibleBeautifyCSS = "#main-header {\r\n background-color: #670000 !important;\r\n background-image: linear-gradient(#670000, #990000) !important;\r\n}\r\n#site-nav-vue {\r\n flex-wrap: wrap;\r\n  justify-content: flex-end;\r\n}\r\n.open-sidebar {\r\n  border-width: 1px;\r\n  border-radius: 3px;\r\n margin-right: 0;\r\n}\r\ninput.search-submit {\r\n  transform: translateY(-5%) !important;\r\n  margin-left: 10px;\r\n}\r\n#script-content code {\r\n word-wrap: break-word;\r\n}\r\n.code-container ::selection {\r\n  background-color: #3d4556 !important;\r\n}\r\n"
+    const compatibleBeautifyCSS = '#main-header {\r\n background-color: #670000 !important;\r\n background-image: linear-gradient(#670000, #990000) !important;\r\n}\r\n#site-nav-vue {\r\n flex-wrap: wrap;\r\n  justify-content: flex-end;\r\n}\r\n.open-sidebar {\r\n  border-width: 1px;\r\n  border-radius: 3px;\r\n margin-right: 0;\r\n}\r\ninput.search-submit {\r\n  transform: translateY(-5%) !important;\r\n  margin-left: 10px;\r\n}\r\n#script-content code {\r\n word-wrap: break-word;\r\n}\r\n.code-container ::selection {\r\n  background-color: #3d4556 !important;\r\n}\r\n'
     if (usercssto) {
         GM_addStyle(`
 ${beautifyMarkdownCSS}
@@ -2141,9 +2275,9 @@ ${compatibleBeautifyCSS}
     `)
         // 添加 CSS 样式到页面
     }
-    //功能-美化版本列表边框
+    //STUB - 美化版本列表边框
     function beautifyChangelog() {
-        document.querySelectorAll(".version-changelog").forEach(element => {
+        document.querySelectorAll('.version-changelog').forEach(element => {
             element.style.cssText = `
             border: 2px solid #4CAF50; /* 绿色边框 */
             border-radius: 8px; /* 边框圆角 */
@@ -2178,7 +2312,7 @@ ${compatibleBeautifyCSS}
         })
     }
     // 调用函数来执行替换操作
-    //功能- 下载历史版本
+    //STUB -  下载历史版本
     if (window.location.href.includes('versions') && installforversions) {
         beautifyChangelog()//m美化日志
         replaceVersionLinks()//美化信息边框
@@ -2206,7 +2340,7 @@ ${compatibleBeautifyCSS}
         }
     }
     function createHistoryLinks(jsonData) {
-        var ulElement = document.querySelector("#script-content > form > ul")
+        var ulElement = document.querySelector('#script-content > form > ul')
         if (ulElement) {
             logMessage('createHistoryLinks', 'Parent element found:', true, ulElement)
             // Iterate over each version in JSON data
@@ -2230,7 +2364,7 @@ ${compatibleBeautifyCSS}
                 container.appendChild(link)
                 container.appendChild(link2)
                 // Find corresponding .diff-controls element (assuming index corresponds to the order)
-                var diffControls = ulElement.querySelectorAll(".diff-controls")
+                var diffControls = ulElement.querySelectorAll('.diff-controls')
                 if (index < diffControls.length) {
                     var diffControl = diffControls[index]
                     diffControl.insertAdjacentElement('beforebegin', container)
@@ -2265,7 +2399,7 @@ ${compatibleBeautifyCSS}
             logMessage('createHistoryLinks', '找不到父元素', false)
         }
     }
-    //功能- 脚本详情页增加作者所有脚本
+    //STUB -  脚本详情页增加作者所有脚本
     function createAuthorScriptsLink() {
         // 检查是否已经存在作者其他脚本链接
         if (document.querySelector('[data-author-scripts-link]')) {
@@ -2333,8 +2467,8 @@ ${compatibleBeautifyCSS}
     }
     function switchToAuthorScript() {
         let scriptDetail = [] //从脚本提取用户名称
-        var useridformlink = getUserIdFromAuthorLink("#script-stats > dd.script-show-author")
-        var textContents = getDtContents("#script-stats")
+        var useridformlink = getUserIdFromAuthorLink('#script-stats > dd.script-show-author')
+        var textContents = getDtContents('#script-stats')
         var jsonlink = null
         const currentUrl = window.location.href // 获取当前页面的 URL
         const match2 = currentUrl.match(/\/scripts\/(\d+)/)
@@ -2343,7 +2477,7 @@ ${compatibleBeautifyCSS}
             logMessage('switchToAuthorScript', '用户主页地址', false, userscripts)
             getUserJSON(userscripts)
                 .then(mergedData => {
-                    const scrName = document.querySelector("#script-stats > dd.script-show-author > span > a").textContent
+                    const scrName = document.querySelector('#script-stats > dd.script-show-author > span > a').textContent
                     insertUserScript(mergedData, { name: scrName }, textContents)
                 })
                 .catch(error => {
@@ -2373,7 +2507,7 @@ ${compatibleBeautifyCSS}
                 })
         }
     }
-    //功能-主页显示统计
+    //STUB - 主页显示统计
     const userHeader = document.querySelector('#about-user h2')
     if (userHeader && shouwtotalonuserpage) {
         var userId = window.location.href.match(/\d+/)?.[0]
@@ -2460,7 +2594,7 @@ ${compatibleBeautifyCSS}
                 if (error) {
                     Toast(error.message, 3000, '#ff6347', '#ffffff', 'top')
                 } else {
-                    link.textContent = "下载"
+                    link.textContent = '下载'
                 }
             }, 2)
         })
@@ -2564,6 +2698,7 @@ button:focus {
             bad_ratings,
             code_url,
             version,
+            fan_score,
             license
         } = scriptDetails
         const extension = code_url.substring(code_url.lastIndexOf('.') + 1)
@@ -2601,7 +2736,7 @@ button:focus {
                       <dt class="script-list-total-installs"><span>${translate('tviewotal_installs')}</span></dt>
                       <dd class="script-list-total-installs"><span>${total_installs}</span></dd>
                       <dt class="script-list-ratings"><span>${translate('viewfan_score')}</span></dt>
-                      <dd class="script-list-ratings" data-rating-score="0.0"><span><span class="good-rating-count" title="好评或收藏的人数。">${good_ratings}</span>
+                      <dd class="script-list-ratings" data-rating-score="${fan_score}"><span><span class="good-rating-count" title="好评或收藏的人数。">${good_ratings}</span>
         <span class="ok-rating-count" title="评级为一般的人数。">${ok_ratings}</span>
         <span class="bad-rating-count" title="评级为差评的人数。">${bad_ratings}</span>
         </span></dd>
@@ -2620,7 +2755,7 @@ button:focus {
         //    checkVersionInfo(`https://greasyfork.org/scripts/${scriptid}.json`, installLink, version)
         return scriptInfoHtml
     }
-    //功能- 锁定语言  greasyfork.org/scripts/6245/
+    //STUB -  锁定语言  greasyfork.org/scripts/6245/
     if (setlocklang) {
         let valuehe = ''
         if (window.location.origin == 'https://greasyfork.org') {
@@ -2815,6 +2950,41 @@ button:focus {
 .col-md-10 { flex: 0 0 83.33%; max-width: 83.33%; }
 .col-md-11 { flex: 0 0 91.66%; max-width: 91.66%; }
 .col-md-12 { flex: 0 0 100%; max-width: 100%; }
+@media (max-width: 600px) {//NOTE - 修正在移动设备上显示错乱问题
+  #settingsModal {
+    width: 100%;
+    max-width: 100%;
+    padding: 1rem;
+  }
+  #settingsModal .modal-header,
+  #settingsModal .modal-footer {
+    padding: 0.5rem;
+  }
+  #settingsModal .modal-body {
+    padding: 0.5rem;
+  }
+  #settingsModal .nav-link {
+    padding: 0.25rem 0.5rem;
+    font-size: 14px;
+  }
+  #settingsModal .form-control,
+  #settingsModal .form-check-label {
+    font-size: 14px;
+  }
+  /* 强制不折行 */
+  .nav-link {
+    white-space: nowrap;
+  }
+    #settingsModal .nav {
+    width: 30%; /* 缩小分类切换栏的宽度 */
+  }
+  #settingsModal .nav-link {
+    font-size: 12px; /* 缩小字体 */
+  }
+  #settingsModal .tab-content {
+    width: 70%; /* 增加内容区域的宽度 */
+  }
+}
       `)
     }
     // 控件数据示例
@@ -2995,10 +3165,10 @@ button:focus {
             const controlId = element.id
             const controlType = element.type
             // 根据控件类型保存值
-            if (controlType === 'checkbox') {
+            if (updateAndSetValue === 'checkbox') {
                 GM_setValue(controlId, element.checked)
             } else if (controlType === 'text' || controlType === 'number' || controlType === 'select-one') {
-                GM_setValue(controlId, element.value)
+                updateAndSetValue(controlId, element.value)
             }
         })
         // 弹出提示或执行其他操作
@@ -3018,24 +3188,24 @@ button:focus {
     // 保存设置按钮事件
     $('#saveSettings').on('click', function () {
         saveSettings()
-        reloadSettings()
         $('#settingsModal').modal('hide')
     })
     const viewMode = isMobileDevice() ? 1 : 2
+    //FIXME - 修改设置
     // 使用封装函数创建分类
     createCategory('category1', translate('脚本详情'), [
-        { type: 'checkbox', id: 'sethtmlview', label: translate('htmlViewtotext'), checked: GM_getValue('sethtmlview', false), onchange: function () { GM_setValue('sethtmlview', this.checked) } },
-        { type: 'checkbox', id: 'setcopylink', label: translate('copyto'), checked: GM_getValue('setcopylink', true), onchange: function () { GM_setValue('setcopylink', this.checked) } },
-        { type: 'checkbox', id: 'viewicon', label: translate('showIcon'), checked: GM_getValue('viewicon', true), onchange: function () { GM_setValue('viewicon', this.checked) } },
+        { type: 'checkbox', id: 'sethtmlview', label: translate('htmlViewtotext'), checked: sethtmlview, onchange: function () { updateAndSetValue('sethtmlview', this.checked) } },
+        { type: 'checkbox', id: 'setcopylink', label: translate('copyto'), checked: setcopylink, onchange: function () { updateAndSetValue('setcopylink', this.checked) } },
+        { type: 'checkbox', id: 'viewicon', label: translate('showIcon'), checked: viewicon, onchange: function () { updateAndSetValue('viewicon', this.checked) } },
         { type: 'button', id: 'clear-icon-cache', text: `${translate('cleariconcache')} ${Object.keys(JSON.parse(GM_getValue('scriptsIcon', '{}'))).length}`, class: 'btn-danger', onclick: () => { GM_setValue('scriptsIcon', JSON.stringify({})); Toast('success', 1000, '#0000ff', '#ffffff', 'top') } },
-        { type: 'checkbox', id: 'installforversions', label: translate('scriptHisAddInstall'), checked: GM_getValue('installforversions', true), onchange: function () { GM_setValue('installforversions', this.checked) } },
-        { type: 'checkbox', id: 'addbutton', label: translate('addDownButton'), checked: GM_getValue('addbutton', true), onchange: function () { GM_setValue('addbutton', this.checked) } },
-        { type: 'checkbox', id: 'showtotal', label: translate('scriptLinNumb'), checked: GM_getValue('showtotal', false), onchange: function () { GM_setValue('showtotal', this.checked) } },
-        { type: 'checkbox', id: 'addCopyButtonBeforelibScript', label: translate('copylib'), checked: GM_getValue('addCopyButtonBeforelibScript', true), onchange: function () { GM_setValue('addCopyButtonBeforelibScript', this.checked) } },
-        { type: 'checkbox', id: 'showresource', label: translate('displaycitationcount'), checked: GM_getValue('showresource', false), onchange: function () { GM_setValue('showresource', this.checked) } },
-        { type: 'checkbox', id: 'copyshortlink', label: translate('复制短链接'), checked: GM_getValue('copyshortlink', true), onchange: function () { GM_setValue('copyshortlink', this.checked) } },
-        { type: 'checkbox', id: 'useHighlighting', label: translate('beautifycodesnippets'), checked: GM_getValue('useHighlighting', true), onchange: function () { GM_setValue('useHighlighting', this.checked) } },
-        { type: 'checkbox', id: 'useHighlighttocode', label: translate('beautifycodeview'), checked: GM_getValue('useHighlighttocode', true), onchange: function () { GM_setValue('useHighlighttocode', this.checked) } },
+        { type: 'checkbox', id: 'installforversions', label: translate('scriptHisAddInstall'), checked: installforversions, onchange: function () { updateAndSetValue('installforversions', this.checked) } },
+        { type: 'checkbox', id: 'addbutton', label: translate('addDownButton'), checked: addbutton, onchange: function () { updateAndSetValue('addbutton', this.checked) } },
+        { type: 'checkbox', id: 'showtotal', label: translate('scriptLinNumb'), checked: showtotal, onchange: function () { updateAndSetValue('showtotal', this.checked) } },
+        { type: 'checkbox', id: 'addCopyButtonBeforelibScript', label: translate('copylib'), checked: addCopyButtonBeforelibScript, onchange: function () { updateAndSetValue('addCopyButtonBeforelibScript', this.checked) } },
+        { type: 'checkbox', id: 'showresource', label: translate('displaycitationcount'), checked: showresource, onchange: function () { updateAndSetValue('showresource', this.checked) } },
+        { type: 'checkbox', id: 'copyshortlink', label: translate('复制短链接'), checked: copyshortlink, onchange: function () { updateAndSetValue('copyshortlink', this.checked) } },
+        { type: 'checkbox', id: 'useHighlighting', label: translate('beautifycodesnippets'), checked: useHighlighting, onchange: function () { updateAndSetValue('useHighlighting', this.checked) } },
+        { type: 'checkbox', id: 'useHighlighttocode', label: translate('beautifycodeview'), checked: useHighlighttocode, onchange: function () { updateAndSetValue('useHighlighttocode', this.checked) } },
         {
             type: 'select',
             id: 'lockmode',
@@ -3069,69 +3239,65 @@ button:focus {
         }
     ], viewMode)
     createCategory('category2', translate('导航栏'), [
-        { type: 'checkbox', id: 'Postlink', label: translate('addNewScript'), checked: GM_getValue('Postlink', true), onchange: function () { GM_setValue('Postlink', this.checked) } },
-        { type: 'checkbox', id: 'jumpto', label: translate('jumpTo18'), checked: GM_getValue('jumpto', false), onchange: function () { GM_setValue('jumpto', this.checked) } },
-        { type: 'checkbox', id: 'HeaderStyleFix', label: translate('fixNavbar'), checked: GM_getValue('HeaderStyleFix', true), onchange: function () { GM_setValue('HeaderStyleFix', this.checked) } },
-        { type: 'checkbox', id: 'setopenindoc', label: translate('openindoc'), checked: GM_getValue('setopenindoc', true), onchange: function () { GM_setValue('setopenindoc', this.checked) } },
-        { type: 'checkbox', id: 'wightnav', label: translate('barvertical'), checked: GM_getValue('wightnav', true), onchange: function () { GM_setValue('wightnav', this.checked) } },
-        { type: 'checkbox', id: 'Expandsubmenu', label: translate('expandmore'), checked: GM_getValue('Expandsubmenu', false), onchange: function () { GM_setValue('Expandsubmenu', this.checked) } },
-        { type: 'checkbox', id: 'beautifyTopNav', label: translate('beautifyTopNav'), checked: GM_getValue('beautifyTopNav', true), onchange: function () { GM_setValue('beautifyTopNav', this.checked) } },
-
+        { type: 'checkbox', id: 'Postlink', label: translate('addNewScript'), checked: Postlink, onchange: function () { updateAndSetValue('Postlink', this.checked) } },
+        { type: 'checkbox', id: 'jumpto', label: translate('jumpTo18'), checked: jumpto, onchange: function () { updateAndSetValue('jumpto', this.checked) } },
+        { type: 'checkbox', id: 'HeaderStyleFix', label: translate('fixNavbar'), checked: HeaderStyleFix, onchange: function () { updateAndSetValue('HeaderStyleFix', this.checked) } },
+        { type: 'checkbox', id: 'setopenindoc', label: translate('openindoc'), checked: setopenindoc, onchange: function () { updateAndSetValue('setopenindoc', this.checked) } },
+        { type: 'checkbox', id: 'wightnav', label: translate('barvertical'), checked: wightnav, onchange: function () { updateAndSetValue('wightnav', this.checked) } },
+        { type: 'checkbox', id: 'Expandsubmenu', label: translate('expandmore'), checked: Expandsubmenu, onchange: function () { updateAndSetValue('Expandsubmenu', this.checked) } },
+        { type: 'checkbox', id: 'beautifyTopNav', label: translate('beautifyTopNav'), checked: beautifyTopNav, onchange: function () { updateAndSetValue('beautifyTopNav', this.checked) } }
     ]
     )
-    createCategory('category3', translate('website'), [
-        { type: 'checkbox', id: 'autocheck', label: translate('AutoEnableCodeEditor'), checked: GM_getValue('autocheck', false), onchange: function () { GM_setValue('autocheck', this.checked) } },
-        { type: 'checkbox', id: 'newtabtoinstall', label: translate('openTab'), checked: GM_getValue('newtabtoinstall', false), onchange: function () { GM_setValue('newtabtoinstall', this.checked) } },
-        { type: 'checkbox', id: 'AbsoluteTime', label: translate('exactDate'), checked: GM_getValue('AbsoluteTime', false), onchange: function () { GM_setValue('AbsoluteTime', this.checked) } },
-        { type: 'checkbox', id: 'greasymaxWidth', label: translate('maxView'), checked: GM_getValue('greasymaxWidth', false), onchange: function () { GM_setValue('greasymaxWidth', this.checked) } },
-        { type: 'checkbox', id: 'usereport', label: translate('oneclickreport'), checked: GM_getValue('usereport', true), onchange: function () { GM_setValue('usereport', this.checked) } },
-        { type: 'checkbox', id: 'userlocalfav', label: translate('localbookmarks'), checked: GM_getValue('userlocalfav', true), onchange: function () { GM_setValue('userlocalfav', this.checked) } },
-        { type: 'checkbox', id: 'remme', label: translate('Rememberme'), checked: GM_getValue('remme', true), onchange: function () { GM_setValue('remme', this.checked) } },
-        {
-            type: 'checkbox', id: 'hidediscussionread', label: translate('hidereadcomments'), checked: GM_getValue('hidediscussionread', false
-            ), onchange: function () { GM_setValue('hidediscussionread', this.checked) }
-        },
-        { type: 'checkbox', id: 'italicdiscussionread', label: translate('italicizereadcomments'), checked: GM_getValue('italicdiscussionread', true), onchange: function () { GM_setValue('italicdiscussionread', this.checked) } },
-        { type: 'checkbox', id: 'useroutline', label: translate('useroutlines'), checked: GM_getValue('useroutline', true), onchange: function () { GM_setValue('useroutline', this.checked) } },
-        { type: 'checkbox', id: 'userimageproxy', label: translate('imageproxy'), checked: GM_getValue('userimageproxy', false), onchange: function () { GM_setValue('userimageproxy', this.checked) } },
-        { type: 'checkbox', id: 'fixElementoption', label: translate('fixElementoption'), checked: GM_getValue('fixElementoption', true), onchange: function () { GM_setValue('fixElementoption', this.checked) } },
-
+    createCategory('category3', translate('website'), [//网站设置
+        { type: 'checkbox', id: 'autocheck', label: translate('AutoEnableCodeEditor'), checked: autocheck, onchange: function () { updateAndSetValue('autocheck', this.checked) } },
+        { type: 'checkbox', id: 'newtabtoinstall', label: translate('openTab'), checked: newtabtoinstall, onchange: function () { updateAndSetValue('newtabtoinstall', this.checked) } },
+        { type: 'checkbox', id: 'AbsoluteTime', label: translate('exactDate'), checked: AbsoluteTime, onchange: function () { updateAndSetValue('AbsoluteTime', this.checked) } },
+        { type: 'checkbox', id: 'greasymaxWidth', label: translate('maxView'), checked: greasymaxWidth, onchange: function () { updateAndSetValue('greasymaxWidth', this.checked) } },
+        { type: 'checkbox', id: 'usereport', label: translate('oneclickreport'), checked: usereport, onchange: function () { updateAndSetValue('usereport', this.checked) } },
+        { type: 'checkbox', id: 'userlocalfav', label: translate('localbookmarks'), checked: userlocalfav, onchange: function () { updateAndSetValue('userlocalfav', this.checked) } },
+        { type: 'checkbox', id: 'remme', label: translate('Rememberme'), checked: remme, onchange: function () { updateAndSetValue('remme', this.checked) } },
+        { type: 'checkbox', id: 'hidediscussionread', label: translate('hidereadcomments'), checked: hidediscussionread, onchange: function () { updateAndSetValue('hidediscussionread', this.checked) } },
+        { type: 'checkbox', id: 'italicdiscussionread', label: translate('italicizereadcomments'), checked: italicdiscussionread, onchange: function () { updateAndSetValue('italicdiscussionread', this.checked) } },
+        { type: 'checkbox', id: 'useroutline', label: translate('useroutlines'), checked: useroutline, onchange: function () { updateAndSetValue('useroutline', this.checked) } },
+        { type: 'checkbox', id: 'userimageproxy', label: translate('imageproxy'), checked: userimageproxy, onchange: function () { updateAndSetValue('userimageproxy', this.checked) } },
+        { type: 'checkbox', id: 'fixElementoption', label: translate('fixElementoption'), checked: fixElementoption, onchange: function () { updateAndSetValue('fixElementoption', this.checked) } }
     ], viewMode)
     createCategory('checkLogin', translate('enableautologin'), [
-        { type: 'checkbox', id: 'userautologin', label: translate('enableautologin'), checked: GM_getValue('userautologin', false), onchange: function () { GM_setValue('userautologin', this.checked) } },
-        { type: 'text', id: 'useremail', label: translate('account'), value: GM_getValue('useremail', "") },
-        { type: 'text', id: 'userpassword', label: translate('password'), value: GM_getValue('userpassword', "") },
+        { type: 'checkbox', id: 'userautologin', label: translate('enableautologin'), checked: userautologin, onchange: function () { updateAndSetValue('userautologin', this.checked) } },
+        { type: 'text', id: 'useremail', label: translate('account'), value: useremail },
+        { type: 'text', id: 'userpassword', label: translate('password'), value: userpassword }
     ], 1)
     createCategory('sl', translate('scriptlist'), [
-        { type: 'checkbox', id: 'showinstallbutton', label: translate('listdisplayinstallationdownload'), checked: GM_getValue('showinstallbutton', true), onchange: function () { GM_setValue('showinstallbutton', this.checked) } },
-        { type: 'checkbox', id: 'setlocklang', label: translate('locklangset'), checked: GM_getValue('setlocklang', false), onchange: function () { GM_setValue('setlocklang', this.checked) } },
-        { type: 'checkbox', id: 'showRating', label: translate('showRating'), checked: GM_getValue('showRating', false), onchange: function () { GM_setValue('showRating', this.checked) } },
-        { type: 'checkbox', id: 'showSourceCode', label: translate('showJump'), checked: GM_getValue('showSourceCode', false), onchange: function () { GM_setValue('showSourceCode', this.checked) } },
-        { type: 'checkbox', id: 'userapplyCustomStyles', label: translate('useoldversionlist'), checked: GM_getValue('userapplyCustomStyles', false), onchange: function () { GM_setValue('userapplyCustomStyles', this.checked) } },
-        { type: 'checkbox', id: 'userhandleLocaleFilter', label: translate('showscriptall'), checked: GM_getValue('userhandleLocaleFilter', true), onchange: function () { GM_setValue('userhandleLocaleFilter', this.checked) } },
-        { type: 'checkbox', id: 'scriptset', label: translate('moveSidebar'), checked: GM_getValue('scriptset', true), onchange: function () { GM_setValue('scriptset', this.checked) } },
-        { type: 'checkbox', id: 'scriptwithdata', label: translate('ScriptListByCreat'), checked: GM_getValue('scriptwithdata', true), onchange: function () { GM_setValue('scriptwithdata', this.checked) } },
-        { type: 'checkbox', id: 'scriptlistdouble', label: translate('ScriptListdouble'), checked: GM_getValue('scriptlistdouble', true), onchange: function () { GM_setValue('scriptlistdouble', this.checked) } },
-
+        { type: 'checkbox', id: 'showinstallbutton', label: translate('listdisplayinstallationdownload'), checked: showinstallbutton, onchange: function () { updateAndSetValue('showinstallbutton', this.checked) } },
+        { type: 'checkbox', id: 'setlocklang', label: translate('locklangset'), checked: setlocklang, onchange: function () { updateAndSetValue('setlocklang', this.checked) } },
+        { type: 'checkbox', id: 'showRating', label: translate('showRating'), checked: showRating, onchange: function () { updateAndSetValue('showRating', this.checked) } },
+        { type: 'checkbox', id: 'showSourceCode', label: translate('showJump'), checked: showSourceCode, onchange: function () { updateAndSetValue('showSourceCode', this.checked) } },
+        { type: 'checkbox', id: 'userapplyCustomStyles', label: translate('useoldversionlist'), checked: userapplyCustomStyles, onchange: function () { updateAndSetValue('userapplyCustomStyles', this.checked) } },
+        { type: 'checkbox', id: 'userhandleLocaleFilter', label: translate('showscriptall'), checked: userhandleLocaleFilter, onchange: function () { updateAndSetValue('userhandleLocaleFilter', this.checked) } },
+        { type: 'checkbox', id: 'scriptset', label: translate('moveSidebar'), checked: scriptset, onchange: function () { updateAndSetValue('scriptset', this.checked) } },
+        { type: 'checkbox', id: 'scriptwithdata', label: translate('ScriptListByCreat'), checked: scriptwithdata, onchange: function () { updateAndSetValue('scriptwithdata', this.checked) } },
+        { type: 'checkbox', id: 'scriptlistdouble', label: translate('ScriptListdouble'), checked: scriptlistdouble, onchange: function () { updateAndSetValue('scriptlistdouble', this.checked) } }
     ], viewMode)
     createCategory('sl2', translate('personalhomepage'), [
-        { type: 'checkbox', id: 'clearhomepage', label: translate('cleanUpOld'), checked: GM_getValue('clearhomepage', true), onchange: function () { GM_setValue('clearhomepage', this.checked) } },
-        { type: 'text', id: 'clearhomepagedays', label: translate('cleanUpOld'), value: GM_getValue('clearhomepagedays', 30) },
-        { type: 'checkbox', id: 'addedittohomepage', label: translate('主页脚本添加操作'), checked: GM_getValue('addedittohomepage', true), onchange: function () { GM_setValue('addedittohomepage', this.checked) } },
-        { type: 'checkbox', id: 'hideuserdiscussions', label: translate('hiderrecentcomments'), checked: GM_getValue('hideuserdiscussions', false), onchange: function () { GM_setValue('hideuserdiscussions', this.checked) } },
-        { type: 'checkbox', id: 'shouwtotalonuserpage', label: translate('displaystatisticsonhomepage'), checked: GM_getValue('shouwtotalonuserpage', true), onchange: function () { GM_setValue('shouwtotalonuserpage', this.checked) } },
+        { type: 'checkbox', id: 'clearhomepage', label: translate('cleanUpOld'), checked: clearhomepage, onchange: function () { updateAndSetValue('clearhomepage', this.checked) } },
+        { type: 'text', id: 'clearhomepagedays', label: translate('cleanUpOld'), value: clearhomepagedays },
+        { type: 'checkbox', id: 'addedittohomepage', label: translate('主页脚本添加操作'), checked: addedittohomepage, onchange: function () { updateAndSetValue('addedittohomepage', this.checked) } },
+        { type: 'checkbox', id: 'hideuserdiscussions', label: translate('hiderrecentcomments'), checked: hideuserdiscussions, onchange: function () { updateAndSetValue('hideuserdiscussions', this.checked) } },
+        { type: 'checkbox', id: 'hideuserconversations', label: translate('hiderconversations'), checked: hideuserconversations, onchange: function () { updateAndSetValue('hideuserconversations', this.checked) } },
+        { type: 'checkbox', id: 'hideuserprofile', label: translate('hideuserprofile'), checked: hideuserprofile, onchange: function () { updateAndSetValue('hideuserprofile', this.checked) } },
+        { type: 'checkbox', id: 'shouwtotalonuserpage', label: translate('displaystatisticsonhomepage'), checked: shouwtotalonuserpage, onchange: function () { updateAndSetValue('shouwtotalonuserpage', this.checked) } }
     ], viewMode)
     createCategory('sl3', translate('beautifycontrols'), [
-        { type: 'checkbox', id: 'usercssto', label: translate('beautifycontrols'), checked: GM_getValue('usercssto', true), onchange: function () { GM_setValue('usercssto', this.checked) } },
-        { type: 'checkbox', id: 'modifyRadioLabels', label: translate('beautifyDis'), checked: GM_getValue('modifyRadioLabels', false), onchange: function () { GM_setValue('modifyRadioLabels', this.checked) } },
+        { type: 'checkbox', id: 'usercssto', label: translate('beautifycontrols'), checked: usercssto, onchange: function () { updateAndSetValue('usercssto', this.checked) } },
+        { type: 'checkbox', id: 'modifyRadioLabels', label: translate('beautifyDis'), checked: modifyRadioLabels, onchange: function () { updateAndSetValue('modifyRadioLabels', this.checked) } }
     ], viewMode)
     createCategory('openabout', translate('applyto'), [
-        { type: 'checkbox', id: 'usersearchingreasyfork', label: translate('enableenhancements'), checked: GM_getValue('usersearchingreasyfork', true), onchange: function () { GM_setValue('usersearchingreasyfork', this.checked) } },
+        { type: 'checkbox', id: 'usersearchingreasyfork', label: translate('enableenhancements'), checked: usersearchingreasyfork, onchange: function () { updateAndSetValue('usersearchingreasyfork', this.checked) } },
         //  { type: 'divider' },
         {
-            type: 'checkbox', id: 'newtabopenabout', label: translate('openinnewwindow'), checked: GM_getValue('navigateTotab', true), onchange: function () { GM_setValue('navigateTotab', this.checked) }
+            type: 'checkbox', id: 'newtabopenabout', label: translate('openinnewwindow'), checked: navigateTotab, onchange: function () { updateAndSetValue('navigateTotab', this.checked) }
         },
-        { type: 'checkbox', id: 'showlinktotal', label: translate('showscriptsinforum'), checked: GM_getValue('navigateTotab', true), onchange: function () { GM_setValue('showlinktotal', this.checked) } },
+        { type: 'checkbox', id: 'showlinktotal', label: translate('showscriptsinforum'), checked: navigateTotab, onchange: function () { updateAndSetValue('showlinktotal', this.checked) } },
         { type: 'select', id: 'searchingreasyfork', label: translate('detailsapplytoopen'), placeholder: 'Select...', options: [{ value: '0', text: translate('forumsearch'), selected: false }, { value: '1', text: translate('webpageopen'), selected: true }, { value: '2', text: translate('popupprompt'), selected: false }], onchange: thandleSelectChange('searchingreasyfork') }
     ], 1)
     const controls2 = [
@@ -3148,7 +3314,7 @@ button:focus {
         { type: 'link', id: 'maximaleFensterbreite', text: 'maximale Fensterbreite auf nutzen', href: 'https://greasyfork.org/de/scripts/36037', target: '_blank' },
         { type: 'link', id: 'toggleHTMLView', text: 'Toggle HTML View', href: 'https://greasyfork.org/de/scripts/471149', target: '_blank' },
         { type: 'link', id: 'greasyforkHeaderStyleFix', text: 'GreasyFork Header Style Fix', href: 'https://greasyfork.org/zh-CN/scripts/473269', target: '_blank' },
-        { type: 'link', id: 'autoEnableSyntaxHighlightingSourceEditor', text: 'Auto Enable Syntax-Highlighting Source Editor', href: 'https://greasyfork.org/zh-CN/scripts/22223', target: '_blank' },
+        { type: 'link', id: 'autoEnableSyntaxHighlightingSourceEditor', text: 'Auto Enable Syntax-Highlighting Source Editor', href: 'https://greasyfork.org/zh-CN/scripts/22223', target: '_blank' }
     ]
     createCategory('category52', 'Thank You', controls2, 1)
     function thandleSelectChange(searchingValue) {
@@ -3156,8 +3322,12 @@ button:focus {
             // 获取选中的值
             const selectedValue = event.target.value
             // 使用传递的 searchingValue 作为键来设置 GM_setValue
-            GM_setValue(searchingValue, selectedValue)
+            updateAndSetValue(searchingValue, selectedValue)
         }
+    }
+    function updateAndSetValue(key, value) {
+        GM_setValue(key, value)    // 更新 GM 存储中的值
+        eval(`${key} = GM_getValue('${key}')`) // 使用 eval 动态更新全局变量
     }
     handleSelectChange('searchingreasyfork', searchingreasyfork)
     handleSelectChange('lockmode', lockmode)
@@ -3170,13 +3340,13 @@ button:focus {
             }
         }
     }
-    //设置- 适用于网页增强
-    const ulElement = document.querySelector("#script-stats > dd.script-show-applies-to > ul")
+    //STUB - - 适用于网页增强
+    const ulElement = document.querySelector('#script-stats > dd.script-show-applies-to > ul')
     if (ulElement && usersearchingreasyfork) {
-        const links = ulElement.querySelectorAll("a")
+        const links = ulElement.querySelectorAll('a')
         if (showlinktotal) {
             links.forEach(link => {
-                const titleText = link.getAttribute("title")
+                const titleText = link.getAttribute('title')
                 if (titleText) {
                     const numberMatch = titleText.match(/\d+/)
                     if (numberMatch) {
@@ -3262,7 +3432,7 @@ button:focus {
             window.location.href = url
         }
     }
-    //webhook页面增强 482672
+    // STUB - webhook页面增强 482672
     function customizeWebhookInfoPage() {
         if (!location.pathname.includes('/users/webhook-info')) return
         document.head.appendChild(document.createElement('style')).textContent = `
@@ -3380,7 +3550,7 @@ button:focus {
             if (document.readyState !== 'loading') {
                 r()
             } else {
-                window.addEventListener("DOMContentLoaded", r, false)
+                window.addEventListener('DOMContentLoaded', r, false)
             }
         }).then(() => {
             for (const elm of document.querySelectorAll('.text-content dd, .text-content dd textarea')) {
@@ -3395,7 +3565,7 @@ button:focus {
                     let s = elm.value
                     // Add a click event listener to the textarea
                     elm.addEventListener('click', function () {
-                        if (window.getSelection() + "" === "")
+                        if (window.getSelection() + '' === '')
                             this.select()
                     })
                     elm.addEventListener('drag', function (evt) {
@@ -3416,13 +3586,102 @@ button:focus {
             }
         })
     }
+    //STUB - WebHook脚本添加跳转
+    function addAdminButtons() {
+        const firstUl = document.querySelector('ul')
+        if (firstUl) {
+            const listItems = firstUl.querySelectorAll('li')
+            listItems.forEach(li => {
+                const firstLink = li.querySelector('a')
+                if (firstLink) {
+                    const buttonHtml = '<button style="margin-left: 10px;">admin</button>'
+                    firstLink.insertAdjacentHTML('afterend', buttonHtml)
+                    const button = firstLink.nextElementSibling
+                    button.addEventListener('click', () => {
+                        const originalHref = firstLink.href
+                        const newHref = originalHref + '/admin'
+                        window.open(newHref, '_blank')
+                    })
+                }
+            })
+        }
+    }
+    function addButtonToScipstsList() {
+        let linkTitle = ''
+        const ScipstsList = document.querySelector('ul')
+        if (ScipstsList) {
+            const button = document.createElement('button')
+            button.textContent = 'Click Me'
+            ScipstsList.insertBefore(button, ScipstsList.firstChild)
+            button.addEventListener('click', () => {
+                const listItems = ScipstsList.querySelectorAll('li')
+                listItems.forEach((li, index) => {
+                    const firstLink = li.querySelector('a')
+                    if (firstLink) {
+                        linkTitle = li.textContent
+                        linkTitle = li.textContent.split('admin')[0].trim()
+                        const number = firstLink.href.match(/\d+/)
+                        if (number) {
+                            const scriptId = number[0]
+                            const promotedScriptUrl = 'https://greasyfork.org/zh-CN/scripts/497346-greasyfork-utility-toolkit'
+                            updatePromotedScript(scriptId, promotedScriptUrl, linkTitle)
+                        }
+                    }
+                })
+            })
+        }
+    }
+    function updatePromotedScript(scriptId, promotedScriptUrl, linkTitle) {
+        let csrfTokenMeta = document.querySelector('meta[name=\'csrf-token\']')
+        let authenticity_token = csrfTokenMeta ? csrfTokenMeta.getAttribute('content') : ''
+        console.log(authenticity_token)
+        const url = `https://greasyfork.org/zh-CN/scripts/${scriptId}/update_promoted`
+        const data = new URLSearchParams({
+            _method: 'patch',
+            authenticity_token: authenticity_token,
+            promoted_script_id: promotedScriptUrl
+        })
+        fetch(url, {
+            method: 'POST',
+            body: data,
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        })
+            .then(response => response.text()) // 先以文本方式读取响应
+            .then(text => {
+                // 创建一个临时的 DOM 容器
+                const parser = new DOMParser()
+                const doc = parser.parseFromString(text, 'text/html')
+                // 查找 <input> 元素并获取其 value 值
+                const inputElement = doc.querySelector('input#promoted_script_id')
+                if (inputElement) {
+                    const value = inputElement.value
+                    console.log(`${linkTitle}${value}`)
+                } else {
+                    console.error(`Link Title: ${linkTitle}`)
+                }
+            })
+            .catch(error => console.error('Error:', error))
+    }
+    //NOTE - 美化WEBHOOK页面
+    function checkAndRun() {
+        const url = window.location.href
+        const lastSegment = url.substring(url.lastIndexOf('/') + 1)
+        if (lastSegment === 'webhook-info') {
+            addAdminButtons()
+            //FIXME - 没啥用,不改了   addButtonToScipstsList()
+        }
+    }
+    // 调用函数以检查 URL 并执行操作
+    checkAndRun()
     // 调用函数
     customizeWebhookInfoPage()
     customizeWebhookInfoPage2()
     function customizeWebhookInfoPage2() {
-        if (window.location.href.indexOf("https://greasyfork.org/zh-CN/users/webhook-info") != -1) //webhook
+        if (window.location.href.indexOf('https://greasyfork.org/zh-CN/users/webhook-info') != -1) //webhook
         {
-            $("h3").each(function () {
+            $('h3').each(function () {
                 if ($(this).text() == 'GitHub') {
                     $(this).html('<img src="https://github.githubassets.com/favicons/favicon.svg"> Github')
                 }
@@ -3434,17 +3693,17 @@ button:focus {
                 }
             })
             $('textarea').attr('cols', '130')
-            if (getCountryCode() === "zh-CN") {
-                $("input").each(function () {
-                    if ($(this).val() == "Generate")
-                        $(this).val("生成")
-                    if ($(this).val() == "Regenerate")
-                        $(this).val("重新生成")
+            if (getCountryCode() === 'zh-CN') {
+                $('input').each(function () {
+                    if ($(this).val() == 'Generate')
+                        $(this).val('生成')
+                    if ($(this).val() == 'Regenerate')
+                        $(this).val('重新生成')
                 })
             }
         }
     }
-    //功能-隐藏AD 482672
+    //STUB - 隐藏AD 482672
     function addStyleToHideElements(classSelectors) {
         classSelectors.forEach(selector => {
             var style = document.createElement('style')
@@ -3454,7 +3713,7 @@ button:focus {
         })
     }
     addStyleToHideElements(['.ad-entry', '.ad.ad-ea'])
-    //功能-语言筛选器 greasyfork.org/scripts/467463
+    //STUB - 语言筛选器 greasyfork.org/scripts/467463
     function handleLocaleFilter(linkSelector, filterParam = 'filter_locale', defaultValue = '0') {
         const currentURL = new URL(window.location.href)
         const regex = /^https:\/\/greasyfork\.org\/.*\/scripts\?.*/
@@ -3481,7 +3740,7 @@ button:focus {
     if (userhandleLocaleFilter) {
         handleLocaleFilter('.sidebarred-main-content p a')
     }
-    //功能-旧版本视图greasyfork.org/scripts/464089/
+    //STUB - 旧版本视图greasyfork.org/scripts/464089/
     function applyCustomStyles() {
         let css = `
         /* disable default properties */
@@ -3508,19 +3767,19 @@ button:focus {
             height: 20px;
         }
     `
-        if (typeof GM_addStyle !== "undefined") {
+        if (typeof GM_addStyle !== 'undefined') {
             GM_addStyle(css)
         } else {
-            let styleNode = document.createElement("style")
+            let styleNode = document.createElement('style')
             styleNode.appendChild(document.createTextNode(css));
-            (document.querySelector("head") || document.documentElement).appendChild(styleNode)
+            (document.querySelector('head') || document.documentElement).appendChild(styleNode)
         }
     }
     if (userapplyCustomStyles) {
         applyCustomStyles()
     }
     // Call the function to apply the styles
-    //功能-高亮代码片段
+    //STUB - 高亮代码片段
     // Define a function to set up code highlighting
     function setupCodeHighlighting() {
         if (checkMode()) {
@@ -3532,7 +3791,7 @@ button:focus {
         function highlightTextCode() {
             const selectors = [
                 'pre:not([class])', // 选择没有 class 属性的 <pre> 元素
-                'code',            // 选择所有 <code> 元素
+                'code'            // 选择所有 <code> 元素
             ]
             selectors.forEach(selector => {
                 document.querySelectorAll(selector).forEach(block => {
@@ -3560,7 +3819,7 @@ button:focus {
         return /android|iPad|iPhone|iPod|IEMobile|WPDesktop|Windows Phone|webOS|BlackBerry|Opera Mini|Mobile|tablet/i.test(userAgent) ||
             (window.innerWidth <= 1024 && (window.innerHeight <= 768 || window.orientation !== undefined))
     }
-    //功能-库页面增加复制按钮 greasyfork.org/scripts/463
+    //STUB - 库页面增加复制按钮 greasyfork.org/scripts/463
     function addCopyButtonBeforeScriptLink() {
         var scriptLink = $('#script-content > p > code:first-child')
         if (scriptLink.length > 0) {
@@ -3615,7 +3874,7 @@ button:focus {
     if (addCopyButtonBeforelibScript) {
         addCopyButtonBeforeScriptLink()
     }
-    //功能-代码查看页面增加梅花
+    //STUB - 代码查看页面增加梅花
     function setCodeContainerTheme(isDayMode, addde = true) {
         // const themeCSS = isDayMode ? GM_getResourceText('nnfx-light.min.css') : GM_getResourceText('nnfx-dark.min.css');
         const themeCSS = isDayMode ? GM_getResourceText('atom-one-light.css') : GM_getResourceText('atom-one-dark.css')
@@ -3670,7 +3929,6 @@ button:focus {
   cursor: auto;
 }
       `)
-            alert
         }
     }
     // 选择白天模式或黑夜模式  //反选
@@ -3679,10 +3937,10 @@ button:focus {
         const scriptInfoElement = document.querySelector('#script-info')
         // 检查元素是否存在
         if (scriptInfoElement) {
-            if (lockmode === "1") {
+            if (lockmode === '1') {
                 return true  // 锁定黑夜
             }
-            if (lockmode === "2") {
+            if (lockmode === '2') {
                 return false  // 锁定白天
             }
             // 获取元素的计算样式
@@ -3762,17 +4020,17 @@ button:focus {
             }
         })
     }
-    //功能-选择器透明
+    //STUB - 选择器透明
     function fuckselector() {
-        const languageSelector = document.querySelector("#language-selector-locale")
+        const languageSelector = document.querySelector('#language-selector-locale')
         if (languageSelector) {
             // 设置默认背景颜色为透明
             languageSelector.style.backgroundColor = 'transparent'
             // 取消边框
             languageSelector.style.border = 'none'
             // 添加样式来控制下拉时和悬停时的背景颜色
-            const styleSheet = document.createElement("style")
-            styleSheet.type = "text/css"
+            const styleSheet = document.createElement('style')
+            styleSheet.type = 'text/css'
             styleSheet.innerText = `
               #language-selector-locale {
                 background-color: transparent !important; /* 默认状态下背景透明 */
@@ -3872,7 +4130,7 @@ button:focus {
                 return null
         }
     }
-    //功能-已经阅读的评论斜体
+    //STUB - 已经阅读的评论斜体
     function applyDiscussionReadStyles(hide, applyStyles) {
         const style = document.createElement('style')
         let css = '.discussion-list-container.discussion-read {'
@@ -3885,7 +4143,7 @@ button:focus {
         document.head.appendChild(style)
     }
     applyDiscussionReadStyles(hidediscussionread, italicdiscussionread)
-    //功能-在代码页面增加引用库数量显示
+    //STUB - 在代码页面增加引用库数量显示
     function logUserScriptOccurrences(textContent) {
         const urlPattern = /(https?:\/\/[^\s]+)/g  // 匹配网址的正则表达式
         const scriptPattern = /(@require|@resource)/  // 查找 @require 或 @resource 的正则表达式
@@ -3910,7 +4168,7 @@ button:focus {
             }
             // 当找到目标子串并停止遍历后，将收集到的网址传递给 createDetailsWithLinks 函数
             if (urls.length > 0) {
-                createDetailsWithLinks("#install-area", urls.map(url => [url, url]), '6666', `引用${urls.length}个文件`)
+                createDetailsWithLinks('#install-area', urls.map(url => [url, url]), '6666', `引用${urls.length}个文件`)
             } else {
                 logMessage('logUserScriptOccurrences', '没有找到 @require 或 @resource 相关的链接', true)
             }
@@ -3924,24 +4182,19 @@ button:focus {
  * @returns {Promise<string>} - 返回一个 Promise，解析为获取到的文本内容
  */
     async function fetchTextFromURL(url, json = false) {
-        try {
-            // 从指定的 URL 中获取文件内容
-            const response = await fetch(url)
-            if (!response.ok) throw new Error('网络响应失败')
-            if (json) {
-                // 如果 json 参数为 true，返回 JSON 数据
-                const jsonData = await response.json()
-                return jsonData
-            } else {
-                // 否则返回文本内容
-                const textContent = await response.text()
-                return textContent
-            }
-        } catch (error) {
+        // 从指定的 URL 中获取文件内容
+        const response = await fetch(url)
+        if (!response.ok) throw new Error('网络响应失败')
 
-            throw error // 将错误抛出，以便调用者处理
+        if (json) {
+            // 如果 json 参数为 true，返回 JSON 数据
+            return await response.json()
+        } else {
+            // 否则返回文本内容
+            return await response.text()
         }
     }
+
     if (isScriptCodePage() && showresource) {
         $(document).ready(function () {
             const number = getNumberFromURL()
@@ -3974,18 +4227,18 @@ button:focus {
     function createDetailsWithLinks(selector, URLs, detailsId, summaryText) {
         const description = document.querySelector(selector)
         if (description) {
-            const details = document.createElement("details")
-            const summary = document.createElement("summary")
-            summary.textContent = summaryText || "Links" // 如果未提供 summaryText，则默认为 "Links"
+            const details = document.createElement('details')
+            const summary = document.createElement('summary')
+            summary.textContent = summaryText || 'Links' // 如果未提供 summaryText，则默认为 "Links"
             details.appendChild(summary)
-            const list = document.createElement("ul")
+            const list = document.createElement('ul')
             for (const [url, text] of URLs) {
-                const listItem = document.createElement("li")
-                const link = document.createElement("a")
+                const listItem = document.createElement('li')
+                const link = document.createElement('a')
                 link.href = url
                 link.textContent = getFilenameFromUrl(url)
                 link.title = text
-                link.target = "_blank"
+                link.target = '_blank'
                 listItem.appendChild(link)
                 list.appendChild(listItem)
             }
@@ -3996,7 +4249,7 @@ button:focus {
             //console.error('指定的插入位置不存在');
         }
     }
-    //功能-添加举报
+    //STUB - 添加举报
     const TEST_MODE = 0
     let skipMode = false
     const onIframeLoad = async (evt) => {
@@ -4048,10 +4301,10 @@ button:focus {
                 }
             }, 100)
         } else if (iframe.contentDocument.querySelector('#open-report-:not(:empty)')) {
-            Toast("The spam report is already submitted for moderator's review. Action aborted.", 2000, '#FF0000', '#ffffff', 'top')
+            Toast('The spam report is already submitted for moderator\'s review. Action aborted.', 2000, '#FF0000', '#ffffff', 'top')
             onAbort()
         } else {
-            Toast("Cannot find the report[reason] radio button. Action aborted.", 2000, '#FF0000', '#ffffff', 'top')
+            Toast('Cannot find the report[reason] radio button. Action aborted.', 2000, '#FF0000', '#ffffff', 'top')
             onAbort()
         }
     }
@@ -4062,12 +4315,12 @@ button:focus {
         if (!url) return
         let discussionId = /id=(\d+)\b/.exec(url)
         if (discussionId) discussionId = discussionId[1]
-        let r = window.confirm(` ${translate('report')}#${discussionId || "------"} ?`)
+        let r = window.confirm(` ${translate('report')}#${discussionId || '------'} ?`)
         if (!r) return
         const iframe = document.createElement('iframe')
         skipMode = false
         iframe.addEventListener('load', onIframeLoad, false)
-        iframe.name = "u423323"
+        iframe.name = 'u423323'
         iframe.src = url
         Object.assign(iframe.style, {
             display: 'block',
@@ -4076,7 +4329,7 @@ button:focus {
             left: '0px',
             width: '300px',
             height: '300px',
-            'contain': 'strict',
+            'contain': 'strict'
         })
         document.body.appendChild(iframe)
     }
@@ -4238,11 +4491,23 @@ cursor: pointer;
     }
     //是否为主页
     function isHomepage() {
-        // 判断 #about-user 元素是否存在
-        return !!document.querySelector("#about-user")
+
+        const profileLinkElement = document.querySelector('#nav-user-info > span.user-profile-link > a')
+        if (profileLinkElement) {
+            const href = profileLinkElement.getAttribute('href')
+            const match = href.match(/\/users\/(\d+)-/)
+            if (match) {
+                const userId = match[1]
+                const currentUrl = window.location.href
+                if (currentUrl.includes(`/users/${userId}`)) {
+                    return true
+                }
+            }
+        }
+        return false
     }
     //下载函数
-    function downloadFile(url, filename, callback, maxRetries = 3) {
+    function downloadFile(url, filename, callback, maxRetries = 3, zipInstance) {
         let attempt = 0  // 当前尝试次数
         function tryDownload() {
             var xhr = new XMLHttpRequest()
@@ -4251,14 +4516,18 @@ cursor: pointer;
             xhr.onload = function () {
                 if (xhr.status === 200) {
                     var blob = xhr.response
-                    var objectUrl = window.URL.createObjectURL(blob)
-                    var a = document.createElement('a')
-                    a.href = objectUrl
-                    a.download = filename // 设置下载文件名
-                    document.body.appendChild(a)
-                    a.click()
-                    window.URL.revokeObjectURL(objectUrl)
-                    document.body.removeChild(a) // 清理 DOM
+                    if (zipInstance) {
+                        zipInstance.file(filename, blob)
+                    } else {
+                        var objectUrl = window.URL.createObjectURL(blob)
+                        var a = document.createElement('a')
+                        a.href = objectUrl
+                        a.download = filename // 设置下载文件名
+                        document.body.appendChild(a)
+                        a.click()
+                        window.URL.revokeObjectURL(objectUrl)
+                        document.body.removeChild(a) // 清理 DOM
+                    }
                     if (callback && typeof callback === 'function') {
                         callback(null) // 执行回调，传递 null 表示没有错误
                     }
@@ -4306,6 +4575,64 @@ cursor: pointer;
         decodedFilename = decodedFilename.replace(/%20/g, '_') // 替换所有的 %20 为下划线
         return decodedFilename
     }
+    async function printAllDataCodeUrls() {
+        const scriptList = document.querySelector('.script-list')
+        if (!scriptList) {
+            console.error('Script list not found')
+            return
+        }
+
+        const button = document.createElement('button')
+        button.textContent = 'DownAll'
+        button.style.marginBottom = '10px'
+        scriptList.parentNode.insertBefore(button, scriptList)
+
+        button.addEventListener('click', async () => {
+            button.disabled = true
+            const scriptItems = scriptList.querySelectorAll('li')
+            const totalFiles = scriptItems.length
+            let currentFile = 0
+            const zip = new JSZip()
+
+            function updateButtonText() {
+                button.textContent = ` (${currentFile}/${totalFiles})`
+            }
+            const downloadPromises = Array.from(scriptItems).map(item => {
+                const codeUrl = item.getAttribute('data-code-url')
+                const filename = getFilenameFromUrl(codeUrl)
+                return new Promise((resolve, reject) => {
+                    downloadFile(codeUrl, filename, (error) => {
+                        currentFile++
+                        updateButtonText()
+                        if (error) {
+                            reject(error)
+                        } else {
+                            resolve()
+                        }
+                    }, 3, zip)
+                })
+            })
+            try {
+                await Promise.all(downloadPromises)
+                const zipBlob = await zip.generateAsync({ type: 'blob' })
+                const objectUrl = window.URL.createObjectURL(zipBlob)
+                const a = document.createElement('a')
+                a.href = objectUrl
+                a.download = `${document.title}.zip`
+                document.body.appendChild(a)
+                a.click()
+                window.URL.revokeObjectURL(objectUrl)
+                document.body.removeChild(a)
+                button.textContent = 'DownAll'
+            } catch (error) {
+                logMessage('', '下载所有脚本失败', false, error)
+                button.textContent = 'Failed'
+            }
+            button.disabled = false
+        })
+    }
+
+    printAllDataCodeUrls()
     /**
 * 在控制台输出带有样式的日志信息
 * @param {string} mainMessage - 主要日志信息
@@ -4359,7 +4686,7 @@ cursor: pointer;
         a.href = linkurl
         a.innerText = link_text
         if (newtab) {
-            a.target = "_blank" // 设置为新窗口打开
+            a.target = '_blank' // 设置为新窗口打开
         }
         // 将 <a> 元素添加到 <li> 中
         li.appendChild(a)
@@ -4376,19 +4703,19 @@ cursor: pointer;
         }
     }
     //  -------------------------------------------------------------
-    //--功能-增加本地中文汉化
+    //--STUB - 增加本地中文汉化
     if (getCountryCode() === 'zh-CN') {
         const translatet = new Map()
-        translatet.set("Script Sets", "脚本收藏夹")
-        translatet.set("Edit", "编辑")
-        $("label, span, li, h3, a").each(function () {
+        translatet.set('Script Sets', '脚本收藏夹')
+        translatet.set('Edit', '编辑')
+        $('label, span, li, h3, a').each(function () {
             var currentText = $(this).text()
             if (translatet.has(currentText)) {
                 $(this).html(translatet.get(currentText))
             }
         })
     }
-    //功能-导航栏更多不收缩
+    //STUB - 导航栏更多不收缩
     if (Expandsubmenu) {
         waitForElement('a[href="#"][onclick="return false"]').then(() => {
             /*         var submenu = document.querySelector('.with-submenu')
@@ -4412,22 +4739,21 @@ cursor: pointer;
             display: none !important;
         }
     `)
-            let $siteNav = document.querySelector("#site-nav")
-            let $siteNavNav = $siteNav.querySelector("nav")
-            document.querySelectorAll(".with-submenu nav li").forEach(($ele) => {
+            let $siteNav = document.querySelector('#site-nav')
+            let $siteNavNav = $siteNav.querySelector('nav')
+            document.querySelectorAll('.with-submenu nav li').forEach(($ele) => {
                 $siteNavNav.appendChild($ele)
             })
         })
     }
-    //功能-增加自动登录
+    //STUB - 增加自动登录
     async function autoLogin() {
         // 等待登录链接出现
-        await waitForElement("span.sign-in-link a[rel=nofollow]")
+        await waitForElement('span.sign-in-link a[rel=nofollow]')
         let user = useremail
         let pwd = userpassword
         if (!user) {
             Toast(translate('nostoredaccount'), 1000, '#ff6347', '#ffffff', 'top')
-            alert()
             return
         }
         if (!pwd) {
@@ -4435,16 +4761,16 @@ cursor: pointer;
             return
         }
         Toast(translate('autologinredirect'), 1000, 'rgb(18, 187, 2)', '#ffffff', 'top')
-        let csrfTokenMeta = document.querySelector("meta[name='csrf-token']")
+        let csrfTokenMeta = document.querySelector('meta[name=\'csrf-token\']')
         if (!csrfTokenMeta) {
             Toast(translate('getcsrftokenfailed'), 1000, '#ff6347', '#ffffff', 'top')
             return
         }
-        let csrfToken = csrfTokenMeta.getAttribute("content")
-        let postResp = await fetch("https://greasyfork.org/zh-CN/users/sign_in", {
+        let csrfToken = csrfTokenMeta.getAttribute('content')
+        let postResp = await fetch('https://greasyfork.org/zh-CN/users/sign_in', {
             method: 'POST',
             headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
+                'Content-Type': 'application/x-www-form-urlencoded'
             },
             body: new URLSearchParams({
                 authenticity_token: csrfToken,
@@ -4456,14 +4782,14 @@ cursor: pointer;
         })
         if (postResp.status !== 200) {
             Toast(translate('loginfailedconsole'), 1000, 'rgb(219, 27, 27)', '#ffffff', 'top')
-            logMessage("自动登录", "返回码错误", postResp.status, false)
+            logMessage('自动登录', '返回码错误', postResp.status, false)
             return
         }
         let respText = await postResp.text()
         let parser = new DOMParser()
         let parseLoginHTMLNode = parser.parseFromString(respText, 'text/html')
         if (parseLoginHTMLNode.querySelectorAll(
-            ".sign-out-link a[rel=nofollow][data-method='delete']"
+            '.sign-out-link a[rel=nofollow][data-method=\'delete\']'
         ).length) {
             Toast(translate('loginsuccessredirect'), 1000, 'rgb(18, 187, 2)', '#ffffff', 'top')
             setTimeout(() => {
@@ -4487,8 +4813,7 @@ cursor: pointer;
             observer.observe(document.body, { childList: true, subtree: true })
         })
     }
-
-    //功能-设置脚本列表为双列 
+    //STUB - 设置脚本列表为双列
     if (scriptlistdouble) {
         const beautifyCenterContentCSS = `
         .sidebarred-main-content {
@@ -4522,11 +4847,9 @@ cursor: pointer;
             box-shadow: rgb(221, 221, 221) 0px 0px 5px 2px;
         }
     `
-
         GM_addStyle(beautifyCenterContentCSS)
     }
-
-    //功能-侧边栏
+    //STUB - 侧边栏
     if (useroutline) {
         outline()
     }
@@ -4535,14 +4858,14 @@ cursor: pointer;
         const $$ = document.querySelectorAll.bind(document)
         function sanitify(s) {
             // Remove emojis (such a headache)
-            s = s.replaceAll(/([\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDEFF]|\uFE0F)/g, "")
+            s = s.replaceAll(/([\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDEFF]|\uFE0F)/g, '')
             // Trim spaces and newlines
             s = s.trim()
             // Replace spaces
-            s = s.replaceAll(" ", "-")
-            s = s.replaceAll("%20", "-")
+            s = s.replaceAll(' ', '-')
+            s = s.replaceAll('%20', '-')
             // No more multiple "-"
-            s = s.replaceAll(/-+/g, "-")
+            s = s.replaceAll(/-+/g, '-')
             return s
         }
         function process(node) { // Add anchor and assign id to given node; Add to outline. Return true if node is actually processed.
@@ -4555,15 +4878,15 @@ cursor: pointer;
             const anchor = node.appendChild(document.createElement('a'))
             anchor.className = 'anchor'
             anchor.href = '#' + node.id
-            const link = outline.appendChild(document.createElement("li"))
-                .appendChild(document.createElement("a"))
-            link.href = "#" + node.id
+            const link = outline.appendChild(document.createElement('li'))
+                .appendChild(document.createElement('a'))
+            link.href = '#' + node.id
             link.text = text
             return true
         }
         function injectCSS(css) {
-            const style = document.head.appendChild(document.createElement("style"))
-            style.id = "greasyfork-enhance-basic"
+            const style = document.head.appendChild(document.createElement('style'))
+            style.id = 'greasyfork-enhance-basic'
             style.textContent = css
         }
         // Basic css
@@ -4589,16 +4912,16 @@ cursor: pointer;
         const is_disccussion = /^\/[^\/]+\/discussions/
         const path = window.location.pathname
         if ((!is_script.test(path) && !is_disccussion.test(path)) || is_specific_script.test(path)) {
-            const panel = $("body").insertBefore(document.createElement("aside"), $("body > div.width-constraint"))
-            panel.className = "panel"
-            const reference_node = $("body > div.width-constraint > section")
-            outline = panel.appendChild(document.createElement("ul"))
-            outline.classList.add("outline")
-            outline.classList.add("dynamic-opacity")
-            outline.style.top = reference_node ? getComputedStyle(reference_node).marginTop : "1em"
+            const panel = $('body').insertBefore(document.createElement('aside'), $('body > div.width-constraint'))
+            panel.className = 'panel'
+            const reference_node = $('body > div.width-constraint > section')
+            outline = panel.appendChild(document.createElement('ul'))
+            outline.classList.add('outline')
+            outline.classList.add('dynamic-opacity')
+            outline.style.top = reference_node ? getComputedStyle(reference_node).marginTop : '1em'
             outline.style.marginTop = outline.style.top
             let flag = false
-            $$("body > div.width-constraint h1, h2, h3, h4, h5, h6").forEach((node) => {
+            $$('body > div.width-constraint h1, h2, h3, h4, h5, h6').forEach((node) => {
                 flag = process(node) || flag // Not `flag || process(node)`!
             })
             if (!flag) {
@@ -4606,11 +4929,11 @@ cursor: pointer;
             }
         }
     }
-    // 功能-设置用户图片代理
+    // STUB - 设置用户图片代理
     if (userimageproxy) {
         const $$ = document.querySelectorAll.bind(document)
-        const PROXY = "https://wsrv.nl/?url="
-        const images = $$("a[href^='/rails/active_storage/blobs/redirect/'] > img[src^='https://greasyfork.']")
+        const PROXY = 'https://wsrv.nl/?url='
+        const images = $$('a[href^=\'/rails/active_storage/blobs/redirect/\'] > img[src^=\'https://greasyfork.\']')
         for (const img of images) {
             img.src = PROXY + img.src
             const link = img.parentElement
@@ -4632,64 +4955,46 @@ cursor: pointer;
     height: auto; /* 自动高度，以适应内容 */
 }
           `)
-
     }
     if (fixElementoption && isMobile() === false) {
-        let element = document.querySelector("#script-list-option-groups")
-
+        let element = document.querySelector('#script-list-option-groups')
         if (!element) {
-            element = document.querySelector("body > div.width-constraint > div > div.sidebar.collapsed")
+            element = document.querySelector('body > div.width-constraint > div > div.sidebar.collapsed')
         }
         if (element) {
             function fixElementInViewport() {
-
                 const viewportTop = window.scrollY
                 const viewportLeft = window.scrollX
-
-
                 const rect = element.getBoundingClientRect()
                 const elementWidth = rect.width
                 const elementHeight = rect.height
-
-
-                element.style.position = "fixed"
-                element.style.top = "60px"   // 固定在距离视口顶部 10 像素的位置
-                element.style.right = "10px" // 固定在距离视口右侧 10 像素的位置
-                element.style.zIndex = "1000"
-                element.style.backgroundColor = "#fff"
-                element.style.boxShadow = "0 2px 5px rgba(0,0,0,0.3)"
-                element.style.overflow = "auto" // 允许内容滚动
-                element.style.maxHeight = "800px" // 设置最大高度为视口高度减去顶部和底部的边距
-
-
+                element.style.position = 'fixed'
+                element.style.top = '60px'   // 固定在距离视口顶部 10 像素的位置
+                element.style.right = '10px' // 固定在距离视口右侧 10 像素的位置
+                element.style.zIndex = '1000'
+                element.style.backgroundColor = '#fff'
+                element.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)'
+                element.style.overflow = 'auto' // 允许内容滚动
+                element.style.maxHeight = '800px' // 设置最大高度为视口高度减去顶部和底部的边距
             }
-
-
             fixElementInViewport()
-
-
             window.addEventListener('resize', fixElementInViewport)
             window.addEventListener('scroll', fixElementInViewport)
         }
     }
-
     /**
      * 美化顶部导航栏
      */
     if (beautifyTopNav && isMobile() === false) {
         beautifyTopNavigationBar()
         function beautifyTopNavigationBar() {
-            const beautifyTopNavigationBarCSS = "#language-selector {\r\n	display: none;\r\n}\r\n@media screen and (min-width: 600px) {\r\n	body {\r\n		--header-height: 50px;\r\n		--el-gap: 20px;\r\n	}\r\n\r\n	header#main-header {\r\n		height: var(--header-height);\r\n		position: fixed;\r\n		top: 0;\r\n		width: 100%;\r\n		z-index: 55555;\r\n		padding: unset;\r\n		display: flex;\r\n		justify-content: space-around;\r\n	}\r\n\r\n	header#main-header + div {\r\n		margin-top: calc(var(--header-height) + 35px);\r\n	}\r\n\r\n	header#main-header .width-constraint {\r\n		display: flex;\r\n		align-items: center;\r\n		gap: var(--el-gap);\r\n		padding: unset;\r\n		margin: unset;\r\n		max-width: unset;\r\n	}\r\n\r\n	header#main-header a {\r\n		text-decoration: none;\r\n		text-wrap: nowrap;\r\n	}\r\n\r\n	header#main-header .sign-out-link a {\r\n		text-decoration: underline;\r\n	}\r\n\r\n	header#main-header #site-name {\r\n		display: flex;\r\n		align-items: center;\r\n	}\r\n\r\n	header#main-header #site-name img {\r\n		width: calc(var(--header-height) - 5px);\r\n		height: calc(var(--header-height) - 5px);\r\n	}\r\n\r\n	/* 隐藏Greasyfork文字 */\r\n	header#main-header #site-name-text {\r\n		display: none;\r\n	}\r\n\r\n	header#main-header #site-nav {\r\n		display: flex;\r\n		flex-direction: row-reverse;\r\n		align-items: center;\r\n		flex: 1;\r\n		justify-content: space-between;\r\n		height: 100%;\r\n		gap: var(--el-gap);\r\n	}\r\n\r\n	header#main-header #site-nav nav li {\r\n		padding: 0 0.5em;\r\n		display: flex;\r\n		align-items: center;\r\n		height: var(--header-height);\r\n		min-width: 30px;\r\n		justify-content: center;\r\n	}\r\n\r\n	header#main-header #site-nav nav li:hover {\r\n		background: #5f0101;\r\n	}\r\n\r\n	header#main-header #nav-user-info {\r\n		max-width: 150px;\r\n	}\r\n\r\n	header#main-header #nav-user-info > span {\r\n		flex: 1;\r\n	}\r\n\r\n	header#main-header #nav-user-info,\r\n	header#main-header #nav-user-info + nav {\r\n		position: unset;\r\n		width: unset;\r\n		display: flex;\r\n		flex-wrap: nowrap;\r\n		align-items: center;\r\n	}\r\n}\r\n"
+            const beautifyTopNavigationBarCSS = '#language-selector {\r\n	display: none;\r\n}\r\n@media screen and (min-width: 600px) {\r\n	body {\r\n		--header-height: 50px;\r\n		--el-gap: 20px;\r\n	}\r\n\r\n	header#main-header {\r\n		height: var(--header-height);\r\n		position: fixed;\r\n		top: 0;\r\n		width: 100%;\r\n		z-index: 55555;\r\n		padding: unset;\r\n		display: flex;\r\n		justify-content: space-around;\r\n	}\r\n\r\n	body > .width-constraint {\r\n		margin-top: calc(var(--header-height) + 35px);\r\n	}\r\n\r\n	header#main-header .width-constraint {\r\n		display: flex;\r\n		align-items: center;\r\n		gap: var(--el-gap);\r\n		padding: unset;\r\n		margin: unset;\r\n		max-width: unset;\r\n	}\r\n\r\n	header#main-header a {\r\n		text-decoration: none;\r\n		text-wrap: nowrap;\r\n	}\r\n\r\n	header#main-header .sign-out-link a {\r\n		text-decoration: underline;\r\n	}\r\n\r\n	header#main-header #site-name {\r\n		display: flex;\r\n		align-items: center;\r\n	}\r\n\r\n	header#main-header #site-name img {\r\n		width: calc(var(--header-height) - 5px);\r\n		height: calc(var(--header-height) - 5px);\r\n	}\r\n\r\n	/* 隐藏Greasyfork文字 */\r\n	header#main-header #site-name-text {\r\n		display: none;\r\n	}\r\n\r\n	header#main-header #site-nav {\r\n		display: flex;\r\n		flex-direction: row-reverse;\r\n		align-items: center;\r\n		flex: 1;\r\n		justify-content: space-between;\r\n		height: 100%;\r\n		gap: var(--el-gap);\r\n	}\r\n\r\n	header#main-header #site-nav nav li {\r\n		padding: 0 0.5em;\r\n		display: flex;\r\n		align-items: center;\r\n		height: var(--header-height);\r\n		min-width: 30px;\r\n		justify-content: center;\r\n	}\r\n\r\n	header#main-header #site-nav nav li:hover {\r\n		background: #5f0101;\r\n	}\r\n\r\n	header#main-header #nav-user-info {\r\n		max-width: 150px;\r\n	}\r\n\r\n	header#main-header #nav-user-info > span {\r\n		/*flex: 1;*/\r\n		flex: 1 0 auto;\r\n	}\r\n\r\n	header#main-header #nav-user-info,\r\n	header#main-header #nav-user-info + nav {\r\n		position: unset;\r\n		width: unset;\r\n		display: flex;\r\n		flex-wrap: nowrap;\r\n		align-items: center;\r\n	}\r\n}\r\n'
+
             GM_addStyle(beautifyTopNavigationBarCSS)
-
-
-
         }
     }
-
-
 })()
-///--功能-美化网页徽章等 greasyfork.org/scripts/436913
+///--STUB - 美化网页徽章等 greasyfork.org/scripts/436913
 function addbageStyles() {
     const cssMain = `
         .report-link.report-link-abs::before {
@@ -4732,6 +5037,3 @@ function addbageStyles() {
     GM_addStyle(cssMain)
 }
 addbageStyles()
-
-
-
