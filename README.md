@@ -1,17 +1,6 @@
-<div align="center">
-
 # Collection of ☠️4ndr0666☠️ Personal Userscripts
 
-## Heavily inspired by the Javascript Master Hoothin:
-
-<details>
-<a href="https://github.com/hoothin/UserScripts">
-  <img src="https://avatars.githubusercontent.com/u/5361213" />
-</a>
-</details>
-
-</div align="center">
-
+---
 
                               .... NO! ...    SIGCONT3.5    ... MNO! ....
                            ..... MNO!! ...................... MNNOO! ....
