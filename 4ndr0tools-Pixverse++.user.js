@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name        4ndr0tools - Pixverse++
+// @name        4ndr0tools-Pixverse++
 // @namespace   https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
 // @version     1.0
@@ -8,6 +8,8 @@
 // @run-at      document-start
 // @grant       none
 // @license     MIT
+// @downloadURL https://github.com/4ndr0666/userscripts/blob/main/4ndr0tools-Pixverse%2B%2B.user.js
+// @updateURL https://github.com/4ndr0666/userscripts/blob/main/4ndr0tools-Pixverse%2B%2B.user.js
 // ==/UserScript==
 
 (() => {
