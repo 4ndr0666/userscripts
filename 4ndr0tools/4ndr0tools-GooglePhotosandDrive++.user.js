@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         4ndr0tools - Google Photos and Drive Tweaks
+// @name         4ndr0tools - Google Photos and Drive++  
 // @namespace    https://github.com/4ndr0666
 // @version      1.0
 // @description  Combines multiple functionalities such as image direct links, context menu removal, and non-intrusive UI integration for Google Photos and Drive.
