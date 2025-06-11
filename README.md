@@ -1,7 +1,7 @@
-# Collection of ☠️4ndr0666☠️ Personal Userscripts
+☠️4ndr0666 Userscripts☠️
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-                              .... NO! ...    SIGCONT3.5    ... MNO! ....
+                              .... NO! ...    4ndr0666      ... MNO! ....
                            ..... MNO!! ...................... MNNOO! ....
                          ..... MMNO! ......................... MNNOO!! .
                         .... MNOONNOO!   MMMMMMMMMMPPPOII!   MNNO!!!! .
