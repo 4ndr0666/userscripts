@@ -5,7 +5,7 @@
 // @version      0.2 // Increment version as code changes
 // @author       4ndr0666
 // @include      *
-// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/archicon.png
+// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @grant        none
 // ==/UserScript==
 
