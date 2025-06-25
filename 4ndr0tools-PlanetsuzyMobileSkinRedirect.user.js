@@ -8,7 +8,9 @@
 //               version instead. (styleid=4).
 // @match        http://www.planetsuzy.org/*
 // @match        https://www.planetsuzy.org/*
-// @icon         http://www.planetsuzy.org/favicon.ico
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-PlanetsuzyMobileSkinRedirect.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-PlanetsuzyMobileSkinRedirect.user.js
+// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @run-at       document-start
 // @grant        none
 // @noframes
