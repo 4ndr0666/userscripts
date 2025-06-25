@@ -2,14 +2,15 @@
 // @name        4ndr0tools-Pixverse++
 // @namespace   https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     1.0
-// @description Bypass Pixverse video blocks, auto-reveal download, and intercept all API methods (XHR+fetch).
+// @version     2.0
+// @description Bypass Pixverse video blocks, auto-reveal download, and intercept all API methods (XHR+fetch)
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-Pixverse++.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-Pixverse++.user.js
+// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match       https://app.pixverse.ai/*
 // @run-at      document-start
 // @grant       none
 // @license     MIT
-// @downloadURL https://github.com/4ndr0666/userscripts/blob/main/4ndr0tools-Pixverse%2B%2B.user.js
-// @updateURL https://github.com/4ndr0666/userscripts/blob/main/4ndr0tools-Pixverse%2B%2B.user.js
 // ==/UserScript==
 
 (() => {
