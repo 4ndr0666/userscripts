@@ -5,6 +5,9 @@
 // @description  Part of 4ndr0tools for "ease-of-life". Offers semi-transparent
 //               and draggable button in top right corner. Right click it to
 //               set a keybind (default Ctrl+E).
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-YouTubeEmbedRedirectButton.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-YouTubeEmbedRedirectButton.user.js
+// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @author       4ndr0666
 // @match        https://www.youtube.com/*
 // @match        https://m.youtube.com/*
