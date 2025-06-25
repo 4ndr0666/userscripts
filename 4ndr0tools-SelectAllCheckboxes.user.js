@@ -11,6 +11,8 @@
 // @match        *://*.*.*/
 // @match        https://note.zework.com/*
 // @require      http://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.3/jquery.min.js
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-SelectAllCheckboxes.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-SelectAllCheckboxes.user.js
 // @icon         https://img.icons8.com/?size=30&id=48178&format=png
 // @license       MIT
 // @grant        GM_registerMenuCommand
