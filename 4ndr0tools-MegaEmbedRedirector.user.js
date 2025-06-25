@@ -5,6 +5,9 @@
 // @version      1.0.0
 // @description  Part of 4ndr0tools for "ease-of-life". Redirects all Mega
 //               links to the embedded URL and autoplays.
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-MegaEmbedRedirector.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-MegaEmbedRedirector.user.js
+// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match        https://mega.nz/*
 // @icon         https://avatars.githubusercontent.com/u/4920706?s=200&v=4
 // @grant        none
