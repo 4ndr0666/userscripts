@@ -6,13 +6,16 @@
 //               Silently accepts the “warning: you are leaving this site”
 //               warning page and always opens true external links in a new tab.
 // @version      2.0.0
-// @license      MIT
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-ConfirmationBypass.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-ConfirmationBypass.user.js
+// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 //
 // ---------- WRITE DOMAIN HERE ----------
 // For security **only** run this on a specific URL:
 // @match        https://forums.socialmediagirls.com/goto/link-confirmation*
 // -----------------------------------
 //
+// @license      MIT
 // @run-at       document-idle
 // @grant        none
 // ==/UserScript==
