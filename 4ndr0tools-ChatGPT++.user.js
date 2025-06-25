@@ -9,7 +9,6 @@
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-ChatGPT++.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-ChatGPT++.user.js
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
-// @include      *
 // @match        http*://*.openai.com/*
 // @match        http*://*.chatgpt.com/*
 // @match        http*://chatgpt.com/*
