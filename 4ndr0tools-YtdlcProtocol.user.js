@@ -6,6 +6,9 @@
 // @description Registers ytdl:// via xdg-mime to to handle youtube links
 //              automatically(yt-dlp wrapper with cookies). Offers
 //              draggable button, context-menu, editable hot-key.
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-YtdlcProtocol.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-YtdlcProtocol.user.js
+// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match       http*://www.youtube.com/embed/*
 // @match       http*://www.youtu.be/*
 // @match       http*://www.youtube.com/watch?v=*
