@@ -3,6 +3,9 @@
 // @namespace    https://www.github.com/4ndr0666/userscripts
 // @author       4ndr0666
 // @description  Small omnibox to quickly search the simpcity forums.
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-SimpcitySearch.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-SimpcitySearch.user.js
+// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match        *://*/*
 // @version      1.2
 // @icon         https://img.icons8.com/?size=30&id=44045&format=png
