@@ -4,6 +4,9 @@
 // @version      1.0
 // @description  Combines multiple functionalities such as image direct links, context menu removal, and non-intrusive UI integration for Google Photos and Drive.
 // @author       4ndr0666
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-ConfirmationBypass.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-ConfirmationBypass.user.js
+// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match        *://*.googleusercontent.com/*
 // @match        *://*google.com/*
 // @require      https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js
