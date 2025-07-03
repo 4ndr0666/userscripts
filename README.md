@@ -1,8 +1,6 @@
 ☠️ 4ndr0tools ☠️
 =========================
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
 > A modular, **userscript suite** engineered for actual control and digital emancipation—crafted by [4ndr0666](https://github.com/4ndr0666).  
 >  
 > _Destroying knowledge feudalism one line at a time._
@@ -73,44 +71,7 @@ Below are the flagship scripts and their core features. See each file for exhaus
 
 ---
 
-## 🏴 Example: Google Photos & Drive++ Script
-
-```js
-// ==UserScript==
-// @name         4ndr0tools - Google Photos and Drive++  
-// @namespace    https://github.com/4ndr0666
-// @version      1.0
-// @description  Combines multiple functionalities such as image direct links, context menu removal, and non-intrusive UI integration for Google Photos and Drive.
-// @author       4ndr0666
-// @match        *://*.googleusercontent.com/*
-// @match        *://*google.com/*
-// @require      https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js
-// @grant        none
-// ==/UserScript==
-````
-
-**Features:**
-
-* Direct photo link enhancement: Converts URLs to original, highest-quality direct image links.
-* Context menu restoration: Removes all JS-blockers preventing right-click/save on images.
-* UI overlay: Adds quick links for Google/Yandex reverse image search.
-* Subtle notification system.
-
-See [4ndr0tools-GooglePhotosandDrive++.user.js](4ndr0tools-GooglePhotosandDrive++.user.js) for implementation and extension details.
-
----
-
-## 🧠 More: Pixverse Bypass Example
-
-**Pixverse++** (Pixverse NSFW/video bypass):
-
-* Hooks XHR requests to intercept/patch moderation and NSFW rejections
-* Exposes the true media URL even when the platform tries to hide it
-* (See the included flowchart for an overview of the data extraction and bypass process.)
-
----
-
-## 🤘 ASCII Manifesto
+## LICENSE 🤘 
 
 ```
                           .... NO! ...    4ndr0666      ... MNO! ....
@@ -138,17 +99,7 @@ See [4ndr0tools-GooglePhotosandDrive++.user.js](4ndr0tools-GooglePhotosandDrive+
 
 ```
 
----
-
-## 📬 Contact & Support
-
-* Maintainer: **4ndr0666**
-* Repo: [https://github.com/4ndr0666/userscripts](https://github.com/4ndr0666/userscripts)
-* Issues, improvements, pull requests welcome.
-
----
-
-## LICENSE
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 MIT License © 4ndr0666
 
