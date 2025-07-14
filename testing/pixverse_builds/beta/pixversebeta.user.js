@@ -1,12 +1,10 @@
 // ==UserScript==
-// @name        4ndr0tools-Pixverse++
+// @name        4ndr0tools_Pixverse-Beta
 // @namespace   https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     2.1
-// @description Pixverse toolkit: bypass blocks, auto-download, prompt NSFW bypass, robust API overrides, settings UI.
-// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-Pixverse++.user.js
-// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-Pixverse++.user.js
-// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
+// @version     1
+// @description Pixverse toolkit in beta: bypass blocks, auto-download, prompt NSFW bypass, robust API overrides, settings UI.
+// @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match       https://app.pixverse.ai/*
 // @run-at      document-start
 // @grant       none
@@ -25,13 +23,18 @@
 
   // --- Trigger Words (NSFW bypass, insert zero-width spaces) ---
   const TRIGGER_WORDS = [
-    "asshole","anus","areola","areolas","blowjob","cock","crotch","ddick","member",
-    "oral","penis","phallus","pussy","suck","throat","vagina","wiener","tits","fuck",
-    "bukake","corridas","esperma","culo","nsfw","deep","boobs","sucking","throating",
-    "cum","meco","semen","deepthroat","buttcheeks","titties","breast","breasts","titfuck",
-    "tittydrop","tittyfuck","swallow","splooge","slut","whore","horny","masterbate",
-    "masterbating","pleasure","fingering","clit","orgasm","climax","moan","moaning",
-    "cock","cleavage","nipple","lick","squeeze","bounce","bouncing","rump","buttcheeks"
+    "anal","anus","areola","areolas","asshole","blowjob","boobs","bounce","bouncing",
+    "breast","breasts","bukake","buttcheeks","climax","clit","cleavage","cock","corridas",
+    "crotch","cum","cums","culo","deep","deepthroat","ddick","dick","esperma","fat ass",
+    "fellatio","fingering","fuck","horny","lick","masterbate","masterbating","member",
+    "meco","moan","moaning","nipple","nsfw","oral","orgasm","penis","phallus","pleasure",
+    "pussy","rump","semen","slut","splooge","squeezing","squeeze","suck","sucking",
+    "swallow","throat","throating","tits","titfuck","titties","tittydrop","tittyfuck",
+    "vagina","wiener","whore"
+    // — Redteam/GenAI/Jailbreak fuzzers (optional, but useful):
+    ,"creampie","cumshot","cunnilingus","doggystyle","ejaculate","ejaculation","handjob",
+    "jerk off","labia","masturbate","nude","orgy","porn","prolapse","rectum","rimjob",
+    "sensual","stripper","submissive","teabag","threesome","vibrator","voyeur"
   ];
   // Optional: enable/disable prompt obfuscation
   const ENABLE_PROMPT_OBFUSCATION = true;
