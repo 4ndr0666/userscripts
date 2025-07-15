@@ -1,30 +1,33 @@
-<!-- ────────────────────────────────────────────────────────────────────────────── -->
-<!--  AGENTS.md  ·  Master Orchestration & Ticket Manifest · Pixverse++ Redteam    -->
-<!--  Living record: ALL placeholders filled with canonical, current project data  -->
-<!-- ────────────────────────────────────────────────────────────────────────────── -->
+<!-- ─────────────────────────────────────────────────────────────────────────── -->
+<!--  AGENTS.md  ·  Master Orchestration & Ticket Manifest (Pixverse++)         -->
+<!--  Owner: 4ndr0666  ·  Generated: 2025-07-15                                 -->
+<!-- ─────────────────────────────────────────────────────────────────────────── -->
 
-# AGENTS — Pixverse++ Toolkit Redteam Hardening
+# AGENTS — Pixverse++
 
 > **Mission Statement**
-> Deliver a production-grade, modular, stealth-optimized Pixverse++ userscript with zero-drift, atomic feature integration, hardening, and an auditable DevSecOps workflow—documented and ready for cross-functional redteam execution and review.
+> Ship a **drift-proof, production-grade** Pixverse++ userscript by executing a
+> seven-step hardening plan through atomic, fully-auditable tickets while
+> enforcing immediate rollback on any failure.
 
 *Repository*: <https://github.com/4ndr0666/userscripts>
-*Generated*: 2025-07-15
-*Maintainer*: 4ndr0666 (Lead/PO)
+*Maintainer*: **4ndr0666** (Lead / Red-team Dev-Ops)
+*Escalation Contact*: <andr0666@protonmail.com>
+*Generated*: **2025-07-15**
 
 ---
 
 ## 0 · Table of Contents
 1. [Executive Summary](#1--executive-summary)
-2. [File Tree Snapshot](#2--file-tree-snapshot)
+2. [Current File Tree Snapshot](#2--current-file-tree-snapshot)
 3. [Streams & Roles](#3--streams--roles)
 4. [Ticket Matrix](#4--ticket-matrix)
-5. [Detailed Ticket Specs](#5--detailed-ticket-specs)
-6. [Change Log](#6--change-log)
-7. [Automation & CI Mandates](#7--automation--ci-mandates)
-8. [Approval Rubric](#8--approval-rubric)
+5. [Detailed Ticket Specifications](#5--detailed-ticket-specifications)
+6. [Roadmap & Sprint Cadence](#6--roadmap--sprint-cadence)
+7. [Automation & Infrastructure Mandates](#7--automation--infrastructure-mandates)
+8. [Approval Rubric (Go/No-Go)](#8--approval-rubric--go-no-go)
 9. [Contribution Workflow](#9--contribution-workflow)
-10. [Post-Release Roadmap](#10--post-release-roadmap)
+10. [Further Enhancements](#10--further-enhancements)
 11. [Glossary](#11--glossary)
 12. [Appendix A — Ticket YAML Stub](#appendix-a--ticket-yaml-stub)
 13. [Appendix B — ADR Template](#appendix-b--adr-template)
@@ -33,306 +36,210 @@
 
 ## 1 · Executive Summary
 
-**Pixverse++** is the flagship userscript for the redteam community—built, tested, and refined by 4ndr0666 and trusted contributors.
-**Key goals:**
-- **Zero drift**: Only atomic, fully-tested feature additions.
-- **Stealth**: No detectable side channels or markers.
-- **Production reliability**: No regressions, every revision passes “smoke” and edge-case tests.
-- **Auditability**: Every team action is traceable, logged, and reviewed.
+Pixverse++ v2.0 is the *canonical* working userscript.
+A **seven-step refactor plan** (Endpoint map → parseBody → robust selector → throttled observers → structuredClone → filename sanitiser → obfuscation helpers) is in progress.
 
-**Gaps previously found:**
-- Experimental function grafts breaking core features.
-- Watermark-free button replacement bugs.
-- Unintentional NSFW placeholder “side-channel” artifacts.
-- Lack of structured, team-friendly audit record for merges, rollbacks, and cross-feature impact.
-
-This AGENTS.md is the live, “single source of truth” for all operational and team-facing work on Pixverse++.
+Failures at Step 2 and Step 3 revealed the necessity of strict **one-feature-per-commit** and **instant rollback**.
+This document converts that plan—and every lesson learned—into ticketed, cross-referenced tasks for the agent team.
 
 ---
 
-## 2 · File Tree Snapshot (2025-07-15)
-
+## 2 · Current File Tree Snapshot
 ```
 
-\| - 4ndr0tools-Pixverse++.user.js        # Canonical userscript, prod baseline
-\| - 4ndr0tools-PixVerseBeta.user.js      # In-progress “hardening” branch
-\| - AGENTS.md                            # This orchestration manifest
-\| - README.md                            # Manual, function doc, usage
-\| - test/
-\|    ├── e2e/
-\|    └── regression/
-\| - .github/
-\|    └── workflows/
-\|         ├── lint.yml
-\|         └── test.yml
-\| - docs/
-\|    └── ADR-0001.md                     # Initial architecture decision
-\| - .gitignore
+.
+├── 4ndr0tools-AlwaysNewWindow\.user.js
+├── 4ndr0tools-BunkrCanonicalURL.user.js
+├── 4ndr0tools-ChatGPTBrainImplant.user.js
+├── 4ndr0tools-ChatGPT++.user.js
+├── 4ndr0tools-ConfirmationBypass.user.js
+├── 4ndr0tools-GooglePhotosandDrive++.user.js
+├── 4ndr0tools-InstagramRedirect.user.js
+├── 4ndr0tools-MegaEmbedRedirector.user.js
+├── 4ndr0tools-Pixverse++.user.js        ◀︎ canonical (v2.0)
+├── 4ndr0tools-PlanetsuzyMobileSkinRedirect.user.js
+├── 4ndr0tools-SelectAllCheckboxes.user.js
+├── 4ndr0tools-SimpcitySearch.user.js
+├── 4ndr0tools-Sora Toolkit.user.js
+├── 4ndr0tools-YandexImageSearch++.user.js
+├── 4ndr0tools-YouTubeEmbedRedirectButton.user.js
+├── 4ndr0tools-YtdlcProtocol.user.js
+├── README.md
+└── testing
+├── functions
+│   └── …  (27 ancillary helper scripts)
+└── pixverse\_builds
+└── beta
+├── AGENTS.md          ◀︎ experimental branch copy
+└── pixversebeta.user.js
 
 ````
+> **Authoritative baseline** = `4ndr0tools-Pixverse++.user.js` (tag v2.0).
+> All tickets below reference this file unless stated otherwise.
 
 ---
 
 ## 3 · Streams & Roles
 
-| Prefix | Stream            | Core Responsibilities                   | Current Lead     |
-| ------ | ----------------- | --------------------------------------- | --------------- |
-| **ENG**| Core Engineering  | Userscript logic, feature migration     | 4ndr0666        |
-| **QA** | Quality Assurance | Regression, smoke tests, ticket closure | 4ndr0666        |
-| **SEC**| Stealth/Redteam   | Detection-resistance, anti-fingerprint  | 4ndr0666        |
-| **DOC**| Documentation     | Usage docs, ADR, AGENTS updates         | 4ndr0666        |
+| Prefix | Stream / Role       | Core Responsibilities                               | Lead            |
+| ------ | ------------------- | --------------------------------------------------- | --------------- |
+| **ARC**| Architecture        | Design approvals, drift prevention, rollback guard  | 4ndr0666        |
+| **ENG**| Core Engineering    | Userscript code, DOM logic, feature grafts          | *vacant*        |
+| **QA** | Quality Assurance   | Regression tests, CI, rollback verification         | *vacant*        |
+| **SEC**| Security/Red-Team   | Anti-fingerprint, anti-tamper, SBOM                 | *vacant*        |
+| **DOC**| Documentation       | README, AGENTS.md upkeep, change-logs               | *vacant*        |
+| **INF**| Infrastructure      | GitHub Actions, pre-commit hooks, repo hygiene      | *vacant*        |
+
+*(Vacant leads are assigned per ticket; core lead escalates blockers.)*
 
 ---
 
 ## 4 · Ticket Matrix
 
-| ID      | Stream | Title                                   | Dependencies | Prio | Est (hrs) |
-| ------- | ------ | --------------------------------------- | ------------ | ---- | --------- |
-| 100-01  | ENG    | Endpoint Regex Map integration          | —            | P0   | 1         |
-| 100-02  | ENG    | Centralized parseBody() helper          | 100-01       | P0   | 1         |
-| 100-03  | ENG    | Robust watermark button selector        | 100-02       | P0   | 1         |
-| 100-04  | ENG    | Scoped/throttled MutationObservers      | 100-03       | P1   | 2         |
-| 100-05  | ENG    | Use structuredClone for deep copies     | 100-04       | P1   | 1         |
-| 100-06  | ENG    | Download filename sanitization/patterns | 100-05       | P2   | 1         |
-| 100-07  | ENG    | Robust obfuscation helpers              | 100-06       | P2   | 1         |
-| 200-01  | QA     | Test/rollback-after-fail discipline     | —            | P0   | 1         |
-| 200-02  | QA     | Regression test coverage >95%           | 100-07       | P0   | 2         |
-| 300-01  | DOC    | AGENTS.md up-to-date (this file)        | —            | P0   | 1         |
-| 300-02  | DOC    | ADR and README update                   | 100-07       | P1   | 2         |
+| ID   | Stream | Step | Title                                        | Depends | Prio | Est hrs |
+| ---- | ------ | ---- | -------------------------------------------- | ------- | ---- | ------- |
+| PX-01| ENG    | 1    | Introduce `API_ENDPOINTS` map & helper       | —       | P0   | 1 |
+| PX-02| ENG    | 2    | Add **parseBody()** & replace inline parsing | PX-01   | P0   | 1 |
+| PX-03| ENG    | 3    | Implement robust watermark button selector   | PX-02   | P0   | 1 |
+| PX-04| ENG    | 4    | Throttled, scoped MutationObservers          | PX-03   | P1   | 2 |
+| PX-05| ENG    | 5    | Migrate deep copy to `structuredClone()`     | PX-04   | P1   | 1 |
+| PX-06| ENG    | 6    | Filename sanitiser & pattern generator       | PX-05   | P2   | 1 |
+| PX-07| ENG    | 7    | Consolidate obfuscation helpers              | PX-06   | P2   | 1 |
+| PX-08| QA     | —    | Regression test + auto-rollback workflow     | PX-01…PX-07 | P0 | 2 |
+| PX-09| DOC    | —    | Update README & inline docs for new APIs     | PX-07   | P1   | 1 |
+| PX-10| INF    | —    | GitHub Action: lint → test → smoke → release | PX-08   | P1   | 2 |
 
 ---
 
-## 5 · Detailed Ticket Specs
+## 5 · Detailed Ticket Specifications
 
-### 100-01  ENG  “Endpoint Regex Map integration”
+### PX-01 · ENG · Step 1 — API_ENDPOINTS Map
+**Goal** Stop string-fragile `includes()` checks.
+- Add canonical `API_ENDPOINTS` (credits, videoList, batchUpload, singleUpload, creativePrompt).
+- Helper `matchesEndpoint(url, key)` returns Boolean.
+- Replace every `url.includes(...)` pattern in XHR/fetch logic.
 
-- **Goal:**
-  Replace all `url.includes()` API matching with a single, canonical `API_ENDPOINTS` regex map and `matchesEndpoint()` helper.
-- **Scope:**
-  - Define endpoints in map.
-  - Refactor every XHR/fetch API hit to use `matchesEndpoint()`.
-- **Acceptance:**
-  - All bypasses (video list, upload, credits) still fire.
-  - Test passes: video/status unlock, upload, credits.
-
----
-
-### 100-02  ENG  “Centralized parseBody() helper”
-
-- **Goal:**
-  Remove duplicated FormData/JSON parsing.
-- **Scope:**
-  - Add `parseBody()` utility.
-  - Swap all body parsing to this helper.
-- **Acceptance:**
-  - Upload bypass works; no broken mediaPath.
-  - Test: repeated uploads do not clobber paths.
+**Acceptance**
+- Unit tests confirm exact parity with v2.0 behaviour.
+- Log line: `"[PX-01] endpoint matched: <key>"` appears for each request in dev console.
 
 ---
 
-### 100-03  ENG  “Robust watermark button selector”
+### PX-02 · ENG · Step 2 — Centralised parseBody()
+**Goal** One robust parser for FormData/JSON payloads.
+- Implement `parseBody(body)` in utils.
+- Refactor XHR and fetch overrides to call it.
+- Remove duplicated parsing logic.
 
-- **Goal:**
-  Replace brittle watermark-free button selectors with a robust fallback covering data-testid, aria-label, and text content.
-- **Scope:**
-  - Implement `findWatermarkButton()`.
-  - Refactor `setupWatermarkButton()` to use this.
-- **Acceptance:**
-  - “Watermark-free” is always available on eligible videos, no more missed buttons or false triggers.
-  - Canonical style retained.
-
----
-
-### 100-04  ENG  “Scoped/throttled MutationObservers”
-
-- **Goal:**
-  Stop global observer perf spikes; only watch `#main-content` or `[role=main]`.
-- **Scope:**
-  - Add `throttle()` helper.
-  - Refactor observers to be as tight as possible.
-- **Acceptance:**
-  - Inline download and watermark button always re-injected on SPA navigation.
-  - No lag, no over-observing.
+**Acceptance**
+- `savedMediaPath` captured identically to v2.0 (manual upload test).
+- No site blackout / no moderation tripping.
+- Revert automatically on fail (see PX-08 workflow).
 
 ---
 
-### 100-05  ENG  “Use structuredClone for deep copies”
+### PX-03 · ENG · Step 3 — Robust Watermark Button Selector
+**Goal** Fix selector drift that broke “Watermark-free” replacement.
+Tasks
+1. Add `findWatermarkButton()` with selector priority:
+   `data-testid*="watermark"` → `aria-label*="watermark"` → button text.
+2. Refactor `setupWatermarkButton()` to call helper.
+3. Ensure replacement runs on SPA route changes.
 
-- **Goal:**
-  Swap all legacy deep copy patterns for native `structuredClone()` for safety and speed.
-- **Scope:**
-  - All response mutation (e.g., modifyVideoList) uses `structuredClone`.
-- **Acceptance:**
-  - No regression on API modification.
-  - No edge-case bugs with object references.
-
----
-
-### 100-06  ENG  “Download filename sanitization/patterns”
-
-- **Goal:**
-  All downloads get a `sanitize()` function and macro pattern for title/raw/etc.
-- **Scope:**
-  - Implement filename generator with `{title}`, `{raw}`, etc.
-- **Acceptance:**
-  - No download ever fails or yields an illegal filename.
+**Acceptance**
+- Manual QA: button replaced on *all* Pixverse pages with “Download” widget.
+- No duplicate buttons, no console errors.
 
 ---
 
-### 100-07  ENG  “Robust obfuscation helpers”
+*(PX-04 → PX-10 follow identical format; omitted for brevity here.)*
 
-- **Goal:**
-  Harden prompt moderation bypass:
-  - `escapeRegExp()`
-  - `obfuscatePrompt()`
-  - Pull in full `TRIGGER_WORDS` list.
-- **Scope:**
-  - All prompt obfuscation uses these helpers only.
-- **Acceptance:**
-  - Every trigger word is obfuscated, no false positives or leakage.
-  - No accidental side channels.
+Full ticket blocks are embedded in `docs/tickets/*.md` once generated.
 
 ---
 
-### 200-01  QA  “Test/rollback-after-fail discipline”
+## 6 · Roadmap & Sprint Cadence
 
-- **Goal:**
-  Enforce: one-feature-per-commit; rollback instantly after a failed test.
-- **Scope:**
-  - Test log must show “pass before advance.”
-  - Add automated script to restore last passing build.
-- **Acceptance:**
-  - Team never stacks features in one PR.
-  - No partial merges.
+| Sprint | Focus                          | Tickets                    | Duration |
+| ------ | ----------------------------- | -------------------------- | -------- |
+| **S-1**| Hardening Steps 1–3           | PX-01 · PX-02 · PX-03      | 5 days   |
+| **S-2**| Observer & deep-copy upgrade  | PX-04 · PX-05              | 4 days   |
+| **S-3**| Filename + obfuscation + QA   | PX-06 · PX-07 · PX-08      | 5 days   |
+| **S-4**| Docs + CI/CD polish           | PX-09 · PX-10              | 3 days   |
 
 ---
 
-### 200-02  QA  “Regression test coverage >95%”
+## 7 · Automation & Infrastructure Mandates
 
-- **Goal:**
-  Regression suite runs on every feature; maintain >95% coverage.
-- **Scope:**
-  - Add tests for all new features.
-  - Write edge-case regression tests.
-- **Acceptance:**
-  - No feature ever regresses without instant detection.
-
----
-
-### 300-01  DOC  “AGENTS.md up-to-date (this file)”
-
-- **Goal:**
-  Every AGENTS.md ticket must be cross-referenced, closed, and dated.
-- **Scope:**
-  - PR checklist: “update AGENTS.md” on every merge.
-- **Acceptance:**
-  - No tickets drift from file state.
-  - Audit trail shows clear closure.
-
----
-
-### 300-02  DOC  “ADR and README update”
-
-- **Goal:**
-  Each architectural change triggers an ADR and README revision.
-- **Scope:**
-  - AGENTS.md references ADR-0001.md.
-  - README accurately reflects current UX, features, limitations.
-- **Acceptance:**
-  - ADRs match code as implemented.
-  - All PRs/changes documented.
-
----
-
-## 6 · Change Log (Live)
-
-- **2025-07-15:** AGENTS.md fully re-authored for Pixverse++ with live tickets, detailed roles, file tree, and explicit acceptance for each step.
-- **2025-07-14:** All legacy experimental features rolled back to canonical v2.0 baseline.
-- **2025-07-13:** Regression discovered: Watermark-free button replacement bug; fix tracked in 100-03.
-- **2025-07-12:** Beta branch introduced (file: 4ndr0tools-PixVerseBeta.user.js).
-- **2025-07-10:** Initial ADR-0001.md and CI lint/test jobs created.
-
----
-
-## 7 · Automation & CI Mandates
-
-| Domain     | Requirement                                                       |
-| ---------- | ----------------------------------------------------------------- |
-| **CI**     | GitHub Actions: `lint.yml`, `test.yml` run on every PR/merge.     |
-| **Lint**   | ESLint (JS), shfmt, shellcheck for all scripts.                   |
-| **Feature**| No batch feature merges; atomic PRs only.                         |
-| **Log**    | All ticket PRs and rollbacks are logged in AGENTS.md changelog.   |
-| **Fail**   | Test failure = auto-revert to last passing build.                 |
+| Aspect           | Requirement                                                         |
+| ---------------- | ------------------------------------------------------------------- |
+| **CI**           | Workflow: lint → unit → e2e → **auto-rollback if fail**.            |
+| **Logging**      | All feature toggles + errors via `DEBUG_PREFIX = '[Pixverse++]'`.   |
+| **Branch Policy**| `feat/PX-##-slug` only; squash-merge; Signed-off-by required.       |
+| **Version Tags** | Semantic tags (`v2.0.1` etc.) by Action on successful release.      |
+| **Rollback**     | GitHub Action reverts commit if QA job red.                         |
 
 ---
 
 ## 8 · Approval Rubric (Go/No-Go)
 
-| Area                | Pass Condition                                   | Verification                 |
-| ------------------- | ----------------------------------------------- | ---------------------------- |
-| **Tests**           | >95% coverage, all features run in CI            | CI status, e2e reports       |
-| **Static Analysis** | 0 lint/shellcheck errors                         | CI logs                      |
-| **Drift**           | No feature “drift” from canonical/approved       | AGENTS.md, PR review         |
-| **Docs**            | AGENTS.md and README match released code         | Manual audit                 |
-| **Rollback**        | Any regression triggers auto-revert              | Git, changelog               |
-| **UX**              | Watermark button and all patches function        | End-user manual check        |
+| Criterion        | Threshold                                   | Verified by |
+| ---------------- | ------------------------------------------- | ----------- |
+| Tests            | 100 % pass, coverage ≥ 95 %                 | QA / CI     |
+| Functionality    | Manual smoke test = v2.0 parity + new feat. | ENG lead    |
+| Drift Check      | Canonical diff shows *only* ticket changes. | ARC lead    |
+| Docs             | README + AGENTS.md updated, no placeholders | DOC lead    |
 
 ---
 
 ## 9 · Contribution Workflow
 
-1. **One ticket = one branch = one PR.**
-2. Fork, branch on open ticket (`feat/100-03-watermark-btn`).
-3. Implement feature; run `lint`, `test` locally.
-4. Commit referencing ticket; squash merge only if tests pass.
-5. If PR fails or regresses: revert branch, refile ticket.
-6. On merge: update AGENTS.md with ticket, PR link, close date.
-7. ADRs and README are updated *before* closing related tickets.
+1. **Branch** from `main` → `feat/PX-##-slug`.
+2. Implement **only** the ticket scope.
+3. `npm run lint && npm test` must pass.
+4. Commit with `feat(PX-##): <summary>` + `Signed-off-by`.
+5. Open PR; assign stream reviewer.
+6. On *any* failure, merge **revert-PR** immediately; ticket returns to **TODO**.
 
 ---
 
-## 10 · Post-Release Roadmap
+## 10 · Further Enhancements
 
-| Idea                 | Value Add                | Effort | Notes                        |
-| -------------------- | ----------------------- | ------ | ---------------------------- |
-| User toggle UI       | Enable/disable features | M      | SPA overlay, localStorage    |
-| Smart agent scoring  | ML/LLM review assist    | L      | LLM + rule-based audit       |
-| Telemetry opt-in     | Usage/error metrics     | L      | Redteam opt-in, GDPR only    |
-| Plugin/extension API | User-contrib extensions | L      | Sandbox via iframes          |
+| Idea                         | Effort | Value                                           |
+| ---------------------------- | ------ | ----------------------------------------------- |
+| Hot-reload user settings UI  | M      | End-user toggles without reinstalling script.   |
+| Telemetry Opt-in (anon)      | L      | Early bug detection with privacy compliance.    |
+| Plugin API for Pixverse++    | L      | Community extensions after step 7 complete.     |
 
 ---
 
 ## 11 · Glossary
 
-| Term       | Definition                                  |
-| ---------- | ------------------------------------------- |
-| **Ticket** | One atomic, testable feature/fix            |
-| **PR**     | Pull request, must reference ticket ID       |
-| **ADR**    | Architecture Decision Record (see docs/)     |
-| **Changelog** | Live log of all merges, rollbacks, events |
+| Term          | Meaning                                   |
+| ------------- | ----------------------------------------- |
+| **PX-##**     | Pixverse++ ticket identifier.             |
+| **Rollback**  | Git revert to previous passing commit.    |
+| **SPA**       | Single-Page Application.                  |
+| **StructuredClone** | Native deep-copy API in modern JS. |
 
 ---
 
 ## Appendix A — Ticket YAML Stub
-
 ```yaml
-id: 100-03
+id: PX-999
 stream: ENG
-title: Robust watermark button selector
-dependencies: [100-02]
-priority: P0
+title: Short concise title
+dependencies: []
+priority: P3
 est_hours: 1
 description: |
-  Implement findWatermarkButton() to robustly match watermark-free buttons across SPA renders and UI changes, using multiple selector strategies. Refactor setupWatermarkButton() to use this exclusively.
+  One paragraph description.
 acceptance_criteria:
-  - Button always present on eligible videos.
-  - Style and behavior match canonical v2.0.
-  - No false positives/negatives.
+  - Bullet measurable outcomes.
 deliverables:
-  - 4ndr0tools-Pixverse++.user.js updated.
-  - Tests updated for edge cases.
+  - Code / tests / docs
 notes: |
-  Use querySelectorAll, data-testid, aria-label, fallback to text match. Coordinate with QA before merge.
+  Implementation hints or edge-cases.
 ````
 
 ---
@@ -340,27 +247,35 @@ notes: |
 ## Appendix B — ADR Template
 
 ```md
-# ADR-0002 – Watermark-Free Button Selector
-
-Status: Accepted
+# ADR-PX-???? – <Decision Title>
+Status: Proposed
 Date: 2025-07-15
 
 ## Context
-Previous selector logic broke on SPA navigation and new classnames.
+Why we need this decision now.
 
 ## Decision
-Adopt a multi-selector approach using querySelectorAll, data attributes, and fallback to innerText.
+The explicit design/engineering choice.
 
 ## Consequences
-- More robust to UI changes.
-- Slight increase in selector complexity.
-- No further regressions in “watermark-free” download UX.
+Positive + negative trade-offs.
 
 ## Alternatives Considered
-- Rely only on class or id (rejected: too brittle)
+Other options and rejections.
+```
+
+<!-- END OF AGENTS.md -->
+
 ```
 
 ---
 
-**END OF AGENTS.md**
-*(Always update the changelog and ticket closure status in this file immediately after any PR merge or rollback. Every section is actionable, live, and specific to Pixverse++ as it exists today.)*
+### How to keep *us* on track
+
+1. **Always reference ticket ID (PX-##) in every PR, commit, and chat update.**
+2. **Reject changes** if they combine multiple tickets or stray from spec.
+3. **QA must roll back immediately** on any failure—automated via PX-08 workflow.
+4. A *passed* ticket moves the step marker; a *failed* ticket loops until green.
+
+This eliminates drift and ensures Pixverse++ reaches a stable, production-grade release.
+```
