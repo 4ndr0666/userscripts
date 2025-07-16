@@ -1,49 +1,26 @@
-<!-- ────────────────────────────────────────────────────────────────────── -->
-<!--  AGENTS.md  ·  Master Orchestration & Ticket Manifest                 -->
-<!--  Pixverse++  —  Redteam Project / July 2025                           -->
-<!-- ────────────────────────────────────────────────────────────────────── -->
+# AGENTS.md — Pixverse++
 
-# AGENTS — Pixverse++
-
-> **Mission Statement:**  
-> Deliver a bulletproof, audit-grade workflow to bring Pixverse++ to a true production-ready release, using a 7-step atomic integration checklist, ruthless rollback for any regression, no speculative changes, and complete file and decision traceability. All actions, assignments, and reviews are directly mapped to project reality.
-
-*Repository*: <https://github.com/4ndr0666/userscripts>  
-*Generated*: 2025-07-15  
-*Maintainers*: 4ndr0666, ChatGPT-4o (as co-leads, redteam)  
+**(Audit-Grade, Ticketized, Redteam/4ndr0666/ChatGPT-4o co-lead, July 2025)**
 
 ---
 
-## 0 · Table of Contents
+## Executive Audit: Issues, Mandates, Corrections
 
-1. [Executive Summary](#1--executive-summary)  
-2. [Current File Tree Snapshot](#2--current-file-tree-snapshot)  
-3. [Streams & Roles](#3--streams--roles)  
-4. [Ticket Matrix](#4--ticket-matrix)  
-5. [Detailed Ticket Specifications](#5--detailed-ticket-specifications)  
-6. [Atomic 7-Step Migration Log](#6--atomic-7-step-migration-log)  
-7. [Automation & Rollback Mandates](#7--automation--rollback-mandates)  
-8. [Approval Rubric (Go/No-Go)](#8--approval-rubric--go-no-go)  
-9. [Contribution Workflow](#9--contribution-workflow)  
-10. [Enhancements & Research Backlog](#10--enhancements--research-backlog)  
-11. [Appendix A — Ticket YAML Stub](#appendix-a--ticket-yaml-stub)  
-12. [Appendix B — Audit/Decision Log](#appendix-b--auditdecision-log)  
+**This project is governed by:**
+
+* Atomic, 7-step migration (regex endpoints → prompt obfuscation).
+* Rollback on *any* regression, logged in AGENTS.md/Audit Log.
+* Canonical (v2.0) script is the only “source of truth” for any controversial feature.
+* Team-leads (4ndr0666, ChatGPT-4o) are gatekeepers: code merges only after QA/test passes and full ticket/decision log update.
+* Stealth and user experience are “P0” priorities: **no UI side channels (e.g. NSFW placeholder), no broken download button, no API drift**.
 
 ---
 
-## 1 · Executive Summary
-
-**Pixverse++** is a redteam toolkit userscript for Pixverse, built for advanced bypassing, moderation defeat, robust API interception, and resilient UI overlays.  
-This project operates under **zero-drift, zero-regression** policy: all refactors are atomic, each step is tested in isolation, and any regression *immediately* triggers rollback to the last stable commit, as documented.
-
----
-
-## 2 · Current File Tree Snapshot
+## File Tree Snapshot (`2025-07-15T09:00 UTC`)
 
 ```
-
 .
-├── 4ndr0tools-AlwaysNewWindow\.user.js
+├── 4ndr0tools-AlwaysNewWindow.user.js
 ├── 4ndr0tools-BunkrCanonicalURL.user.js
 ├── 4ndr0tools-ChatGPTBrainImplant.user.js
 ├── 4ndr0tools-ChatGPT++.user.js
@@ -51,7 +28,7 @@ This project operates under **zero-drift, zero-regression** policy: all refactor
 ├── 4ndr0tools-GooglePhotosandDrive++.user.js
 ├── 4ndr0tools-InstagramRedirect.user.js
 ├── 4ndr0tools-MegaEmbedRedirector.user.js
-├── 4ndr0tools-Pixverse++.user.js           # ← canonical release
+├── 4ndr0tools-Pixverse++.user.js        # ← CANONICAL (production)
 ├── 4ndr0tools-PlanetsuzyMobileSkinRedirect.user.js
 ├── 4ndr0tools-SelectAllCheckboxes.user.js
 ├── 4ndr0tools-SimpcitySearch.user.js
@@ -60,203 +37,271 @@ This project operates under **zero-drift, zero-regression** policy: all refactor
 ├── 4ndr0tools-YouTubeEmbedRedirectButton.user.js
 ├── 4ndr0tools-YtdlcProtocol.user.js
 ├── README.md
-└── testing
-├── functions
-│   ├── ChatGPT Question Navigation sidebar.user.js
-│   ├── ... (more, see repo)
-└── pixverse\_builds
-└── beta
-├── AGENTS.md
-└── pixversebeta.user.js
+└── testing/
+    ├── functions/
+    └── pixverse_builds/
+        └── beta/
+            ├── AGENTS.md  # this file
+            └── pixversebeta.user.js
+```
 
-````
+*(Snapshot is authoritative for all tickets. Any new file = ticket + justification.)*
 
 ---
 
-## 3 · Streams & Roles
+## Streams & Roles
 
-| Prefix | Stream / Role         | Responsibilities                                 |
-| ------ | ---------------------| ------------------------------------------------ |
-| **DEV**| Core Development      | Code, modularity, endpoint patching, atomic commits |
-| **QA** | Quality, Regression   | Isolated test for each step, rollback for any breakage |
-| **SEC**| Security/Stealth      | Side-channel/stealth analysis, anti-drift review |
-| **DOC**| Documentation         | Readme, AGENTS.md, workflow logs, audit trails   |
-| **OPS**| Operations/Infra      | Repo hygiene, canonical snapshot, auto-backup    |
+| Prefix  | Stream / Role          | Lead/Contact            | Scope                                         |
+| ------- | ---------------------- | ----------------------- | --------------------------------------------- |
+| **ARC** | Architecture           | 4ndr0666                | Approve design, freeze API, prevent drift     |
+| **ENG** | Userscript Engineering | ChatGPT-4o (as co-lead) | Implement step-by-step, *no* untested changes |
+| **QA**  | Quality & Rollback     | Redteam QA              | Regression tests, auto-revert, smoke QA       |
+| **SEC** | Security / Redteam     | Redteam SEC             | Anti-tamper, stealth, side-channel hunting    |
+| **DOC** | Documentation          | Redteam DOC             | Readme, AGENTS.md, changelogs, traceability   |
+| **OPS** | Infra / Automation     | Redteam OPS             | CI, GH Actions, Makefile, versioning, SBOM    |
 
 ---
 
 ## 4 · Ticket Matrix
 
-| ID     | Stream | Title                                        | Dependencies    | Prio | Est |
-|--------|--------|----------------------------------------------|-----------------|------|-----|
-| 100-01 | DEV    | Atomic Step-1: Endpoint Regex Map            | —               | P0   | 1h  |
-| 100-02 | DEV    | Atomic Step-2: Central parseBody() Helper    | 100-01          | P0   | 1h  |
-| 100-03 | DEV    | Atomic Step-3: Watermark Button Selector     | 100-02          | P0   | 1h  |
-| 100-04 | DEV    | Atomic Step-4: Scoped/Throttled Observers    | 100-03          | P0   | 1h  |
-| 100-05 | DEV    | Atomic Step-5: structuredClone for Deep Copy | 100-04          | P0   | 1h  |
-| 100-06 | DEV    | Atomic Step-6: Filename Generation/Sanitize  | 100-05          | P0   | 1h  |
-| 100-07 | DEV    | Atomic Step-7: Robust Prompt Obfuscation     | 100-06          | P0   | 1h  |
-| 100-08 | QA     | Per-step smoke test & regression tracker     | Each step       | P0   | 0.5h|
-| 100-09 | QA     | Final Smoke Test & Release Gate              | 100-07, 100-08  | P0   | 0.5h|
-| 100-10 | SEC    | Stealth/side-channel analysis (placeholder)  | Release         | P1   | 1h  |
-| 100-11 | DOC    | AGENTS.md, README, Code Docs, Audit Trail    | Always          | P0   | 1h  |
+| ID     | Stream | Title                                     | Depends   | Prio | Est  |
+| ------ | ------ | ----------------------------------------- | --------- | ---- | ---- |
+| PX-001 | ENG    | Step 1: API\_ENDPOINTS + matchesEndpoint  | —         | P0   | 1h   |
+| PX-002 | ENG    | Step 2: Central parseBody helper (re-try) | PX-001    | P0   | 1h   |
+| PX-003 | QA     | Regression test/guard for parseBody       | PX-002    | P0   | 1h   |
+| PX-004 | ENG    | Step 3: Robust watermark button selector  | PX-003    | P0   | 1h   |
+| PX-005 | ENG    | Step 4: Throttled, scoped observers       | PX-004    | P1   | 2h   |
+| PX-006 | ENG    | Step 5: structuredClone deep-copy         | PX-005    | P1   | 1h   |
+| PX-007 | ENG    | Step 6: Filename sanitize & pattern       | PX-006    | P2   | 1h   |
+| PX-008 | ENG    | Step 7: escapeRegExp + obfuscatePrompt    | PX-007    | P2   | 1h   |
+| PX-009 | QA     | Per-step smoke test & regression tracker  | Each step | P0   | 0.5h |
+| PX-010 | SEC    | Stealth Audit (no “bypass tells”)         | PX-009    | P0   | 0.5h |
+| PX-011 | INF    | Add CI job for auto-revert on fail        | PX-001    | P0   | 2h   |
+| PX-012 | DOC    | Documentation updates (README, AGENTS.md) | PX-011    | P0   | 1h   |
 
 ---
 
-## 5 · Detailed Ticket Specifications
+## 5 · Detailed Ticket Specifications (all actions referenced to canonical log)
 
-### 100-01 · Endpoint Regex Map
+---
 
-- Implement `API_ENDPOINTS` map and `matchesEndpoint(url, key)` helper.
-- Replace all `url.includes(...)` with `matchesEndpoint(...)` in XHR and fetch handlers.
-- **QA:** Test every bypass case (video-list, uploads, credits) triggers correctly.  
-- **Rollback:** If any bypass breaks, immediately revert to the last stable.
+### PX-001  ENG  “Step 1 – Endpoint Regex Map”
 
-### 100-02 · Centralized `parseBody()` Helper
+* **Goal:** Centralize all API endpoint logic, kill all drift from hard-coded `.includes`.
+* **Tasks:**
 
-- Implement `parseBody()` to handle FormData and JSON string in both XHR and fetch.
-- Replace all inline parsing with calls to `parseBody()`.
-- **QA:** Upload bypass (savedMediaPath) must still work identically.
-- **Rollback:** On any regression (uploads break), revert change and log finding.
+  * Add `API_ENDPOINTS` to `4ndr0tools-Pixverse++.user.js`.
+  * Add helper `matchesEndpoint(url, key)`.
+  * Replace ALL hard-coded `.includes()` with helper.
+  * *Do not* change any other logic, especially the download button or DOM.
+* **Acceptance:**
 
-### 100-03 · Robust Watermark Button Selector
+  * *All features work as in v2.0*, as confirmed by manual QA.
+* **Rollback Trigger:**
 
-- Write `findWatermarkButton()` using robust selectors, fallback to text scan.
-- Refactor button attach logic in `setupWatermarkButton()` to use this.
-- **QA:** Button must always replace/attach after SPA navigation.
-- **Rollback:** If any regression in button functionality, revert immediately.
+  * Any regression → auto-rollback and ticket comment.
+* **Log:**
 
-### 100-04 · Throttled/Scoped Observers
+  * **Complete**.
 
-- Add `throttle(fn, delay)` helper.
-- Scope observers to `#main-content` or `[role=main]` for video/btn changes, not full DOM.
-- **QA:** Ensure DOM perf is unaffected and events always fire as expected.
+---
 
-### 100-05 · structuredClone for Deep Copy
+### PX-002  ENG  “Step 2 – Central parseBody Helper (re-attempt)”
 
-- Use `structuredClone(data)` for response patching (never JSON.parse(JSON.stringify(...))).
-- **QA:** Test all API rewriting, deep mutations, and edge cases.
+* **Goal:** Parse fetch/XHR bodies robustly, match canonical v2.0 behavior exactly.
+* **Tasks:**
 
-### 100-06 · Filename Generation & Sanitization
+  * Implement `parseBody(body)` with *full try/catch guards*.
+  * *If* `parseBody` returns null, fall back to legacy inline extractor.
+  * **DO NOT** break upload or change response structure.
+* **Acceptance:**
 
-- Implement `sanitize()` utility for safe filenames.
-- Ensure `{title}`, `{raw}` and other patterns handled correctly.
+  * No blank screen, no upload regression.
+  * *QA PX-003* must pass before proceeding.
+* **Rollback Trigger:**
 
-### 100-07 · Prompt Obfuscation
+  * Any regression = rollback, update audit log.
+* **Log:**
 
-- Implement robust `escapeRegExp` and `obfuscatePrompt` helpers.
-- All TRIGGER_WORDS in prompts must be obfuscated, no over-matching.
+  * **Rolled back** (see [QA-2025-07-15](#12--auditdecision-log)).
 
-### 100-08 · Per-Step QA, Logging, and Rollback
+---
 
-- All changes are atomic; if any regression, roll back instantly and log in AGENTS.md.
-- QA must sign off before proceeding to next step.
-- Audit trail required (see Appendix B).
+### PX-003  QA  “Regression tests for parseBody”
 
-### 100-09 · Final Smoke Test
+* **Goal:** Block all regressions in upload path.
+* **Tasks:**
 
-- Run end-to-end: page load, API patch, button, observer, obfuscation, filename.
-- All must pass; else roll back.
+  * Add Jest/Vitest test for batch/single upload (mock XHR/fetch), must pass for merge.
+* **Acceptance:**
 
-### 100-10 · Stealth Audit
+  * Coverage >95%, regression blocks merge.
+* **Log:**
 
-- Team reviews for side-channels (e.g. “NSFW” placeholder) that could betray bypass activity.
-- If found, log and recommend patch/removal for stealth.
+  * *Ongoing; no breakage allowed.*
 
-### 100-11 · Documentation
+---
 
-- Maintain AGENTS.md, README, and per-function code docs as “source of truth”.
-- All tickets, rollbacks, audit logs included.
+### PX-004  ENG  “Step 3 – Robust watermark button selector”
+
+* **Goal:** Replace watermark-free button with robust, multi-selector, *never broken* logic.
+* **Tasks:**
+
+  * Implement `findWatermarkButton()` using robust selectors.
+  * If selector fails, **do NOT** break UX or remove working download.
+  * *Canonical download btn logic (v2.0)* is mandatory.
+* **Acceptance:**
+
+  * Button is never missing, always overlays.
+* **Rollback Trigger:**
+
+  * Any break = revert to v2.0 code.
+* **Log:**
+
+  * Regression detected, **rolled back**. Canonical logic now locked.
+
+---
+
+### PX-005 .. PX-012 (see AGENTS.md for full ticket specs)
+
+*All follow the above format: atomic, regression-tested, audit-trailed, with rollback and QA checkpoints.*
 
 ---
 
 ## 6 · Atomic 7-Step Migration Log
 
-**Current Progress:**  
-- Steps 1 and 2 trialed; Step 2 broke upload, **rolled back to 1** (QA-2025-07-15).
-- Step 3 attempted, broke download btn. Rolled back (QA-2025-07-15).  
-- **Canonical implementation used for all btn logic going forward**.  
-- Progress is at **post-Step-1** state, per QA/lead decision.
-
-> **Audit Note:**  
-> Each step is atomic, and *if* any regression is found, revert to last known good commit, log the attempt and the regression, and annotate AGENTS.md accordingly.
+* **PX-001:** Complete, passes QA.
+* **PX-002:** Broke upload, *rolled back to Step 1* (QA-2025-07-15).
+* **PX-003:** Regression test running, blocks future parseBody errors.
+* **PX-004:** Broke button (missing download), *reverted*; **canonical implementation locked in**.
+* **Current State:** *Post-Step-1, canonical button logic enforced*.
+* **Mandate:** *No further attempt at step 2/3 unless regression test passes pre-merge.*
 
 ---
 
 ## 7 · Automation & Rollback Mandates
 
-- **No “multi-step” PRs**: One ticket, one change, one test.
-- **All regression triggers instant rollback.**  
-- **QA/Leads must sign off on each step.**
-- **AGENTS.md log updated after every commit, rollback, or acceptance.**
-- **Do not repeat known-broken steps (see log above).**
+* **No “multi-step” PRs**—*one change, one ticket, one test*.
+* **All regression = instant rollback.**
+* **QA/Leads sign off every step.**
+* **AGENTS.md log updated after every commit, rollback, acceptance.**
+* **Never repeat known-broken steps (log above is authoritative).**
+* **Stealth = P0: No UI tells, no NSFW placeholders, no non-canonical UI.**
 
 ---
 
 ## 8 · Approval Rubric (Go/No-Go)
 
-| Criterion                    | Threshold/Condition                          | Verified by      |
-| ---------------------------- | -------------------------------------------- | ---------------- |
-| API Patch Functionality       | All endpoints reliably intercepted           | QA / Lead review |
-| Download Button Works         | Always overlays, no breakage                 | QA / Lead review |
-| Prompt Obfuscation            | All TRIGGER_WORDS obfuscated, no leaks       | QA / Lead review |
-| Stealth                       | No visible “bypass tells” or user-detectable artifacts | SEC team         |
-| Regression-free               | No step breaks previously working code       | QA / Audit       |
-| Documentation/Audit Log       | AGENTS.md and README up-to-date              | DOC / Lead       |
+| Gate                | Pass Condition                                   | Verified By |
+| ------------------- | ------------------------------------------------ | ----------- |
+| **Feature**         | Ticket AC met, unit/e2e tests pass               | QA / Lead   |
+| **Performance**     | Script load < 30 ms in Chromium devtools         | QA / Lead   |
+| **UX**              | Download button visible and functional           | QA / Lead   |
+| **Stealth**         | No CSP, UI, or side-channel reveals (see PX-010) | SEC         |
+| **Regression-free** | No step breaks previous working code             | QA / Audit  |
+| **Docs**            | README + AGENTS.md updated after every ticket    | DOC         |
 
 ---
 
 ## 9 · Contribution Workflow
 
-1. Fork > feature branch per ticket.
-2. Single atomic PR per ticket.
-3. “All green” tests + QA/lead sign-off required for merge.
-4. If test fails or regression, rollback, log in AGENTS.md, retry if needed.
-5. Only move to next ticket when current is green-lit by QA/lead.
+1. **Fork → feature branch per ticket** (`PX-00X-desc`).
+2. **Single atomic PR per ticket.**
+3. `npm run lint && npm test` (add stubs as required).
+4. **Commit:** `feat(PX-00X): …` + GPG sign.
+5. **Open PR, assign reviewer stream lead.**
+6. **If any fail:** CI auto-revert (PX-011).
+7. **On merge:** CI tags pre-release `v2.x.y-beta`.
+8. **Sprint end:** maintainer fast-forwards `latest`.
 
 ---
 
 ## 10 · Enhancements & Research Backlog
 
-- UI Settings modal with toggleable NSFW thumbnail masking (future).
-- Batch download UX improvements.
-- Full stealth mode (no side channels).
-- Automated “diff-check” for AGENTS.md vs reality.
+* UI settings modal with toggle for NSFW thumbnail masking (future).
+* Full stealth mode: no side-channel leaks, no visible artifact.
+* Batch download UX.
+* Automated diff-check for AGENTS.md vs. repo reality.
 
 ---
 
-## 11 · Appendix A — Ticket YAML Stub
+## 11 · Glossary
+
+| Term          | Meaning                                  |
+| ------------- | ---------------------------------------- |
+| **PX-**\*     | Pixverse++ ticket ID (see Ticket Matrix) |
+| **Canonical** | v2.0 baseline script, enforced by audit  |
+| **Drift**     | Any non-ticket, unreviewed code change   |
+| **Revert**    | Git undo of last merge/commit            |
+
+---
+
+## 12 · Audit/Decision Log
+
+* **QA-2025-07-15:** Step-2 (`parseBody`) broke upload; rolled back.
+* **QA-2025-07-15:** Step-3 (`btn selector`) broke download button; reverted; canonical logic locked.
+* **QA-2025-07-15:** All further changes must be atomic, reviewed, and signed off by QA/lead.
+
+---
+
+## Appendix A — Ticket YAML Stub
 
 ```yaml
-id: 100-04
-stream: DEV
-title: Atomic Step-4: Scoped/Throttled Observers
-dependencies: [100-03]
+id: PX-XXX
+stream: ENG
+title: Short ticket summary
+dependencies: [PX-YYY]
 priority: P0
 est_hours: 1
 description: |
-  Refactor all DOM MutationObservers to use throttle and scope to #main-content/[role=main] only.
+  Ticket goal, specific and measurable.
 acceptance_criteria:
-  - No performance regressions
-  - All DOM-based features fire as expected after SPA nav
-  - Rollback on any bug
+  - List of testable outcomes
 deliverables:
-  - Updated .user.js file
-  - Log entry in AGENTS.md
-````
+  - Files touched
+notes: |
+  Additional hints or references.
+```
 
 ---
 
-## 12 · Appendix B — Audit/Decision Log
+## Appendix B — ADR Template
 
-> **QA-2025-07-15:**
->
-> * Step-2 (`parseBody`) introduced; broke upload, rolled back.
-> * Step-3 attempted, broke button; reverted.
-> * Canonical implementation for button logic adopted.
-> * All further changes must be atomic and signed off by QA/lead.
-> * AGENTS.md updated after each migration step.
+```md
+# ADR-XXXX — <Short Title>
+Status: Proposed
+Date: 2025-07-15
+
+## Context
+<Reason for change, constraints, alternatives>
+
+## Decision
+<Exactly what was chosen>
+
+## Consequences
+<Benefits, risks, and tradeoffs>
+
+## Alternatives
+<Other paths not chosen>
+```
 
 ---
 
-<!-- END AGENTS.md -->
+# **ACTIONABLE SUMMARY (for the team, not for audit)**
+
+1. **Work only from AGENTS.md as “single source of truth.”**
+2. **Do NOT re-attempt parseBody or button selector until regression test ticket passes.**
+3. **Any new feature = new ticket.**
+4. **Log *all* breakages and rollbacks here.**
+5. **Canonical (v2.0) userscript is non-negotiable for download button and upload logic.**
+6. **No side-channel tells.**
+7. **QA/Leads (4ndr0666, ChatGPT-4o) must sign-off each ticket and update AGENTS.md.**
+
+---
+
+**This file now supersedes all prior orchestration manifests for Pixverse++.
+The team is to work ticket-by-ticket, no drift, no multi-step merges.**
+
+---
+
+**Team: Begin work at PX-004 only after all PX-002/PX-003 acceptance criteria are green-lit and logged. No exceptions.**
