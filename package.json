@@ -1,0 +1,13 @@
+{
+  "name": "4ndr0tools-pixverse",
+  "version": "2.0.0",
+  "description": "Pixverse++ userscript project: minimal Node.js project scaffold for CI, lint, and test automation.",
+  "private": true,
+  "scripts": {
+    "lint": "eslint --max-warnings=0 --ignore-path .gitignore '**/*.js'",
+    "test": "echo \"No unit tests defined yet.\""
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0"
+  }
+}
