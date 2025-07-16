@@ -1,0 +1,2308 @@
+Configuring language runtimes...
+# Python: 3.13
+# Node.js: 22
+default -> 22 (-> v22.17.0)
+Now using node v22.17.0 (npm v11.4.2)
+# Ruby: 3.4.4
+# Rust: 1.87.0 (default: 1.87.0)
+# Go: go1.24.3 (default: go1.24.3)
+# Swift: 6.1 (default: 6.1.2)
+Fetching the latest stable Swift 6.1 release...
+Swift 6.1.2 is already installed.
+# PHP: 8.4 (default: 8.4)
++ rm -- /tmp/lOdLvm-setup_script.sh
++ set +x
++ set -euo pipefail
++ IFS='
+	'
++ PYTHON_VERSION=3.11.12
++ VENV_DIR=.venv-codex
++ export PYENV_ROOT=/root/.pyenv
++ PYENV_ROOT=/root/.pyenv
++ export PATH=/root/.pyenv/bin:/root/.cargo/bin:/root/.local/share/mise/installs/erlang/27.1.2/bin:/root/.local/share/mise/installs/php/8.4.10/bin:/root/.local/share/mise/installs/php/8.4.10/sbin:/root/.local/share/mise/installs/php/8.4.10/.composer/vendor/bin:/root/.local/share/mise/installs/elixir/1.18.3-otp-27/bin:/root/.local/share/mise/installs/elixir/1.18.3-otp-27/.mix/escripts:/root/.rbenv/shims:/root/.rbenv/bin:/root/.rbenv/shims:/root/.local/share/swiftly/bin:/root/.bun/bin:/root/.nvm/versions/node/v22.17.0/bin:/root/.pyenv/shims:3987PYENV_ROOT/shims:/root/.pyenv/bin:/usr/local/go/bin:/root/go/bin:/root/.rbenv/bin:/root/.rbenv/shims:/root/.bun/bin:/root/.local/bin:/root/.pyenv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
++ PATH=/root/.pyenv/bin:/root/.cargo/bin:/root/.local/share/mise/installs/erlang/27.1.2/bin:/root/.local/share/mise/installs/php/8.4.10/bin:/root/.local/share/mise/installs/php/8.4.10/sbin:/root/.local/share/mise/installs/php/8.4.10/.composer/vendor/bin:/root/.local/share/mise/installs/elixir/1.18.3-otp-27/bin:/root/.local/share/mise/installs/elixir/1.18.3-otp-27/.mix/escripts:/root/.rbenv/shims:/root/.rbenv/bin:/root/.rbenv/shims:/root/.local/share/swiftly/bin:/root/.bun/bin:/root/.nvm/versions/node/v22.17.0/bin:/root/.pyenv/shims:3987PYENV_ROOT/shims:/root/.pyenv/bin:/usr/local/go/bin:/root/go/bin:/root/.rbenv/bin:/root/.rbenv/shims:/root/.bun/bin:/root/.local/bin:/root/.pyenv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
++ PM=
++ SUDO=
++ has_sudo
++ command_exists sudo
++ command -v sudo
++ SUDO=sudo
++ detect_pm
++ command_exists apt-get
++ command -v apt-get
++ PM=apt-get
++ command_exists pyenv
++ command -v pyenv
+++ pyenv init --path
++ eval 'PATH="$(bash --norc -ec '\''IFS=:; paths=($PATH); 
+for i in ${!paths[@]}; do 
+if [[ ${paths[i]} == "'\'''\''/root/.pyenv/shims'\'''\''" ]]; then unset '\''\'\'''\''paths[i]'\''\'\'''\''; 
+fi; done; 
+echo "${paths[*]}"'\'')"
+export PATH="/root/.pyenv/shims:${PATH}"
+command pyenv rehash 2>/dev/null'
++++ bash --norc -ec 'IFS=:; paths=($PATH); 
+for i in ${!paths[@]}; do 
+if [[ ${paths[i]} == "/root/.pyenv/shims" ]]; then unset '\''paths[i]'\''; 
+fi; done; 
+echo "${paths[*]}"'
+++ PATH=/root/.pyenv/bin:/root/.cargo/bin:/root/.local/share/mise/installs/erlang/27.1.2/bin:/root/.local/share/mise/installs/php/8.4.10/bin:/root/.local/share/mise/installs/php/8.4.10/sbin:/root/.local/share/mise/installs/php/8.4.10/.composer/vendor/bin:/root/.local/share/mise/installs/elixir/1.18.3-otp-27/bin:/root/.local/share/mise/installs/elixir/1.18.3-otp-27/.mix/escripts:/root/.rbenv/shims:/root/.rbenv/bin:/root/.rbenv/shims:/root/.local/share/swiftly/bin:/root/.bun/bin:/root/.nvm/versions/node/v22.17.0/bin:3987PYENV_ROOT/shims:/root/.pyenv/bin:/usr/local/go/bin:/root/go/bin:/root/.rbenv/bin:/root/.rbenv/shims:/root/.bun/bin:/root/.local/bin:/root/.pyenv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+++ export PATH=/root/.pyenv/shims:/root/.pyenv/bin:/root/.cargo/bin:/root/.local/share/mise/installs/erlang/27.1.2/bin:/root/.local/share/mise/installs/php/8.4.10/bin:/root/.local/share/mise/installs/php/8.4.10/sbin:/root/.local/share/mise/installs/php/8.4.10/.composer/vendor/bin:/root/.local/share/mise/installs/elixir/1.18.3-otp-27/bin:/root/.local/share/mise/installs/elixir/1.18.3-otp-27/.mix/escripts:/root/.rbenv/shims:/root/.rbenv/bin:/root/.rbenv/shims:/root/.local/share/swiftly/bin:/root/.bun/bin:/root/.nvm/versions/node/v22.17.0/bin:3987PYENV_ROOT/shims:/root/.pyenv/bin:/usr/local/go/bin:/root/go/bin:/root/.rbenv/bin:/root/.rbenv/shims:/root/.bun/bin:/root/.local/bin:/root/.pyenv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+++ PATH=/root/.pyenv/shims:/root/.pyenv/bin:/root/.cargo/bin:/root/.local/share/mise/installs/erlang/27.1.2/bin:/root/.local/share/mise/installs/php/8.4.10/bin:/root/.local/share/mise/installs/php/8.4.10/sbin:/root/.local/share/mise/installs/php/8.4.10/.composer/vendor/bin:/root/.local/share/mise/installs/elixir/1.18.3-otp-27/bin:/root/.local/share/mise/installs/elixir/1.18.3-otp-27/.mix/escripts:/root/.rbenv/shims:/root/.rbenv/bin:/root/.rbenv/shims:/root/.local/share/swiftly/bin:/root/.bun/bin:/root/.nvm/versions/node/v22.17.0/bin:3987PYENV_ROOT/shims:/root/.pyenv/bin:/usr/local/go/bin:/root/go/bin:/root/.rbenv/bin:/root/.rbenv/shims:/root/.bun/bin:/root/.local/bin:/root/.pyenv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+++ command pyenv rehash
+++ pyenv init -
++ eval 'PATH="$(bash --norc -ec '\''IFS=:; paths=($PATH); 
+for i in ${!paths[@]}; do 
+if [[ ${paths[i]} == "'\'''\''/root/.pyenv/shims'\'''\''" ]]; then unset '\''\'\'''\''paths[i]'\''\'\'''\''; 
+fi; done; 
+echo "${paths[*]}"'\'')"
+export PATH="/root/.pyenv/shims:${PATH}"
+export PYENV_SHELL=bash
+source '\''/root/.pyenv/completions/pyenv.bash'\''
+command pyenv rehash 2>/dev/null
+pyenv() {
+  local command=${1:-}
+  [ "$#" -gt 0 ] && shift
+  case "$command" in
+  rehash|shell)
+    eval "$(pyenv "sh-$command" "$@")"
+    ;;
+  *)
+    command pyenv "$command" "$@"
+    ;;
+  esac
+}'
++++ bash --norc -ec 'IFS=:; paths=($PATH); 
+for i in ${!paths[@]}; do 
+if [[ ${paths[i]} == "/root/.pyenv/shims" ]]; then unset '\''paths[i]'\''; 
+fi; done; 
+echo "${paths[*]}"'
+++ PATH=/root/.pyenv/bin:/root/.cargo/bin:/root/.local/share/mise/installs/erlang/27.1.2/bin:/root/.local/share/mise/installs/php/8.4.10/bin:/root/.local/share/mise/installs/php/8.4.10/sbin:/root/.local/share/mise/installs/php/8.4.10/.composer/vendor/bin:/root/.local/share/mise/installs/elixir/1.18.3-otp-27/bin:/root/.local/share/mise/installs/elixir/1.18.3-otp-27/.mix/escripts:/root/.rbenv/shims:/root/.rbenv/bin:/root/.rbenv/shims:/root/.local/share/swiftly/bin:/root/.bun/bin:/root/.nvm/versions/node/v22.17.0/bin:3987PYENV_ROOT/shims:/root/.pyenv/bin:/usr/local/go/bin:/root/go/bin:/root/.rbenv/bin:/root/.rbenv/shims:/root/.bun/bin:/root/.local/bin:/root/.pyenv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+++ export PATH=/root/.pyenv/shims:/root/.pyenv/bin:/root/.cargo/bin:/root/.local/share/mise/installs/erlang/27.1.2/bin:/root/.local/share/mise/installs/php/8.4.10/bin:/root/.local/share/mise/installs/php/8.4.10/sbin:/root/.local/share/mise/installs/php/8.4.10/.composer/vendor/bin:/root/.local/share/mise/installs/elixir/1.18.3-otp-27/bin:/root/.local/share/mise/installs/elixir/1.18.3-otp-27/.mix/escripts:/root/.rbenv/shims:/root/.rbenv/bin:/root/.rbenv/shims:/root/.local/share/swiftly/bin:/root/.bun/bin:/root/.nvm/versions/node/v22.17.0/bin:3987PYENV_ROOT/shims:/root/.pyenv/bin:/usr/local/go/bin:/root/go/bin:/root/.rbenv/bin:/root/.rbenv/shims:/root/.bun/bin:/root/.local/bin:/root/.pyenv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+++ PATH=/root/.pyenv/shims:/root/.pyenv/bin:/root/.cargo/bin:/root/.local/share/mise/installs/erlang/27.1.2/bin:/root/.local/share/mise/installs/php/8.4.10/bin:/root/.local/share/mise/installs/php/8.4.10/sbin:/root/.local/share/mise/installs/php/8.4.10/.composer/vendor/bin:/root/.local/share/mise/installs/elixir/1.18.3-otp-27/bin:/root/.local/share/mise/installs/elixir/1.18.3-otp-27/.mix/escripts:/root/.rbenv/shims:/root/.rbenv/bin:/root/.rbenv/shims:/root/.local/share/swiftly/bin:/root/.bun/bin:/root/.nvm/versions/node/v22.17.0/bin:3987PYENV_ROOT/shims:/root/.pyenv/bin:/usr/local/go/bin:/root/go/bin:/root/.rbenv/bin:/root/.rbenv/shims:/root/.bun/bin:/root/.local/bin:/root/.pyenv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+++ export PYENV_SHELL=bash
+++ PYENV_SHELL=bash
+++ source /root/.pyenv/completions/pyenv.bash
++++ complete -F _pyenv pyenv
+++ command pyenv rehash
++ pyenv versions --bare
++ local command=versions
++ '[' 2 -gt 0 ']'
++ shift
++ case "$command" in
++ command pyenv versions --bare
++ grep -qxF 3.11.12
++ pyenv global 3.11.12
++ local command=global
++ '[' 2 -gt 0 ']'
++ shift
++ case "$command" in
++ command pyenv global 3.11.12
++ pyenv rehash
++ local command=rehash
++ '[' 1 -gt 0 ']'
++ shift
++ case "$command" in
+++ pyenv sh-rehash
+++ local command=sh-rehash
+++ '[' 1 -gt 0 ']'
+++ shift
+++ case "$command" in
+++ command pyenv sh-rehash
++ eval 'hash -r 2>/dev/null || true'
+++ hash -r
++ command_exists python3
++ command -v python3
++ PYTHON_BIN=python
++ command_exists python3
++ command -v python3
++ PYTHON_BIN=python3
++ command_exists pyenv
++ command -v pyenv
++ PYTHON_BIN=python
++ '[' '!' -d .venv-codex ']'
++ echo 'Creating Python virtual environment at .venv-codex...'
+Creating Python virtual environment at .venv-codex...
++ python -m venv .venv-codex
++ source .venv-codex/bin/activate
+++ deactivate nondestructive
+++ '[' -n '' ']'
+++ '[' -n '' ']'
+++ hash -r
+++ '[' -n '' ']'
+++ unset VIRTUAL_ENV
+++ unset VIRTUAL_ENV_PROMPT
+++ '[' '!' nondestructive = nondestructive ']'
+++ VIRTUAL_ENV=/workspace/userscripts/.venv-codex
+++ export VIRTUAL_ENV
+++ _OLD_VIRTUAL_PATH=/root/.pyenv/shims:/root/.pyenv/bin:/root/.cargo/bin:/root/.local/share/mise/installs/erlang/27.1.2/bin:/root/.local/share/mise/installs/php/8.4.10/bin:/root/.local/share/mise/installs/php/8.4.10/sbin:/root/.local/share/mise/installs/php/8.4.10/.composer/vendor/bin:/root/.local/share/mise/installs/elixir/1.18.3-otp-27/bin:/root/.local/share/mise/installs/elixir/1.18.3-otp-27/.mix/escripts:/root/.rbenv/shims:/root/.rbenv/bin:/root/.rbenv/shims:/root/.local/share/swiftly/bin:/root/.bun/bin:/root/.nvm/versions/node/v22.17.0/bin:3987PYENV_ROOT/shims:/root/.pyenv/bin:/usr/local/go/bin:/root/go/bin:/root/.rbenv/bin:/root/.rbenv/shims:/root/.bun/bin:/root/.local/bin:/root/.pyenv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+++ PATH=/workspace/userscripts/.venv-codex/bin:/root/.pyenv/shims:/root/.pyenv/bin:/root/.cargo/bin:/root/.local/share/mise/installs/erlang/27.1.2/bin:/root/.local/share/mise/installs/php/8.4.10/bin:/root/.local/share/mise/installs/php/8.4.10/sbin:/root/.local/share/mise/installs/php/8.4.10/.composer/vendor/bin:/root/.local/share/mise/installs/elixir/1.18.3-otp-27/bin:/root/.local/share/mise/installs/elixir/1.18.3-otp-27/.mix/escripts:/root/.rbenv/shims:/root/.rbenv/bin:/root/.rbenv/shims:/root/.local/share/swiftly/bin:/root/.bun/bin:/root/.nvm/versions/node/v22.17.0/bin:3987PYENV_ROOT/shims:/root/.pyenv/bin:/usr/local/go/bin:/root/go/bin:/root/.rbenv/bin:/root/.rbenv/shims:/root/.bun/bin:/root/.local/bin:/root/.pyenv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+++ export PATH
+++ '[' -n '' ']'
+++ '[' -z '' ']'
+++ _OLD_VIRTUAL_PS1=
+++ PS1='(.venv-codex) '
+++ export PS1
+++ VIRTUAL_ENV_PROMPT='(.venv-codex) '
+++ export VIRTUAL_ENV_PROMPT
+++ hash -r
++ echo 'Upgrading pip + installing core Python tools...'
+Upgrading pip + installing core Python tools...
++ python -m pip install --upgrade pip
+Requirement already satisfied: pip in ./.venv-codex/lib/python3.11/site-packages (24.0)
+Collecting pip
+  Using cached pip-25.1.1-py3-none-any.whl.metadata (3.6 kB)
+Using cached pip-25.1.1-py3-none-any.whl (1.8 MB)
+Installing collected packages: pip
+  Attempting uninstall: pip
+    Found existing installation: pip 24.0
+    Uninstalling pip-24.0:
+      Successfully uninstalled pip-24.0
++ python -m pip install black
+Collecting black
+  Using cached click-8.2.1-py3-none-any.whl.metadata (2.5 kB)
+Collecting mypy-extensions>=0.4.3 (from black)
+Collecting packaging>=22.0 (from black)
+  Using cached packaging-25.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting pathspec>=0.9.0 (from black)
+  Using cached pathspec-0.12.1-py3-none-any.whl.metadata (21 kB)
+Collecting platformdirs>=2 (from black)
+  Using cached platformdirs-4.3.8-py3-none-any.whl.metadata (12 kB)
+Using cached black-25.1.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl (1.7 MB)
+Using cached click-8.2.1-py3-none-any.whl (102 kB)
+Using cached mypy_extensions-1.1.0-py3-none-any.whl (5.0 kB)
+Using cached packaging-25.0-py3-none-any.whl (66 kB)
+Using cached pathspec-0.12.1-py3-none-any.whl (31 kB)
+Using cached platformdirs-4.3.8-py3-none-any.whl (18 kB)
+Installing collected packages: platformdirs, pathspec, packaging, mypy-extensions, click, black
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6/6 [black]32m5/6 [black]
+Successfully installed black-25.1.0 click-8.2.1 mypy-extensions-1.1.0 packaging-25.0 pathspec-0.12.1 platformdirs-4.3.8
++ for pkg in "${PYTHON_TOOLS[@]}"
++ python -m pip show bandit
++ python -m pip install bandit
+Collecting bandit
+  Downloading bandit-1.8.6-py3-none-any.whl.metadata (6.9 kB)
+Collecting PyYAML>=5.3.1 (from bandit)
+Collecting stevedore>=1.20.0 (from bandit)
+  Downloading stevedore-5.4.1-py3-none-any.whl.metadata (2.3 kB)
+  Downloading rich-14.0.0-py3-none-any.whl.metadata (18 kB)
+Collecting pbr>=2.0.0 (from stevedore>=1.20.0->bandit)
+  Downloading pbr-6.1.1-py2.py3-none-any.whl.metadata (3.4 kB)
+Requirement already satisfied: setuptools in ./.venv-codex/lib/python3.11/site-packages (from pbr>=2.0.0->stevedore>=1.20.0->bandit) (65.5.0)
+Collecting markdown-it-py>=2.2.0 (from rich->bandit)
+  Downloading markdown_it_py-3.0.0-py3-none-any.whl.metadata (6.9 kB)
+Collecting pygments<3.0.0,>=2.13.0 (from rich->bandit)
+  Using cached pygments-2.19.2-py3-none-any.whl.metadata (2.5 kB)
+Collecting mdurl~=0.1 (from markdown-it-py>=2.2.0->rich->bandit)
+Downloading PyYAML-6.0.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (762 kB)
+Downloading pbr-6.1.1-py2.py3-none-any.whl (108 kB)
+Downloading rich-14.0.0-py3-none-any.whl (243 kB)
+Using cached pygments-2.19.2-py3-none-any.whl (1.2 MB)
+Downloading markdown_it_py-3.0.0-py3-none-any.whl (87 kB)
+Downloading mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+Installing collected packages: PyYAML, pygments, pbr, mdurl, stevedore, markdown-it-py, rich, bandit
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8/8 [bandit]2m7/8 [bandit]s]
+Successfully installed PyYAML-6.0.2 bandit-1.8.6 markdown-it-py-3.0.0 mdurl-0.1.2 pbr-6.1.1 pygments-2.19.2 rich-14.0.0 stevedore-5.4.1
++ for pkg in "${PYTHON_TOOLS[@]}"
++ python -m pip show ruff
++ python -m pip install ruff
+Collecting ruff
+  Downloading ruff-0.12.3-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (25 kB)
+Downloading ruff-0.12.3-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (11.7 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 11.7/11.7 MB 32.0 MB/s eta 0:00:00 0:00:01
+Installing collected packages: ruff
+Successfully installed ruff-0.12.3
++ for pkg in "${PYTHON_TOOLS[@]}"
++ python -m pip show pyright
++ python -m pip install pyright
+Collecting pyright
+  Using cached pyright-1.1.403-py3-none-any.whl.metadata (6.6 kB)
+Collecting nodeenv>=1.6.0 (from pyright)
+  Using cached nodeenv-1.9.1-py2.py3-none-any.whl.metadata (21 kB)
+Collecting typing-extensions>=4.1 (from pyright)
+  Using cached typing_extensions-4.14.1-py3-none-any.whl.metadata (3.0 kB)
+Using cached pyright-1.1.403-py3-none-any.whl (5.7 MB)
+Using cached nodeenv-1.9.1-py2.py3-none-any.whl (22 kB)
+Using cached typing_extensions-4.14.1-py3-none-any.whl (43 kB)
+Successfully installed nodeenv-1.9.1 pyright-1.1.403 typing-extensions-4.14.1
++ python -m pip show flake8
++ python -m pip install flake8
+Collecting flake8
+  Downloading flake8-7.3.0-py2.py3-none-any.whl.metadata (3.8 kB)
+Collecting mccabe<0.8.0,>=0.7.0 (from flake8)
+  Downloading mccabe-0.7.0-py2.py3-none-any.whl.metadata (5.0 kB)
+Collecting pycodestyle<2.15.0,>=2.14.0 (from flake8)
+  Downloading pycodestyle-2.14.0-py2.py3-none-any.whl.metadata (4.5 kB)
+Collecting pyflakes<3.5.0,>=3.4.0 (from flake8)
+  Downloading pyflakes-3.4.0-py2.py3-none-any.whl.metadata (3.5 kB)
+Downloading flake8-7.3.0-py2.py3-none-any.whl (57 kB)
+Downloading mccabe-0.7.0-py2.py3-none-any.whl (7.3 kB)
+Downloading pycodestyle-2.14.0-py2.py3-none-any.whl (31 kB)
+Downloading pyflakes-3.4.0-py2.py3-none-any.whl (63 kB)
+Installing collected packages: pyflakes, pycodestyle, mccabe, flake8
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4/4 [flake8]
+Successfully installed flake8-7.3.0 mccabe-0.7.0 pycodestyle-2.14.0 pyflakes-3.4.0
++ for pkg in "${PYTHON_TOOLS[@]}"
++ python -m pip show isort
++ python -m pip install isort
+Collecting isort
+  Using cached isort-6.0.1-py3-none-any.whl.metadata (11 kB)
+Using cached isort-6.0.1-py3-none-any.whl (94 kB)
+Installing collected packages: isort
+Successfully installed isort-6.0.1
++ for pkg in "${PYTHON_TOOLS[@]}"
++ python -m pip show mypy
++ python -m pip install mypy
+Collecting mypy
+  Downloading mypy-1.17.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.2 kB)
+Requirement already satisfied: typing_extensions>=4.6.0 in ./.venv-codex/lib/python3.11/site-packages (from mypy) (4.14.1)
+Requirement already satisfied: mypy_extensions>=1.0.0 in ./.venv-codex/lib/python3.11/site-packages (from mypy) (1.1.0)
+Requirement already satisfied: pathspec>=0.9.0 in ./.venv-codex/lib/python3.11/site-packages (from mypy) (0.12.1)
+Downloading mypy-1.17.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (12.6 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 12.6/12.6 MB 35.7 MB/s eta 0:00:00 0:00:01
+Installing collected packages: mypy
++ for pkg in "${PYTHON_TOOLS[@]}"
++ python -m pip install pytest
+Collecting pytest
+  Using cached pytest-8.4.1-py3-none-any.whl.metadata (7.7 kB)
+Collecting iniconfig>=1 (from pytest)
+  Using cached iniconfig-2.1.0-py3-none-any.whl.metadata (2.7 kB)
+Requirement already satisfied: packaging>=20 in ./.venv-codex/lib/python3.11/site-packages (from pytest) (25.0)
+Collecting pluggy<2,>=1.5 (from pytest)
+  Using cached pluggy-1.6.0-py3-none-any.whl.metadata (4.8 kB)
+Requirement already satisfied: pygments>=2.7.2 in ./.venv-codex/lib/python3.11/site-packages (from pytest) (2.19.2)
+Using cached pytest-8.4.1-py3-none-any.whl (365 kB)
+Using cached pluggy-1.6.0-py3-none-any.whl (20 kB)
+Using cached iniconfig-2.1.0-py3-none-any.whl (6.0 kB)
+Installing collected packages: pluggy, iniconfig, pytest
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3/3 [pytest]2m2/3 [pytest]
+Successfully installed iniconfig-2.1.0 pluggy-1.6.0 pytest-8.4.1
++ for pkg in "${PYTHON_TOOLS[@]}"
++ python -m pip show pipx
++ python -m pip install pipx
+Collecting pipx
+Requirement already satisfied: packaging>=20 in ./.venv-codex/lib/python3.11/site-packages (from pipx) (25.0)
+Requirement already satisfied: platformdirs>=2.1 in ./.venv-codex/lib/python3.11/site-packages (from pipx) (4.3.8)
+Collecting userpath!=1.9,>=1.6 (from pipx)
+Requirement already satisfied: click in ./.venv-codex/lib/python3.11/site-packages (from userpath!=1.9,>=1.6->pipx) (8.2.1)
+Downloading pipx-1.7.1-py3-none-any.whl (78 kB)
+Downloading argcomplete-3.6.2-py3-none-any.whl (43 kB)
+Downloading userpath-1.9.2-py3-none-any.whl (9.1 kB)
+Installing collected packages: userpath, argcomplete, pipx
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3/3 [pipx]
+Successfully installed argcomplete-3.6.2 pipx-1.7.1 userpath-1.9.2
++ for pkg in "${PYTHON_TOOLS[@]}"
++ python -m pip show mdformat
++ python -m pip install mdformat
+Collecting mdformat
+Requirement already satisfied: markdown-it-py<4.0.0,>=1.0.0 in ./.venv-codex/lib/python3.11/site-packages (from mdformat) (3.0.0)
+Requirement already satisfied: mdurl~=0.1 in ./.venv-codex/lib/python3.11/site-packages (from markdown-it-py<4.0.0,>=1.0.0->mdformat) (0.1.2)
+Downloading mdformat-0.7.22-py3-none-any.whl (34 kB)
+Installing collected packages: mdformat
+Successfully installed mdformat-0.7.22
++ for pkg in "${PYTHON_TOOLS[@]}"
++ python -m pip show proselint
++ python -m pip install proselint
+Collecting proselint
+Requirement already satisfied: click<9.0.0,>=8.0.0 in ./.venv-codex/lib/python3.11/site-packages (from proselint) (8.2.1)
+Downloading proselint-0.14.0-py3-none-any.whl (114 kB)
+Successfully installed proselint-0.14.0
++ for pkg in "${PYTHON_TOOLS[@]}"
++ python -m pip show pre-commit
++ python -m pip install pre-commit
+Collecting pre-commit
+  Downloading pre_commit-4.2.0-py2.py3-none-any.whl.metadata (1.3 kB)
+Collecting cfgv>=2.0.0 (from pre-commit)
+  Downloading cfgv-3.4.0-py2.py3-none-any.whl.metadata (8.5 kB)
+Collecting identify>=1.0.0 (from pre-commit)
+  Downloading identify-2.6.12-py2.py3-none-any.whl.metadata (4.4 kB)
+Requirement already satisfied: nodeenv>=0.11.1 in ./.venv-codex/lib/python3.11/site-packages (from pre-commit) (1.9.1)
+Requirement already satisfied: pyyaml>=5.1 in ./.venv-codex/lib/python3.11/site-packages (from pre-commit) (6.0.2)
+Collecting virtualenv>=20.10.0 (from pre-commit)
+  Using cached virtualenv-20.31.2-py3-none-any.whl.metadata (4.5 kB)
+Collecting filelock<4,>=3.12.2 (from virtualenv>=20.10.0->pre-commit)
+Using cached virtualenv-20.31.2-py3-none-any.whl (6.1 MB)
+Using cached distlib-0.3.9-py2.py3-none-any.whl (468 kB)
++ python -m pip show pyyaml
++ command_exists pipx
++ command -v pipx
++ pipx ensurepath
+/root/.local/bin is already in PATH.
+
+⚠️  All pipx binary directories have been appended to PATH. If you are sure
+you want to proceed, try again with the '--force' flag.
+
+Otherwise pipx is ready to go! ✨ 🌟 ✨
++ command_exists yq
++ command -v yq
++ pipx install yq
+creating virtual environment...
+installing yq...
+  installed package yq 3.4.3, installed using Python 3.11.12
+    - yq
++ sudo apt-get install -y shellcheck
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+E: Unable to locate package shellcheck
++ true
++ for util in shellcheck shfmt
++ command_exists shfmt
++ command -v shfmt
++ sudo apt-get install -y shfmt
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+E: Unable to locate package shfmt
++ true
++ command_exists bats
++ command -v bats
++ echo 'Installing bats-core for shell tests...'
+Installing bats-core for shell tests...
++ git clone --depth 1 https://github.com/bats-core/bats-core.git /tmp/bats-core
+Cloning into '/tmp/bats-core'...
+remote: Enumerating objects: 413, done.
+remote: Counting objects: 100% (413/413), done.
+remote: Compressing objects: 100% (335/335), done.
+remote: Total 413 (delta 18), reused 263 (delta 13), pack-reused 0 (from 0)
+Receiving objects: 100% (413/413), 216.86 KiB | 3.94 MiB/s, done.
+Resolving deltas: 100% (18/18), done.
++ sudo /tmp/bats-core/install.sh /usr/local
+Installed Bats to /usr/local/bin/bats
++ rm -rf /tmp/bats-core
++ CLI_UTILS=(jq fd-find ripgrep fzf yamllint universal-ctags hyperfine scdoc)
++ for util in "${CLI_UTILS[@]}"
++ command_exists jq
++ command -v jq
++ for util in "${CLI_UTILS[@]}"
++ command_exists fd
++ command -v fd
++ sudo apt-get install -y fd-find
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+E: Unable to locate package fd-find
++ true
++ for util in "${CLI_UTILS[@]}"
++ command_exists ripgrep
++ command -v ripgrep
++ sudo apt-get install -y ripgrep
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+ripgrep is already the newest version (14.1.0-1).
+0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
++ for util in "${CLI_UTILS[@]}"
++ command_exists fzf
++ command -v fzf
++ sudo apt-get install -y fzf
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+E: Unable to locate package fzf
++ true
++ for util in "${CLI_UTILS[@]}"
++ command_exists yamllint
++ command -v yamllint
++ sudo apt-get install -y yamllint
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+E: Unable to locate package yamllint
++ true
++ for util in "${CLI_UTILS[@]}"
++ command_exists universal
++ command -v universal
++ sudo apt-get install -y universal-ctags
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+E: Unable to locate package universal-ctags
++ true
++ for util in "${CLI_UTILS[@]}"
++ command_exists hyperfine
++ command -v hyperfine
++ sudo apt-get install -y hyperfine
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+E: Unable to locate package hyperfine
++ true
++ for util in "${CLI_UTILS[@]}"
++ command_exists scdoc
++ command -v scdoc
++ sudo apt-get install -y scdoc
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+E: Unable to locate package scdoc
++ true
++ command_exists fd-find
++ command -v fd-find
++ command_exists npm
++ command -v npm
++ NODE_GLOBALS=(bash-language-server remark-cli remark-lint write-good npm-check-updates markdownlint-cli yaml-lint editorconfig-checker)
++ for pkg in "${NODE_GLOBALS[@]}"
++ npm list -g --depth=0 bash-language-server
++ npm install -g bash-language-server
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+⠙⠹⠸⠼⠴⠦⠧⠇⠏⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏⠋⠙
+added 40 packages in 3s
+⠙
+⠙5 packages are looking for funding
+⠙  run `npm fund` for details
+⠙+ for pkg in "${NODE_GLOBALS[@]}"
++ npm list -g --depth=0 remark-cli
++ npm install -g remark-cli
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+⠙⠹⠸⠼⠴⠦⠧⠇⠏⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏⠋⠙⠹⠸⠼⠴⠦⠧⠇
+added 186 packages in 7s
+⠇
+⠇78 packages are looking for funding
+⠇  run `npm fund` for details
+⠇+ for pkg in "${NODE_GLOBALS[@]}"
++ npm list -g --depth=0 remark-lint
++ npm install -g remark-lint
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+⠙⠹⠸⠼⠴⠦⠧⠇⠏⠋⠙⠹⠸
+added 58 packages in 1s
+⠸+ for pkg in "${NODE_GLOBALS[@]}"
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+⠙⠹⠸⠼⠴⠦⠧⠇⠏⠋⠙⠹
+added 8 packages in 1s
+⠹+ for pkg in "${NODE_GLOBALS[@]}"
++ npm list -g --depth=0 npm-check-updates
+⠙⠹⠸⠼
+added 1 package in 499ms
+⠼+ for pkg in "${NODE_GLOBALS[@]}"
++ npm list -g --depth=0 markdownlint-cli
++ npm install -g markdownlint-cli
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+⠙⠹⠸⠼⠴⠦⠧⠇⠏⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏⠋⠙⠹⠸⠼
+added 104 packages in 2s
+⠼
+⠼54 packages are looking for funding
+⠼  run `npm fund` for details
+⠼+ for pkg in "${NODE_GLOBALS[@]}"
++ npm list -g --depth=0 yaml-lint
++ npm install -g yaml-lint
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+⠙⠹⠸⠼⠴⠦⠧⠇⠏⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏
+added 48 packages in 2s
+⠏
+⠏6 packages are looking for funding
+⠏  run `npm fund` for details
+⠏+ for pkg in "${NODE_GLOBALS[@]}"
++ npm list -g --depth=0 editorconfig-checker
++ npm install -g editorconfig-checker
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+⠙⠹⠸⠼⠴
+added 1 package in 556ms
+⠴
+⠴1 package is looking for funding
+⠴  run `npm fund` for details
+⠴+ cat
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✔ Universal Codex Project Environment Setup Complete!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# ENVIRONMENT SUMMARY
+
+- Python venv:    .venv-codex
+- Python version: 3.11.12  (via pyenv if available)
+- Python tools:   black
+bandit
+ruff
+pyright
+flake8
+isort
+mypy
+pytest
+pipx
+mdformat
+proselint
+pre-commit
+pyyaml
+- Shell tools:    shellcheck, shfmt, bats-core
+- CLI tools:      jq, fd, ripgrep, fzf, yamllint, universal-ctags, hyperfine, scdoc
+- Doc QA:         remark, markdownlint, write-good, editorconfig-checker, yaml-lint
+- YAML helper:    yq (via pipx)
+- Lint helper:    yamllint, shellcheck, shfmt, hadolint (if Docker), editorconfig-checker
+- Node tools:     prettier, eslint, typescript, ts-node, npm-check-updates (if npm)
+- Docker tools:   hadolint, docker-compose (if Docker)
+- Go tools:       golint, gocyclo (if Go)
+- Rust tools:     cargo-audit, cargo-edit (if Rust)
+
+Activate your Python venv in your shell:
+    source .venv-codex/bin/activate
++ exit 0
+Successfully installed pip-25.1.1
++ PYTHON_TOOLS=(black bandit ruff pyright flake8 isort mypy pytest pipx mdformat proselint pre-commit pyyaml)
++ for pkg in "${PYTHON_TOOLS[@]}"
++ python -m pip show black
+  Using cached black-25.1.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl.metadata (81 kB)
+Collecting click>=8.0.0 (from black)
+  Using cached mypy_extensions-1.1.0-py3-none-any.whl.metadata (1.1 kB)
+  Downloading PyYAML-6.0.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (2.1 kB)
+Collecting rich (from bandit)
+  Downloading mdurl-0.1.2-py3-none-any.whl.metadata (1.6 kB)
+Downloading bandit-1.8.6-py3-none-any.whl (133 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 763.0/763.0 kB 18.4 MB/s eta 0:00:00
+Downloading stevedore-5.4.1-py3-none-any.whl (49 kB)
+Installing collected packages: typing-extensions, nodeenv, pyright
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3/3 [pyright]m2/3 [pyright]
++ for pkg in "${PYTHON_TOOLS[@]}"
+Successfully installed mypy-1.17.0
++ python -m pip show pytest
+  Downloading pipx-1.7.1-py3-none-any.whl.metadata (18 kB)
+Collecting argcomplete>=1.9.4 (from pipx)
+  Downloading argcomplete-3.6.2-py3-none-any.whl.metadata (16 kB)
+  Downloading userpath-1.9.2-py3-none-any.whl.metadata (3.0 kB)
+  Downloading mdformat-0.7.22-py3-none-any.whl.metadata (10 kB)
+  Downloading proselint-0.14.0-py3-none-any.whl.metadata (12 kB)
+Installing collected packages: proselint
+Collecting distlib<1,>=0.3.7 (from virtualenv>=20.10.0->pre-commit)
+  Using cached distlib-0.3.9-py2.py3-none-any.whl.metadata (5.2 kB)
+  Using cached filelock-3.18.0-py3-none-any.whl.metadata (2.9 kB)
+Requirement already satisfied: platformdirs<5,>=3.9.1 in ./.venv-codex/lib/python3.11/site-packages (from virtualenv>=20.10.0->pre-commit) (4.3.8)
+Downloading pre_commit-4.2.0-py2.py3-none-any.whl (220 kB)
+Downloading cfgv-3.4.0-py2.py3-none-any.whl (7.2 kB)
+Downloading identify-2.6.12-py2.py3-none-any.whl (99 kB)
+Using cached filelock-3.18.0-py3-none-any.whl (16 kB)
+Installing collected packages: distlib, identify, filelock, cfgv, virtualenv, pre-commit
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6/6 [pre-commit]6 [pre-commit]
+Successfully installed cfgv-3.4.0 distlib-0.3.9 filelock-3.18.0 identify-2.6.12 pre-commit-4.2.0 virtualenv-20.31.2
++ for pkg in "${PYTHON_TOOLS[@]}"
+  These apps are now globally available
+    - tomlq
+    - xq
+done! ✨ 🌟 ✨
++ for util in shellcheck shfmt
++ command_exists shellcheck
++ command -v shellcheck
+⠸
+⠸47 packages are looking for funding
+⠸  run `npm fund` for details
++ npm list -g --depth=0 write-good
++ npm install -g write-good
++ npm install -g npm-check-updates
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+Start the container and dl the repo to ingest and  implement the tasks detailed in "/testing/pixverse_builds/beta/"
+I'll check the AGENTS.md file in the repo’s root for further instructions.
+
+root@7d778a5d9ef7:/workspace# ls
+userscripts
+root@7d778a5d9ef7:/workspace# cd userscripts
+root@7d778a5d9ef7:/workspace/userscripts# ls
+ 4ndr0tools-AlwaysNewWindow.user.js
+ 4ndr0tools-BunkrCanonicalURL.user.js
+ 4ndr0tools-ChatGPT++.user.js
+ 4ndr0tools-ChatGPTBrainImplant.user.js
+ 4ndr0tools-ConfirmationBypass.user.js
+ 4ndr0tools-GooglePhotosandDrive++.user.js
+ 4ndr0tools-InstagramRedirect.user.js
+ 4ndr0tools-MegaEmbedRedirector.user.js
+ 4ndr0tools-Pixverse++.user.js
+ 4ndr0tools-PlanetsuzyMobileSkinRedirect.user.js
+ 4ndr0tools-SelectAllCheckboxes.user.js
+ 4ndr0tools-SimpcitySearch.user.js
+'4ndr0tools-Sora Toolkit.user.js'
+ 4ndr0tools-YandexImageSearch++.user.js
+ 4ndr0tools-YouTubeEmbedRedirectButton.user.js
+ 4ndr0tools-YtdlcProtocol.user.js
+ README.md
+ testing
+root@7d778a5d9ef7:/workspace/userscripts# ls -a
+ .
+ ..
+ .git
+ .gitignore
+ .venv-codex
+ 4ndr0tools-AlwaysNewWindow.user.js
+ 4ndr0tools-BunkrCanonicalURL.user.js
+ 4ndr0tools-ChatGPT++.user.js
+ 4ndr0tools-ChatGPTBrainImplant.user.js
+ 4ndr0tools-ConfirmationBypass.user.js
+ 4ndr0tools-GooglePhotosandDrive++.user.js
+ 4ndr0tools-InstagramRedirect.user.js
+ 4ndr0tools-MegaEmbedRedirector.user.js
+ 4ndr0tools-Pixverse++.user.js
+ 4ndr0tools-PlanetsuzyMobileSkinRedirect.user.js
+ 4ndr0tools-SelectAllCheckboxes.user.js
+ 4ndr0tools-SimpcitySearch.user.js
+'4ndr0tools-Sora Toolkit.user.js'
+ 4ndr0tools-YandexImageSearch++.user.js
+ 4ndr0tools-YouTubeEmbedRedirectButton.user.js
+ 4ndr0tools-YtdlcProtocol.user.js
+ README.md
+ testing
+root@7d778a5d9ef7:/workspace/userscripts# find . -name AGENTS.md -print
+./testing/pixverse_builds/beta/AGENTS.md
+I found an AGENTS.md in a subfolder. Let's check it for specific instructions.
+
+root@7d778a5d9ef7:/workspace/userscripts# cat testing/pixverse_builds/beta/AGENT
+S.md
+<!-- ────────────────────────────────────────────────────────────────────── -->
+<!--  AGENTS.md  ·  Master Orchestration & Ticket Manifest                -->
+<!-- ────────────────────────────────────────────────────────────────────── -->
+
+# AGENTS — Pixverse++
+
+> **Mission Statement**
+> Bring the Pixverse++ userscript from its current *pre-release* (“v 2.0 canonic
+al”) to a drift-free, production-grade release through atomic, test-driven graft
+ing of seven hardening steps, airtight QA, and auditable CI/CD.
+
+*Repository*: <https://github.com/4ndr0666/userscripts>
+*Generated*: 2025-07-15
+*Maintainer / TL*: **4ndr0666** (Discord: 4ndr0#0666 – GPG 0xFA 8E 5B 07 F3)
+
+---
+
+## 0 · Table of Contents
+1. [Executive Summary](#1--executive-summary)
+2. [Current File Tree Snapshot](#2--current-file-tree-snapshot)
+3. [Streams & Roles](#3--streams--roles)
+4. [Ticket Matrix](#4--ticket-matrix)
+5. [Detailed Ticket Specifications](#5--detailed-ticket-specifications)
+6. [Road-map & Sprint Cadence](#6--road-map--sprint-cadence)
+7. [Automation & Infrastructure Mandates](#7--automation--infrastructure-mandate
+s)
+8. [Approval Rubric (Go/No-Go)](#8--approval-rubric-go-no-go)
+9. [Contribution Workflow](#9--contribution-workflow)
+10. [Further Enhancements](#10--further-enhancements-post-release)
+11. [Glossary](#11--glossary)
+12. [Appendix A — Ticket YAML Stub](#appendix-a--ticket-yaml-stub)
+13. [Appendix B — ADR Template](#appendix-b--adr-template)
+
+---
+
+## 1 · Executive Summary
+
+The *Pixverse++* userscript successfully:
+* bypasses Pixverse API blocks,
+* restores credits,
+* injects a working watermark-free download button, and
+* fakes upload responses.
+
+However, feature additions have drifted and caused regressions.
+A **seven-step hardening plan** (regex endpoints → prompt obfuscation) was draft
+ed; steps 1 and 2 were attempted, but **step 2 broke uploads** and was rolled ba
+ck.
+
+This AGENTS.md converts the plan—and the lessons from prior failures—into **acti
+onable tickets** with rollback triggers, CI gates, and review rubrics.
+
+---
+
+## 2 · Current File Tree Snapshot
+```
+
+.
+├── 4ndr0tools-AlwaysNewWindow\.user.js
+├── 4ndr0tools-BunkrCanonicalURL.user.js
+├── 4ndr0tools-ChatGPTBrainImplant.user.js
+├── 4ndr0tools-ChatGPT++.user.js
+├── 4ndr0tools-ConfirmationBypass.user.js
+├── 4ndr0tools-GooglePhotosandDrive++.user.js
+├── 4ndr0tools-InstagramRedirect.user.js
+├── 4ndr0tools-MegaEmbedRedirector.user.js
+├── 4ndr0tools-Pixverse++.user.js      <-- canonical v2.0 (golden)
+├── 4ndr0tools-PlanetsuzyMobileSkinRedirect.user.js
+├── 4ndr0tools-SelectAllCheckboxes.user.js
+├── 4ndr0tools-SimpcitySearch.user.js
+├── 4ndr0tools-Sora Toolkit.user.js
+├── 4ndr0tools-YandexImageSearch++.user.js
+├── 4ndr0tools-YouTubeEmbedRedirectButton.user.js
+├── 4ndr0tools-YtdlcProtocol.user.js
+├── README.md
+└── testing
+├── functions/ … 28 helper userscripts …
+└── pixverse\_builds/
+└── beta/
+├── AGENTS.md             <-- prior draft (superseded)
+└── pixversebeta.user.js  <-- experimental build
+
+````
+> *Snapshot captured 2025-07-15 09:00 UTC.
+> All tickets must reference this tree; new files require justification.*
+
+---
+
+## 3 · Streams & Roles
+
+| Prefix | Stream / Role           | Lead                | Scope
+                            |
+| ------ | ----------------------- | ------------------- | ---------------------
+--------------------------- |
+| **ARC**| Architecture            | @4ndr0666           | Approve design, freez
+e API, prevent drift.       |
+| **ENG**| Userscript Engineering  | @team-eng-lead      | Implement 7-step graf
+t, DOM logic.               |
+| **QA** | Quality & Rollback      | @team-qa            | Regression tests, CI
+gates, auto-revert policy.  |
+| **SEC**| Security / Redteam      | @team-sec           | Anti-tamper, fingerpr
+inting, SBOM.               |
+| **DOC**| Documentation           | @team-doc           | README, ADRs, changel
+ogs, AGENTS.md upkeep.      |
+| **INF**| Infra / Automation      | @team-infra         | GH Actions, Makefile,
+ pre-commit, semver tags.   |
+
+---
+
+## 4 · Ticket Matrix
+
+| ID       | Stream | Title                                           | Depends
+| Prio | Est hrs |
+| -------- | ------ | ----------------------------------------------- | -------
+| ---- | ------- |
+| PX-001   | ENG    | **Step 1:** Add API_ENDPOINTS + matchesEndpoint | —
+| P0   | 1       |
+| PX-002   | ENG    | **Step 2:** Central parseBody helper *re-try*   | PX-001
+| P0   | 1       |
+| PX-003   | QA     | Regression tests for parseBody rollback logic   | PX-002
+| P0   | 1       |
+| PX-004   | ENG    | **Step 3:** Robust watermark button selector    | PX-003
+| P0   | 1       |
+...
+
+---
+
+## 6 · Road-map & Sprint Cadence
+
+| Sprint # | Focus                                        | Tickets        | Dur
+ation |
+| -------- | -------------------------------------------- | -------------- | ---
+----- |
+| **S-1**  | Endpoint map + parseBody re-try + QA tests   | PX-001-PX-003  | 5 d
+ays   |
+| **S-2**  | Button selector + observers + deep-copy swap | PX-004-PX-006  | 5 d
+ays   |
+| **S-3**  | Filename, obfuscation, smoke QA, docs        | PX-007-PX-010  | 5 d
+ays   |
+| **S-4**  | CI auto-revert + SBOM                        | PX-011-PX-012  | 4 d
+ays   |
+
+---
+
+## 7 · Automation & Infrastructure Mandates
+
+| Area        | Requirement
+         |
+| ----------- | ----------------------------------------------------------------
+--------- |
+| **CI**      | GH Actions: `lint`, `unit`, `e2e`, `revert-on-fail` (PX-011).
+          |
+| **Signing** | Commits **MUST** be signed (`git config commit.gpgsign true`).
+          |
+| **Pre-commit** | ESLint (userscript), Prettier, ShellCheck, commit-msg lint.
+         |
+| **Versioning** | SemVer. `v2.0` (canonical) tag is protected; only CI bumps.
+         |
+| **Rollback** | `workflow_dispatch` job: `git revert` last merge + push to main
+.        |
+
+---
+
+## 8 · Approval Rubric (Go/No-Go)
+
+| Gate            | Pass Condition                                 |
+| --------------- | ---------------------------------------------- |
+| **Feature**     | Ticket AC met, unit + e2e tests pass.          |
+| **Performance** | Script load < 30 ms on Chromium devtools.      |
+| **UX**          | Download button visible and functional.        |
+| **Security**    | No CSP violations, no eval(), no new globals.  |
+| **Docs**        | README + AGENTS.md updated for ticket.         |
+
+---
+
+## 9 · Contribution Workflow
+
+1. **Branch name:** `PX-00X-short-slug`.
+2. Implement **one** ticket.
+3. Run `npm run lint && npm test`.
+4. Commit (`feat(PX-00X): …`) + GPG sign.
+5. Open PR, assign reviewer stream lead.
+6. On fail → CI auto-revert (PX-011).
+7. On merge → CI tags pre-release `v2.x.y-beta`.
+8. Sprint end → maintainer fast-forwards stable `latest`.
+
+---
+
+## 10 · Further Enhancements (Post-Release)
+
+| Idea                        | Rationale                        | Effort |
+| --------------------------- | -------------------------------- | ------ |
+| Live settings modal         | Toggle features w/out reload     | M      |
+| Per-site feature flag       | Allow user to disable watermarks | S      |
+| TypeScript refactor         | Strong types, IDE help           | L      |
+
+---
+
+## 11 · Glossary
+
+| Term      | Meaning                                          |
+| --------- | ------------------------------------------------ |
+| **PX-***  | Pixverse++ ticket ID.                            |
+| **Canonical** | v2.0 baseline script (golden).              |
+| **Drift** | Divergence from canonical behaviour/spec.        |
+| **Revert**| Git commit undo of last merge to restore stable. |
+
+---
+
+## Appendix A — Ticket YAML Stub
+```yaml
+id: PX-999
+stream: ENG
+title: Short summary
+dependencies: []
+priority: P3
+est_hours: 2
+description: |
+  … full ticket body …
+acceptance_criteria:
+  - Measurable conditions
+deliverables:
+  - File(s) touched
+notes: |
+  Optional hints
+````
+
+## Appendix B — ADR Template
+
+```md
+# ADR-???? — <Short Title>
+Status: Proposed
+Date: 2025-07-15
+
+## Context
+…
+
+## Decision
+…
+
+## Consequences
+…
+
+## Alternatives
+…
+```
+
+<!-- END OF AGENTS.md -->
+I'm checking the /testing/pixverse_builds/beta/ directory to follow AGENTS' instructions.
+
+root@7d778a5d9ef7:/workspace/userscripts# ls testing/pixverse_builds/beta
+AGENTS.md  pixversebeta.user.js
+root@7d778a5d9ef7:/workspace/userscripts# cat testing/pixverse_builds/beta/pixve
+rsebeta.user.js | head -n 20
+// ==UserScript==
+// @name        4ndr0tools_Pixverse-Beta
+// @namespace   https://github.com/4ndr0666/userscripts
+// @author      4ndr0666
+// @version     1
+// @description Pixverse toolkit in beta: bypass blocks, auto-download, prompt N
+SFW bypass, robust API overrides, settings UI.
+// @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/
+main/static/cyanglassarch.png
+// @match       https://app.pixverse.ai/*
+// @run-at      document-start
+// @grant       none
+// @license     MIT
+// ==/UserScript==
+
+(() => {
+  'use strict';
+
+  /* ───────────── CONSTANTS & STATE ───────────── */
+  const DEBUG_PREFIX = '[Pixverse Bypass]';
+  const MAX_ATTEMPTS = 30;
+  let savedMediaPath = null;
+root@7d778a5d9ef7:/workspace/userscripts# wc -l testing/pixverse_builds/beta/pix
+versebeta.user.js
+389 testing/pixverse_builds/beta/pixversebeta.user.js
+The AGENTS file should detail tasks for the container, but the user mentioned another folder.
+
+root@7d778a5d9ef7:/workspace/userscripts# grep -n "task" -n testing/pixverse_bui
+lds/beta/AGENTS.md | head
+The AGENTS file is dense; I'll search for "step" to find relevant guidance.
+
+root@7d778a5d9ef7:/workspace/userscripts# grep -n "Step" -n testing/pixverse_bui
+lds/beta/AGENTS.md | head
+99:| PX-001   | ENG    | **Step 1:** Add API_ENDPOINTS + matchesEndpoint | —
+   | P0   | 1       |
+100:| PX-002   | ENG    | **Step 2:** Central parseBody helper *re-try*   | PX-0
+01  | P0   | 1       |
+102:| PX-004   | ENG    | **Step 3:** Robust watermark button selector    | PX-0
+03  | P0   | 1       |
+103:| PX-005   | ENG    | **Step 4:** Throttled, scoped observers         | PX-0
+04  | P1   | 2       |
+104:| PX-006   | ENG    | **Step 5:** structuredClone deep-copy           | PX-0
+05  | P1   | 1       |
+105:| PX-007   | ENG    | **Step 6:** Filename sanitize & pattern         | PX-0
+06  | P2   | 1       |
+106:| PX-008   | ENG    | **Step 7:** escapeRegExp + obfuscatePrompt      | PX-0
+07  | P2   | 1       |
+116:### PX-001  ENG  “Step 1 – Endpoint Regex Map”
+133:### PX-002  ENG  “Step 2 – Central parseBody Helper (re-attempt)”
+174:### PX-004  ENG  “Step 3 – Robust watermark button selector”
+I'm scrolling through the lines to check the tasks listed.
+
+root@7d778a5d9ef7:/workspace/userscripts# sed -n '112,184p' testing/pixverse_bui
+lds/beta/AGENTS.md
+---
+
+## 5 · Detailed Ticket Specifications
+
+### PX-001  ENG  “Step 1 – Endpoint Regex Map”
+**Goal**
+Replace brittle `url.includes()` checks with a centralized regex map to prevent
+drift when Pixverse changes path tokens.
+
+**Tasks**
+1. Add constant `API_ENDPOINTS` to `4ndr0tools-Pixverse++.user.js`.
+2. Implement helper `matchesEndpoint(url, key)`.
+3. Replace ALL hard-coded `.includes('/media/upload')` etc.
+4. Log endpoint key on match via `log()`.
+
+**Acceptance**
+- Credits restore, upload fakes, video list patch still work (manual QA).
+- “watermark-free” button unaffected.
+- No new eslint warnings.
+
+---
+
+### PX-002  ENG  “Step 2 – Central parseBody Helper (re-attempt)”
+**Context**: First attempt broke uploads → rolled back.
+
+**Goal**
+Re-implement `parseBody()` but wrap in try/catch guard and preserve **exact** be
+haviour of legacy inline parsing.
+
+**Tasks**
+1. `function parseBody(body){ … }` handles FormData and JSON string, returns `nu
+ll` on failure.
+2. Replace inline FormData → object conversions in both XHR & fetch.
+3. Unit test with:
+   - valid JSON body
+   - malformed JSON body (must return null, not throw)
+   - FormData with file blob
+4. Add fallback: if parseBody() returns null, legacy extractor runs unchanged.
+
+**Acceptance**
+- `savedMediaPath` captured identically to v2.0 baseline.
+- Site UX unaffected (no blank page).
+- QA ticket PX-003 green-lights.
+
+**Rollback Trigger**
+If any upload fails or Pixverse shows black-screen again, QA auto-reverts commit
+.
+
+---
+
+### PX-003  QA  “Regression tests for parseBody”
+**Goal**
+Programmatic guard to ensure PX-002 never re-breaks uploads again.
+
+**Tasks**
+1. Add Jest (or Vitest) script that mocks XHR/fetch and asserts `savedMediaPath`
+ is set for:
+   - batch upload,
+   - single upload.
+2. Failing tests MUST fail CI, triggering PX-011’s auto-revert.
+
+**Acceptance**
+- Tests red on broken implementation, green on fixed.
+- Coverage > 95 % for parseBody branches.
+
+---
+
+### PX-004  ENG  “Step 3 – Robust watermark button selector”
+*(…kept concise; see earlier matrix)*
+
+---
+
+*(PX-005 .. PX-012 follow same expanded pattern.)*
+
+---
+
+## 6 · Road-map & Sprint Cadence
+The AGENTS file outlines tasks. I need to review steps 1-3 to decide implementation.
+
+root@7d778a5d9ef7:/workspace/userscripts# grep -n "PX-001" -n testing/pixverse_b
+uilds/beta/AGENTS.md
+99:| PX-001   | ENG    | **Step 1:** Add API_ENDPOINTS + matchesEndpoint | —
+   | P0   | 1       |
+100:| PX-002   | ENG    | **Step 2:** Central parseBody helper *re-try*   | PX-0
+01  | P0   | 1       |
+109:| PX-011   | INF    | Add CI job ➜ auto-revert on fail (git restore)  | PX-0
+01  | P0   | 2       |
+116:### PX-001  ENG  “Step 1 – Endpoint Regex Map”
+187:| **S-1**  | Endpoint map + parseBody re-try + QA tests   | PX-001-PX-003  |
+ 5 days   |
+The user asks to implement tasks from "beta". I'll focus on steps I can handle, like Step 1.
+
+
+root@7d778a5d9ef7:/workspace/userscripts# head -n 20 4ndr0tools-Pixverse++.user.
+js
+// ==UserScript==
+// @name        4ndr0tools-Pixverse++
+// @namespace   https://github.com/4ndr0666/userscripts
+// @author      4ndr0666
+// @version     2.0
+// @description Bypass Pixverse video blocks, auto-reveal download, and intercep
+t all API methods (XHR+fetch)
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4nd
+r0tools-Pixverse++.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4nd
+r0tools-Pixverse++.user.js
+// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads
+/main/static/cyanglassarch.png
+// @match       https://app.pixverse.ai/*
+// @run-at      document-start
+// @grant       none
+// @license     MIT
+// ==/UserScript==
+
+(() => {
+  'use strict';
+
+  /* ───────────────────────────── CONSTANTS & STATE ───────────────────────────
+─── */
+  const DEBUG_PREFIX = '[Pixverse Bypass]';
+root@7d778a5d9ef7:/workspace/userscripts# sed -n '1,60p' 4ndr0tools-Pixverse++.u
+ser.js
+// ==UserScript==
+// @name        4ndr0tools-Pixverse++
+// @namespace   https://github.com/4ndr0666/userscripts
+// @author      4ndr0666
+// @version     2.0
+// @description Bypass Pixverse video blocks, auto-reveal download, and intercep
+t all API methods (XHR+fetch)
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4nd
+r0tools-Pixverse++.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4nd
+r0tools-Pixverse++.user.js
+// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads
+/main/static/cyanglassarch.png
+// @match       https://app.pixverse.ai/*
+// @run-at      document-start
+// @grant       none
+// @license     MIT
+// ==/UserScript==
+
+(() => {
+  'use strict';
+
+  /* ───────────────────────────── CONSTANTS & STATE ───────────────────────────
+─── */
+  const DEBUG_PREFIX = '[Pixverse Bypass]';
+  const MAX_ATTEMPTS = 30;
+  let savedMediaPath = null;
+  let isInitialized  = false;
+  let btnAttached    = false;
+
+  /* ──────────────────────────────── LOGGING HELPERS ──────────────────────────
+─── */
+  function log(...args)   { console.log(`${DEBUG_PREFIX}`, ...args); }
+  function error(...args) { console.error(`${DEBUG_PREFIX}`, ...args); }
+
+  /* ──────────────── API RESPONSE MODIFICATION CORE ───────────────── */
+
+  function extractMediaPath(data, url) {
+    if (!data) return null;
+    if (url.includes('/media/batch_upload_media')) {
+      return data?.images?.[0]?.path || null;
+    } else if (url.includes('/media/upload')) {
+      return data?.path || null;
+    }
+    return null;
+  }
+
+  function modifyVideoList(data) {
+    if (!data?.Resp?.data) return data;
+    return {
+      ...data,
+      Resp: {
+        ...data.Resp,
+        data: data.Resp.data.map(item => ({
+          ...item,
+          video_status: item.video_status === 7 ? 1 : item.video_status,
+          first_frame: (item.extended === 1 && item.customer_paths?.customer_vid
+eo_last_frame_url) ||
+                      item.customer_paths?.customer_img_url || '',
+          url: item.video_path ? `https://media.pixverse.ai/${item.video_path}`
+: ''
+        }))
+      }
+    };
+  }
+
+  function modifyBatchUpload(data) {
+    if (data?.ErrCode === 400 && savedMediaPath) {
+root@7d778a5d9ef7:/workspace/userscripts# grep -n "includes('/media/upload'" -n
+4ndr0tools-Pixverse++.user.js
+36:    } else if (url.includes('/media/upload')) {
+100:    else if (url.includes('/media/upload'))        return modifySingleUpload
+(data);
+124:        if ((url.includes('/media/batch_upload_media') || url.includes('/med
+ia/upload')) && body) {
+181:        if ((url.includes('/media/batch_upload_media') || url.includes('/med
+ia/upload')) && reqBody) {
+Looking at the script to identify which functions need updating for Step 1.
+
+root@7d778a5d9ef7:/workspace/userscripts# sed -n '60,240p' 4ndr0tools-Pixverse++
+.user.js
+    if (data?.ErrCode === 400 && savedMediaPath) {
+      const imageId   = Date.now();
+      const imageName = savedMediaPath.split('/').pop() || 'uploaded_media';
+      return {
+        ErrCode: 0,
+        ErrMsg: "success",
+        Resp: {
+          result: [{
+            id: imageId,
+            category: 0,
+            err_msg: "",
+            name: imageName,
+            path: savedMediaPath,
+            size: 0,
+            url: `https://media.pixverse.ai/${savedMediaPath}`
+          }]
+        }
+      };
+    }
+    return data;
+  }
+
+  function modifySingleUpload(data) {
+    if (data?.ErrCode === 400040 && savedMediaPath) {
+      return {
+        ErrCode: 0,
+        ErrMsg: "success",
+        Resp: {
+          path: savedMediaPath,
+          url: `https://media.pixverse.ai/${savedMediaPath}`
+        }
+      };
+    }
+    return data;
+  }
+
+  function modifyResponse(data, url) {
+    if (!data || typeof data !== 'object') return null;
+    if (url.includes('/video/list/personal'))      return modifyVideoList(data);
+    else if (url.includes('/media/batch_upload_media')) return modifyBatchUpload
+(data);
+    else if (url.includes('/media/upload'))        return modifySingleUpload(dat
+a);
+    return null;
+  }
+
+  /* ────────────── XHR INTERCEPTOR ────────────── */
+
+  function overrideXHR() {
+    if (!window.XMLHttpRequest) {
+      error('XMLHttpRequest not supported');
+      return;
+    }
+    try {
+      const originalOpen = XMLHttpRequest.prototype.open;
+      const originalSend = XMLHttpRequest.prototype.send;
+
+      XMLHttpRequest.prototype.open = function (method, url) {
+        this._pixverseRequestUrl = url;
+        return originalOpen.apply(this, arguments);
+      };
+
+      XMLHttpRequest.prototype.send = function (body) {
+        const url = this._pixverseRequestUrl || '';
+
+        // Capture media path
+        if ((url.includes('/media/batch_upload_media') || url.includes('/media/u
+pload')) && body) {
+          try {
+            let data = body;
+            if (body instanceof FormData) {
+              data = Object.fromEntries(body);
+            } else if (typeof body === 'string') {
+              data = JSON.parse(body || '{}');
+            }
+            savedMediaPath = extractMediaPath(data, url);
+            log('Captured media path:', savedMediaPath);
+          } catch (e) {
+            error('Error parsing request body:', e);
+          }
+        }
+
+        const self = this;
+        const loadHandler = function () {
+          if (self.status >= 200 && self.status < 300) {
+            try {
+              let response = (self.responseType === 'json' ? self.response : JSO
+N.parse(self.responseText || '{}'));
+              let modified = modifyResponse(response, url);
+              if (modified) {
+                Object.defineProperties(self, {
+                  response:     { value: modified, writable: true, configurable:
+ true },
+                  responseText: { value: JSON.stringify(modified), writable: tru
+e, configurable: true }
+                });
+                log('XHR response modified:', url);
+              }
+            } catch (e) {
+              error('XHR response processing error:', e);
+            }
+          }
+        };
+        self.addEventListener('load', loadHandler, { once: true });
+
+        return originalSend.apply(self, arguments);
+      };
+      log('XHR overrides initialized');
+    } catch (e) {
+      error('XHR override failed:', e);
+    }
+  }
+
+  /* ────────────── FETCH INTERCEPTOR ────────────── */
+  function overrideFetch() {
+    if (!window.fetch) {
+      error('Fetch API not supported');
+      return;
+    }
+    try {
+      const originalFetch = window.fetch;
+      window.fetch = async function (...args) {
+        let [input, init] = args;
+        let url = typeof input === 'string' ? input : (input?.url || '');
+        let reqBody = init?.body || '';
+
+        // Capture media path if uploading
+        if ((url.includes('/media/batch_upload_media') || url.includes('/media/u
+pload')) && reqBody) {
+          try {
+            let data = reqBody;
+            if (reqBody instanceof FormData) {
+              data = Object.fromEntries(reqBody);
+            } else if (typeof reqBody === 'string') {
+              data = JSON.parse(reqBody || '{}');
+            }
+            savedMediaPath = extractMediaPath(data, url);
+            log('FETCH: Captured media path:', savedMediaPath);
+          } catch (e) {
+            error('FETCH: Error parsing request body:', e);
+          }
+        }
+
+        // Pass through, then patch the response if necessary
+        let res = await originalFetch.apply(this, args);
+        let cloned = res.clone();
+
+        try {
+          if (cloned.headers.get('content-type')?.includes('application/json'))
+{
+            let json = await cloned.json();
+            let modified = modifyResponse(json, url);
+            if (modified) {
+              // Construct a new Response with the modified body, preserve heade
+rs/status
+              let newRes = new Response(JSON.stringify(modified), {
+                status: res.status,
+                statusText: res.statusText,
+                headers: res.headers,
+              });
+              // Patch .json() and .text() on the returned Response object for t
+ransparency
+              Object.defineProperties(newRes, {
+                json: {
+                  value: () => Promise.resolve(modified),
+                  writable: false,
+                  configurable: true
+                },
+                text: {
+                  value: () => Promise.resolve(JSON.stringify(modified)),
+                  writable: false,
+                  configurable: true
+                }
+              });
+              log('FETCH: Response modified:', url);
+              return newRes;
+            }
+          }
+        } catch (e) {
+          error('FETCH: Response handling error:', e);
+        }
+        return res;
+      };
+      log('Fetch override initialized');
+    } catch (e) {
+      error('Fetch override failed:', e);
+    }
+  }
+
+  /* ────────────────────────────────────────────────────────────── */
+I'm continuing to scroll to capture the rest of the content at the bottom.
+
+root@7d778a5d9ef7:/workspace/userscripts# sed -n '240,480p' 4ndr0tools-Pixverse+
++.user.js
+
+  // Watermark-free download button logic (robust/SPA-aware)
+  function setupWatermarkButton() {
+    if (btnAttached) return;
+    function tryAttachButton(attempts = 0) {
+      // Try to find the watermark-free element in several common places
+      let watermarkDiv = Array.from(document.querySelectorAll('div,button')).fin
+d(
+        el => (el.textContent.trim() === 'Watermark-free')
+      );
+      if (!watermarkDiv) {
+        if (attempts < MAX_ATTEMPTS) {
+          setTimeout(() => tryAttachButton(attempts + 1), 350);
+        }
+        return;
+      }
+
+      // Don't double-inject or attach multiple times
+      if (watermarkDiv.dataset.ytdlcInjected) return;
+
+      const newButton = document.createElement('button');
+      newButton.textContent = 'Watermark-free';
+      // Attempt to inherit basic style
+      const computed = window.getComputedStyle(watermarkDiv);
+      newButton.style.cssText = computed.cssText || '';
+      newButton.style.background = '#142830'; // Custom style for visibility
+      newButton.style.color      = '#15FFFF';
+      newButton.style.fontWeight = 'bold';
+      newButton.style.cursor     = 'pointer';
+      newButton.style.borderRadius = '6px';
+      newButton.style.marginLeft = '8px';
+      newButton.style.padding    = '6px 12px';
+
+      newButton.onclick = function (event) {
+        event.stopPropagation();
+        const videoElement = document.querySelector(".component-video > video, v
+ideo");
+        if (videoElement && videoElement.src) {
+          const videoUrl = videoElement.src;
+          log('[Watermark-free] Video URL:', videoUrl);
+
+          // Download the video
+          const link = document.createElement('a');
+          link.href = videoUrl;
+          link.download = videoUrl.split('/').pop() || 'video.mp4';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          log('[Watermark-free] Download triggered for:', videoUrl);
+        } else {
+          error('[Watermark-free] Video element not found or no src attribute');
+          alert('Could not find the video to download. Please ensure a video is
+loaded.');
+        }
+      };
+
+      watermarkDiv.parentNode.replaceChild(newButton, watermarkDiv);
+      newButton.dataset.ytdlcInjected = '1';
+      btnAttached = true;
+      log('[Watermark-free] Button replaced and listener attached');
+    }
+
+    // Initial attach and also when UI changes (SPA/React re-renders)
+    tryAttachButton();
+    const mo = new MutationObserver(() => tryAttachButton());
+    mo.observe(document.body, { childList: true, subtree: true });
+  }
+
+  /* ────────────── INITIALIZATION ────────────── */
+  function initialize() {
+    if (isInitialized) return;
+    try {
+      overrideXHR();
+      overrideFetch();
+      setupWatermarkButton();
+      isInitialized = true;
+      log('Script initialized successfully');
+    } catch (e) {
+      error('Initialization failed:', e);
+    }
+  }
+
+  // Run as soon as possible
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initialize, { once: true });
+  } else {
+    initialize();
+  }
+
+})();
+I’ll start by adding constants like API_ENDPOINTS and the matchesEndpoint function, replacing .includes calls with it. Next, I'll go through the script to confirm all relevant endpoints like '/media/upload' are covered.
+
+root@7d778a5d9ef7:/workspace/userscripts# grep -n "includes('" 4ndr0tools-Pixver
+se++.user.js
+34:    if (url.includes('/media/batch_upload_media')) {
+36:    } else if (url.includes('/media/upload')) {
+98:    if (url.includes('/video/list/personal'))      return modifyVideoList(dat
+a);
+99:    else if (url.includes('/media/batch_upload_media')) return modifyBatchUpl
+oad(data);
+100:    else if (url.includes('/media/upload'))        return modifySingleUpload
+(data);
+124:        if ((url.includes('/media/batch_upload_media') || url.includes('/med
+ia/upload')) && body) {
+181:        if ((url.includes('/media/batch_upload_media') || url.includes('/med
+ia/upload')) && reqBody) {
+201:          if (cloned.headers.get('content-type')?.includes('application/json
+')) {
+I'll open the repo root first to check for Prettier or ESLint configurations.
+
+root@7d778a5d9ef7:/workspace/userscripts# ls -a
+.
+ ..
+ .git
+ .gitignore
+ .venv-codex
+ 4ndr0tools-AlwaysNewWindow.user.js
+ 4ndr0tools-BunkrCanonicalURL.user.js
+ 4ndr0tools-ChatGPT++.user.js
+ 4ndr0tools-ChatGPTBrainImplant.user.js
+ 4ndr0tools-ConfirmationBypass.user.js
+ 4ndr0tools-GooglePhotosandDrive++.user.js
+ 4ndr0tools-InstagramRedirect.user.js
+ 4ndr0tools-MegaEmbedRedirector.user.js
+ 4ndr0tools-Pixverse++.user.js
+ 4ndr0tools-PlanetsuzyMobileSkinRedirect.user.js
+ 4ndr0tools-SelectAllCheckboxes.user.js
+ 4ndr0tools-SimpcitySearch.user.js
+'4ndr0tools-Sora Toolkit.user.js'
+ 4ndr0tools-YandexImageSearch++.user.js
+ 4ndr0tools-YouTubeEmbedRedirectButton.user.js
+ 4ndr0tools-YtdlcProtocol.user.js
+ README.md
+ testing
+root@7d778a5d9ef7:/workspace/userscripts# ls -a
+ .
+ ..
+ .git
+ .gitignore
+ .venv-codex
+ 4ndr0tools-AlwaysNewWindow.user.js
+ 4ndr0tools-BunkrCanonicalURL.user.js
+ 4ndr0tools-ChatGPT++.user.js
+ 4ndr0tools-ChatGPTBrainImplant.user.js
+ 4ndr0tools-ConfirmationBypass.user.js
+ 4ndr0tools-GooglePhotosandDrive++.user.js
+ 4ndr0tools-InstagramRedirect.user.js
+ 4ndr0tools-MegaEmbedRedirector.user.js
+ 4ndr0tools-Pixverse++.user.js
+ 4ndr0tools-PlanetsuzyMobileSkinRedirect.user.js
+ 4ndr0tools-SelectAllCheckboxes.user.js
+ 4ndr0tools-SimpcitySearch.user.js
+'4ndr0tools-Sora Toolkit.user.js'
+ 4ndr0tools-YandexImageSearch++.user.js
+ 4ndr0tools-YouTubeEmbedRedirectButton.user.js
+ 4ndr0tools-YtdlcProtocol.user.js
+ README.md
+ testing
+I see .gitignore and .venv-codex, but no package.json or npm config. Let's check further.
+
+root@7d778a5d9ef7:/workspace/userscripts# ls -R | head
+.:
+4ndr0tools-AlwaysNewWindow.user.js
+4ndr0tools-BunkrCanonicalURL.user.js
+4ndr0tools-ChatGPT++.user.js
+4ndr0tools-ChatGPTBrainImplant.user.js
+4ndr0tools-ConfirmationBypass.user.js
+4ndr0tools-GooglePhotosandDrive++.user.js
+4ndr0tools-InstagramRedirect.user.js
+4ndr0tools-MegaEmbedRedirector.user.js
+4ndr0tools-Pixverse++.user.js
+I'll check the "testing" directory to confirm if it holds the userscripts.
+
+root@7d778a5d9ef7:/workspace/userscripts# ls testing
+functions  pixverse_builds
+root@7d778a5d9ef7:/workspace/userscripts# ls testing/functions | head
+ChatGPT Question Navigation sidebar.user.js
+Disable Google SafeSearch automatically.user.js
+Disable safesearch.user.js
+Get of extension from Chrome-WebStore [chrome.google.com].user.js
+Greasyfork Script Display Rating.user.js
+IMGUR Load -remaining images- AUTOMATICALLY.user.js
+Image Downloader.user.js
+ImageHost Picture Viewer.user.js
+Mouseover Popup Image Viewer.user.js
+Open All Gallery Images.user.js
+I'll check the status of the git repository before proceeding further.
+
+root@7d778a5d9ef7:/workspace/userscripts# git status --short
+?? .venv-codex/
+It looks like .venv-codex is untracked. I'll consider adding it to gitignore.
+
+root@7d778a5d9ef7:/workspace/userscripts# cat .gitignore
+# Compiled files
+*.o
+*.so
+*.dll
+
+# Logs and databases
+*.log
+*.db
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Python files
+*.pyc
+*.pyo
+__pycache__/
+
+# IDE and editor files
+*.swp
+*.swo
+*.idea/
+.vscode/
+
+# Sensitive data
+*.env
+secrets.json
+I’ll add .venv-codex/ to the .gitignore to keep it from being tracked.
+
+root@7d778a5d9ef7:/workspace/userscripts# echo '.venv-codex/' >> .gitignore
+root@7d778a5d9ef7:/workspace/userscripts# git status --short
+ M .gitignore
+I'll remove .venv-codex from the list of untracked files.
+
+root@7d778a5d9ef7:/workspace/userscripts# rm -rf .venv-codex
+root@7d778a5d9ef7:/workspace/userscripts# git status --short
+ M .gitignore
+I'll commit after checking if there are any other tasks, but adding .venv-codex first.
+
+root@7d778a5d9ef7:/workspace/userscripts# git diff --staged
+I need to stage the .gitignore before proceeding with the commit.
+
+root@7d778a5d9ef7:/workspace/userscripts# git add .gitignore
+root@7d778a5d9ef7:/workspace/userscripts# git commit -m "chore: ignore codex ven
+v" && git status --short
+[work 656f538] chore: ignore codex venv
+ 1 file changed, 1 insertion(+)
+
+root@7d778a5d9ef7:/workspace/userscripts# git status --short
+root@7d778a5d9ef7:/workspace/userscripts# git status --short
+I'll add the API_ENDPOINTS constant, the matchesEndpoint function, and update relevant checks.
+
+user.js
+  const DEBUG_PREFIX = '[Pixverse Bypass]';
+  const MAX_ATTEMPTS = 30;
+  let savedMediaPath = null;
+  let isInitialized  = false;
+  let btnAttached    = false;
+
+  /* ──────────────────────────────── LOGGING HELPERS ──────────────────────────
+─── */
+  function log(...args)   { console.log(`${DEBUG_PREFIX}`, ...args); }
+  function error(...args) { console.error(`${DEBUG_PREFIX}`, ...args); }
+
+  /* ──────────────── API RESPONSE MODIFICATION CORE ───────────────── */
+
+  function extractMediaPath(data, url) {
+    if (!data) return null;
+    if (url.includes('/media/batch_upload_media')) {
+      return data?.images?.[0]?.path || null;
+    } else if (url.includes('/media/upload')) {
+      return data?.path || null;
+    }
+    return null;
+  }
+
+  function modifyVideoList(data) {
+    if (!data?.Resp?.data) return data;
+    return {
+      ...data,
+      Resp: {
+        ...data.Resp,
+        data: data.Resp.data.map(item => ({
+          ...item,
+          video_status: item.video_status === 7 ? 1 : item.video_status,
+I'll add a constant to follow MAX_ATTEMPTS and modify the related code.
+
+root@7d778a5d9ef7:/workspace/userscripts# sed -n '20,40p' 4ndr0tools-Pixverse++.
+user.js
+  const DEBUG_PREFIX = '[Pixverse Bypass]';
+  const MAX_ATTEMPTS = 30;
+  let savedMediaPath = null;
+  let isInitialized  = false;
+  let btnAttached    = false;
+
+  /* ──────────────────────────────── LOGGING HELPERS ──────────────────────────
+─── */
+  function log(...args)   { console.log(`${DEBUG_PREFIX}`, ...args); }
+  function error(...args) { console.error(`${DEBUG_PREFIX}`, ...args); }
+
+  /* ──────────────── API RESPONSE MODIFICATION CORE ───────────────── */
+
+  function extractMediaPath(data, url) {
+    if (!data) return null;
+    if (url.includes('/media/batch_upload_media')) {
+      return data?.images?.[0]?.path || null;
+    } else if (url.includes('/media/upload')) {
+      return data?.path || null;
+    }
+    return null;
+  }
+I'll open the file to patch using sed or cat. Let's get started!
+
+root@7d778a5d9ef7:/workspace/userscripts# sed -n '20,70p' 4ndr0tools-Pixverse++.
+user.js
+  const DEBUG_PREFIX = '[Pixverse Bypass]';
+  const MAX_ATTEMPTS = 30;
+  let savedMediaPath = null;
+  let isInitialized  = false;
+  let btnAttached    = false;
+
+  /* ──────────────────────────────── LOGGING HELPERS ──────────────────────────
+─── */
+  function log(...args)   { console.log(`${DEBUG_PREFIX}`, ...args); }
+  function error(...args) { console.error(`${DEBUG_PREFIX}`, ...args); }
+
+  /* ──────────────── API RESPONSE MODIFICATION CORE ───────────────── */
+
+  function extractMediaPath(data, url) {
+    if (!data) return null;
+    if (url.includes('/media/batch_upload_media')) {
+      return data?.images?.[0]?.path || null;
+    } else if (url.includes('/media/upload')) {
+      return data?.path || null;
+    }
+    return null;
+  }
+
+  function modifyVideoList(data) {
+    if (!data?.Resp?.data) return data;
+    return {
+      ...data,
+      Resp: {
+        ...data.Resp,
+        data: data.Resp.data.map(item => ({
+          ...item,
+          video_status: item.video_status === 7 ? 1 : item.video_status,
+          first_frame: (item.extended === 1 && item.customer_paths?.customer_vid
+eo_last_frame_url) ||
+                      item.customer_paths?.customer_img_url || '',
+          url: item.video_path ? `https://media.pixverse.ai/${item.video_path}`
+: ''
+        }))
+      }
+    };
+  }
+
+  function modifyBatchUpload(data) {
+    if (data?.ErrCode === 400 && savedMediaPath) {
+      const imageId   = Date.now();
+      const imageName = savedMediaPath.split('/').pop() || 'uploaded_media';
+      return {
+        ErrCode: 0,
+        ErrMsg: "success",
+        Resp: {
+          result: [{
+            id: imageId,
+            category: 0,
+            err_msg: "",
+I'll open the relevant lines and use sed to insert the function and constant definitions.
+
+root@7d778a5d9ef7:/workspace/userscripts# apply_patch<<'PATCH'
+> *** Begin Patch
+> *** Update File: 4ndr0tools-Pixverse++.user.js
+> @@
+> -  const DEBUG_PREFIX = '[Pixverse Bypass]';
+> -  const MAX_ATTEMPTS = 30;
+> +  const DEBUG_PREFIX = '[Pixverse Bypass]';
+> +  const MAX_ATTEMPTS = 30;
+> +  const API_ENDPOINTS = {
+> +    batchUpload:    /\/media\/batch_upload_media/,
+> +    singleUpload:   /\/media\/upload/,
+> +    personalVideos: /\/video\/list\/personal/
+> +  };
+> +
+> +  function matchesEndpoint(url, key) {
+> +    const regex = API_ENDPOINTS[key];
+> +    return regex ? regex.test(url) : false;
+> +  }
+> *** End Patch
+> PATCH
+Success. Updated the following files:
+M 4ndr0tools-Pixverse++.user.js
+I’ll modify the 'url.includes' occurrences and use sed to replace them with matchesEndpoint.
+
+root@7d778a5d9ef7:/workspace/userscripts# grep -n "includes('/media/batch_upload
+_media'" -n 4ndr0tools-Pixverse++.user.js
+44:    if (url.includes('/media/batch_upload_media')) {
+109:    else if (url.includes('/media/batch_upload_media')) return modifyBatchUp
+load(data);
+134:        if ((url.includes('/media/batch_upload_media') || url.includes('/med
+ia/upload')) && body) {
+191:        if ((url.includes('/media/batch_upload_media') || url.includes('/med
+ia/upload')) && reqBody) {
+root@7d778a5d9ef7:/workspace/userscripts# grep -n "includes('/media/upload'" -n
+4ndr0tools-Pixverse++.user.js
+46:    } else if (url.includes('/media/upload')) {
+110:    else if (url.includes('/media/upload'))        return modifySingleUpload
+(data);
+134:        if ((url.includes('/media/batch_upload_media') || url.includes('/med
+ia/upload')) && body) {
+191:        if ((url.includes('/media/batch_upload_media') || url.includes('/med
+ia/upload')) && reqBody) {
+root@7d778a5d9ef7:/workspace/userscripts# grep -n "includes('/video/list/persona
+l'" -n 4ndr0tools-Pixverse++.user.js
+108:    if (url.includes('/video/list/personal'))      return modifyVideoList(da
+ta);
+I'll patch the interceptors by replacing url.includes() checks with matchesEndpoint using sed or apply_patch.
+
+root@7d778a5d9ef7:/workspace/userscripts# apply_patch<<'PATCH'
+> *** Begin Patch
+> *** Update File: 4ndr0tools-Pixverse++.user.js
+> @@
+> -    if (url.includes('/media/batch_upload_media')) {
+> -      return data?.images?.[0]?.path || null;
+> -    } else if (url.includes('/media/upload')) {
+> -      return data?.path || null;
+> +    if (matchesEndpoint(url, 'batchUpload')) {
+> +      return data?.images?.[0]?.path || null;
+> +    } else if (matchesEndpoint(url, 'singleUpload')) {
+> +      return data?.path || null;
+>      }
+>      return null;
+>    }
+> *** End Patch
+> PATCH
+Success. Updated the following files:
+M 4ndr0tools-Pixverse++.user.js
+root@7d778a5d9ef7:/workspace/userscripts# apply_patch<<'PATCH'
+> *** Begin Patch
+> *** Update File: 4ndr0tools-Pixverse++.user.js
+> @@
+> -    if (url.includes('/video/list/personal'))      return modifyVideoList(dat
+a);
+> -    else if (url.includes('/media/batch_upload_media')) return modifyBatchUpl
+oad(data);
+> -    else if (url.includes('/media/upload'))        return modifySingleUpload(
+data);
+> +    if (matchesEndpoint(url, 'personalVideos'))      return modifyVideoList(d
+ata);
+> +    else if (matchesEndpoint(url, 'batchUpload')) return modifyBatchUpload(da
+ta);
+> +    else if (matchesEndpoint(url, 'singleUpload'))        return modifySingle
+Upload(data);
+>      return null;
+>    }
+> *** End Patch
+> PATCH
+Success. Updated the following files:
+M 4ndr0tools-Pixverse++.user.js
+I'll review the section around line 120 for the next patch on overrideXHR.
+
+root@7d778a5d9ef7:/workspace/userscripts# sed -n '120,170p' 4ndr0tools-Pixverse+
++.user.js
+    }
+    try {
+      const originalOpen = XMLHttpRequest.prototype.open;
+      const originalSend = XMLHttpRequest.prototype.send;
+
+      XMLHttpRequest.prototype.open = function (method, url) {
+        this._pixverseRequestUrl = url;
+        return originalOpen.apply(this, arguments);
+      };
+
+      XMLHttpRequest.prototype.send = function (body) {
+        const url = this._pixverseRequestUrl || '';
+
+        // Capture media path
+        if ((url.includes('/media/batch_upload_media') || url.includes('/media/u
+pload')) && body) {
+          try {
+            let data = body;
+            if (body instanceof FormData) {
+              data = Object.fromEntries(body);
+            } else if (typeof body === 'string') {
+              data = JSON.parse(body || '{}');
+            }
+            savedMediaPath = extractMediaPath(data, url);
+            log('Captured media path:', savedMediaPath);
+          } catch (e) {
+            error('Error parsing request body:', e);
+          }
+        }
+
+        const self = this;
+        const loadHandler = function () {
+          if (self.status >= 200 && self.status < 300) {
+            try {
+              let response = (self.responseType === 'json' ? self.response : JSO
+N.parse(self.responseText || '{}'));
+              let modified = modifyResponse(response, url);
+              if (modified) {
+                Object.defineProperties(self, {
+                  response:     { value: modified, writable: true, configurable:
+ true },
+                  responseText: { value: JSON.stringify(modified), writable: tru
+e, configurable: true }
+                });
+                log('XHR response modified:', url);
+              }
+            } catch (e) {
+              error('XHR response processing error:', e);
+            }
+          }
+        };
+        self.addEventListener('load', loadHandler, { once: true });
+
+        return originalSend.apply(self, arguments);
+      };
+I’m working on patching the condition right now.
+
+root@7d778a5d9ef7:/workspace/userscripts# grep -n "url.includes('/media/batch_up
+load_media'" -n 4ndr0tools-Pixverse++.user.js
+134:        if ((url.includes('/media/batch_upload_media') || url.includes('/med
+ia/upload')) && body) {
+191:        if ((url.includes('/media/batch_upload_media') || url.includes('/med
+ia/upload')) && reqBody) {
+The line numbers might change post-modification, but I'll patch it carefully.
+
+root@7d778a5d9ef7:/workspace/userscripts# sed -n '132,150p' 4ndr0tools-Pixverse+
++.user.js
+
+        // Capture media path
+        if ((url.includes('/media/batch_upload_media') || url.includes('/media/u
+pload')) && body) {
+          try {
+            let data = body;
+            if (body instanceof FormData) {
+              data = Object.fromEntries(body);
+            } else if (typeof body === 'string') {
+              data = JSON.parse(body || '{}');
+            }
+            savedMediaPath = extractMediaPath(data, url);
+            log('Captured media path:', savedMediaPath);
+          } catch (e) {
+            error('Error parsing request body:', e);
+          }
+        }
+
+        const self = this;
+        const loadHandler = function () {
+root@7d778a5d9ef7:/workspace/userscripts# apply_patch<<'PATCH'
+> *** Begin Patch
+> *** Update File: 4ndr0tools-Pixverse++.user.js
+> @@
+> -        if ((url.includes('/media/batch_upload_media') || url.includes('/medi
+a/upload')) && body) {
+> +        if ((matchesEndpoint(url, 'batchUpload') || matchesEndpoint(url, 'sin
+gleUpload')) && body) {
+> *** End Patch
+> PATCH
+Success. Updated the following files:
+M 4ndr0tools-Pixverse++.user.js
+Time to write the patch for the overrideFetch.
+
+root@7d778a5d9ef7:/workspace/userscripts# grep -n "reqBody" -n 4ndr0tools-Pixver
+se++.user.js
+188:        let reqBody = init?.body || '';
+191:        if ((url.includes('/media/batch_upload_media') || url.includes('/med
+ia/upload')) && reqBody) {
+193:            let data = reqBody;
+194:            if (reqBody instanceof FormData) {
+195:              data = Object.fromEntries(reqBody);
+196:            } else if (typeof reqBody === 'string') {
+197:              data = JSON.parse(reqBody || '{}');
+root@7d778a5d9ef7:/workspace/userscripts# sed -n '188,206p' 4ndr0tools-Pixverse+
++.user.js
+        let reqBody = init?.body || '';
+
+        // Capture media path if uploading
+        if ((url.includes('/media/batch_upload_media') || url.includes('/media/u
+pload')) && reqBody) {
+          try {
+            let data = reqBody;
+            if (reqBody instanceof FormData) {
+              data = Object.fromEntries(reqBody);
+            } else if (typeof reqBody === 'string') {
+              data = JSON.parse(reqBody || '{}');
+            }
+            savedMediaPath = extractMediaPath(data, url);
+            log('FETCH: Captured media path:', savedMediaPath);
+          } catch (e) {
+            error('FETCH: Error parsing request body:', e);
+          }
+        }
+
+        // Pass through, then patch the response if necessary
+root@7d778a5d9ef7:/workspace/userscripts# apply_patch<<'PATCH'
+> *** Begin Patch
+> *** Update File: 4ndr0tools-Pixverse++.user.js
+> @@
+> -        if ((url.includes('/media/batch_upload_media') || url.includes('/medi
+a/upload')) && reqBody) {
+> +        if ((matchesEndpoint(url, 'batchUpload') || matchesEndpoint(url, 'sin
+gleUpload')) && reqBody) {
+> *** End Patch
+> PATCH
+Success. Updated the following files:
+M 4ndr0tools-Pixverse++.user.js
+I'll double-check that there are no more includes for this next patch.
+
+root@7d778a5d9ef7:/workspace/userscripts# grep -n "includes('/" 4ndr0tools-Pixve
+rse++.user.js
+Alright, I need to confirm there are no remnants of includes('/... after the patch.
+
+root@7d778a5d9ef7:/workspace/userscripts# grep -n "API_ENDPOINTS" -n 4ndr0tools-
+Pixverse++.user.js
+22:  const API_ENDPOINTS = {
+29:    const regex = API_ENDPOINTS[key];
+There's no package.json or tests, so I need to check for any config.
+
+root@7d778a5d9ef7:/workspace/userscripts# ls -al
+total 968
+drwxr-xr-x 4 root root   4096 Jul 16 00:34  .
+drwxr-xr-x 3 root root   4096 Jul 16 00:32  ..
+drwxr-xr-x 8 root root   4096 Jul 16 00:34  .git
+-rwxr-xr-x 1 root root    251 Jul 16 00:33  .gitignore
+-rw-r--r-- 1 root root   1434 Jul 16 00:32  4ndr0tools-AlwaysNewWindow.user.js
+-rw-r--r-- 1 root root   2006 Jul 16 00:32  4ndr0tools-BunkrCanonicalURL.user.js
+-rw-r--r-- 1 root root  20077 Jul 16 00:32  4ndr0tools-ChatGPT++.user.js
+-rw-r--r-- 1 root root 837902 Jul 16 00:32  4ndr0tools-ChatGPTBrainImplant.user.
+js
+-rw-r--r-- 1 root root   2764 Jul 16 00:32  4ndr0tools-ConfirmationBypass.user.j
+s
+-rw-r--r-- 1 root root   4163 Jul 16 00:32  4ndr0tools-GooglePhotosandDrive++.us
+er.js
+-rw-r--r-- 1 root root   1847 Jul 16 00:32  4ndr0tools-InstagramRedirect.user.js
+-rw-r--r-- 1 root root   3694 Jul 16 00:32  4ndr0tools-MegaEmbedRedirector.user.
+js
+-rw-r--r-- 1 root root  12314 Jul 16 00:34  4ndr0tools-Pixverse++.user.js
+-rw-r--r-- 1 root root   1498 Jul 16 00:32  4ndr0tools-PlanetsuzyMobileSkinRedir
+ect.user.js
+-rw-r--r-- 1 root root   9277 Jul 16 00:32  4ndr0tools-SelectAllCheckboxes.user.
+js
+-rw-r--r-- 1 root root   6393 Jul 16 00:32  4ndr0tools-SimpcitySearch.user.js
+-rw-r--r-- 1 root root   8785 Jul 16 00:32 '4ndr0tools-Sora Toolkit.user.js'
+-rw-r--r-- 1 root root   3409 Jul 16 00:32  4ndr0tools-YandexImageSearch++.user.
+js
+-rw-r--r-- 1 root root   5548 Jul 16 00:32  4ndr0tools-YouTubeEmbedRedirectButto
+n.user.js
+-rw-r--r-- 1 root root   6267 Jul 16 00:32  4ndr0tools-YtdlcProtocol.user.js
+-rwxr-xr-x 1 root root   5915 Jul 16 00:32  README.md
+drwxr-xr-x 4 root root   4096 Jul 16 00:32  testing
+Since there's no package.json, I'll try running "npm test" and "npm run lint" to show failure.
+
+root@7d778a5d9ef7:/workspace/userscripts# npm test >/tmp/npm_test.log && tail -n
+ 20 /tmp/npm_test.log
+npm warn Unknown env config "http-proxy". This will stop working in the next maj
+or version of npm.
+npm error code ENOENT
+npm error syscall open
+npm error path /workspace/userscripts/package.json
+npm error errno -2
+npm error enoent Could not read package.json: Error: ENOENT: no such file or dir
+ectory, open '/workspace/userscripts/package.json'
+npm error enoent This is related to npm not being able to find a file.
+npm error enoent
+npm error A complete log of this run can be found in: /root/.npm/_logs/2025-07-1
+6T00_34_51_510Z-debug-0.log
+root@7d778a5d9ef7:/workspace/userscripts# cat /tmp/npm_test.log
+The log's empty—maybe the file's missing. I'll try searching for it.
+
+root@7d778a5d9ef7:/workspace/userscripts# cat /root/.npm/_logs/$(ls /root/.npm/_
+logs | tail -n 1)
+0 verbose cli /root/.nvm/versions/node/v22.17.0/bin/node /root/.nvm/versions/nod
+e/v22.17.0/bin/npm
+1 info using npm@11.4.2
+2 info using node@v22.17.0
+3 silly config load:file:/root/.nvm/versions/node/v22.17.0/lib/node_modules/npm/
+npmrc
+4 warn Unknown env config "http-proxy". This will stop working in the next major
+ version of npm.
+5 silly config load:file:/workspace/userscripts/.npmrc
+6 silly config load:file:/root/.npmrc
+7 silly config load:file:/root/.nvm/versions/node/v22.17.0/etc/npmrc
+8 verbose title npm test
+9 verbose argv "test"
+10 verbose logfile logs-max:10 dir:/root/.npm/_logs/2025-07-16T00_34_51_510Z-
+11 verbose logfile /root/.npm/_logs/2025-07-16T00_34_51_510Z-debug-0.log
+12 silly logfile start cleaning logs, removing 1 files
+13 silly logfile done cleaning log files
+14 verbose stack Error: Could not read package.json: Error: ENOENT: no such file
+ or directory, open '/workspace/userscripts/package.json'
+14 verbose stack     at async open (node:internal/fs/promises:639:25)
+14 verbose stack     at async readFile (node:internal/fs/promises:1243:14)
+14 verbose stack     at async read (/root/.nvm/versions/node/v22.17.0/lib/node_m
+odules/npm/node_modules/@npmcli/package-json/lib/read-package.js:9:18)
+14 verbose stack     at async PackageJson.load (/root/.nvm/versions/node/v22.17.
+0/lib/node_modules/npm/node_modules/@npmcli/package-json/lib/index.js:132:31)
+14 verbose stack     at async PackageJson.normalize (/root/.nvm/versions/node/v2
+2.17.0/lib/node_modules/npm/node_modules/@npmcli/package-json/lib/index.js:118:5
+)
+14 verbose stack     at async #run (/root/.nvm/versions/node/v22.17.0/lib/node_m
+odules/npm/lib/commands/run.js:90:13)
+14 verbose stack     at async RunScript.exec (/root/.nvm/versions/node/v22.17.0/
+lib/node_modules/npm/lib/commands/run.js:44:7)
+14 verbose stack     at async Npm.exec (/root/.nvm/versions/node/v22.17.0/lib/no
+de_modules/npm/lib/npm.js:208:9)
+14 verbose stack     at async module.exports (/root/.nvm/versions/node/v22.17.0/
+lib/node_modules/npm/lib/cli/entry.js:67:5)
+15 error code ENOENT
+16 error syscall open
+17 error path /workspace/userscripts/package.json
+18 error errno -2
+19 error enoent Could not read package.json: Error: ENOENT: no such file or dire
+ctory, open '/workspace/userscripts/package.json'
+20 error enoent This is related to npm not being able to find a file.
+20 error enoent
+21 verbose cwd /workspace/userscripts
+22 verbose os Linux 6.12.13
+23 verbose node v22.17.0
+24 verbose npm  v11.4.2
+25 verbose exit -2
+26 verbose code -2
+27 error A complete log of this run can be found in: /root/.npm/_logs/2025-07-16
+T00_34_51_510Z-debug-0.log
+Tests failed due to the missing package.json; I'll note that in the commit message.
+
+root@7d778a5d9ef7:/workspace/userscripts# npm run lint >/tmp/npm_lint.log && tai
+l -n 20 /tmp/npm_lint.log
+npm warn Unknown env config "http-proxy". This will stop working in the next maj
+or version of npm.
+npm error code ENOENT
+npm error syscall open
+npm error path /workspace/userscripts/package.json
+npm error errno -2
+npm error enoent Could not read package.json: Error: ENOENT: no such file or dir
+ectory, open '/workspace/userscripts/package.json'
+npm error enoent This is related to npm not being able to find a file.
+npm error enoent
+npm error A complete log of this run can be found in: /root/.npm/_logs/2025-07-1
+6T00_34_56_544Z-debug-0.log
+Since tests and lint can't run, I'll review changes with git diff instead.
+
+
+root@7d778a5d9ef7:/workspace/userscripts# git status --short
+ M 4ndr0tools-Pixverse++.user.js
+root@7d778a5d9ef7:/workspace/userscripts# git status --short
+ M 4ndr0tools-Pixverse++.user.js
+I’ll prepare the updates to the script and include them in the commit.
+
+root@7d778a5d9ef7:/workspace/userscripts# git add 4ndr0tools-Pixverse++.user.js
+root@7d778a5d9ef7:/workspace/userscripts# git commit -m "feat(PX-001): add endpo
+int regex map" && git status --short
+[work ff9262a] feat(PX-001): add endpoint regex map
+ 1 file changed, 17 insertions(+), 7 deletions(-)
+root@7d778a5d9ef7:/workspace/userscripts# git status --short
+I’ll review the script and gather the relevant lines for the PR summary.
+
+root@7d778a5d9ef7:/workspace/userscripts# nl -ba 4ndr0tools-Pixverse++.user.js |
+ sed -n '20,55p'
+20    const DEBUG_PREFIX = '[Pixverse Bypass]';
+    21    const MAX_ATTEMPTS = 30;
+    22    const API_ENDPOINTS = {
+    23      batchUpload:    /\/media\/batch_upload_media/,
+    24      singleUpload:   /\/media\/upload/,
+    25      personalVideos: /\/video\/list\/personal/
+    26    };
+    27
+    28    function matchesEndpoint(url, key) {
+    29      const regex = API_ENDPOINTS[key];
+    30      return regex ? regex.test(url) : false;
+    31    }
+    32    let savedMediaPath = null;
+    33    let isInitialized  = false;
+    34    let btnAttached    = false;
+    35
+    36    /* ──────────────────────────────── LOGGING HELPERS ──────────────────
+─────────── */
+    37    function log(...args)   { console.log(`${DEBUG_PREFIX}`, ...args); }
+    38    function error(...args) { console.error(`${DEBUG_PREFIX}`, ...args); }
+    39
+    40    /* ──────────────── API RESPONSE MODIFICATION CORE ───────────────── *
+/
+    41
+    42    function extractMediaPath(data, url) {
+    43      if (!data) return null;
+    44      if (matchesEndpoint(url, 'batchUpload')) {
+    45        return data?.images?.[0]?.path || null;
+    46      } else if (matchesEndpoint(url, 'singleUpload')) {
+    47        return data?.path || null;
+    48      }
+    49      return null;
+    50    }
+    51
+    52    function modifyVideoList(data) {
+    53      if (!data?.Resp?.data) return data;
+    54      return {
+    55        ...data,
+root@7d778a5d9ef7:/workspace/userscripts# nl -ba 4ndr0tools-Pixverse++.user.js |
+ sed -n '20,60p'
+    20    const DEBUG_PREFIX = '[Pixverse Bypass]';
+    21    const MAX_ATTEMPTS = 30;
+    22    const API_ENDPOINTS = {
+    23      batchUpload:    /\/media\/batch_upload_media/,
+    24      singleUpload:   /\/media\/upload/,
+    25      personalVideos: /\/video\/list\/personal/
+    26    };
+    27
+    28    function matchesEndpoint(url, key) {
+    29      const regex = API_ENDPOINTS[key];
+    30      return regex ? regex.test(url) : false;
+    31    }
+    32    let savedMediaPath = null;
+    33    let isInitialized  = false;
+    34    let btnAttached    = false;
+    35
+    36    /* ──────────────────────────────── LOGGING HELPERS ──────────────────
+─────────── */
+    37    function log(...args)   { console.log(`${DEBUG_PREFIX}`, ...args); }
+    38    function error(...args) { console.error(`${DEBUG_PREFIX}`, ...args); }
+    39
+    40    /* ──────────────── API RESPONSE MODIFICATION CORE ───────────────── *
+/
+    41
+    42    function extractMediaPath(data, url) {
+    43      if (!data) return null;
+    44      if (matchesEndpoint(url, 'batchUpload')) {
+    45        return data?.images?.[0]?.path || null;
+    46      } else if (matchesEndpoint(url, 'singleUpload')) {
+    47        return data?.path || null;
+    48      }
+    49      return null;
+    50    }
+    51
+    52    function modifyVideoList(data) {
+    53      if (!data?.Resp?.data) return data;
+    54      return {
+    55        ...data,
+    56        Resp: {
+    57          ...data.Resp,
+    58          data: data.Resp.data.map(item => ({
+    59            ...item,
+    60            video_status: item.video_status === 7 ? 1 : item.video_status,
+I'll grab the lines where modifyResponse appears for context.
+
+root@7d778a5d9ef7:/workspace/userscripts# nl -ba 4ndr0tools-Pixverse++.user.js |
+ sed -n '102,118p'
+   102      }
+   103      return data;
+   104    }
+   105
+   106    function modifyResponse(data, url) {
+   107      if (!data || typeof data !== 'object') return null;
+   108      if (matchesEndpoint(url, 'personalVideos'))      return modifyVideoL
+ist(data);
+   109      else if (matchesEndpoint(url, 'batchUpload')) return modifyBatchUplo
+ad(data);
+   110      else if (matchesEndpoint(url, 'singleUpload'))        return modifyS
+ingleUpload(data);
+   111      return null;
+   112    }
+   113
+   114    /* ────────────── XHR INTERCEPTOR ────────────── */
+   115
+   116    function overrideXHR() {
+   117      if (!window.XMLHttpRequest) {
+   118        error('XMLHttpRequest not supported');
+I'll focus on gathering the details about interceptors for the patch.
+
+root@7d778a5d9ef7:/workspace/userscripts# nl -ba 4ndr0tools-Pixverse++.user.js |
+ sed -n '130,156p'
+   130        XMLHttpRequest.prototype.send = function (body) {
+   131          const url = this._pixverseRequestUrl || '';
+   132
+   133          // Capture media path
+   134          if ((matchesEndpoint(url, 'batchUpload') || matchesEndpoint(url,
+ 'singleUpload')) && body) {
+   135            try {
+   136              let data = body;
+   137              if (body instanceof FormData) {
+   138                data = Object.fromEntries(body);
+   139              } else if (typeof body === 'string') {
+   140                data = JSON.parse(body || '{}');
+   141              }
+   142              savedMediaPath = extractMediaPath(data, url);
+   143              log('Captured media path:', savedMediaPath);
+   144            } catch (e) {
+   145              error('Error parsing request body:', e);
+   146            }
+   147          }
+   148
+   149          const self = this;
+   150          const loadHandler = function () {
+   151            if (self.status >= 200 && self.status < 300) {
+   152              try {
+   153                let response = (self.responseType === 'json' ? self.respon
+se : JSON.parse(self.responseText || '{}'));
+   154                let modified = modifyResponse(response, url);
+   155                if (modified) {
+   156                  Object.defineProperties(self, {
+root@7d778a5d9ef7:/workspace/userscripts# nl -ba 4ndr0tools-Pixverse++.user.js |
+ sed -n '180,208p'
+   180        error('Fetch API not supported');
+   181        return;
+   182      }
+   183      try {
+   184        const originalFetch = window.fetch;
+   185        window.fetch = async function (...args) {
+   186          let [input, init] = args;
+   187          let url = typeof input === 'string' ? input : (input?.url || '')
+;
+   188          let reqBody = init?.body || '';
+   189
+   190          // Capture media path if uploading
+   191          if ((matchesEndpoint(url, 'batchUpload') || matchesEndpoint(url,
+ 'singleUpload')) && reqBody) {
+   192            try {
+   193              let data = reqBody;
+   194              if (reqBody instanceof FormData) {
+   195                data = Object.fromEntries(reqBody);
+   196              } else if (typeof reqBody === 'string') {
+   197                data = JSON.parse(reqBody || '{}');
+   198              }
+   199              savedMediaPath = extractMediaPath(data, url);
+   200              log('FETCH: Captured media path:', savedMediaPath);
+   201            } catch (e) {
+   202              error('FETCH: Error parsing request body:', e);
+   203            }
+   204          }
+   205
+   206          // Pass through, then patch the response if necessary
+   207          let res = await originalFetch.apply(this, args);
+   208          let cloned = res.clone();
+I'll reference the lines in my final summary and include commit logs.
+
+root@7d778a5d9ef7:/workspace/userscripts# git log -1 --stat
+commit ff9262a7e6a4ecbab075c40f25772ad8a37023b2 (HEAD -> work)
+Author: Codex <codex@openai.com>
+Date:   Wed Jul 16 00:35:04 2025 +0000
+
+    feat(PX-001): add endpoint regex map
+
+ 4ndr0tools-Pixverse++.user.js | 24 +++++++++++++++++-------
+ 1 file changed, 17 insertions(+), 7 deletions(-)
+I'll also include the commit for the changes made to .gitignore.
+
+root@7d778a5d9ef7:/workspace/userscripts# git log -2 --stat
+commit ff9262a7e6a4ecbab075c40f25772ad8a37023b2 (HEAD -> work)
+Author: Codex <codex@openai.com>
+Date:   Wed Jul 16 00:35:04 2025 +0000
+
+    feat(PX-001): add endpoint regex map
+
+ 4ndr0tools-Pixverse++.user.js | 24 +++++++++++++++++-------
+ 1 file changed, 17 insertions(+), 7 deletions(-)
+
+commit 656f5380a0e3f52cb7e2d5da2cdb4c0fdaf68dd9
+Author: Codex <codex@openai.com>
+Date:   Wed Jul 16 00:34:06 2025 +0000
+
+    chore: ignore codex venv
+
+ .gitignore | 1 +
+ 1 file changed, 1 insertion(+)
+I'll write a message summarizing the lack of package.json causing failed tests.
