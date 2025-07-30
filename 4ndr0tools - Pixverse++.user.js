@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name        4ndr0tools-Pixverse++
+// @name        4ndr0tools - Pixverse++
 // @namespace   https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
 // @version     2.2.1 // Incrementing version for stealth fix
