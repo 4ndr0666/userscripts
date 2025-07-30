@@ -5,9 +5,9 @@
 // @version     2.3.2
 // @description Redteam pentesting bypass & toolkit: credits patch, video/status unlock, robust download, NSFW bypass, anti-blockers, stealth mode, and inline uBO bullshit filters. For future-proofing and minimal footprint simply right-click and save your media.
 // @match       https://app.pixverse.ai/*
-// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-ChatGPT++.user.js
-// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-ChatGPT++.user.js
-// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
+// @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Pixverse++%20(RedTeam%20Edition).user.js
+// @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Pixverse++%20(RedTeam%20Edition).user.js
+// @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @run-at      document-start
 // @grant       none
 // @license     MIT
