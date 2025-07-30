@@ -2,7 +2,7 @@
 // @name        4ndr0tools - Pixverse++ (RedTeam Edition)
 // @namespace   https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     2.3.2
+// @version     2.3.3
 // @description Redteam pentesting bypass & toolkit: credits patch, video/status unlock, robust download, NSFW bypass, anti-blockers, stealth mode, and inline uBO bullshit filters. For future-proofing and minimal footprint simply right-click and save your media.
 // @match       https://app.pixverse.ai/*
 // @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Pixverse++%20(RedTeam%20Edition).user.js
@@ -212,26 +212,21 @@
   //────── UBO CSS FILTER INJECTION ──────//
   function injectUboCssFilters() {
     const cssRules = [
-      // Core user filters:
       ".top-14.gap-1.items-center.flex.bg-background-primary.py-2.px-4.sticky.z-20",
       ".overflow-hidden.rounded-xl.aspect-video.w-full",
       ".gap-9.flex-col.flex.max-lg\\:p-4.p-6.w-full",
       ".relative.cursor-pointer.flex-row.rounded-full.px-3.gap-1\\.5.text-xs.h-8.hover\\:text-text-white-primary.hover\\:bg-button-secondary-hover.border-border-third.border-solid.border-t.text-text-white-secondary.backdrop-blur-\\[32px\\].bg-button-secondary-normal.items-center.justify-center.flex.border-0.text-nowrap.font-medium.group\\/button",
       "#radix-\\:r1a\\:", "#radix-\\:r1g\\:", "#radix-\\:r1h\\:", "#radix-\\:r1b\\:",
-      // TensorPix extras:
       ".intercom-lightweight-app-launcher-icon-open.intercom-lightweight-app-launcher-icon",
       ".intercom-launcher.intercom-lightweight-app-launcher",
-      // Additional stealth/minimal-UI recommendations:
       ".absolute.top-0.left-0.right-0.bg-black.bg-opacity-30.pointer-events-none",
       ".fixed.z-50.inset-0.flex.items-center.justify-center",
       ".bg-primary-50", ".bg-secondary-50",
-      // User-supplied additions:
       ".gap-2.flex-col.flex.py-2",
       ".flex-col.flex.w-full.flex-1 > .gap-2.flex-col.flex.w-full",
       "#image_text-advanced > .hover\\:text-text-white-primary.text-text-white-secondary.pr-6.px-3.gap-1\\.5.items-center.justify-center.shrink-0.flex.h-full.relative",
       "#image_text-quality > .hover\\:text-text-white-primary.text-text-white-secondary.pr-6.px-3.gap-1\\.5.items-center.justify-center.shrink-0.flex.h-full.relative"
     ];
-    // Asset/image block (footer)
     const assetRules = [
       'img[src*="media.pixverse.ai/asset/media/footer_earned_bg.png?x-oss-process=style/cover-webp-small"]'
     ];
