@@ -24,7 +24,7 @@
 
   // Set DEBUG_MODE to true during development/testing for console logs and toast notifications.
   // Set to false for stealthy red team deployment.
-  const DEBUG_MODE = true; // <<< IMPORTANT FOR TESTING/DEBUGGING: Set to 'true' >>>
+  const DEBUG_MODE = false; // <<< IMPORTANT FOR TESTING/DEBUGGING: Set to 'true' >>>
 
   const DEBUG_PREFIX = '[Pixverse++]'; // Used only if DEBUG_MODE is true
   const MAX_ATTEMPTS = 30; // Max attempts for DOM element observation in setupWatermarkButton
