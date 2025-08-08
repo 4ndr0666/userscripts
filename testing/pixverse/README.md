@@ -4,7 +4,7 @@ This document provides comprehensive technical documentation for the 4ndr0tools-
 
 4ndr0tools-Pixverse++ UserScript Documentation
 Summary
-The 4ndr0tools-Pixverse++ UserScript is designed to enhance the user experience on app.pixverse.ai by bypassing certain restrictions, automating download processes, and intercepting API calls to modify responses. It specifically targets video blocks, automatically reveals download options, and ensures successful media uploads even when the server might return an error.
+The 4ndr0tools-Pixverse++ UserScript is designed to enhance the red teams exercises by bypassing certain restrictions, automating download processes, and intercepting API calls to modify responses. It specifically targets video blocks, automatically reveals download options, and ensures successful media uploads even when the server might return an error.
 
 Key Features:
 
@@ -17,33 +17,6 @@ Key Features:
 * Capture the path of successfully uploaded media.
 
 * Modify error responses for media uploads (batch and single) to appear as successful, using the captured media path.
-
-UserScript Metadata
-The script begins with standard UserScript metadata, which defines its properties and how it interacts with the browser and UserScript manager (e.g., Tampermonkey, Violentmonkey).
-
-* @name: 4ndr0tools-Pixverse++ - The display name of the script.
-
-* @namespace: https://github.com/4ndr0666/userscripts - A unique identifier for the script, often a URL.
-
-* @author: 4ndr0666 - The author of the script.
-
-* @version: 2.0 - The current version of the script.
-
-* @description: Bypass Pixverse video blocks, auto-reveal download, and intercept all API methods (XHR+fetch) - A brief explanation of the script's functionality.
-
-* @downloadURL: https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-Pixverse++.user.js - URL for initial download.
-
-* @updateURL: https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-Pixverse++.user.js - URL for checking updates.
-
-* @icon: https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png - Icon displayed by the UserScript manager.
-
-@match: https://app.pixverse.ai/ - Specifies the URLs where the script should run. In this case, any page under app.pixverse.ai.
-
-* @run-at: document-start - Ensures the script runs as early as possible, before the page's DOM is fully loaded, which is crucial for intercepting network requests.
-
-* @grant: none - Indicates that the script does not require any special UserScript manager API permissions.
-
-* @license: MIT - The license under which the script is distributed.
 
 Constants & State
 * DEBUG_PREFIX: string
