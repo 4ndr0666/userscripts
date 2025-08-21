@@ -25,4 +25,4 @@ __pycache__/
 # Sensitive data
 *.env
 secrets.json
-/testing
+testing/
