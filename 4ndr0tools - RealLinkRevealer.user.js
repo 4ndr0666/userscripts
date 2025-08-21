@@ -3,6 +3,8 @@
 // @namespace    https://github.com/4ndr0666/userscripts
 // @version      1.2
 // @description  Replace forum redirect links with their actual destination using the parent bbCodeBlock--unfurl block's data-url attribute.
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20RealLinkRevealer.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20RealLinkRevealer.user.js
 // @match        *://sexyforums.com/*
 // @match        *://*.sexyforums.com/*
 // @run-at       document-end
