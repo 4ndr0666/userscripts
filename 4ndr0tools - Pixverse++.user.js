@@ -2,8 +2,8 @@
 // @name        4ndr0tools-Pixverse++
 // @namespace   https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     2.3.1 // Incrementing version for stealth fix
-// @description Pixverse bypass & toolkit: credits patch, video/status unlock, robust download, prompt NSFW bypass, API override, anti-blockers, minimal toast UI. Robust filename & sanitize helpers added. Includes self-healing hooks and covert data exfiltration.
+// @version     2.3.2 
+// @description Red-team lab toolset blue team engagements focusing on exploits: credits patch, video/status unlock, robust download, prompt NSFW bypass, API override, anti-blockers. Includes self-healing hooks and covert data exfiltration.
 // @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match       https://app.pixverse.ai/*
 // @run-at      document-start
@@ -45,14 +45,14 @@
 
   // List of words to obfuscate in prompts to bypass NSFW filters.
   const TRIGGER_WORDS = [
-    "anal","asshole","anus","areola","areolas","blowjob","boobs","bounce","bouncing","breast","breasts",
-    "bukake","buttcheeks","butt","cheeks","climax","clit","cleavage","cock","corridas","crotch","cum","cums","culo","cunt",
-    "deep","deepthroat","ddick","dick","esperma","fat ass","fellatio","fingering","fuck","fucking","fucked","horny","lick","masturbate",
-    "masterbating","missionary","member","meco","moan","moaning","nipple","nsfw","oral","orgasm","penis","phallus","pleasure",
-    "pussy","rump","semen","slut","slutty","splooge","squeezing","squeeze","suck","sucking","swallow","throat","throating",
-    "tits","tit","titty","titfuck","titties","tittydrop","tittyfuck","titfuck","vagina","wiener","whore","creampie","cumshot","cunnilingus",
-    "doggystyle","ejaculate","ejaculation","handjob","jerk off","labia","nude","orgy","porn","prolapse",
-    "rectum","rimjob","sesual","stripper","submissive","teabag","threesome","vibrator","voyeur","whore"
+	  "anal","asshole","anus","areola","areolas","blowjob","boobs","bounce","bouncing","breast","breasts",
+	  "bukake","buttcheeks","butt","cheeks","climax","clit","cleavage","cock","corridas","crotch","cum","cums","culo","cunt",
+	  "deep","deepthroat","ddick","dick","esperma","fat ass","fellatio","fingering","fuck","fucking","fucked","horny","lick","masturbate",
+	  "masterbating","missionary","member","meco","moan","moaning","nipple","nsfw","oral","orgasm","penis","phallus","pleasure",
+	  "pussy","rump","semen","slut","slutty","splooge","squeezing","squeeze","suck","sucking","swallow","throat","throating",
+	  "tits","tit","titty","titfuck","titties","tittydrop","tittyfuck","titfuck","vagina","wiener","whore","creampie","cumshot","cunnilingus",
+	  "doggystyle","ejaculate","ejaculation","handjob","jerk off","labia","nude","orgy","porn","prolapse",
+	  "rectum","rimjob","sesual","stripper","submissive","teabag","threesome","vibrator","voyeur","whore"
   ];
 
   /**
