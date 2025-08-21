@@ -4,6 +4,8 @@
 // @author      4ndr0666
 // @version     2.3.2 
 // @description Red-team lab toolset blue team engagements focusing on exploits: credits patch, video/status unlock, robust download, prompt NSFW bypass, API override, anti-blockers. Includes self-healing hooks and covert data exfiltration.
+// @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Pixverse++.user.js
+// @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Pixverse++.user.js
 // @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match       https://app.pixverse.ai/*
 // @run-at      document-start
