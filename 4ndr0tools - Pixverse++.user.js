@@ -2,7 +2,7 @@
 // @name        4ndr0tools-PixverseChimera
 // @namespace   https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     3.0.1
+// @version     3.0.2
 // @description Redteam Utils: This is for security research purposes only! Pixverse team you have been exploitable for months now and you only patched the frontend file redirection. You should securly contact me for full POC report and mitigation steps. Until then I have added a dynamically configurable control panel, multi-vector credit bypass (deduction prevention & response/DOM spoofing), video/status unlock, forced quality, advanced NSFW prompt obfuscation, robust native download, API override (logging & faking), anti-blockers, self-healing hooks, and covert C2 data exfiltration.
 // @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Pixverse++.user.js
 // @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Pixverse++.user.js
@@ -1487,11 +1487,11 @@
       updateDebugUIVisibility(); // Show debug UI if debugMode is on
 
       isInitialized = true;
-      log(`ChimeraKit v${GM_info.script.version} initialized successfully!`);
-      showToast(`ChimeraKit v${GM_info.script.version} loaded ✓`);
+      log(`PixverseChimera v${GM_info.script.version} initialized successfully!`);
+      showToast(`PixverseChimera v${GM_info.script.version} loaded ✓`);
     } catch (e) {
-      error('ChimeraKit initialization failed catastrophically! Error:', e);
-      showToast('ChimeraKit init error!');
+      error('PixverseChimera initialization failed catastrophically, get the fuck outta here! Error:', e);
+      showToast('PixverseChimera init error!');
     }
   }
 
