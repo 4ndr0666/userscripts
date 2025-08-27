@@ -2,18 +2,13 @@
 // @name         4ndr0tools - Bunkr Canonical URL
 // @namespace    https://github.com/4ndr0666/userscripts
 // @version      1.1.0
-// @description  Part of 4ndr0tools for "ease-of-life". Redirects
-//               every bunkr* url to the true canonical host
-//               without losing path, query or sub-domain.
+// @description  Part of 4ndr0tools: Redirects every bunkr* url to the true canonical host without losing path, query or sub-domain.
 // @author       4ndr0666
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-AlwaysNewWindow.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-AlwaysNewWindow.user.js
-// @include      *
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
-// @match        http*://*.bunkr.*/*
-// @match        http*://bunkr.*/*
-// @match        http*://*.bunker.*/*
-// @match        http*://bunker.*/*
+// @match        *://bunkr.*/*
+// @match        *://*.bunkr.*/*
 // @grant        none
 // @run-at       document-start
 // @license      MIT
