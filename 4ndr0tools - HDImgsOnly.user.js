@@ -6,6 +6,7 @@
 // @description Part of 4ndr0tools; redirects every image to its high res version.
 // @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20HDImgsOnly.user.js
 // @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20HDImgsOnly.user.js
+// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match       https://*.imagetwist.com/*
 // @match       https://*.imgspice.com/*
 // @match       https://*.turboimagehost.com/*.html
