@@ -6,6 +6,7 @@
 // @description  Part of 4ndr0tools - Remove the Premium Sign Up element on x.com websites
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20RmSignUpBanners.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20RmSignUpBanners.user.js
+// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match        *://*/*
 // @grant        none
 // @license      MIT
