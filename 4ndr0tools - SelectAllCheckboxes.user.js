@@ -3,13 +3,8 @@
 // @namespace    https://www.github.com/4ndr0666/userscripts
 // @author       4ndr0666
 // @version      1.1
-// @description  Part of 4ndr0tools, and simply automates the clicking
-//               of checkboxes: - Ctrl+Alt+LeftClick = Select All
-//               - Alt+Hover = Select On Mouse Over
-//               - Shift+Click = Select Checkboxes In A Range.
-// @author       4ndr0666
-// @match        *://*.*.*/
-// @match        https://note.zework.com/*
+// @description  Part of 4ndr0tools: Selects all checkboxes on page; Ctrl+Alt+LeftClick = Select All; Alt+Hover = Select On Mouse Over; Shift+Click = Select Checkboxes In A Range.
+// @match        *://*/*
 // @require      http://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.3/jquery.min.js
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-SelectAllCheckboxes.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-SelectAllCheckboxes.user.js
