@@ -3,7 +3,7 @@
 // @namespace   https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
 // @version     3.0.1
-// @description The ultimate Pixverse red-team toolkit: dynamically configurable control panel, multi-vector credit bypass (deduction prevention & response/DOM spoofing), video/status unlock, forced quality, advanced NSFW prompt obfuscation, robust native download, API override (logging & faking), anti-blockers, self-healing hooks, and covert C2 data exfiltration.
+// @description Redteam Utils: This is for security research purposes only! Pixverse team you have been exploitable for months now and you only patched the frontend file redirection. You should securly contact me for full POC report and mitigation steps. Until then I have added a dynamically configurable control panel, multi-vector credit bypass (deduction prevention & response/DOM spoofing), video/status unlock, forced quality, advanced NSFW prompt obfuscation, robust native download, API override (logging & faking), anti-blockers, self-healing hooks, and covert C2 data exfiltration.
 // @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Pixverse++.user.js
 // @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Pixverse++.user.js
 // @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
