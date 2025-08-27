@@ -6,7 +6,7 @@
 // @author       4ndr0666
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-AlwaysNewWindow.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-AlwaysNewWindow.user.js
-// @include      *
+// @match        *://*/*
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @grant        none
 // ==/UserScript==
