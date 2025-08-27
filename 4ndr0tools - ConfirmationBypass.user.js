@@ -2,18 +2,15 @@
 // @name         4ndr0tools - Confirmation bypass
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666
-// @description  Part of my 4ndr0tools suite of utilites for "quality-of-life".
-//               Silently accepts the “warning: you are leaving this site”
-//               warning page and always opens true external links in a new tab.
+// @description  Part of 4ndr0tools: Silently accepts the “warning: you are leaving this site” warning page and always opens true external links in a new tab.
 // @version      2.0.0
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-ConfirmationBypass.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-ConfirmationBypass.user.js
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 //
-// ---------- WRITE DOMAIN HERE ----------
-// For security **only** run this on a specific URL:
+// ------ WARNING: ONLY use a specific url --------------
 // @match        https://forums.socialmediagirls.com/goto/link-confirmation*
-// -----------------------------------
+// ------ WARNING ------------------------------------
 //
 // @license      MIT
 // @run-at       document-idle
