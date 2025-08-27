@@ -6,11 +6,11 @@
 // @version     1.8
 // @description Part of 4ndr0tools; embeds suite of utilities for forums such as powerful downloading, indexing, link checking, archiving features and more.
 // @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Forums++.user.js
-// @updateURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Forums++.user.js
-// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
+// @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Forums++.user.js
+// @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @license WTFPL; http://www.wtfpl.net/txt/copying/
-// @match https://simpcity.su/threads/*
-// @match https://simpcity.cr/threads/*
+// @match       https://simpcity.su/threads/*
+// @match       https://simpcity.cr/threads/*
 // @require https://unpkg.com/@popperjs/core@2
 // @require https://unpkg.com/tippy.js@6
 // @require https://unpkg.com/file-saver@2.0.4/dist/FileSaver.min.js
