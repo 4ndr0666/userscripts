@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name        4ndr0tools - Redteam Recon
+// @name        4ndr0tools - Recon
 // @namespace   https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
 // @version     1.0.2
-// @description Standalone Debugging Tool: Captures browser state and all API requests/responses (XHR/Fetch) without modification. Includes debug UI and credit analysis. For diagnostic use only.
+// @description Red-team tool for conducting recon on targetsCaptures browser state and all API requests/responses (XHR/Fetch) without modification. For educational and lab use only. 
 // @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20RedteamRecon.user.js
 // @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20RedteamRecon.user.js
 // @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
