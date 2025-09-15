@@ -84,30 +84,7 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
 
 **4ndr0tools** was created in response to the growing digital enclosure of browser experiences—where user agency, open standards, and direct access are actively eroded by major web platforms.
 
-**Key Tenets:**
-- **End-User Sovereignty**: You, not the site or corporation, should dictate your browsing experience.  
-- **Anti-Feudalism**: Knowledge, data, and tools must be free, inspectable, forkable, and remixable.  
-- **Minimalism**: Every script should have a single clear purpose. No bloat. No tracking. No hidden logic.  
-- **Cohesion & Idempotency**: All changes are modular, reversible, and avoid breakage on site updates.  
-- **Community, not Platform**: Designed to be forked, improved, and locally tailored—never locked in.  
-
----
-
-## 📋 Usage, Contributing & Extending
-
-1. **Clone or fork** this repo for your own workflow.  
-2. **Edit/extend scripts** to your own needs. All code is MIT licensed. See comments in each script for usage and extension tips.  
-3. **Contribute via pull requests** for new modules, bugfixes, or optimizations. Adhere to the **project code standards**:  
-   - Strict XDG directory compliance  
-   - ShellCheck & shfmt clean for all scripts  
-   - Long-form flags, minimal dependencies  
-   - Zero-omissions: all features are explicit and transparent  
-
----
-
-## LICENSE 🤘
-
-```
+<div align="center">
 
 ```
                       .... NO! ...    4ndr0666      ... MNO! ....
@@ -134,10 +111,35 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
                           ................................
 ```
 
-```
+</div>
+
+**Key Tenets:**
+- **End-User Sovereignty**: You, not the site or corporation, should dictate your browsing experience.  
+- **Anti-Feudalism**: Knowledge, data, and tools must be free, inspectable, forkable, and remixable.  
+- **Minimalism**: Every script should have a single clear purpose. No bloat. No tracking. No hidden logic.  
+- **Cohesion & Idempotency**: All changes are modular, reversible, and avoid breakage on site updates.  
+- **Community, not Platform**: Designed to be forked, improved, and locally tailored—never locked in.  
+
+---
+
+## 📋 Usage, Contributing & Extending
+
+1. **Clone or fork** this repo for your own workflow.  
+2. **Edit/extend scripts** to your own needs. All code is MIT licensed. See comments in each script for usage and extension tips.  
+3. **Contribute via pull requests** for new modules, bugfixes, or optimizations. Adhere to the **project code standards**:  
+   - Strict XDG directory compliance  
+   - ShellCheck & shfmt clean for all scripts  
+   - Long-form flags, minimal dependencies  
+   - Zero-omissions: all features are explicit and transparent  
+
+---
+
+## LICENSE 🤘
+
+<div align="center">
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)  
 
 MIT License © 4ndr0666
 
----
+</div>
