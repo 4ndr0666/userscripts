@@ -81,12 +81,10 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
 ---
 
 ## 🔥 Project Philosophy
-
 ```
 4ndr0tools was created in response to the growing digital enclosure of browser experiences--
 
-                                      4ndr0666
-                      .... NO! ...                  ... MNO! ....
+                      .... NO! ...    4ndr0666      ... MNO! ....
                    ..... MNO!! ...................... MNNOO! ....
                  ..... MMNO! ......................... MNNOO!! .
                 .... MNOONNOO!   MMMMMMMMMMPPPOII!   MNNO!!!! .
