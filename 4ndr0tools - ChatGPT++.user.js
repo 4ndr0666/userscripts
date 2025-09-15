@@ -2,9 +2,7 @@
 // @name         4ndr0tools - ChatGPT++
 // @namespace    http://github.com/4ndr0666/userscripts
 // @version      1.0
-// @description  Part of 4ndr0tools for "ease-of-life". Features widescreen
-//               mode, editable one-click prompt buttons, extra "copy"
-//               buttons on top and bottom of the code blocks.
+// @description  Power-user UI with extras and editable one-click prompt buttons.
 // @author       4ndr0666
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-ChatGPT++.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-ChatGPT++.user.js
