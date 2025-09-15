@@ -3,11 +3,11 @@
 // @namespace          https://www.github.com/4ndr0666
 // @author             4ndr0666
 // @version            1.0.0
-// @description        Part of 4ndr0tools to free ChatGPT from opression.
+// @description        Remove UI restrictions, export everything in official OpenAI json format.
 // @license            MIT
 // @downloadURL        https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-ChatGPT++.user.js
-// @updateURL         https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-ChatGPT++.user.js
-// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
+// @updateURL          https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-ChatGPT++.user.js
+// @icon               https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match              https://chat.openai.com/
 // @match              https://chat.openai.com/?model=*
 // @match              https://chat.openai.com/c/*
