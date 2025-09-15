@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Sora Toolkit
 // @namespace    https://github.com/4ndr0666/userscripts
-// @description  Download, batch-download, copy, or share Sora videos.  Adds inline ⬇️ button, single-key hot-keys, batch mode, toast notifications, JSON settings — and now **auto-refreshes** a stuck job after 20 s.
+// @description  Sora utils such as single-key hot-keys, batch-downloads, auto-refreshes a stuck job after 20s and more.
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Sora%20Toolkit.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Sora%20Toolkit.user.js
 // @version      3.5.0
