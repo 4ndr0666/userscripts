@@ -82,12 +82,11 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
 
 ## 🔥 Project Philosophy
 
-**4ndr0tools** was created in response to the growing digital enclosure of browser experiences—where user agency, open standards, and direct access are actively eroded by major web platforms.
-
-<div align="center">
-
 ```
-                      .... NO! ...    4ndr0666      ... MNO! ....
+4ndr0tools was created in response to the growing digital enclosure of browser experiences--
+
+                                      4ndr0666
+                      .... NO! ...                  ... MNO! ....
                    ..... MNO!! ...................... MNNOO! ....
                  ..... MMNO! ......................... MNNOO!! .
                 .... MNOONNOO!   MMMMMMMMMMPPPOII!   MNNO!!!! .
@@ -109,12 +108,13 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
                     ...... MNNNNO! .. PPPPPPPPP .. MMNON!........
                        ...... OO! ................. ON! .......
                           ................................
+                                      4ndr0666
+
+where user agency, open standards, and direct access are actively eroded by our government.
 ```
 
-</div>
-
 **Key Tenets:**
-- **End-User Sovereignty**: You, not the site or corporation, should dictate your browsing experience.  
+- **End-User Sovereignty**: You, not the site or government, should dictate your browsing experience.  
 - **Anti-Feudalism**: Knowledge, data, and tools must be free, inspectable, forkable, and remixable.  
 - **Minimalism**: Every script should have a single clear purpose. No bloat. No tracking. No hidden logic.  
 - **Cohesion & Idempotency**: All changes are modular, reversible, and avoid breakage on site updates.  
@@ -134,12 +134,6 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
 
 ---
 
-## LICENSE 🤘
-
-<div align="center">
-
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)  
 
 MIT License © 4ndr0666
-
-</div>
