@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         4ndr0tools - ModelSearch
 // @namespace    https://www.github.com/4ndr0666/userscripts
-// @version      1.7 // Version incremented for IIFE 'async' removal and clarity
-// @description  Adds a floating button to search models on Simpcity.su directly from any website.
+// @version      1.7 
+// @description  Direct SimpCity search UI to search models on Simpcity.su directly from any website.
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20ModelSearch.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20ModelSearch.user.js
 // @match        *://*/*
