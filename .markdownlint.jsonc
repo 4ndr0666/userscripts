@@ -1,6 +1,0 @@
-{
-  "default": true,
-  "MD013": false, // disable line length checks (too noisy for tables/ASCII)
-  "MD033": false, // allow inline HTML (<div align="center">, etc.)
-  "MD041": false  // don't force first line to be a heading
-}

@@ -1,79 +1,79 @@
 #!/usr/bin/env node
-/**
- * update_catalog.mjs
- *
- * Auto-update README Script Catalog from *.user.js files.
- * Scopes replacement strictly between <!-- BEGIN_CATALOG --> and <!-- END_CATALOG -->.
- * Ensures newlines before/after markers for clean rendering.
- */
 
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { readFileSync, writeFileSync, readdirSync } from 'fs';
+import { join } from 'path';
 
-const __filename = fileURLToPath(import.meta.url);
-const repoRoot = path.dirname(__filename).replace(/\/tools$/, "");
-const readmePath = path.join(repoRoot, "README.md");
+// Read all .user.js files in the root directory
+const userscriptFiles = readdirSync('.')
+  .filter(file => file.endsWith('.user.js'))
+  .sort();
 
-// 1) Collect *.user.js scripts from repo root
-const entries = fs
-  .readdirSync(repoRoot, { withFileTypes: true })
-  .filter((d) => d.isFile() && d.name.endsWith(".user.js"))
-  .map((d) => d.name)
-  .sort((a, b) => a.localeCompare(b));
-
-// 2) Extract summaries from @description
-function summaryFor(file) {
-  try {
-    const head = fs
-      .readFileSync(path.join(repoRoot, file), "utf8")
-      .split("\n")
-      .slice(0, 80)
-      .join("\n");
-    const m = head.match(/@description\s+(.+)\s*$/m);
-    if (m && m[1]) return m[1].trim();
-  } catch {
-    // ignore
+// Extract metadata from userscript files
+function extractMetadata(filePath) {
+  const content = readFileSync(filePath, 'utf8');
+  const metadataMatch = content.match(/\/\/ ==UserScript==([\s\S]*?)\/\/ ==\/UserScript==/);
+  
+  if (!metadataMatch) {
+    return null;
   }
-  return "—";
+
+  const metadata = {};
+  const metadataContent = metadataMatch[1];
+  
+  // Extract common metadata fields
+  const nameMatch = metadataContent.match(/\/\/ @name\s+(.+)/);
+  const descriptionMatch = metadataContent.match(/\/\/ @description\s+(.+)/);
+  const versionMatch = metadataContent.match(/\/\/ @version\s+(.+)/);
+  const authorMatch = metadataContent.match(/\/\/ @author\s+(.+)/);
+  const matchMatches = metadataContent.match(/\/\/ @match\s+(.+)/g);
+  
+  if (nameMatch) metadata.name = nameMatch[1].trim();
+  if (descriptionMatch) metadata.description = descriptionMatch[1].trim();
+  if (versionMatch) metadata.version = versionMatch[1].trim();
+  if (authorMatch) metadata.author = authorMatch[1].trim();
+  if (matchMatches) {
+    metadata.matches = matchMatches.map(match => 
+      match.replace(/\/\/ @match\s+/, '').trim()
+    );
+  }
+  
+  return metadata;
 }
 
-// 3) Build markdown table
-const rows = entries.map((f) => {
-  const href = "./" + encodeURI(f).replace(/#/g, "%23");
-  const display = f.replace(/^4ndr0tools\s*-\s*/i, "").replace(/\.user\.js$/i, "");
-  return `| ${display} | [${f}](${href}) | ${summaryFor(f)} |`;
+// Generate catalog content
+let catalogContent = `# ☠️ 4ndr0tools ☠️
+
+A modular userscript suite for digital emancipation.
+
+## Script Catalog
+
+| Script | Description | Version |
+|--------|-------------|---------|
+`;
+
+userscriptFiles.forEach(file => {
+  const metadata = extractMetadata(file);
+  if (metadata) {
+    const name = metadata.name || file.replace('.user.js', '');
+    const description = metadata.description || 'No description available';
+    const version = metadata.version || 'Unknown';
+    
+    catalogContent += `| [${name}](${file}) | ${description} | ${version} |\n`;
+  }
 });
 
-const table = [
-  "| Script | File | Summary |",
-  "|---|---|---|",
-  ...rows,
-].join("\n");
+catalogContent += `
+## Installation
 
-// 4) Read README
-const md = fs.readFileSync(readmePath, "utf8");
+1. Install a userscript manager like [Tampermonkey](https://www.tampermonkey.net/) or [Greasemonkey](https://www.greasespot.net/)
+2. Click on any script link above
+3. Your userscript manager should prompt you to install the script
 
-const start = "<!-- BEGIN_CATALOG -->";
-const end = "<!-- END_CATALOG -->";
+## License
 
-// 5) Ensure markers exist
-if (!md.includes(start) || !md.includes(end)) {
-  console.error("Catalog markers not found in README.md. Aborting.");
-  process.exit(2);
-}
+MIT License - See individual scripts for specific licensing information.
+`;
 
-// 6) Replace catalog content with padding
-const newBlock = `${start}\n\n${table}\n\n${end}`;
-const updated = md.replace(
-  new RegExp(`${start}[\\s\\S]*?${end}`),
-  newBlock
-);
-
-// 7) Write if changed
-if (updated !== md) {
-  fs.writeFileSync(readmePath, updated);
-  console.log("README.md catalog updated.");
-} else {
-  console.log("README.md catalog already current.");
-}
+// Write the updated README.md
+writeFileSync('README.md', catalogContent);
+console.log('Script catalog updated successfully!');
