@@ -81,8 +81,12 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
 ---
 
 ## 🔥 Project Philosophy
+
+**4ndr0tools** was created in response to the growing digital enclosure of browser experiences--where user agency, open standards, and direct access are actively eroded by our government.
+
+<br/>
+
 ```
-4ndr0tools was created in response to the growing digital enclosure of browser experiences--
 
                       .... NO! ...    4ndr0666      ... MNO! ....
                    ..... MNO!! ...................... MNNOO! ....
@@ -107,9 +111,9 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
                        ...... OO! ................. ON! .......
                           ................................
                                       4ndr0666
-
-where user agency, open standards, and direct access are actively eroded by our government.
 ```
+
+<br/>
 
 **Key Tenets:**
 - **End-User Sovereignty**: You, not the site or government, should dictate your browsing experience.  
