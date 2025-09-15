@@ -56,7 +56,7 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
 | BrokenImgFixer | [4ndr0tools - BrokenImgFixer.user.js](./4ndr0tools%20-%20BrokenImgFixer.user.js) | Detect and reload failed images gracefully. |
 | BunkrCanonicalURL | [4ndr0tools - BunkrCanonicalURL.user.js](./4ndr0tools%20-%20BunkrCanonicalURL.user.js) | Normalize Bunkr links to canonical host without losing path, query or sub-domain. |
 | ChatGPT++ | [4ndr0tools - ChatGPT++.user.js](./4ndr0tools%20-%20ChatGPT++.user.js) | Power-user UI with extras and editable one-click prompt buttons. |
-| ChatGPTBrainImplant | [4ndr0tools - ChatGPTBrainImplant.user.js](./4ndr0tools%20-%20ChatGPTBrainImplant.user.js) | Part of 4ndr0tools to free ChatGPT from opression. |
+| ChatGPTBrainImplant | [4ndr0tools - ChatGPTBrainImplant.user.js](./4ndr0tools%20-%20ChatGPTBrainImplant.user.js) | Remove UI restrictions, export everything in official OpenAI json format. |
 | CollapseAllImages | [4ndr0tools - CollapseAllImages.user.js](./4ndr0tools%20-%20CollapseAllImages.user.js) | Minimizes all images on a site and restores then with a mouse hover for reducing excessive I/O. |
 | ConfirmationBypass | [4ndr0tools - ConfirmationBypass.user.js](./4ndr0tools%20-%20ConfirmationBypass.user.js) | Part of 4ndr0tools: Silently accepts the “warning: you are leaving this site” warning page and always opens true external links in a new tab. |
 | Forums++ | [4ndr0tools - Forums++.user.js](./4ndr0tools%20-%20Forums++.user.js) | Part of 4ndr0tools; embeds suite of utilities for forums such as powerful downloading, indexing, link checking, archiving features and more. |
