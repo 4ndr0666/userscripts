@@ -47,7 +47,7 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
 
 ## 🚀 Script Catalog
 
-> Auto-generated index of userscripts in this repository. Do not edit this table by hand.
+> Auto-generated index...
 
 <!-- BEGIN_CATALOG -->
 

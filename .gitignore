@@ -1,28 +1,37 @@
-# Compiled files
-*.o
-*.so
-*.dll
+node_modules/
+dist/
+.cache/
+.tmp/
 
-# Logs and databases
-*.log
-*.db
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# OS generated files
+coverage/
+*.lcov
+
 .DS_Store
 Thumbs.db
-
-# Python files
-*.pyc
-*.pyo
-__pycache__/
-
-# IDE and editor files
+ehthumbs.db
+Icon?
 *.swp
 *.swo
-*.idea/
+*~
 .vscode/
+.idea/
 
-# Sensitive data
-*.env
-secrets.json
-testing/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+.env
+.env.local
+.env.*.local
+
+testing/*
+tools/*.log
+
+!README.md
+!*.user.js

@@ -1,8 +1,23 @@
 {
+  "name": "4ndr0tools-userscripts",
+  "version": "1.0.0",
+  "description": "☠️ 4ndr0tools ☠️ — A modular userscript suite for digital emancipation.",
+  "author": "4ndr0666",
+  "license": "MIT",
+  "type": "module",
   "scripts": {
-    "lint-md": "markdownlint '**/*.md' --ignore node_modules"
+    "lint-md": "markdownlint '**/*.md' --ignore node_modules",
+    "lint-js": "eslint . --ext .js,.jsx,.ts,.tsx,.user.js",
+    "format": "prettier --write .",
+    "check-format": "prettier --check .",
+    "update-catalog": "node tools/update_catalog.mjs",
+    "lint": "npm run lint-js && npm run lint-md && npm run check-format"
   },
   "devDependencies": {
-    "markdownlint-cli": "^0.39.0"
+    "markdownlint-cli": "^0.39.0",
+    "prettier": "^3.3.3",
+    "eslint": "^9.11.1",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-config-prettier": "^9.1.0"
   }
 }
