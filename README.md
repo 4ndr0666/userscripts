@@ -58,7 +58,7 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
 | ChatGPT++ | [4ndr0tools - ChatGPT++.user.js](./4ndr0tools%20-%20ChatGPT++.user.js) | Power-user UI with extras and editable one-click prompt buttons. |
 | ChatGPTBrainImplant | [4ndr0tools - ChatGPTBrainImplant.user.js](./4ndr0tools%20-%20ChatGPTBrainImplant.user.js) | Remove UI restrictions, export everything in official OpenAI json format. |
 | CollapseAllImages | [4ndr0tools - CollapseAllImages.user.js](./4ndr0tools%20-%20CollapseAllImages.user.js) | Toggle/auto-collapse all images with a mouse hover for reducing excessive I/O. |
-| ConfirmationBypass | [4ndr0tools - ConfirmationBypass.user.js](./4ndr0tools%20-%20ConfirmationBypass.user.js) | Part of 4ndr0tools: Silently accepts the “warning: you are leaving this site” warning page and always opens true external links in a new tab. |
+| ConfirmationBypass | [4ndr0tools - ConfirmationBypass.user.js](./4ndr0tools%20-%20ConfirmationBypass.user.js) | Unfucks the "Are you sure?" bullshit when opening links. |
 | Forums++ | [4ndr0tools - Forums++.user.js](./4ndr0tools%20-%20Forums++.user.js) | Part of 4ndr0tools; embeds suite of utilities for forums such as powerful downloading, indexing, link checking, archiving features and more. |
 | GooglePhotosandDrive++ | [4ndr0tools - GooglePhotosandDrive++.user.js](./4ndr0tools%20-%20GooglePhotosandDrive++.user.js) | Combines multiple functionalities such as image direct links, context menu removal, and non-intrusive UI integration for Google Photos and Drive. |
 | Hailuo++ | [4ndr0tools - Hailuo++.user.js](./4ndr0tools%20-%20Hailuo++.user.js) | For educational and official red-team lab purposes only. |
