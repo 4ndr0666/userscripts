@@ -2,7 +2,7 @@
 // @name         4ndr0tools - Bunkr Canonical URL
 // @namespace    https://github.com/4ndr0666/userscripts
 // @version      1.1.0
-// @description  Part of 4ndr0tools: Redirects every bunkr* url to the true canonical host without losing path, query or sub-domain.
+// @description  Normalize Bunkr links to canonical host without losing path, query or sub-domain.
 // @author       4ndr0666
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-AlwaysNewWindow.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-AlwaysNewWindow.user.js
