@@ -52,7 +52,7 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
 <!-- BEGIN_CATALOG -->
 | Script | File | Summary |
 |---|---|---|
-| AlwaysNewWindow | [4ndr0tools - AlwaysNewWindow.user.js](./4ndr0tools%20-%20AlwaysNewWindow.user.js) | Part of 4ndr0tools - Force all links to be opened in a new window. |
+| AlwaysNewWindow | [4ndr0tools - AlwaysNewWindow.user.js](./4ndr0tools%20-%20AlwaysNewWindow.user.js) | Force every single link to open in a new window/tab. |
 | BrokenImgFixer | [4ndr0tools - BrokenImgFixer.user.js](./4ndr0tools%20-%20BrokenImgFixer.user.js) | Part of 4ndr0tools - Shows and reloads broken images |
 | BunkrCanonicalURL | [4ndr0tools - BunkrCanonicalURL.user.js](./4ndr0tools%20-%20BunkrCanonicalURL.user.js) | Part of 4ndr0tools: Redirects every bunkr* url to the true canonical host without losing path, query or sub-domain. |
 | ChatGPT++ | [4ndr0tools - ChatGPT++.user.js](./4ndr0tools%20-%20ChatGPT++.user.js) | Part of 4ndr0tools for "ease-of-life". Features widescreen |
