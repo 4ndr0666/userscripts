@@ -2,7 +2,7 @@
 // @name         4ndr0tools - YouTube Embed Redirect Button
 // @namespace    https://github.com/4ndr0666/userscripts
 // @version      1.4
-// @description  Part of 4ndr0tools: semi-transparent draggable button in top right corner redirecting to embedded video. Right click it to set a keybind (default Ctrl+E).
+// @description  Floating button for redirects to embedded version. Right click it to set a keybind (default Ctrl+E).
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-YouTubeEmbedRedirectButton.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-YouTubeEmbedRedirectButton.user.js
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
