@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         4ndr0tools - Real Link Revealer (data-url block)
+// @name         4ndr0tools - Premium Link Revealer 
 // @namespace    https://github.com/4ndr0666/userscripts
 // @version      1.2
-// @description  Replace forum redirect links with their actual destination using the parent bbCodeBlock--unfurl block's data-url attribute.
+// @description  Reveal true URLs hidden as "premium" link wrappers using the parent bbCodeBlock--unfurl block's data-url attribute.
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20RealLinkRevealer.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20RealLinkRevealer.user.js
 // @match        *://sexyforums.com/*
