@@ -3,7 +3,7 @@
 // @namespace    https://www.github.com/4ndr0666/userscripts
 // @author       4ndr0666
 // @version      1.1
-// @description  Handy when unchecking/checking a fuckload of checkboxes; Ctrl+Alt+LeftClick = Select All; Alt+Hover = Select On Mouse Over; Shift+Click = Select Checkboxes In A Range.
+// @description  Check/Uncheck a fuckload of checkboxes at once.
 // @match        *://*/*
 // @require      http://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.3/jquery.min.js
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-SelectAllCheckboxes.user.js
