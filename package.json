@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "lint-md": "markdownlint '**/*.md' --ignore node_modules",
-    "lint-js": "eslint . --ext .js,.jsx,.ts,.tsx,.user.js",
+    "lint-js": "eslint .",
     "format": "prettier --write .",
     "check-format": "prettier --check .",
     "update-catalog": "node tools/update_catalog.mjs",

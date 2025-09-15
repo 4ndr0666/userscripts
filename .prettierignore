@@ -1,23 +1,12 @@
-# Ignore build outputs and caches
 dist/
 node_modules/
 .cache/
 .tmp/
-
-# Ignore Git internals
 .git/
 .github/
-
-# Ignore logs
 *.log
-
-# Ignore coverage reports
 coverage/
-
-# Prevent Prettier from rewrapping ASCII art or modifying generated catalog
 README.md
-
-# Optional: ignore lock files if you don't want Prettier checking them
 package-lock.json
 yarn.lock
 pnpm-lock.yaml

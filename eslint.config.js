@@ -1,4 +1,4 @@
-// eslint.config.js
+// Flat config for ESLint v9
 import prettier from "eslint-plugin-prettier";
 
 export default [
@@ -29,11 +29,6 @@ export default [
       ],
       "no-console": "off"
     },
-    ignores: [
-      "dist/**",
-      "node_modules/**",
-      "coverage/**",
-      "tools/**"
-    ]
+    ignores: ["dist/**", "node_modules/**", "coverage/**", "tools/**"]
   }
 ];
