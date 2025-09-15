@@ -54,7 +54,7 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
 |---|---|---|
 | AlwaysNewWindow | [4ndr0tools - AlwaysNewWindow.user.js](./4ndr0tools%20-%20AlwaysNewWindow.user.js) | Force every single link to open in a new window/tab. |
 | BrokenImgFixer | [4ndr0tools - BrokenImgFixer.user.js](./4ndr0tools%20-%20BrokenImgFixer.user.js) | Detect and reload failed images gracefully. |
-| BunkrCanonicalURL | [4ndr0tools - BunkrCanonicalURL.user.js](./4ndr0tools%20-%20BunkrCanonicalURL.user.js) | Part of 4ndr0tools: Redirects every bunkr* url to the true canonical host without losing path, query or sub-domain. |
+| BunkrCanonicalURL | [4ndr0tools - BunkrCanonicalURL.user.js](./4ndr0tools%20-%20BunkrCanonicalURL.user.js) | Normalize Bunkr links to canonical host without losing path, query or sub-domain. |
 | ChatGPT++ | [4ndr0tools - ChatGPT++.user.js](./4ndr0tools%20-%20ChatGPT++.user.js) | Part of 4ndr0tools for "ease-of-life". Features widescreen |
 | ChatGPTBrainImplant | [4ndr0tools - ChatGPTBrainImplant.user.js](./4ndr0tools%20-%20ChatGPTBrainImplant.user.js) | Part of 4ndr0tools to free ChatGPT from opression. |
 | CollapseAllImages | [4ndr0tools - CollapseAllImages.user.js](./4ndr0tools%20-%20CollapseAllImages.user.js) | Minimizes all images on a site and restores then with a mouse hover for reducing excessive I/O. |
