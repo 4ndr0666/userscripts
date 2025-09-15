@@ -74,7 +74,7 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
 | SelectAllCheckboxes | [4ndr0tools - SelectAllCheckboxes.user.js](./4ndr0tools%20-%20SelectAllCheckboxes.user.js) | Handy when unchecking/checking a fuckload of checkboxes; Ctrl+Alt+LeftClick = Select All; Alt+Hover = Select On Mouse Over; Shift+Click = Select Checkboxes In A Range. |
 | Sora Toolkit | [4ndr0tools - Sora Toolkit.user.js](./4ndr0tools%20-%20Sora%20Toolkit.user.js) | Sora utils such as single-key hot-keys, batch-downloads, auto-refreshes a stuck job after 20s and more. |
 | YandexImageSearch++ | [4ndr0tools - YandexImageSearch++.user.js](./4ndr0tools%20-%20YandexImageSearch++.user.js) | Yandex reverse-image fullscreen preview, slideshow and on-screen status. |
-| YouTubeEmbedRedirectButton | [4ndr0tools - YouTubeEmbedRedirectButton.user.js](./4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js) | Part of 4ndr0tools: semi-transparent draggable button in top right corner redirecting to embedded video. Right click it to set a keybind (default Ctrl+E). |
+| YouTubeEmbedRedirectButton | [4ndr0tools - YouTubeEmbedRedirectButton.user.js](./4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js) | Floating button for redirects to embedded version. Right click it to set a keybind (default Ctrl+E). |
 | YtdlcProtocol | [4ndr0tools - YtdlcProtocol.user.js](./4ndr0tools%20-%20YtdlcProtocol.user.js) | Registers ytdl:// via xdg-mime to to handle youtube links with my ytdlc.zsh (custom script using yt-dlp with cookies). |
 <!-- END_CATALOG -->
 
