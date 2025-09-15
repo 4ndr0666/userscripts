@@ -4,22 +4,20 @@
 // @namespace   https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
 // @version     1.8
-// @description Part of 4ndr0tools; embeds suite of utilities for forums such as powerful downloading, indexing, link checking, archiving features and more.
+// @description Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.
 // @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Forums++.user.js
 // @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Forums++.user.js
 // @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
-// @license WTFPL; http://www.wtfpl.net/txt/copying/
+// @license     WTFPL; http://www.wtfpl.net/txt/copying/
 // @match       https://simpcity.su/threads/*
 // @match       https://simpcity.cr/threads/*
-// @require https://unpkg.com/@popperjs/core@2
-// @require https://unpkg.com/tippy.js@6
-// @require https://unpkg.com/file-saver@2.0.4/dist/FileSaver.min.js
-// @require https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js
-// @require https://raw.githubusercontent.com/geraintluff/sha256/gh-pages/sha256.min.js
+// @require     https://unpkg.com/@popperjs/core@2
+// @require     https://unpkg.com/tippy.js@6
+// @require     https://unpkg.com/file-saver@2.0.4/dist/FileSaver.min.js
+// @require     https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js
+// @require     https://raw.githubusercontent.com/geraintluff/sha256/gh-pages/sha256.min.js
 // @connect self
 // @connect coomer.su
-// @connect box.com
-// @connect boxcloud.com
 // @connect kemono.su
 // @connect github.com
 // @connect big-taco-1img.bunkr.ru
@@ -61,7 +59,6 @@
 // @connect saint2.pk
 // @connect saint2.cr
 // @connect redd.it
-// @connect onlyfans.com
 // @connect i.ibb.co
 // @connect ibb.co
 // @connect imagebam.com
@@ -78,19 +75,16 @@
 // @connect selti-delivery.ru
 // @connect imgbox.com
 // @connect pixhost.to
-// @connect pomf2.lain.la
 // @connect pornhub.com
 // @connect postimg.cc
 // @connect imgvb.com
 // @connect pixxxels.cc
 // @connect postimg.cc
 // @connect imagevenue.com
-// @connect nhentai-proxy.herokuapp.com
 // @connect pbs.twimg.com
 // @connect media.tumblr.com
 // @connect pixeldrain.com
 // @connect redgifs.com
-// @connect rule34.xxx
 // @connect noodlemagazine.com
 // @connect pvvstream.pro
 // @connect spankbang.com
@@ -98,7 +92,6 @@
 // @connect gofile.io
 // @connect phncdn.com
 // @connect xvideos.com
-// @connect give.xxx
 // @connect githubusercontent.com
 // @run-at document-start
 // @grant GM_xmlhttpRequest
