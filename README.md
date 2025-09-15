@@ -50,7 +50,6 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
 > Auto-generated index...
 
 <!-- BEGIN_CATALOG -->
-
 | Script | File | Summary |
 |---|---|---|
 | AlwaysNewWindow | [4ndr0tools - AlwaysNewWindow.user.js](./4ndr0tools%20-%20AlwaysNewWindow.user.js) | Force every single link to open in a new window/tab. |
@@ -72,12 +71,11 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
 | RealLinkRevealer | [4ndr0tools - RealLinkRevealer.user.js](./4ndr0tools%20-%20RealLinkRevealer.user.js) | Reveal true URLs hidden as "premium" link wrappers using the parent bbCodeBlock--unfurl block's data-url attribute. |
 | Recon | [4ndr0tools - Recon.user.js](./4ndr0tools%20-%20Recon.user.js) | Red-team tool for conducting recon on targetsCaptures browser state and all API requests/responses (XHR/Fetch) without modification. For educational and lab use only. |
 | RmSignUpBanners | [4ndr0tools - RmSignUpBanners.user.js](./4ndr0tools%20-%20RmSignUpBanners.user.js) | Hide nagging sign-up/login overlays. |
-| SelectAllCheckboxes | [4ndr0tools - SelectAllCheckboxes.user.js](./4ndr0tools%20-%20SelectAllCheckboxes.user.js) | Handy when unchecking/checking a fuckload of checkboxes; Ctrl+Alt+LeftClick = Select All; Alt+Hover = Select On Mouse Over; Shift+Click = Select Checkboxes In A Range. |
+| SelectAllCheckboxes | [4ndr0tools - SelectAllCheckboxes.user.js](./4ndr0tools%20-%20SelectAllCheckboxes.user.js) | Check/Uncheck a fuckload of checkboxes at once. |
 | Sora Toolkit | [4ndr0tools - Sora Toolkit.user.js](./4ndr0tools%20-%20Sora%20Toolkit.user.js) | Sora utils such as single-key hot-keys, batch-downloads, auto-refreshes a stuck job after 20s and more. |
 | YandexImageSearch++ | [4ndr0tools - YandexImageSearch++.user.js](./4ndr0tools%20-%20YandexImageSearch++.user.js) | Yandex reverse-image fullscreen preview, slideshow and on-screen status. |
 | YouTubeEmbedRedirectButton | [4ndr0tools - YouTubeEmbedRedirectButton.user.js](./4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js) | Floating button for redirects to embedded version. Right click it to set a keybind (default Ctrl+E). |
 | YtdlcProtocol | [4ndr0tools - YtdlcProtocol.user.js](./4ndr0tools%20-%20YtdlcProtocol.user.js) | Personal `ytdl://`-style protocol trigger for using yt-dlp with cookies. |
-
 <!-- END_CATALOG -->
 
 ---
