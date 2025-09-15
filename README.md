@@ -50,6 +50,32 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
 > Auto-generated index of userscripts in this repository. Do not edit this table by hand.
 
 <!-- BEGIN_CATALOG -->
+| Script | File | Summary |
+|---|---|---|
+| AlwaysNewWindow | [4ndr0tools - AlwaysNewWindow.user.js](./4ndr0tools%20-%20AlwaysNewWindow.user.js) | Part of 4ndr0tools - Force all links to be opened in a new window. |
+| BrokenImgFixer | [4ndr0tools - BrokenImgFixer.user.js](./4ndr0tools%20-%20BrokenImgFixer.user.js) | Part of 4ndr0tools - Shows and reloads broken images |
+| BunkrCanonicalURL | [4ndr0tools - BunkrCanonicalURL.user.js](./4ndr0tools%20-%20BunkrCanonicalURL.user.js) | Part of 4ndr0tools: Redirects every bunkr* url to the true canonical host without losing path, query or sub-domain. |
+| ChatGPT++ | [4ndr0tools - ChatGPT++.user.js](./4ndr0tools%20-%20ChatGPT++.user.js) | Part of 4ndr0tools for "ease-of-life". Features widescreen |
+| ChatGPTBrainImplant | [4ndr0tools - ChatGPTBrainImplant.user.js](./4ndr0tools%20-%20ChatGPTBrainImplant.user.js) | Part of 4ndr0tools to free ChatGPT from opression. |
+| CollapseAllImages | [4ndr0tools - CollapseAllImages.user.js](./4ndr0tools%20-%20CollapseAllImages.user.js) | Minimizes all images on a site and restores then with a mouse hover for reducing excessive I/O. |
+| ConfirmationBypass | [4ndr0tools - ConfirmationBypass.user.js](./4ndr0tools%20-%20ConfirmationBypass.user.js) | Part of 4ndr0tools: Silently accepts the “warning: you are leaving this site” warning page and always opens true external links in a new tab. |
+| Forums++ | [4ndr0tools - Forums++.user.js](./4ndr0tools%20-%20Forums++.user.js) | Part of 4ndr0tools; embeds suite of utilities for forums such as powerful downloading, indexing, link checking, archiving features and more. |
+| GooglePhotosandDrive++ | [4ndr0tools - GooglePhotosandDrive++.user.js](./4ndr0tools%20-%20GooglePhotosandDrive++.user.js) | Combines multiple functionalities such as image direct links, context menu removal, and non-intrusive UI integration for Google Photos and Drive. |
+| Hailuo++ | [4ndr0tools - Hailuo++.user.js](./4ndr0tools%20-%20Hailuo++.user.js) | For educational and official red-team lab purposes only. |
+| HDImgsOnly | [4ndr0tools - HDImgsOnly.user.js](./4ndr0tools%20-%20HDImgsOnly.user.js) | Part of 4ndr0tools; redirects every image to its high res version. |
+| InstagramRedirect | [4ndr0tools - InstagramRedirect.user.js](./4ndr0tools%20-%20InstagramRedirect.user.js) | Part of 4ndr0tools for "ease-of-life". Simply |
+| MegaEmbedRedirector | [4ndr0tools - MegaEmbedRedirector.user.js](./4ndr0tools%20-%20MegaEmbedRedirector.user.js) | Part of 4ndr0tools for "ease-of-life". Redirects all Mega |
+| ModelSearch | [4ndr0tools - ModelSearch.user.js](./4ndr0tools%20-%20ModelSearch.user.js) | Adds a floating button to search models on Simpcity.su directly from any website. |
+| Pixverse++ | [4ndr0tools - Pixverse++.user.js](./4ndr0tools%20-%20Pixverse++.user.js) | Redteam Utils: This is for security research purposes only! Pixverse team you have been exploitable for months now and you only patched the frontend file redirection. You should securly contact me for full POC report and mitigation steps. Until then I have added a dynamically configurable control panel, multi-vector credit bypass (deduction prevention & response/DOM spoofing), video/status unlock, forced quality, advanced NSFW prompt obfuscation, robust native download, API override (logging & faking), anti-blockers, self-healing hooks, and covert C2 data exfiltration. |
+| PlanetsuzyMobileSkinRedirect | [4ndr0tools - PlanetsuzyMobileSkinRedirect.user.js](./4ndr0tools%20-%20PlanetsuzyMobileSkinRedirect.user.js) | Part of 4ndr0tools for "ease-of-life". Redirects |
+| RealLinkRevealer | [4ndr0tools - RealLinkRevealer.user.js](./4ndr0tools%20-%20RealLinkRevealer.user.js) | Replace forum redirect links with their actual destination using the parent bbCodeBlock--unfurl block's data-url attribute. |
+| RedteamRecon | [4ndr0tools - RedteamRecon.user.js](./4ndr0tools%20-%20RedteamRecon.user.js) | Standalone Debugging Tool: Captures browser state and all API requests/responses (XHR/Fetch) without modification. Includes debug UI and credit analysis. For diagnostic use only. |
+| RmSignUpBanners | [4ndr0tools - RmSignUpBanners.user.js](./4ndr0tools%20-%20RmSignUpBanners.user.js) | Part of 4ndr0tools - Remove the Premium Sign Up element on x.com websites |
+| SelectAllCheckboxes | [4ndr0tools - SelectAllCheckboxes.user.js](./4ndr0tools%20-%20SelectAllCheckboxes.user.js) | Part of 4ndr0tools: Selects all checkboxes on page; Ctrl+Alt+LeftClick = Select All; Alt+Hover = Select On Mouse Over; Shift+Click = Select Checkboxes In A Range. |
+| Sora Toolkit | [4ndr0tools - Sora Toolkit.user.js](./4ndr0tools%20-%20Sora%20Toolkit.user.js) | Download, batch-download, copy, or share Sora videos.  Adds inline ⬇️ button, single-key hot-keys, batch mode, toast notifications, JSON settings — and now **auto-refreshes** a stuck job after 20 s. |
+| YandexImageSearch++ | [4ndr0tools - YandexImageSearch++.user.js](./4ndr0tools%20-%20YandexImageSearch++.user.js) | Fullscreen preview + quick slideshow via |
+| YouTubeEmbedRedirectButton | [4ndr0tools - YouTubeEmbedRedirectButton.user.js](./4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js) | Part of 4ndr0tools: semi-transparent draggable button in top right corner redirecting to embedded video. Right click it to set a keybind (default Ctrl+E). |
+| YtdlcProtocol | [4ndr0tools - YtdlcProtocol.user.js](./4ndr0tools%20-%20YtdlcProtocol.user.js) | Registers ytdl:// via xdg-mime to to handle youtube links with my ytdlc.zsh (custom script using yt-dlp with cookies). |
 <!-- END_CATALOG -->
 
 ---
