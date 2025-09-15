@@ -3,9 +3,7 @@
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666
 // @version      1.2.0
-// @description  Part of 4ndr0tools for "ease-of-life". Redirects
-//               all PlanetSuzy.org traffic to use the mobile
-//               version instead. (styleid=4).
+// @description  Force a faster mobile skin where useful.
 // @match        http://www.planetsuzy.org/*
 // @match        https://www.planetsuzy.org/*
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-PlanetsuzyMobileSkinRedirect.user.js
