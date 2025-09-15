@@ -16,9 +16,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
 
-      - name: Install markdownlint
-        run: npm install --save-dev markdownlint-cli
+      - name: Install dependencies
+        run: npm install
 
       - name: Run markdownlint
         run: npm run lint-md
