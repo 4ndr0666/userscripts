@@ -3,8 +3,7 @@
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666
 // @version      0.2.0
-// @description  Fullscreen preview + quick slideshow via
-//               arrow keys, with on-screen status.
+// @description  Yandex reverse-image fullscreen preview, slideshow and on-screen status.
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-YandexImageSearch++.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-YandexImageSearch++.user.js
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
