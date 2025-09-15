@@ -3,8 +3,7 @@
 // @namespace    http://github.com/4ndr066/userscripts
 // @author       4ndr0666
 // @version      1.0.0
-// @description  Part of 4ndr0tools for "ease-of-life". Simply
-//               redirects all Instagram URLs to dumpor.com.
+// @description  Privacy redirect for IG media to dumpor.com.
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-InstagramRedirect.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-InstagramRedirect.user.js
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
