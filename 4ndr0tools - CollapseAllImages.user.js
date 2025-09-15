@@ -3,7 +3,7 @@
 // @namespace    http://github.com/4ndr0666/userscripts
 // @author       4ndr0666
 // @version      1.2.0
-// @description  Minimizes all images on a site and restores then with a mouse hover for reducing excessive I/O.
+// @description  Toggle/auto-collapse all images with a mouse hover for reducing excessive I/O.
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20CollapseAllImages.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20CollapseAllImages.user.js
 // @match        *://*/*
