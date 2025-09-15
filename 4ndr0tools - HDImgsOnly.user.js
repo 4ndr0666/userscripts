@@ -3,10 +3,10 @@
 // @namespace   https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
 // @version     1.0
-// @description Part of 4ndr0tools; redirects every image to its high res version.
+// @description Prefer high-resolution assets when available.
 // @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20HDImgsOnly.user.js
 // @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20HDImgsOnly.user.js
-// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
+// @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match       https://*.imagetwist.com/*
 // @match       https://*.imgspice.com/*
 // @match       https://*.turboimagehost.com/*.html
