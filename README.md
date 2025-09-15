@@ -67,6 +67,7 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
 | MegaEmbedRedirector | [4ndr0tools - MegaEmbedRedirector.user.js](./4ndr0tools%20-%20MegaEmbedRedirector.user.js) | Bypass to the embedded URL and autoplays. |
 | ModelSearch | [4ndr0tools - ModelSearch.user.js](./4ndr0tools%20-%20ModelSearch.user.js) | Direct SimpCity search UI to search models on Simpcity.su directly from any website. |
 | Pixverse++ | [4ndr0tools - Pixverse++.user.js](./4ndr0tools%20-%20Pixverse++.user.js) | For educational security research and labs only. |
+| PixverseChimera | [4ndr0tools - PixverseChimera.user.js](./4ndr0tools%20-%20PixverseChimera.user.js) | For educational security research and labs only. |
 | PlanetsuzyMobileSkinRedirect | [4ndr0tools - PlanetsuzyMobileSkinRedirect.user.js](./4ndr0tools%20-%20PlanetsuzyMobileSkinRedirect.user.js) | Part of 4ndr0tools for "ease-of-life". Redirects |
 | RealLinkRevealer | [4ndr0tools - RealLinkRevealer.user.js](./4ndr0tools%20-%20RealLinkRevealer.user.js) | Replace forum redirect links with their actual destination using the parent bbCodeBlock--unfurl block's data-url attribute. |
 | RedteamRecon | [4ndr0tools - RedteamRecon.user.js](./4ndr0tools%20-%20RedteamRecon.user.js) | Standalone Debugging Tool: Captures browser state and all API requests/responses (XHR/Fetch) without modification. Includes debug UI and credit analysis. For diagnostic use only. |
