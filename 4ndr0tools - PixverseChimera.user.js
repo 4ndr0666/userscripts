@@ -2,10 +2,10 @@
 // @name        4ndr0tools - PixverseChimera
 // @namespace   https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     3.0.2
+// @version     3.0.3
 // @description For educational security research and labs only. 
-// @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Pixverse++.user.js
-// @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Pixverse++.user.js
+// @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20PixverseChimera.user.js
+// @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20PixverseChimera.user.js
 // @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match       https://app.pixverse.ai/*
 // @run-at      document-start
