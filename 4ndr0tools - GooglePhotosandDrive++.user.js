@@ -2,7 +2,7 @@
 // @name         4ndr0tools - Google Photos and Drive++  
 // @namespace    https://github.com/4ndr0666
 // @version      1.0
-// @description  Combines multiple functionalities such as image direct links, context menu removal, and non-intrusive UI integration for Google Photos and Drive.
+// @description  Restore context menus, expose direct links for Google Photos and Drive.
 // @author       4ndr0666
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-ConfirmationBypass.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-ConfirmationBypass.user.js
