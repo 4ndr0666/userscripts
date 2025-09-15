@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Always New Window
 // @namespace    http://www.github.com/4ndr0666/userscripts
-// @description  Part of 4ndr0tools - Force all links to be opened in a new window.
+// @description  Force every single link to open in a new window/tab.
 // @version      0.2
 // @author       4ndr0666
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-AlwaysNewWindow.user.js
