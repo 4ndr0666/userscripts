@@ -2,7 +2,7 @@
 // @name         4ndr0tools - Confirmation bypass
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666
-// @description  Part of 4ndr0tools: Silently accepts the “warning: you are leaving this site” warning page and always opens true external links in a new tab.
+// @description  Unfucks the "Are you sure?" bullshit when opening links.
 // @version      2.0.0
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-ConfirmationBypass.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-ConfirmationBypass.user.js
