@@ -3,7 +3,7 @@
 // @namespace   https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
 // @version     2.1
-// @description Registers ytdl:// via xdg-mime to to handle youtube links with my ytdlc.zsh (custom script using yt-dlp with cookies).
+// @description Personal `ytdl://`-style protocol trigger for using yt-dlp with cookies.
 // @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-YtdlcProtocol.user.js
 // @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-YtdlcProtocol.user.js
 // @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
