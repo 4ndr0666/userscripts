@@ -50,6 +50,7 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
 > Auto-generated index of userscripts in this repository. Do not edit this table by hand.
 
 <!-- BEGIN_CATALOG -->
+
 | Script | File | Summary |
 |---|---|---|
 | AlwaysNewWindow | [4ndr0tools - AlwaysNewWindow.user.js](./4ndr0tools%20-%20AlwaysNewWindow.user.js) | Force every single link to open in a new window/tab. |
@@ -76,6 +77,7 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
 | YandexImageSearch++ | [4ndr0tools - YandexImageSearch++.user.js](./4ndr0tools%20-%20YandexImageSearch++.user.js) | Yandex reverse-image fullscreen preview, slideshow and on-screen status. |
 | YouTubeEmbedRedirectButton | [4ndr0tools - YouTubeEmbedRedirectButton.user.js](./4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js) | Floating button for redirects to embedded version. Right click it to set a keybind (default Ctrl+E). |
 | YtdlcProtocol | [4ndr0tools - YtdlcProtocol.user.js](./4ndr0tools%20-%20YtdlcProtocol.user.js) | Personal `ytdl://`-style protocol trigger for using yt-dlp with cookies. |
+
 <!-- END_CATALOG -->
 
 ---
