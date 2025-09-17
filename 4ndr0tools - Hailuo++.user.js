@@ -4,8 +4,8 @@
 // @author      4ndr0666 (Red Team Revision)
 // @version     9.0.0-RT
 // @description For educational and official red-team lab purposes only.
-// @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Hailuo++.user.js
-// @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Hailuo++.user.js
+// @downloadURL https://github.com/4ndr0666/userscripts/edit/main/4ndr0tools%20-%20Hailuo%2B%2B.user.js
+// @updateURL   https://github.com/4ndr0666/userscripts/edit/main/4ndr0tools%20-%20Hailuo%2B%2B.user.js
 // @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match       *://*.hailuoai.video/*
 // @match       *://*.hailuoai.com/*
