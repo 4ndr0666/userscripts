@@ -1,0 +1,170 @@
+// ==UserScript==
+// @name            4ndr0tools - Redgifs++
+// @namespace       https://github.com/4ndr0666/userscripts
+// @match           https://*.redgifs.com/watch/*
+// @match           https://*.redgifs.com/ifr/*
+// @grant           GM_addStyle
+// @version         2.0
+// @author          hdyzen (Original Concept), 4ndr0666 (Refactor)
+// @description     Replaces the cluttered watch page with a clean, centered video player that can be toggled on and off.
+// @license         MIT
+// @run-at          document-start
+// @downloadURL    
+// @updateURL      
+// ==/UserScript==
+
+'use strict';
+
+// --- CONFIGURATION ---
+const VIDEO_ONLY_CLASS = 'video-only-mode';
+const PLAYER_CONTAINER_SELECTOR = '.player-container';
+const BLUR_BACKGROUND_SELECTOR = '.player-container > img';
+// --- END CONFIGURATION ---
+
+let originalParent = null;
+let videoPlayer = null;
+
+/**
+ * Injects the necessary CSS for the video-only mode.
+ * This is far superior to inline styles as it's cleaner and more powerful.
+ */
+function addStyles() {
+    GM_addStyle(`
+        body.${VIDEO_ONLY_CLASS} {
+            overflow: hidden;
+        }
+
+        /* Create a blurred background using a pseudo-element */
+        body.${VIDEO_ONLY_CLASS}::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9998;
+            background-image: var(--blur-bg-url);
+            background-size: cover;
+            filter: blur(80px);
+            transform: scale(1.1);
+        }
+
+        /* Hide all direct children of body except our moved player */
+        body.${VIDEO_ONLY_CLASS} > *:not(.${VIDEO_ONLY_CLASS}-player) {
+            display: none !important;
+        }
+
+        /* Style the video player when it's in video-only mode */
+        .${VIDEO_ONLY_CLASS}-player {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+            max-height: 98vh;
+            max-width: 98vw;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+    `);
+}
+
+/**
+ * Enters the cinematic "video-only" mode.
+ * Moves the video player to be a direct child of the body for isolation.
+ */
+function enterVideoOnlyMode() {
+    if (!videoPlayer || document.body.classList.contains(VIDEO_ONLY_CLASS)) {
+        return;
+    }
+
+    // Grab the blurred background image source
+    const backgroundImage = document.querySelector(BLUR_BACKGROUND_SELECTOR);
+    if (backgroundImage) {
+        document.body.style.setProperty('--blur-bg-url', `url(${backgroundImage.src})`);
+    }
+
+    // Preserve original context
+    originalParent = videoPlayer.parentElement;
+
+    // Move video to body and apply class
+    document.body.appendChild(videoPlayer);
+    videoPlayer.classList.add(`${VIDEO_ONLY_CLASS}-player`);
+    document.body.classList.add(VIDEO_ONLY_CLASS);
+
+    // Add event listeners to exit the mode
+    document.addEventListener('keydown', handleExitKeys);
+    document.body.addEventListener('click', handleBodyClick);
+}
+
+/**
+ * Exits the cinematic mode and restores the original page layout.
+ */
+function exitVideoOnlyMode() {
+    if (!videoPlayer || !document.body.classList.contains(VIDEO_ONLY_CLASS)) {
+        return;
+    }
+
+    // Restore the video player to its original container
+    if (originalParent) {
+        originalParent.appendChild(videoPlayer);
+    }
+    videoPlayer.classList.remove(`${VIDEO_ONLY_CLASS}-player`);
+    document.body.classList.remove(VIDEO_ONLY_CLASS);
+    document.body.style.removeProperty('--blur-bg-url');
+
+    // Clean up event listeners
+    document.removeEventListener('keydown', handleExitKeys);
+    document.body.removeEventListener('click', handleBodyClick);
+}
+
+/**
+ * Handles clicks on the body to exit video-only mode.
+ * If the click is on the video itself, it shouldn't exit.
+ * @param {MouseEvent} event
+ */
+function handleBodyClick(event) {
+    if (event.target.closest(`.${VIDEO_ONLY_CLASS}-player`)) {
+        // Click was inside the video player, do nothing.
+        return;
+    }
+    exitVideoOnlyMode();
+}
+
+/**
+ * Handles key presses to exit video-only mode (e.g., Escape key).
+ * @param {KeyboardEvent} event
+ */
+function handleExitKeys(event) {
+    if (event.key === 'Escape') {
+        exitVideoOnlyMode();
+    }
+}
+
+/**
+ * Sets up a MutationObserver to wait for the video player to appear in the DOM.
+ * This is the modern, robust replacement for the original script's JSON.parse hijack.
+ */
+function initObserver() {
+    const observer = new MutationObserver((mutations, obs) => {
+        const playerContainer = document.querySelector(PLAYER_CONTAINER_SELECTOR);
+
+        if (playerContainer) {
+            // Player found, find the video element within it
+            videoPlayer = playerContainer.querySelector('video');
+            if (videoPlayer) {
+                // We have what we need. Enter video mode and disconnect the observer.
+                enterVideoOnlyMode();
+                obs.disconnect();
+            }
+        }
+    });
+
+    observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true
+    });
+}
+
+// --- SCRIPT EXECUTION ---
+addStyles();
+initObserver();
