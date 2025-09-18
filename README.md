@@ -60,7 +60,7 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
 | CollapseAllImages | [4ndr0tools - CollapseAllImages.user.js](./4ndr0tools%20-%20CollapseAllImages.user.js) | Toggle/auto-collapse all images with a mouse hover for reducing excessive I/O. |
 | ConfirmationBypass | [4ndr0tools - ConfirmationBypass.user.js](./4ndr0tools%20-%20ConfirmationBypass.user.js) | Unfucks the "Are you sure?" bullshit when opening links. |
 | Forums++ | [4ndr0tools - Forums++.user.js](./4ndr0tools%20-%20Forums++.user.js) | Forum utils UI with powerful downloading, indexing, link checking, archiving features and more. |
-| GooglePhotosandDrive++ | [4ndr0tools - GooglePhotosandDrive++.user.js](./4ndr0tools%20-%20GooglePhotosandDrive++.user.js) | Restore context menus, expose direct links for Google Photos and Drive. |
+| GooglePhotosandDrive++ | [4ndr0tools - GooglePhotosandDrive++.user.js](./4ndr0tools%20-%20GooglePhotosandDrive++.user.js) | Restore context menus, expose direct links, and add reverse image search for Google Photos and Drive. |
 | Hailuo++ | [4ndr0tools - Hailuo++.user.js](./4ndr0tools%20-%20Hailuo++.user.js) | For educational and official red-team lab purposes only. |
 | HDImgsOnly | [4ndr0tools - HDImgsOnly.user.js](./4ndr0tools%20-%20HDImgsOnly.user.js) | Prefer high-resolution assets when available. |
 | Images++ | [4ndr0tools - Images++.user.js](./4ndr0tools%20-%20Images++.user.js) | Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. |
