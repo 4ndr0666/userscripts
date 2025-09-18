@@ -54,7 +54,7 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
 |---|---|---|
 | AlwaysNewWindow | [4ndr0tools - AlwaysNewWindow.user.js](./4ndr0tools%20-%20AlwaysNewWindow.user.js) | Force every single link to open in a new window/tab. |
 | BrokenImgFixer | [4ndr0tools - BrokenImgFixer.user.js](./4ndr0tools%20-%20BrokenImgFixer.user.js) | Detect and reload failed images gracefully. |
-| BunkrCanonicalURL | [4ndr0tools - BunkrCanonicalURL.user.js](./4ndr0tools%20-%20BunkrCanonicalURL.user.js) | Normalize Bunkr links to canonical host without losing path, query or sub-domain. |
+| BunkrCanonicalURL | [4ndr0tools - BunkrCanonicalURL.user.js](./4ndr0tools%20-%20BunkrCanonicalURL.user.js) | Normalize Bunkr links to a canonical host without losing the path, query, or sub-domain. |
 | ChatGPT++ | [4ndr0tools - ChatGPT++.user.js](./4ndr0tools%20-%20ChatGPT++.user.js) | Power-user UI with extras and editable one-click prompt buttons. |
 | ChatGPTBrainImplant | [4ndr0tools - ChatGPTBrainImplant.user.js](./4ndr0tools%20-%20ChatGPTBrainImplant.user.js) | Remove UI restrictions, export everything in official OpenAI json format. |
 | CollapseAllImages | [4ndr0tools - CollapseAllImages.user.js](./4ndr0tools%20-%20CollapseAllImages.user.js) | Toggle/auto-collapse all images with a mouse hover for reducing excessive I/O. |
