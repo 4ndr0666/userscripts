@@ -34,7 +34,9 @@
 // @connect      facebook.com
 // @connect      fbcdn.com
 // @connect      flickr.com
-// @connect      gfycat.com
+// @connect      simp6.jp5.su
+// @connect      jp5.su
+// @connect      jp6.su
 // @connect      googleusercontent.com
 // @connect      gyazo.com
 // @connect      imgur.com
@@ -44,10 +46,9 @@
 // @connect      prntscr.com
 // @connect      user-images.githubusercontent.com
 //
-// @supportURL   https://github.com/tophf/mpiv/issues
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
-// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-UnifiedImageTools.user.js
-// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-UnifiedImageTools.user.js
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Images++.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Images++.user.js
 // @license      AGPL-v3.0; MIT
 // ==/UserScript==
 
