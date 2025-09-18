@@ -1,100 +1,201 @@
 // ==UserScript==
 // @name         4ndr0tools - Google Photos and Drive++  
 // @namespace    https://github.com/4ndr0666
-// @version      1.0
-// @description  Restore context menus, expose direct links for Google Photos and Drive.
+// @version      1.1
+// @description  Restore context menus, expose direct links, and add reverse image search for Google Photos and Drive.
 // @author       4ndr0666
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-ConfirmationBypass.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-ConfirmationBypass.user.js
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match        *://*.googleusercontent.com/*
-// @match        *://*google.com/*
-// @require      https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js
+// @match        *://photos.google.com/*
+// @match        *://drive.google.com/*
 // @grant        none
 // ==/UserScript==
+
 
 (function() {
     'use strict';
 
-    // Module 1: Direct Photo Link Enhancement
-    const getDirectPhotoLink = () => {
-        let linkSplit = window.location.href.split("=");
-        let param = linkSplit[0].match(/(w\d+\-h\d+)((?:\-[rw|p|no]+)+)/);
+    /**
+     * A centralized error logging utility for the script.
+     * @param {string} module - The name of the function/module where the error occurred.
+     * @param {Error} error - The error object caught.
+     */
+    const logError = (module, error) => {
+        console.error(`[4ndr0tools Error] in ${module}:`, error.message, error.stack);
+    };
 
-        if (linkSplit[1] !== "s0-tmp.jpg" && linkSplit.length > 1) {
-            linkSplit[0] = linkSplit[0] + "=s0-tmp.jpg";
-            window.location.href = linkSplit[0]; // Redirect to updated link
-        } else if (param) {
-            linkSplit[0] = linkSplit[0].replace(param[0], "s0");
-            window.location.href = linkSplit[0]; // Redirect to updated link
+    /**
+     * Module 1: Direct Photo Link Enhancement
+     * Identifies and redirects to the highest resolution version of a Google User Content image.
+     * The regex targets Google's URL-based image resizing parameters (e.g., w1920-h1080-rw-no).
+     */
+    const getDirectPhotoLink = () => {
+        try {
+            const currentUrl = window.location.href;
+            // This regex finds image dimension parameters like "w1920-h1080" and any subsequent flags like "-rw-no".
+            const sizeParamRegex = /(w\d+\-h\d+)((?:\-[a-z]+)+)?/i;
+            const urlParts = currentUrl.split('=');
+
+            // Scenario 1: URL has a size parameter that is not the max resolution ('s0').
+            if (urlParts.length > 1 && urlParts[1] !== 's0') {
+                const newUrl = `${urlParts[0]}=s0`;
+                if (currentUrl !== newUrl) {
+                    window.location.href = newUrl;
+                }
+            // Scenario 2: URL uses the path-based resizing format.
+            } else if (sizeParamRegex.test(urlParts[0])) {
+                const newUrl = urlParts[0].replace(sizeParamRegex, 's0');
+                if (currentUrl !== newUrl) {
+                    window.location.href = newUrl;
+                }
+            }
+        } catch (error) {
+            logError('getDirectPhotoLink', error);
         }
     };
 
-    // Module 2: Context Menu Integration (Right-click Blocker Neutralizer)
+    /**
+     * Module 2: Context Menu Integration (Right-click Blocker Neutralizer)
+     * Proactively removes 'oncontextmenu' attributes and stops event propagation for 'contextmenu' events.
+     * This ensures the native browser context menu is always available.
+     */
     const removeContextMenuBlockers = () => {
-        document.addEventListener('contextmenu', function(e) {
-            e.preventDefault();
-        });
+        try {
+            // Immediately stop any attempts to block the context menu.
+            // Using capture phase to ensure this runs before any other listeners on the page.
+            document.addEventListener('contextmenu', (event) => {
+                event.stopImmediatePropagation();
+            }, true); // The 'true' enables capture phase.
 
-        // MutationObserver to handle any dynamically added contextmenu blockers
-        const observer = new MutationObserver(mutations => {
-            mutations.forEach(mutation => {
-                mutation.target.removeAttribute('oncontextmenu'); // Remove inline event handlers
+            // MutationObserver to handle any dynamically added contextmenu blockers.
+            // This is more performant than observing the entire body for all changes.
+            const observer = new MutationObserver(mutations => {
+                for (const mutation of mutations) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'oncontextmenu' && mutation.target.hasAttribute('oncontextmenu')) {
+                        mutation.target.removeAttribute('oncontextmenu');
+                    }
+                }
             });
-        });
 
-        observer.observe(document.body, { childList: true, subtree: true });
+            observer.observe(document.documentElement, {
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['oncontextmenu'] // Only watch for changes to this specific attribute.
+            });
+        } catch (error) {
+            logError('removeContextMenuBlockers', error);
+        }
     };
 
-    // Module 3: Display Direct Links in Google Photos
+    /**
+     * Module 3: Display Direct Links in Google Photos
+     * Injects a floating box with reverse image search links.
+     */
     const displaySearchLinks = () => {
-        let src = window.location.href;
-        let block = `
-            <div style="background:#fff;padding:0 5px;position: fixed;z-index: 10000;left: 10px;top: 10px;">
-                <a href="https://www.google.com/searchbyimage?image_url=${src}" target="_blank">Search in Google</a><br>
-                <a href="https://yandex.ru/images/search?rpt=imageview&cbird=1&img_url=${encodeURIComponent(src).replace(/%20/g, '+')}" target="_blank">Search in Yandex</a>
-            </div>
-        `;
+        try {
+            // Prevent adding duplicate blocks.
+            if (document.getElementById('image-search-links-4ndr0')) {
+                return;
+            }
 
-        $('body').append(block);
+            const src = window.location.href;
+            const encodedSrc = encodeURIComponent(src);
+
+            const linkBlock = document.createElement('div');
+            linkBlock.id = 'image-search-links-4ndr0';
+            linkBlock.style.cssText = `
+                background: rgba(255, 255, 255, 0.9);
+                padding: 8px;
+                position: fixed;
+                z-index: 2147483647; /* Max z-index */
+                left: 10px;
+                top: 10px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                font-family: sans-serif;
+                font-size: 12px;
+            `;
+
+            linkBlock.innerHTML = `
+                <a href="https://www.google.com/searchbyimage?image_url=${encodedSrc}" target="_blank" style="color: #1a0dab; text-decoration: none;">Search Google</a><br>
+                <a href="https://yandex.com/images/search?rpt=imageview&img_url=${encodedSrc}" target="_blank" style="color: #1a0dab; text-decoration: none; margin-top: 4px; display: inline-block;">Search Yandex</a>
+            `;
+
+            document.body.appendChild(linkBlock);
+        } catch (error) {
+            logError('displaySearchLinks', error);
+        }
     };
 
-    // Module 4: Notification System (Non-blocking)
+    /**
+     * Module 4: Notification System (Non-blocking)
+     * Displays a small notification to confirm the script is active.
+     * @param {string} message - The message to display.
+     */
     const showNotification = (message) => {
-        const notification = document.createElement('div');
-        notification.style.position = 'fixed';
-        notification.style.bottom = '20px';
-        notification.style.left = '20px';
-        notification.style.padding = '10px';
-        notification.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-        notification.style.color = '#fff';
-        notification.style.fontSize = '14px';
-        notification.style.zIndex = '10001';
-        notification.style.borderRadius = '5px';
-        notification.innerText = message;
+        try {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                left: 20px;
+                padding: 12px 18px;
+                background-color: rgba(17, 17, 17, 0.85);
+                color: #fff;
+                font-family: sans-serif;
+                font-size: 14px;
+                z-index: 2147483647; /* Max z-index */
+                border-radius: 5px;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+                opacity: 0;
+                transition: opacity 0.5s ease-in-out;
+            `;
+            notification.textContent = message;
 
-        document.body.appendChild(notification);
+            document.body.appendChild(notification);
 
-        // Remove after 3 seconds
-        setTimeout(() => {
-            notification.remove();
-        }, 3000);
+            // Fade in and out for a smoother experience.
+            setTimeout(() => { notification.style.opacity = '1'; }, 100);
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                // Remove from DOM after transition completes.
+                notification.addEventListener('transitionend', () => notification.remove());
+            }, 3000);
+        } catch (error) {
+            logError('showNotification', error);
+        }
     };
 
-    // Initialize the functions
-    try {
-        // Check if it is a Google Photo URL and handle it accordingly
-        if (window.location.href.includes('googleusercontent.com')) {
+    /**
+     * Main execution block.
+     * Determines which functions to run based on the current URL.
+     */
+    const initialize = () => {
+        const currentHost = window.location.hostname;
+
+        // Always enable the context menu restoration.
+        removeContextMenuBlockers();
+
+        // Specific logic for Google User Content URLs (direct image views).
+        if (currentHost.includes('googleusercontent.com')) {
             getDirectPhotoLink();
             displaySearchLinks();
         }
 
-        // Block right-click context menu from being added dynamically
-        removeContextMenuBlockers();
+        // Notify user of script activation on relevant domains.
+        if (currentHost.includes('google.com') || currentHost.includes('googleusercontent.com')) {
+            showNotification('4ndr0tools++ Activated');
+        }
+    };
 
-        // Notify user of script activation
-        showNotification('Google Photo Direct Link Script Activated');
-    } catch (error) {
-        console.error('Error occurred in the script: ', error);
+    // Run the script after the initial page content has loaded.
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initialize);
+    } else {
+        initialize();
     }
+
 })();
