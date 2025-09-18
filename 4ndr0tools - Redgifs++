@@ -1,16 +1,16 @@
 // ==UserScript==
 // @name            4ndr0tools - Redgifs++
 // @namespace       https://github.com/4ndr0666/userscripts
+// @author          4ndr0666
+// @version         2.0
+// @description     Replaces the cluttered watch page with a clean, centered video player that can be toggled on and off.
+// @downloadURL     https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Redgifs++
+// @updateURL       https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Redgifs++
 // @match           https://*.redgifs.com/watch/*
 // @match           https://*.redgifs.com/ifr/*
 // @grant           GM_addStyle
-// @version         2.0
-// @author          hdyzen (Original Concept), 4ndr0666 (Refactor)
-// @description     Replaces the cluttered watch page with a clean, centered video player that can be toggled on and off.
 // @license         MIT
 // @run-at          document-start
-// @downloadURL    
-// @updateURL      
 // ==/UserScript==
 
 'use strict';
