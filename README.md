@@ -63,6 +63,7 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
 | GooglePhotosandDrive++ | [4ndr0tools - GooglePhotosandDrive++.user.js](./4ndr0tools%20-%20GooglePhotosandDrive++.user.js) | Restore context menus, expose direct links for Google Photos and Drive. |
 | Hailuo++ | [4ndr0tools - Hailuo++.user.js](./4ndr0tools%20-%20Hailuo++.user.js) | For educational and official red-team lab purposes only. |
 | HDImgsOnly | [4ndr0tools - HDImgsOnly.user.js](./4ndr0tools%20-%20HDImgsOnly.user.js) | Prefer high-resolution assets when available. |
+| Images++ | [4ndr0tools - Images++.user.js](./4ndr0tools%20-%20Images++.user.js) | Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. |
 | InstagramRedirect | [4ndr0tools - InstagramRedirect.user.js](./4ndr0tools%20-%20InstagramRedirect.user.js) | Privacy redirect for IG media to dumpor.com. |
 | MegaEmbedRedirector | [4ndr0tools - MegaEmbedRedirector.user.js](./4ndr0tools%20-%20MegaEmbedRedirector.user.js) | Bypass to the embedded URL and autoplays. |
 | ModelSearch | [4ndr0tools - ModelSearch.user.js](./4ndr0tools%20-%20ModelSearch.user.js) | Direct SimpCity search UI to search models on Simpcity.su directly from any website. |
