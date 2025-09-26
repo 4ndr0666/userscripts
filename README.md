@@ -69,7 +69,7 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
 | PixverseChimera | [4ndr0tools - PixverseChimera.user.js](./4ndr0tools%20-%20PixverseChimera.user.js) | For educational security research and labs only. |
 | PlanetsuzyMobileSkinRedirect | [4ndr0tools - PlanetsuzyMobileSkinRedirect.user.js](./4ndr0tools%20-%20PlanetsuzyMobileSkinRedirect.user.js) | Force a faster mobile skin where useful. |
 | RealLinkRevealer | [4ndr0tools - RealLinkRevealer.user.js](./4ndr0tools%20-%20RealLinkRevealer.user.js) | Reveal true URLs hidden as "premium" link wrappers using the parent bbCodeBlock--unfurl block's data-url attribute. |
-| Recon | [4ndr0tools - Recon.user.js](./4ndr0tools%20-%20Recon.user.js) | Red-team tool for conducting recon on targetsCaptures browser state and all API requests/responses (XHR/Fetch) without modification. For educational and lab use only. |
+| Recon | [4ndr0tools - Recon.user.js](./4ndr0tools%20-%20Recon.user.js) | Red-team tool for automated recon. Passively captures all traffic and generates a heuristic analysis report on command. For educational and lab use only. |
 | Redgifs++ | [4ndr0tools - Redgifs++.user.js](./4ndr0tools%20-%20Redgifs++.user.js) | Intercepts Redgifs links on Reddit to open them in an enhanced, cinematic overlay. Cleans up the Redgifs site itself. |
 | RmSignUpBanners | [4ndr0tools - RmSignUpBanners.user.js](./4ndr0tools%20-%20RmSignUpBanners.user.js) | Hide nagging sign-up/login overlays. |
 | SelectAllCheckboxes | [4ndr0tools - SelectAllCheckboxes.user.js](./4ndr0tools%20-%20SelectAllCheckboxes.user.js) | Check/Uncheck a fuckload of checkboxes at once. |
