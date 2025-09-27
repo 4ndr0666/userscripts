@@ -2,11 +2,19 @@
 // @name        4ndr0tools - HDImagesOnly
 // @namespace   https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     1.0
+// @version     1.1 
 // @description Prefer high-resolution assets when available.
 // @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20HDImgsOnly.user.js
 // @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20HDImgsOnly.user.js
 // @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
+// @match       https://*.deviantart.com
+// @match       https://*.simp6.jp5.su
+// @match       https://*.jp5.su
+// @match       https://*.jp6.su
+// @match       https://*.googleusercontent.com
+// @match       https://*.imgur.com
+// @match       https://*.instagr.am
+// @match       https://*.instagram.com
 // @match       https://*.imagetwist.com/*
 // @match       https://*.imgspice.com/*
 // @match       https://*.turboimagehost.com/*.html
@@ -30,155 +38,141 @@ const domainHandlers = new Map();
 /**
  * Attempts to redirect the browser to the source of an image element identified by a CSS selector.
  * @param {string} selector - The CSS selector for the image element.
- * @returns {boolean} True if redirection was attempted, false otherwise (e.g., image not found or no src).
+ * @returns {boolean} True if redirection was attempted, false otherwise.
  */
 function redirectToImage(selector) {
     const img = document.querySelector(selector);
-    // Use strict equality (===) and check for both element existence and src attribute.
-    // Ensure img.src is a non-empty string before attempting redirection.
+    // Use strict equality and ensure img.src is a non-empty string before redirecting.
     if (img && typeof img.src === 'string' && img.src.length > 0) {
-        location.href = img.src;
-        return true; // Indicate that redirection logic was executed
+        window.location.href = img.src;
+        return true;
     }
-    return false; // Indicate that no suitable image was found for redirection
+    return false;
 }
 
-// Define handlers for each domain.
-// Each handler encapsulates the specific logic for finding the image or a "continue" button.
+/**
+ * Waits for a DOM element to appear using a polling mechanism.
+ * This is far more robust than a fixed setTimeout.
+ * @param {string} selector - The CSS selector for the element to find.
+ * @param {number} [timeout=5000] - The maximum time to wait in milliseconds.
+ * @returns {Promise<Element>} A promise that resolves with the element when found, or rejects on timeout.
+ */
+function waitForElement(selector, timeout = 5000) {
+    return new Promise((resolve, reject) => {
+        const intervalTime = 100; // Check every 100ms
+        const endTime = Date.now() + timeout;
 
-// imagetwist.com handler
+        const timer = setInterval(() => {
+            const element = document.querySelector(selector);
+            if (element) {
+                clearInterval(timer);
+                resolve(element);
+            } else if (Date.now() > endTime) {
+                clearInterval(timer);
+                reject(new Error(`Element "${selector}" not found within ${timeout}ms.`));
+            }
+        }, intervalTime);
+    });
+}
+
+
+// --- Domain Handlers ---
+// Each handler encapsulates the specific logic for its domain.
+// Handlers that perform actions and then wait for a result are marked as `async`.
+
 domainHandlers.set("imagetwist.com", () => {
-    // First, try to find and redirect to the image directly.
-    if (redirectToImage(".pic")) {
-        return; // If redirected, stop further execution for this domain.
-    }
-
-    // If the image is not immediately available, look for a "Continue to your image" link.
-    // Using Array.from and .find is concise and efficient for finding a single element.
+    if (redirectToImage(".pic")) return;
     const continueButton = Array.from(document.querySelectorAll("a"))
                                 .find(element => element.innerText === "Continue to your image");
-
-    if (continueButton) {
-        // Click the button to proceed. This typically leads to a new page load
-        // where the script will run again.
-        continueButton.click();
-    }
+    if (continueButton) continueButton.click();
 });
 
-// imgspice.com handler
 domainHandlers.set("imgspice.com", () => {
-    // Directly attempt to redirect to the image.
     redirectToImage("#imgpreview");
 });
 
-// turboimagehost.com handler
 domainHandlers.set("turboimagehost.com", () => {
-    // Directly attempt to redirect to the image.
     redirectToImage(".uImage");
 });
 
-// acidimg.cc handler
-domainHandlers.set("acidimg.cc", () => {
+// This handler now uses async/await to robustly wait for the image after a click.
+domainHandlers.set("acidimg.cc", async () => {
     const submitButton = document.querySelector("input[type='submit']");
-
-    // Use a direct truthy check for the element's existence.
     if (submitButton) {
         submitButton.click();
-        // After clicking, wait for the page to potentially update and reveal the image.
-        // The original script used ".centred" for this site's final image, so we maintain that.
-        window.setTimeout(() => redirectToImage(".centred"), 2000);
+        try {
+            // Wait for the image element to appear in the DOM instead of using a blind timeout.
+            await waitForElement(".centred", 3000);
+            redirectToImage(".centred");
+        } catch (error) {
+            console.error('Ψ-Anarch:', error.message); // Log error if element doesn't appear.
+        }
     } else {
-        // If no submit button is found, assume the image is already present.
         redirectToImage(".centred");
     }
 });
 
-// imx.to handler
-domainHandlers.set("imx.to", () => {
-    // Check for either a ".button" or "#continuebutton" to proceed.
+// This handler is also upgraded to use the robust async waiting mechanism.
+domainHandlers.set("imx.to", async () => {
     const blueButton = document.querySelector(".button") || document.querySelector("#continuebutton");
-
-    // Use a direct truthy check for the element's existence.
     if (blueButton) {
         blueButton.click();
-        // After clicking, wait for the page to potentially update and reveal the image.
-        // The original script used ".centred" for this site's final image, so we maintain that.
-        window.setTimeout(() => redirectToImage(".centred"), 500);
+        try {
+            // Wait for the image element to appear, which is more reliable than a short timeout.
+            await waitForElement(".centred", 3000);
+            redirectToImage(".centred");
+        } catch (error) {
+            console.error('4ndr0666:', error.message);
+        }
     } else {
-        // If no button is found, assume the image is already present.
         redirectToImage(".centred");
     }
 });
 
-// pixhost.to handler
 domainHandlers.set("pixhost.to", () => {
-    // Directly attempt to redirect to the image.
     redirectToImage("img#image");
 });
 
-// imagebam.com handler
 domainHandlers.set("imagebam.com", () => {
-    // First, try to find and redirect to the image directly.
-    if (redirectToImage("img.main-image")) {
-        return; // If redirected, stop further execution.
-    }
-
-    // If not found, look for a "continue" anchor.
+    if (redirectToImage("img.main-image")) return;
     const anchor = document.querySelector("#continue > a");
-    if (anchor) {
-        anchor.click(); // Click to proceed, typically leads to a new page.
-    }
+    if (anchor) anchor.click();
 });
 
-// imgbox.com handler
 domainHandlers.set("imgbox.com", () => {
-    // Directly attempt to redirect to the image.
     redirectToImage("img.image-content");
 });
 
-// kropic.com handler
 domainHandlers.set("kropic.com", () => {
-    // First, try to find and redirect to the image directly.
-    if (redirectToImage("img.pic")) {
-        return; // If redirected, stop further execution.
-    }
-
-    // If not found, look for a "Continue to image..." submit button.
+    if (redirectToImage("img.pic")) return;
     const continueButton = Array.from(document.querySelectorAll("input[type='submit']"))
                                 .find(element => element.value === "Continue to image...");
-
-    if (continueButton) {
-        continueButton.click(); // Click to proceed, typically leads to a new page.
-    }
+    if (continueButton) continueButton.click();
 });
 
-// vipr.im handler
 domainHandlers.set("vipr.im", () => {
-    // Directly attempt to redirect to the image.
     redirectToImage(".img-responsive");
 });
 
-// imagevenue.com handler
 domainHandlers.set("imagevenue.com", () => {
-    // Directly attempt to redirect to the image.
     redirectToImage("#main-image");
 });
 
-// Main execution block (Immediately Invoked Function Expression - IIFE)
+// --- Main Execution Block (IIFE) ---
 (function() {
-    'use strict'; // Enforce strict mode for cleaner code and fewer silent errors.
+    'use strict';
 
-    // Get the current hostname and remove "www." for consistent matching with domain patterns.
-    const currentDomain = location.hostname.replace(/^www\./, '');
+    // Get the current hostname, stripping "www." for consistent matching.
+    const currentDomain = window.location.hostname.replace(/^www\./, '');
 
-    // Iterate through the defined domain handlers.
-    // Using a Map and iterating allows for a more organized and extensible structure
-    // compared to a long if/else if chain.
+    // Iterate through the defined domain handlers to find a match.
     for (const [domainPattern, handler] of domainHandlers.entries()) {
-        // Check if the current domain includes the pattern defined in the map.
         if (currentDomain.includes(domainPattern)) {
-            handler(); // Execute the specific handler function for the matched domain.
-            return;    // Exit the script after the first matching handler is executed.
+            // Execute the handler for the matched domain.
+            // The handler itself will manage any asynchronous operations.
+            handler();
+            // Stop searching once the correct handler is found and executed.
+            return;
         }
     }
 })();
