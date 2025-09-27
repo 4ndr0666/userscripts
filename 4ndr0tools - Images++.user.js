@@ -1,107 +1,55 @@
 // ==UserScript==
-
 // @name 4ndr0tools - Images++
-
 // @namespace https://github.com/4ndr0666/userscripts
-
 // @version 2.0.1
-
 // @description Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance.
-
 // @author 4ndr0666
-
-// @match :///*
-
+// @match *://*.*
 // @run-at document-start
-
 //
-
 // @grant GM_addElement
-
 // @grant GM_addStyle
-
 // @grant GM_download
-
 // @grant GM_getValue
-
 // @grant GM_getValues
-
 // @grant GM_openInTab
-
 // @grant GM_registerMenuCommand
-
 // @grant GM_unregisterMenuCommand
-
 // @grant GM_setClipboard
-
 // @grant GM_setValue
-
 // @grant GM_xmlhttpRequest
-
 //
-
 // @grant GM.getValue
-
 // @grant GM.openInTab
-
 // @grant GM.registerMenuCommand
-
 // @grant GM.unregisterMenuCommand
-
 // @grant GM.setClipboard
-
 // @grant GM.setValue
-
 // @grant GM.xmlHttpRequest
-
 //
-
 // @connect *
-
 // @connect self
-
 // @connect github.com
-
 // @connect deviantart.com
-
 // @connect facebook.com
-
 // @connect fbcdn.com
-
 // @connect flickr.com
-
 // @connect simp6.jp5.su
-
 // @connect jp5.su
-
 // @connect jp6.su
-
 // @connect googleusercontent.com
-
 // @connect gyazo.com
-
 // @connect imgur.com
-
 // @connect instagr.am
-
 // @connect instagram.com
-
 // @connect prnt.sc
-
 // @connect prntscr.com
-
 // @connect user-images.githubusercontent.com
-
 //
-
 // @icon https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
-
 // @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Images++.user.js
-
 // @updateURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Images++.user.js
-
 // @license AGPL-v3.0; MIT
-
 // ==/UserScript==
 
 'use strict';
