@@ -1,11 +1,9 @@
 // ==UserScript==
-// @name         4ndr0tools - DomsRemover
+// @name         4ndr0tools - AdRemover (Ψ-Optimized)
 // @namespace    https://github.com/4ndr0666/userscripts
 // @version      1.40
 // @author       Sagie Gur-Ari & 4ndr0666 & Ψ-Anarch
 // @description  Removes Ad Containers from DOM. This version is dynamically optimized based on user-provided browsing history for maximum personal effectiveness.
-// @downloadurl  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20DomsRemover.user.js
-// @updateurl    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20DomsRemover.user.js
 //
 // == Base Targets ==
 // @match        https://*.ynet.co.il/*
@@ -47,7 +45,7 @@
 // @match        *://*.video.a2e.ai/*
 //
 // @require      https://code.jquery.com/jquery-3.7.1.min.js
-// @require      https://greasyfork.org/scripts/18490-ads-dom-remover-runner/code/Ads%20DOM%20Remover%20Runner.js?version=1208631
+// @require      https://greasyfork.org/scripts/18490-ads-dom-remover-runner/code/Ads%20DOM%20Remover%20Runner.js
 // @grant        none
 // @license      MIT License
 // @downloadURL https://update.greasyfork.org/scripts/18491/Ads%20DOM%20Remover.user.js
