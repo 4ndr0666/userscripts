@@ -74,7 +74,7 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
 | Redgifs++ | [4ndr0tools - Redgifs++.user.js](./4ndr0tools%20-%20Redgifs++.user.js) | Intercepts Redgifs links on Reddit to open them in an enhanced, cinematic overlay. Cleans up the Redgifs site itself for a focused viewing experience. |
 | RmSignUpBanners | [4ndr0tools - RmSignUpBanners.user.js](./4ndr0tools%20-%20RmSignUpBanners.user.js) | A configurable and performant solution to hide nagging sign-up/login overlays, cookie banners, and other visual noise. |
 | SelectAllCheckboxes | [4ndr0tools - SelectAllCheckboxes.user.js](./4ndr0tools%20-%20SelectAllCheckboxes.user.js) | Check/Uncheck a fuckload of checkboxes at once. |
-| Sora Toolkit | [4ndr0tools - Sora Toolkit.user.js](./4ndr0tools%20-%20Sora%20Toolkit.user.js) | Sora utils such as single-key hot-keys, batch-downloads, auto-refreshes a stuck job after 20s and more. |
+| Sora Toolkit | [4ndr0tools - Sora Toolkit.user.js](./4ndr0tools%20-%20Sora%20Toolkit.user.js) | Auto-refreshes stuck Sora generation jobs after a configurable timeout to help you get your assets faster. |
 | YandexImageSearch++ | [4ndr0tools - YandexImageSearch++.user.js](./4ndr0tools%20-%20YandexImageSearch++.user.js) | Robust, event-driven slideshow, fullscreen preview, and on-screen status for Yandex reverse-image search. |
 | YouTubeEmbedRedirectButton | [4ndr0tools - YouTubeEmbedRedirectButton.user.js](./4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js) | Floating button for redirects to embedded version. Right click it to set a keybind (default Ctrl+E). |
 | YtdlcProtocol | [4ndr0tools - YtdlcProtocol.user.js](./4ndr0tools%20-%20YtdlcProtocol.user.js) | Personal `ytdl://`-style protocol trigger for using yt-dlp with cookies. |
