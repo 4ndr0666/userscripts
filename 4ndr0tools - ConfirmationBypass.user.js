@@ -3,12 +3,13 @@
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666
 // @description  Unfucks the "Are you sure?" bullshit when opening links.
-// @version      2.0.0
+// @version      2.1.0
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-ConfirmationBypass.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-ConfirmationBypass.user.js
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 //
 // ------ WARNING: ONLY use a specific url --------------
+// @match        https://forums.socialmediagirls.com/*
 // @match        https://forums.socialmediagirls.com/goto/link-confirmation*
 // ------ WARNING ------------------------------------
 //
@@ -20,51 +21,123 @@
 (() => {
   'use strict';
 
-  /* ------------------------------------------------------------------
-     1.  Click the “OK / Continue” button as soon as it exists.
-     ------------------------------------------------------------------ */
-  const BTN_SELECTOR = '.button--cta, .button--cta .button-text';
+  // =================================================================================
+  // SCRIPT ROUTER
+  // Determines which functionality to run based on the current page URL.
+  // =================================================================================
 
-  /** try to click; return true if successful */
-  const clickConfirm = () => {
-    const btn = document.querySelector(BTN_SELECTOR);
-    if (btn) {
-      btn.dispatchEvent(
-        new MouseEvent('click', { bubbles: true, cancelable: true })
-      );
-      return true;
-    }
-    return false;
-  };
+  const currentUrl = window.location.href;
 
-  // First quick attempt (page may already be ready)
-  if (!clickConfirm()) {
-    /* Fallback: monitor the DOM until the button appears, then click */
-    const mo = new MutationObserver(() => {
-      if (clickConfirm()) mo.disconnect();
-    });
-    mo.observe(document.documentElement, { childList: true, subtree: true });
+  if (currentUrl.includes('/goto/link-confirmation')) {
+    // We are on the confirmation page, so we run the bypass logic.
+    initializeConfirmationBypass();
+  } else {
+    // We are on a regular forum page, so we set up the external link handler.
+    initializeExternalLinkSafety();
   }
 
-  /* ------------------------------------------------------------------
-     2.  On the *origin* forum pages, force external links to open safely
-     ------------------------------------------------------------------ */
-  const ownOrigin = 'https://forum.example.com'; // change to forum origin
+  // =================================================================================
+  // 1. CONFIRMATION PAGE BYPASS LOGIC
+  // Clicks the “OK / Continue” button as soon as it appears in the DOM.
+  // =================================================================================
 
-  document.body.addEventListener(
-    'click',
-    (ev) => {
-      const a = ev.target.closest('a[href]');
-      if (!a) return;
+  /**
+   * Sets up the logic to find and click the confirmation button.
+   */
+  function initializeConfirmationBypass() {
+    const CONFIRM_BUTTON_SELECTOR = '.button--cta, .button--cta .button-text';
 
-      // Skip internal links
-      const dest = new URL(a.href, location.href);
-      if (dest.origin === ownOrigin) return;
+    /**
+     * Attempts to find and click the confirmation button.
+     * @returns {boolean} - True if the button was found and clicked, otherwise false.
+     */
+    const clickConfirmButton = () => {
+      const buttonElement = document.querySelector(CONFIRM_BUTTON_SELECTOR);
+      if (buttonElement) {
+        // Dispatch a synthetic mouse event, which is more reliable than .click()
+        // for elements with complex event listeners.
+        buttonElement.dispatchEvent(
+          new MouseEvent('click', { bubbles: true, cancelable: true })
+        );
+        return true;
+      }
+      return false;
+    };
 
-      // Ensure safety: new tab + noopener/noreferrer
-      a.target = '_blank';
-      a.rel = `${a.rel || ''} noopener noreferrer`.trim();
-    },
-    true /* capture – fires before site JS */
-  );
+    // Attempt an immediate click in case the page is already fully loaded.
+    if (!clickConfirmButton()) {
+      // If the button isn't ready, observe the DOM for changes.
+      // This is a robust fallback for pages that load content dynamically.
+      const observer = new MutationObserver(() => {
+        if (clickConfirmButton()) {
+          // Once the button is clicked, we no longer need to observe.
+          observer.disconnect();
+        }
+      });
+
+      observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+      });
+    }
+  }
+
+  // =================================================================================
+  // 2. EXTERNAL LINK SAFETY LOGIC
+  // On origin forum pages, intercepts clicks on external links to ensure they
+  // open safely in a new tab.
+  // =================================================================================
+
+  /**
+   * Sets up a global click listener to handle external links securely.
+   */
+  function initializeExternalLinkSafety() {
+    // Use location.origin to dynamically and correctly identify the host site.
+    // This removes the need for a hardcoded, potentially incorrect placeholder.
+    const internalOrigin = location.origin;
+
+    /**
+     * Handles click events to secure external links.
+     * @param {MouseEvent} event - The click event.
+     */
+    const secureExternalLink = (event) => {
+      // Use .closest() to find the nearest parent anchor tag from the click target.
+      const anchorTag = event.target.closest('a[href]');
+      if (!anchorTag) {
+        return; // The click was not on or within a link.
+      }
+
+      try {
+        // Resolve the link's href relative to the current page's location.
+        const destinationUrl = new URL(anchorTag.href, location.href);
+
+        // If the link's origin is the same as the current site, do nothing.
+        if (destinationUrl.origin === internalOrigin) {
+          return;
+        }
+
+        // For all external links, enforce security best practices.
+        anchorTag.target = '_blank'; // Always open in a new tab.
+
+        // Robustly add 'noopener' and 'noreferrer' to the rel attribute.
+        // Using a Set prevents duplicates if the attributes are already present.
+        const relValues = new Set(anchorTag.rel ? anchorTag.rel.split(/\s+/) : []);
+        relValues.add('noopener');
+        relValues.add('noreferrer');
+        anchorTag.rel = Array.from(relValues).join(' ');
+
+      } catch (error) {
+        // Add robust error handling in case of an invalid `href` attribute.
+        console.error('4ndr0tools-ConfirmationBypass: Failed to process link.', {
+          href: anchorTag.href,
+          error: error,
+        });
+      }
+    };
+
+    // Add the event listener to the document body in the capture phase.
+    // The capture phase (true) ensures this script runs *before* the site's
+    // own JavaScript, preventing potential conflicts or overrides.
+    document.body.addEventListener('click', secureExternalLink, true);
+  }
 })();
