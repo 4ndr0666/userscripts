@@ -1,286 +1,548 @@
 // ==UserScript==
-// @name         4ndr0tools - Images++
-// @namespace    https://github.com/4ndr0666/userscripts
-// @version      2.0.0
-// @description  Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance.
-// @author       4ndr0666
-// @match        *://*./*
-// @run-at       document-start
+
+// @name 4ndr0tools - Images++
+
+// @namespace https://github.com/4ndr0666/userscripts
+
+// @version 2.0.1
+
+// @description Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance.
+
+// @author 4ndr0666
+
+// @match :///*
+
+// @run-at document-start
+
 //
-// @grant        GM_addElement
-// @grant        GM_addStyle
-// @grant        GM_download
-// @grant        GM_getValue
-// @grant        GM_getValues
-// @grant        GM_openInTab
-// @grant        GM_registerMenuCommand
-// @grant        GM_unregisterMenuCommand
-// @grant        GM_setClipboard
-// @grant        GM_setValue
-// @grant        GM_xmlhttpRequest
+
+// @grant GM_addElement
+
+// @grant GM_addStyle
+
+// @grant GM_download
+
+// @grant GM_getValue
+
+// @grant GM_getValues
+
+// @grant GM_openInTab
+
+// @grant GM_registerMenuCommand
+
+// @grant GM_unregisterMenuCommand
+
+// @grant GM_setClipboard
+
+// @grant GM_setValue
+
+// @grant GM_xmlhttpRequest
+
 //
-// @grant        GM.getValue
-// @grant        GM.openInTab
-// @grant        GM.registerMenuCommand
-// @grant        GM.unregisterMenuCommand
-// @grant        GM.setClipboard
-// @grant        GM.setValue
-// @grant        GM.xmlHttpRequest
+
+// @grant GM.getValue
+
+// @grant GM.openInTab
+
+// @grant GM.registerMenuCommand
+
+// @grant GM.unregisterMenuCommand
+
+// @grant GM.setClipboard
+
+// @grant GM.setValue
+
+// @grant GM.xmlHttpRequest
+
 //
-// @connect      *
-// @connect      self
-// @connect      github.com
-// @connect      deviantart.com
-// @connect      facebook.com
-// @connect      fbcdn.com
-// @connect      flickr.com
-// @connect      simp6.jp5.su
-// @connect      jp5.su
-// @connect      jp6.su
-// @connect      googleusercontent.com
-// @connect      gyazo.com
-// @connect      imgur.com
-// @connect      instagr.am
-// @connect      instagram.com
-// @connect      prnt.sc
-// @connect      prntscr.com
-// @connect      user-images.githubusercontent.com
+
+// @connect *
+
+// @connect self
+
+// @connect github.com
+
+// @connect deviantart.com
+
+// @connect facebook.com
+
+// @connect fbcdn.com
+
+// @connect flickr.com
+
+// @connect simp6.jp5.su
+
+// @connect jp5.su
+
+// @connect jp6.su
+
+// @connect googleusercontent.com
+
+// @connect gyazo.com
+
+// @connect imgur.com
+
+// @connect instagr.am
+
+// @connect instagram.com
+
+// @connect prnt.sc
+
+// @connect prntscr.com
+
+// @connect user-images.githubusercontent.com
+
 //
-// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
-// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Images++.user.js
-// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Images++.user.js
-// @license      AGPL-v3.0; MIT
+
+// @icon https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
+
+// @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Images++.user.js
+
+// @updateURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Images++.user.js
+
+// @license AGPL-v3.0; MIT
+
 // ==/UserScript==
 
 'use strict';
 
 //#region Globals
 
-/** @type mpiv.Config */
+/ @type mpiv.Config */
+
 let cfg;
-/** @type mpiv.AppInfo */
+
+/ @type mpiv.AppInfo */
+
 let ai = {rule: {}};
-/** @type Element */
+
+/ @type Element */
+
 let elSetup;
+
 let nonce;
 
 const doc = document;
+
 const hostname = location.hostname;
+
 const dotDomain = '.' + hostname;
+
 const isFF = CSS.supports('-moz-appearance', 'none');
+
 const AudioContext = window.AudioContext || function () {};
+
 const {from: arrayFrom, isArray} = Array;
 
 const PREFIX = 'mpiv-';
+
 const NOAA_ATTR = 'data-no-aa';
-const STATUS_ATTR = `${PREFIX}status`;
+
+const STATUS_ATTR = ${PREFIX}status;
+
 const MSG = Object.assign({}, ...[
-  'getViewSize',
-  'viewSize',
-].map(k => ({[k]: `${PREFIX}${k}`})));
+
+'getViewSize',
+
+'viewSize',
+
+].map(k => ({[k]: ${PREFIX}${k}})));
+
 const WHEEL_EVENT = 'onwheel' in doc ? 'wheel' : 'mousewheel';
+
 // time for volatile things to settle down meanwhile we postpone action
+
 // examples: loading image from cache, quickly moving mouse over one element to another
+
 const SETTLE_TIME = 50;
+
 // used to detect JS code in host rules
+
 const RX_HAS_CODE = /(^|[^-\w])return[\W\s]/;
+
 const RX_EVAL_BLOCKED = /'Trusted(Script| Type)'|unsafe-eval/;
+
 const RX_MEDIA_URL = /^(?!data:)[^?#]+?\.(avif|bmp|jpe?g?|gif|mp4|png|svgz?|web[mp])($|[?#])/i;
+
 const BLANK_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
 const ZOOM_MAX = 16;
+
 const SYM_U = Symbol('u');
+
 const FN_ARGS = {
-  s: ['m', 'node', 'rule'],
-  c: ['text', 'doc', 'node', 'rule'],
-  q: ['text', 'doc', 'node', 'rule'],
-  g: ['text', 'doc', 'url', 'm', 'rule', 'node', 'cb'],
+
+s: ['m', 'node', 'rule'],
+
+c: ['text', 'doc', 'node', 'rule'],
+
+q: ['text', 'doc', 'node', 'rule'],
+
+g: ['text', 'doc', 'url', 'm', 'rule', 'node', 'cb'],
+
 };
+
 let trustedHTML, trustedScript;
+
 //#endregion
+
 //#region GM4 polyfill
 
-if (typeof GM === 'undefined' || !GM.xmlHttpRequest)
-  this.GM = {__proto__: null, info: GM_info};
-if (!GM.getValue)
-  GM.getValue = GM_getValue; // we use it only with `await` so no need to return a Promise
-if (!GM.setValue)
-  GM.setValue = GM_setValue; // we use it only with `await` so no need to return a Promise
-if (!GM.openInTab)
-  GM.openInTab = GM_openInTab;
-if (!GM.registerMenuCommand && typeof GM_registerMenuCommand === 'function')
-  GM.registerMenuCommand = GM_registerMenuCommand;
-if (!GM.unregisterMenuCommand && typeof GM_unregisterMenuCommand === 'function')
-  GM.unregisterMenuCommand = GM_unregisterMenuCommand;
-if (!GM.setClipboard)
-  GM.setClipboard = GM_setClipboard;
-if (!GM.xmlHttpRequest)
-  GM.xmlHttpRequest = GM_xmlhttpRequest;
-// Polyfill for GM_addStyle for maximum compatibility, though MPIV has its own Util.addStyle
-if (typeof GM_addStyle === 'undefined') {
-    this.GM_addStyle = (css) => {
-        const style = document.createElement('style');
-        style.textContent = css;
-        document.head.append(style);
-        return style;
-    };
+if (typeof GM === 'undefined' || !GM.xmlHttpRequest) {
+
+this.GM = {__proto__: null, info: GM_info};
+
 }
 
+if (!GM.getValue) {
+
+GM.getValue = GM_getValue; // we use it only with await so no need to return a Promise
+
+}
+
+if (!GM.setValue) {
+
+GM.setValue = GM_setValue; // we use it only with await so no need to return a Promise
+
+}
+
+if (!GM.openInTab) {
+
+GM.openInTab = GM_openInTab;
+
+}
+
+if (!GM.registerMenuCommand && typeof GM_registerMenuCommand === 'function') {
+
+GM.registerMenuCommand = GM_registerMenuCommand;
+
+}
+
+if (!GM.unregisterMenuCommand && typeof GM_unregisterMenuCommand === 'function') {
+
+GM.unregisterMenuCommand = GM_unregisterMenuCommand;
+
+}
+
+if (!GM.setClipboard) {
+
+GM.setClipboard = GM_setClipboard;
+
+}
+
+if (!GM.xmlHttpRequest) {
+
+GM.xmlHttpRequest = GM_xmlhttpRequest;
+
+}
+
+// Polyfill for GM_addStyle for maximum compatibility, though MPIV has its own Util.addStyle
+
+if (typeof GM_addStyle === 'undefined') {
+
+this.GM_addStyle = (css) => {
+
+const style = document.createElement('style');
+
+style.textContent = css;
+
+document.head.append(style);
+
+return style;
+
+};
+
+}
 
 //#endregion
+
+// The App object serves as the main controller for the script's lifecycle.
 
 const App = {
 
-  isEnabled: true,
-  isImageTab: false,
-  globalStyle: '',
-  popupStyleBase: '',
-  tabfix: /\.(dumpoir|greatfon|picuki)\.com$/.test(dotDomain),
-  NOP: /\.(facebook|instagram|chrome|google)\.com$/.test(dotDomain) &&
-    (() => {}),
+isEnabled: true,
 
-  activate(info, event) {
-    const {match, node, rule, url} = info;
-    const auto = cfg.start === 'auto';
-    const vidCtrl = cfg.videoCtrl && isVideo(node);
-    if (elSetup) console.info({node, rule, url, match});
-    if (auto && vidCtrl && !Events.ctrl)
-      return;
-    if (ai.node) App.deactivate();
-    ai = info;
-    ai.force = Events.ctrl;
-    ai.gNum = 0;
-    ai.zooming = cfg.css.includes(`${PREFIX}zooming`);
-    Util.suppressTooltip();
-    Calc.updateViewSize();
-    Events.ctrl = false;
-    Events.toggle(true);
-    Events.trackMouse(event);
-    if (ai.force && (auto || cfg.start === 'ctrl' || cfg.start === 'context')) {
-      App.start();
-    } else if ((auto || cfg.preload) && !vidCtrl && !rule.manual) {
-      App.belate(auto);
-    } else {
-      Status.set('ready');
-    }
-  },
+isImageTab: false,
 
-  belate(auto) {
-    if (cfg.preload) {
-      ai.preloadStart = auto ? now() : -1;
-      App.start();
-      Status.set('+preloading');
-    } else {
-      ai.timer = setTimeout(App.start, cfg.delay);
-    }
-  },
+globalStyle: '',
 
-  checkProgress({start} = {}) {
-    const p = ai.popup;
-    if (!p)
-      return;
-    const w = ai.nwidth = p.naturalWidth || p.videoWidth || ai.popupLoaded && innerWidth / 2;
-    const h = ai.nheight = p.naturalHeight || p.videoHeight || ai.popupLoaded && innerHeight / 2;
-    if (h)
-      return App.canCommit(w, h);
-    if (start) {
-      clearInterval(ai.timerProgress);
-      ai.timerProgress = setInterval(App.checkProgress, 150);
-    }
-  },
+popupStyleBase: '',
 
-  canClose: (p = ai.popup) => !p || (
-    isVideo(p)
-      ? !cfg.keepVids
-      : document.fullscreenElement !== p
-  ),
+tabfix: /\.(dumpoir|greatfon|picuki)\.com$/.test(dotDomain),
 
-  canCommit(w, h) {
-    if (!ai.force && ai.rect && !ai.gItems &&
-        Math.max(w / (ai.rect.width || 1), h / (ai.rect.height || 1)) < cfg.scale) {
-      App.deactivate();
-      return false;
-    }
-    App.stopTimers();
-    let wait = ai.preloadStart;
-    if (wait < 0 && !ai.force || !ai.popup)
-      return;
-    if (wait > 0 && (wait += cfg.delay - now()) > 0) {
-      ai.timer = setTimeout(App.checkProgress, wait);
-    } else if ((!w || !h) && (ai.urls || []).length) {
-      App.handleError({type: 'error'});
-    } else {
-      App.commit();
-    }
-    return true;
-  },
+NOP: /\.(facebook|instagram|chrome|google)\.com$/.test(dotDomain) &&
 
-  async commit() {
-    const p = ai.popupShown = ai.popup;
-    const isDecoded = cfg.waitLoad && isFunction(p.decode);
-    if (isDecoded) {
-      await p.decode();
-      if (p !== ai.popup)
-        return;
-    }
-    Status.set('-preloading');
-    App.updateStyles();
-    Calc.measurePopup();
-    const willZoom = cfg.zoom === 'auto' || App.isImageTab && cfg.imgtab;
-    const willMove = !willZoom || App.toggleZoom({keepScale: true}) === undefined;
-    if (willMove)
-      Popup.move();
-    Bar.updateName();
-    Bar.updateDetails();
-    Status.set(!ai.popupLoaded && 'loading');
-    ai.large = ai.nwidth > p.clientWidth + ai.extras.w ||
-               ai.nheight > p.clientHeight + ai.extras.h;
-    if (ai.large) {
-      Status.set('+large');
-      // prevent a blank bg+border in FF
-      if (isFF && p.complete && !isDecoded)
-        p.style.backgroundImage = `url('${p.src}')`;
-    }
-    if (ai.preloadStart < 0 && isFunction(p.play))
-      p.play().catch(now);
-  },
+(() => {}),
 
-  deactivate({wait} = {}) {
-    App.stopTimers(true);
-    if (ai.req)
-      tryCatch(ai.req.abort);
-    if (ai.tooltip)
-      ai.tooltip.node.title = ai.tooltip.text;
-    Status.set(false);
-    Bar.set(false);
-    Events.toggle(false);
-    Popup.destroy();
-    if (wait) {
-      App.isEnabled = false;
-      setTimeout(App.enable, 200);
-    }
-    ai = {rule: {}};
-  },
+activate(info, event) {
 
-  enable() {
-    App.isEnabled = true;
-  },
+const {match, node, rule, url} = info;
 
-  handleError(e, rule = ai.rule) {
-    if (rule && rule.onerror === 'skip')
-      return;
-    if (ai.imageUrl &&
-        !ai.xhr &&
-        !ai.imageUrl.startsWith(location.origin + '/') &&
-        location.protocol === 'https:' &&
-        CspSniffer.init) {
-      Popup.create(ai.imageUrl, ai.pageUrl, e);
-      return;
-    }
-    const fe = Util.formatError(e, rule);
-    if (!rule || !ai.urls || !ai.urls.length)
-      console.warn(...fe);
-    if (ai.urls && ai.urls.length) {
-      ai.url = ai.urls.shift();
+const auto = cfg.start === 'auto';
+
+const vidCtrl = cfg.videoCtrl && isVideo(node);
+
+if (elSetup) console.info({node, rule, url, match});
+
+if (auto && vidCtrl && !Events.ctrl)
+
+return;
+
+if (ai.node) App.deactivate();
+
+ai = info;
+
+ai.force = Events.ctrl;
+
+ai.gNum = 0;
+
+ai.zooming = cfg.css.includes(${PREFIX}zooming);
+
+Util.suppressTooltip();
+
+Calc.updateViewSize();
+
+Events.ctrl = false;
+
+Events.toggle(true);
+
+Events.trackMouse(event);
+
+if (ai.force && (auto || cfg.start === 'ctrl' || cfg.start === 'context')) {
+
+App.start();
+
+} else if ((auto || cfg.preload) && !vidCtrl && !rule.manual) {
+
+App.belate(auto);
+
+} else {
+
+Status.set('ready');
+
+}
+
+},
+
+belate(auto) {
+
+if (cfg.preload) {
+
+ai.preloadStart = auto ? now() : -1;
+
+App.start();
+
+Status.set('+preloading');
+
+} else {
+
+ai.timer = setTimeout(App.start, cfg.delay);
+
+}
+
+},
+
+checkProgress({start} = {}) {
+
+const p = ai.popup;
+
+if (!p)
+
+return;
+
+const w = ai.nwidth = p.naturalWidth || p.videoWidth || ai.popupLoaded && innerWidth / 2;
+
+const h = ai.nheight = p.naturalHeight || p.videoHeight || ai.popupLoaded && innerHeight / 2;
+
+if (h)
+
+return App.canCommit(w, h);
+
+if (start) {
+
+clearInterval(ai.timerProgress);
+
+ai.timerProgress = setInterval(App.checkProgress, 150);
+
+}
+
+},
+
+canClose: (p = ai.popup) => !p || (
+
+isVideo(p)
+
+? !cfg.keepVids
+
+: document.fullscreenElement !== p
+
+),
+
+canCommit(w, h) {
+
+if (!ai.force && ai.rect && !ai.gItems &&
+
+Math.max(w / (ai.rect.width || 1), h / (ai.rect.height || 1)) < cfg.scale) {
+
+App.deactivate();
+
+return false;
+
+}
+
+App.stopTimers();
+
+let wait = ai.preloadStart;
+
+if (wait < 0 && !ai.force || !ai.popup)
+
+return;
+
+if (wait > 0 && (wait += cfg.delay - now()) > 0) {
+
+ai.timer = setTimeout(App.checkProgress, wait);
+
+} else if ((!w || !h) && (ai.urls || []).length) {
+
+App.handleError({type: 'error'});
+
+} else {
+
+App.commit();
+
+}
+
+return true;
+
+},
+
+async commit() {
+
+const p = ai.popupShown = ai.popup;
+
+const isDecoded = cfg.waitLoad && isFunction(p.decode);
+
+if (isDecoded) {
+
+await p.decode();
+
+if (p !== ai.popup)
+
+return;
+
+}
+
+Status.set('-preloading');
+
+App.updateStyles();
+
+Calc.measurePopup();
+
+const willZoom = cfg.zoom === 'auto' || App.isImageTab && cfg.imgtab;
+
+const willMove = !willZoom || App.toggleZoom({keepScale: true}) === undefined;
+
+if (willMove)
+
+Popup.move();
+
+Bar.updateName();
+
+Bar.updateDetails();
+
+Status.set(!ai.popupLoaded && 'loading');
+
+ai.large = ai.nwidth > p.clientWidth + ai.extras.w ||
+
+ai.nheight > p.clientHeight + ai.extras.h;
+
+if (ai.large) {
+
+Status.set('+large');
+
+// prevent a blank bg+border in FF
+
+if (isFF && p.complete && !isDecoded)
+
+p.style.backgroundImage = url('${p.src}');
+
+}
+
+if (ai.preloadStart < 0 && isFunction(p.play))
+
+p.play().catch(now);
+
+},
+
+deactivate({wait} = {}) {
+
+App.stopTimers(true);
+
+if (ai.req)
+
+tryCatch(ai.req.abort);
+
+if (ai.tooltip)
+
+ai.tooltip.node.title = ai.tooltip.text;
+
+Status.set(false);
+
+Bar.set(false);
+
+Events.toggle(false);
+
+Popup.destroy();
+
+if (wait) {
+
+App.isEnabled = false;
+
+setTimeout(App.enable, 200);
+
+}
+
+ai = {rule: {}};
+
+},
+
+enable() {
+
+App.isEnabled = true;
+
+},
+
+handleError(e, rule = ai.rule) {
+
+if (rule && rule.onerror === 'skip')
+
+return;
+
+if (ai.imageUrl &&
+
+!ai.xhr &&
+
+!ai.imageUrl.startsWith(location.origin + '/') &&
+
+location.protocol === 'https:' &&
+
+CspSniffer.init) {
+
+Popup.create(ai.imageUrl, ai.pageUrl, e);
+
+return;
+
+}
+
+const fe = Util.formatError(e, rule);
+
+if (!rule || !ai.urls || !ai.urls.length)
+
+console.warn(...fe);
+
+if (ai.urls && ai.urls.length) {
+
+ai.url = ai.urls.shift();
       if (ai.url) {
         App.stopTimers();
         App.startSingle();
@@ -784,7 +1046,7 @@ const CspSniffer = {
     this.busy = new Promise(resolve => {
       const xhr = new XMLHttpRequest();
       xhr.open('get', location);
-      xhr.timeout = Math.max(2000, (performance.timing.responseEnd - performance.timeOrigin) * 2);
+      xhr.timeout = Math.max(2000, (performance.timing?.responseEnd - performance.timeOrigin) * 2);
       xhr.onreadystatechange = () => {
         if (xhr.readyState >= xhr.HEADERS_RECEIVED) {
           this.csp = this._parse([
@@ -1645,8 +1907,8 @@ const Ruler = {
       }, {
         e: '.dev-view-deviation img',
         s: () => [
-          $('.dev-page-download').href,
-          $('.dev-content-full').src,
+          $('.dev-page-download')?.href,
+          $('.dev-content-full')?.src,
         ].filter(Boolean),
       }, {
         e: 'a[data-hook=deviation_link]',
@@ -1729,7 +1991,7 @@ const Ruler = {
           if (location.pathname.startsWith('/p/') || location.pathname.startsWith('/tv/')) {
             img = $('img[srcset], video', node.parentNode);
             if (img && (isVideo(img) || parseFloat(img.sizes) > 900))
-              src = (img.srcset || img.currentSrc).split(',').pop().split(' ')[0];
+              src = (img.srcset || img.currentSrc)?.split(',').pop().split(' ')[0];
           }
           if (!src && (n = node.closest('a[href*="/p/"], article'))) {
             a = n.tagName === 'A' ? n : $('a[href*="/p/"]', n);
@@ -1753,19 +2015,19 @@ const Ruler = {
         _g(text, doc, url, m, rule) {
           const json = tryJSON(text);
           const media =
-            pick(json, 'graphql.shortcode_media') ||
+            pick(json, 'graphql.shortcode_media') ??
             pick(json, 'items.0');
           const items =
             pick(media, 'edge_sidecar_to_children.edges', res => res.map(e => ({
               url: e.node.video_url || e.node.display_url,
-            }))) ||
+            }))) ??
             pick(media, 'carousel_media', res => res.map(e => ({
-              url: pick(e, 'video_versions.0.url') || pick(e, 'image_versions2.candidates.0.url'),
+              url: pick(e, 'video_versions.0.url') ?? pick(e, 'image_versions2.candidates.0.url'),
             })));
           items.title = rule._getCaption(media) || '';
           return items;
         },
-        _getCaption: data => pick(data, 'caption.text') ||
+        _getCaption: data => pick(data, 'caption.text') ??
           pick(data, 'edge_media_to_caption.edges.0.node.text'),
       }); break;
 
@@ -2040,18 +2302,18 @@ const Ruler = {
         s: 'gallery', // suppressing an unused network request for remote `document`
         async g() {
           let u = `https://imgur.com/ajaxalbums/getimages/${ai.url.split(/[/?#]/)[4]}/hit.json?all=true`;
-          let info = tryJSON((await Req.gmXhr(u)).responseText) || 0;
-          let images = (info.data || 0).images || [];
+          let info = tryJSON((await Req.gmXhr(u)).responseText) ?? 0;
+          let images = info?.data?.images ?? [];
           if (!images[0]) {
             info = (await Req.gmXhr(ai.url)).responseText.match(/postDataJSON=(".*?")<|$/)[1];
-            info = tryJSON(tryJSON(info)) || 0;
+            info = tryJSON(tryJSON(info)) ?? 0;
             images = info.media;
           }
           const items = [];
           for (const img of images) {
             const meta = img.metadata || img;
             items.push({
-              url: img.url ||
+              url: img.url ??
                 (u = `https://i.imgur.com/${img.hash}`) && (
                   img.ext === '.gif' && img.animated !== false ?
                     [`${u}.webm`, `${u}.mp4`, u] :
@@ -2101,18 +2363,18 @@ const Ruler = {
         s: m => m.input.substr(0, m.input.lastIndexOf('/')).replace('/liked_by', '') +
         '/?__a=1&__d=dis',
         q: m => (m = tryJSON(m)) && (
-          m = pick(m, 'graphql.shortcode_media') || pick(m, 'items.0') || 0
+          m = pick(m, 'graphql.shortcode_media') ?? pick(m, 'items.0') ?? 0
         ) && (
-          m.video_url ||
-          m.display_url ||
-          pick(m, 'video_versions.0.url') ||
-          pick(m, 'carousel_media.0.image_versions2.candidates.0.url') ||
+          m.video_url ??
+          m.display_url ??
+          pick(m, 'video_versions.0.url') ??
+          pick(m, 'carousel_media.0.image_versions2.candidates.0.url') ??
           pick(m, 'image_versions2.candidates.0.url')
         ),
         rect: 'div.PhotoGridMediaItem',
         c: m => (m = tryJSON(m)) && (
-          pick(m, 'items.0.caption.text') ||
-          pick(m, 'graphql.shortcode_media.edge_media_to_caption.edges.0.node.text') ||
+          pick(m, 'items.0.caption.text') ??
+          pick(m, 'graphql.shortcode_media.edge_media_to_caption.edges.0.node.text') ??
           ''
         ),
       },
@@ -3920,7 +4182,7 @@ function createSetupElement() {
           }, ['Custom scale factors:', $new('input#scales', {placeholder: scalesHint})]),
         ]),
         $new('li.options.row', [
-          $new([
+          $new('fragment', [
             $newCheck('Centered*', 'center',
               '...or try to keep the original link/thumbnail unobscured by the popup'),
             $newCheck('Preload on hover*', 'preload',
@@ -3932,7 +4194,7 @@ function createSetupElement() {
             $newCheck('Keep preview on blur*', 'keepOnBlur',
               'i.e. when mouse pointer moves outside the page'),
           ]),
-          $new([
+          $new('fragment', [
             $newCheck('Show complete image*', 'waitLoad',
               '...or immediately show a partial image while still loading'),
             $newCheck('Shadow only when complete*', 'uiShadowOnLoad',
@@ -3947,7 +4209,7 @@ function createSetupElement() {
             $newCheck('Fade-in transition', 'uiFadein'),
             $newCheck('Fade-in transition in gallery', 'uiFadeinGallery'),
           ]),
-          $new([
+          $new('fragment', [
             $newCheck('Night mode*', 'night', 'Hotkey: "n" in the popup'),
             $newCheck('Run in image tabs', 'imgtab'),
             $newCheck('Spoof hotlinking*', 'xhr',
@@ -4040,7 +4302,7 @@ function createSetupElement() {
 
 function createGlobalStyle() {
   App.globalStyle = /*language=CSS*/ (String.raw`
-#\mpiv-bar {
+#${PREFIX}bar {
   position: fixed;
   z-index: 2147483647;
   top: 0;
@@ -4057,32 +4319,32 @@ function createGlobalStyle() {
   transition: opacity 1s ease .25s;
   opacity: 0;
 }
-#\mpiv-bar[data-force] {
+#${PREFIX}bar[data-force] {
   transition: none;
 }
-#\mpiv-bar.\mpiv-show {
+#${PREFIX}bar.${PREFIX}show {
   opacity: 1;
 }
-#\mpiv-bar[data-zoom][data-prefix]::before {
+#${PREFIX}bar[data-zoom][data-prefix]::before {
   content: "[" attr(data-prefix) "] ";
   color: gold;
 }
-#\mpiv-bar[data-zoom]:not(:empty)::after {
+#${PREFIX}bar[data-zoom]:not(:empty)::after {
   content: " (" attr(data-zoom) ")";
   opacity: .8;
 }
-#\mpiv-bar[data-zoom]:empty::after {
+#${PREFIX}bar[data-zoom]:empty::after {
   content: attr(data-zoom);
 }
-#\mpiv-popup.\mpiv-show {
+#${PREFIX}popup.${PREFIX}show {
   display: inline;
 }
-#\mpiv-popup {
+#${PREFIX}popup {
   display: none;
   cursor: none;
   box-shadow: none;
 ${cfg.uiFadein ? String.raw`
-  animation: .2s \mpiv-fadein both;
+  animation: .2s ${PREFIX}fadein both;
   transition: box-shadow .25s, background-color .25s;
   ` : ''}
 ${App.popupStyleBase = `
@@ -4102,32 +4364,32 @@ ${App.popupStyleBase = `
   max-height: none;
 `}
 }
-#\mpiv-popup.\mpiv-show {
+#${PREFIX}popup.${PREFIX}show {
   ${cfg.uiBorder ? `border: ${cfg.uiBorder}px solid ${Util.color('Border')};` : ''}
   ${cfg.uiPadding ? `padding: ${cfg.uiPadding}px;` : ''}
   ${cfg.uiMargin ? `margin: ${cfg.uiMargin}px;` : ''}
 }
-#\mpiv-popup.\mpiv-show${cfg.uiShadowOnLoad ? '[loaded]' : ''} {
+#${PREFIX}popup.${PREFIX}show${cfg.uiShadowOnLoad ? '[loaded]' : ''} {
   background-color: ${Util.color('Background')};
   ${cfg.uiShadow ? `box-shadow: 2px 4px ${cfg.uiShadow}px 4px ${Util.color('Shadow')};` : ''}
 }
-#\mpiv-popup[data-gallery-flip] {
+#${PREFIX}popup[data-gallery-flip] {
   animation: none;
   transition: none;
 }
-#\mpiv-popup[${NOAA_ATTR}],
-#\mpiv-popup.\mpiv-zoom-max {
+#${PREFIX}popup[${NOAA_ATTR}],
+#${PREFIX}popup.${PREFIX}zoom-max {
   image-rendering: pixelated;
 }
-#\mpiv-popup.\mpiv-night:not(#\\0) {
+#${PREFIX}popup.${PREFIX}night:not(#\\0) {
   box-shadow: 0 0 0 ${Math.max(screen.width, screen.height)}px #000;
 }
-body:has(#\mpiv-popup.\mpiv-night)::-webkit-scrollbar {
+body:has(#${PREFIX}popup.${PREFIX}night)::-webkit-scrollbar {
   background: #000;
 }
-#\mpiv-setup {
+#${PREFIX}setup {
 }
-@keyframes \mpiv-fadein {
+@keyframes ${PREFIX}fadein {
   from {
     opacity: 0;
     border-color: transparent;
@@ -4137,40 +4399,40 @@ body:has(#\mpiv-popup.\mpiv-night)::-webkit-scrollbar {
   }
 }
 ` + (cfg.globalStatus ? String.raw`
-:root.\mpiv-loading:not(.\mpiv-preloading) *:hover {
+:root.${PREFIX}loading:not(.${PREFIX}preloading) *:hover {
   cursor: progress !important;
 }
-:root.\mpiv-edge #\mpiv-popup {
+:root.${PREFIX}edge #${PREFIX}popup {
   cursor: default;
 }
-:root.\mpiv-error *:hover {
+:root.${PREFIX}error *:hover {
   cursor: not-allowed !important;
 }
-:root.\mpiv-ready *:hover,
-:root.\mpiv-large *:hover {
+:root.${PREFIX}ready *:hover,
+:root.${PREFIX}large *:hover {
   cursor: zoom-in !important;
 }
-:root.\mpiv-shift *:hover {
+:root.${PREFIX}shift *:hover {
   cursor: default !important;
 }
 ` : String.raw`
-[\mpiv-status~="loading"]:not([\mpiv-status~="preloading"]):hover {
+[${STATUS_ATTR}~="loading"]:not([${STATUS_ATTR}~="preloading"]):hover {
   cursor: progress;
 }
-[\mpiv-status~="edge"]:hover {
+[${STATUS_ATTR}~="edge"]:hover {
   cursor: default;
 }
-[\mpiv-status~="error"]:hover {
+[${STATUS_ATTR}~="error"]:hover {
   cursor: not-allowed;
 }
-[\mpiv-status~="ready"]:hover,
-[\mpiv-status~="large"]:hover {
+[${STATUS_ATTR}~="ready"]:hover,
+[${STATUS_ATTR}~="large"]:hover {
   cursor: zoom-in;
 }
-[\mpiv-status~="shift"]:hover {
+[${STATUS_ATTR}~="shift"]:hover {
   cursor: default;
 }
-`)).replace(/\\mpiv-status/g, STATUS_ATTR).replace(/\\mpiv-/g, PREFIX);
+`));
   App.popupStyleBase = App.popupStyleBase.replace(/;/g, '!important;');
   return App.globalStyle;
 }
@@ -4288,7 +4550,7 @@ const $many = (q, doc) => {
 };
 
 const $prop = (sel, prop, node = doc) =>
-  (node = $(sel, node)) && node[prop] || '';
+  $(sel, node)?.[prop] ?? '';
 
 const $propUp = (node, prop) =>
   (node = node.closest(`[${prop}]`)) &&
@@ -4296,7 +4558,7 @@ const $propUp = (node, prop) =>
   '';
 
 const $remove = node =>
-  node && node.remove();
+  node?.remove();
 
 const $dataset = ({dataset: d}, key, val) =>
   val == null ? delete d[key] : (d[key] = val);
