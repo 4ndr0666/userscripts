@@ -4,7 +4,7 @@
 // @version 2.0.1
 // @description Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance.
 // @author 4ndr0666
-// @match http*://*.*/*
+// @match  *://*/*
 // @run-at document-start
 //
 // @grant GM_addElement
