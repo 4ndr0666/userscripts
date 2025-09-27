@@ -4,6 +4,8 @@
 // @version      1.40
 // @author       Sagie Gur-Ari & 4ndr0666 & Ψ-Anarch
 // @description  Removes Ad Containers from DOM. This version is dynamically optimized based on user-provided browsing history for maximum personal effectiveness.
+// @downloadurl  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20DomsRemover.user.js
+// @updateurl    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20DomsRemover.user.js
 //
 // == Base Targets ==
 // @match        https://*.ynet.co.il/*
