@@ -59,6 +59,7 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
 | ChatGPT++ | [4ndr0tools - ChatGPT++.user.js](./4ndr0tools%20-%20ChatGPT++.user.js) | Power-user UI with extras and editable one-click prompt buttons. |
 | ChatGPTBrainImplant | [4ndr0tools - ChatGPTBrainImplant.user.js](./4ndr0tools%20-%20ChatGPTBrainImplant.user.js) | Remove UI restrictions, export everything in official OpenAI json format. |
 | ConfirmationBypass | [4ndr0tools - ConfirmationBypass.user.js](./4ndr0tools%20-%20ConfirmationBypass.user.js) | Unfucks the "Are you sure?" bullshit when opening links. |
+| DomsRemover | [4ndr0tools - DomsRemover.user.js](./4ndr0tools%20-%20DomsRemover.user.js) | Removes Ad Containers from DOM. This version is dynamically optimized based on user-provided browsing history for maximum personal effectiveness. |
 | Forums++ | [4ndr0tools - Forums++.user.js](./4ndr0tools%20-%20Forums++.user.js) | Forum utils UI with powerful downloading, indexing, link checking, archiving features and more. |
 | GooglePhotosandDrive++ | [4ndr0tools - GooglePhotosandDrive++.user.js](./4ndr0tools%20-%20GooglePhotosandDrive++.user.js) | Restores context menus, exposes direct links, adds reverse image search, and enhances security for Google Photos and Drive. |
 | Hailuo++ | [4ndr0tools - Hailuo++.user.js](./4ndr0tools%20-%20Hailuo++.user.js) | For educational and official red-team lab purposes only. |
