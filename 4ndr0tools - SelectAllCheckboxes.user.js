@@ -2,10 +2,10 @@
 // @name         4ndr0tools - Select All Checkboxes
 // @namespace    https://www.github.com/4ndr0666/userscripts
 // @author       4ndr0666
-// @version      1.1
-// @description  Check/Uncheck a fuckload of checkboxes at once.
+// @version      1.2
+// @description  Check/Uncheck a fuckload of checkboxes at once with enhanced precision and modern code.
 // @match        *://*/*
-// @require      http://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.3/jquery.min.js
+// @require      https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-SelectAllCheckboxes.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-SelectAllCheckboxes.user.js
 // @icon         https://img.icons8.com/?size=30&id=48178&format=png
@@ -16,129 +16,117 @@
 // ==/UserScript==
 
 (function() {
-    "use strict";
+    'use strict';
 
     // ============================================================================
-    // Language Detection and GM Command Registration
+    // Configuration & State
     // ============================================================================
-    var browserName = navigator.appName;
-    var userLang = (browserName === "Netscape") ? navigator.language : navigator.userLanguage;
-    var langKey = userLang.substr(0,2) === "zh" ? "全选" : "SelectAll";
 
-    var GMCommandHandler;
-    if (typeof GM_registerMenuCommand !== "undefined") {
-        GMCommandHandler = GM_registerMenuCommand;
-    } else if (typeof GM !== "undefined" && typeof GM.registerMenuCommand !== "undefined") {
-        GMCommandHandler = GM.registerMenuCommand;
-    } else {
-        GMCommandHandler = function(s, f) {};
-    }
+    // Use const for values that do not change.
+    const CHECKBOX_SELECTOR = 'input:checkbox:enabled, .checkbox';
+    // Use let for state that needs to be reassigned.
+    let previousElement = null;
 
     // ============================================================================
-    // Global Selector and State Variables
+    // Greasemonkey API Compatibility
     // ============================================================================
-    var checkboxSelector = "input:checkbox:enabled, .checkbox";
-    var previousElement = null; // Used for shift-based range selection
+
+    // Determine the correct GM command function once and store it in a constant.
+    const GMCommandHandler = (() => {
+        if (typeof GM_registerMenuCommand !== 'undefined') {
+            return GM_registerMenuCommand;
+        }
+        if (typeof GM !== 'undefined' && typeof GM.registerMenuCommand !== 'undefined') {
+            return GM.registerMenuCommand;
+        }
+        // Return a no-op function if the API is not available, preventing errors.
+        return (s, f) => {
+            console.warn('UserScript menu command API not found.');
+        };
+    })();
+
+    // Detect user language for menu command localization.
+    const userLang = navigator.language || navigator.userLanguage;
+    const langKey = userLang.startsWith('zh') ? '全选' : 'Select All';
 
     // ============================================================================
-    // Utility Functions
+    // Core Utility Functions
     // ============================================================================
 
     /**
-     * Safely invokes a native click event.
-     * This function generates a trusted click so that attached listeners are triggered.
-     * @param {HTMLElement} element - The element to click.
+     * Checks an element if it's a selectable item that is not already selected.
+     * This centralizes the logic for activating a checkbox-like element.
+     * @param {HTMLElement} element - The DOM element to potentially check.
      */
-    function invokeNativeClick(element) {
+    function checkElementIfNeeded(element) {
         try {
-            // For input checkboxes, only click if not already checked to prevent toggling off.
-            if (element.matches("input:checkbox")) {
-                if (!element.checked) {
-                    element.click();
-                }
-            } else {
-                element.click();
+            // Use a jQuery object for consistent methods.
+            const $el = $(element);
+            // The logic is simple: if it's an input checkbox, it must be unchecked.
+            // For other elements (like custom divs), we assume a click is always desired.
+            if ($el.is('input:checkbox') && element.checked) {
+                return; // Do nothing if it's an already checked native checkbox.
             }
+            // A native, trusted click event is dispatched to trigger all attached listeners.
+            element.click();
         } catch (error) {
-            console.error("Error invoking native click:", error, element);
+            console.error('Error attempting to check element:', error, element);
         }
     }
 
     /**
-     * Iterates through all elements matching the selector and activates them.
-     * This function complements the original code by ensuring that each checkbox
-     * is only activated if not already checked.
+     * Iterates through all matching elements on the page and checks them.
      */
     function selectAll() {
         try {
-            $(checkboxSelector).each(function() {
-                // Check if element is an input checkbox and whether it's unchecked; else, proceed as defined.
-                if ($(this).is("input:checkbox")) {
-                    if (!this.checked) {
-                        invokeNativeClick(this);
-                    }
-                } else {
-                    invokeNativeClick(this);
-                }
-            });
+            // Use native querySelectorAll for performance and convert to array for iteration.
+            const elements = document.querySelectorAll(CHECKBOX_SELECTOR);
+            elements.forEach(checkElementIfNeeded);
         } catch (error) {
-            console.error("Error during selectAll execution:", error);
+            console.error('Error during selectAll execution:', error);
         }
     }
 
     /**
-     * Processes range selection between two markers (previous and current checkboxes).
-     * It traverses up to five levels to find a common parent container and then activates
-     * each checkbox between the markers if not already checked.
+     * Processes range selection between two elements.
+     * This revised version is more robust by finding a common ancestor and then
+     * operating on the indices of the elements within that scope.
      * @param {HTMLElement} startElem - The previously marked checkbox element.
      * @param {HTMLElement} endElem - The current checkbox element.
      */
     function selectRange(startElem, endElem) {
-        if (!startElem || !endElem) {
-            console.warn("Range selection skipped due to missing markers.");
+        if (!startElem || !endElem || startElem === endElem) {
             return;
         }
-        var startParent = startElem;
-        var endParent = endElem;
-        var commonParent = null;
 
-        // Traverse up to 5 levels to locate a common parent.
-        for (var i = 0; i < 5; i++) {
-            startParent = startParent.parentNode;
-            endParent = endParent.parentNode;
-            if (!startParent || !endParent) {
-                break;
-            }
-            if (startParent === endParent) {
-                commonParent = startParent;
-                break;
-            }
-        }
-        if (!commonParent) {
-            console.warn("No common parent found for range selection.");
+        // Find the closest common ancestor of the two elements.
+        const commonParent = $(startElem).closest($(endElem).parents().add(endElem.parentNode).get().reverse());
+        if (!commonParent.length) {
+            console.warn('No common parent found for range selection. Falling back to global selection.');
+            // As a fallback, just check the two endpoints.
+            checkElementIfNeeded(startElem);
+            checkElementIfNeeded(endElem);
             return;
         }
-        var inRange = false;
-        // Iterate over checkboxes within the common parent.
-        $(commonParent).find(checkboxSelector).each(function() {
-            // Toggle the inRange flag when encountering a marker.
-            if (this === startElem || this === endElem) {
-                inRange = !inRange;
-                // Ensure the marker is activated.
-                if ($(this).is("input:checkbox") && !this.checked) {
-                    invokeNativeClick(this);
-                }
-            } else if (inRange) {
-                // Activate checkboxes in between if not already activated.
-                if ($(this).is("input:checkbox")) {
-                    if (!this.checked) {
-                        invokeNativeClick(this);
-                    }
-                } else {
-                    invokeNativeClick(this);
-                }
-            }
-        });
+
+        // Get all checkboxes within the common parent's scope.
+        const checkboxesInScope = Array.from(commonParent[0].querySelectorAll(CHECKBOX_SELECTOR));
+        const startIndex = checkboxesInScope.indexOf(startElem);
+        const endIndex = checkboxesInScope.indexOf(endElem);
+
+        // If either element isn't in the list, something is wrong.
+        if (startIndex === -1 || endIndex === -1) {
+            console.warn('Range selection markers could not be found within the common parent.');
+            return;
+        }
+
+        // Determine the slice of elements to select.
+        const lowerBound = Math.min(startIndex, endIndex);
+        const upperBound = Math.max(startIndex, endIndex);
+        const elementsToSelect = checkboxesInScope.slice(lowerBound, upperBound + 1);
+
+        // Activate each element in the calculated range.
+        elementsToSelect.forEach(checkElementIfNeeded);
     }
 
     // ============================================================================
@@ -146,75 +134,57 @@
     // ============================================================================
 
     /**
-     * Handles mousedown events on elements matching the checkbox selector.
-     * Implements:
-     * - Full selection on ctrl+alt+leftclick.
-     * - Range selection on shift+leftclick.
+     * Handles mousedown events to trigger selection logic.
+     * - Ctrl+Alt+LeftClick: Selects all checkboxes on the page.
+     * - Shift+LeftClick: Selects a range of checkboxes.
      */
-    $(document).on("mousedown", checkboxSelector, function(event) {
-        try {
-            // Only respond to left mouse clicks.
-            if (event.button !== 0) return;
+    $(document).on('mousedown', CHECKBOX_SELECTOR, function(event) {
+        // Only respond to the primary mouse button (left-click).
+        if (event.button !== 0) return;
 
-            // Retrieve the current element using the selector.
-            var currentElem = event.currentTarget;
-            // Full selection: ctrl + alt pressed, shift NOT pressed.
+        const currentElem = event.currentTarget;
+
+        try {
+            // Full selection: Ctrl + Alt pressed, Shift NOT pressed.
             if (event.ctrlKey && event.altKey && !event.shiftKey) {
+                event.preventDefault(); // Prevent default click behavior to avoid double-toggling.
                 selectAll();
-                // Provide immediate visual feedback.
-                invokeNativeClick(currentElem);
             }
-            // Range selection: shift pressed without ctrl or alt.
-            else if (event.shiftKey && !event.altKey && !event.ctrlKey && previousElement) {
+            // Range selection: Shift pressed, without Ctrl or Alt.
+            else if (event.shiftKey && !event.ctrlKey && !event.altKey && previousElement) {
+                event.preventDefault(); // Prevent default browser text selection during shift-click.
                 selectRange(previousElement, currentElem);
             }
-            // Update previous element reference.
-            previousElement = currentElem;
         } catch (error) {
-            console.error("Error in mousedown handler:", error, event);
+            console.error('Error in mousedown handler:', error, event);
         }
+
+        // Always update the last clicked element for the next range selection.
+        previousElement = currentElem;
     });
 
     /**
      * Handles mouseenter events for alt+hover activation.
-     * When the alt key is held during hover, the targeted checkbox is activated.
      */
-    $(document).on("mouseenter", checkboxSelector, function(event) {
-        try {
-            // Only proceed if alt is pressed and neither ctrl nor shift is active.
-            if (event.altKey && !event.shiftKey && !event.ctrlKey) {
-                // For input checkboxes, only click if not already checked.
-                if ($(this).is("input:checkbox")) {
-                    if (!this.checked) {
-                        invokeNativeClick(this);
-                    }
-                } else {
-                    invokeNativeClick(this);
-                }
+    $(document).on('mouseenter', CHECKBOX_SELECTOR, function(event) {
+        // Only proceed if Alt is pressed and no other modifiers are active.
+        if (event.altKey && !event.shiftKey && !event.ctrlKey) {
+            try {
+                checkElementIfNeeded(event.currentTarget);
+            } catch (error) {
+                console.error('Error in mouseenter handler:', error, event);
             }
-        } catch (error) {
-            console.error("Error in mouseenter handler:", error, event);
         }
     });
 
     // ============================================================================
-    // GM Menu Command Registration for Manual Trigger
+    // Initialization
     // ============================================================================
+
+    // Register the menu command for manual activation.
     GMCommandHandler(langKey, selectAll);
 
-    // ============================================================================
-    // Self-Validation Logging
-    // ============================================================================
-    (function selfValidate() {
-        try {
-            if (!$(checkboxSelector).length) {
-                console.warn("Self-validation: No checkboxes detected with selector:", checkboxSelector);
-            } else {
-                console.info("Self-validation: Script initialized successfully. Checkboxes detected.");
-            }
-        } catch (error) {
-            console.error("Self-validation encountered an error:", error);
-        }
-    })();
+    // Self-validation log to confirm script is active and can find elements.
+    console.info(`[4ndr0tools-SelectAllCheckboxes v1.2] Initialized. Found ${document.querySelectorAll(CHECKBOX_SELECTOR).length} selectable elements.`);
 
 })();
