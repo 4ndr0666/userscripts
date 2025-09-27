@@ -2,11 +2,11 @@
 // @name        4ndr0tools - BrokenImgFixer
 // @namespace   https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     1.0
-// @description Detect and reload failed images gracefully.
-// downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20BrokenImgFixer.user.js
+// @version     1.1
+// @description Detect and reload failed images gracefully with robust cache-busting.
+// @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20BrokenImgFixer.user.js
 // @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20BrokenImgFixer.user.js
-// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
+// @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match       *://*/*
 // @license     MIT
 // @grant       none
@@ -15,7 +15,8 @@
 /* eslint-env browser, violentmonkey */
 
 /**
- * Forces a reload of broken images by appending a hash to their src.
+ * Forces a reload of broken images using a robust cache-busting technique.
+ * It appends a unique timestamp as a query parameter to the image src.
  * Checks for `img.complete` (standard) and `:-moz-broken` (Firefox-specific).
  */
 function reloadImages() {
@@ -25,9 +26,27 @@ function reloadImages() {
     // `img.matches("[src]:-moz-broken")` is a Firefox-specific pseudo-class
     // that identifies images that failed to load.
     if (!img.complete || img.matches("[src]:-moz-broken")) {
-      // Appending '#' to the src forces the browser to re-request the image,
-      // as it considers it a new URL, without changing the actual resource path.
-      img.src += "#";
+      try {
+        // Use the URL API for robust and safe URL manipulation. This correctly handles
+        // URLs that already have query parameters or fragments.
+        // The second argument provides a base URL for resolving relative image paths.
+        const url = new URL(img.src, window.location.href);
+
+        // Set a unique query parameter using the current timestamp. This is a standard
+        // cache-busting technique that forces the browser to re-fetch the resource.
+        url.searchParams.set('_cache_bust', Date.now());
+
+        // Assign the newly constructed URL back to the image's src attribute.
+        img.src = url.toString();
+      } catch (error) {
+        // If the src is not a valid URL (e.g., malformed data URI), the URL constructor will fail.
+        // In this edge case, we fall back to the original, simpler hash-append method.
+        console.warn("BrokenImgFixer: Could not parse image src. Falling back to hash append.", { src: img.src, error });
+        // Avoid appending multiple hashes if the script is run repeatedly on a failing URL.
+        if (!img.src.endsWith('#')) {
+          img.src += "#";
+        }
+      }
     }
   }
 }
@@ -37,19 +56,20 @@ function reloadImages() {
  * Uses try...catch to safely handle cross-origin frame access, which can throw SecurityError.
  */
 function broadcastEvent() {
+  // window.frames includes all immediate child frames of the current window.
   for (const win of window.frames) {
     try {
-      // Post a message to the frame. The '*' target origin is used for simplicity
-      // in userscripts to communicate across different origins.
+      // Post a message to the frame. The '*' target origin allows communication
+      // across different origins, which is necessary for a userscript like this.
       win.postMessage("RELOAD_BROKEN_IMAGES", "*");
     } catch (error) {
       // Catch SecurityError which occurs when trying to access or post messages
-      // to cross-origin iframes. Log a warning but continue the broadcast.
+      // to cross-origin iframes. This is expected behavior in a sandboxed environment.
       if (error instanceof DOMException && error.name === 'SecurityError') {
-        console.warn("BrokenImgFixer: Could not post message to a cross-origin frame.", win, error);
+        console.warn("BrokenImgFixer: Could not post message to a cross-origin frame. This is expected and can be ignored.", error.message);
       } else {
-        // Log any other unexpected errors.
-        console.error("BrokenImgFixer: An unexpected error occurred while broadcasting.", win, error);
+        // Log any other unexpected errors for debugging purposes.
+        console.error("BrokenImgFixer: An unexpected error occurred while broadcasting.", { frame: win, error });
       }
     }
   }
@@ -60,11 +80,12 @@ function broadcastEvent() {
  * and incoming messages from other frames.
  */
 function init() {
-  // Listen for the 'keyup' event to detect keyboard shortcuts.
+  // Listen for the 'keyup' event to detect the keyboard shortcut.
   window.addEventListener("keyup", e => {
     // Trigger reload if Alt + R (case-insensitive) is pressed.
-    // Using e.key is more modern and readable than e.keyCode.
-    if ((e.key === "r" || e.key === "R") && e.altKey) {
+    // Using e.key is the modern and recommended approach over deprecated keyCode.
+    if (e.altKey && e.key.toLowerCase() === "r") {
+      console.log("BrokenImgFixer: Alt+R detected. Reloading broken images...");
       reloadImages();
       broadcastEvent();
     }
@@ -72,8 +93,9 @@ function init() {
 
   // Listen for messages from other frames or the parent window.
   window.addEventListener("message", e => {
-    // If the message data is our specific reload command, trigger reload.
+    // Ensure the message data is our specific reload command to avoid acting on other messages.
     if (e.data === "RELOAD_BROKEN_IMAGES") {
+      console.log("BrokenImgFixer: Received RELOAD_BROKEN_IMAGES message. Reloading...");
       reloadImages();
       // Re-broadcast the event to ensure nested iframes also receive the command.
       broadcastEvent();
@@ -81,6 +103,5 @@ function init() {
   });
 }
 
-// Initialize the script when the DOM is ready.
-// The unnecessary outer block has been removed.
+// Initialize the script.
 init();
