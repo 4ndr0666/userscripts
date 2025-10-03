@@ -62,7 +62,7 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
 | DomsRemover | [4ndr0tools - DomsRemover.user.js](./4ndr0tools%20-%20DomsRemover.user.js) | Removes Ad Containers from DOM. This version is dynamically optimized based on user-provided browsing history for maximum personal effectiveness. |
 | Forums++ | [4ndr0tools - Forums++.user.js](./4ndr0tools%20-%20Forums++.user.js) | Forum utils UI with powerful downloading, indexing, link checking, archiving features and more. |
 | GooglePhotosandDrive++ | [4ndr0tools - GooglePhotosandDrive++.user.js](./4ndr0tools%20-%20GooglePhotosandDrive++.user.js) | Restores context menus, exposes direct links, adds reverse image search, and enhances security for Google Photos and Drive. |
-| Hailuo++ | [4ndr0tools - Hailuo++.user.js](./4ndr0tools%20-%20Hailuo++.user.js) | For educational and official red-team lab purposes only. |
+| Hailuo++ | [4ndr0tools - Hailuo++.user.js](./4ndr0tools%20-%20Hailuo++.user.js) | For educational and official red-team lab purposes only. This version codifies the Re-Edit Refund Exploit and is designed for automated deployment. |
 | HDImgsOnly | [4ndr0tools - HDImgsOnly.user.js](./4ndr0tools%20-%20HDImgsOnly.user.js) | Prefer high-resolution assets when available. |
 | Images++ | [4ndr0tools - Images++.user.js](./4ndr0tools%20-%20Images++.user.js) | Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. |
 | InstagramRedirect | [4ndr0tools - InstagramRedirect.user.js](./4ndr0tools%20-%20InstagramRedirect.user.js) | Privacy redirect for IG media to dumpor.com. |
