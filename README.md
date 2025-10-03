@@ -79,6 +79,7 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
 | YandexImageSearch++ | [4ndr0tools - YandexImageSearch++.user.js](./4ndr0tools%20-%20YandexImageSearch++.user.js) | Robust, event-driven slideshow, fullscreen preview, and on-screen status for Yandex reverse-image search. |
 | YouTubeEmbedRedirectButton | [4ndr0tools - YouTubeEmbedRedirectButton.user.js](./4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js) | Floating button for redirects to embedded version. Right click it to set a keybind (default Ctrl+E). |
 | YtdlcProtocol | [4ndr0tools - YtdlcProtocol.user.js](./4ndr0tools%20-%20YtdlcProtocol.user.js) | Personal `ytdl://`-style protocol trigger for using yt-dlp with cookies. |
+| Wan++ | [Wan++.user.js](./Wan++.user.js) | Red Team Framework: Includes proactive CSP neutralization, polymorphic UI, advanced layered NSFW obfuscation, and all credit/model/task bypass vectors. For authorized security research. |
 <!-- END_CATALOG -->
 
 ---
