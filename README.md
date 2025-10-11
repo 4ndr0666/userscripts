@@ -56,6 +56,7 @@ _**Arch Linux users**_: All scripts are tested and optimized for a minimalist, s
 | Blob2URL | [4ndr0tools - Blob2URL.user.js](./4ndr0tools%20-%20Blob2URL.user.js) | Finds all blob links on a page and adds a button to download their contents. |
 | BrokenImgFixer | [4ndr0tools - BrokenImgFixer.user.js](./4ndr0tools%20-%20BrokenImgFixer.user.js) | Detect and reload failed images gracefully with robust cache-busting. |
 | BunkrCanonicalURL | [4ndr0tools - BunkrCanonicalURL.user.js](./4ndr0tools%20-%20BunkrCanonicalURL.user.js) | Normalize Bunkr links to a canonical host without losing the path, query, or sub-domain. |
+| BypassPaywalls | [4ndr0tools - BypassPaywalls.user.js](./4ndr0tools%20-%20BypassPaywalls.user.js) | A way to bypass paywalls for popular news sites |
 | ChatGPT++ | [4ndr0tools - ChatGPT++.user.js](./4ndr0tools%20-%20ChatGPT++.user.js) | Power-user UI with extras and editable one-click prompt buttons. |
 | ChatGPTBrainImplant | [4ndr0tools - ChatGPTBrainImplant.user.js](./4ndr0tools%20-%20ChatGPTBrainImplant.user.js) | Remove UI restrictions, export everything in official OpenAI json format. |
 | ConfirmationBypass | [4ndr0tools - ConfirmationBypass.user.js](./4ndr0tools%20-%20ConfirmationBypass.user.js) | Unfucks the "Are you sure?" bullshit when opening links. |
