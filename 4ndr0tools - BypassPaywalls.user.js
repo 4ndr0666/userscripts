@@ -3,8 +3,8 @@
 // @description  A way to bypass paywalls for popular news sites
 // @author       4ndr0666, (Fork from LegeBeker https://github.com/LegeBeker/bypass-paywalls-tampermonkey)
 // @namespace    https://github.com/4ndr0666/userscripts
-// @updateURL    https://github.com/4ndr0666/userscripts/raw/master/4ndr0tools - BypassPaywalls.user.js
-// @downloadURL  https://github.com/4ndr0666/userscripts/raw/master/4ndr0tools - BypassPaywalls.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20BypassPaywalls.user.js
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20BypassPaywalls.user.js
 // @icon         data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAQAAABpN6lAAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAAmJLR0QA/4ePzL8AAAAJcEhZcwAACxMAAAsTAQCanBgAAAAHdElNRQfkBhAPLAM1PCwiAAABZ0lEQVR42u3aPUoDURiG0bsBU6W2UKLrMQoWrkIY3Yu9INhaBldidBNGrJLXQhS9MYU4guM9TzkzCdyT+flIUookSZIkSVJV/nkAAAAAAABAywC9iw1srgEAAAAAAAAAbF7gd/f3PZn99vsBAAAAAAAAAPoD+PFgMvRBCAAAAAAAAADQG0DzgxAAAAAAAADg+wCTIAAAAAAAAOD/AX4ZAgAAAAAAAP4QwNACAAAAAAAAABiEAAAAAAAAAAAGIQAAmgdYVFu2Ph0+qvYuBr78ej2PJffVpoNPLzis9j4MHKBez7zktt6U8fvh48yrvTeDXv76emYl52uPznmmGWWUw7WzIzkd8Mn/1Xq6kv2s0mrLTEopuWoW4PL15NjNU5PLX2Tn7fqYNngZrHL88RZx1hjBKl19lzxq6EJ4zslXD4rtXGTZwGd/nd3NT8u9dJnlbm1A/g+3vLvM0mVSJEmSJEmSJElSo70AqgAJADOYlfQAAAAldEVYdGRhdGU6Y3JlYXRlADIwMjAtMDYtMTZUMTU6NDM6NTcrMDA6MDAT/mVIAAAAJXRFWHRkYXRlOm1vZGlmeQAyMDIwLTA2LTE2VDE1OjQzOjU3KzAwOjAwYqPd9AAAAABJRU5ErkJggg==
 // @run-at       document-end
 // @version      0.1.2
