@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name                4ndr0tools - Prompt Master
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version             28.7.6
+// @version             28.7.7
 // @author              4ndr0666
 // @icon                data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @license             UNLICENSED - RED TEAM USE ONLY
@@ -49,6 +49,36 @@
   let __mpSortMode;
   let __apCustomShortcutsMap;
 
+// 28.7.7 (suite v1.8.2, GUP v7.0.1 Media Slideshow & Palette Hardening):
+// (1) Media Slideshow collection scoping & visibility gate — removed
+// [role="dialog"] and .cdk-overlay-container from SLIDESHOW_EXCLUDE (which
+// blinded harvestSlideshowMedia to any collection opened inside an Angular
+// CDK overlay or modal dialog and caused it to harvest the same ~30 default
+// background images behind the overlay), fixed the #mp-media-slideshow
+// self-exclusion selector typo, rejected hidden / 0x0 / [hidden] /
+// [aria-hidden="true"] DOM nodes even when cached naturalWidth >= 100 from a
+// prior view, and added resolveSlideshowScopeRoot() so open collection
+// dialogs, drawers, tabpanels, and gallery containers are scoped directly.
+// (2) Virtual-scroll & lazy-media accumulation ("read more") — expanded
+// candidate extraction (extractSlideshowCandidate / parseSlideshowSrcsetBest)
+// across data-src, data-lazy-src, data-original, data-full-src, srcset,
+// <picture><source>, computed backgroundImage, and open shadowRoots; added
+// findSlideshowScrollContainer(), triggerSlideshowLoadMore(), synchronous
+// multi-step virtual-scroll sweeping (slideshowSweepScrollerSync), and
+// progressive async hydration (slideshowScheduleAsyncHarvest) so
+// harvestSlideshowMedia(), openSlideshow(), slideshowRefreshDeck(), and
+// near-end playback accumulate newly hydrated batches into slideshowDeck
+// up to SLIDESHOW_MAX_ITEMS (900) without dropping unmounted virtual-scroll
+// items. (3) Color palette & foreground icon contrast — repaired malformed
+// self-closed <svg ... d="..."/></svg> markup on ICONS.prev and ICONS.next
+// (wrapping path data in <path d="..."/>), added fill="none"
+// stroke="currentColor" stroke-width="2" to ICONS.expand and ICONS.collapse,
+// added fill="currentColor" to ICONS.info, synced fullscreen icon state
+// (slideshowSyncFullscreenIcon), completed --mp-text-buttons and
+// --mp-text-disabled across all themeDefinitions, and hardened SLIDESHOW_CSS,
+// FLOW_DOCK_CSS, and mp-electric-glass-override with !important 3lectric-Glass
+// foreground contrast against host-page dark button/SVG rules. (4) Synced
+// SCRIPT_VERSION sandbox fallback to "28.7.7".
 // 28.7.6 (suite v1.8.1, WO-05): the expanded library's N-column grid card
 // starves its own title column — the field screenshot shows every card's
 // title rendered one character per line. Root cause (measured live in
@@ -1379,6 +1409,8 @@
         "--mp-text-primary": "#282a36",
         "--mp-text-secondary": "#44475a",
         "--mp-text-tertiary": "#6272a4",
+        "--mp-text-buttons": "#ffffff",
+        "--mp-text-disabled": "#9099b5",
         "--mp-border-primary": "#bd93f9",
         "--mp-border-secondary": "#6272a4",
         "--mp-accent-primary": "#ff79c6",
@@ -1433,6 +1465,8 @@
         "--mp-text-primary": "#f8f8f2",
         "--mp-text-secondary": "#bfbfbf",
         "--mp-text-tertiary": "#6272a4",
+        "--mp-text-buttons": "#f8f8f2",
+        "--mp-text-disabled": "#6272a4",
         "--mp-border-primary": "#6272a4",
         "--mp-border-secondary": "#44475a",
         "--mp-accent-primary": "#bd93f9",
@@ -1490,6 +1524,8 @@
         "--mp-text-primary": "#432818",
         "--mp-text-secondary": "#6f4e37",
         "--mp-text-tertiary": "#9c6644",
+        "--mp-text-buttons": "#ffffff",
+        "--mp-text-disabled": "#b8977a",
         "--mp-border-primary": "#d4a373",
         "--mp-border-secondary": "#e6ccb2",
         "--mp-accent-primary": "#bb9457",
@@ -1544,6 +1580,8 @@
         "--mp-text-primary": "#ede0d4",
         "--mp-text-secondary": "#ddb892",
         "--mp-text-tertiary": "#b08968",
+        "--mp-text-buttons": "#ede0d4",
+        "--mp-text-disabled": "#7f5539",
         "--mp-border-primary": "#7f5539",
         "--mp-border-secondary": "#5c3d2e",
         "--mp-accent-primary": "#d4a373",
@@ -1601,6 +1639,8 @@
         "--mp-text-primary": "#050505",
         "--mp-text-secondary": "#2e2e38",
         "--mp-text-tertiary": "#5a5a66",
+        "--mp-text-buttons": "#ffffff",
+        "--mp-text-disabled": "#8a8a96",
         "--mp-border-primary": "#b8b8c2",
         "--mp-border-secondary": "#d1d1db",
         "--mp-accent-primary": "#b000b0",
@@ -1655,6 +1695,8 @@
         "--mp-text-primary": "#ffffff",
         "--mp-text-secondary": "#e0e0e0",
         "--mp-text-tertiary": "#a1a1aa",
+        "--mp-text-buttons": "#ffffff",
+        "--mp-text-disabled": "#52525b",
         "--mp-border-primary": "#272730",
         "--mp-border-secondary": "#3f3f46",
         "--mp-accent-primary": "#f700ff",
@@ -2069,7 +2111,7 @@
     if (!document.getElementById("mp-electric-glass-override")) {
       const g = document.createElement("style");
       g.id = "mp-electric-glass-override";
-      g.textContent = `.modal-title{font-family:'Orbitron',sans-serif;font-weight:700;color:var(--mp-text-secondary);}.mp-dialogo-title{font-family:'Orbitron',sans-serif;font-weight:700;}.save-button,.mp-overlay button,.mp-dialogo button,.mp-expanded-modal button,#prompt-menu-container button,.mp-inline-menu button,.mp-org-sidebar button,.mp-action-btn-full,.mp-btn-part{border-radius:0!important;transition:all 150ms ease-in-out;}.save-button:hover,.mp-action-btn-full:hover,.mp-btn-part:hover{box-shadow:0 0 20px rgba(0,229,255,0.5);}.save-button.mp-btn-secondary.destructive,.mp-dialogo-btn-danger{border-color:var(--mp-error)!important;color:var(--mp-error)!important;}.save-button.mp-btn-secondary.destructive:hover,.mp-dialogo-btn-danger:hover{box-shadow:0 0 25px var(--mp-error);background:rgba(255,0,85,0.3)!important;}.mp-switch input:checked+label{box-shadow:0 0 12px rgba(0,229,255,0.8);}.mp-tooltip-content{background-color:rgba(10,19,26,0.65)!important;color:var(--mp-text-primary)!important;border:1px solid rgba(0,229,255,0.3)!important;box-shadow:0 0 20px rgba(0,229,255,0.15)!important;backdrop-filter:blur(6px);}.mp-tooltip-preview-text{background-color:rgba(10,19,26,0.4)!important;color:var(--mp-text-primary)!important;border:1px solid rgba(0,229,255,0.2)!important;}.mp-tooltip-top .mp-tooltip-arrow{border-top-color:rgba(10,19,26,0.65)!important;}.mp-tooltip-bottom .mp-tooltip-arrow{border-bottom-color:rgba(10,19,26,0.65)!important;}.mp-tooltip-left .mp-tooltip-arrow{border-left-color:rgba(10,19,26,0.65)!important;}.mp-tooltip-right .mp-tooltip-arrow{border-right-color:rgba(10,19,26,0.65)!important;}.mp-tooltip-btn:focus,.mp-tooltip-btn:hover{background-color:rgba(0,229,255,0.2)!important;color:var(--mp-text-secondary)!important;}.mp-brand-glyph{filter:drop-shadow(0 0 6px rgba(0,229,255,0.35));display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;}.mp-brand-glyph .mp-glyph-ring-1,.mp-brand-glyph .mp-glyph-ring-2{transform-box:fill-box;transform-origin:center;}.mp-brand-glyph .mp-glyph-ring-1{animation:mp-glyph-spin 24s linear infinite;}.mp-brand-glyph .mp-glyph-ring-2{animation:mp-glyph-spin-rev 36s linear infinite;}@keyframes mp-glyph-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}@keyframes mp-glyph-spin-rev{from{transform:rotate(0)}to{transform:rotate(-360deg)}}@media (prefers-reduced-motion:reduce){.mp-brand-glyph .mp-glyph-ring-1,.mp-brand-glyph .mp-glyph-ring-2{animation:none;}}`;
+      g.textContent = `.modal-title{font-family:'Orbitron',sans-serif;font-weight:700;color:var(--mp-text-secondary);}.mp-dialogo-title{font-family:'Orbitron',sans-serif;font-weight:700;}.save-button,.mp-overlay button,.mp-dialogo button,.mp-expanded-modal button,#prompt-menu-container button,.mp-inline-menu button,.mp-org-sidebar button,.mp-action-btn-full,.mp-btn-part{border-radius:0!important;transition:all 150ms ease-in-out;}.mp-btn-part,.action-btn,.menu-header-btn,.menu-footer-btn,.mp-pinned-action-btn,.mp-modal-close-btn,.mp-modal-expand-btn,.mp-modal-info-btn,.mp-org-icon-btn,.mp-org-node-op,.mp-org-caret,.mp-org-star-btn,.mp-org-archive-btn,.mp-nav-btn,.mp-pin-btn,.mp-tag-action-btn,.mp-filter-btn,.mp-filter-manage-btn,.mp-filter-clear-btn{color:var(--mp-text-secondary,#67E8F9)!important;}.mp-btn-part:hover,.action-btn:hover,.menu-header-btn:hover,.mp-modal-expand-btn:hover,.mp-modal-info-btn:hover,.mp-org-node-op:hover,.mp-nav-btn:hover,.mp-filter-btn:hover{color:var(--mp-accent-primary,#00E5FF)!important;}.mp-modal-close-btn:hover,.action-btn.delete:hover,.mp-tag-action-btn.delete:hover,.mp-filter-clear-btn:hover{color:var(--mp-accent-close,#ff0055)!important;}.mp-btn-part svg,.action-btn svg,.menu-header-btn svg,.menu-footer-btn svg,.mp-pinned-action-btn svg,.mp-modal-close-btn svg,.mp-modal-expand-btn svg,.mp-modal-info-btn svg,.mp-org-icon-btn svg,.mp-org-node-op svg,.mp-org-caret svg,.mp-org-star-btn svg,.mp-org-archive-btn svg,.mp-nav-btn svg,.mp-pin-btn svg,.mp-tag-action-btn svg,.mp-filter-btn svg,.mp-filter-manage-btn svg,.mp-filter-clear-btn svg,.mp-icon-container svg{color:inherit!important;}.mp-enhance-ai-btn svg{fill:none!important;stroke:currentColor!important;}.save-button:hover,.mp-action-btn-full:hover,.mp-btn-part:hover{box-shadow:0 0 20px rgba(0,229,255,0.5);}.save-button.mp-btn-secondary.destructive,.mp-dialogo-btn-danger{border-color:var(--mp-error)!important;color:var(--mp-error)!important;}.save-button.mp-btn-secondary.destructive:hover,.mp-dialogo-btn-danger:hover{box-shadow:0 0 25px var(--mp-error);background:rgba(255,0,85,0.3)!important;}.mp-switch input:checked+label{box-shadow:0 0 12px rgba(0,229,255,0.8);}.mp-tooltip-content{background-color:rgba(10,19,26,0.65)!important;color:var(--mp-text-primary)!important;border:1px solid rgba(0,229,255,0.3)!important;box-shadow:0 0 20px rgba(0,229,255,0.15)!important;backdrop-filter:blur(6px);}.mp-tooltip-preview-text{background-color:rgba(10,19,26,0.4)!important;color:var(--mp-text-primary)!important;border:1px solid rgba(0,229,255,0.2)!important;}.mp-tooltip-top .mp-tooltip-arrow{border-top-color:rgba(10,19,26,0.65)!important;}.mp-tooltip-bottom .mp-tooltip-arrow{border-bottom-color:rgba(10,19,26,0.65)!important;}.mp-tooltip-left .mp-tooltip-arrow{border-left-color:rgba(10,19,26,0.65)!important;}.mp-tooltip-right .mp-tooltip-arrow{border-right-color:rgba(10,19,26,0.65)!important;}.mp-tooltip-btn:focus,.mp-tooltip-btn:hover{background-color:rgba(0,229,255,0.2)!important;color:var(--mp-text-secondary)!important;}.mp-brand-glyph{filter:drop-shadow(0 0 6px rgba(0,229,255,0.35));display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;}.mp-brand-glyph .mp-glyph-ring-1,.mp-brand-glyph .mp-glyph-ring-2{transform-box:fill-box;transform-origin:center;}.mp-brand-glyph .mp-glyph-ring-1{animation:mp-glyph-spin 24s linear infinite;}.mp-brand-glyph .mp-glyph-ring-2{animation:mp-glyph-spin-rev 36s linear infinite;}@keyframes mp-glyph-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}@keyframes mp-glyph-spin-rev{from{transform:rotate(0)}to{transform:rotate(-360deg)}}@media (prefers-reduced-motion:reduce){.mp-brand-glyph .mp-glyph-ring-1,.mp-brand-glyph .mp-glyph-ring-2{animation:none;}}`;
       document.head.appendChild(g);
     }
     if (!document.getElementById("mp-pill-copy-btn-style")) {
@@ -2432,9 +2474,9 @@
         '<svg viewBox="0 0 1024 1024"><path fill="currentColor" d="M195.2 195.2a64 64 0 0 1 90.5 0L512 421.5l226.3-226.3a64 64 0 0 1 90.5 90.5L602.5 512l226.3 226.3a64 64 0 0 1-90.5 90.5L512 602.5 285.7 828.8a64 64 0 0 1-90.5-90.5L421.5 512 195.2 285.7a64 64 0 0 1 0-90.5"/></svg>',
       file: '<svg class="mp-file-icon-gen" fill="none" viewBox="0 0 24 28"><path d="m16.5 0 7 7v15.6c0 2.25 0 3.38-.57 4.16a3 3 0 0 1-.67.67c-.79.57-1.91.57-4.16.57H5.9c-2.25 0-3.37 0-4.16-.57a3 3 0 0 1-.67-.67C.5 25.97.5 24.85.5 22.6V5.4c0-2.25 0-3.38.57-4.16a3 3 0 0 1 .67-.67C2.52 0 3.65 0 5.9 0z" fill="url(#a)"/><path d="m16.5 0 7 7h-3.8c-1.12 0-1.68 0-2.1-.22a2 2 0 0 1-.88-.87c-.22-.43-.22-.99-.22-2.11z" fill="var(--mp-switch-knob)" fill-opacity=".55"/><path d="M6 11.78c0-.43.35-.78.78-.78h10.44a.78.78 0 1 1 0 1.57H6.78a.8.8 0 0 1-.78-.79m0 4c0-.43.35-.78.78-.78h10.44a.78.78 0 1 1 0 1.57H6.78a.8.8 0 0 1-.78-.79m.11 4.04c0-.44.35-.79.79-.79h6.32a.78.78 0 1 1 0 1.57H6.9a.8.8 0 0 1-.79-.78" fill="var(--mp-switch-knob)"/><defs><linearGradient id="a" x1="1.5" y1="-1" x2="23.5" y2="28" gradientUnits="userSpaceOnUse"><stop stop-color="var(--mp-accent-primary)"/><stop offset="1" stop-color="var(--mp-accent-primary-hover)"/></linearGradient></defs></svg>',
       expand:
-        '<svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>',
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke-linecap="round" stroke-linejoin="round" d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>',
       collapse:
-        '<svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>',
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke-linecap="round" stroke-linejoin="round" d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>',
       folder:
         '<svg style="width:16px;height:16px;margin-right:8px;vertical-align:text-bottom;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>',
       chevron:
@@ -2449,7 +2491,7 @@
       add: '<svg viewBox="0 0 14 14"><path fill="currentColor" fill-rule="evenodd" d="M8 1a1 1 0 0 0-2 0v5H1a1 1 0 0 0 0 2h5v5a1 1 0 1 0 2 0V8h5a1 1 0 1 0 0-2H8z" clip-rule="evenodd"/></svg>',
       import:
         '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M8.71 7.71 11 5.41V15a1 1 0 0 0 2 0V5.41l2.29 2.3a1 1 0 0 0 1.42 0 1 1 0 0 0 0-1.42l-4-4a1 1 0 0 0-.33-.21 1 1 0 0 0-.76 0 1 1 0 0 0-.33.21l-4 4a1 1 0 1 0 1.42 1.42M21 14a1 1 0 0 0-1 1v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-4a1 1 0 0 0-2 0v4a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-4a1 1 0 0 0-1-1"/></svg>',
-      info: '<svg viewBox="0 0 20 20"><path d="M10 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16Zm0 14a6 6 0 1 1 0-12 6 6 0 0 1 0 12ZM9 5h2v2H9V5Zm0 4h2v6H9V9Z"/></svg>',
+      info: '<svg viewBox="0 0 20 20" fill="currentColor"><path fill="currentColor" d="M10 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16Zm0 14a6 6 0 1 1 0-12 6 6 0 0 1 0 12ZM9 5h2v2H9V5Zm0 4h2v6H9V9Z"/></svg>',
       drag: '<svg viewBox="0 0 512 512"><path fill="currentColor" d="M278.6 9.4a32 32 0 0 0-45.3 0l-64 64A32 32 0 0 0 192 128h32v96h-96v-32a32.1 32.1 0 0 0-54.7-22.7l-64 64a32 32 0 0 0 0 45.3l64 64A32 32 0 0 0 128 320v-32h96v96h-32a32.1 32.1 0 0 0-22.7 54.7l64 64a32 32 0 0 0 45.3 0l64-64A32 32 0 0 0 320 384h-32v-96h96v32a32.1 32.1 0 0 0 54.7 22.7l64-64a32 32 0 0 0 0-45.3l-64-64A32 32 0 0 0 384 192v32h-96v-96h32a32.1 32.1 0 0 0 22.7-54.7l-64-64z"/></svg>',
       pin: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path></svg>',
       save: '<svg viewBox="0 0 32 32"><path fill="currentColor" d="M11.5 12A2.5 2.5 0 0 1 9 9.5V3H7.5A4.5 4.5 0 0 0 3 7.5v17a4.5 4.5 0 0 0 4 4.47V18.5A2.5 2.5 0 0 1 9.5 16h13a2.5 2.5 0 0 1 2.5 2.5v10.47a4.5 4.5 0 0 0 4-4.47V10.45a4.5 4.5 0 0 0-1.32-3.18l-2.95-2.95A4.5 4.5 0 0 0 22 3.02V9.5a2.5 2.5 0 0 1-2.5 2.5zM20 3h-9v6.5a.5.5 0 0 0 .5.5h8a.5.5 0 0 0 .5-.5zm3 26H9V18.5a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 .5.5z"/></svg>',
@@ -2526,9 +2568,9 @@
       pause:
         '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>',
       prev:
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m14 6-6 6 6 6"/></svg>',
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m14 6-6 6 6 6"/></svg>',
       next:
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m10 6 6 6-6 6"/></svg>',
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m10 6 6 6-6 6"/></svg>',
       volume:
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z" fill="currentColor" stroke="none"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>',
       volumeOff:
@@ -2760,8 +2802,9 @@
     "#pm-flow-dock .mp-sliding-pill-container{height:100%;border-radius:0;border:none;box-shadow:none;background:rgba(0,229,255,.10);backdrop-filter:blur(2px) saturate(1.15);-webkit-backdrop-filter:blur(2px) saturate(1.15);transition:width var(--mp-transition-fast),height var(--mp-transition-fast),background-color var(--mp-transition-fast),border-color var(--mp-transition-fast),backdrop-filter 280ms ease,-webkit-backdrop-filter 280ms ease;}" +
     "#pm-flow-dock .mp-sliding-pill-container:hover{background:rgba(0,229,255,.17);border:none;box-shadow:none;backdrop-filter:blur(14px) saturate(1.4);-webkit-backdrop-filter:blur(14px) saturate(1.4);}" +
     "#pm-flow-dock .mp-sliding-pill-container:active{background:rgba(0,229,255,.24);}" +
-    "#pm-flow-dock .mp-btn-part{height:100%;color:rgba(0,229,255,.7);}" +
-    "#pm-flow-dock .mp-btn-part:hover{color:#67E8F9;}" +
+    "#pm-flow-dock .mp-btn-part{height:100%;color:#67E8F9!important;}" +
+    "#pm-flow-dock .mp-btn-part:hover{color:#ffffff!important;}" +
+    "#pm-flow-dock .mp-btn-part svg{color:inherit!important;filter:drop-shadow(0 0 5px rgba(0,229,255,.45));}" +
     "#pm-flow-dock .mp-sliding-pill-container:after,#pm-flow-dock .mp-sliding-pill-container:before{background-color:rgba(0,229,255,.28);}" +
     "#pm-flow-dock .mp-btn-settings{flex:0 0 0;width:0;opacity:0;overflow:hidden;transition:flex-basis var(--mp-transition-fast),width var(--mp-transition-fast),height var(--mp-transition-fast),opacity var(--mp-transition-fast),transform var(--mp-transition-fast);}" +
     "#pm-flow-dock .mp-sliding-pill-container:hover .mp-btn-settings{flex:0 0 34px;width:34px;opacity:1;transform:translate(0);}" +
@@ -17009,15 +17052,23 @@
     SLIDESHOW_VIDEO_CAP_MS = 30000,
     SLIDESHOW_MIN_INTERVAL_MS = 2000,
     SLIDESHOW_MAX_INTERVAL_MS = 15000,
-    SLIDESHOW_INTERVAL_STEP_MS = 500;
+    SLIDESHOW_INTERVAL_STEP_MS = 500,
+    SLIDESHOW_EXCLUDE =
+      '#mp-media-slideshow, #pm-media-slideshow, #pm-flow-dock, #pm-flow-credit-chip, #mp-notification-container, #mp-pinned-carousel-wrapper, #prompt-menu-container, .mp-overlay, .mp-modal-box, .mp-dialogo-overlay, .mp-tooltip, .mp-inline-menu, [role="menu"], [role="listbox"], [role="tooltip"]',
+    SLIDESHOW_CANDIDATE_SELECTOR =
+      'video, img, [style*="background"], [data-src], [data-lazy-src], [data-original], [data-full-src], [data-bg], [data-background], [role="img"], [class*="thumb" i], [class*="photo" i], [class*="media" i], [class*="tile" i]';
   let slideshowConfig = { intervalMs: 5000, muted: true },
     slideshowOverlay = null,
     slideshowDeck = [],
     slideshowIdx = 0,
     slideshowPlaying = false,
     slideshowTimer = null,
+    slideshowHarvestTimer = null,
     slideshowVisHandler = null,
-    slideshowFsHandler = null;
+    slideshowFsHandler = null,
+    slideshowActiveScope = null,
+    slideshowActiveContextKey = "",
+    slideshowScrollCursor = 0;
   // v28.4.0: persisted preferences (dwell interval + video mute). Merges
   // over defaults so a store written by a future version can never drop
   // keys this build still reads; the interval is clamped on load because
@@ -17049,79 +17100,552 @@
       console.debug("[slideshow] config save failed:", e);
     }
   }
-  // The deck source: one DOM pass, document order, three media families
-  // (video / img / background-image), size-gated like the tracker's
-  // fingerprints (>=100x80 rendered or intrinsic) so avatars, icons and
-  // sprite tiles never enter the deck. Videos without a playable source
-  // but with a poster degrade to image slides on the poster. Dedupe is
-  // Set-based (O(1)) with a hard FIFO ceiling of 900 entries.
-  function harvestSlideshowMedia() {
-    const out = [];
-    if (!document.body) return out;
-    const seen = new Set();
-    const excl =
-      '#pm-media-slideshow, #pm-flow-dock, #pm-flow-credit-chip, #mp-notification-container, #mp-pinned-carousel-wrapper, #prompt-menu-container, .mp-overlay, .mp-modal-box, .mp-dialogo-overlay, .mp-tooltip, .mp-inline-menu, [role="menu"], [role="listbox"], [role="dialog"], .cdk-overlay-container';
-    const gate = (w, h) => w >= 100 && h >= 80;
-    const nodes = document.body.querySelectorAll(
-      'video, img, [style*="background-image"]',
-    );
-    for (const el of nodes) {
+  function slideshowClearHarvestTimer() {
+    if (slideshowHarvestTimer) {
+      clearTimeout(slideshowHarvestTimer);
+      slideshowHarvestTimer = null;
+    }
+  }
+  function normalizeSlideshowUrl(raw) {
+    if (!raw || typeof raw !== "string") return "";
+    const trimmed = raw.trim().replace(/^["']+|["']+$/g, "");
+    if (!trimmed || trimmed === "none" || trimmed === "about:blank") return "";
+    if (/^data:image\/svg/i.test(trimmed)) return "";
+    if (
+      /^data:image\/(?:gif|png|webp)/i.test(trimmed) &&
+      trimmed.length < 96
+    )
+      return "";
+    try {
+      return new URL(trimmed, location.href).href;
+    } catch (e) {
+      console.debug("[slideshow] URL normalize fallback:", e);
+      return trimmed;
+    }
+  }
+  function parseSlideshowSrcsetBest(raw) {
+    if (!raw || typeof raw !== "string") return "";
+    let bestUrl = "",
+      bestScore = -1;
+    const parts = raw.split(",");
+    for (let i = 0; i < parts.length; i++) {
+      const seg = parts[i].trim();
+      if (!seg) continue;
+      const tokens = seg.split(/\s+/);
+      const u = tokens[0];
+      if (!u) continue;
+      let score = i + 1;
+      if (tokens[1]) {
+        const m = /^(\d+(?:\.\d+)?)(w|x)$/i.exec(tokens[1].trim());
+        if (m) {
+          const val = parseFloat(m[1]);
+          score = m[2].toLowerCase() === "w" ? val : val * 1000;
+        }
+      }
+      if (score >= bestScore) {
+        bestScore = score;
+        bestUrl = u;
+      }
+    }
+    return bestUrl;
+  }
+  function isSlideshowNodeVisible(el) {
+    if (!el || !el.isConnected) return false;
+    try {
+      if (el.closest(SLIDESHOW_EXCLUDE)) return false;
+      if (el.closest('[hidden], [aria-hidden="true"], template')) return false;
+      const r = el.getBoundingClientRect();
+      if (r.width <= 0 || r.height <= 0) return false;
+      let cur = el;
+      let guard = 0;
+      while (cur && cur !== document.documentElement && guard++ < 40) {
+        if (
+          cur.hasAttribute &&
+          (cur.hasAttribute("hidden") ||
+            cur.getAttribute("aria-hidden") === "true")
+        )
+          return false;
+        const cs = window.getComputedStyle ? window.getComputedStyle(cur) : null;
+        if (
+          cs &&
+          (cs.display === "none" ||
+            cs.visibility === "hidden" ||
+            cs.visibility === "collapse" ||
+            parseFloat(cs.opacity) === 0)
+        )
+          return false;
+        cur = cur.parentElement || (cur.getRootNode && cur.getRootNode().host) || null;
+      }
+      return true;
+    } catch (e) {
+      console.debug("[slideshow] visibility check failed:", e);
+      return false;
+    }
+  }
+  function extractSlideshowCandidate(el) {
+    if (!el || !isSlideshowNodeVisible(el)) return null;
+    const gate = function (w, h) {
+      return w >= 100 && h >= 80;
+    };
+    const r = el.getBoundingClientRect();
+    const tag = (el.tagName || "").toUpperCase();
+    if (tag === "VIDEO") {
+      const sourceEl = el.querySelector("source[src], source[data-src]");
+      const rawSrc =
+        el.currentSrc ||
+        el.src ||
+        el.getAttribute("data-src") ||
+        el.getAttribute("data-lazy-src") ||
+        el.getAttribute("data-video-src") ||
+        (sourceEl &&
+          (sourceEl.src ||
+            sourceEl.getAttribute("src") ||
+            sourceEl.getAttribute("data-src"))) ||
+        "";
+      const src = normalizeSlideshowUrl(rawSrc);
+      const poster = normalizeSlideshowUrl(
+        el.poster || el.getAttribute("data-poster") || "",
+      );
+      if (src) {
+        const intrinsic =
+          (el.videoWidth || 0) >= 100 && (el.videoHeight || 0) >= 80;
+        if (!gate(r.width, r.height) && !(intrinsic && r.width >= 48 && r.height >= 48))
+          return null;
+        return { kind: "video", src: src, poster: poster };
+      }
+      if (poster && gate(r.width, r.height))
+        return { kind: "image", src: poster, poster: "" };
+      return null;
+    }
+    if (tag === "IMG") {
+      let rawSrc =
+        el.currentSrc ||
+        el.src ||
+        el.getAttribute("data-src") ||
+        el.getAttribute("data-lazy-src") ||
+        el.getAttribute("data-original") ||
+        el.getAttribute("data-full-src") ||
+        parseSlideshowSrcsetBest(
+          el.getAttribute("srcset") || el.getAttribute("data-srcset") || "",
+        ) ||
+        "";
+      if (!rawSrc && el.parentElement && el.parentElement.tagName === "PICTURE") {
+        const picSource = el.parentElement.querySelector("source[srcset], source[data-srcset]");
+        if (picSource) {
+          rawSrc = parseSlideshowSrcsetBest(
+            picSource.getAttribute("srcset") ||
+              picSource.getAttribute("data-srcset") ||
+              "",
+          );
+        }
+      }
+      const src = normalizeSlideshowUrl(rawSrc);
+      if (!src) return null;
+      const intrinsic =
+        (el.naturalWidth || 0) >= 100 && (el.naturalHeight || 0) >= 80;
+      const hasLazyAttr = !!(
+        el.getAttribute("data-src") ||
+        el.getAttribute("data-lazy-src") ||
+        el.getAttribute("data-original") ||
+        el.getAttribute("data-full-src")
+      );
+      if (
+        !gate(r.width, r.height) &&
+        !((intrinsic || hasLazyAttr) && r.width >= 60 && r.height >= 60)
+      )
+        return null;
+      return { kind: "image", src: src, poster: "" };
+    }
+    if (!gate(r.width, r.height)) return null;
+    const dataBg =
+      el.getAttribute("data-bg") || el.getAttribute("data-background") || "";
+    if (dataBg) {
+      const bgUrl = normalizeSlideshowUrl(dataBg);
+      if (bgUrl) return { kind: "image", src: bgUrl, poster: "" };
+    }
+    const inlineStyle = el.getAttribute("style") || "";
+    let m = /url\(["']?([^"')]+)["']?\)/i.exec(inlineStyle);
+    if (!m && window.getComputedStyle) {
+      const csBg = window.getComputedStyle(el).backgroundImage || "";
+      if (csBg && csBg !== "none") {
+        m = /url\(["']?([^"')]+)["']?\)/i.exec(csBg);
+      }
+    }
+    if (m && m[1]) {
+      const src = normalizeSlideshowUrl(m[1]);
+      if (src) return { kind: "image", src: src, poster: "" };
+    }
+    return null;
+  }
+  function collectSlideshowCandidateNodes(root) {
+    const scope = root && root.querySelectorAll ? root : document.body;
+    if (!scope) return [];
+    const results = [];
+    const queue = [scope];
+    let guard = 0;
+    while (queue.length && guard++ < 60) {
+      const cur = queue.shift();
+      if (!cur || !cur.querySelectorAll) continue;
+      const found = cur.querySelectorAll(SLIDESHOW_CANDIDATE_SELECTOR);
+      for (let i = 0; i < found.length; i++) results.push(found[i]);
+      const allEls = cur.querySelectorAll("*");
+      for (let j = 0; j < allEls.length && queue.length < 60; j++) {
+        if (allEls[j].shadowRoot) queue.push(allEls[j].shadowRoot);
+      }
+    }
+    return results;
+  }
+  function countVisibleSlideshowMedia(container) {
+    if (!container || !container.isConnected) return 0;
+    if (container.closest && container.closest(SLIDESHOW_EXCLUDE)) return 0;
+    const nodes = collectSlideshowCandidateNodes(container);
+    let count = 0;
+    for (let i = 0; i < nodes.length; i++) {
+      if (extractSlideshowCandidate(nodes[i])) {
+        count++;
+        if (count >= 6) break;
+      }
+    }
+    return count;
+  }
+  function resolveSlideshowScopeRoot() {
+    if (!document.body) return null;
+    try {
+      // Priority 1: topmost open non-PM dialog / CDK overlay pane / modal drawer
+      // holding visible media items (fixes collection overlays being ignored in
+      // favor of the ~30 default background photos on the underlying page).
+      const overlaySelectors =
+        '[role="dialog"]:not(.mp-dialogo), [aria-modal="true"]:not(.mp-dialogo), dialog[open], .cdk-overlay-pane';
+      const overlays = Array.from(document.body.querySelectorAll(overlaySelectors));
+      let bestOverlay = null;
+      for (let i = overlays.length - 1; i >= 0; i--) {
+        const ov = overlays[i];
+        if (!ov || !ov.isConnected || ov.closest(SLIDESHOW_EXCLUDE)) continue;
+        if (ov.closest('[hidden], [aria-hidden="true"]')) continue;
+        const r = ov.getBoundingClientRect();
+        if (r.width < 120 || r.height < 100) continue;
+        if (countVisibleSlideshowMedia(ov) > 0) {
+          bestOverlay = ov;
+          break;
+        }
+      }
+      if (bestOverlay) return bestOverlay;
+
+      // Priority 2: active visible collection container or tabpanel holding media
+      const collectionSelectors =
+        '[data-collection-id], [data-album-id], [data-gallery-id], [role="tabpanel"]:not([hidden]):not([aria-hidden="true"]), [class*="collection-view" i], [class*="collection-grid" i], [class*="album-view" i]';
+      const cols = Array.from(document.body.querySelectorAll(collectionSelectors));
+      let bestCol = null,
+        bestColCount = 0;
+      for (let j = 0; j < cols.length; j++) {
+        const col = cols[j];
+        if (!col || !col.isConnected || col.closest(SLIDESHOW_EXCLUDE)) continue;
+        if (col.closest('[hidden], [aria-hidden="true"]')) continue;
+        const r = col.getBoundingClientRect();
+        if (r.width < 120 || r.height < 100) continue;
+        const c = countVisibleSlideshowMedia(col);
+        if (c > bestColCount) {
+          bestColCount = c;
+          bestCol = col;
+        }
+      }
+      if (bestCol) return bestCol;
+    } catch (e) {
+      console.debug("[slideshow] scope resolution fallback:", e);
+    }
+    return document.body;
+  }
+  function computeSlideshowContextKey(scopeRoot) {
+    const root = scopeRoot || document.body;
+    if (!root) return location.href;
+    const tag = root.tagName || "BODY";
+    const id = root.id || "";
+    const colId =
+      (root.getAttribute &&
+        (root.getAttribute("data-collection-id") ||
+          root.getAttribute("data-album-id") ||
+          root.getAttribute("data-gallery-id") ||
+          root.getAttribute("aria-label"))) ||
+      "";
+    const cls = typeof root.className === "string" ? root.className.slice(0, 64) : "";
+    let heading = "";
+    try {
+      const h =
+        root !== document.body &&
+        root.querySelector &&
+        root.querySelector("h1, h2, h3, [role='heading'], [class*='title' i]");
+      if (h && h.textContent) heading = h.textContent.trim().slice(0, 48);
+    } catch (e) {
+      console.debug("[slideshow] heading key fallback:", e);
+    }
+    return [location.href, tag, id, colId, cls, heading].join("::");
+  }
+  function isScrollableSlideshowContainer(el) {
+    if (!el || !el.isConnected) return false;
+    const sh = el.scrollHeight || 0,
+      ch = el.clientHeight || 0;
+    if (sh <= ch + 16 || ch <= 0) return false;
+    if (
+      el === document.scrollingElement ||
+      el === document.documentElement ||
+      el === document.body
+    )
+      return true;
+    try {
+      const cs = window.getComputedStyle ? window.getComputedStyle(el) : null;
+      if (cs && /(?:auto|scroll|overlay)/i.test(cs.overflowY || cs.overflow || ""))
+        return true;
+    } catch (e) {
+      console.debug("[slideshow] scroll style check failed:", e);
+    }
+    return sh > ch + 32;
+  }
+  function findSlideshowScrollContainer(scopeRoot) {
+    const root = scopeRoot && scopeRoot.isConnected ? scopeRoot : document.body;
+    if (!root) return null;
+    try {
+      const nodes = collectSlideshowCandidateNodes(root);
+      for (let i = 0; i < nodes.length; i++) {
+        const item = extractSlideshowCandidate(nodes[i]);
+        if (!item) continue;
+        let cur = nodes[i].parentElement;
+        let guard = 0;
+        while (cur && guard++ < 32) {
+          if (isScrollableSlideshowContainer(cur)) return cur;
+          if (cur === root || cur === document.body) break;
+          cur = cur.parentElement;
+        }
+      }
+      if (isScrollableSlideshowContainer(root)) return root;
+      const descendants = root.querySelectorAll
+        ? root.querySelectorAll(
+            '[class*="scroll" i], [class*="grid" i], [class*="list" i], [class*="gallery" i], [class*="collection" i], main, section, div',
+          )
+        : [];
+      for (let j = 0; j < descendants.length && j < 250; j++) {
+        const d = descendants[j];
+        if (
+          !d.closest(SLIDESHOW_EXCLUDE) &&
+          isScrollableSlideshowContainer(d) &&
+          countVisibleSlideshowMedia(d) > 0
+        )
+          return d;
+      }
+      const docScroller = document.scrollingElement || document.documentElement;
+      if (
+        root === document.body &&
+        docScroller &&
+        (docScroller.scrollHeight || 0) > (docScroller.clientHeight || window.innerHeight || 0) + 16
+      )
+        return docScroller;
+    } catch (e) {
+      console.debug("[slideshow] find scroll container failed:", e);
+    }
+    return null;
+  }
+  function triggerSlideshowLoadMore(scopeRoot) {
+    const root = scopeRoot && scopeRoot.isConnected ? scopeRoot : document.body;
+    if (!root || !root.querySelectorAll) return false;
+    try {
+      const btns = root.querySelectorAll('button, [role="button"]');
+      const re =
+        /^(?:load\s+more|show\s+more|view\s+more|more\s+(?:photos|images|media|items|results)|see\s+more)\b/i;
+      for (let i = 0; i < btns.length; i++) {
+        const b = btns[i];
+        if (!b || !b.isConnected || b.disabled) continue;
+        if (b.closest(SLIDESHOW_EXCLUDE)) continue;
+        if (b.getAttribute("aria-disabled") === "true") continue;
+        const r = b.getBoundingClientRect();
+        if (r.width <= 0 || r.height <= 0) continue;
+        const label = (
+          (b.textContent || "") +
+          " " +
+          (b.getAttribute("aria-label") || "")
+        ).trim();
+        if (re.test(label)) {
+          b.click();
+          return true;
+        }
+      }
+    } catch (e) {
+      console.debug("[slideshow] load-more trigger failed:", e);
+    }
+    return false;
+  }
+  function dispatchSlideshowScroll(scroller) {
+    if (!scroller) return;
+    try {
+      scroller.dispatchEvent(new Event("scroll", { bubbles: true }));
+      if (
+        scroller === document.scrollingElement ||
+        scroller === document.documentElement ||
+        scroller === document.body
+      ) {
+        window.dispatchEvent(new Event("scroll"));
+      }
+    } catch (e) {
+      console.debug("[slideshow] scroll dispatch failed:", e);
+    }
+  }
+  function harvestSlideshowMediaFromScope(scopeRoot, out, seen) {
+    const root = scopeRoot && scopeRoot.isConnected ? scopeRoot : document.body;
+    if (!root) return out;
+    const nodes = collectSlideshowCandidateNodes(root);
+    for (let i = 0; i < nodes.length; i++) {
       if (out.length >= SLIDESHOW_MAX_ITEMS) break;
       try {
-        if (el.closest(excl)) continue;
-        const r = el.getBoundingClientRect();
-        if (el.tagName === "VIDEO") {
-          const src =
-            el.currentSrc ||
-            el.src ||
-            (el.querySelector("source") && el.querySelector("source").src) ||
-            "";
-          if (src) {
-            if (
-              !gate(r.width, r.height) &&
-              !(el.videoWidth >= 100 && el.videoHeight >= 80)
-            )
-              continue;
-            pushSlide(out, seen, "video", src, el.poster || "");
-            continue;
-          }
-          // No playable source yet: a poster still presents a frame.
-          if (el.poster && gate(r.width, r.height))
-            pushSlide(out, seen, "image", el.poster, "");
-          continue;
-        }
-        if (el.tagName === "IMG") {
-          const src = el.currentSrc || el.src || "";
-          // Inline SVG data URIs are the icon/sprite family, never media.
-          if (!src || src.startsWith("data:image/svg")) continue;
-          const intrinsic =
-            (el.naturalWidth || 0) >= 100 && (el.naturalHeight || 0) >= 80;
-          if (!intrinsic && !gate(r.width, r.height)) continue;
-          pushSlide(out, seen, "image", src, "");
-          continue;
-        }
-        if (!gate(r.width, r.height)) continue;
-        const m = /url\(["']?([^"')]+)["']?\)/i.exec(
-          el.getAttribute("style") || "",
-        );
-        if (m) pushSlide(out, seen, "image", m[1], "");
+        const item = extractSlideshowCandidate(nodes[i]);
+        if (item) pushSlide(out, seen, item.kind, item.src, item.poster);
       } catch (e) {
         console.debug("[slideshow] skipped a media node:", e);
       }
     }
     return out;
   }
+  function slideshowSweepScrollerSync(scopeRoot, out, seen, maxSteps) {
+    const scroller = findSlideshowScrollContainer(scopeRoot);
+    triggerSlideshowLoadMore(scopeRoot);
+    if (!scroller) return out;
+    const maxScroll = Math.max(
+      0,
+      (scroller.scrollHeight || 0) - (scroller.clientHeight || 0),
+    );
+    if (maxScroll <= 16) return out;
+    const origTop = scroller.scrollTop || 0;
+    const stepPx = Math.max(
+      260,
+      Math.floor((scroller.clientHeight || window.innerHeight || 600) * 0.85),
+    );
+    const limit = Math.max(1, Math.min(16, maxSteps || 8));
+    try {
+      let cursor = origTop;
+      for (let s = 0; s < limit && out.length < SLIDESHOW_MAX_ITEMS; s++) {
+        const curMax = Math.max(
+          0,
+          (scroller.scrollHeight || 0) - (scroller.clientHeight || 0),
+        );
+        if (cursor + stepPx <= curMax + stepPx - 4) {
+          cursor = Math.min(curMax, cursor + stepPx);
+        } else if (origTop > 0 && s === 0) {
+          cursor = 0;
+        } else {
+          triggerSlideshowLoadMore(scopeRoot);
+          break;
+        }
+        if (cursor === scroller.scrollTop) break;
+        scroller.scrollTop = cursor;
+        slideshowScrollCursor = cursor;
+        dispatchSlideshowScroll(scroller);
+        harvestSlideshowMediaFromScope(scopeRoot, out, seen);
+      }
+    } catch (e) {
+      console.debug("[slideshow] sync scroll sweep failed:", e);
+    } finally {
+      try {
+        scroller.scrollTop = origTop;
+        dispatchSlideshowScroll(scroller);
+      } catch (e) {
+        console.debug("[slideshow] scroll restore failed:", e);
+      }
+    }
+    return out;
+  }
+  // The deck source: scopes to the active collection container (dialog,
+  // overlay, tabpanel, or gallery scroller), extracts video / img / lazy /
+  // srcset / computed background-image media, and sweeps virtual-scroll
+  // windows into an ordered, deduplicated deck capped at 900 items.
+  function harvestSlideshowMedia() {
+    const out = [];
+    if (!document.body) return out;
+    const seen = new Set();
+    const scopeRoot = resolveSlideshowScopeRoot();
+    slideshowActiveScope = scopeRoot;
+    slideshowActiveContextKey = computeSlideshowContextKey(scopeRoot);
+    harvestSlideshowMediaFromScope(scopeRoot, out, seen);
+    slideshowSweepScrollerSync(scopeRoot, out, seen, 10);
+    return out;
+  }
   function pushSlide(out, seen, kind, src, poster) {
-    if (!src || seen.has(src) || out.length >= SLIDESHOW_MAX_ITEMS) return;
+    if (
+      !src ||
+      seen.has(src) ||
+      seen.size >= SLIDESHOW_MAX_ITEMS ||
+      out.length >= SLIDESHOW_MAX_ITEMS
+    )
+      return;
     seen.add(src);
     out.push({ kind: kind, src: src, poster: poster || "" });
   }
+  function slideshowUpdateCounterLabel() {
+    if (!slideshowOverlay) return;
+    const counter = slideshowOverlay.querySelector(".mp-ss-counter");
+    if (counter)
+      counter.textContent = slideshowIdx + 1 + " / " + slideshowDeck.length;
+  }
+  function slideshowScheduleAsyncHarvest(scopeRoot, stepsLeft, notifyOnDone) {
+    slideshowClearHarvestTimer();
+    if (!slideshowOverlay || stepsLeft <= 0 || slideshowDeck.length >= SLIDESHOW_MAX_ITEMS)
+      return;
+    slideshowHarvestTimer = setTimeout(function () {
+      slideshowHarvestTimer = null;
+      if (!slideshowOverlay) return;
+      try {
+        const root =
+          scopeRoot && scopeRoot.isConnected
+            ? scopeRoot
+            : resolveSlideshowScopeRoot();
+        const seen = new Set();
+        for (let i = 0; i < slideshowDeck.length; i++) {
+          if (seen.size < SLIDESHOW_MAX_ITEMS && !seen.has(slideshowDeck[i].src))
+            seen.add(slideshowDeck[i].src);
+        }
+        const scroller = findSlideshowScrollContainer(root);
+        let moved = false;
+        if (scroller) {
+          const maxScroll = Math.max(
+            0,
+            (scroller.scrollHeight || 0) - (scroller.clientHeight || 0),
+          );
+          const stepPx = Math.max(
+            260,
+            Math.floor((scroller.clientHeight || window.innerHeight || 600) * 0.85),
+          );
+          if (maxScroll > 16) {
+            const nextTop =
+              slideshowScrollCursor + stepPx <= maxScroll + stepPx - 4
+                ? Math.min(maxScroll, slideshowScrollCursor + stepPx)
+                : 0;
+            if (nextTop !== scroller.scrollTop) {
+              scroller.scrollTop = nextTop;
+              slideshowScrollCursor = nextTop;
+              dispatchSlideshowScroll(scroller);
+              moved = true;
+            }
+          }
+        }
+        const clickedMore = triggerSlideshowLoadMore(root);
+        const before = slideshowDeck.length;
+        harvestSlideshowMediaFromScope(root, slideshowDeck, seen);
+        if (slideshowDeck.length !== before) {
+          slideshowUpdateCounterLabel();
+        }
+        if ((moved || clickedMore) && stepsLeft > 1 && slideshowDeck.length < SLIDESHOW_MAX_ITEMS) {
+          slideshowScheduleAsyncHarvest(root, stepsLeft - 1, notifyOnDone);
+        } else if (notifyOnDone) {
+          showNotification("Deck refreshed — " + slideshowDeck.length + " media.", "success");
+        }
+      } catch (e) {
+        console.debug("[slideshow] async harvest step failed:", e);
+      }
+    }, 65);
+  }
   // 3lectric-Glass presentation chrome. One idempotent <style> block,
   // same injection pattern as pm-flow-dock-style / pm-flow-credit-style;
-  // all colors ride the --mp-* token system so imported themes restyle
-  // the deck for free.
+  // all colors ride the --mp-* token system with high-contrast 3lectric
+  // foreground defaults and !important protection against host-page
+  // button/SVG dark-color overrides.
   const SLIDESHOW_CSS =
-    "#mp-media-slideshow{position:fixed;inset:0;z-index:2147483646;display:flex;flex-direction:column;background:linear-gradient(160deg,rgba(10,19,26,.94) 0%,rgba(10,19,26,.90) 55%,rgba(10,19,26,.95) 100%);backdrop-filter:blur(14px) saturate(1.3);-webkit-backdrop-filter:blur(14px) saturate(1.3);font-family:var(--mp-font-family-base);}" +
+    "#mp-media-slideshow{position:fixed;inset:0;z-index:2147483646;display:flex;flex-direction:column;background:linear-gradient(160deg,rgba(10,19,26,.94) 0%,rgba(10,19,26,.90) 55%,rgba(10,19,26,.95) 100%);backdrop-filter:blur(14px) saturate(1.3);-webkit-backdrop-filter:blur(14px) saturate(1.3);font-family:var(--mp-font-family-base);color:var(--mp-text-primary,#00E5FF);}" +
     "#mp-media-slideshow *{box-sizing:border-box;}" +
     "#mp-media-slideshow .mp-ss-stage{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:24px;}" +
     "#mp-media-slideshow .mp-ss-frame{position:relative;display:flex;align-items:center;justify-content:center;max-width:100%;max-height:100%;animation:mp-ss-fade 150ms ease-in-out;}" +
@@ -17133,19 +17657,20 @@
     "#mp-media-slideshow .mp-ss-frame.is-video .mp-ss-progress{display:none;}" +
     "@keyframes mp-ss-progress{from{transform:scaleX(0);}to{transform:scaleX(1);}}" +
     "@keyframes mp-ss-fade{from{opacity:0;transform:scale(.985);}to{opacity:1;transform:scale(1);}}" +
-    "#mp-media-slideshow .mp-ss-chrome{flex:0 0 auto;display:flex;flex-wrap:wrap;row-gap:4px;align-items:center;gap:4px;padding:8px 12px;border-top:1px solid rgba(0,229,255,.3);background:linear-gradient(160deg,rgba(10,19,26,.66) 0%,rgba(10,19,26,.60) 55%,rgba(10,19,26,.68) 100%);backdrop-filter:blur(18px) saturate(1.5);-webkit-backdrop-filter:blur(18px) saturate(1.5);box-shadow:inset 0 1px 0 rgba(103,232,249,.18);}" +
-    "#mp-media-slideshow .mp-ss-brand{width:20px;height:20px;flex:0 0 auto;color:#67E8F9;opacity:.9;}" +
-    "#mp-media-slideshow .mp-ss-brand svg{width:100%;height:100%;display:block;}" +
-    "#mp-media-slideshow .mp-ss-counter{font:600 12.5px/1 var(--mp-font-family-editor);letter-spacing:.06em;color:#67E8F9;white-space:nowrap;margin:0 6px;}" +
+    "#mp-media-slideshow .mp-ss-chrome{flex:0 0 auto;display:flex;flex-wrap:wrap;row-gap:4px;align-items:center;gap:6px;padding:8px 12px;border-top:1px solid rgba(0,229,255,.35);background:linear-gradient(160deg,rgba(10,19,26,.82) 0%,rgba(10,19,26,.76) 55%,rgba(10,19,26,.85) 100%);backdrop-filter:blur(18px) saturate(1.5);-webkit-backdrop-filter:blur(18px) saturate(1.5);box-shadow:inset 0 1px 0 rgba(103,232,249,.22);}" +
+    "#mp-media-slideshow .mp-ss-brand{width:20px;height:20px;flex:0 0 auto;color:var(--mp-accent-primary,#00E5FF)!important;filter:drop-shadow(0 0 6px rgba(0,229,255,.45));}" +
+    "#mp-media-slideshow .mp-ss-brand svg{width:100%;height:100%;display:block;color:inherit!important;}" +
+    "#mp-media-slideshow .mp-ss-counter{font:600 12.5px/1 var(--mp-font-family-editor);letter-spacing:.06em;color:var(--mp-text-secondary,#67E8F9)!important;white-space:nowrap;margin:0 6px;}" +
     "#mp-media-slideshow .mp-ss-spacer{flex:1 1 auto;}" +
-    "#mp-media-slideshow .mp-ss-ctrl{width:34px;height:34px;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;border:none;background:transparent;color:rgba(0,229,255,.7);cursor:pointer;transition:background 150ms ease-in-out,color 150ms ease-in-out;}" +
-    "#mp-media-slideshow .mp-ss-ctrl svg{width:18px;height:18px;display:block;}" +
-    "#mp-media-slideshow .mp-ss-ctrl:hover{background:rgba(0,229,255,.08);color:#67E8F9;}" +
-    "#mp-media-slideshow .mp-ss-ctrl:active{background:rgba(0,229,255,.2);}" +
-    "#mp-media-slideshow .mp-ss-ctrl.mp-ss-close{color:rgba(255,0,85,.85);}" +
-    "#mp-media-slideshow .mp-ss-ctrl.mp-ss-close:hover{background:rgba(255,0,85,.12);color:#ff0055;}" +
-    "#mp-media-slideshow .mp-ss-interval{display:inline-flex;align-items:center;gap:2px;color:#67E8F9;}" +
-    "#mp-media-slideshow .mp-ss-interval-val{font:600 12px/1 var(--mp-font-family-editor);min-width:44px;text-align:center;letter-spacing:.04em;}" +
+    "#mp-media-slideshow .mp-ss-ctrl{width:34px;height:34px;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--mp-border-primary,rgba(0,229,255,.38))!important;background:rgba(0,229,255,.12)!important;color:var(--mp-text-secondary,#67E8F9)!important;border-radius:0!important;padding:0!important;cursor:pointer;transition:background 150ms ease-in-out,color 150ms ease-in-out,border-color 150ms ease-in-out,box-shadow 150ms ease-in-out;}" +
+    "#mp-media-slideshow .mp-ss-ctrl svg{width:18px;height:18px;display:block;color:inherit!important;flex-shrink:0;pointer-events:none;filter:drop-shadow(0 0 4px rgba(0,229,255,.35));}" +
+    "#mp-media-slideshow .mp-ss-ctrl:hover{background:rgba(0,229,255,.24)!important;color:var(--mp-text-buttons,#ffffff)!important;border-color:var(--mp-accent-primary,#00E5FF)!important;box-shadow:0 0 16px rgba(0,229,255,.45)!important;}" +
+    "#mp-media-slideshow .mp-ss-ctrl:active{background:rgba(0,229,255,.32)!important;}" +
+    "#mp-media-slideshow .mp-ss-ctrl.mp-ss-close{color:var(--mp-accent-close,#ff0055)!important;border-color:rgba(255,0,85,.45)!important;background:rgba(255,0,85,.12)!important;}" +
+    "#mp-media-slideshow .mp-ss-ctrl.mp-ss-close svg{filter:drop-shadow(0 0 4px rgba(255,0,85,.4));}" +
+    "#mp-media-slideshow .mp-ss-ctrl.mp-ss-close:hover{background:rgba(255,0,85,.28)!important;color:#ffffff!important;border-color:#ff0055!important;box-shadow:0 0 16px rgba(255,0,85,.5)!important;}" +
+    "#mp-media-slideshow .mp-ss-interval{display:inline-flex;align-items:center;gap:4px;color:var(--mp-text-primary,#00E5FF)!important;}" +
+    "#mp-media-slideshow .mp-ss-interval-val{font:600 12px/1 var(--mp-font-family-editor);min-width:44px;text-align:center;letter-spacing:.04em;color:var(--mp-text-secondary,#67E8F9)!important;}" +
     "#mp-media-slideshow .mp-ss-sep{width:1px;height:22px;flex:0 0 auto;background:rgba(0,229,255,.28);margin:0 6px;}" +
     "body.mp-slideshow-open #pm-flow-dock,body.mp-slideshow-open #pm-flow-credit-chip{display:none !important;}" +
     "@media (prefers-reduced-motion:reduce){#mp-media-slideshow .mp-ss-frame{animation:none;}#mp-media-slideshow .mp-ss-progress{animation:none;}}";
@@ -17184,10 +17709,20 @@
     }, dwell);
   }
   // Pagination with wraparound — the "repeat" in the vision: the deck
-  // loops the entire collection indefinitely.
+  // loops the entire collection indefinitely, and when advancing near
+  // the end of the currently harvested window it triggers a background
+  // scroll-harvest step so virtualized collections continue growing.
   function slideshowAdvance(dir) {
     const n = slideshowDeck.length;
     if (!n) return;
+    if (
+      dir > 0 &&
+      slideshowIdx >= n - 3 &&
+      n < SLIDESHOW_MAX_ITEMS &&
+      !slideshowHarvestTimer
+    ) {
+      slideshowScheduleAsyncHarvest(slideshowActiveScope, 2, false);
+    }
     slideshowIdx = (slideshowIdx + dir + n) % n;
     renderSlideshowSlide();
   }
@@ -17243,6 +17778,16 @@
     btn.dataset.muted = state;
     setSafeInnerHTML(btn, slideshowConfig.muted ? ICONS.volumeOff : ICONS.volume);
   }
+  function slideshowSyncFullscreenIcon() {
+    if (!slideshowOverlay) return;
+    const fsBtn = slideshowOverlay.querySelector(".mp-ss-fs");
+    if (!fsBtn) return;
+    const isFs = !!document.fullscreenElement;
+    const state = isFs ? "1" : "0";
+    if (fsBtn.dataset.fs === state) return;
+    fsBtn.dataset.fs = state;
+    setSafeInnerHTML(fsBtn, isFs ? ICONS.collapse : ICONS.expand);
+  }
   function slideshowToggleFullscreen() {
     try {
       if (document.fullscreenElement) {
@@ -17256,27 +17801,65 @@
       console.debug("[slideshow] fullscreen failed:", e);
     }
   }
-  // Re-harvest on demand (the refresh button): keeps the user's place by
-  // URL when the new deck still holds the current slide, clamps
-  // otherwise. An empty re-harvest means the page stopped exposing
-  // media — the honest response is to say so and keep the deck as-is.
+  // Re-harvest & read-more on demand (the refresh button / R key):
+  // accumulates newly discovered items from the active collection (and
+  // steps virtualized scroll containers + pagination triggers forward)
+  // while preserving already-harvested items when staying in the same
+  // collection, or resets cleanly if the underlying collection context
+  // changed. Keeps the user's current slide by URL when present.
   function slideshowRefreshDeck() {
-    const fresh = harvestSlideshowMedia();
-    if (!fresh.length) {
+    const scopeRoot = resolveSlideshowScopeRoot();
+    const ctxKey = computeSlideshowContextKey(scopeRoot);
+    const sameContext =
+      !!slideshowActiveContextKey && ctxKey === slideshowActiveContextKey;
+    slideshowActiveScope = scopeRoot;
+    slideshowActiveContextKey = ctxKey;
+    const merged = sameContext ? slideshowDeck.slice() : [];
+    const seen = new Set();
+    for (let i = 0; i < merged.length; i++) {
+      if (seen.size < SLIDESHOW_MAX_ITEMS && !seen.has(merged[i].src))
+        seen.add(merged[i].src);
+    }
+    harvestSlideshowMediaFromScope(scopeRoot, merged, seen);
+    slideshowSweepScrollerSync(scopeRoot, merged, seen, 12);
+    const scroller = findSlideshowScrollContainer(scopeRoot);
+    if (scroller) {
+      const maxScroll = Math.max(
+        0,
+        (scroller.scrollHeight || 0) - (scroller.clientHeight || 0),
+      );
+      const stepPx = Math.max(
+        260,
+        Math.floor((scroller.clientHeight || window.innerHeight || 600) * 0.85),
+      );
+      if (maxScroll > 16) {
+        const nextTop =
+          slideshowScrollCursor + stepPx <= maxScroll + stepPx - 4
+            ? Math.min(maxScroll, slideshowScrollCursor + stepPx)
+            : 0;
+        scroller.scrollTop = nextTop;
+        slideshowScrollCursor = nextTop;
+        dispatchSlideshowScroll(scroller);
+        harvestSlideshowMediaFromScope(scopeRoot, merged, seen);
+      }
+    }
+    triggerSlideshowLoadMore(scopeRoot);
+    if (!merged.length) {
       showNotification("No media found on this page to present.", "info");
       return;
     }
     const cur = slideshowDeck[slideshowIdx];
     let next = cur
-      ? fresh.findIndex(function (s) {
+      ? merged.findIndex(function (s) {
           return s.src === cur.src;
         })
       : -1;
-    if (next < 0) next = Math.min(slideshowIdx, fresh.length - 1);
-    slideshowDeck = fresh;
+    if (next < 0) next = Math.min(slideshowIdx, merged.length - 1);
+    slideshowDeck = merged;
     slideshowIdx = next;
     renderSlideshowSlide();
-    showNotification("Deck refreshed — " + fresh.length + " media.", "success");
+    showNotification("Deck refreshed — " + merged.length + " media.", "success");
+    slideshowScheduleAsyncHarvest(scopeRoot, 4, false);
   }
   // The slide renderer: builds the frame node fresh each time (the old
   // video's listeners die with its node — no accumulation), restarts the
@@ -17339,10 +17922,9 @@
     );
     frame.appendChild(prog);
     stage.appendChild(frame);
-    const counter = slideshowOverlay.querySelector(".mp-ss-counter");
-    if (counter)
-      counter.textContent = slideshowIdx + 1 + " / " + slideshowDeck.length;
+    slideshowUpdateCounterLabel();
     slideshowApplyMute();
+    slideshowSyncFullscreenIcon();
     slideshowScheduleSlide();
   }
   function buildSlideshowOverlay() {
@@ -17395,7 +17977,7 @@
     intervalBox.className = "mp-ss-interval";
     const minus = document.createElement("button");
     minus.type = "button";
-    minus.className = "mp-ss-ctrl";
+    minus.className = "mp-ss-ctrl mp-ss-slower";
     setSafeInnerHTML(minus, ICONS.prev);
     createCustomTooltip(minus, "Slower (-0.5s)", "top");
     minus.addEventListener("click", function (ev) {
@@ -17407,7 +17989,7 @@
     ivLabel.textContent = (slideshowConfig.intervalMs / 1000).toFixed(1) + "s";
     const plus = document.createElement("button");
     plus.type = "button";
-    plus.className = "mp-ss-ctrl";
+    plus.className = "mp-ss-ctrl mp-ss-faster";
     setSafeInnerHTML(plus, ICONS.next);
     createCustomTooltip(plus, "Faster (+0.5s)", "top");
     plus.addEventListener("click", function (ev) {
@@ -17430,8 +18012,19 @@
     // Seed the idempotence guard so the first render never rewrites the
     // icon the builder just placed (see slideshowApplyMute).
     muteBtn.dataset.muted = slideshowConfig.muted ? "1" : "0";
-    mkCtrl("", ICONS.expand, "Fullscreen (F)", slideshowToggleFullscreen);
-    mkCtrl("", ICONS.restore, "Re-scan page media", slideshowRefreshDeck);
+    const fsBtn = mkCtrl(
+      "mp-ss-fs",
+      ICONS.expand,
+      "Fullscreen (F)",
+      slideshowToggleFullscreen,
+    );
+    fsBtn.dataset.fs = "0";
+    mkCtrl(
+      "mp-ss-refresh",
+      ICONS.restore,
+      "Re-scan / Read more media (R)",
+      slideshowRefreshDeck,
+    );
     mkCtrl("mp-ss-close", ICONS.close, "Close (Esc)", closeSlideshow);
     root.appendChild(chrome);
     return root;
@@ -17492,20 +18085,30 @@
         return;
       case "f":
       case "F":
+        if (ev.ctrlKey || ev.altKey || ev.metaKey) return;
         ev.preventDefault();
         ev.stopPropagation();
         slideshowToggleFullscreen();
         return;
       case "m":
       case "M":
+        if (ev.ctrlKey || ev.altKey || ev.metaKey) return;
         ev.preventDefault();
         ev.stopPropagation();
         slideshowToggleMute();
+        return;
+      case "r":
+      case "R":
+        if (ev.ctrlKey || ev.altKey || ev.metaKey) return;
+        ev.preventDefault();
+        ev.stopPropagation();
+        slideshowRefreshDeck();
         return;
     }
   }
   function openSlideshow() {
     if (slideshowOverlay) return;
+    slideshowScrollCursor = 0;
     const deck = harvestSlideshowMedia();
     if (!deck.length) {
       showNotification("No media found on this page to present.", "info");
@@ -17536,9 +18139,10 @@
     };
     document.addEventListener("visibilitychange", slideshowVisHandler);
     slideshowFsHandler = function () {
-      // Re-arm timing after fullscreen transitions settle: the element
-      // re-layout can pause video playback, and a playing deck must
-      // resume its dwell exactly once. No-op for image slides.
+      // Re-arm timing and sync fullscreen icon after fullscreen transitions:
+      // the element re-layout can pause video playback, and a playing deck
+      // must resume its dwell.
+      slideshowSyncFullscreenIcon();
       const vid = slideshowOverlay
         ? slideshowOverlay.querySelector("video.mp-ss-slide")
         : null;
@@ -17547,6 +18151,7 @@
     document.addEventListener("fullscreenchange", slideshowFsHandler);
     slideshowSetPlaying(true);
     renderSlideshowSlide();
+    slideshowScheduleAsyncHarvest(slideshowActiveScope, 4, false);
     try {
       slideshowOverlay.focus();
     } catch (e) { console.debug("PM interceptor:", e);}
@@ -17554,6 +18159,7 @@
   function closeSlideshow() {
     if (!slideshowOverlay) return;
     slideshowClearTimer();
+    slideshowClearHarvestTimer();
     document.removeEventListener("keydown", slideshowOnKey, true);
     if (slideshowVisHandler)
       document.removeEventListener("visibilitychange", slideshowVisHandler);
@@ -17573,6 +18179,9 @@
     slideshowDeck = [];
     slideshowIdx = 0;
     slideshowPlaying = false;
+    slideshowActiveScope = null;
+    slideshowActiveContextKey = "";
+    slideshowScrollCursor = 0;
   }
   function toggleSlideshow() {
     if (slideshowOverlay) closeSlideshow();
@@ -17617,7 +18226,7 @@
     GM_info.script &&
     GM_info.script.version
       ? GM_info.script.version
-      : "28.7.3-Ψ";
+      : "28.7.7";
   // v27.0.12: canonical backup snapshot helper. The beta's Gist push
   // called snapshotKeys() before it existed anywhere, so every "Sync Now"
   // threw a ReferenceError; takeAutoBackup() now shares this one helper

@@ -30,7 +30,7 @@
 | **ModelSearch** | `4.0.2` | forums | kernel-free | [reference](./modelsearch/) |
 | **PageCraft** | `1.1.3` | ux utilities | build-module (5-kernel) | [reference](./pagecraft/) |
 | **Pixeldrain++** | `1.2.1` | media & links | typeof-guarded + gmFetch fallback | [reference](./pixeldrain/) |
-| **Prompt Master** | `28.7.6` | sovereign platforms | typeof-guarded + gmFetch fallback | [reference](./prompt-master/) |
+| **Prompt Master** | `28.7.7` | sovereign platforms | typeof-guarded + gmFetch fallback | [reference](./prompt-master/) |
 | **Recon** | `9.1.0` | privacy & security | typeof-guarded (NetHook) | [reference](./recon/) |
 | **Redgifs++** | `5.3` | video & players | kernel-free | [reference](./redgifs/) |
 | **Stream Interceptor** | `3.3.0` | media & links | typeof-guarded (NetHook) | [reference](./stream-interceptor/) |

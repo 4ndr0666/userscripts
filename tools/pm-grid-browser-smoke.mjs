@@ -196,6 +196,148 @@ function buildPmFixtureHtml(baseCss, orgCss, cols) {
 </html>`;
 }
 
+
+const PNG_DATA_URI =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAABkCAYAAAD0bce9AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAABdJREFUeF7twQEBAAAAgiD/r25IQAEAAPBoDhAAAQ66P+8AAAAASUVORK5CYII=";
+
+function buildSlideshowFixtureHtml(scriptSource) {
+  const safe = String(scriptSource).replace(/<\/script>/gi, "<\\/script>");
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Prompt Master Slideshow & Icon Contrast Fixture</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #0a131a; color: #eee; font-family: sans-serif; }
+  /* Hostile host-page button rule that previously turned non-!important button icons dark */
+  body button { color: rgb(17, 17, 17); background: rgb(12, 12, 12); }
+  #bg-gallery { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px; }
+  .bg-img { width: 160px; height: 120px; display: block; }
+  .cdk-overlay-container { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; }
+  .cdk-overlay-pane { width: 900px; height: 520px; background: #111822; border: 1px solid #233; display: flex; flex-direction: column; }
+  #col-scroller { flex: 1 1 auto; height: 360px; overflow-y: auto; position: relative; }
+  #col-spacer { height: 2400px; position: relative; }
+  #col-window { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; }
+  .col-img { width: 160px; height: 120px; display: block; }
+  .col-bg-tile { width: 160px; height: 120px; display: block; background-size: cover; }
+</style>
+<script>
+  window.__gmStore = {};
+  window.__gmMenu = {};
+  window.GM_info = { script: { version: "28.7.7" } };
+  window.GM_getValue = async function(k, defVal) {
+    return Object.prototype.hasOwnProperty.call(window.__gmStore, k) ? window.__gmStore[k] : defVal;
+  };
+  window.GM_setValue = async function(k, v) { window.__gmStore[k] = v; };
+  window.GM_listValues = async function() { return Object.keys(window.__gmStore); };
+  window.GM_deleteValue = async function(k) { delete window.__gmStore[k]; };
+  window.GM_registerMenuCommand = function(label, fn) { window.__gmMenu[label] = fn; };
+  window.GM_setClipboard = function() {};
+  window.GM_xmlhttpRequest = function(opts) {
+    if (opts && opts.onerror) setTimeout(function() { opts.onerror(new Error("offline fixture")); }, 0);
+  };
+</script>
+</head>
+<body>
+  <!-- 30 default background photos on the underlying page -->
+  <div id="bg-gallery"></div>
+  <!-- Hidden stale photos from an inactive view -->
+  <div id="hidden-stale" style="display:none" aria-hidden="true"></div>
+
+  <!-- Active collection rendered inside an Angular CDK / ARIA dialog overlay -->
+  <div class="cdk-overlay-container">
+    <div class="cdk-overlay-pane">
+      <div role="dialog" aria-modal="true" data-collection-id="col-A" id="active-collection-dialog" style="width:880px;height:500px;display:flex;flex-direction:column;">
+        <h2 id="col-heading">Collection Alpha</h2>
+        <div id="col-scroller">
+          <div id="col-spacer">
+            <div id="col-window"></div>
+          </div>
+        </div>
+        <button type="button" id="load-more-btn" style="width:160px;height:32px;">Load more photos</button>
+      </div>
+    </div>
+  </div>
+
+  <textarea id="prompt-textarea" style="width:300px;height:60px;"></textarea>
+
+  <script>
+    var bgGal = document.getElementById("bg-gallery");
+    for (var b = 1; b <= 30; b++) {
+      var bi = document.createElement("img");
+      bi.className = "bg-img";
+      bi.src = "http://flow.google.com/media/bg-" + b + ".jpg";
+      bgGal.appendChild(bi);
+    }
+    var hid = document.getElementById("hidden-stale");
+    for (var h = 1; h <= 5; h++) {
+      var hi = document.createElement("img");
+      hi.src = "http://flow.google.com/media/hidden-" + h + ".jpg";
+      hid.appendChild(hi);
+    }
+
+    window.__activeCollectionPrefix = "colA";
+    window.__extraBatchLoaded = false;
+    window.__lazyExtrasCount = 0;
+    var scroller = document.getElementById("col-scroller");
+    var win = document.getElementById("col-window");
+
+    window.__renderVirtualWindow = function() {
+      win.replaceChildren();
+      var prefix = window.__activeCollectionPrefix;
+      if (prefix === "colB") {
+        for (var k = 1; k <= 42; k++) {
+          var imB = document.createElement("img");
+          imB.className = "col-img";
+          imB.src = "http://flow.google.com/media/colB-" + k + ".jpg";
+          win.appendChild(imB);
+        }
+        return;
+      }
+      var top = scroller.scrollTop || 0;
+      var start = 1, end = 30;
+      if (top >= 550) { start = 61; end = 75; }
+      else if (top >= 250) { start = 31; end = 60; }
+      for (var i = start; i <= end; i++) {
+        var im = document.createElement("img");
+        im.className = "col-img";
+        im.src = "http://flow.google.com/media/" + prefix + "-" + i + ".jpg";
+        win.appendChild(im);
+      }
+      if (window.__extraBatchLoaded) {
+        for (var j = 76; j <= 90; j++) {
+          var im2 = document.createElement("img");
+          im2.className = "col-img";
+          im2.setAttribute("data-src", "http://flow.google.com/media/" + prefix + "-" + j + ".jpg");
+          win.appendChild(im2);
+        }
+      }
+      if (window.__lazyExtrasCount > 0) {
+        for (var m = 91; m <= 90 + window.__lazyExtrasCount; m++) {
+          var tile = document.createElement("div");
+          tile.className = "col-bg-tile";
+          tile.style.backgroundImage = "url('http://flow.google.com/media/" + prefix + "-" + m + ".jpg')";
+          win.appendChild(tile);
+        }
+      }
+    };
+
+    scroller.addEventListener("scroll", function() {
+      window.__renderVirtualWindow();
+    });
+    document.getElementById("load-more-btn").addEventListener("click", function() {
+      window.__extraBatchLoaded = true;
+      window.__renderVirtualWindow();
+      this.disabled = true;
+      this.style.display = "none";
+    });
+    window.__renderVirtualWindow();
+  </script>
+  <script>${safe}</script>
+</body>
+</html>`;
+}
+
 function fetchJson(url) {
   return new Promise((resolve, reject) => {
     http
@@ -424,6 +566,16 @@ export async function runPmGridBrowserBattery() {
     server = http.createServer((req, res) => {
       const url = new URL(req.url, "http://fixture/");
       const mode = url.searchParams.get("mode") || "dist";
+      if (url.pathname === "/slideshow") {
+        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+        res.end(buildSlideshowFixtureHtml(mode === "canon" ? canonSource : distSource));
+        return;
+      }
+      if (url.pathname.startsWith("/media/")) {
+        res.writeHead(200, { "Content-Type": "image/png" });
+        res.end(Buffer.from(PNG_DATA_URI.split(",")[1], "base64"));
+        return;
+      }
       const cols = Number(url.searchParams.get("cols") || 3);
       const stripped = url.searchParams.get("stripped") === "1";
       const base = mode === "canon" ? baseCssCanon : baseCssDist;
@@ -442,6 +594,7 @@ export async function runPmGridBrowserBattery() {
         "--no-sandbox",
         "--disable-gpu",
         "--disable-dev-shm-usage",
+        "--host-resolver-rules=MAP flow.google.com 127.0.0.1",
         `--remote-debugging-port=0`,
         `--user-data-dir=${path.join(tmpDir, "profile")}`,
         "about:blank",
@@ -487,7 +640,7 @@ export async function runPmGridBrowserBattery() {
     }
 
     /* --- 4-6: the field geometry: n=3 at 1568×864 (the screenshot's case) --- */
-    const grid3 = await measureAt([1568, 864], `http://127.0.0.1:${port}/?mode=dist&cols=3`);
+    const grid3 = await measureAt([1568, 864], `http://flow.google.com:${port}/?mode=dist&cols=3`);
     const narrowestTitle = Math.min(...grid3.map((t) => t.titleWidth));
     const widestLine = Math.max(...grid3.map((t) => t.widestLine));
     assert(
@@ -507,7 +660,7 @@ export async function runPmGridBrowserBattery() {
     );
 
     /* --- 7: the v28.7.5 superset: wide single-column card stays inline --- */
-    const grid1 = await measureAt([1280, 800], `http://127.0.0.1:${port}/?mode=dist&cols=1`);
+    const grid1 = await measureAt([1280, 800], `http://flow.google.com:${port}/?mode=dist&cols=1`);
     assert(
       "7. (get) SUPERSET: wide n=1 card keeps the v28.7.5 inline layout (strip on the title's line, title full-width)",
       grid1.every((t) => !t.stacked && t.titleWidth >= 300),
@@ -515,7 +668,7 @@ export async function runPmGridBrowserBattery() {
     );
 
     /* --- 8: wide n=2 cards stay inline (stacking only below 580px) --- */
-    const grid2 = await measureAt([1440, 900], `http://127.0.0.1:${port}/?mode=dist&cols=2`);
+    const grid2 = await measureAt([1440, 900], `http://flow.google.com:${port}/?mode=dist&cols=2`);
     assert(
       "8. (get) SUPERSET: wide n=2 card (>= 580px) keeps the inline layout too",
       grid2.every((t) => !t.stacked && t.titleWidth >= 150),
@@ -523,19 +676,165 @@ export async function runPmGridBrowserBattery() {
     );
 
     /* --- 9: canon parity live: canon CSS produces the same stacked cure --- */
-    const grid3canon = await measureAt([1568, 864], `http://127.0.0.1:${port}/?mode=canon&cols=3`);
+    const grid3canon = await measureAt([1568, 864], `http://flow.google.com:${port}/?mode=canon&cols=3`);
     assert(
       "9. canon live parity: canon CSS stacks the n=3 grid identically (narrowest title >= 300px)",
       Math.min(...grid3canon.map((t) => t.titleWidth)) >= 300 && grid3canon.every((t) => t.stacked)
     );
 
     /* --- 10: red control — stripping the @container block resurrects the bug --- */
-    const grid3red = await measureAt([1568, 864], `http://127.0.0.1:${port}/?mode=dist&cols=3&stripped=1`);
+    const grid3red = await measureAt([1568, 864], `http://flow.google.com:${port}/?mode=dist&cols=3&stripped=1`);
     const redNarrowest = Math.min(...grid3red.map((t) => t.titleWidth));
     assert(
       "10. red-control: without the container query the n=3 title starves again (metric flags it: narrowest < 150px)",
       redNarrowest < 150,
       `narrowest=${redNarrowest}px (the original bug geometry, detected)`
+    );
+
+    /* --- 11-14: v28.7.7 Media Slideshow collection scoping, >30 virtual-scroll accumulation, refresh merge & icon contrast --- */
+    async function runSlideshowProbe(mode) {
+      await cdp.send("Emulation.setDeviceMetricsOverride", {
+        width: 1280, height: 800, deviceScaleFactor: 1, mobile: false,
+      });
+      await cdp.send("Page.navigate", { url: `http://flow.google.com:${port}/slideshow?mode=${mode}` });
+      await new Promise((r) => setTimeout(r, 450));
+      const res = await cdp.send("Runtime.evaluate", {
+        awaitPromise: true,
+        returnByValue: true,
+        expression: `(async function() {
+          for (let i = 0; i < 40; i++) {
+            if (window.__gmMenu && Object.keys(window.__gmMenu).some(k => k.includes("Media Slideshow"))) break;
+            await new Promise(r => setTimeout(r, 60));
+          }
+          // Open slideshow via Alt+T hotkey
+          document.dispatchEvent(new KeyboardEvent("keydown", { key: "t", code: "KeyT", altKey: true, bubbles: true, cancelable: true }));
+          await new Promise(r => setTimeout(r, 380));
+          const ov = document.getElementById("mp-media-slideshow");
+          if (!ov) return { opened: false };
+          const counter1 = (ov.querySelector(".mp-ss-counter") || {}).textContent || "";
+          const slide1Src = (ov.querySelector(".mp-ss-slide") || {}).src || "";
+
+          // Inspect all 9 control buttons & their SVG children + computed foreground colors
+          const ctrls = Array.from(ov.querySelectorAll(".mp-ss-ctrl"));
+          const iconAudit = ctrls.map(btn => {
+            const svg = btn.querySelector("svg");
+            const graphicChildren = svg ? svg.querySelectorAll("path, rect, line, polygon, circle, polyline").length : 0;
+            const sr = svg ? svg.getBoundingClientRect() : { width: 0, height: 0 };
+            const cs = window.getComputedStyle(btn);
+            const svgCs = svg ? window.getComputedStyle(svg) : { color: "" };
+            return {
+              cls: btn.className,
+              hasSvg: !!svg,
+              graphicChildren,
+              w: Math.round(sr.width),
+              h: Math.round(sr.height),
+              color: cs.color,
+              svgColor: svgCs.color,
+              svgFillAttr: svg ? svg.getAttribute("fill") : null,
+              svgStrokeAttr: svg ? svg.getAttribute("stroke") : null,
+            };
+          });
+
+          // Step forward with Next button click
+          const nextBtn = ov.querySelector(".mp-ss-next");
+          if (nextBtn) nextBtn.click();
+          const slide2Src = (ov.querySelector(".mp-ss-slide") || {}).src || "";
+
+          // Add 15 more lazy background-image tiles to Collection A and click Refresh ("Read more")
+          window.__lazyExtrasCount = 15;
+          window.__renderVirtualWindow();
+          const refreshBtn = ov.querySelector(".mp-ss-refresh");
+          if (refreshBtn) refreshBtn.click();
+          await new Promise(r => setTimeout(r, 200));
+          const counterAfterRefresh = (ov.querySelector(".mp-ss-counter") || {}).textContent || "";
+
+          // Close slideshow, switch dialog to Collection B (42 items), and reopen
+          const closeBtn = ov.querySelector(".mp-ss-close");
+          if (closeBtn) closeBtn.click();
+          const closedClean = !document.getElementById("mp-media-slideshow");
+
+          const dlg = document.getElementById("active-collection-dialog");
+          dlg.setAttribute("data-collection-id", "col-B");
+          document.getElementById("col-heading").textContent = "Collection Beta";
+          window.__activeCollectionPrefix = "colB";
+          window.__renderVirtualWindow();
+
+          document.dispatchEvent(new KeyboardEvent("keydown", { key: "t", code: "KeyT", altKey: true, bubbles: true, cancelable: true }));
+          await new Promise(r => setTimeout(r, 200));
+          const ovB = document.getElementById("mp-media-slideshow");
+          const counterColB = ovB ? ((ovB.querySelector(".mp-ss-counter") || {}).textContent || "") : "";
+          const slideColBSrc = ovB ? ((ovB.querySelector(".mp-ss-slide") || {}).src || "") : "";
+          if (ovB && ovB.querySelector(".mp-ss-close")) ovB.querySelector(".mp-ss-close").click();
+
+          return {
+            opened: true,
+            counter1,
+            slide1Src,
+            slide2Src,
+            counterAfterRefresh,
+            closedClean,
+            counterColB,
+            slideColBSrc,
+            ctrlCount: ctrls.length,
+            iconAudit,
+          };
+        })()`,
+      });
+      return res.result ? res.result.value : { opened: false };
+    }
+
+    const ssDist = await runSlideshowProbe("dist");
+    assert(
+      "11. (click, wait, get) Media Slideshow scopes to open dialog collection (0 background/hidden bleed) & sweeps virtual scroll + load-more beyond 30-image ceiling (90 items)",
+      ssDist.opened &&
+        ssDist.counter1 === "1 / 90" &&
+        ssDist.slide1Src.includes("/media/colA-1.jpg") &&
+        ssDist.slide2Src.includes("/media/colA-2.jpg"),
+      `counter1=${ssDist.counter1}, slide1=${ssDist.slide1Src}, slide2=${ssDist.slide2Src}`
+    );
+    assert(
+      "12. (click, wait, get) Media Slideshow refresh/read-more merges newly hydrated items (105 items) & switching collections harvests Collection B (42 items)",
+      ssDist.counterAfterRefresh === "2 / 105" &&
+        ssDist.closedClean &&
+        ssDist.counterColB === "1 / 42" &&
+        ssDist.slideColBSrc.includes("/media/colB-1.jpg"),
+      `afterRefresh=${ssDist.counterAfterRefresh}, colB=${ssDist.counterColB}, slideColB=${ssDist.slideColBSrc}`
+    );
+    const allIconsValid =
+      Array.isArray(ssDist.iconAudit) &&
+      ssDist.ctrlCount === 9 &&
+      ssDist.iconAudit.every(
+        (ic) =>
+          ic.hasSvg &&
+          ic.graphicChildren >= 1 &&
+          ic.w >= 14 &&
+          ic.h >= 14 &&
+          ic.color !== "rgb(17, 17, 17)" &&
+          ic.color !== "rgb(0, 0, 0)" &&
+          (ic.color === "rgb(103, 232, 249)" ||
+            ic.color === "rgb(0, 229, 255)" ||
+            ic.color === "rgb(255, 0, 85)")
+      );
+    const fsIcon = (ssDist.iconAudit || []).find((ic) => ic.cls.includes("mp-ss-fs"));
+    assert(
+      "13. (get) Media Slideshow foreground icons: all 9 chrome buttons render non-empty SVG paths (>=14x14px) with high-contrast 3lectric-Glass foreground colors",
+      allIconsValid &&
+        fsIcon &&
+        fsIcon.svgFillAttr === "none" &&
+        fsIcon.svgStrokeAttr === "currentColor",
+      `ctrls=${ssDist.ctrlCount}, allValid=${allIconsValid}, fs=${JSON.stringify(fsIcon)}`
+    );
+
+    const ssCanon = await runSlideshowProbe("canon");
+    assert(
+      "14. canon live parity: Media Slideshow virtual-scroll harvest (90 -> 105), collection switch (42), and 9/9 bright SVG icons hold in canon",
+      ssCanon.opened &&
+        ssCanon.counter1 === "1 / 90" &&
+        ssCanon.counterAfterRefresh === "2 / 105" &&
+        ssCanon.counterColB === "1 / 42" &&
+        ssCanon.ctrlCount === 9 &&
+        ssCanon.iconAudit.every((ic) => ic.graphicChildren >= 1 && ic.w >= 14),
+      `canonCounter1=${ssCanon.counter1}, canonRefresh=${ssCanon.counterAfterRefresh}, canonColB=${ssCanon.counterColB}`
     );
   } finally {
     if (cdp) cdp.close();

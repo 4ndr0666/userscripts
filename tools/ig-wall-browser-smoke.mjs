@@ -347,7 +347,7 @@ export async function runIgWallBrowserBattery() {
     await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
     const port = server.address().port;
 
-    const targetUrl = `http://www.instagram.com:${port}/fixtureuser/`;
+    const targetUrl = `http://ig-fixture.local:${port}/fixtureuser/`;
     browser = spawn(
       CHROMIUM_BIN,
       [
@@ -358,7 +358,7 @@ export async function runIgWallBrowserBattery() {
         "--no-first-run",
         "--no-default-browser-check",
         `--user-data-dir=${path.join(tmpDir, "ud")}`,
-        `--host-resolver-rules=MAP www.instagram.com 127.0.0.1`,
+        `--host-resolver-rules=MAP ig-fixture.local 127.0.0.1,MAP www.instagram.com 127.0.0.1`,
         "--window-size=1280,800",
         "--remote-debugging-port=0",
         targetUrl,
@@ -393,7 +393,7 @@ export async function runIgWallBrowserBattery() {
     let pageWsUrl = null;
     for (let i = 0; i < 120; i++) {
       const targets = await fetchJson(`http://127.0.0.1:${wsBrowserUrl.port}/json/list`);
-      const pageTarget = targets.find((t) => t.type === "page" && t.url.includes("www.instagram.com"));
+      const pageTarget = targets.find((t) => t.type === "page" && (t.url.includes("ig-fixture.local") || t.url.includes("www.instagram.com")));
       if (pageTarget && pageTarget.webSocketDebuggerUrl) { pageWsUrl = pageTarget.webSocketDebuggerUrl; break; }
       await new Promise((r) => setTimeout(r, 150));
     }

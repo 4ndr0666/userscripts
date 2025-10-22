@@ -624,9 +624,11 @@ async function gateD() {
     if (!pmCanon2.includes('mediaSlideshow: {') || !pmCanon2.includes('keys: "Alt+T"') ||
         !pmCanon2.includes("function toggleSlideshow()") || !pmCanon2.includes("function closeSlideshow()") ||
         !pmCanon2.includes("function openSlideshow()") || !pmCanon2.includes("function harvestSlideshowMedia()") ||
+        !pmCanon2.includes("function resolveSlideshowScopeRoot()") || !pmCanon2.includes("function slideshowSweepScrollerSync(") ||
+        !pmCanon2.includes("function slideshowScheduleAsyncHarvest(") || !pmCanon2.includes("function slideshowSyncFullscreenIcon()") ||
         !pmCanon2.includes('"SlideshowConfig",') || !pmCanon2.includes("Media Slideshow")) {
-        failures.push(`[D] Prompt Master: Media Slideshow surface incomplete (mediaSlideshow Alt+T + lifecycle + config + menu entry)`);
-    } else passes.push(`[D] Prompt Master Media Slideshow verified (operator candidate integrated; Alt+T census re-letter, config rides the backup family)`);
+        failures.push(`[D] Prompt Master: Media Slideshow surface incomplete (mediaSlideshow Alt+T + lifecycle + active-collection scoping + virtual-scroll harvest + config + menu entry)`);
+    } else passes.push(`[D] Prompt Master Media Slideshow verified (operator candidate integrated; Alt+T census re-letter, active-collection scoping + virtual-scroll accumulation + high-contrast 3lectric-Glass icons, config rides the backup family)`);
     if (/keys: "Alt\+[SD]",\s*\n\s*desc: "Opens\/closes the media slideshow/.test(pmCanon2) || /mediaSlideshow[\s\S]{0,120}keys: "Alt\+S"/.test(pmCanon2)) {
         failures.push(`[D] Prompt Master: media slideshow combo regressed to a census-owned letter (Alt+S ModelSearch / Alt+D GPD domain)`);
     }
@@ -1303,7 +1305,7 @@ async function gateD() {
     if (!pmGridBrowser.clean) {
         for (const f of pmGridBrowser.failed) failures.push(`[D] pm-grid browser smoke: ${f.name} (${f.detail})`);
     } else {
-        passes.push(`[D] Prompt Master expanded-grid card layout browser Proof-of-Possession verified (${pmGridBrowser.passed}/${pmGridBrowser.total} get assertions + red control, mode=${pmGridBrowser.mode})`);
+        passes.push(`[D] Prompt Master expanded-grid card layout & Media Slideshow browser Proof-of-Possession verified (${pmGridBrowser.passed}/${pmGridBrowser.total} click/wait/get assertions + red control, mode=${pmGridBrowser.mode})`);
     }
 }
 

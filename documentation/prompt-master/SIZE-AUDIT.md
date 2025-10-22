@@ -1,6 +1,6 @@
 # SIZE-AUDIT — 4ndr0tools - Prompt Master.user.js (suite v1.5.0, G6 record)
 
-**Artifact:** `dist/4ndr0tools - Prompt Master.user.js` — 1,124,279 B (measured this round; v1.4.10 baseline 1,122,838 B).
+**Artifact:** `dist/4ndr0tools - Prompt Master.user.js` — 1,159,643 B (measured v1.8.2; v1.4.10 baseline 1,122,838 B).
 **Gate:** tools/size-budget.mjs (1,300,000 B hard budget; 1,000,000 B audit line — this record satisfies the latter).
 
 ## Composition analysis (machine-measured, this round)
@@ -10,7 +10,7 @@
 | Embedded base64/data-URI payloads | **0 B** (0 blobs — the @icon SVG is the only data URI, ~2 KB) | nothing material to externalize on the asset axis |
 | Embedded fonts / images | **0 B** | WCP-local font stack; no font payloads |
 | Comment mass | ~182 KB across 2,825 comment lines (v-series changelogs + per-feature rationale) | dense documentation-in-source is deliberate |
-| Application code | ~0.94 MB across 23,357 lines (avg 48 B/line) | the prompt-management application |
+| Application code | ~0.97 MB across 23,839 lines (avg 49 B/line) | the prompt-management application |
 
 ## What the weight IS
 
@@ -35,7 +35,7 @@ interactive critical path.
 
 ## Justification
 
-Ships as-is at 1,124,279 B: under the 1.3 MB hard budget, above the audit
+Ships as-is at 1,159,643 B: under the 1.3 MB hard budget, above the audit
 line by design, with this record as the audited decision. Watch item: the
 comment mass (~182 KB) is the one *reversible* component if a future round
 needs headroom — moving the v-series changelogs into
