@@ -105,19 +105,6 @@ Each script adheres to a core set of principles:
 
 <div align="center">
 <svg width="300" height="300" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="cyanGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#00FFFF;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#00a1a1;stop-opacity:1" />
-    </linearGradient>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
-      <feMerge>
-        <feMergeNode in="coloredBlur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-  </defs>
   <path d="M 50,15
            C 30,15 20,30 20,50
            C 20,75 35,85 50,85
@@ -133,9 +120,7 @@ Each script adheres to a core set of principles:
            M 38,72 V 78 H 42 V 72 Z
            M 48,72 V 78 H 52 V 72 Z
            M 58,72 V 78 H 62 V 72 Z"
-        fill="none" stroke="url(#cyanGradient)" stroke-width="2" filter="url(#glow)"/>
-  
-  <!-- Glitch & Circuit Elements -->
+        fill="none" stroke="#00FFFF" stroke-width="2"/>
   <rect x="22" y="48" width="5" height="2" fill="#00FFFF" />
   <rect x="73" y="48" width="5" height="2" fill="#00FFFF" />
   <rect x="48" y="18" width="4" height="10" fill="black" />
