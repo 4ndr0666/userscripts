@@ -65,6 +65,7 @@ Each script adheres to a core set of principles:
 | HDImgsOnly | [4ndr0tools - HDImgsOnly.user.js](./4ndr0tools%20-%20HDImgsOnly.user.js) | Prefer high-resolution assets when available. |
 | Images++ | [4ndr0tools - Images++.user.js](./4ndr0tools%20-%20Images++.user.js) | Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. |
 | InstagramRedirect | [4ndr0tools - InstagramRedirect.user.js](./4ndr0tools%20-%20InstagramRedirect.user.js) | Privacy redirect for IG media to dumpor.com. |
+| LinkMasterΨ | [4ndr0tools - LinkMasterΨ.user.js](./4ndr0tools%20-%20LinkMaster%CE%A8.user.js) | Ψ Electric-Glass HUD: Accurately decodes, previews, exports, and validates real external host links. |
 | MegaEmbedRedirector | [4ndr0tools - MegaEmbedRedirector.user.js](./4ndr0tools%20-%20MegaEmbedRedirector.user.js) | Bypass to the embedded URL and autoplays. |
 | ModelSearch | [4ndr0tools - ModelSearch.user.js](./4ndr0tools%20-%20ModelSearch.user.js) | Direct SimpCity search UI to search models on Simpcity.su directly from any website. |
 | PixverseChimera | [4ndr0tools - PixverseChimera.user.js](./4ndr0tools%20-%20PixverseChimera.user.js) | For educational security research and labs only. |
