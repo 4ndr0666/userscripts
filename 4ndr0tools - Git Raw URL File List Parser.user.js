@@ -20,88 +20,54 @@
 (() => {
   'use strict';
 
-  // Inject Google Fonts + Full HUD Theme
-  GM_addStyle(`
-    @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@500&family=Orbitron:wght@700&display=swap');
+GM_addStyle(`
+  #raw-harvest-btn {
+    position: relative;
 
-    :root {
-      --bg-dark: #0A131A;
-      --accent-cyan: #00E5FF;
-      --text-cyan-active: #67E8F9;
-      --accent-cyan-border-hover: rgba(0, 229, 255, 0.5);
-      --accent-cyan-bg-active: rgba(0, 229, 255, 0.2);
-      --accent-cyan-glow-active: rgba(0, 229, 255, 0.4);
-      --text-primary: #EAEAEA;
-      --text-secondary: #9E9E9E;
-      --font-body: 'Roboto Mono', monospace;
-    }
+    /* HUD cyan gradient */
+    background: linear-gradient(
+      45deg,
+      var(--accent-cyan),
+      var(--text-cyan-active),
+      var(--accent-cyan-bg-active),
+      var(--accent-cyan)
+    ) !important;
 
-    #raw-harvest-btn {
-      display: inline-flex !important;
-      align-items: center !important;
-      padding: 0.65rem 1.4rem !important;
-      margin-left: 16px !important;
-      border: 1px solid transparent !important;
-      font-family: var(--font-body) !important;
-      font-weight: 500 !important;
-      font-size: 0.875rem !important;
-      letter-spacing: 0.08em !important;
-      text-transform: uppercase !important;
-      color: var(--text-secondary) !important;
-      background-color: rgba(0, 0, 0, 0.4) !important;
-      backdrop-filter: blur(10px) !important;
-      border-radius: 6px !important;
-      cursor: pointer !important;
-      transition: all 300ms cubic-bezier(0.23, 1, 0.32, 1) !important;
-      position: relative !important;
-      overflow: hidden !important;
-      z-index: 9999 !important;
-    }
+    background-size: 300% 300% !important;
 
-    #raw-harvest-btn .icon {
-      width: 1.25rem;
-      height: 1.25rem;
-      margin-right: 0.6rem;
-      transition: all 300ms ease;
-    }
+    /* Animate both the moving gradient and glow */
+    animation: gradient 6s ease infinite, glow 2s ease-in-out infinite alternate;
 
-    #raw-harvest-btn:hover {
-      color: var(--accent-cyan) !important;
-      border-color: var(--accent-cyan-border-hover) !important;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(0, 229, 255, 0.3) !important;
-    }
+    color: var(--text-primary) !important;
+    border: none !important;
+    padding: 8px 16px !important;
+    border-radius: 8px !important;
+    font-weight: bold !important;
 
-    #raw-harvest-btn.active,
-    #raw-harvest-btn.copied {
-      color: var(--text-cyan-active) !important;
-      background-color: var(--accent-cyan-bg-active) !important;
-      border-color: var(--accent-cyan) !important;
-      box-shadow: 
-        0 0 20px var(--accent-cyan-glow-active),
-        inset 0 0 20px rgba(0, 229, 255, 0.1) !important;
-      animation: pulseGlow 2s infinite alternate;
-    }
+    /* Cyan glow */
+    box-shadow: 0 0 20px var(--accent-cyan-glow-active);
+    
+    z-index: 9999;
+  }
 
-    @keyframes pulseGlow {
-      from { box-shadow: 0 0 20px var(--accent-cyan-glow-active), inset 0 0 20px rgba(0,229,255,0.1); }
-      to   { box-shadow: 0 0 35px var(--accent-cyan-glow-active), inset 0 0 30px rgba(0,229,255,0.2); }
-    }
+  @keyframes gradient {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
 
-    #raw-harvest-btn::before {
-      content: '';
-      position: absolute;
-      top: 0; left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(0,229,255,0.15), transparent);
-      transition: 0.7s;
-    }
+  @keyframes glow {
+    from { box-shadow: 0 0 20px var(--accent-cyan-glow-active); }
+    to   { box-shadow: 0 0 35px var(--accent-cyan); }
+  }
 
-    #raw-harvest-btn:hover::before {
-      left: 100%;
-    }
-  `);
+  /* Success state override */
+  #raw-harvest-btn.copied {
+    background: var(--accent-cyan) !important;
+    animation: none;
+    box-shadow: 0 0 35px var(--accent-cyan);
+  }
+`);
 
   // Ultimate file row detector – covers ALL current & future GitHub layouts
   const getFileRows = () => {
