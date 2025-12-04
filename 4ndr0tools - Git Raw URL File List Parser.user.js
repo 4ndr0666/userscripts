@@ -36,20 +36,18 @@ GM_addStyle(`
     color: var(--accent-cyan, #00E5FF) !important;
     background: rgba(0, 0, 0, 0.35) !important;
 
-    /* the cyan wireframe border */
     border: 2px solid var(--accent-cyan, #00E5FF) !important;
     border-radius: 2px !important;
 
-    /* glowing cyan outline */
-    box-shadow: 0 0 8px rgba(0, 229, 255, 0.45);
+    /* MUCH STRONGER CYAN GLOW */
+    box-shadow:
+      0 0 12px rgba(0, 229, 255, 0.7),
+      0 0 22px rgba(0, 229, 255, 0.45),
+      inset 0 0 6px rgba(0, 229, 255, 0.25);
 
-    /* angular futuristic cut corner (top-right) */
     clip-path: polygon(
-      0% 0%, 
-      calc(100% - 10px) 0%, 
-      100% 10px, 
-      100% 100%, 
-      0% 100%
+      0% 0%, calc(100% - 10px) 0%, 100% 10px,
+      100% 100%, 0% 100%
     );
 
     cursor: pointer;
@@ -57,7 +55,6 @@ GM_addStyle(`
     z-index: 9999;
   }
 
-  /* subtle scanline / grid effect */
   #raw-harvest-btn::before {
     content: "";
     position: absolute;
@@ -69,32 +66,28 @@ GM_addStyle(`
     pointer-events: none;
   }
 
-  /* hover: brighten border + lighten text */
   #raw-harvest-btn:hover {
     color: var(--text-cyan-active, #67E8F9) !important;
     border-color: var(--text-cyan-active, #67E8F9) !important;
-    box-shadow: 0 0 12px rgba(0, 229, 255, 0.6);
+    box-shadow:
+      0 0 15px rgba(0, 229, 255, 0.9),
+      0 0 30px rgba(0, 229, 255, 0.55),
+      inset 0 0 8px rgba(0, 229, 255, 0.35);
   }
 
-  /* active/pressed state */
   #raw-harvest-btn:active {
     transform: scale(0.97);
-    box-shadow: 0 0 6px rgba(0, 229, 255, 0.35);
+    box-shadow:
+      0 0 8px rgba(0, 229, 255, 0.45),
+      0 0 18px rgba(0, 229, 255, 0.35),
+      inset 0 0 5px rgba(0, 229, 255, 0.25);
   }
 
-  /* success state (green flash) */
   #raw-harvest-btn.copied {
     background: rgba(0, 255, 157, 0.15) !important;
     border-color: #00ff9d !important;
     color: #00ff9d !important;
-    box-shadow: 0 0 12px #00ff9d !important;
-    clip-path: polygon(
-      0% 0%, 
-      calc(100% - 10px) 0%, 
-      100% 10px, 
-      100% 100%, 
-      0% 100%
-    );
+    box-shadow: 0 0 12px #00ff9d, 0 0 24px #00ff9d !important;
   }
 `);
 
