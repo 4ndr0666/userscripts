@@ -23,49 +23,78 @@
 GM_addStyle(`
   #raw-harvest-btn {
     position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 
-    /* HUD cyan gradient */
-    background: linear-gradient(
-      45deg,
-      var(--accent-cyan),
-      var(--text-cyan-active),
-      var(--accent-cyan-bg-active),
-      var(--accent-cyan)
-    ) !important;
+    padding: 6px 14px !important;
+    font-family: var(--font-body, 'Roboto Mono', monospace);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 
-    background-size: 300% 300% !important;
+    color: var(--accent-cyan, #00E5FF) !important;
+    background: rgba(0, 0, 0, 0.35) !important;
 
-    /* Animate both the moving gradient and glow */
-    animation: gradient 6s ease infinite, glow 2s ease-in-out infinite alternate;
+    /* the cyan wireframe border */
+    border: 2px solid var(--accent-cyan, #00E5FF) !important;
+    border-radius: 2px !important;
 
-    color: var(--text-primary) !important;
-    border: none !important;
-    padding: 8px 16px !important;
-    border-radius: 8px !important;
-    font-weight: bold !important;
+    /* glowing cyan outline */
+    box-shadow: 0 0 8px rgba(0, 229, 255, 0.45);
 
-    /* Cyan glow */
-    box-shadow: 0 0 20px var(--accent-cyan-glow-active);
-    
+    /* angular futuristic cut corner (top-right) */
+    clip-path: polygon(
+      0% 0%, 
+      calc(100% - 10px) 0%, 
+      100% 10px, 
+      100% 100%, 
+      0% 100%
+    );
+
+    cursor: pointer;
+    transition: 200ms ease all;
     z-index: 9999;
   }
 
-  @keyframes gradient {
-    0%   { background-position: 0% 50%; }
-    50%  { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+  /* subtle scanline / grid effect */
+  #raw-harvest-btn::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(transparent 95%, rgba(0, 229, 255, 0.15) 100%),
+      linear-gradient(90deg, transparent 95%, rgba(0, 229, 255, 0.10) 100%);
+    background-size: 100% 6px, 6px 100%;
+    pointer-events: none;
   }
 
-  @keyframes glow {
-    from { box-shadow: 0 0 20px var(--accent-cyan-glow-active); }
-    to   { box-shadow: 0 0 35px var(--accent-cyan); }
+  /* hover: brighten border + lighten text */
+  #raw-harvest-btn:hover {
+    color: var(--text-cyan-active, #67E8F9) !important;
+    border-color: var(--text-cyan-active, #67E8F9) !important;
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.6);
   }
 
-  /* Success state override */
+  /* active/pressed state */
+  #raw-harvest-btn:active {
+    transform: scale(0.97);
+    box-shadow: 0 0 6px rgba(0, 229, 255, 0.35);
+  }
+
+  /* success state (green flash) */
   #raw-harvest-btn.copied {
-    background: var(--accent-cyan) !important;
-    animation: none;
-    box-shadow: 0 0 35px var(--accent-cyan);
+    background: rgba(0, 255, 157, 0.15) !important;
+    border-color: #00ff9d !important;
+    color: #00ff9d !important;
+    box-shadow: 0 0 12px #00ff9d !important;
+    clip-path: polygon(
+      0% 0%, 
+      calc(100% - 10px) 0%, 
+      100% 10px, 
+      100% 100%, 
+      0% 100%
+    );
   }
 `);
 
