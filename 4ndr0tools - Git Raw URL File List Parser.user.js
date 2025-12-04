@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Git Raw URL File List Parser 
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.3.37
+// @version      2.0.0
 // @description  Adds a "Copy All Raw URLs" button on any GitHub repo/tree view. Copies a clean, delimited list of raw.githubusercontent.com URLs (one per line) directly to clipboard.
 // @author       4ndr0666
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
@@ -13,6 +13,7 @@
 // @exclude      https://github.com/*/*/blob/*
 // @grant        GM_setClipboard
 // @grant        GM_addStyle
+// @run-at       document-idle
 // @license      MIT
 // ==/UserScript==
 
@@ -20,127 +21,124 @@
   'use strict';
 
   GM_addStyle(`
-    .raw-list-btn {
-      margin-left: 8px !important;
-      background: linear-gradient(180deg, #28a745, #218838) !important;
-      border-color: #1e7e34 !important;
+    #raw-harvest-btn {
+      margin-left: 12px !important;
+      background: linear-gradient(135deg, #ff006e, #8338ec) !important;
+      border: none !important;
       color: white !important;
+      font-weight: bold !important;
+      padding: 6px 12px !important;
+      border-radius: 6px !important;
+      cursor: pointer;
     }
-    .raw-list-btn:hover {
-      background: linear-gradient(180deg, #218838, #1e7e34) !important;
+    #raw-harvest-btn:hover { opacity: 0.9; }
+    #raw-harvest-btn.copied {
+      background: #00ff9d !important;
+      animation: pulse 1.5s;
     }
-    .raw-list-success {
-      background: #2da44e !important;
-      animation: flash 1.5s ease-out;
-    }
-    @keyframes flash {
-      0%   { opacity: 1; }
-      50%  { opacity: 0.6; }
-      100% { opacity: 1; }
+    @keyframes pulse {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.05); }
+      100% { transform: scale(1); }
     }
   `);
 
-  const generateRawUrls = () => {
-    const rows = document.querySelectorAll('div[role="row"].js-navigation-item');
+  const waitFor = (selector, timeout = 10000) => new Promise((resolve, reject) => {
+    const start = Date.now();
+    const check = () => {
+      const el = document.querySelector(selector);
+      if (el) resolve(el);
+      else if (Date.now() - start > timeout) reject(new Error('Timeout waiting for ' + selector));
+      else requestAnimationFrame(check);
+    };
+    check();
+  });
+
+  const getAllFileRows = () => {
+    // New 2024-2025 GitHub layout uses <tr[role="row"]inside tbody
+    return [...document.querySelectorAll('table[aria-labelledby] tr[js-navigation-item], div[role="row"][data-href]')];
+  };
+
+  const generateRawUrls = async () => {
+    const rows = getAllFileRows();
+    if (rows.length === 0) return '';
+
     const rawUrls = [];
 
-    const base = location.href
-      .replace('https://github.com/', 'https://raw.githubusercontent.com/')
-      .replace(/\/$/, '');
+    // Extract repo + branch once
+    const pathParts = location.pathname.split('/').filter(Boolean);
+    const user = pathParts[0];
+    const repo = pathParts[1];
+    let branch = pathParts[3] === 'tree' ? pathParts[4] : pathParts[3] || 'main';
 
-    const currentBranch = document.querySelector('summary[title="Switch branches or tags"] span')?.textContent.trim()
-      || document.querySelector('#branch-select-menu span.css-truncate-target')?.textContent.trim()
-      || 'main';
+    // Fallback: read visible branch name
+    const branchEl = document.querySelector('[data-testid="branch-select-menu"] span, summary[aria-label*="branch"] span, #branch-select-menu .css-truncate-target');
+    if (branchEl) branch = branchEl.textContent.trim();
+
+    const baseRaw = `https://raw.githubusercontent.com/${user}/${repo}/${branch}`;
 
     for (const row of rows) {
-      const link = row.querySelector('a.js-navigation-open');
+      let link = row.querySelector('a[data-testid="listitem-title-link"], a.js-navigation-open, div[role="rowheader"] a');
       if (!link) continue;
 
-      const path = link.getAttribute('title') || link.textContent.trim();
-      if (!path || path === '..') continue;
+      let href = link.getAttribute('href');
+      if (!href) continue;
 
-      const icon = row.querySelector('svg[aria-label="Directory"]') || row.querySelector('svg[aria-label="File"]');
-      const isDir = icon?.getAttribute('aria-label') === 'Directory';
+      // Skip parent directory
+      if (link.title === '..' || link.textContent.trim() === '..') continue;
 
-      // Full path from repo root
-      const relativePath = link.getAttribute('href').split('/').slice(3).join('/');
-      const rawUrl = `https://raw.githubusercontent.com${link.getAttribute('href').replace('/blob/', '/')}`;
+      // If it's a directory → /tree/, skip (we only want files)
+      const isDir = !!row.querySelector('svg.octicon-directory, svg[aria-label="Directory"]');
+      if (isDir) continue;
 
+      // Build raw URL
+      const rawUrl = href.replace(`/blob/`, `/`).replace(`https://github.com/`, `https://raw.githubusercontent.com/`);
       rawUrls.push(rawUrl);
     }
 
     return rawUrls.join('\n');
   };
 
-  const copyToClipboard = (text) => {
-    if (typeof GM_setClipboard === 'function') {
-      GM_setClipboard(text);
-    } else {
-      navigator.clipboard.writeText(text).catch(() => {
-        // Fallback
-        const textarea = document.createElement('textarea');
-        textarea.value = text;
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-      });
+  const createButton = async () => {
+    if (document.getElementById('raw-harvest-btn')) return;
+
+    try {
+      // Wait for the top bar where "Code", "Issues", etc. live
+      const header = await waitFor('.file-navigation, [data-testid="repository-actions-container"], .Layout-sidebar + .Layout-main .d-flex.flex-items-center');
+      
+      const btn = document.createElement('button');
+      btn.id = 'raw-harvest-btn';
+      btn.innerHTML = 'Copy All Raw URLs';
+      btn.title = 'Copies raw.githubusercontent.com links for every file in this folder';
+
+      btn.onclick = async () => {
+        const urls = await generateRawUrls();
+        if (!urls) {
+          alert('No files detected. Are you on a human or a CAPTCHA?');
+          return;
+        }
+
+        GM_setClipboard(urls);
+        btn.innerHTML = 'Copied ' + urls.split('\n').length + ' URLs!';
+        btn.classList.add('copied');
+
+        setTimeout(() => {
+          btn.innerHTML = 'Copy All Raw URLs';
+          btn.classList.remove('copied');
+        }, 3000);
+      };
+
+      header.appendChild(btn);
+    } catch (e) {
+      console.error('[4ndr0tools] Button injection failed:', e);
     }
   };
 
-  const createButton = () => {
-    if (document.getElementById('raw-list-btn')) return;
+  // Run on load + every navigation
+  const init = () => setTimeout(createButton, 800);
+  init();
 
-    const container = document.querySelector('.file-navigation') || document.querySelector('.d-flex.flex-items-center');
-    if (!container) return;
-
-    const btn = document.createElement('button');
-    btn.id = 'raw-list-btn';
-    btn.className = 'btn btn-sm raw-list-btn';
-    btn.innerHTML = `Copy All Raw URLs`;
-    btn.type = 'button';
-
-    btn.onclick = () => {
-      const urls = generateRawUrls();
-      if (!urls) {
-        alert('No files found in current directory.');
-        return;
-      }
-
-      copyToClipboard(urls);
-      btn.textContent = 'Copied!';
-      btn.classList.add('raw-list-success');
-
-      setTimeout(() => {
-        btn.innerHTML = `Copy All Raw URLs`;
-        btn.classList.remove('raw-list-success');
-      }, 2000);
-    };
-
-    // Insert after "Code" button or similar
-    const insertAfter = container.querySelector('get-repo') || container.querySelector('.BtnGroup');
-    if (insertAfter && insertAfter.parentNode) {
-      insertAfter.parentNode.insertBefore(btn, insertAfter.nextSibling);
-    } else {
-      container.appendChild(btn);
-    }
-  };
-
-  // Initial run
-  setTimeout(createButton, 1000);
-
-  // Observe dynamic navigation (pjax, turbo, etc.)
-  const observer = new MutationObserver((mutations) => {
-    if (!document.getElementById('raw-list-btn')) {
-      setTimeout(createButton, 800);
-    }
-  });
-
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
-
-  // Re-inject on full page loads (fallback
-  window.addEventListener('popstate', () => setTimeout(createButton, 1000));
+  // Turbo / pjax / React navigation
+  new MutationObserver(init).observe(document.body, { childList: true, subtree: true });
+  window.addEventListener('popstate', init);
 })();
