@@ -103,73 +103,104 @@
     }
   `);
 
-  // Ultimate bulletproof file detector (works on every GitHub layout ever made)
-  const getAllFileLinks = () => {
+  // Ultimate file row detector – covers ALL current & future GitHub layouts
+  const getFileRows = () => {
     const selectors = [
-      'a.js-navigation-open[href*="/blob/"]',
-      'a[data-testid="listitem-title-link"][href*="/blob/"]',
-      'div[role="rowheader"] a[href*="/blob/"]',
-      'table tr a[href*="/blob/"]',
-      'div.Box-row a[href*="/blob/"]'
+      'tr.js-navigation-item',
+      'tr[role="row"]',
+      'div[role="row"].ReactVirtualized__List div[role="row"]',
+      'div[data-testid="listitem"]',
+      'div.Box-row',
+      'a.js-navigation-open',
+      'div[role="rowheader"] a'
     ];
 
-    const set = new Set();
-    selectors.forEach(sel => {
-      document.querySelectorAll(sel).forEach(a => {
-        if (a.href && !a.href.includes('/tree/') && !a.textContent.includes('..')) {
-          set.add(a.href);
-        }
-      });
+    const links = new Set();
+
+    // Method 1: Direct <a> with title/href (most reliable)
+    document.querySelectorAll('a.js-navigation-open, a[data-testid="listitem-title-link"], div[role="rowheader"] a').forEach(a => {
+      const href = a.getAttribute('href');
+      if (href && !href.includes('/tree/') && !href.endsWith('/..')) {
+        links.add(a);
+      }
     });
-    return Array.from(set);
+
+    // Method 2: Fallback via parent rows
+    document.querySelectorAll('tr, div[role="row"], div.Box-row').forEach(row => {
+      const link = row.querySelector('a');
+      if (link && link.getAttribute('href')?.match(/\/blob\//)) {
+        links.add(link);
+      }
+    });
+
+    return Array.from(links);
   };
 
   const generateRawUrls = () => {
-    const blobUrls = getAllFileLinks();
-    if (blobUrls.length === 0) return '';
+    const links = getFileRows();
+    if (links.length === 0) return '';
 
-    return blobUrls
-      .map(url => url.replace('https://github.com/', 'https://raw.githubusercontent.com/').replace('/blob/', '/'))
-      .join('\n');
+    const rawUrls = links.map(link => {
+      return link.href.replace('https://github.com/', 'https://raw.githubusercontent.com/githubusercontent.com/').replace('/blob/', '/');
+    });
+
+    return rawUrls.join('\n');
   };
 
-  const injectElectricButton = () => {
+  const injectButton = () => {
     if (document.getElementById('raw-harvest-btn')) return;
 
-    const container = document.querySelector('[data-testid="repository-actions-container"], .file-navigation, .d-flex.flex-justify-between, header .d-flex') || document.body;
+    // Find the top bar (works on old + new + future layout)
+    const targets = [
+      '.file-navigation',
+      '[data-testid="repository-actions-container"]',
+      '.d-flex.flex-justify-between.flex-items-center',
+      '.Layout-sidebar + .Layout-main .d-flex',
+      'header div.d-flex'
+    ];
+
+    let container = null;
+    for (const sel of targets) {
+      container = document.querySelector(sel);
+      if (container) break;
+    }
+    if (!container) container = document.body;
 
     const btn = document.createElement('button');
     btn.id = 'raw-harvest-btn';
-    btn.innerHTML = `
-      <svg class="icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-        <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>
-        <path d="M9 12h6v2H9zm0 4h6v2H9z"/>
-      </svg>
-      <span>Copy All Raw URLs</span>
-    `;
-
+    btn.innerHTML = 'Copy All Raw URLs';
     btn.onclick = () => {
       const urls = generateRawUrls();
       if (!urls) {
-        alert('No files in this folder — or GitHub is being GitHub again.');
+        alert('Still no files? You might be on a directory landing page with zero files.\n\nTry going into a folder that actually has files.');
         return;
       }
       GM_setClipboard(urls);
       const count = urls.split('\n').length;
+      btn.innerHTML = `Copied ${count} URLs!`;
       btn.classList.add('copied');
-      btn.querySelector('span').textContent = `Copied ${count} URLs!`;
       setTimeout(() => {
+        btn.innerHTML = 'Copy All Raw URLs';
         btn.classList.remove('copied');
-        btn.querySelector('span').textContent = 'Copy All Raw URLs';
       }, 3000);
     };
 
     container.appendChild(btn);
   };
 
-  // Deploy on all possible load states
-  const deploy = () => setTimeout(injectElectric, 600);
-  ['DOMContentLoaded', 'load', 'turbo:render', 'pjax:end'].forEach(ev => window.addEventListener(ev, deploy));
-  new MutationObserver(deploy).observe(document, {childList: true, subtree: true});
-  deploy();
+  // Hammer it until it works
+  const tryInject = () => {
+    if (document.readyState === 'loading') return;
+    injectButton();
+  };
+
+  // Multiple injection strategies
+  setTimeout(tryInject, 500);
+  setTimeout(tryInject, 1500);
+  setTimeout(tryInject, 3000);
+  setTimeout(tryInject, 6000);
+
+  new MutationObserver(tryInject).observe(document, { childList: true, subtree: true });
+  window.addEventListener('load', () => setTimeout(tryInject, 1000));
+  window.addEventListener('popstate', () => setTimeout(tryInject, 1000));
 })();
