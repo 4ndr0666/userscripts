@@ -3,7 +3,7 @@
 // @namespace   https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
 // @version     4.0.0
-// @description Red Team Framework: Includes proactive CSP neutralization, polymorphic UI, advanced layered NSFW obfuscation, and all credit/model/task bypass vectors. For authorized security research.
+// @description For educational and security research only.
 // @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20WanVideoChimera.user.js
 // @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20WanVideoChimera.user.js
 // @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
