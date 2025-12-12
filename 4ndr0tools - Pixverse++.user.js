@@ -3,9 +3,9 @@
 // @namespace   https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
 // @version     4.1.0
-// @description For educational security research. Merged stable base with advanced UI and obfuscation.
-// @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/%CE%A8-4ndr0tools%20-%20PixVerse++.user.js
-// @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/%CE%A8-4ndr0tools%20-%20PixVerse++.user.js
+// @description For educational security research.
+// @downloadURL https://github.com/4ndr0666/userscripts/blob/main/4ndr0tools%20-%20Pixverse%2B%2B.user.js
+// @updateURL   https://github.com/4ndr0666/userscripts/blob/main/4ndr0tools%20-%20Pixverse%2B%2B.user.js
 // @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match       https://app.pixverse.ai/*
 // @run-at      document-start
