@@ -4,8 +4,8 @@
 // @author       4ndr0666
 // @version      2025.11.11.Ψ3
 // @description  Scrapes all the links. TODO: merge with LinkMasterΨ2
-// @downloadurl  https://github.com/4ndr0666/userscripts/blob/main/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
-// @updateurl    https://github.com/4ndr0666/userscripts/blob/main/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
+// @downloadurl  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
+// @updateurl    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match        *://*/*
 // @license      MIT
