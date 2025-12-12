@@ -66,6 +66,7 @@ Each script adheres to a core set of principles:
 | Hailuo++ | [4ndr0tools - Hailuo++.user.js](./4ndr0tools%20-%20Hailuo++.user.js) | For educational and official red-team lab purposes only. This version codifies the Re-Edit Refund Exploit and is designed for automated deployment. |
 | HDImgsOnly | [4ndr0tools - HDImgsOnly.user.js](./4ndr0tools%20-%20HDImgsOnly.user.js) | Prefer high-resolution assets when available. |
 | Images++ | [4ndr0tools - Images++.user.js](./4ndr0tools%20-%20Images++.user.js) | Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. |
+| InfiniteBrave | [4ndr0tools - InfiniteBrave.user.js](./4ndr0tools%20-%20InfiniteBrave.user.js) | Part of 4ndr0tools - Infinitely scroll Brave search results. |
 | InstagramRedirect | [4ndr0tools - InstagramRedirect.user.js](./4ndr0tools%20-%20InstagramRedirect.user.js) | Privacy redirect for IG media to dumpor.com. |
 | LinkMasterΨ | [4ndr0tools - LinkMasterΨ.user.js](./4ndr0tools%20-%20LinkMaster%CE%A8.user.js) | Ψ Electric-Glass HUD: Accurately decodes, previews, exports, and validates real external host links. |
 | LinkMasterΨ2 | [4ndr0tools - LinkMasterΨ2.user.js](./4ndr0tools%20-%20LinkMaster%CE%A82.user.js) | A fully-integrated HUD for scraping, previewing, checking, and downloading links from any website. Features dual modes for targeted forum scraping or aggressive general-purpose link discovery, a standalone link checker with paste support, and persistent user settings. |
