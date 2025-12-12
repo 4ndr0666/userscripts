@@ -4,8 +4,8 @@
 // @version     1.1
 // @description Always load your preferred SearXNG settings hash/bookmarklet on every visit
 // @author      4ndr0666
-// @downloadURL https://github.com/4ndr0666/userscripts/blob/main/4ndr0tools%20-%20Searxng%20Sticky%20Settings.user.js
-// @updateURL   https://github.com/4ndr0666/userscripts/blob/main/4ndr0tools%20-%20Searxng%20Sticky%20Settings.user.js
+// @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Searxng%20Sticky%20Settings.user.js
+// @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Searxng%20Sticky%20Settings.user.js
 // @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match       http*://*/*
 // @grant       none
