@@ -1,19 +1,19 @@
 // ==UserScript==
-// @name           4ndr0tools - LinkMasterΨ
-// @namespace  https://github.com/4ndr0666/userscripts
-// @author          4ndr0666
-// @version         2025.11.11.Ψ3
-// @description  Ψ Electric-Glass HUD: Accurately decodes, previews, exports, and validates real external host links.
-// @downloadurl https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
-// @updateurl     https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
-// @icon             https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
-// @match          *://*/*
-// @license         MIT
-// @grant            GM_setValue
-// @grant            GM_getValue
-// @grant            GM_deleteValue
-// @grant            GM_listValues
-// @grant            GM_registerMenuCommand
+// @name         4ndr0tools - LinkMasterΨ
+// @namespace    https://github.com/4ndr0666/userscripts
+// @author       4ndr0666
+// @version      2025.11.11.Ψ3
+// @description  Scrapes all the links. TODO: merge with LinkMasterΨ2
+// @downloadurl  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
+// @updateurl    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
+// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
+// @match        *://*/*
+// @license      MIT
+// @grant        GM_setValue
+// @grant        GM_getValue
+// @grant        GM_deleteValue
+// @grant        GM_listValues
+// @grant        GM_registerMenuCommand
 // ==/UserScript==
 
 (() => {
