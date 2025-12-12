@@ -81,7 +81,7 @@ Each script adheres to a core set of principles:
 | Searxng Sticky Settings | [4ndr0tools - Searxng Sticky Settings.user.js](./4ndr0tools%20-%20Searxng%20Sticky%20Settings.user.js) | Always load your preferred SearXNG settings hash/bookmarklet on every visit |
 | SelectAllCheckboxes | [4ndr0tools - SelectAllCheckboxes.user.js](./4ndr0tools%20-%20SelectAllCheckboxes.user.js) | Check/Uncheck a fuckload of checkboxes at once with enhanced precision and modern code. |
 | Sora Toolkit | [4ndr0tools - Sora Toolkit.user.js](./4ndr0tools%20-%20Sora%20Toolkit.user.js) | Auto-refreshes stuck Sora generation jobs after a configurable timeout to help you get your assets faster. |
-| Wan++ | [4ndr0tools - Wan++.user.js](./4ndr0tools%20-%20Wan++.user.js) | Red Team Framework: Includes proactive CSP neutralization, polymorphic UI, advanced layered NSFW obfuscation, and all credit/model/task bypass vectors. For authorized security research. |
+| Wan++ | [4ndr0tools - Wan++.user.js](./4ndr0tools%20-%20Wan++.user.js) | For educational and security research only. |
 | YandexImageSearch++ | [4ndr0tools - YandexImageSearch++.user.js](./4ndr0tools%20-%20YandexImageSearch++.user.js) | Robust, event-driven slideshow, fullscreen preview, and on-screen status for Yandex reverse-image search. |
 | YouTubeEmbedRedirectButton | [4ndr0tools - YouTubeEmbedRedirectButton.user.js](./4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js) | Floating button for redirects to embedded version. Right click it to set a keybind (default Ctrl+E). |
 | YtdlcProtocol | [4ndr0tools - YtdlcProtocol.user.js](./4ndr0tools%20-%20YtdlcProtocol.user.js) | Personal `ytdl://`-style protocol trigger for using yt-dlp with cookies. |
