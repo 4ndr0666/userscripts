@@ -5,8 +5,10 @@
 // @version      3.1.0
 // @description  A fully-integrated HUD for scraping, previewing, checking, and downloading links from any website. Features dual modes for targeted forum scraping or aggressive general-purpose link discovery, a standalone link checker with paste support, and persistent user settings.
 // @author       4ndr0666, SkyCloudDev, and The Akashic Collective
+// @downloadURL  https://github.com/4ndr0666/userscripts/blob/main/4ndr0tools%20-%20LinkMaster%CE%A82.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/blob/main/4ndr0tools%20-%20LinkMaster%CE%A82.user.js
 // @license      MIT, WTFPL
-// @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
+// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match        *://*.*/*
 // @require      https://unpkg.com/@popperjs/core@2
 // @require      https://unpkg.com/tippy.js@6
