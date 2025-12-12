@@ -5,8 +5,8 @@
 // @description  Adds a "Copy All Raw URLs" button on any GitHub repo/tree view. Copies a clean, delimited list of raw.githubusercontent.com URLs (one per line) directly to clipboard.
 // @author       4ndr0666
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
-// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Git%20Raw%20URL%20File%20List%20Parser.user.js
-// @updateURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Git%20Raw%20URL%20File%20List%20Parser.user.js
+// @downloadURL  https://github.com/4ndr0666/userscripts/blob/main/4ndr0tools%20-%20Git%20Raw%20URL%20File%20List%20Parser.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/blob/main/4ndr0tools%20-%20Git%20Raw%20URL%20File%20List%20Parser.user.js
 // @match        https://github.com/*/*
 // @exclude      https://github.com/*/*/issues*
 // @exclude      https://github.com/*/*/pull*
