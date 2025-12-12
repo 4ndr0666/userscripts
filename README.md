@@ -69,7 +69,7 @@ Each script adheres to a core set of principles:
 | LinkMasterΨ | [4ndr0tools - LinkMasterΨ.user.js](./4ndr0tools%20-%20LinkMaster%CE%A8.user.js) | Ψ Electric-Glass HUD: Accurately decodes, previews, exports, and validates real external host links. |
 | MegaEmbedRedirector | [4ndr0tools - MegaEmbedRedirector.user.js](./4ndr0tools%20-%20MegaEmbedRedirector.user.js) | Bypass to the embedded URL and autoplays. |
 | ModelSearch | [4ndr0tools - ModelSearch.user.js](./4ndr0tools%20-%20ModelSearch.user.js) | Direct SimpCity search UI to search models on Simpcity.su directly from any website. |
-| PixverseChimera | [4ndr0tools - PixverseChimera.user.js](./4ndr0tools%20-%20PixverseChimera.user.js) | For educational security research and labs only. |
+| Pixverse++ | [4ndr0tools - Pixverse++.user.js](./4ndr0tools%20-%20Pixverse++.user.js) | For educational security research. Merged stable base with advanced UI and obfuscation. |
 | PlanetsuzyMobileSkinRedirect | [4ndr0tools - PlanetsuzyMobileSkinRedirect.user.js](./4ndr0tools%20-%20PlanetsuzyMobileSkinRedirect.user.js) | Force a faster mobile skin where useful. |
 | RealLinkRevealer | [4ndr0tools - RealLinkRevealer.user.js](./4ndr0tools%20-%20RealLinkRevealer.user.js) | Reveal true URLs hidden as "premium" link wrappers using the parent bbCodeBlock--unfurl block's data-url attribute. |
 | Recon | [4ndr0tools - Recon.user.js](./4ndr0tools%20-%20Recon.user.js) | Red-team tool for automated recon. Passively captures all traffic and generates a heuristic analysis report on command. For educational and lab use only. |
