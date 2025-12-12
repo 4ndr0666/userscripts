@@ -5,8 +5,8 @@
 // @version     1.0
 // @date        11/21/2025, 2:16:39 AM
 // @description Part of 4ndr0tools - Infinitely scroll Brave search results.
-// @downloadURL https://github.com/4ndr0666/userscripts
-// @updateURL   https://github.com/4ndr0666/userscripts
+// @downloadURL https://github.com/4ndr0666/userscripts/blob/main/4ndr0tools%20-%20InfiniteBrave.user.js
+// @updateURL   https://github.com/4ndr0666/userscripts/blob/main/4ndr0tools%20-%20InfiniteBrave.user.js
 // @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match       https://search.brave.com/*
 // @license     MIT
