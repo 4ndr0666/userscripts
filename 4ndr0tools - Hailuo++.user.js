@@ -30,7 +30,7 @@
     Object.defineProperty(window, '_hailuoKitPsiInitialized', { value: true, writable: false, configurable: false });
     console.log(`[HailuoKit-Ψ INIT] Script started at document-start. Force Debug Mode: ${_forceDebugMode}`);
 
-    const neutralizeMetaCSP = () => { /* ... NO CHANGE ... */
+    const neutralizeMetaCSP = () => {
         const removeCSP = (node) => {
             if (node.tagName === 'META' && node.httpEquiv?.toLowerCase() === 'content-security-policy') {
                 node.remove();
@@ -72,7 +72,7 @@
         initialize() {
             this.injectHudStyles();
             if (document.body) this.createHudButton();
-            else document.addEventListener('DOMContentLoaded', this.createHudButton);
+            else document.addEventListener('DOMContentLoaded', () => this.createHudButton());
         }
 
         toggleHudVisibility = (forceState = null) => {
@@ -89,7 +89,7 @@
 
         updateAssetList = () => this.#debouncedUpdateAssetList();
 
-        #createElement = (tag, props = {}, children = []) => { /* ... NO CHANGE ... */
+        #createElement = (tag, props = {}, children = []) => {
             const el = document.createElement(tag);
             Object.entries(props).forEach(([key, value]) => {
                 if (key === 'style') Object.assign(el.style, value);
@@ -105,7 +105,7 @@
             return el;
         };
 
-        injectHudStyles = () => { /* ... NO CHANGE ... */
+        injectHudStyles = () => {
             if (document.getElementById("eglass-hud-css")) return;
             document.head.insertAdjacentHTML('beforeend', `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@500&family=Orbitron:wght@700&family=Cinzel+Decorative:wght@700&display=swap">`);
             const style = this.#createElement('style', { id: "eglass-hud-css" });
@@ -127,7 +127,7 @@
                 .chip.unknown, .chip.error { color:#fffbe6; border-color:#b5b500; background:#4c4b12; }
                 .chip.checking { color:#fffbe6; border-color:#b5b500; background:#4c4b12; animation: pulse-glow 1.5s infinite; }
                 @keyframes pulse-glow { 50% { box-shadow: 0 0 10px var(--panel-glow-intense); } }
-                .hud-toast{ position:fixed; z-index:calc(var(--hud-z)+2000); bottom:3.4em; right:3.1em; background:#111b1bcc; color:var(--primary-cyan); font-family:var(--font-hud); font-size:1em; border-radius:0.8em; border:2px solid var(--panel-border-bright); box-shadow:0 0 18px var(--panel-glow-intense); padding:1em 2em; pointer-events:none; transition:opacity 220ms; }
+                .hud-toast{ position:fixed; z-index:calc(var(--hud-z)+2000); bottom:3.4em; right:3.1em; background:#111b1bcc; color:var(--primary-cyan); font-family:var(--font-hud); font-size:1em; border-radius:0.8em; border:2px solid var(--panel-border-bright); box-shadow:0 0 18px var(--panel-glow-intense); padding:1em 2em; pointer-events:none; transition:opacity 220ms ease-in-out; }
                 #hud-panel-root .config-grid { display:grid; grid-template-columns: auto 1fr; gap: 12px 18px; align-items:center; } #hud-panel-root .config-grid label { font-size: 0.9em; cursor:help; color: var(--text-secondary); } #hud-panel-root .config-grid label:hover { color: var(--text-primary); } #hud-panel-root .config-grid input, #hud-panel-root .config-grid select { background:#101827; color:#e0ffff; border-radius:0.5em; border:1.5px solid #15adad; padding:0.5em; font-size:0.9em; font-family:var(--font-body); }
                 #hud-assets-table { width:100%; border-collapse: separate; border-spacing: 0 0.5em; } #hud-assets-table td { padding: 0.4em; background: rgba(0,0,0,0.2); vertical-align: middle; } #hud-assets-table td:first-child { border-radius: 8px 0 0 8px; } #hud-assets-table td:last-child { border-radius: 0 8px 8px 0; text-align: right; }
                 #hud-assets-table tr.honeypot td { background: rgba(139,0,0,0.2); filter: grayscale(50%); } #hud-assets-table tr.honeypot .hud-button { filter: brightness(0.7); cursor: not-allowed; }
@@ -136,7 +136,7 @@
             document.head.appendChild(style);
         };
 
-        createHudButton = () => { /* ... NO CHANGE ... */
+        createHudButton = () => {
             if (document.getElementById("hud-float-btn")) return;
             const btn = this.#createElement('button', {
                 id: 'hud-float-btn', className: 'hud-button',
@@ -147,7 +147,7 @@
             document.body.appendChild(btn);
         };
 
-        #createHud = () => { /* ... NO CHANGE ... */
+        #createHud = () => {
             if (this.#hud) return;
             const header = this.#createElement('div', { className: 'hud-header' });
             header.innerHTML = this.#psiGlyphSVG;
@@ -168,7 +168,7 @@
             this.#makeDraggable(this.#hud, header);
         };
 
-        #switchTab = (tabName) => { /* ... NO CHANGE ... */
+        #switchTab = (tabName) => {
             this.#kit.state.currentTab = tabName;
             this.#hud.querySelectorAll(".hud-tabs .hud-button").forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabName));
             this.#contentPanel.innerHTML = "";
@@ -177,7 +177,7 @@
             this.#kit.log(`Switched to tab: ${tabName}`);
         };
 
-        #renderAssetsPanel = () => { /* ... NO CHANGE ... */
+        #renderAssetsPanel = () => {
             this.#contentPanel.append(
                 this.#createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1em' } }, [
                     this.#createElement('h3', { textContent: 'Captured Assets', style: { margin: 0, color: 'var(--primary-cyan)', fontFamily: 'var(--font-hud)' } }),
@@ -188,7 +188,7 @@
             this.updateAssetList();
         };
 
-        #updateAssetList = () => { /* ... NO CHANGE ... */
+        #updateAssetList = () => {
             const container = document.getElementById('assets-container');
             if (!container) return;
             const assets = this.#kit.assets.load();
@@ -244,7 +244,7 @@
             container.appendChild(table);
         };
 
-        #renderSettings = () => { /* ... NO CHANGE ... */
+        #renderSettings = () => {
             const grid = this.#createElement('div', { className: 'config-grid' });
             const settings = [
                 { key: 'debugMode', type: 'checkbox', label: 'Debug Mode', desc: 'Enable console logs. Requires reload.' },
@@ -273,7 +273,7 @@
             this.#contentPanel.appendChild(grid);
         };
 
-        #handleSettingChange = (e) => { /* ... NO CHANGE ... */
+        #handleSettingChange = (e) => {
             const el = e.target;
             const key = el.dataset.key;
             const value = el.type === 'checkbox' ? el.checked : el.value;
@@ -286,7 +286,7 @@
             this.#kit.log('Settings saved:', newConfig);
         };
 
-        #makeDraggable = (element, handle) => { /* ... NO CHANGE ... */
+        #makeDraggable = (element, handle) => {
             let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
             const dragMouseDown = (e) => { e.preventDefault(); pos3 = e.clientX; pos4 = e.clientY; document.onmouseup = closeDragElement; document.onmousemove = elementDrag; handle.style.cursor = 'grabbing'; };
             const elementDrag = (e) => { e.preventDefault(); pos1 = pos3 - e.clientX; pos2 = pos4 - e.clientY; pos3 = e.clientX; pos4 = e.clientY; element.style.top = (element.offsetTop - pos2) + "px"; element.style.left = (element.offsetLeft - pos1) + "px"; };
@@ -299,15 +299,15 @@
      * HailuoKit: The core logic for data interception, processing, and defense.
      */
     class HailuoKit {
-        #constants = Object.freeze({ /* ... NO CHANGE ... */
+        #constants = Object.freeze({
             ASSET_STORAGE_KEY: 'hailuokit_psi_assets', CONFIG_STORAGE_KEY: 'hailuokit_psi_config', PSI_UNICODE_CHAR: 'Ψ', HONEYPOT_DOM_ID: '_hailuokit_debug_probe',
             TRIGGER_WORDS_B64: "YXNzLGFuYWwsYXNzaG9sZSxhbnVzLGFyZW9sYSxhcmVvbGFzLGJsb3dqb2IsYm9vYnMsYm91bmNlLGJvdW5jaW5nLGJyZWFzdCxicmVhc3RzLGJ1a2FrZSxidXR0Y2hlZWtzLGJ1dHQsY2hlZWtzLGNsaW1heCxjbGl0LGNsZWF2YWdlLGNvY2ssY29ycmlkYXMsY3JvdGNoLGN1bSxjdW1zLGN1bG8sY3VudCxkZWVwLGRlZXB0aHJvYXQsZGVlcHRocm9hdGluZyxkZWVwdGhyb2F0ZWQsZGljayxlc3Blcm1hLGZhdCBhc3MsZmVsbGF0aW8sZmluZ2VyaW5nLGZ1Y2ssZnVja2luZyxmdWNrZWQsaG9ybnksbGljayxtYXN0dXJiYXRlLG1hc3RlcmJhdGluZyxtaXNzaW9uYXJ5LG1lbWJlcixtZWNvLG1vYW4sbW9hbmluZyxuaXBwbGUsbnNmdyxvcmFsLG9yZ2FzbSxwZW5pcyxwaGFsbHVzLHBsZWFzdXJlLHB1c3N5LHJ1bXAsc2VtZW4sc2VkdWN0aXZlbHksc2x1dCxzZHV0dHksc3Bsb29nZSxzcXVlZXppbmcsc3F1ZWV6ZSxzdWNrLHN1Y2tpbmcuc3dhbGxvdyx0aHJvYXQsdGhyb2F0aW5nLHRpdHMsdGl0LHRpdHR5LHRpdGZ1Y2ssdGl0dGllcyx0aXR0eWRyb3AsdGl0dHlmdWNrLHRpdGZ1Y2ssdHJhbnN2ZXN0aXRlLHZhZ2luYSx3aWVuZXIsd2hvcmUsY3JlYW1waWUsY3Vtc2hvdCxjdW5uaWxpbmd1cyxkb2dneXN0eWxlLGVqYWN1bGF0ZSxlamFjdWxhdGlvbixaYW51c2EsbGFiaWEsbnVkZSxvcmd5LHBvcm4scHJvbGFwc2UscmVjdHVtLHJpbWpvYixzZXN1YWwsc3RyaXBwZXIsc3VibWlzc2l2ZSx0ZWFidWcsdGhyZWVzb21lLHZpYnJhdG9yLHZveWV1cix3aG9yZSx0aG9uZw==",
             HOMOGLYPH_MAP: { 'a': 'а', 'c': 'с', 'e': 'е', 'i': 'і', 'o': 'о', 'p': 'р', 's': 'ѕ', 'x': 'х', 'y': 'у' },
             ZWSP_CHAR: '\u200B', MAX_ASSETS: 150,
-            API_ENDPOINTS: { videoGen: /\/api\/multimodal\/generate\/video/, reporter: /meerkat-reporter\/api\/report/ },
+            API_ENDPOINTS: { videoGen: /\/api\/multimodal\/generate\/video/, reporter: /meerkat-reporter\/api\/report/, processing: /\/video\/processing/ },
         });
         #config = {};
-        #state = { /* ... NO CHANGE ... */
+        #state = {
             analystDetected: false, currentTab: 'assets', assetCache: new Map(), statusCache: new Map(), decodedTriggerWords: null,
             isJsonParseHookActive: false, isWebSocketHookActive: false, isDefenseActive: false,
         };
@@ -316,8 +316,10 @@
         #originalJSONParse = JSON.parse;
         #originalWebSocket = window.WebSocket;
         #originalQuerySelector = Element.prototype.querySelector;
+        #originalXhrOpen = XMLHttpRequest.prototype.open;
+        #originalXhrSend = XMLHttpRequest.prototype.send;
 
-        constructor() { /* ... NO CHANGE ... */
+        constructor() {
             this.config = {}; // Will be populated by async loadConfig
             this.#ui = new UIController(this);
             this.#state.assetCache = this.#loadAssets();
@@ -330,7 +332,7 @@
         get config() { return this.#config; }
         set config(newConfig) { this.#config = { ...this.#config, ...newConfig }; GM_setValue(this.#constants.CONFIG_STORAGE_KEY, this.#config); }
 
-        initialize() { /* ... NO CHANGE ... */
+        initialize() {
             this.#loadConfig().then(() => {
                 if (this.#config.enableJsonParseHook) this.#setupJsonParseHook();
                 if (this.#config.enableWebSocketHook) this.#setupWebSocketHook();
@@ -345,10 +347,22 @@
         log = (...args) => this.config.debugMode && console.log('[HailuoKit-Ψ LOG]', ...args);
         warn = (...args) => this.config.debugMode && console.warn('[HailuoKit-Ψ WARN]', ...args);
         error = (...args) => console.error('[HailuoKit-Ψ ERR]', ...args);
-        debounce = (func, wait) => { /* ... NO CHANGE ... */ let timeout; return function(...args) { const context = this; clearTimeout(timeout); timeout = setTimeout(() => func.apply(context, args), wait); }; };
-        showToast = (message, duration = 3300) => { /* ... NO CHANGE ... */ if (!document.body) { document.addEventListener('DOMContentLoaded', () => this.showToast(message, duration)); return; } let t = document.createElement("div"); t.className = "hud-toast"; t.textContent = message; document.body.appendChild(t); setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 600); }, duration); };
+        debounce = (func, wait) => { let timeout; return function(...args) { const context = this; clearTimeout(timeout); timeout = setTimeout(() => func.apply(context, args), wait); }; };
+        showToast = (message, duration = 3300) => {
+            if (!document.body) { document.addEventListener('DOMContentLoaded', () => this.showToast(message, duration)); return; }
+            let t = document.createElement("div");
+            t.className = "hud-toast";
+            t.style.opacity = '0';
+            t.textContent = message;
+            document.body.appendChild(t);
+            setTimeout(() => { t.style.opacity = '1'; }, 10); // Fade in
+            setTimeout(() => {
+                t.style.opacity = '0';
+                setTimeout(() => t.remove(), 600); // Remove after fade out
+            }, duration);
+        };
 
-        #assetManager = { /* ... NO CHANGE ... */
+        #assetManager = {
             load: () => Array.from(this.#state.assetCache.values()).sort((a, b) => b.ts - a.ts),
             save: () => GM_setValue(this.#constants.ASSET_STORAGE_KEY, Array.from(this.#state.assetCache.values())),
             add: (asset) => {
@@ -378,7 +392,7 @@
 
         #loadAssets = () => GM_getValue(this.#constants.ASSET_STORAGE_KEY, []).reduce((map, asset) => map.set(asset.id, asset), new Map());
 
-        async #loadConfig() { /* ... NO CHANGE ... */
+        async #loadConfig() {
             const defaultConfig = {
                 debugMode: _forceDebugMode, statusBypassEnabled: true, nsfwObfuscation: 'layered',
                 gaslightingEnabled: false, debuggerDefense: 'none', enableJsonParseHook: false, enableWebSocketHook: false,
@@ -388,13 +402,13 @@
             this.log('Loaded config:', this.#config);
         }
 
-        #getTriggerWords = () => { /* ... NO CHANGE ... */
+        #getTriggerWords = () => {
             if (this.#state.decodedTriggerWords) return this.#state.decodedTriggerWords;
             try { this.#state.decodedTriggerWords = atob(this.#constants.TRIGGER_WORDS_B64).split(','); } catch (e) { this.error("Trigger decoding failed.", e); this.#state.decodedTriggerWords = []; }
             return this.#state.decodedTriggerWords;
         };
 
-        #obfuscatePrompt = (prompt) => { /* ... NO CHANGE ... */
+        #obfuscatePrompt = (prompt) => {
             if (this.config.nsfwObfuscation === 'none' || !prompt) return prompt;
             const triggers = this.#getTriggerWords();
             if (triggers.length === 0) return prompt;
@@ -412,7 +426,7 @@
             }
         };
 
-        #recursiveDataScan = (obj, processor) => { /* ... NO CHANGE ... */
+        #recursiveDataScan = (obj, processor) => {
             if (!obj || typeof obj !== 'object') return false;
             let wasModified = false;
             if (Array.isArray(obj)) {
@@ -424,7 +438,7 @@
             return wasModified;
         };
 
-        #processDataChunk = (data) => { /* ... NO CHANGE ... */
+        #processDataChunk = (data) => {
             const processAsset = (asset) => {
                 let modified = false;
                 if (asset && (asset.videoUrl || asset.imageUrl)) this.assets.add({ url: asset.videoUrl || asset.imageUrl, thumb: asset.coverUrl });
@@ -441,13 +455,15 @@
             return this.#recursiveDataScan(data, processAsset);
         };
 
-        #patchNetwork = () => { /* ... NO CHANGE ... */
+        #patchNetwork = () => {
             const self = this;
+
+            // == Fetch Patch ==
             window.fetch = async function(...args) {
                 const request = new Request(...args);
 
                 if (self.#constants.API_ENDPOINTS.reporter.test(request.url)) {
-                    self.log('Telemetry blocked:', request.url);
+                    self.log('Fetch Telemetry blocked:', request.url);
                     return new Response(JSON.stringify({ code: 0, msg: "OK" }), { status: 200, headers: { 'Content-Type': 'application/json' } });
                 }
 
@@ -462,29 +478,79 @@
                 }
 
                 const response = await self.#originalFetch.apply(this, args);
+
                 if (response.ok && response.headers.get('Content-Type')?.includes('application/json')) {
+                    const clonedResponse = response.clone();
+                    const needsModification = self.config.statusBypassEnabled || self.config.gaslightingEnabled;
+                    const isPollingEndpoint = self.#constants.API_ENDPOINTS.processing.test(request.url);
+
+                    if (!needsModification || isPollingEndpoint) {
+                        clonedResponse.json().then(data => self.#processDataChunk(data)).catch(e => self.warn('Async fetch response processing failed', e));
+                        return response;
+                    }
+
                     try {
-                        const clonedResponse = response.clone();
                         const data = await clonedResponse.json();
-                        const modifiedData = JSON.parse(JSON.stringify(data)); // Deep clone
+                        const modifiedData = self.#originalJSONParse(JSON.stringify(data));
                         if (self.#processDataChunk(modifiedData)) {
-                            self.log('API response modified (bypassed/gaslit/captured).');
+                            self.log('Fetch API response modified (bypassed/gaslit/captured).');
                             return new Response(JSON.stringify(modifiedData), { status: response.status, statusText: response.statusText, headers: response.headers });
                         }
-                    } catch (e) { /* ignore */ }
+                    } catch (e) { self.warn('Blocking fetch response processing failed', e); }
                 }
                 return response;
             };
-            this.log('Fetch interception active.');
+
+            // == XHR (XMLHttpRequest) Patch ==
+            XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+                this._url = url;
+                this.addEventListener('load', function handleXhrLoad() {
+                    if (this.readyState === 4 && this.status === 200 && this.responseText) {
+                         try {
+                            const data = self.#originalJSONParse(this.responseText);
+                            const modifiedData = self.#originalJSONParse(JSON.stringify(data)); // Deep clone
+                            const wasModified = self.#processDataChunk(modifiedData);
+
+                            const needsModification = self.config.statusBypassEnabled || self.config.gaslightingEnabled;
+                            const isPollingEndpoint = self.#constants.API_ENDPOINTS.processing.test(this._url);
+
+                            if (wasModified && needsModification && !isPollingEndpoint) {
+                                self.log('XHR API response modified (bypassed/gaslit/captured).');
+                                Object.defineProperty(this, 'responseText', { value: JSON.stringify(modifiedData), writable: true });
+                            }
+                        } catch (e) {
+                            self.warn('XHR response processing failed', e);
+                        }
+                    }
+                }, { once: true });
+                return self.#originalXhrOpen.apply(this, [method, url, ...rest]);
+            };
+
+            XMLHttpRequest.prototype.send = function(...args) {
+                if (this._url && self.#constants.API_ENDPOINTS.reporter.test(this._url)) {
+                    self.log('XHR Telemetry blocked:', this._url);
+                    Object.defineProperty(this, 'readyState', { value: 4, writable: true });
+                    Object.defineProperty(this, 'status', { value: 200, writable: true });
+                    Object.defineProperty(this, 'responseText', { value: '{"code":0,"msg":"OK"}', writable: true });
+                    this.dispatchEvent(new Event('readystatechange'));
+                    this.dispatchEvent(new Event('load'));
+                    this.dispatchEvent(new Event('loadend'));
+                    return;
+                }
+                return self.#originalXhrSend.apply(this, args);
+            };
+
+            this.log('Network interception active (Fetch & XHR).');
         };
 
-        #setupJsonParseHook = () => { /* ... NO CHANGE ... */
+        #setupJsonParseHook = () => {
             if (this.#state.isJsonParseHookActive) return;
-            JSON.parse = (text, reviver) => {
-                const data = this.#originalJSONParse(text, reviver);
-                const modified = JSON.parse(JSON.stringify(data));
-                if (this.#processDataChunk(modified)) {
-                    this.log('JSON.parse data chunk processed and modified.');
+            const self = this;
+            window.JSON.parse = (text, reviver) => {
+                const data = self.#originalJSONParse(text, reviver);
+                const modified = self.#originalJSONParse(JSON.stringify(data));
+                if (self.#processDataChunk(modified)) {
+                    self.log('JSON.parse data chunk processed and modified.');
                     return modified;
                 }
                 return data;
@@ -492,7 +558,8 @@
             this.#state.isJsonParseHookActive = true;
             this.log('JSON.parse hook active.');
         };
-        #setupWebSocketHook = () => { /* ... NO CHANGE ... */
+
+        #setupWebSocketHook = () => {
             if (this.#state.isWebSocketHookActive) return;
             const self = this;
             window.WebSocket = class extends this.#originalWebSocket {
@@ -502,7 +569,7 @@
                         if (typeof event.data === 'string') {
                             try {
                                 const data = self.#originalJSONParse(event.data);
-                                const modified = JSON.parse(JSON.stringify(data));
+                                const modified = self.#originalJSONParse(JSON.stringify(data));
                                 if (self.#processDataChunk(modified)) {
                                     self.log('WebSocket message processed and modified.');
                                     Object.defineProperty(event, 'data', { value: JSON.stringify(modified), writable: false });
@@ -520,30 +587,24 @@
             if (this.#state.isDefenseActive) return;
             this.log(`Activating defense protocols (${this.config.debuggerDefense})...`);
 
-            const self = this; // Capture class instance context
+            const self = this;
 
-            // DOM Honeypot
             const honeypotEl = document.createElement('div');
             honeypotEl.id = this.#constants.HONEYPOT_DOM_ID;
             honeypotEl.style.display = 'none';
             document.documentElement.appendChild(honeypotEl);
 
-            // CRITICAL FIX: Use a 'function' expression, not an arrow function, to preserve 'this' context.
             Element.prototype.querySelector = function(...args) {
-                // Here, 'this' is the DOM element (e.g., document)
                 if (args[0] === `#${self.#constants.HONEYPOT_DOM_ID}`) {
                     self.#triggerAnalystDetection('DOM honeypot queried.');
                 }
-                // Call original method with the correct context
                 return self.#originalQuerySelector.apply(this, args);
             };
 
-            // toString Honeypot
             const honeypotFn = () => self.#triggerAnalystDetection('Honeypot function executed!');
             honeypotFn.toString = () => { self.#triggerAnalystDetection('Honeypot toString inspected!'); return 'function () { [native code] }'; };
             window._hailuoKitHoneypot = honeypotFn;
 
-            // Temporal Analysis
             if (this.config.debuggerDefense === 'passive') {
                 let lastTime = performance.now();
                 const check = (now) => {
@@ -554,7 +615,6 @@
                 requestAnimationFrame(check);
             }
 
-            // Debugger check
             if (this.config.debuggerDefense === 'aggressive') {
                 setInterval(() => { const then = performance.now(); debugger; if (performance.now() - then > 100) self.#triggerAnalystDetection('Debugger statement detected (aggressive).'); }, 1000);
             }
@@ -563,7 +623,7 @@
             this.log('Defense protocols active.');
         };
 
-        #triggerAnalystDetection = (reason) => { /* ... NO CHANGE ... */
+        #triggerAnalystDetection = (reason) => {
             if (this.#state.analystDetected) return;
             this.#state.analystDetected = true;
             console.warn(`[HailuoKit-Ψ DEFENSE] Analyst detected! Reason: ${reason}`);
@@ -575,7 +635,7 @@
             }
         };
 
-        #registerMenuCommands = () => { /* ... NO CHANGE ... */
+        #registerMenuCommands = () => {
             GM_registerMenuCommand('Open HailuoKit-Ψ HUD', () => this.#ui.toggleHudVisibility(true));
             GM_registerMenuCommand('Clear Captured Assets', () => { if (confirm('Clear all assets?')) this.assets.clear(); });
         };
