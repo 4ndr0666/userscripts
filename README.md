@@ -68,6 +68,7 @@ Each script adheres to a core set of principles:
 | Images++ | [4ndr0tools - Images++.user.js](./4ndr0tools%20-%20Images++.user.js) | Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. |
 | InstagramRedirect | [4ndr0tools - InstagramRedirect.user.js](./4ndr0tools%20-%20InstagramRedirect.user.js) | Privacy redirect for IG media to dumpor.com. |
 | LinkMasterΨ | [4ndr0tools - LinkMasterΨ.user.js](./4ndr0tools%20-%20LinkMaster%CE%A8.user.js) | Ψ Electric-Glass HUD: Accurately decodes, previews, exports, and validates real external host links. |
+| LinkMasterΨ2 | [4ndr0tools - LinkMasterΨ2.user.js](./4ndr0tools%20-%20LinkMaster%CE%A82.user.js) | A fully-integrated HUD for scraping, previewing, checking, and downloading links from any website. Features dual modes for targeted forum scraping or aggressive general-purpose link discovery, a standalone link checker with paste support, and persistent user settings. |
 | MegaEmbedRedirector | [4ndr0tools - MegaEmbedRedirector.user.js](./4ndr0tools%20-%20MegaEmbedRedirector.user.js) | Bypass to the embedded URL and autoplays. |
 | ModelSearch | [4ndr0tools - ModelSearch.user.js](./4ndr0tools%20-%20ModelSearch.user.js) | Direct SimpCity search UI to search models on Simpcity.su directly from any website. |
 | Pixverse++ | [4ndr0tools - Pixverse++.user.js](./4ndr0tools%20-%20Pixverse++.user.js) | For educational security research. |
