@@ -4,6 +4,8 @@
 // @author      4ndr0666 
 // @version     36
 // @description Enhanced endpoint interception, status bypass, and obfuscation. Fortified with active anti-analysis and perception warfare modules. Security research only.
+// @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Hailuo++.user.js
+// @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Hailuo++.user.js
 // @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match       *://*.hailuoai.video/*
 // @match       *://*.hailuoai.com/*
