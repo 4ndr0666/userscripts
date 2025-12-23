@@ -1,16 +1,9 @@
 // ==UserScript==
 // @name        4ndr0tools - Hailuo++
 // @namespace   https://github.com/4ndr0666/userscripts
-// @author      4ndr0666 
-<<<<<<< HEAD
-// @version     36
-// @description Enhanced endpoint interception, status bypass, and obfuscation. Fortified with active anti-analysis and perception warfare modules. Security research only.
-// @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Hailuo++.user.js
-// @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Hailuo++.user.js
-=======
-// @version     37
-// @description Enhanced endpoint interception, status bypass, and obfuscation.Bug immune.Security research only.
->>>>>>> 58a68da (updated blob2url and hailuo.)
+// @author      4ndr0666
+// @version     37.0
+// @description UI non-functional but the script will work in the background and allow moderated content to generate and download.Status bypass, bracket obfuscation, bug-immune. Security research only.
 // @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match       *://*.hailuoai.video/*
 // @match       *://*.hailuoai.com/*
