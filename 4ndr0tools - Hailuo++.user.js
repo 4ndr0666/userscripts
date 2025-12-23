@@ -3,7 +3,7 @@
 // @namespace   https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
 // @version     37.0
-// @description UI non-functional but the script will work in the background and allow moderated content to generate and download.Status bypass, bracket obfuscation, bug-immune. Security research only.
+// @description UI non-functional but the script will work in the background and allow moderated content to generate and download. Image gen using nano banana pro status bypass, bracket obfuscation, bug-immune. Security research only.
 // @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match       *://*.hailuoai.video/*
 // @match       *://*.hailuoai.com/*
