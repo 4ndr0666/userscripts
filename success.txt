@@ -1,25 +1,183 @@
-image-generation:1 Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'forEach')
-    at image-generation:1:18655
-image-generation:16 [导航防护] Web 端（桌面），启用手势拦截 🛡️
-www.googletagmanager.com/gtag/js?id=G-5PMRNYL7P0:1  Failed to load resource: net::ERR_BLOCKED_BY_CLIENT
-accounts.google.com/gsi/client:1  Failed to load resource: net::ERR_BLOCKED_BY_CLIENT
-Maximize Video.user.js:65 [2025-12-23 19:03:36][Maximize Video] > Ready
-default_avatar.png:1  Failed to load resource: net::ERR_CERT_DATE_INVALID
-1169-9588bde601562ab5.js:1 ⚠️ Translations not preloaded for locale: en. Key: toast_s2v_upload_fail_min_size
-l @ 1169-9588bde601562ab5.js:1
-1169-9588bde601562ab5.js:1 ⚠️ Translations not preloaded for locale: en. Key: toast_image_upload_fail_min_size
-l @ 1169-9588bde601562ab5.js:1
-1169-9588bde601562ab5.js:1 ⚠️ Translations not preloaded for locale: en. Key: toast_s2v_upload_fail_min_size
-l @ 1169-9588bde601562ab5.js:1
-bat.js:1  Failed to load resource: net::ERR_BLOCKED_BY_CLIENT
-fbevents.js:1  Failed to load resource: net::ERR_BLOCKED_BY_CLIENT
-events.js:1  Failed to load resource: net::ERR_BLOCKED_BY_CLIENT
-5566-fb31b0fa95f296af.js:1 historyImages =====  0
-default_avatar.png:1  Failed to load resource: net::ERR_CERT_DATE_INVALID
-layout-3bd14c505cdf220a.js:1 getSeoConfig {data: {…}, statusInfo: {…}}
-layout-3bd14c505cdf220a.js:1 cfg {landing_page_json_url: 'https://cdn.hailuoai.video/open-hailuo-video-web/p…_assets/cb249843-7d4e-4944-8b93-17e367dd730c.json', tools_footer_config: {…}, tools_page_entry: {…}, tools_pages_json_url: {…}}landing_page_json_url: "https://cdn.hailuoai.video/open-hailuo-video-web/public_assets/cb249843-7d4e-4944-8b93-17e367dd730c.json"tools_footer_config: {columns: Array(4)}tools_page_entry: {entry: Array(4)}tools_pages_json_url: {pages: {…}, updateDay: 20251223, url: 'https://cdn.hailuoai.video/open-hailuo-video-web/p…_assets/89ff05c5-0597-4a39-a5da-d9cefb13183c.json'}[[Prototype]]: Objectconstructor: ƒ Object()hasOwnProperty: ƒ hasOwnProperty()isPrototypeOf: ƒ isPrototypeOf()propertyIsEnumerable: ƒ propertyIsEnumerable()toLocaleString: ƒ toLocaleString()toString: ƒ toString()valueOf: ƒ valueOf()__defineGetter__: ƒ __defineGetter__()__defineSetter__: ƒ __defineSetter__()__lookupGetter__: ƒ __lookupGetter__()__lookupSetter__: ƒ __lookupSetter__()__proto__: (...)get __proto__: ƒ __proto__()set __proto__: ƒ __proto__()
-1013-dc7a9b6b0dfc560c.js:1 [shanque] watermarkType: 0 WatermarkType enum: {0: 'NONE', 1: 'ALL', 2: 'AI_ONLY', 3: 'BRAND_ONLY', NONE: 0, ALL: 1, AI_ONLY: 2, BRAND_ONLY: 3}
-1013-dc7a9b6b0dfc560c.js:1 [shanque] videoURLs from server: {downloadURLWithWatermark: 'https://cdn.hailuoai.video/moss/prod/2025-12-24-09…538187175506931-415177789996793865_1766538157.png', downloadURLWithoutWatermark: 'https://cdn.hailuoai.video/moss/prod/2025-12-24-09…538176762702305-415177789996793865_1766538157.png', downloadURLWithAIWatermark: undefined, downloadURLWithHailuoWatermark: undefined, fallbackDownloadURL: 'https://cdn.hailuoai.video/moss/prod/2025-12-24-09…538176762702305-415177789996793865_1766538157.png'}downloadURLWithAIWatermark: undefineddownloadURLWithHailuoWatermark: undefineddownloadURLWithWatermark: "https://cdn.hailuoai.video/moss/prod/2025-12-24-09/user/multi_chat_file/1766538187175506931-415177789996793865_1766538157.png"downloadURLWithoutWatermark: "https://cdn.hailuoai.video/moss/prod/2025-12-24-09/user/multi_chat_file/1766538176762702305-415177789996793865_1766538157.png"fallbackDownloadURL: "https://cdn.hailuoai.video/moss/prod/2025-12-24-09/user/multi_chat_file/1766538176762702305-415177789996793865_1766538157.png"[[Prototype]]: Object
-1013-dc7a9b6b0dfc560c.js:1 [shanque] full videoURLs object: {feedURL: '', downloadURLWithWatermark: 'https://cdn.hailuoai.video/moss/prod/2025-12-24-09…538187175506931-415177789996793865_1766538157.png', downloadURLWithoutWatermark: 'https://cdn.hailuoai.video/moss/prod/2025-12-24-09…538176762702305-415177789996793865_1766538157.png', fileName: 'Hailuo_Image_**First** create multiple/4 an_460039131998744582'}downloadURLWithWatermark: "https://cdn.hailuoai.video/moss/prod/2025-12-24-09/user/multi_chat_file/1766538187175506931-415177789996793865_1766538157.png"downloadURLWithoutWatermark: "https://cdn.hailuoai.video/moss/prod/2025-12-24-09/user/multi_chat_file/1766538176762702305-415177789996793865_1766538157.png"feedURL: ""fileName: "Hailuo_Image_**First** create multiple/4 an_460039131998744582"[[Prototype]]: Object
-1013-dc7a9b6b0dfc560c.js:1 [shanque] getDownloadUrlByWatermarkType: {watermarkType: 0, selectedField: 'downloadURLWithoutWatermark', selectedValue: 'https://cdn.hailuoai.video/moss/prod/2025-12-24-09…538176762702305-415177789996793865_1766538157.png', usedFallback: false, result: 'https://cdn.hailuoai.video/moss/prod/2025-12-24-09…538176762702305-415177789996793865_1766538157.png'}result: "https://cdn.hailuoai.video/moss/prod/2025-12-24-09/user/multi_chat_file/1766538176762702305-415177789996793865_1766538157.png"selectedField: "downloadURLWithoutWatermark"selectedValue: "https://cdn.hailuoai.video/moss/prod/2025-12-24-09/user/multi_chat_file/1766538176762702305-415177789996793865_1766538157.png"usedFallback: falsewatermarkType: 0[[Prototype]]: Object
-1013-dc7a9b6b0dfc560c.js:1 [shanque] final downloadUrl: https://cdn.hailuoai.video/moss/prod/2025-12-24-09/user/multi_chat_file/1766538176762702305-415177789996793865_1766538157.png
+// ==UserScript==
+// @name        4ndr0tools - HailuoΨ Asset Siphon (Red Team Edition)
+// @namespace   https://github.com/4ndr0666/userscripts
+// @author      4ndr0666
+// @version     2025.12.25
+// @description Suckless, surgical API asset exfiltrator. Intercepts all download URLs, parses [shanque] logs, exposes every asset via HUD. No polling, no crawling, just pure capture.
+// @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
+// @match       *://*.hailuoai.video/*
+// @match       *://*.hailuoai.com/*
+// @run-at      document-start
+// @grant       GM_setValue
+// @grant       GM_getValue
+// @grant       GM_registerMenuCommand
+// @license     MIT
+// ==/UserScript==
+
+(() => {
+  "use strict";
+
+  //────── SINGLETON LOCK & EARLY DEFENSE NEUTRALIZATION ──────//
+  if (window._hailuoKitPsiInitialized) return;
+  window._hailuoKitPsiInitialized = true;
+
+  // KILL CSP
+  new MutationObserver((mut, obs) => {
+    mut.forEach(m => [...m.addedNodes].forEach(node => {
+      if (node.tagName === 'META' && node.httpEquiv?.toLowerCase() === 'content-security-policy') node.remove();
+    }));
+  }).observe(document.documentElement, { childList: true, subtree: true });
+
+  //────── CORE STATE ──────//
+  let isInitialized = false;
+  const SESSION_KEY = 'hailuo_assets_session';
+  const MAX_SESSION = 120;
+  function loadAssets() { try { return JSON.parse(sessionStorage.getItem(SESSION_KEY) || '[]'); } catch { return []; } }
+  function saveAssets(arr) { sessionStorage.setItem(SESSION_KEY, JSON.stringify(arr || [])); }
+  function addAsset(url, thumb) {
+    if (!url) return;
+    let arr = loadAssets();
+    if (!arr.some(i => i.url === url)) {
+      arr.unshift({ url, thumb: thumb || '', ts: Date.now() });
+      if (arr.length > MAX_SESSION) arr = arr.slice(0, MAX_SESSION);
+      saveAssets(arr);
+      updateHUD();
+    }
+  }
+
+  //────── UNIVERSAL ASSET PARSER ──────//
+  function extractHailuoAssetLinks(obj) {
+    if (!obj || typeof obj !== 'object') return [];
+    let out = [];
+    if (Array.isArray(obj)) obj.forEach(v => out = out.concat(extractHailuoAssetLinks(v)));
+    else for (const [k, v] of Object.entries(obj)) {
+      if (typeof v === 'string' && v.startsWith('https://cdn.hailuoai.video/')) {
+        // Typical asset keys, match [shanque] and all API responses
+        if (/downloadURLWith(Watermark|outWatermark)|final\s?downloadUrl|feedURL/i.test(k)) out.push({ url: v, thumb: v });
+      } else if (typeof v === 'object') out = out.concat(extractHailuoAssetLinks(v));
+    }
+    return out;
+  }
+
+  //────── FETCH & WEBSOCKET INTERCEPTION ──────//
+  const origFetch = window.fetch;
+  window.fetch = async function(...args) {
+    const res = await origFetch.apply(this, args);
+    if (res && res.ok) {
+      const clone = res.clone();
+      try {
+        const json = await clone.json();
+        extractHailuoAssetLinks(json).forEach(({url, thumb}) => addAsset(url, thumb));
+      } catch {}
+    }
+    return res;
+  };
+
+  const OrigWS = window.WebSocket;
+  window.WebSocket = class extends OrigWS {
+    constructor(...a) {
+      super(...a);
+      this.addEventListener('message', (event) => {
+        if (typeof event.data === 'string') {
+          try {
+            const obj = JSON.parse(event.data);
+            extractHailuoAssetLinks(obj).forEach(({url, thumb}) => addAsset(url, thumb));
+          } catch {}
+        }
+      });
+    }
+  };
+
+  //────── [shanque] CONSOLE PATCH (LOG SCAN) ──────//
+  const origLog = console.log;
+  console.log = function(...a) {
+    try {
+      if (a && a.length && typeof a[0] === 'string' && a[0].includes('[shanque]')) {
+        const line = a.find(x => typeof x === 'string' && x.startsWith('http'));
+        if (line) addAsset(line, line);
+        if (typeof a[1] === 'object') extractHailuoAssetLinks(a[1]).forEach(({url, thumb}) => addAsset(url, thumb));
+      }
+    } catch {}
+    origLog.apply(this, a);
+  };
+
+  //────── HUD — Suckless Asset Display ──────//
+  function injectHudStyles() {
+    if (document.getElementById("hailuo-hud-css")) return;
+    const style = document.createElement("style");
+    style.id = "hailuo-hud-css";
+    style.textContent = `
+      .hailuo-hud { position:fixed; bottom:2em; right:2em; background:#131d23e6; color:#e0feff; font-family:monospace; min-width:420px; z-index:999999; border-radius:1.2em; border:2.5px solid #00e5ff; box-shadow:0 0 24px #0ff5; padding:0 0 1.2em 0; }
+      .hailuo-hud-header { display:flex; align-items:center; padding:1em 1.3em; border-bottom:1px solid #00e5ff; font-weight:700; font-size:1.1em; }
+      .hailuo-hud-close { margin-left:auto; background:none; border:none; color:#ff3b7b; font-size:2em; cursor:pointer; }
+      .hailuo-hud-list { max-height:44vh; overflow-y:auto; padding:1em 1.4em 0 1.4em; }
+      .hailuo-hud-list table { width:100%; border-collapse:separate; border-spacing:0 0.4em; }
+      .hailuo-hud-list td { background:#141b23cc; padding:0.5em 0.8em; border-radius:0.7em; }
+      .hailuo-hud-list .thumb { width:74px; height:44px; object-fit:cover; border-radius:5px; }
+      .hailuo-hud-list .url { word-break:break-all; color:#44fff9; }
+      .hailuo-hud-list .action { background:#00e5ff; color:#121313; border:none; border-radius:4px; margin-left:0.7em; padding:0.17em 0.7em; font-weight:bold; cursor:pointer; }
+      .hailuo-hud-toast { position:fixed; z-index:1000000; bottom:1.9em; right:3.5em; background:#122; color:#19fdce; font-weight:700; border-radius:0.7em; border:2px solid #19fdce; padding:0.7em 2.1em; }
+    `;
+    document.head.appendChild(style);
+  }
+  function showHUD() {
+    let hud = document.getElementById("hailuo-hud");
+    if (!hud) {
+      hud = document.createElement("div"); hud.id = "hailuo-hud"; hud.className = "hailuo-hud";
+      hud.innerHTML = `<div class="hailuo-hud-header">HailuoΨ Asset HUD<button class="hailuo-hud-close" title="Close HUD">&times;</button></div><div class="hailuo-hud-list"></div>`;
+      document.body.appendChild(hud);
+      hud.querySelector(".hailuo-hud-close").onclick = () => hud.remove();
+    }
+    updateHUD();
+    hud.hidden = false;
+  }
+  function showToast(msg, ms=2100) {
+    let t = document.createElement("div"); t.className = "hailuo-hud-toast"; t.textContent = msg;
+    document.body.appendChild(t); setTimeout(() => t.remove(), ms);
+  }
+  function updateHUD() {
+    let hud = document.getElementById("hailuo-hud"); if (!hud) return;
+    let container = hud.querySelector(".hailuo-hud-list");
+    const assets = loadAssets();
+    if (assets.length === 0) { container.innerHTML = `<p style="color:#aaa;text-align:center;margin:2em;">No assets captured this session.</p>`; return; }
+    let html = `<table><tbody>`;
+    assets.forEach(({url, thumb}) => {
+      const filename = url.split('/').pop();
+      html += `<tr>
+        <td><img class="thumb" src="${thumb}" onerror="this.style.display='none'"></td>
+        <td class="url">${filename}</td>
+        <td><button class="action" data-url="${url}" data-act="open">Open</button>
+            <button class="action" data-url="${url}" data-act="dl" data-fn="${filename}">DL</button>
+            <button class="action" data-url="${url}" data-act="copy">Copy</button>
+        </td>
+      </tr>`;
+    });
+    html += `</tbody></table>`;
+    container.innerHTML = html;
+    container.querySelectorAll("button.action").forEach(btn => {
+      btn.onclick = async e => {
+        const { url, act, fn } = e.currentTarget.dataset;
+        if (act === "open") window.open(url, "_blank");
+        else if (act === "dl") { const r = await fetch(url); const b = await r.blob(); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = fn; a.click(); URL.revokeObjectURL(a.href);}
+        else if (act === "copy") { await navigator.clipboard.writeText(url); showToast("Copied!"); }
+      }
+    });
+  }
+
+  //────── LIFECYCLE ──────//
+  function initialize() {
+    if (isInitialized) return;
+    injectHudStyles();
+    let btn = document.getElementById("hailuo-hud-btn");
+    if (!btn) {
+      btn = document.createElement("button"); btn.id = "hailuo-hud-btn";
+      btn.textContent = "Ψ Assets"; btn.style = "position:fixed;bottom:2em;right:2em;z-index:999998;background:#19fdce;color:#121313;font-weight:900;border-radius:1.2em;border:2.5px solid #00e5ff;padding:1.2em 1.9em;font-size:1.1em;cursor:pointer;";
+      btn.onclick = showHUD; document.body.appendChild(btn);
+    }
+    showToast("HailuoΨ Asset Siphon armed.");
+    isInitialized = true;
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initialize, { once:true });
+  else initialize();
+  GM_registerMenuCommand("Show HailuoΨ HUD", showHUD);
+})();
