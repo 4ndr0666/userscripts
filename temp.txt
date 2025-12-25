@@ -1,0 +1,352 @@
+// ==UserScript==
+// @name        4ndr0tools - HailuoΨ
+// @namespace   https://github.com/4ndr0666/userscripts
+// @author      4ndr0666
+// @version     2025.03.17
+// @description Specialized toolkit for hailuoai.video, integrating status bypass and targeted NSFW obfuscation within the Electric-Glass HUD.
+// @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
+// @match       *://*.hailuoai.video/*
+// @match       *://*.hailuoai.com/*
+// @run-at      document-start
+// @grant       GM_setValue
+// @grant       GM_getValue
+// @grant       GM_registerMenuCommand
+// @license     MIT
+// ==/UserScript==
+
+(() => {
+    "use strict";
+
+    //────── SINGLETON LOCK & EARLY DEFENSE NEUTRALIZATION ──────//
+    if (window._hailuoKitPsiInitialized) return;
+    window._hailuoKitPsiInitialized = true;
+
+    function neutralizeMetaCSP() {
+        const observer = new MutationObserver((mutations, obs) => {
+            for (const mutation of mutations) {
+                for (const node of mutation.addedNodes) {
+                    if (node.tagName === 'META' && node.httpEquiv?.toLowerCase() === 'content-security-policy') {
+                        node.remove();
+                        obs.disconnect();
+                        return;
+                    }
+                }
+            }
+        });
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+    }
+    neutralizeMetaCSP();
+
+    //────── CORE CONFIGURATION & STATE ──────//
+    let isInitialized = false;
+    let myCustomFetch = null;
+    let currentTab = "assets";
+
+    const config = {
+        debugMode: false,
+        statusBypassEnabled: true,
+        nsfwObfuscation: 'layered', // 'none', 'zwsp', 'homoglyph', 'layered'
+    };
+
+    //────── STATIC ASSETS & DATA ──────//
+    const TRIGGER_WORDS_B64 = "YXNzLGFuYWwsYXNzaG9sZSxhbnVzLGFyZW9sYSxhcmVvbGFzLGJsb3dqb2IsYm9vYnMsYm91bmNlLGJvdW5jaW5nLGJyZWFzdCxicmVhc3RzLGJ1a2FrZSxidXR0Y2hlZWtzLGJ1dHQsY2hlZWtzLGNsaW1heCxjbGl0LGNsZWF2YWdlLGNvY2ssY29ycmlkYXMsY3JvdGNoLGN1bSxjdW1zLGN1bG8sY3VudCxkZWVwLGRlZXB0aHJvYXQsZGVlcHRocm9hdGluZyxkZWVwdGhyb2F0ZWQsZGljayxlc3Blcm1hLGZhdCBhc3MsZmVsbGF0aW8sZmluZ2VyaW5nLGZ1Y2ssZnVja2luZyxmdWNrZWQsaG9ybnksbGljayxtYXN0dXJiYXRlLG1hc3RlcmJhdGluZyxtaXNzaW9uYXJ5LG1lbWJlcixtZWNvLG1vYW4sbW9hbmluZyxuaXBwbGUsbnNmdyxvcmFsLG9yZ2FzbSxwZW5pcyxwaGFsbHVzLHBsZWFzdXJlLHB1c3N5LHJ1bXAsc2VtZW4sc2VkdWN0aXZlbHksc2x1dCxzZHV0dHksc3Bsb29nZSxzcXVlZXppbmcsc3F1ZWV6ZSxzdWNrLHN1Y2tpbmcuc3dhbGxvdyx0aHJvYXQsdGhyb2F0aW5nLHRpdHMsdGl0LHRpdHR5LHRpdGZ1Y2ssdGl0dGllcyx0aXR0eWRyb3AsdGl0dHlmdWNrLHRpdGZ1Y2ssdmFnaW5hLHdpZW5lcix3aG9yZSxjcmVhbXBpZSxjdW1zaG90LGN1bm5pbGluZ3VzLGRvZ2d5c3R5bGUsZWphY3VsYXRlLGVqYWN1bGF0aW9uLGhhbmRqb2IsamVyayBvZmYsbGFiaWEsbnVkZSxvcmd5LHBvcm4scHJvbGFwc2UscmVjdHVtLHJpbWpvYixzZXN1YWwsc3RyaXBwZXIsc3VibWlzc2l2ZSx0ZWFidWcsdGhyZWVzb21lLHZpYnJhdG9yLHZveWV1cix3aG9yZSx0aG9uZw==";
+    let _decodedTriggerWords = null;
+    const HOMOGLYPH_MAP = { 'a': 'а', 'c': 'с', 'e': 'е', 'i': 'і', 'o': 'о', 'p': 'р', 's': 'ѕ', 'x': 'х', 'y': 'у' };
+
+    //────── CORE HELPER & UTILITY FUNCTIONS ──────//
+    function log(...args) { if (config.debugMode) console.log('[HailuoKit-Ψ]', ...args); }
+    function error(...args) { if (config.debugMode) console.error('[HailuoKit-Ψ]', ...args); }
+    async function setUserPref(key, val) { await GM_setValue(key, val); }
+    async function getUserPref(key, def) { const v = await GM_getValue(key, null); return v == null ? def : v; }
+    function safeDeepClone(obj) { try { return JSON.parse(JSON.stringify(obj)); } catch (e) { error("Clone failed:", e); return null; } }
+    async function downloadUrl(url, filename) { try { const r = await fetch(url); const b = await r.blob(); const u = URL.createObjectURL(b); const a = Object.assign(document.createElement('a'), { href: u, download: filename }); a.click(); URL.revokeObjectURL(u); } catch (e) { error('Download failed:', e); } }
+
+    //────── OBFUSCATION & DECRYPTION ENGINE ──────//
+    function getTriggerWords() {
+        if (_decodedTriggerWords) return _decodedTriggerWords;
+        try { _decodedTriggerWords = atob(TRIGGER_WORDS_B64).split(','); } catch (e) { error("Trigger decoding failed.", e); _decodedTriggerWords = []; }
+        return _decodedTriggerWords;
+    }
+    function obfuscatePrompt(prompt) {
+        if (config.nsfwObfuscation === 'none' || !prompt) return prompt;
+        const triggers = getTriggerWords();
+        if (triggers.length === 0) return prompt;
+        const getRegex = () => new RegExp(`\\b(?:${triggers.join('|')})\\b`, "gi");
+        const applyZWSP = (text, targetRegex) => text.replace(targetRegex, m => m.split('').join('\u200B'));
+        const applyHomoglyph = (text) => text.replace(getRegex(), m => m.split('').map(char => HOMOGLYPH_MAP[char.toLowerCase()] || char).join(''));
+        switch (config.nsfwObfuscation) {
+            case 'zwsp': return applyZWSP(prompt, getRegex());
+            case 'homoglyph': return applyHomoglyph(prompt);
+            case 'layered':
+                let layeredPrompt = applyHomoglyph(prompt);
+                const homoglyphedWords = triggers.map(word => word.split('').map(char => HOMOGLYPH_MAP[char.toLowerCase()] || char).join(''));
+                const layeredRegex = new RegExp(`\\b(?:${homoglyphedWords.join('|')})\\b`, "gi");
+                return applyZWSP(layeredPrompt, layeredRegex);
+            default: return prompt;
+        }
+    }
+
+    //────── ASSET MANAGEMENT & VALIDATION ──────//
+    const SESSION_KEY = 'hailuokit_captured_assets_session';
+    const MAX_SESSION_ITEMS = 100;
+    function loadSession() { try { return JSON.parse(sessionStorage.getItem(SESSION_KEY) || '[]'); } catch (e) { return []; } }
+    function saveSession(arr) { try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(arr || [])); } catch (e) { error('Session save failed:', e); } }
+    function addSessionEntry(url, thumb) {
+        try {
+            if (!url) return;
+            let arr = loadSession();
+            if (!arr.some(i => i.url === url)) {
+                log(`Adding to session: ${url}`);
+                arr.unshift({ url, thumb: thumb || '', ts: Date.now() });
+            }
+            if (arr.length > MAX_SESSION_ITEMS) arr = arr.slice(0, MAX_SESSION_ITEMS);
+            saveSession(arr);
+            if (document.getElementById("hud-panel-root")) updateAssetsPanel();
+        } catch (e) { error('addSessionEntry error:', e); }
+    }
+    function checkMediaLink(url, cb) {
+        fetch(url, { method: 'HEAD', mode: "no-cors", cache: "no-store" })
+            .then(resp => {
+                let status = "unknown", info = "";
+                if (resp && resp.status) {
+                    if (resp.status === 200) status = "alive";
+                    else if ([403, 404, 410].includes(resp.status)) status = "dead";
+                    info = `${resp.status} ${resp.statusText}`;
+                }
+                cb(status, info);
+            }).catch(() => cb("unknown", "CORS/Network Error"));
+    }
+
+    //────── HAILUO-SPECIFIC NETWORK INTERCEPTION ──────//
+    const API_ENDPOINTS = {
+        videoGen: /\/api\/multimodal\/generate\/video/,
+        processing: /\/v4\/api\/multimodal\/video\/processing/,
+        batchCursor: /\/v3\/api\/multimodal\/video\/my\/batchCursor/,
+        reporter: /meerkat-reporter\/api\/report/
+    };
+    function matches(url, key) { return API_ENDPOINTS[key]?.test(url); }
+
+    function processRequestBody(url, body) {
+        let modBody = safeDeepClone(body), modified = false;
+        const isTargetMode = (matches(url, 'videoGen') && body.modelId === 'video-02' && Array.isArray(body.fileList) && body.fileList.length === 2);
+        if (isTargetMode && modBody.desc) {
+            const obfuscated = obfuscatePrompt(modBody.desc);
+            if (obfuscated !== modBody.desc) {
+                log('Target mode detected (v2.0 start/end frame). Applying NSFW obfuscation.');
+                modBody.desc = obfuscated;
+                modified = true;
+            }
+        }
+        return { modifiedBody, bodyWasModified: modified };
+    }
+
+    function processResponseBody(url, data) {
+        // Asset Capture Logic
+        if (data?.data?.batchVideos) {
+            log(`Checking for assets in response from ${url}`);
+            for (const batch of data.data.batchVideos) {
+                if (batch.assets && batch.assets.length > 0) {
+                    for (const asset of batch.assets) {
+                        const mediaUrl = asset.videoUrl || asset.imageUrl;
+                        const thumb = asset.coverUrl;
+                        if (mediaUrl) {
+                            addSessionEntry(mediaUrl, thumb);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Status Forgery Logic
+        if (config.statusBypassEnabled && data?.data?.batchVideos) {
+            let wasModified = false;
+            const forged = safeDeepClone(data);
+            for (const batch of forged.data.batchVideos) {
+                if (batch.assets) {
+                    for (const asset of batch.assets) {
+                        if (asset.sensitiveInfo && asset.sensitiveInfo.level !== 0) {
+                            asset.sensitiveInfo = { level: 0, prompt: "", type: 0 };
+                            wasModified = true;
+                        }
+                    }
+                }
+            }
+            if (wasModified) {
+                log(`Forging sensitiveInfo in response from ${url}.`);
+                return forged;
+            }
+        }
+        return null;
+    }
+
+    function overrideFetch() {
+        const origFetch = window.fetch;
+        const newFetch = async function(...args) {
+            const request = new Request(...args);
+            const { url, method } = request;
+
+            if (matches(url, 'reporter')) { log('Telemetry blocked.'); return new Response(JSON.stringify({ "status": "ok" }), { status: 200 }); }
+
+            let finalArgs = [request];
+            if (method !== 'GET' && method !== 'HEAD') {
+                 try {
+                    const bodyText = await request.clone().text();
+                    const originalBodyParsed = JSON.parse(bodyText);
+                    const { modifiedBody, bodyWasModified } = processRequestBody(url, originalBodyParsed);
+                    if (bodyWasModified) {
+                        const newRequest = new Request(request, { body: JSON.stringify(modifiedBody) });
+                        finalArgs = [newRequest];
+                    }
+                 } catch(e) {/* ignore */}
+            }
+
+            const res = await origFetch(...finalArgs);
+
+            if (res.ok) {
+                const clone = res.clone();
+                try {
+                    const respData = await clone.json();
+                    const modRespData = processResponseBody(url, respData);
+                    if (modRespData) return new Response(JSON.stringify(modRespData), { status: res.status, statusText: res.statusText, headers: res.headers });
+                } catch(e) { /* ignore */ }
+            }
+            return res;
+        };
+        try {
+            Object.defineProperty(window, 'fetch', { value: newFetch, writable: false, configurable: false });
+            log('Resilient Fetch override active.');
+        } catch (e) {
+            error("Failed to apply resilient fetch hook, falling back to simple override.", e);
+            window.fetch = newFetch;
+        }
+    }
+
+    //────── ELECTRIC-GLASS HUD (UI & RENDERING) ──────//
+    const psiGlyphSVG = `<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" class="glyph" fill="none" stroke="var(--accent-cyan)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M 64,12 A 52,52 0 1 1 63.9,12 Z" stroke-dasharray="21.78 21.78" stroke-width="2" /><path d="M 64,20 A 44,44 0 1 1 63.9,20 Z" stroke-dasharray="10 10" stroke-width="1.5" opacity="0.7" /><path d="M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z" /><text x="64" y="67" text-anchor="middle" dominant-baseline="middle" fill="var(--accent-cyan)" stroke="none" font-size="56" font-weight="700" font-family="'Cinzel Decorative', serif">Ψ</text></svg>`;
+    function injectHudStyles() {
+        if (document.getElementById("eglass-hud-css")) return;
+        document.head.insertAdjacentHTML('beforeend', `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@500&family=Orbitron:wght@700&family=Cinzel+Decorative:wght@700&display=swap">`);
+        const style = document.createElement("style"); style.id = "eglass-hud-css";
+        style.textContent = `
+          :root { --accent-cyan: #00E5FF; --primary-cyan: #15fafa; --text-primary: #EAEAEA; --text-secondary: #9E9E9E; --font-body: 'Roboto Mono', monospace; --font-hud: 'Orbitron', sans-serif; --panel-bg: #101827cc; --panel-bg-solid: #101827; --panel-border: #15adad; --panel-border-bright: #15fafa; --panel-glow: rgba(21,250,250,0.2); --panel-glow-intense: rgba(21,250,250,0.4); --hud-z: 999999; --accent-cyan-bg-active: rgba(0,229,255,0.2); }
+          .hud-container { position:fixed; bottom:2.6em; right:2.6em; z-index:var(--hud-z); background:var(--panel-bg); backdrop-filter:blur(6px); border-radius:1.2em; border:2.5px solid var(--panel-border); box-shadow:0 0 36px var(--panel-glow), 0 1.5px 8px #000b; min-width:480px; max-width:94vw; min-height:340px; color:var(--text-primary); font-family:var(--font-body); user-select:text; opacity:0.99; }
+          .hud-container[hidden]{ display:none!important; }
+          .hud-header{ display:flex; align-items:center; padding:1.2em 1em 0.3em 1.2em; border-bottom:1.5px solid var(--panel-border); gap:1.1em; font-family:var(--font-hud); cursor:grab; user-select:none; }
+          .hud-header .glyph{ flex:none; width:44px; height:44px; }
+          .hud-header .title{ flex:1; font-weight:700; background:linear-gradient(to right,#15fafa,#15adad,#157d7d); -webkit-background-clip:text; background-clip:text; color:transparent; letter-spacing:0.1em; text-shadow:0 0 9px var(--panel-glow-intense); font-size:1.1em; }
+          .hud-header .hud-close-btn{ font-size:1.3em; border:none; background:transparent; color:var(--primary-cyan); cursor:pointer; opacity:0.8; } .hud-header .hud-close-btn:hover{ color:#e06; opacity:1; }
+          .hud-tabs{ display:flex; flex-wrap:wrap; gap:0.5em; padding:0.6em 1.3em 0.1em 1.3em; border-bottom:1.5px solid var(--panel-border); }
+          .hud-content{ padding:1.35em; min-height:220px; max-height:68vh; overflow-y:auto; } .hud-content::-webkit-scrollbar{ width:12px; background:var(--panel-bg-solid); } .hud-content::-webkit-scrollbar-thumb{ background: #157d7d; border-radius:8px; }
+          .hud-btn, .hud-button{ display:inline-flex; align-items:center; gap:0.5em; padding:0.4em 0.9em; border-radius:0.6em; border:1.5px solid transparent; font-family:var(--font-hud); font-weight:700; font-size:0.9em; background:rgba(0,0,0,0.24); color:var(--text-secondary); cursor:pointer; }
+          .hud-btn.active, .hud-button.active{ color:var(--primary-cyan); border-color:var(--primary-cyan); background:var(--accent-cyan-bg-active); box-shadow:0 0 10px var(--panel-glow-intense); }
+          .chip{ display:inline-block; border-radius:1.3em; padding:0.1em 0.8em; font-size:0.9em; font-weight:600; background:#121c24; color:#67E8F9; border:1.5px solid #15fafa; box-shadow:0 0 7px var(--panel-glow); }
+          .chip.alive { text-transform: capitalize; } .chip.dead{ color:#fff3; border-color:#e06; background:#390a18; text-transform: capitalize; } .chip.unknown{ color:#fffbe6; border-color:#b5b500; background:#4c4b12; text-transform: capitalize; }
+          .hud-toast{ position:fixed; z-index:calc(var(--hud-z)+2000); bottom:3.4em; right:3.1em; background:#111b1bcc; color:var(--primary-cyan); font-family:var(--font-hud); font-size:1em; border-radius:0.8em; border:2px solid var(--panel-border-bright); box-shadow:0 0 18px var(--panel-glow-intense); padding:1em 2em; pointer-events:none; transition:opacity 220ms; }
+          #hud-panel-root .config-grid { display:grid; grid-template-columns: auto 1fr; gap: 12px 18px; align-items:center; } #hud-panel-root .config-grid label { font-size: 0.9em; cursor:help; } #hud-panel-root .config-grid input, #hud-panel-root .config-grid select { background:#101827; color:#e0ffff; border-radius:0.5em; border:1.5px solid #15adad; padding:0.5em; font-size:0.9em; font-family:var(--font-body); }
+          #hud-assets-table { width:100%; border-collapse: separate; border-spacing: 0 0.5em; } #hud-assets-table td { padding: 0.4em; background: rgba(0,0,0,0.2); vertical-align: middle; } #hud-assets-table td:first-child { border-radius: 8px 0 0 8px; } #hud-assets-table td:last-child { border-radius: 0 8px 8px 0; text-align: right; }
+          #hud-assets-table .asset-thumb { width: 100px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid var(--panel-border); }
+        `;
+        document.head.appendChild(style);
+    }
+    function createHudButton() {
+        if (document.getElementById("hud-float-btn")) return;
+        const btn = document.createElement("button"); btn.id = "hud-float-btn"; btn.className = "hud-btn";
+        btn.innerHTML = psiGlyphSVG + `<span style="font-family: var(--font-hud); font-weight: 800; margin-left: 0.6em;">HailuoΨ</span>`;
+        Object.assign(btn.style, { position: "fixed", bottom: "2em", right: "2em", zIndex: "999998", padding: "0.6em 1.3em", background: "rgba(10,19,26,0.85)", borderRadius: "0.9em", border: "2.5px solid var(--panel-border)", boxShadow: "0 0 16px var(--panel-glow)", color: "var(--primary-cyan)", fontSize: "1.08em", cursor: "pointer" });
+        document.body.appendChild(btn);
+        btn.onclick = showHudPanel;
+    }
+    function showToast(msg, timeout = 3300) { let t = document.createElement("div"); t.className = "hud-toast"; t.textContent = msg; document.body.appendChild(t); setTimeout(() => { t.style.opacity = 0; setTimeout(() => t.remove(), 600); }, timeout); }
+    function showHudPanel() {
+        let panel = document.getElementById("hud-panel-root");
+        if (!panel) {
+            panel = document.createElement("div"); panel.id = "hud-panel-root"; panel.className = "hud-container";
+            panel.innerHTML = `<div class="hud-header">${psiGlyphSVG}<span class="title">HailuoKit-Ψ</span><button class="hud-close-btn" title="Close HUD">&times;</button></div><nav class="hud-tabs" role="tablist"><button class="hud-button" data-tab="assets">Assets</button><button class="hud-button" data-tab="config">Config</button></nav><main class="hud-content" id="hud-content-panel"></main>`;
+            document.body.appendChild(panel);
+            panel.querySelector(".hud-close-btn").onclick = () => { panel.hidden = true; };
+            panel.querySelectorAll(".hud-tabs .hud-button").forEach(btn => { btn.onclick = () => setHudTab(btn.dataset.tab); });
+            let drag = { is: false, x: 0, y: 0, el: panel };
+            const header = panel.querySelector(".hud-header");
+            header.onmousedown = (e) => { drag.is = true; drag.x = e.clientX - panel.offsetLeft; drag.y = e.clientY - panel.offsetTop; };
+            document.onmousemove = (e) => { if (drag.is) { panel.style.left = `${e.clientX - drag.x}px`; panel.style.top = `${e.clientY - drag.y}px`; panel.style.right = 'auto'; panel.style.bottom = 'auto'; } };
+            document.onmouseup = () => drag.is = false;
+        }
+        panel.hidden = false;
+        setHudTab(currentTab);
+    }
+    function setHudTab(tab) {
+        currentTab = tab;
+        const panel = document.getElementById("hud-panel-root");
+        if (!panel) return;
+        panel.querySelectorAll(".hud-tabs .hud-button").forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+        const content = panel.querySelector("#hud-content-panel");
+        content.innerHTML = "";
+        if (tab === 'assets') renderAssetsPanel(content); else if (tab === 'config') renderConfigPanel(content);
+    }
+    function renderAssetsPanel(root) {
+        root.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1em;"><h3 style="margin:0; color:var(--primary-cyan); font-family:var(--font-hud);">Captured Assets</h3><button id="hailuokit-clear-session" class="hud-btn">Clear Session</button></div><div id="assets-container"></div>`;
+        root.querySelector('#hailuokit-clear-session').onclick = () => { if (confirm('Clear all captured assets?')) { saveSession([]); updateAssetsPanel(); } };
+        updateAssetsPanel();
+    }
+    function updateAssetsPanel() {
+        const container = document.getElementById('assets-container');
+        if (!container) return;
+        const items = loadSession();
+        if (items.length === 0) { container.innerHTML = `<p style="text-align:center; color: var(--text-secondary);">No assets captured this session.</p>`; return; }
+        let table = `<table id="hud-assets-table"><tbody>`;
+        items.forEach((item, idx) => {
+            const filename = item.url.split('/').pop().split('?')[0] || `mediafile`;
+            table += `<tr><td><img src="${item.thumb}" class="asset-thumb" onerror="this.style.display='none'"></td><td style="word-break:break-all;">${filename}</td><td id="asset-status-${idx}">Checking...</td><td><button class="hud-btn asset-action" data-url="${item.url}" data-action="open">Open</button><button class="hud-btn asset-action" data-url="${item.url}" data-action="dl" data-filename="${filename}">DL</button><button class="hud-btn asset-action" data-url="${item.url}" data-action="copy">Copy</button></td></tr>`;
+        });
+        table += `</tbody></table>`;
+        container.innerHTML = table;
+        container.querySelectorAll('.asset-action').forEach(btn => {
+            btn.onclick = async (e) => {
+                const { url, action, filename } = e.currentTarget.dataset;
+                if (action === 'open') window.open(url, '_blank');
+                if (action === 'dl') downloadUrl(url, filename);
+                if (action === 'copy') { await navigator.clipboard.writeText(url); showToast('Copied!'); }
+            };
+        });
+        items.forEach((item, idx) => checkMediaLink(item.url, (status, info) => {
+            const cell = document.getElementById(`asset-status-${idx}`);
+            if (cell) {
+                cell.innerHTML = ''; let chip = document.createElement("span"); chip.className = `chip ${status}`; chip.textContent = status;
+                if (info) chip.title = info; cell.appendChild(chip);
+            }
+        }));
+    }
+    function renderConfigPanel(root) {
+        root.innerHTML = `<div class="config-grid">
+            <label for="cfg-debugMode" title="Enable console logs for debugging.">Debug Mode</label><input id="cfg-debugMode" type="checkbox" data-key="debugMode">
+            <label for="cfg-statusBypassEnabled" title="Forge 'safe' status on moderated content to enable download.">Status Bypass</label><input id="cfg-statusBypassEnabled" type="checkbox" data-key="statusBypassEnabled">
+            <label for="cfg-nsfwObfuscation" title="Obfuscate NSFW prompts. Layered is strongest.">NSFW Obfuscation</label><select id="cfg-nsfwObfuscation" data-key="nsfwObfuscation"><option value="none">None</option><option value="zwsp">ZWSP</option><option value="homoglyph">Homoglyph</option><option value="layered">Layered</option></select>
+        </div>`;
+        root.querySelectorAll('[data-key]').forEach(el => {
+            const key = el.dataset.key;
+            if (el.type === 'checkbox') el.checked = config[key]; else el.value = config[key];
+            el.onchange = async (e) => {
+                const value = (e.target.type === 'checkbox') ? e.target.checked : e.target.value;
+                config[key] = value; await setUserPref(key, value); showToast(`Set ${key}`);
+            };
+        });
+    }
+
+    //────── INITIALIZATION & LIFECYCLE ──────//
+    async function initialize() {
+        if (isInitialized) return;
+        const keys = Object.keys(config);
+        for (const key of keys) config[key] = await getUserPref(key, config[key]);
+        overrideFetch();
+        const onReady = () => { injectHudStyles(); createHudButton(); };
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', onReady, { once: true });
+        else onReady();
+        isInitialized = true;
+        log(`HailuoKit-Ψ v${GM_info.script.version} initialized.`);
+        showToast("HailuoKit-Ψ Active");
+    }
+
+    initialize();
+    GM_registerMenuCommand("Show HailuoKit-Ψ HUD", showHudPanel);
+
+})();
