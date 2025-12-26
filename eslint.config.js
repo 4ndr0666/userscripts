@@ -1,9 +1,10 @@
-import js from "@eslint/js";
-import globals from "globals";
-
-export default [
-  {
-    ignores: ["node_modules/**", "dist/**", "*.min.js"],
+// eslint.config.js (ES Module version)
+export default {
+  root: true,
+  env: {
+    browser: true,
+    es2021: true,
+    greasemonkey: true
   },
   {
     ...js.configs.recommended,
