@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         LinkMasterΨ2 Plugin - CandidShiny Forum
+// @name         LinkMasterΨ2 - CandidShiny Plugin
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.1.0
-// @description  Support for forum.candidshiny.com posts and attachments in LinkMasterΨ2
+// @version      1.0.0
+// @description  Extract all images/videos/attachments from forum.candidshiny.com posts
 // @match        *://forum.candidshiny.com/*
 // @grant        none
 // ==/UserScript==
@@ -14,49 +14,42 @@
         name: "CandidShiny",
         hosts: [
             [
-                "CandidShiny:Post Media",
-                [
-                    /https?:\/\/forum\.candidshiny\.com\/uploads\/.*\.(mp4|webm|jpg|jpeg|png|gif)/i
-                ]
+                "CandidShiny:Attachments",
+                [] // Will populate dynamically
             ]
         ],
         resolvers: [
             [
-                /https?:\/\/forum\.candidshiny\.com\/uploads\/.*\.(mp4|webm|jpg|jpeg|png|gif)/i,
-                async (url, http, spoilers, postId) => {
-                    try {
-                        // Simple HEAD request to verify existence
-                        const res = await http.gm_promise({ method: "HEAD", url });
-                        if (res.status >= 200 && res.status < 400) return url;
-                        return null;
-                    } catch {
-                        return null;
-                    }
-                }
+                /.+/,
+                async (url) => url // No special resolving needed, just report the URL
             ]
         ]
     };
 
-    // Auto-scan posts and collect media
-    const scanPosts = () => {
-        const posts = document.querySelectorAll("article.message, div.message-content");
-        posts.forEach(post => {
-            const container = post.querySelector(".message-content") || post;
-            const mediaUrls = [];
+    function scanPosts() {
+        const posts = document.querySelectorAll("div.message-body, div.bbWrapper, article.message"); // catch common post containers
+        const mediaUrls = [];
 
-            container.querySelectorAll("img, video, a[href]").forEach(el => {
-                let url = el.src || el.getAttribute("href");
-                if (!url) return;
-                if (/forum\.candidshiny\.com\/uploads/.test(url)) mediaUrls.push(url);
+        posts.forEach(post => {
+            // Attachments as <a class="attachment">
+            post.querySelectorAll("a.attachment[href]").forEach(a => mediaUrls.push(a.href));
+
+            // Inline images
+            post.querySelectorAll("img[src]").forEach(img => {
+                if (img.src.includes("/uploads/")) mediaUrls.push(img.src);
             });
 
-            if (mediaUrls.length) {
-                plugin.hosts[0][1].resources = mediaUrls;
-            }
+            // Inline videos
+            post.querySelectorAll("video, video source[src]").forEach(v => {
+                const src = v.src || v.getAttribute("src");
+                if (src) mediaUrls.push(src);
+            });
         });
-    };
 
-    // Expose globally for LinkMasterΨ2
-    window.LinkMasterPlugin = plugin;
+        plugin.hosts[0][1] = mediaUrls.map(url => ({ url }));
+    }
+
     scanPosts();
+    window.LinkMasterPlugin = plugin;
+
 })();
