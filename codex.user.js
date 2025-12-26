@@ -1606,9 +1606,7 @@ const buildGenericMediaHost = (postId, resources) => ({
 });
 
 const collectGenericMediaResources = (root = document) => {
-  if (!root?.querySelectorAll) return [];
-
-  const mediaExtensions = new Set(["mp4", "webm", "mkv", "mp3", "m4v", "m4a", "aac", "wav", "flac", "ogg", "ogv", "oga", "opus"]);
+  const mediaExtensions = new Set(["mp4", "webm", "mkv", "mp3", "m4v", "m4a", "aac", "wav", "flac"]);
   const collected = [];
 
   const normalizeUrl = (url) => {
@@ -1632,17 +1630,10 @@ const collectGenericMediaResources = (root = document) => {
     }
   };
 
-  root
-    .querySelectorAll("video[src], audio[src], video[data-src], audio[data-src], source[src], source[data-src], video source[src], video source[data-src], audio source[src], audio source[data-src]")
-    .forEach((el) => {
-      pushIfValid(el.getAttribute("src"));
-      pushIfValid(el.dataset?.src);
-    });
-
-  root.querySelectorAll("a[href]").forEach((a) => {
-    const href = a.getAttribute("href");
-    const ext = href ? h.ext(href)?.toLowerCase() : null;
-    if (ext && mediaExtensions.has(ext)) pushIfValid(href);
+  root.querySelectorAll("video[src], audio[src]").forEach((el) => pushIfValid(el.getAttribute("src")));
+  root.querySelectorAll("video source[src], audio source[src], source[src]").forEach((el) => pushIfValid(el.getAttribute("src")));
+  root.querySelectorAll('a[href$=".mp4"], a[href$=".webm"], a[href$=".mp3"], a[href$=".m4v"], a[href$=".m4a"], a[href$=".aac"], a[href$=".wav"], a[href$=".flac"]').forEach((a) => {
+    pushIfValid(a.getAttribute("href"));
   });
 
   return h.unique(collected);
@@ -2157,8 +2148,8 @@ async function resolvePostLinks(postData, statusLabel) {
 
   let hostsToProcess = [...enabledHosts];
   if (globalConfig.enableGenericMediaDetection) {
-    const contentRoot = parsedPost.contentContainer || parsedPost.post || document;
-    const genericResources = collectGenericMediaResources(contentRoot);
+    
+    const genericResources = collectGenericMediaResources(parsedPost.contentContainer || document);
     const hasGenericHost = hostsToProcess.some((host) => host.name === "Generic Media");
     if (genericResources.length && !hasGenericHost) {
       hostsToProcess = hostsToProcess.concat(buildGenericMediaHost(postId, genericResources));
@@ -2923,9 +2914,6 @@ function showToast(msg, timeout = 3300) {
     if (post.dataset.linkmasterProcessed) return false;
     const parsedPost = parsers.thread.parsePost(post);
     if (!parsedPost) return false;
-
-    const targetPost = parsedPost.post || post;
-    if (targetPost.dataset.linkmasterProcessed) return false;
 
     let parsedHosts = parsers.hosts.parseHosts(parsedPost.content);
     if (!parsedHosts.length && globalConfig.enableGenericMediaDetection && parsedPost.contentContainer) {
