@@ -1,5 +1,5 @@
-// eslint.config.js
-module.exports = {
+// eslint.config.js (ES Module version)
+export default {
   root: true,
   env: {
     browser: true,
