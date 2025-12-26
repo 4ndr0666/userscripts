@@ -353,56 +353,126 @@ const parsers = {
         : parsed.trim();
     },
     parsePost: (post) => {
-      const messageContent = post.parentNode.parentNode.querySelector(".message-content > .message-userContent");
-      if (!messageContent) return null;
-
-      const footer = post.parentNode.parentNode.querySelector("footer");
-      const messageContentClone = messageContent.cloneNode(true);
-
-      const postIdAnchor = post.querySelector("li:last-of-type > a");
-      if (!postIdAnchor) return null;
-
-      const href = postIdAnchor.getAttribute("href");
-      if (!href) return null;
-
-      const postIdMatch = /(?<=post-).*/i.exec(href);
-      if (!postIdMatch || !postIdMatch[0]) return null;
-      const postId = postIdMatch[0];
-
-      const postNumber = postIdAnchor.textContent ? postIdAnchor.textContent.replace("#", "").trim() : null;
-      if (!postNumber) return null;
-
-      [".contentRow-figure", ".js-unfurl-favicon", "blockquote", ".button-text > span"]
-        .flatMap((i) => [...messageContentClone.querySelectorAll(i)])
-        .forEach((i) => {
-          if (i.tagName === "BLOCKQUOTE" && i.querySelector(".bbCodeBlock-title")) i.remove();
-          else if (i.tagName !== "BLOCKQUOTE") i.remove();
-        });
-      [...messageContentClone.querySelectorAll('.contentRow-header > a[href^="https://simpcity.su/threads"]')]
-        .map((a) => a.parentNode.parentNode.parentNode.parentNode).forEach((i) => i.remove());
-
-      const spoilers = [...messageContentClone.querySelectorAll(".bbCodeBlock--spoiler > .bbCodeBlock-content"), ...messageContentClone.querySelectorAll(".bbCodeInlineSpoiler")]
-        .filter((s) => !s.querySelector(".bbCodeBlock--unfurl"))
-        .map((s) => s.innerText)
-        .concat(h.re.matchAll(/(?<=pw|pass|passwd|password)(\s:|:)?\s+?[a-zA-Z0-9~!@#$%^&*()_+{}|:'"<>?/,;.]+/gis, messageContentClone.innerText).map((s) => s.trim()))
-        .map((s) => s.trim().replace(/^:|^\bp:\b|^\bpw:\b|^\bkey:\b/i, "").trim())
-        .filter(Boolean).unique();
-
-      const postContent = messageContentClone.innerHTML;
-      const postTextContent = messageContentClone.innerText;
-      const matches = /(?<=\/page-)\d+/is.exec(document.location.pathname);
-      const pageNumber = matches && matches.length ? Number(matches[0]) : 1;
-      return {
-        post,
-        postId,
-        postNumber,
-        pageNumber,
-        spoilers,
-        footer,
-        content: postContent,
-        textContent: postTextContent,
-        contentContainer: messageContent
+      const parsePageNumber = () => {
+        const pathMatch = /(?<=\/page-)\d+/is.exec(document.location.pathname);
+        if (pathMatch?.[0]) return Number(pathMatch[0]);
+        const queryPage = new URLSearchParams(document.location.search).get("page");
+        if (queryPage && !Number.isNaN(Number(queryPage))) return Number(queryPage);
+        return 1;
       };
+
+      const collectSpoilers = (contentNode) => {
+        const textContent = contentNode?.innerText || "";
+        const spoilers = [
+          ...contentNode.querySelectorAll(".bbCodeBlock--spoiler > .bbCodeBlock-content, .bbCodeInlineSpoiler, [class*='spoiler' i], details"),
+        ]
+          .filter((s) => !s.querySelector?.(".bbCodeBlock--unfurl"))
+          .map((s) => s.innerText)
+          .concat(
+            h.re
+              .matchAll(
+                /(?<=pw|pass|passwd|password)(\s:|:)?\s+?[a-zA-Z0-9~!@#$%^&*()_+{}|:'"<>?/,;.]+/gis,
+                textContent,
+              )
+              .map((s) => s.trim()),
+          )
+          .map((s) => s.trim().replace(/^:|^\bp:\b|^\bpw:\b|^\bkey:\b/i, "").trim())
+          .filter(Boolean)
+          .unique();
+        return spoilers;
+      };
+
+      const parseFlarumPost = (article) => {
+        const messageContent = article.querySelector(".Post-body");
+        if (!messageContent) return null;
+
+        const footer = article.querySelector(".Post-footer");
+        const messageContentClone = messageContent.cloneNode(true);
+
+        const permalink =
+          article.querySelector("a.PostPermalink, a.Post-permalink, a.Post-permalinkButton, a.PostHeader-permalink") ||
+          article.querySelector(".Post-header a[href]");
+        const href = permalink?.getAttribute("href") || "";
+        const hrefNumberMatch = href.match(/(\d+)(?!.*\d)/);
+
+        const postId =
+          article.getAttribute("data-id") || article.id || hrefNumberMatch?.[1] || article.getAttribute("data-number") || null;
+        const postNumber =
+          article.getAttribute("data-number") ||
+          (permalink?.textContent ? permalink.textContent.replace("#", "").trim() : null) ||
+          hrefNumberMatch?.[1] ||
+          postId;
+
+        if (!postId || !postNumber) return null;
+
+        const spoilers = collectSpoilers(messageContentClone);
+        const postContent = messageContentClone.innerHTML;
+        const postTextContent = messageContentClone.innerText;
+
+        return {
+          post: article,
+          postId,
+          postNumber,
+          pageNumber: parsePageNumber(),
+          spoilers,
+          footer,
+          actions: article.querySelector(".Post-actions") || null,
+          content: postContent,
+          textContent: postTextContent,
+          contentContainer: messageContent,
+        };
+      };
+
+      const parseLegacyPost = (legacyPost) => {
+        const messageContent = legacyPost.parentNode?.parentNode?.querySelector?.(".message-content > .message-userContent");
+        if (!messageContent) return null;
+
+        const footer = legacyPost.parentNode?.parentNode?.querySelector?.("footer");
+        const messageContentClone = messageContent.cloneNode(true);
+
+        const postIdAnchor = legacyPost.querySelector("li:last-of-type > a");
+        if (!postIdAnchor) return null;
+
+        const href = postIdAnchor.getAttribute("href");
+        if (!href) return null;
+
+        const postIdMatch = /(?<=post-).*/i.exec(href);
+        if (!postIdMatch || !postIdMatch[0]) return null;
+        const postId = postIdMatch[0];
+
+        const postNumber = postIdAnchor.textContent ? postIdAnchor.textContent.replace("#", "").trim() : null;
+        if (!postNumber) return null;
+
+        [".contentRow-figure", ".js-unfurl-favicon", "blockquote", ".button-text > span"]
+          .flatMap((i) => [...messageContentClone.querySelectorAll(i)])
+          .forEach((i) => {
+            if (i.tagName === "BLOCKQUOTE" && i.querySelector(".bbCodeBlock-title")) i.remove();
+            else if (i.tagName !== "BLOCKQUOTE") i.remove();
+          });
+        [...messageContentClone.querySelectorAll('.contentRow-header > a[href^="https://simpcity.su/threads"]')]
+          .map((a) => a.parentNode.parentNode.parentNode.parentNode)
+          .forEach((i) => i.remove());
+
+        const spoilers = collectSpoilers(messageContentClone);
+
+        const postContent = messageContentClone.innerHTML;
+        const postTextContent = messageContentClone.innerText;
+        return {
+          post: legacyPost,
+          postId,
+          postNumber,
+          pageNumber: parsePageNumber(),
+          spoilers,
+          footer,
+          content: postContent,
+          textContent: postTextContent,
+          contentContainer: messageContent,
+        };
+      };
+
+      const flarumPost = post.matches("article.CommentPost.Post") ? post : post.closest("article.CommentPost.Post");
+      if (flarumPost) return parseFlarumPost(flarumPost);
+      return parseLegacyPost(post);
     }
   },
   hosts: {
@@ -1536,7 +1606,7 @@ const buildGenericMediaHost = (postId, resources) => ({
   id: `generic-${postId}-${Math.round(Math.random() * Number.MAX_SAFE_INTEGER)}`
 });
 
-const collectGenericMediaResources = () => {
+const collectGenericMediaResources = (root = document) => {
   const mediaExtensions = new Set(["mp4", "webm", "mkv", "mp3", "m4v", "m4a", "aac", "wav", "flac"]);
   const collected = [];
 
@@ -1553,9 +1623,9 @@ const collectGenericMediaResources = () => {
     }
   };
 
-  document.querySelectorAll("video[src], audio[src]").forEach((el) => pushIfValid(el.getAttribute("src")));
-  document.querySelectorAll("video source[src], audio source[src], source[src]").forEach((el) => pushIfValid(el.getAttribute("src")));
-  document.querySelectorAll('a[href$=".mp4"], a[href$=".webm"], a[href$=".mp3"], a[href$=".m4v"], a[href$=".m4a"], a[href$=".aac"], a[href$=".wav"], a[href$=".flac"]').forEach((a) => {
+  root.querySelectorAll("video[src], audio[src]").forEach((el) => pushIfValid(el.getAttribute("src")));
+  root.querySelectorAll("video source[src], audio source[src], source[src]").forEach((el) => pushIfValid(el.getAttribute("src")));
+  root.querySelectorAll('a[href$=".mp4"], a[href$=".webm"], a[href$=".mp3"], a[href$=".m4v"], a[href$=".m4a"], a[href$=".aac"], a[href$=".wav"], a[href$=".flac"]').forEach((a) => {
     pushIfValid(a.getAttribute("href"));
   });
 
@@ -2070,9 +2140,10 @@ async function resolvePostLinks(postData, statusLabel) {
   const allResolved = [];
 
   let hostsToProcess = [...enabledHosts];
-  if (globalConfig.enableGenericMediaDetection && globalConfig.appMode === "general") {
-    const genericResources = collectGenericMediaResources();
-    if (genericResources.length) {
+  if (globalConfig.enableGenericMediaDetection) {
+    const genericResources = collectGenericMediaResources(parsedPost.contentContainer || document);
+    const hasGenericHost = hostsToProcess.some((host) => host.name === "Generic Media");
+    if (genericResources.length && !hasGenericHost) {
       hostsToProcess = hostsToProcess.concat(buildGenericMediaHost(postId, genericResources));
       log.info(postId, `${HUD_TAG} Added ${genericResources.length} generic media source(s)`, "HUD");
     }
@@ -2836,7 +2907,14 @@ function showToast(msg, timeout = 3300) {
     post.dataset.linkmasterProcessed = "true";
     const parsedPost = parsers.thread.parsePost(post);
     if (!parsedPost) return false;
-    const parsedHosts = parsers.hosts.parseHosts(parsedPost.content);
+    let parsedHosts = parsers.hosts.parseHosts(parsedPost.content);
+    if (!parsedHosts.length && globalConfig.enableGenericMediaDetection && parsedPost.contentContainer) {
+      const genericResources = collectGenericMediaResources(parsedPost.contentContainer);
+      if (genericResources.length) {
+        parsedHosts = [buildGenericMediaHost(parsedPost.postId, genericResources)];
+        log.info(parsedPost.postId, `${HUD_TAG} Added generic media fallback for post`, "HUD");
+      }
+    }
     if (!parsedHosts.length) return false;
     const localSettings = { ...globalConfig, zipped: globalConfig.defaultZipped, flatten: globalConfig.defaultFlatten, generateLinks: globalConfig.defaultGenerateLinks, generateLog: globalConfig.defaultGenerateLog, skipDuplicates: globalConfig.defaultSkipDuplicates, skipDownload: false, verifyBunkrLinks: false, output: [] };
     parsedPosts.push({
@@ -2878,24 +2956,25 @@ function showToast(msg, timeout = 3300) {
     }
 
     if (globalConfig.appMode === 'forum') {
+      const forumPostSelector = "article.CommentPost.Post, .message-attribution-opposite";
+      const processPostsInNode = (node, tracker) => {
+        if (node.matches && node.matches(forumPostSelector)) {
+          if (processPost(node)) tracker.processed = true;
+        }
+        node.querySelectorAll?.(forumPostSelector).forEach((p) => {
+          if (processPost(p)) tracker.processed = true;
+        });
+      };
       const observer = new MutationObserver((mutations) => {
-        let newPostsProcessed = false;
+        const tracker = { processed: false };
         mutations.forEach((mutation) => {
           if (mutation.addedNodes.length) {
             mutation.addedNodes.forEach((node) => {
-              if (node.nodeType === 1) {
-                const posts = node.querySelectorAll(".message-attribution-opposite");
-                posts.forEach((p) => {
-                  if (processPost(p)) newPostsProcessed = true;
-                });
-                if (node.matches && node.matches(".message-attribution-opposite")) {
-                  if (processPost(node)) newPostsProcessed = true;
-                }
-              }
+              if (node.nodeType === 1) processPostsInNode(node, tracker);
             });
           }
         });
-        if (newPostsProcessed) {
+        if (tracker.processed) {
           const hudPanel = document.getElementById("hud-panel-root");
           if (hudPanel && !hudPanel.hidden) {
             setHudTab(currentTab);
@@ -2904,7 +2983,7 @@ function showToast(msg, timeout = 3300) {
       });
       observer.observe(document.body, { childList: true, subtree: true });
       let initialPostsFound = 0;
-      document.querySelectorAll(".message-attribution-opposite").forEach((p) => {
+      document.querySelectorAll(forumPostSelector).forEach((p) => {
         if (processPost(p)) initialPostsFound++;
       });
       if (initialPostsFound > 0) showToast(`${initialPostsFound} post(s) with media found!`);
