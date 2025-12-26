@@ -1,95 +1,115 @@
-# AGENTS.md
+# Codex Work Order: LinkMasterΨ2 — Full Production Integration & Enhancement
 
-## Agent Directive: Adapt `LinkMasterΨ2` for `forum.candidshiny.com`
+## Objective
+Finalize the `4ndr0tools - LinkMasterΨ2` userscript with production-ready enhancements, ensuring robust Flarum forum post detection, generic media scraping, M3U8 stream handling, clipboard/export utilities, and resilient plugin architecture.
 
-### Objective
-Update the `LinkMasterΨ2` userscript so that it fully supports scraping, previewing, checking, repairing, and downloading links from posts on `forum.candidshiny.com` (a Flarum-based forum). Maintain full feature parity with the existing functionality.
+---
 
-### Scope
-The agent must:
+## Tasks
 
-1. Detect and process all posts in the forum thread.
-2. Parse media links from each post.
-3. Populate the HUD correctly for:
-   - Scrape panel
-   - Check panel
-   - Export / Copy All URLs
-   - Scan / Repair URLs
-   - m3u8 stream analysis
-4. Ensure plugin fixers and generic media detection are fully functional.
+### 1. Post Detection & Parsing
+- Ensure `processPost` handles both Flarum (`article.CommentPost.Post`) and legacy post structures.
+- Attach `MutationObserver` to `document.body` with `{ childList: true, subtree: true }`.
+- Mark posts as processed to prevent duplicates: `post.dataset.linkmasterProcessed = "true"`.
+- Collect post metadata: `postId`, `postNumber`, `contentContainer`, `spoilers`.
+- Parse content for:
+  - `parsedHosts` via `parsers.hosts.parseHosts`
+  - Generic media via `collectGenericMediaResources` if enabled.
+- Reset resolved cache after new post detection.
 
-### Technical Details
+### 2. Generic Media Detection
+- Implement `collectGenericMediaResources(root)`:
+  - Detect `<video>`, `<audio>`, `<source>` tags.
+  - Detect `<a>` links with media extensions: `mp4, webm, mp3, m4v, m4a, aac, wav, flac`.
+  - Deduplicate and normalize URLs.
+- Wrap results in a virtual host object using `buildGenericMediaHost(postId, resources)`.
 
-#### 1. Post Detection
-- Current `LinkMasterΨ2` targets `.message-attribution-opposite`.
-- On `forum.candidshiny.com`, posts use:
-  ```html
-  <article class="CommentPost Post Post--by-start-user">
+### 3. Resolver & Fixer Logic
+- Maintain existing `resolvers` array with pattern matching and async resolution.
+- Apply `pluginFixers` to URLs post-resolution.
+- Implement robust error handling and retries where appropriate.
+- Resolve protected content using spoilers/passwords if available.
+- Ensure resolved URLs are cached via `cacheResolvedLinks` and `cacheLinkStatus`.
 
-	•	Task: Update post selection to:
+### 4. HUD & Interface
+- Inject HUD container with:
+  - Tabs: Scrape, Check, Settings.
+  - Quick Filter panel with regex, type, status, and min size.
+  - Post listing with checkboxes, download buttons, and status chips.
+  - Bulk actions: Copy URLs, Export, Scan/Repair, Scan Streams.
+- Display previews for images/videos via lazy tooltip (`ui.tooltip`).
+- Update HUD dynamically when posts are added/processed.
 
-document.querySelectorAll("article.CommentPost.Post")
+### 5. Download System
+- Implement `downloadPost(postData, statusContainer)`:
+  - Resolve all links for the post.
+  - Handle duplicate prevention, folder structure, and custom filenames.
+  - Integrate zip creation (`JSZip`) and optional `links.txt` and `log.txt`.
+  - Provide per-file progress bars and overall progress.
+  - Support Firefox vs non-Firefox behavior for downloads.
+  - Use `GM_download` for direct file saves.
 
+### 6. Bulk Operations
+- `copyAllResolvedUrls`:
+  - Filters by type (`all/images/videos/documents/compressed`).
+  - Supports formats: plaintext, JSON, Markdown.
+  - Copies to clipboard and updates HUD.
+- `exportResolvedUrls`:
+  - Show modal with filter, format, and detail options.
+  - Export to CSV, JSON, or Markdown.
+  - Include optional context and thumbnails.
+- `scanAndRepairResolvedUrls`:
+  - Check all resolved links via HEAD requests.
+  - Attempt protocol toggling or minor rewrites for broken links.
+  - Copy repaired links to clipboard.
+- `scanM3u8Streams`:
+  - Parse playlists, display selectable variants.
+  - Generate and copy ffmpeg commands per variant.
 
+### 7. Plugin Architecture
+- Load inline, script, or URL-defined plugins.
+- Normalize plugin definitions: `hosts`, `resolvers`, `fixers`.
+- Register plugins dynamically to extend parsing and resolution.
+- Maintain error logging for plugin failures.
 
-2. Post Content
-	•	The content container is .Post-body.
-	•	Update parsers.thread.parsePost to select:
+### 8. Settings Management
+- Persist global settings via `GM_setValue` / `GM_getValue`.
+- Settings include:
+  - App mode (`forum` / `general`)
+  - Default download options (zipped, flatten, generate links/log, skip duplicates)
+  - Generic media detection toggle
+  - GoFile token
+  - Plugin sources
+- Provide Settings HUD panel with live-save and reload capability.
 
-const messageContent = post.querySelector(".Post-body");
+### 9. Event Handling & Safety
+- Warn user on page unload if downloads are in progress.
+- Handle dynamically added posts in Flarum via `MutationObserver`.
+- Ensure tooltips, buttons, and modals are interactive and non-blocking.
+- Update HUD in real-time when resolved links or generic media are added.
 
+### 10. Logging & Debug
+- Structured logging via `log` object with `post` and `host` context.
+- Store logs per post for download generation.
+- Include severity levels: info, warn, error.
+- Use console output for developer visibility.
 
+---
 
-3. Footer & Actions
-	•	Update references to footer and actions for compatibility:
+## Deliverables
+1. Full userscript (`LinkMasterΨ2`) with all above functionality integrated.
+2. Persistent settings management.
+3. Fully operational HUD for forum and general modes.
+4. Download system with zip and progress tracking.
+5. Clipboard/export utilities with filtering.
+6. Robust resolver/fixer logic with plugin support.
+7. Comprehensive logging and error handling.
 
-const footer = post.querySelector(".Post-footer");
-const actions = post.querySelector(".Post-actions"); // optional for buttons
+---
 
-
-
-4. Spoilers & Embedded Media
-	•	Verify and adjust selectors for:
-	•	spoilers
-	•	embedded images/videos
-	•	links hidden within HTML elements specific to candidshiny
-	•	Ensure parsing does not remove necessary elements.
-
-5. Generic Media Detection
-	•	Enable automatic detection of <video> and <audio> elements within .Post-body for posts that lack host-specific resolvers.
-
-6. Post Mutation Handling
-	•	Update MutationObserver for dynamically loaded posts:
-
-observer.observe(document.body, { childList: true, subtree: true });
-
-
-	•	Ensure new posts added to the DOM are automatically processed and HUD updates correctly.
-
-7. HUD Integration
-	•	All panels, buttons, and tooltips must work without modification.
-	•	Existing download logic, status chips, copy/export, m3u8 scanning, and repair functionality must integrate seamlessly.
-
-Deliverables
-	1.	Fully updated parsers.thread.parsePost function tailored to forum.candidshiny.com.
-	2.	Adjusted post detection logic for initial load and dynamically appended posts.
-	3.	Verified integration with:
-	•	resolvePostLinks
-	•	downloadPost
-	•	scanAndRepairResolvedUrls
-	•	scanM3u8Streams
-	•	copyAllResolvedUrls and exportResolvedUrls
-	4.	All updates should preserve backward compatibility for other supported forums.
-
-Constraints
-	•	Do not remove any existing features.
-	•	Ensure all async operations (HTTP requests, parsing, resolving) remain properly awaited and HUD progress bars update accurately.
-	•	Maintain all plugin loading and fixer logic.
-
-Success Criteria
-	•	All posts on forum.candidshiny.com are detected and parsed correctly.
-	•	Media links within posts are detected, categorized, and available for all HUD features.
-	•	Download, check, copy/export, and scan/repair features function without errors.
-	•	Generic media detection works for uncategorized media.
-	•	HUD remains fully interactive and responsive.
-
+## Notes
+- Strictly maintain canonical host/resolver definitions.
+- Avoid duplicate downloads.
+- All async operations must be properly awaited.
+- Preserve UI/UX consistency for both light/dark themes.
+- Ensure all features are fully production-ready.
