@@ -1,95 +1,166 @@
-# AGENTS.md
+# Work Order: LinkMasterΨ2 — Optimization, Hardening, and Feature Enhancements
 
-## Agent Directive: Adapt `LinkMasterΨ2` for `forum.candidshiny.com`
+## Task Overview
+This work order outlines a set of recommended improvements, optimizations, and architectural refinements for the **LinkMasterΨ2 UserScript**. The goal is to enhance robustness, performance, user experience, and maintainability while preserving the full breadth of scraping, resolving, and downloading functionality.
 
-### Objective
-Update the `LinkMasterΨ2` userscript so that it fully supports scraping, previewing, checking, repairing, and downloading links from posts on `forum.candidshiny.com` (a Flarum-based forum). Maintain full feature parity with the existing functionality.
+---
 
-### Scope
-The agent must:
+## 1. Performance Enhancements
 
-1. Detect and process all posts in the forum thread.
-2. Parse media links from each post.
-3. Populate the HUD correctly for:
-   - Scrape panel
-   - Check panel
-   - Export / Copy All URLs
-   - Scan / Repair URLs
-   - m3u8 stream analysis
-4. Ensure plugin fixers and generic media detection are fully functional.
+### 1.1 Lazy-Load Media Previews
+- **Issue:** Previews (images/videos) are generated for all resources upfront. For posts with many resources, this increases memory usage and DOM nodes significantly.
+- **Recommendation:** Implement lazy-loading:
+  - Only generate previews when a user hovers over a post.
+  - Use `IntersectionObserver` or deferred DOM population.
+- **Technical Implementation:**
+  - Modify `generatePreviewContent` in `renderScrapePanel` to populate children on first hover.
+  - Remove the DOM elements from tooltip when hidden to free memory.
 
-### Technical Details
+### 1.2 Throttled HTTP Requests
+- **Issue:** Bulk link resolution (`resolveAllPosts`) currently initiates many concurrent HTTP requests.
+- **Recommendation:** Introduce concurrency limits to prevent browser memory overuse and host rate-limiting.
+- **Technical Implementation:**
+  - Implement a promise pool with a configurable concurrency limit (e.g., 5–10 concurrent requests).
+  - Ensure link resolution promises queue properly and continue once a slot is available.
 
-#### 1. Post Detection
-- Current `LinkMasterΨ2` targets `.message-attribution-opposite`.
-- On `forum.candidshiny.com`, posts use:
-  ```html
-  <article class="CommentPost Post Post--by-start-user">
+### 1.3 Persistent Resolved Link Cache
+- **Issue:** Resolving links per page load may redundantly re-fetch previously resolved links.
+- **Recommendation:** Implement persistent caching across sessions.
+- **Technical Implementation:**
+  - Store `resolvedCache` and `linkStatusCache` in `GM_setValue` on unload.
+  - Reload caches on script initialization using `GM_getValue`.
+  - Maintain cache invalidation by timestamp or page-specific key.
 
-	•	Task: Update post selection to:
+---
 
-document.querySelectorAll("article.CommentPost.Post")
+## 2. Reliability & Robustness
 
+### 2.1 Error Handling for Resolvers
+- **Issue:** Host resolvers can fail silently or throw uncaught exceptions, halting resolution for a post.
+- **Recommendation:** Wrap all resolver calls in `try/catch` blocks and log failures gracefully.
+- **Technical Implementation:**
+  - Standardize error reporting with `log.host.error`.
+  - Ensure unresolved links are still processed, marking status as `Error`.
 
+### 2.2 FFmpeg Command Generation Validation
+- **Issue:** `buildFfmpegCommand` assumes URLs and filenames are safe and valid.
+- **Recommendation:** Add comprehensive sanitization and validation.
+- **Technical Implementation:**
+  - Escape spaces and special characters.
+  - Ensure file path separators are platform-safe.
+  - Validate URI via `encodeURI` or `encodeURIComponent` as needed.
 
-2. Post Content
-	•	The content container is .Post-body.
-	•	Update parsers.thread.parsePost to select:
+### 2.3 Plugin Load Feedback
+- **Issue:** Plugin loading errors are logged to console but not surfaced in UI.
+- **Recommendation:** Provide user-visible notifications for failed plugin loads.
+- **Technical Implementation:**
+  - Display toast messages with source URL and error summary.
+  - Maintain a plugin status panel in settings for success/failure.
 
-const messageContent = post.querySelector(".Post-body");
+---
 
+## 3. UX & Usability Improvements
 
+### 3.1 Bulk Operations Feedback
+- **Issue:** During bulk downloads or resolution, users may not know exact progress.
+- **Recommendation:** Enhance progress bars and status labels.
+- **Technical Implementation:**
+  - Display per-host resolution count.
+  - Show a dynamic queue or estimated time remaining.
+  - Color-code progress based on successful vs failed resolutions.
 
-3. Footer & Actions
-	•	Update references to footer and actions for compatibility:
+### 3.2 Filter Enhancements
+- **Issue:** Quick Filter only supports substring and regex; additional metadata is ignored.
+- **Recommendation:** Expand filters to include:
+  - Host name
+  - Post number
+  - Folder name
+  - File size ranges
+- **Technical Implementation:**
+  - Extend `quickFilterState` with new filter keys.
+  - Update `renderQuickFilterResults` to apply additional conditions.
 
-const footer = post.querySelector(".Post-footer");
-const actions = post.querySelector(".Post-actions"); // optional for buttons
+### 3.3 Settings Persistence Enhancements
+- **Issue:** Changing settings requires page reload to apply.
+- **Recommendation:** Apply critical settings dynamically where possible.
+- **Technical Implementation:**
+  - Dynamically update `globalConfig` without reloading the page.
+  - Re-initialize post parsing and plugin registration on-the-fly.
 
+---
 
+## 4. Architectural & Code Quality Improvements
 
-4. Spoilers & Embedded Media
-	•	Verify and adjust selectors for:
-	•	spoilers
-	•	embedded images/videos
-	•	links hidden within HTML elements specific to candidshiny
-	•	Ensure parsing does not remove necessary elements.
+### 4.1 Modularization
+- **Issue:** Script is monolithic (~10k+ lines), making maintenance and debugging difficult.
+- **Recommendation:** Break into modules:
+  - `core` (utility functions, status cache)
+  - `ui` (HUD, tooltips, modals)
+  - `resolvers` (per-host resolvers)
+  - `downloadManager` (download/zip logic)
+  - `plugins` (plugin loader, register, fixers)
+- **Technical Implementation:**
+  - Use ES Modules or IIFE submodules.
+  - Expose only essential APIs to the global script.
 
-5. Generic Media Detection
-	•	Enable automatic detection of <video> and <audio> elements within .Post-body for posts that lack host-specific resolvers.
+### 4.2 Typed Structures & Documentation
+- **Recommendation:** Introduce TypeScript or JSDoc annotations for key objects:
+  - `ParsedPost`, `HostResource`, `ResolvedLink`, `PluginDefinition`.
+- **Benefit:** Easier onboarding, reduced runtime errors, clearer plugin interface expectations.
 
-6. Post Mutation Handling
-	•	Update MutationObserver for dynamically loaded posts:
+### 4.3 Enhanced Logging
+- **Recommendation:** Add log levels and structured formatting.
+- **Technical Implementation:**
+  - Differentiate `INFO`, `WARN`, `ERROR`, `DEBUG`.
+  - Allow export of logs per session or per post.
 
-observer.observe(document.body, { childList: true, subtree: true });
+---
 
+## 5. Security Considerations
 
-	•	Ensure new posts added to the DOM are automatically processed and HUD updates correctly.
+### 5.1 Sanitization of External Data
+- **Issue:** Inline HTML or external plugin data may be unsafe.
+- **Recommendation:** Ensure tooltips, modals, and previews sanitize content.
+- **Technical Implementation:**
+  - Escape user-generated content in tooltips.
+  - Use DOMPurify or manual sanitization before injecting into HUD.
 
-7. HUD Integration
-	•	All panels, buttons, and tooltips must work without modification.
-	•	Existing download logic, status chips, copy/export, m3u8 scanning, and repair functionality must integrate seamlessly.
+### 5.2 Temporary Token Handling
+- **Issue:** Redgifs token or GoFile token may be exposed.
+- **Recommendation:** Mask sensitive data in UI, limit storage to script-level persistence.
+- **Technical Implementation:**
+  - Store tokens in `GM_setValue` with restricted scope.
+  - Avoid displaying full token in settings textarea.
 
-Deliverables
-	1.	Fully updated parsers.thread.parsePost function tailored to forum.candidshiny.com.
-	2.	Adjusted post detection logic for initial load and dynamically appended posts.
-	3.	Verified integration with:
-	•	resolvePostLinks
-	•	downloadPost
-	•	scanAndRepairResolvedUrls
-	•	scanM3u8Streams
-	•	copyAllResolvedUrls and exportResolvedUrls
-	4.	All updates should preserve backward compatibility for other supported forums.
+---
 
-Constraints
-	•	Do not remove any existing features.
-	•	Ensure all async operations (HTTP requests, parsing, resolving) remain properly awaited and HUD progress bars update accurately.
-	•	Maintain all plugin loading and fixer logic.
+## 6. Optional Enhancements
 
-Success Criteria
-	•	All posts on forum.candidshiny.com are detected and parsed correctly.
-	•	Media links within posts are detected, categorized, and available for all HUD features.
-	•	Download, check, copy/export, and scan/repair features function without errors.
-	•	Generic media detection works for uncategorized media.
-	•	HUD remains fully interactive and responsive.
+1. **Batch Download Scheduling**
+   - Queue downloads with rate-limiting.
+   - Optionally resume after tab reload.
+2. **Preview Enhancement**
+   - Support animated GIFs, WebP, or live video thumbnails.
+3. **Host Health Monitoring**
+   - Track resolver success/failure over time.
+   - Highlight consistently failing hosts in UI.
 
+---
+
+## Deliverables for Codex
+
+- Refactored modules as per **Section 4.1**.
+- Lazy-loading for media previews.
+- Concurrency-limited HTTP requests.
+- Persistent resolved link cache.
+- Enhanced error handling and logging.
+- UI feedback enhancements for bulk operations and plugin loading.
+- Extended quick filter and export functionality.
+- Security hardening for tokens and external data.
+- Optional: Download queueing and preview enhancements.
+
+---
+
+**Priority:** High — critical for performance, stability, and maintainability.  
+**Environment:** UserScript / Tampermonkey / Greasemonkey, modern browsers (FF, Chromium).  
+**Dependencies:** JSZip, FileSaver, Popper, Tippy.js, sha256, m3u8-parser.

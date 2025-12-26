@@ -352,50 +352,11 @@ const parsers = {
         : parsed.trim();
     },
     parsePost: (post) => {
-      const parsePageNumber = (permalink, postNumber) => {
-        const parseFromUrl = (url) => {
-          try {
-            const parsedUrl = new URL(url, document.location.href);
-            const pathName = parsedUrl.pathname;
-            const pathMatch = /(?<=\/page-)\d+/is.exec(pathName);
-            if (pathMatch?.[0]) return Number(pathMatch[0]);
-
-            const queryPage = new URLSearchParams(parsedUrl.search).get("page");
-            if (queryPage && !Number.isNaN(Number(queryPage))) return Number(queryPage);
-
-            const segments = pathName.split("/").filter(Boolean);
-            if (segments.length >= 3 && segments[0] === "d") {
-              const lastSegment = segments[segments.length - 1];
-              if (/^\d+$/.test(lastSegment)) return Number(lastSegment);
-            }
-          } catch (error) {
-            log.warn?.("page", `${HUD_TAG} Failed to parse page number from ${url}: ${error.message}`, "HUD");
-          }
-          return null;
-        };
-
-        const resolvedFromPermalink = permalink ? parseFromUrl(permalink) : null;
-        if (resolvedFromPermalink) return resolvedFromPermalink;
-
-        const resolvedFromLocation = parseFromUrl(document.location.href);
-        if (resolvedFromLocation) return resolvedFromLocation;
-
-        const parsePostsPerPage = () => {
-          const candidates = [
-            document.querySelector('meta[name="flarum::posts-per-page"]')?.getAttribute("content"),
-            typeof window.app?.forum?.attribute === "function" ? window.app.forum.attribute("postsPerPage") : null,
-          ]
-            .map((val) => Number(val))
-            .filter((val) => Number.isFinite(val) && val > 0);
-          return candidates[0] || 20;
-        };
-
-        const numericPost = Number(postNumber);
-        if (!Number.isNaN(numericPost) && numericPost > 0) {
-          const postsPerPage = parsePostsPerPage();
-          return Math.max(1, Math.ceil(numericPost / postsPerPage));
-        }
-
+      const parsePageNumber = () => {
+        const pathMatch = /(?<=\/page-)\d+/is.exec(document.location.pathname);
+        if (pathMatch?.[0]) return Number(pathMatch[0]);
+        const queryPage = new URLSearchParams(document.location.search).get("page");
+        if (queryPage && !Number.isNaN(Number(queryPage))) return Number(queryPage);
         return 1;
       };
 
@@ -451,7 +412,7 @@ const parsers = {
           post: article,
           postId,
           postNumber,
-          pageNumber: parsePageNumber(href, postNumber),
+          pageNumber: parsePageNumber(),
           spoilers,
           footer,
           actions: article.querySelector(".Post-actions") || null,
@@ -499,7 +460,7 @@ const parsers = {
           post: legacyPost,
           postId,
           postNumber,
-          pageNumber: parsePageNumber(href, postNumber),
+          pageNumber: parsePageNumber(),
           spoilers,
           footer,
           content: postContent,
@@ -1645,9 +1606,7 @@ const buildGenericMediaHost = (postId, resources) => ({
 });
 
 const collectGenericMediaResources = (root = document) => {
-  if (!root?.querySelectorAll) return [];
-
-  const mediaExtensions = new Set(["mp4", "webm", "mkv", "mp3", "m4v", "m4a", "aac", "wav", "flac", "ogg", "ogv", "oga", "opus"]);
+  const mediaExtensions = new Set(["mp4", "webm", "mkv", "mp3", "m4v", "m4a", "aac", "wav", "flac"]);
   const collected = [];
 
   const normalizeUrl = (url) => {
@@ -1671,17 +1630,10 @@ const collectGenericMediaResources = (root = document) => {
     }
   };
 
-  root
-    .querySelectorAll("video[src], audio[src], video[data-src], audio[data-src], source[src], source[data-src], video source[src], video source[data-src], audio source[src], audio source[data-src]")
-    .forEach((el) => {
-      pushIfValid(el.getAttribute("src"));
-      pushIfValid(el.dataset?.src);
-    });
-
-  root.querySelectorAll("a[href]").forEach((a) => {
-    const href = a.getAttribute("href");
-    const ext = href ? h.ext(href)?.toLowerCase() : null;
-    if (ext && mediaExtensions.has(ext)) pushIfValid(href);
+  root.querySelectorAll("video[src], audio[src]").forEach((el) => pushIfValid(el.getAttribute("src")));
+  root.querySelectorAll("video source[src], audio source[src], source[src]").forEach((el) => pushIfValid(el.getAttribute("src")));
+  root.querySelectorAll('a[href$=".mp4"], a[href$=".webm"], a[href$=".mp3"], a[href$=".m4v"], a[href$=".m4a"], a[href$=".aac"], a[href$=".wav"], a[href$=".flac"]').forEach((a) => {
+    pushIfValid(a.getAttribute("href"));
   });
 
   return h.unique(collected);
@@ -2196,8 +2148,8 @@ async function resolvePostLinks(postData, statusLabel) {
 
   let hostsToProcess = [...enabledHosts];
   if (globalConfig.enableGenericMediaDetection) {
-    const contentRoot = parsedPost.contentContainer || parsedPost.post || document;
-    const genericResources = collectGenericMediaResources(contentRoot);
+    
+    const genericResources = collectGenericMediaResources(parsedPost.contentContainer || document);
     const hasGenericHost = hostsToProcess.some((host) => host.name === "Generic Media");
     if (genericResources.length && !hasGenericHost) {
       hostsToProcess = hostsToProcess.concat(buildGenericMediaHost(postId, genericResources));
@@ -2962,9 +2914,6 @@ function showToast(msg, timeout = 3300) {
     if (post.dataset.linkmasterProcessed) return false;
     const parsedPost = parsers.thread.parsePost(post);
     if (!parsedPost) return false;
-
-    const targetPost = parsedPost.post || post;
-    if (targetPost.dataset.linkmasterProcessed) return false;
 
     let parsedHosts = parsers.hosts.parseHosts(parsedPost.content);
     if (!parsedHosts.length && globalConfig.enableGenericMediaDetection && parsedPost.contentContainer) {
