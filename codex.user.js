@@ -33,6 +33,21 @@ const http = window.GM_xmlhttpRequest;
 window.isFF = typeof InstallTrigger !== "undefined";
 window.logs = [];
 const globalConfig = {}; // Populated by loadSettings()
+const cacheStorage = { resolvedKey: "linkmaster_resolved_cache", statusKey: "linkmaster_status_cache", ttlMs: 1000 * 60 * 60 * 24 };
+const sanitizeFilename = (value) => (value || "").replace(/[\p{Cc}\p{Cs}<>:"/\\|?*]/gu, "_").trim() || "stream";
+const promisePool = async (tasks, worker, concurrency = 6) => {
+  const queue = [...tasks];
+  const results = [];
+  const runners = Array.from({ length: Math.max(1, concurrency) }, async () => {
+    while (queue.length) {
+      const task = queue.shift();
+      const result = await worker(task);
+      results.push(result);
+    }
+  });
+  await Promise.all(runners);
+  return results;
+};
 const HUD_TAG = "[Ψ-4ndr0666]";
 const LOG_TAGS = {
   copyAll: "[Ψ-4ndr0666:CopyAll]",
@@ -79,11 +94,13 @@ const cacheLinkStatusesForPosts = (postIds) => {
 const cacheResolvedLinks = (postId, links) => {
   resolvedCache.set(postId, links);
   cachedResolvedLinks = Array.from(resolvedCache.values()).flat();
+  persistCaches();
 };
 
 const resetResolvedCache = () => {
   resolvedCache.clear();
   cachedResolvedLinks = null;
+  persistCaches();
 };
 
 const summarizePostStatus = (postId) => {
@@ -117,6 +134,7 @@ const cacheLinkStatus = (url, result, postIds = []) => {
   const mergedPosts = h.unique([...(existing.postIds || []), ...postIds]);
   linkStatusCache.set(url, { ...existing, ...result, postIds: mergedPosts });
   cacheLinkStatusesForPosts(mergedPosts);
+  persistCaches();
 };
 
 const matchesStatusFilter = (filter, status) => {
@@ -159,6 +177,35 @@ const postStatusSummary = new Map();
 let lastCheckResults = [];
 const parsedPosts = [];
 const pluginFixers = [];
+const pluginStatuses = [];
+
+const loadPersistedCaches = () => {
+  const now = Date.now();
+  try {
+    const resolvedPayload = GM_getValue(cacheStorage.resolvedKey, null);
+    const statusPayload = GM_getValue(cacheStorage.statusKey, null);
+    const parsedResolved = resolvedPayload ? JSON.parse(resolvedPayload) : null;
+    if (parsedResolved?.timestamp && now - parsedResolved.timestamp < cacheStorage.ttlMs) {
+      parsedResolved.data.forEach(([key, value]) => resolvedCache.set(key, value));
+      cachedResolvedLinks = Array.from(resolvedCache.values()).flat();
+    }
+    const parsedStatus = statusPayload ? JSON.parse(statusPayload) : null;
+    if (parsedStatus?.timestamp && now - parsedStatus.timestamp < cacheStorage.ttlMs) {
+      parsedStatus.data.forEach(([key, value]) => linkStatusCache.set(key, value));
+    }
+  } catch (error) {
+    log.warn?.("cache", `${HUD_TAG} Failed to load persisted cache: ${error}`, "HUD");
+  }
+};
+
+const persistCaches = () => {
+  try {
+    GM_setValue(cacheStorage.resolvedKey, JSON.stringify({ timestamp: Date.now(), data: [...resolvedCache.entries()] }));
+    GM_setValue(cacheStorage.statusKey, JSON.stringify({ timestamp: Date.now(), data: [...linkStatusCache.entries()] }));
+  } catch (error) {
+    log.warn?.("cache", `${HUD_TAG} Failed to persist cache: ${error}`, "HUD");
+  }
+};
 const log = {
   separator: (postId) => window.logs.push({ postId, message: "-".repeat(175) }),
   write: (postId, str, type, toConsole = true) => {
@@ -1523,6 +1570,12 @@ const normalizePlugin = (plugin, sourceLabel) => {
   return { name: plugin.name || sourceLabel || "External Plugin", hosts: hostsDef, resolvers: resolversDef, fixers: fixersDef };
 };
 
+const recordPluginStatus = (source, status, message) => {
+  const entry = { source, status, message, ts: new Date().toLocaleTimeString() };
+  pluginStatuses.push(entry);
+  if (status === "error") showToast(`Plugin failed: ${source}`);
+};
+
 const parsePluginDefinition = (definition, sourceLabel = "external plugin") => {
   try {
     if (typeof definition === "string") {
@@ -1543,6 +1596,7 @@ const parsePluginDefinition = (definition, sourceLabel = "external plugin") => {
     return normalizePlugin(definition, sourceLabel);
   } catch (error) {
     log.warn?.("plugin", `${HUD_TAG} Failed to parse plugin from ${sourceLabel}: ${error}`, "HUD");
+    recordPluginStatus(sourceLabel, "error", error.message);
     return null;
   }
 };
@@ -1550,9 +1604,13 @@ const parsePluginDefinition = (definition, sourceLabel = "external plugin") => {
 const loadPluginFromUrl = async (url) => {
   try {
     const response = await h.http.gm_promise({ method: "GET", url, responseType: "text" });
-    return parsePluginDefinition(response.responseText, url);
+    const parsed = parsePluginDefinition(response.responseText, url);
+    if (parsed) recordPluginStatus(url, "loaded", parsed.name);
+    else recordPluginStatus(url, "error", "Invalid plugin payload");
+    return parsed;
   } catch (error) {
     log.warn?.("plugin", `${HUD_TAG} Failed to load plugin ${url}: ${error}`, "HUD");
+    recordPluginStatus(url, "error", error.message);
     return null;
   }
 };
@@ -1563,6 +1621,7 @@ const registerPlugin = (plugin) => {
   if (plugin.resolvers?.length) resolvers.push(...plugin.resolvers);
   if (plugin.fixers?.length) pluginFixers.push(...plugin.fixers.filter((fn) => typeof fn === "function"));
   log.info("plugin", `${HUD_TAG} Loaded plugin: ${plugin.name}`, "HUD");
+  recordPluginStatus(plugin.name, "loaded", `${plugin.hosts.length} hosts | ${plugin.resolvers.length} resolvers`);
 };
 
 const initPlugins = async () => {
@@ -1644,17 +1703,19 @@ async function resolveAllPosts(postDatas, statusLabel, totalPB, options = {}) {
   const aggregate = [];
   const totalTargets = postDatas.reduce((acc, postData) => acc + postData.enabledHostsCB(postData.parsedHosts).reduce((sum, hst) => sum + hst.resources.length, 0), 0) || 1;
   let processed = 0;
-
-  for (const postData of postDatas) {
+  const tasks = postDatas.map((postData) => async () => {
     const resolved = await resolvePostLinks(postData, statusLabel);
     const postSettings = typeof postData.getSettingsCB === "function" ? postData.getSettingsCB() : null;
     const sanitized = respectSkipDuplicates && postSettings?.skipDuplicates ? h.unique(resolved, "url") : resolved;
-
     aggregate.push(...sanitized);
     processed += sanitized.length || 0;
-    if (totalPB) totalPB.style.width = `${Math.min(100, Math.round((processed / totalTargets) * 100))}%`;
-  }
+    const percent = Math.min(100, Math.round((processed / totalTargets) * 100));
+    if (statusLabel) h.ui.setText(statusLabel, `Bulk resolve: ${processed}/${totalTargets} links`);
+    if (totalPB) totalPB.style.width = `${percent}%`;
+  });
 
+  const concurrency = Number(globalConfig.resolutionConcurrency) || 6;
+  await promisePool(tasks, (task) => task(), concurrency);
   return aggregate;
 }
 
@@ -2029,7 +2090,9 @@ function buildVariantLabel(variant) {
 }
 
 function buildFfmpegCommand(url, streamUrl) {
-  return `ffmpeg -i "${streamUrl}" -c copy -map 0 -f mp4 "${h.basename(url).replace(/\.m3u8.*/, "") || "stream"}.mp4"`;
+  const safeUrl = encodeURI(streamUrl);
+  const baseName = sanitizeFilename(h.basename(url).replace(/\.m3u8.*/, ""));
+  return `ffmpeg -i "${safeUrl}" -c copy -map 0 -f mp4 "${baseName || "stream"}.mp4"`;
 }
 
 async function scanM3u8Streams(statusContainer) {
@@ -2379,7 +2442,7 @@ function showToast(msg, timeout = 3300) {
 (function () {
   "use strict";
   let currentTab = "scrape";
-  const quickFilterState = { query: "", regex: false, type: "all", status: "any", minSize: null };
+  const quickFilterState = { query: "", regex: false, type: "all", status: "any", minSize: null, maxSize: null, host: "", post: "", folder: "" };
 
   const hudStyle = `
   :root { --bg-dark:#0A131A; --accent-cyan:#00E5FF; --text-cyan-active:#67E8F9; --accent-cyan-border-hover:rgba(0,229,255,0.5); --accent-cyan-bg-active:rgba(0,229,255,0.2); --accent-cyan-glow-active:rgba(0,229,255,0.4); --text-primary:#EAEAEA; --text-secondary:#9E9E9E; --font-body:'Roboto Mono',monospace; --font-hud:'Orbitron',sans-serif; --panel-bg:#101827cc; --panel-bg-solid:#101827; --panel-border:#15adad; --panel-border-bright:#15fafa; --panel-glow:rgba(21,250,250,0.2); --panel-glow-intense:rgba(21,250,250,0.4); --primary-cyan:#15fafa; --scrollbar-thumb:#157d7d; --scrollbar-thumb-hover:#15fafa; --hud-z:999999; }
@@ -2488,15 +2551,20 @@ function showToast(msg, timeout = 3300) {
     }
 
     const minBytes = quickFilterState.minSize;
+    const maxBytes = quickFilterState.maxSize;
     const filtered = resolved.filter((entry) => {
       const cached = linkStatusCache.get(entry.url);
       if (!matchesStatusFilter(quickFilterState.status, cached?.status ?? "unknown")) return false;
       if (quickFilterState.type !== "all" && determineLinkType(entry.url) !== quickFilterState.type) return false;
+      if (quickFilterState.host && !(entry.host?.name || "").toLowerCase().includes(quickFilterState.host.toLowerCase())) return false;
+      if (quickFilterState.post && `${entry.postNumber}`.toLowerCase().indexOf(quickFilterState.post.toLowerCase()) === -1) return false;
+      if (quickFilterState.folder && !(entry.folderName || "").toLowerCase().includes(quickFilterState.folder.toLowerCase())) return false;
       if (quickFilterState.query) {
         if (regex && !regex.test(entry.url)) return false;
         if (!regex && !entry.url.toLowerCase().includes(quickFilterState.query.toLowerCase())) return false;
       }
       if (minBytes && (!cached?.sizeBytes || cached.sizeBytes < minBytes)) return false;
+      if (maxBytes && cached?.sizeBytes && cached.sizeBytes > maxBytes) return false;
       return true;
     });
 
@@ -2526,6 +2594,10 @@ function showToast(msg, timeout = 3300) {
     const typeSelect = contentPanel.querySelector('#quick-filter-type');
     const statusSelect = contentPanel.querySelector('#quick-filter-status');
     const sizeInput = contentPanel.querySelector('#quick-filter-size');
+    const maxSizeInput = contentPanel.querySelector('#quick-filter-max-size');
+    const hostInput = contentPanel.querySelector('#quick-filter-host');
+    const postInput = contentPanel.querySelector('#quick-filter-post');
+    const folderInput = contentPanel.querySelector('#quick-filter-folder');
 
     const handler = () => {
       quickFilterState.query = queryInput?.value || "";
@@ -2533,10 +2605,14 @@ function showToast(msg, timeout = 3300) {
       quickFilterState.type = typeSelect?.value || "all";
       quickFilterState.status = statusSelect?.value || "any";
       quickFilterState.minSize = parseSizeInput(sizeInput?.value || "");
+      quickFilterState.maxSize = parseSizeInput(maxSizeInput?.value || "");
+      quickFilterState.host = hostInput?.value || "";
+      quickFilterState.post = postInput?.value || "";
+      quickFilterState.folder = folderInput?.value || "";
       renderQuickFilterResults();
     };
 
-    [queryInput, regexToggle, typeSelect, statusSelect, sizeInput].forEach((el) => {
+    [queryInput, regexToggle, typeSelect, statusSelect, sizeInput, maxSizeInput, hostInput, postInput, folderInput].forEach((el) => {
       if (!el) return;
       el.oninput = handler;
       el.onchange = handler;
@@ -2602,6 +2678,10 @@ function showToast(msg, timeout = 3300) {
             </select>
           </label>
           <input id="quick-filter-size" type="text" placeholder="Min size (e.g., 5MB)" style="width: 160px; background: var(--panel-bg-solid); border:1px solid var(--panel-border); border-radius:0.5em; color: var(--text-primary); padding:0.45em;">
+          <input id="quick-filter-max-size" type="text" placeholder="Max size (e.g., 2GB)" style="width: 160px; background: var(--panel-bg-solid); border:1px solid var(--panel-border); border-radius:0.5em; color: var(--text-primary); padding:0.45em;">
+          <input id="quick-filter-host" type="text" placeholder="Host name" style="width: 140px; background: var(--panel-bg-solid); border:1px solid var(--panel-border); border-radius:0.5em; color: var(--text-primary); padding:0.45em;">
+          <input id="quick-filter-post" type="text" placeholder="Post #" style="width: 90px; background: var(--panel-bg-solid); border:1px solid var(--panel-border); border-radius:0.5em; color: var(--text-primary); padding:0.45em;">
+          <input id="quick-filter-folder" type="text" placeholder="Folder name" style="width: 150px; background: var(--panel-bg-solid); border:1px solid var(--panel-border); border-radius:0.5em; color: var(--text-primary); padding:0.45em;">
           <span id="quick-filter-count" style="margin-left:auto; color: var(--text-secondary); font-size:0.9em;">Ready</span>
       </div>
       <div id="quick-filter-results" style="margin-bottom: 0.8em; word-break: break-all;"></div>
@@ -2859,6 +2939,7 @@ function showToast(msg, timeout = 3300) {
               <label for="plugin-sources" style="display:block; margin-bottom: 0.5em; font-family: var(--font-hud);">Plugin Sources (one per line)</label>
               <textarea id="plugin-sources" style="width: 100%; min-height: 90px; background: #0A131A; border: 1.5px solid var(--panel-border); color: var(--text-primary); padding: 0.5em; border-radius: 0.4em; resize: vertical;">${(globalConfig.pluginSources || []).join("\n")}</textarea>
               <small style="color: var(--text-secondary);">Add URLs for external LinkMasterΨ2 plugins or paste inline definitions. Plugins load without updating the main script.</small>
+              <div id="plugin-status-panel" style="margin-top:0.6em; background:rgba(21,250,250,0.05); border:1px solid var(--panel-border); border-radius:0.5em; padding:0.6em; max-height:150px; overflow:auto;"></div>
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1em;">
                 <label><input type="checkbox" id="setting-zipped" ${globalConfig.defaultZipped ? 'checked' : ''}> Default to Zipped</label>
@@ -2867,6 +2948,7 @@ function showToast(msg, timeout = 3300) {
                 <label><input type="checkbox" id="setting-gen-log" ${globalConfig.defaultGenerateLog ? 'checked' : ''}> Default to Generate log.txt</label>
                 <label><input type="checkbox" id="setting-skip-dupes" ${globalConfig.defaultSkipDuplicates ? 'checked' : ''}> Default to Skip Duplicates</label>
                 <label><input type="checkbox" id="setting-generic-media" ${globalConfig.enableGenericMediaDetection ? 'checked' : ''}> Enable Generic Media Detection</label>
+                <label>Resolution Concurrency <input type="number" min="1" max="15" id="setting-resolution-concurrency" value="${globalConfig.resolutionConcurrency || 6}" style="width:80px; margin-left:6px; background: var(--panel-bg-solid); color: var(--text-primary); border: 1px solid var(--panel-border); border-radius: 6px; padding: 0.25em 0.4em;"></label>
             </div>
             <button id="save-settings-btn" class="hud-btn active">Save Settings & Reload</button>
         </div>`;
@@ -2879,6 +2961,7 @@ function showToast(msg, timeout = 3300) {
       globalConfig.defaultGenerateLog = contentPanel.querySelector('#setting-gen-log').checked;
       globalConfig.defaultSkipDuplicates = contentPanel.querySelector('#setting-skip-dupes').checked;
       globalConfig.enableGenericMediaDetection = contentPanel.querySelector('#setting-generic-media').checked;
+      globalConfig.resolutionConcurrency = Number(contentPanel.querySelector('#setting-resolution-concurrency').value) || 6;
       globalConfig.pluginSources = contentPanel
         .querySelector('#plugin-sources')
         .value.split('\n')
@@ -2886,12 +2969,43 @@ function showToast(msg, timeout = 3300) {
         .filter(Boolean);
       saveSettings();
     };
+    renderPluginStatusPanel();
+  }
+
+  function renderPluginStatusPanel() {
+    const panel = document.getElementById('plugin-status-panel');
+    if (!panel) return;
+    if (!pluginStatuses.length) {
+      panel.innerHTML = '<small style="color: var(--text-secondary);">No plugin activity recorded yet.</small>';
+      return;
+    }
+    panel.innerHTML = pluginStatuses.slice(-12).reverse().map((p) => {
+      const statusColor = p.status === 'error' ? '#ff6b6b' : '#67e8f9';
+      return `<div style="margin-bottom:4px; color:${statusColor};"><strong>${p.status.toUpperCase()}</strong> [${p.ts}] ${p.source} — ${p.message || ''}</div>`;
+    }).join('');
   }
 
   function saveSettings() {
     GM_setValue('linkmaster_settings', JSON.stringify(globalConfig));
-    showToast('Settings Saved! Reloading...');
-    setTimeout(() => window.location.reload(), 1500);
+    applySettingsLive();
+  }
+
+  function applySettingsLive() {
+    parsedPosts.forEach((postData) => {
+      const settingsRef = typeof postData.getSettingsCB === 'function' ? postData.getSettingsCB() : postData.settings;
+      Object.assign(settingsRef, {
+        ...globalConfig,
+        zipped: globalConfig.defaultZipped,
+        flatten: globalConfig.defaultFlatten,
+        generateLinks: globalConfig.defaultGenerateLinks,
+        generateLog: globalConfig.defaultGenerateLog,
+        skipDuplicates: globalConfig.defaultSkipDuplicates,
+      });
+    });
+    showToast('Settings saved and applied!');
+    renderPluginStatusPanel();
+    const hudPanel = document.getElementById('hud-panel-root');
+    if (hudPanel && !hudPanel.hidden) setHudTab(currentTab);
   }
 
   function loadSettings() {
@@ -2905,6 +3019,7 @@ function showToast(msg, timeout = 3300) {
       defaultGenerateLog: false,
       defaultSkipDuplicates: true,
       enableGenericMediaDetection: false,
+      resolutionConcurrency: 6,
       pluginSources: [],
     };
     Object.assign(globalConfig, defaults, saved ? JSON.parse(saved) : {});
@@ -2925,7 +3040,7 @@ function showToast(msg, timeout = 3300) {
     }
     if (!parsedHosts.length) return false;
 
-    targetPost.dataset.linkmasterProcessed = "true";
+    post.dataset.linkmasterProcessed = "true";
     const localSettings = { ...globalConfig, zipped: globalConfig.defaultZipped, flatten: globalConfig.defaultFlatten, generateLinks: globalConfig.defaultGenerateLinks, generateLog: globalConfig.defaultGenerateLog, skipDuplicates: globalConfig.defaultSkipDuplicates, skipDownload: false, verifyBunkrLinks: false, output: [] };
     parsedPosts.push({
       parsedPost,
@@ -2946,6 +3061,7 @@ function showToast(msg, timeout = 3300) {
 
   const start = async () => {
     loadSettings();
+    loadPersistedCaches();
     await initPlugins();
     init.injectCustomStyles();
     if (!document.getElementById("eglass-hud-css")) {
@@ -3031,6 +3147,7 @@ function showToast(msg, timeout = 3300) {
       e.returnValue = message;
       return message;
     }
+    persistCaches();
   });
 
   if (document.readyState === "loading") {
