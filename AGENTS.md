@@ -1,112 +1,93 @@
 # Agents
 
-## Core Feature Expansion Objectives
+Target File: codex.user.js
+Objective: Integrate advanced HUD utilities and post-processing features into the existing codex.user.js userscript without breaking existing functionality. Preserve all canonical host resolvers, scraping logic, and download flows.
 
->We are extending codex.user.js with eight advanced utility modules, fully integrated into the existing HUD ecosystem:
+1. Feature Integration
 
-1.	Fix Dead/Broken URLs
-	•	HUD Integration: Button 🔧 Check/Fix URLs in Scrape tab, next to Download/Copy.
-	•	Functionality:
-	•	Async HEAD/GET requests on all resolved URLs.
-	•	Auto-rewrite rules: known patterns (.su ↔ .cr, cdnX → streamX).
-	•	Color-coded status: Green = live, Yellow = rewritable, Red = dead.
-	•	Hover tooltip: shows original + suggested fix.
-	•	Optional auto-apply fixes with user toggle.
+1.1 Dead/Broken URL Fixer
+	•	Add a HUD button: Fix URLs
+	•	Async ping all links in the current post selection
+	•	Color-code links in the HUD:
+	•	Green: Alive
+	•	Yellow: Possibly fixable (pattern-based auto rewrite)
+	•	Red: Dead
+	•	Auto-suggestion for known transformations (.su ↔ .cr, cdnX → streamX, etc.)
+	•	Must not block other HUD functionality; async updates only.
 
-2.	Copy All URLs
-	•	HUD Integration: Button 📋 Copy All URLs.
-	•	Functionality:
-	•	Supports filters: all, images only, videos only, documents, compressed archives.
-	•	Copies to system clipboard via GM_setClipboard.
-	•	Output formats: plaintext (one URL per line), JSON, optional Markdown.
+1.2 Copy All URLs
+	•	Add Copy All HUD button
+	•	Optional filtering: All, Images only, Videos only
+	•	Uses GM_setClipboard
+	•	Copy format options:
+	•	One-per-line plaintext (default)
+	•	JSON array
+	•	Optional: include folder/host metadata
 
-3.	Batch Open / Download
-	•	HUD Integration: Button 🌐 Open/Download All.
-	•	Functionality:
-	•	Open all resolved URLs in new tabs (throttle configurable, default: 5 at a time).
-	•	Alternatively, queue direct downloads for all enabled hosts.
-	•	Integrates with postSettings to respect zipped/flattened download options.
+1.3 Batch Open / Download
+	•	Open All / Download All buttons in HUD
+	•	Optional throttling (configurable, default 5 simultaneous tabs/downloads)
+	•	Integrates with resolved URL queue from resolvePostLinks
 
-4.	Smart Export
-	•	HUD Integration: Dropdown or button menu Export.
-	•	Formats:
-	•	CSV: URL, Type, Host, FolderName
-	•	JSON: structured array of resolved objects
-	•	Markdown: [AltText](URL) for images/videos
-	•	Options: Links Only, Links + Context, Links + Thumbnails
+1.4 Smart Export
+	•	Export formats: CSV, JSON, Markdown
+	•	Options:
+	•	Links only
+	•	Links + context
+	•	Links + thumbnails
+	•	Include proper escaping and encoding for CSV/Markdown
+	•	Use HUD modal for export selection
 
-5.	M3U8 Sniffer/Parser
-	•	HUD Integration: Optional toggle or button in Scrape/Check tabs.
-	•	Functionality:
-	•	Scan page for .m3u8 manifests.
-	•	Auto-parse best candidate.
-	•	Provide resolution picker (720p, 1080p).
-	•	Generate ready-to-run ffmpeg command snippet for download/stream capture.
+1.5 M3U8 Stream Utility
+	•	Detect and list all m3u8 URLs
+	•	Offer stream selection and resolution picker
+	•	Copy ffmpeg command to clipboard for each selection
+	•	Include error handling for invalid playlists
 
-6.	Broken Link Detector
-	•	HUD Integration: Persistent badge on HUD header, colored by link health (Green/Yellow/Red).
-	•	Functionality:
-	•	Async validation for every URL.
-	•	Filters: show only good, bad, or unknown links dynamically.
-	•	Updates real-time as user navigates or resolves new links.
+1.6 Broken Link Detector
+	•	Built-in async checker for all resolved links
+	•	HUD badge indicator per post: Green / Yellow / Red
+	•	Clickable filter in HUD to show only good/bad/unknown links
 
-7.	Quick Regex Filter/Search
-	•	HUD Integration: Search input in Scrape tab toolbar.
-	•	Functionality:
-	•	Filters visible URLs by substring, regex, type, or file size.
-	•	Instant UI feedback; highlights matches and updates download counter.
+1.7 Regex/Substring Search
+	•	Quick filter input in HUD for visible links
+	•	Supports: substring, regex, type (image/video), size filtering
+	•	Updates the list dynamically without blocking other HUD interactions
 
-8.	Custom Per-Host Plugins
-	•	HUD Integration: Admin/Settings tab: Plugin Loader.
-	•	Functionality:
-	•	External JSON/JS host parsers dynamically loaded.
-	•	Auto-update or manually push “host fixers.”
-	•	Supports crowd-sourced rule contributions for new or changing hosts.
+1.8 Custom Per-Host Plugins
+	•	Externalize host parsing into plugin folder or object array
+	•	Allow runtime addition or update of parsers without touching core script
+	•	Include hook to register new host resolver and optional “fixer” logic
 
-***
+⸻
 
-2. UI/UX Integration
-	•	HUD Buttons: Align new features alongside existing Download Selected, Configure & Download.
-	•	Progress Indicators: Reuse ui.pBars for async URL checks and batch downloads.
-	•	Status Labels: Use ui.labels.status.createStatusLabel() for real-time feedback.
-	•	Tippy Popovers: Tooltips for all new buttons, showing counts, preview snippets, and fixes.
+2. HUD Integration Requirements
+	•	All new buttons appear alongside existing Configure & Download and post settings
+	•	Async operations must show progress bars (per file + total)
+	•	Status messages update in real-time
+	•	Maintain tooltip previews (images/videos) while adding new buttons
+	•	Maintain full compatibility with Forum Mode and General Mode
 
-***
+⸻
 
-3. Data Flow & Canonical Structures
-	•	All resolved URLs must continue to conform to { url, folderName, host, original }.
-	•	Broken/fixed URLs tracked separately with a boolean flag fixed: true/false.
-	•	Export and clipboard operations act on flattened arrays of canonical URL objects.
-	•	Async operations must not mutate shared state; use cloned structures or map-reduce patterns to ensure concurrency safety.
+3. Technical Notes
+	•	Preserve all current resolver logic and resolvePostLinks flow
+	•	Maintain compatibility with Firefox and Chrome (GM_* APIs)
+	•	Use Promise.all or controlled async queue for batch operations to prevent memory overload
+	•	Avoid overwriting previously cached URL transformations or folder names
 
-***
+⸻
 
-4. Codex Environment Startup
+4. Validation/Testing
+	•	Ensure all new HUD buttons function correctly
+	•	Test batch operations on posts with multiple image/video hosts
+	•	Test copy/export functions across Firefox/Chrome
+	•	Test m3u8 detection + ffmpeg command generation on sample streams
+	•	Test Dead/Broken URL fixer with known transformable patterns
 
-# Codex Env Initialization for HUD Feature Expansion
-export NODE_ENV=production
-export GM_XHR=true
-export GM_DOWNLOAD=true
-export GM_CLIPBOARD=true
+⸻
 
-# Dependencies
-npm install tippy.js jszip file-saver sha256 m3u8-parser
-
-# Preload custom resolvers / host fixers
-curl -s https://raw.githubusercontent.com/geraintluff/sha256/gh-pages/sha256.min.js -o ./lib/sha256.min.js
-curl -s https://cdn.jsdelivr.net/npm/m3u8-parser@4.7.1/dist/m3u8-parser.min.js -o ./lib/m3u8-parser.min.js
-
-***
-
-5. Edge Considerations
-	•	Respect user throttle limits to prevent browser crashes.
-	•	Async broken-link fixes must not block download flow; UI must be non-blocking.
-	•	Clipboard export must handle thousands of URLs without truncation.
-	•	Regex filter should avoid catastrophic backtracking; sanitize user input.
-	•	Plugins: sandbox externally loaded scripts to prevent DOM corruption or infinite loops.
-
-***
-
-6. Logging & Akashic Tracking
-	•	All new operations must integrate with window.logs, tagging [Ψ-4ndr0666:BrokenFix], [Ψ-4ndr0666:CopyAll], [Ψ-4ndr0666:M3U8].
-	•	HUD toast feedback for every operation completion.
+5. Startup/Environment
+	•	Standard Codex environment with Node.js >=18 and browser emulation enabled
+	•	Required modules preloaded: GM_* APIs, JSZip, tippy.js, sha256, FileSaver
+	•	Script is self-contained, no external calls outside resolvers and API endpoints
