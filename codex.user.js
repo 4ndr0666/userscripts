@@ -1,4 +1,3 @@
-/* global JSZip, tippy, sha256, saveAs, GM_xmlhttpRequest, GM_download, GM_setValue, GM_getValue */
 // ==UserScript==
 // @name         4ndr0tools - LinkMasterΨ2
 // @namespace    https://github.com/4ndr0666/userscripts
@@ -1610,16 +1609,24 @@ const collectGenericMediaResources = (root = document) => {
   const mediaExtensions = new Set(["mp4", "webm", "mkv", "mp3", "m4v", "m4a", "aac", "wav", "flac"]);
   const collected = [];
 
-  const pushIfValid = (url) => {
-    if (!url) return;
+  const normalizeUrl = (url) => {
+    if (!url) return null;
+    const trimmed = url.trim();
+    if (!trimmed) return null;
     try {
-      const normalized = url.split("?")[0];
-      const ext = h.ext(normalized);
-      if (ext && mediaExtensions.has(ext.toLowerCase())) {
-        collected.push(normalized);
-      }
+      const sanitized = trimmed.split("#")[0].split("?")[0];
+      return sanitized;
     } catch (e) {
       log.info("generic", `${HUD_TAG} Error normalizing media url ${url}: ${e.message}`, "HUD");
+      return null;
+    }
+  };
+
+  const pushIfValid = (url) => {
+    const normalized = normalizeUrl(url);
+    const ext = normalized ? h.ext(normalized)?.toLowerCase() : null;
+    if (normalized && ext && mediaExtensions.has(ext)) {
+      collected.push(normalized);
     }
   };
 
@@ -2141,6 +2148,7 @@ async function resolvePostLinks(postData, statusLabel) {
 
   let hostsToProcess = [...enabledHosts];
   if (globalConfig.enableGenericMediaDetection) {
+    
     const genericResources = collectGenericMediaResources(parsedPost.contentContainer || document);
     const hasGenericHost = hostsToProcess.some((host) => host.name === "Generic Media");
     if (genericResources.length && !hasGenericHost) {
@@ -2246,61 +2254,61 @@ const downloadPost = async (postData, statusContainerElement) => {
   }
 
   const isFF = window.isFF;
+  const sanitizePath = (value) => value.replace(/[\p{Cc}\p{Cs}<>:"/\\|?*]/gu, "_");
 
   if (!postSettings.skipDownload) {
     const resources = resolved.filter((r) => r.url);
-      const filenames = []; // To track filenames and avoid duplicates
-      const downloadPromises = resources.map(({ url, original, folderName }) => new Promise(async (resolve) => {
+    const filenames = []; // To track filenames and avoid duplicates
+    const downloadPromises = resources.map(async ({ url, original, folderName }) => {
       const ellipsedUrl = h.limit(url, 60);
-      try {
-        const response = await h.http.gm_promise({
-          method: 'GET',
-          url,
-          headers: { Referer: original },
-          responseType: "blob",
-          onprogress: (e) => {
-            h.ui.setText(statusLabel, `${completed}/${totalDownloadable} | ${h.prettyBytes(e.loaded)} / ${e.total ? h.prettyBytes(e.total) : '?'} | ${ellipsedUrl}`);
-            if (e.total > 0) h.ui.setElProps(filePB, { width: `${(e.loaded / e.total) * 100}%` });
+        try {
+          const response = await h.http.gm_promise({
+            method: "GET",
+            url,
+            headers: { Referer: original },
+            responseType: "blob",
+            onprogress: (e) => {
+              h.ui.setText(statusLabel, `${completed}/${totalDownloadable} | ${h.prettyBytes(e.loaded)} / ${e.total ? h.prettyBytes(e.total) : "?"} | ${ellipsedUrl}`);
+              if (e.total > 0) h.ui.setElProps(filePB, { width: `${(e.loaded / e.total) * 100}%` });
+            }
+          });
+
+          let basename = h.generateFilename(url, response.responseHeaders);
+          const originalBase = basename;
+          let count = 2;
+          while (filenames.includes(basename)) {
+            const ext = h.ext(originalBase);
+            basename = `${h.fnNoExt(originalBase)} (${count++})${ext ? `.${ext}` : ""}`;
           }
-        });
+          filenames.push(basename);
 
-        let basename = h.generateFilename(url, response.responseHeaders);
-        const originalBase = basename;
-        let count = 2;
-        while (filenames.includes(basename)) {
-          const ext = h.ext(originalBase);
-          basename = `${h.fnNoExt(originalBase)} (${count++})${ext ? '.' + ext : ''}`;
+          let fn = basename;
+          if (!postSettings.flatten && folderName) fn = `${sanitizePath(folderName)}/${basename}`;
+          fn = sanitizePath(fn);
+
+          if (isFF || postSettings.zipped) {
+            zip.file(fn, response.response);
+          } else {
+            const blobUrl = URL.createObjectURL(response.response);
+            GM_download({ url: blobUrl, name: `${sanitizePath(threadTitle)}/${fn}`, onload: () => URL.revokeObjectURL(blobUrl) });
+          }
+        } catch (error) {
+          log.post.error(postId, `Failed to download ${url}: ${error}`, postNumber);
+        } finally {
+          completed++;
+          h.ui.setElProps(totalPB, { width: `${(completed / totalDownloadable) * 100}%` });
         }
-        filenames.push(basename);
+      });
+      await Promise.all(downloadPromises);
 
-        let fn = basename;
-        if (!postSettings.flatten && folderName) fn = `${folderName.replace(/[\x00-\x1F\x7F-\uFFFF<>:"/\\|?*]/g, '_')}/${basename}`;
-        fn = fn.replace(/[\x00-\x1F\x7F-\uFFFF<>:"/\\|?*]/g, '_');
-
-        if (isFF || postSettings.zipped) {
-          zip.file(fn, response.response);
-        } else {
-          const blobUrl = URL.createObjectURL(response.response);
-          GM_download({ url: blobUrl, name: `${threadTitle.replace(/[\x00-\x1F\x7F-\uFFFF<>:"/\\|?*]/g, '_')}/${fn}`, onload: () => URL.revokeObjectURL(blobUrl) });
-        }
-      } catch (error) {
-        log.post.error(postId, `Failed to download ${url}: ${error}`, postNumber);
-      } finally {
-        completed++;
-        h.ui.setElProps(totalPB, { width: `${(completed / totalDownloadable) * 100}%` });
-        resolve();
-      }
-    }));
-    await Promise.all(downloadPromises);
-
-  } else {
+    } else {
     log.post.info(postId, "::Skipping download as per settings::", postNumber);
   }
 
   h.ui.setText(statusLabel, "Finalizing package...");
 
   if (totalDownloadable > 0 && (postSettings.zipped || postSettings.generateLinks || postSettings.generateLog)) {
-    let title = threadTitle.replace(/[\x00-\x1F\x7F-\uFFFF<>:"/\\|?*]/g, '_');
+    const title = sanitizePath(threadTitle);
     const filename = customFilename || `${title} #${postNumber}.zip`;
     if (postSettings.generateLog) zip.file("log.txt", window.logs.filter((l) => l.postId === postId).map((l) => l.message).join("\n"));
     if (postSettings.generateLinks) zip.file("links.txt", resolved.filter((r) => r.url).map((r) => r.url).join("\n"));
@@ -2904,9 +2912,9 @@ function showToast(msg, timeout = 3300) {
 
   const processPost = (post) => {
     if (post.dataset.linkmasterProcessed) return false;
-    post.dataset.linkmasterProcessed = "true";
     const parsedPost = parsers.thread.parsePost(post);
     if (!parsedPost) return false;
+
     let parsedHosts = parsers.hosts.parseHosts(parsedPost.content);
     if (!parsedHosts.length && globalConfig.enableGenericMediaDetection && parsedPost.contentContainer) {
       const genericResources = collectGenericMediaResources(parsedPost.contentContainer);
@@ -2916,6 +2924,8 @@ function showToast(msg, timeout = 3300) {
       }
     }
     if (!parsedHosts.length) return false;
+
+    targetPost.dataset.linkmasterProcessed = "true";
     const localSettings = { ...globalConfig, zipped: globalConfig.defaultZipped, flatten: globalConfig.defaultFlatten, generateLinks: globalConfig.defaultGenerateLinks, generateLog: globalConfig.defaultGenerateLog, skipDuplicates: globalConfig.defaultSkipDuplicates, skipDownload: false, verifyBunkrLinks: false, output: [] };
     parsedPosts.push({
       parsedPost,
