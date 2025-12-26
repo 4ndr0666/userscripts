@@ -53,6 +53,113 @@ const settings = {
     video: ["mp4", "mov", "avi", "wmv", "mkv", "flv", "webm", "mpeg", "mpg", "m4v"]
   }
 };
+const statusUtils = {
+  categorize: (status) => {
+    if (status === "Error") return "bad";
+    if (typeof status === "number") {
+      if (status >= 400) return "bad";
+      if (status >= 200) return "good";
+    }
+    return "unknown";
+  }
+};
+
+const buildStatusChip = (status) => {
+  const category = statusUtils.categorize(status);
+  let label = "Unknown";
+  if (category === "good") label = `${status} OK`;
+  else if (category === "bad") label = status === "Error" ? "Error" : `${status} Error`;
+  const cls = category === "good" ? "ok" : category === "bad" ? "dead" : "unknown";
+  return `<span class="chip ${cls}">${label}</span>`;
+};
+
+const cacheLinkStatusesForPosts = (postIds) => {
+  postIds.forEach((postId) => updatePostStatusChip(postId));
+};
+
+const cacheResolvedLinks = (postId, links) => {
+  resolvedCache.set(postId, links);
+  cachedResolvedLinks = Array.from(resolvedCache.values()).flat();
+};
+
+const resetResolvedCache = () => {
+  resolvedCache.clear();
+  cachedResolvedLinks = null;
+};
+
+const summarizePostStatus = (postId) => {
+  const links = resolvedCache.get(postId) || [];
+  if (!links.length) return null;
+  const summary = { good: 0, bad: 0, unknown: 0 };
+  links.forEach((link) => {
+    const cached = linkStatusCache.get(link.url);
+    const category = cached ? statusUtils.categorize(cached.status) : "unknown";
+    summary[category] += 1;
+  });
+  return { ...summary, total: links.length };
+};
+
+const updatePostStatusChip = (postId) => {
+  const chip = document.getElementById(`status-chip-${postId}`);
+  if (!chip) return;
+  const summary = summarizePostStatus(postId);
+  let category = "unknown";
+  if (summary) {
+    if (summary.bad > 0) category = "bad";
+    else if (summary.good === summary.total) category = "good";
+  }
+  postStatusSummary.set(postId, summary || { good: 0, bad: 0, unknown: 0, total: 0 });
+  chip.textContent = `${h.ucFirst(category)}${summary?.total ? ` (${summary.good}/${summary.total})` : ""}`;
+  chip.className = `chip ${category === "good" ? "ok" : category === "bad" ? "dead" : "unknown"}`;
+};
+
+const cacheLinkStatus = (url, result, postIds = []) => {
+  const existing = linkStatusCache.get(url) || {};
+  const mergedPosts = h.unique([...(existing.postIds || []), ...postIds]);
+  linkStatusCache.set(url, { ...existing, ...result, postIds: mergedPosts });
+  cacheLinkStatusesForPosts(mergedPosts);
+};
+
+const matchesStatusFilter = (filter, status) => {
+  const category = statusUtils.categorize(status);
+  return filter === "any" || filter === category;
+};
+
+const parseSizeInput = (value) => {
+  if (!value) return null;
+  const trimmed = value.trim();
+  const match = trimmed.match(/^(\d+(?:\.\d+)?)(\s*[kKmMgGtTpP]?)(?:[bB])?$/);
+  if (!match) return null;
+  const amount = Number(match[1]);
+  const unit = match[2].toLowerCase().replace(/\s/g, "");
+  const multipliers = { k: 1_000, m: 1_000_000, g: 1_000_000_000, t: 1_000_000_000_000, p: 1_000_000_000_000_000 };
+  const multiplier = unit && multipliers[unit[0]] ? multipliers[unit[0]] : 1;
+  return amount * multiplier;
+};
+
+const determineLinkType = (url) => {
+  const ext = h.ext(url);
+  if (!ext) return "other";
+  if (settings.extensions.image.includes(ext)) return "images";
+  if (settings.extensions.video.includes(ext)) return "videos";
+  if (settings.extensions.documents.includes(ext)) return "documents";
+  if (settings.extensions.compressed.includes(ext)) return "compressed";
+  return "other";
+};
+
+const getAggregatedResolved = () => {
+  if (cachedResolvedLinks) return cachedResolvedLinks;
+  cachedResolvedLinks = Array.from(resolvedCache.values()).flat();
+  return cachedResolvedLinks;
+};
+
+const resolvedCache = new Map();
+let cachedResolvedLinks = null;
+const linkStatusCache = new Map();
+const postStatusSummary = new Map();
+let lastCheckResults = [];
+const parsedPosts = [];
+const pluginFixers = [];
 const log = {
   separator: (postId) => window.logs.push({ postId, message: "-".repeat(175) }),
   write: (postId, str, type, toConsole = true) => {
@@ -451,17 +558,21 @@ const ui = {
           ui.tooltip(btnDownloadPost, configForm, {
             onShown: (instance) => {
               const inputEl = h.element(`#filename-input-${postId}`);
-              if (inputEl) inputEl.oninput = e => {
-                let o = settings.output.find(o => o.postId === postId);
-                if (o) o.value = e.target.value;
-                else settings.output.push({ postId, value: e.target.value });
-              };
+              if (inputEl) {
+                inputEl.oninput = (e) => {
+                  let o = settings.output.find(o => o.postId === postId);
+                  if (o) o.value = e.target.value;
+                  else settings.output.push({ postId, value: e.target.value });
+                };
+              }
 
               const updateCheckbox = (id, key) => {
                 const el = h.element(id);
-                if (el) el.onchange = e => {
-                  settings[key] = e.target.checked;
-                };
+                if (el) {
+                  el.onchange = (e) => {
+                    settings[key] = e.target.checked;
+                  };
+                }
               };
               updateCheckbox(`#settings-${postId}-generate-links`, "generateLinks");
               updateCheckbox(`#settings-${postId}-generate-log`, "generateLog");
@@ -471,59 +582,67 @@ const ui = {
               if (!window.isFF) updateCheckbox(`#settings-${postId}-zipped`, "zipped");
 
               const skipDownloadEl = h.element(`#settings-${postId}-skip-download`);
-              if (skipDownloadEl) skipDownloadEl.onchange = e => {
-                const checked = e.target.checked;
-                settings.skipDownload = checked;
-                const dependentElems = ["flatten", "skip-duplicates"];
-                dependentElems.forEach(key => {
-                  const el = h.element(`#settings-${postId}-${key}`);
-                  if (el) {
-                    el.checked = false;
-                    el.disabled = checked;
-                  }
-                });
-                const genLinks = h.element(`#settings-${postId}-generate-links`);
-                if (genLinks) {
-                  genLinks.checked = true;
-                  genLinks.disabled = checked;
-                }
-              };
-
-              const formEl = h.element(`#download-config-form-${postId}`);
-              if (formEl) formEl.onsubmit = e => {
-                e.preventDefault();
-                onSubmitFormCB({ tippyInstance: instance });
-              };
-
-              if (parsedHosts.length > 1) {
-                const toggleAllHostsEl = h.element(`#settings-toggle-all-hosts-${postId}`);
-                if (toggleAllHostsEl) toggleAllHostsEl.onchange = e => {
+              if (skipDownloadEl) {
+                skipDownloadEl.onchange = (e) => {
                   const checked = e.target.checked;
-                  parsedHosts.forEach(host => {
-                    const cb = h.element(`#downloader-host-${host.id}-${postId}`);
-                    if (cb && cb.checked !== checked) cb.click();
+                  settings.skipDownload = checked;
+                  const dependentElems = ["flatten", "skip-duplicates"];
+                  dependentElems.forEach((key) => {
+                    const el = h.element(`#settings-${postId}-${key}`);
+                    if (el) {
+                      el.checked = false;
+                      el.disabled = checked;
+                    }
                   });
+                  const genLinks = h.element(`#settings-${postId}-generate-links`);
+                  if (genLinks) {
+                    genLinks.checked = true;
+                    genLinks.disabled = checked;
+                  }
                 };
               }
 
-              parsedHosts.forEach(host => {
-                const hostCheckbox = h.element(`#downloader-host-${host.id}-${postId}`);
-                if (hostCheckbox) hostCheckbox.onchange = e => {
-                  host.enabled = e.target.checked;
-                  const filteredCount = totalDownloadableResourcesForPostCB(parsedHosts);
-                  const countEl = document.querySelector(`#filtered-count-${parsedHosts[0].id}`); // Use querySelector for broader scope if needed
-                  if (countEl) countEl.textContent = `(${filteredCount})`;
-
-                  const totalResources = parsedHosts.reduce((acc, h) => acc + h.resources.length, 0);
-                  const btnTextSpan = btnDownloadPost.querySelector("span") || btnDownloadPost;
-                  btnTextSpan.textContent = `🡳 Configure & Download (${filteredCount}/${totalResources})`;
-
-                  if (parsedHosts.length > 1) {
-                    const checkedLength = parsedHosts.filter(h => h.enabled).length;
-                    const toggleAll = h.element(`#settings-toggle-all-hosts-${postId}`);
-                    if (toggleAll) toggleAll.checked = checkedLength === parsedHosts.length;
-                  }
+              const formEl = h.element(`#download-config-form-${postId}`);
+              if (formEl) {
+                formEl.onsubmit = (e) => {
+                  e.preventDefault();
+                  onSubmitFormCB({ tippyInstance: instance });
                 };
+              }
+
+              if (parsedHosts.length > 1) {
+                const toggleAllHostsEl = h.element(`#settings-toggle-all-hosts-${postId}`);
+                if (toggleAllHostsEl) {
+                  toggleAllHostsEl.onchange = (e) => {
+                    const checked = e.target.checked;
+                    parsedHosts.forEach((host) => {
+                      const cb = h.element(`#downloader-host-${host.id}-${postId}`);
+                      if (cb && cb.checked !== checked) cb.click();
+                    });
+                  };
+                }
+              }
+
+              parsedHosts.forEach((host) => {
+                const hostCheckbox = h.element(`#downloader-host-${host.id}-${postId}`);
+                if (hostCheckbox) {
+                  hostCheckbox.onchange = (e) => {
+                    host.enabled = e.target.checked;
+                    const filteredCount = totalDownloadableResourcesForPostCB(parsedHosts);
+                    const countEl = document.querySelector(`#filtered-count-${parsedHosts[0].id}`); // Use querySelector for broader scope if needed
+                    if (countEl) countEl.textContent = `(${filteredCount})`;
+
+                    const totalResources = parsedHosts.reduce((acc, h) => acc + h.resources.length, 0);
+                    const btnTextSpan = btnDownloadPost.querySelector("span") || btnDownloadPost;
+                    btnTextSpan.textContent = `🡳 Configure & Download (${filteredCount}/${totalResources})`;
+
+                    if (parsedHosts.length > 1) {
+                      const checkedLength = parsedHosts.filter((h) => h.enabled).length;
+                      const toggleAll = h.element(`#settings-toggle-all-hosts-${postId}`);
+                      if (toggleAll) toggleAll.checked = checkedLength === parsedHosts.length;
+                    }
+                  };
+                }
               });
             }
           });
@@ -1327,6 +1446,87 @@ const setProcessing = (isProcessing, postId) => {
   }
 };
 
+const normalizePlugin = (plugin, sourceLabel) => {
+  if (!plugin || typeof plugin !== "object") return null;
+  const hostsDef = Array.isArray(plugin.hosts) ? plugin.hosts : [];
+  const resolversDef = Array.isArray(plugin.resolvers) ? plugin.resolvers : [];
+  const fixersDef = Array.isArray(plugin.fixers) ? plugin.fixers.filter((fn) => typeof fn === "function") : [];
+  return { name: plugin.name || sourceLabel || "External Plugin", hosts: hostsDef, resolvers: resolversDef, fixers: fixersDef };
+};
+
+const parsePluginDefinition = (definition, sourceLabel = "external plugin") => {
+  try {
+    if (typeof definition === "string") {
+      const trimmed = definition.trim();
+      try {
+        const json = JSON.parse(trimmed);
+        return normalizePlugin(json, sourceLabel);
+      } catch {
+        const factoryBody = trimmed.startsWith("(") ? `return ${trimmed};` : trimmed;
+        const factory = new Function(
+          "helpers",
+          `"use strict"; const exports = {}; const module = { exports }; ${factoryBody}; return typeof LinkMasterPlugin !== "undefined" ? LinkMasterPlugin : (module.exports || exports);`
+        );
+        const plugin = factory({ h, log });
+        return normalizePlugin(plugin, sourceLabel);
+      }
+    }
+    return normalizePlugin(definition, sourceLabel);
+  } catch (error) {
+    log.warn?.("plugin", `${HUD_TAG} Failed to parse plugin from ${sourceLabel}: ${error}`, "HUD");
+    return null;
+  }
+};
+
+const loadPluginFromUrl = async (url) => {
+  try {
+    const response = await h.http.gm_promise({ method: "GET", url, responseType: "text" });
+    return parsePluginDefinition(response.responseText, url);
+  } catch (error) {
+    log.warn?.("plugin", `${HUD_TAG} Failed to load plugin ${url}: ${error}`, "HUD");
+    return null;
+  }
+};
+
+const registerPlugin = (plugin) => {
+  if (!plugin) return;
+  if (plugin.hosts?.length) hosts.push(...plugin.hosts);
+  if (plugin.resolvers?.length) resolvers.push(...plugin.resolvers);
+  if (plugin.fixers?.length) pluginFixers.push(...plugin.fixers.filter((fn) => typeof fn === "function"));
+  log.info("plugin", `${HUD_TAG} Loaded plugin: ${plugin.name}`, "HUD");
+};
+
+const initPlugins = async () => {
+  const pluginObjects = [];
+  const manualSources = Array.isArray(globalConfig.pluginSources) ? globalConfig.pluginSources.filter(Boolean) : [];
+  for (const source of manualSources) {
+    const plugin = await loadPluginFromUrl(source);
+    if (plugin) pluginObjects.push(plugin);
+  }
+
+  const inlinePlugins = [...(window.LinkMasterPlugins || []), ...(window.linkmasterPlugins || [])];
+  inlinePlugins.forEach((plugin, idx) => {
+    const parsed = parsePluginDefinition(plugin, `inline-${idx + 1}`);
+    if (parsed) pluginObjects.push(parsed);
+  });
+
+  const scriptPlugins = document.querySelectorAll('script[data-linkmaster-plugin], script[type="application/linkmaster-plugin"]');
+  let scriptIndex = 0;
+  for (const script of scriptPlugins) {
+    const label = script.dataset.linkmasterPlugin || script.getAttribute("src") || `script-${++scriptIndex}`;
+    const inlineDefinition = script.textContent?.trim();
+    if (inlineDefinition) {
+      const parsed = parsePluginDefinition(inlineDefinition, label);
+      if (parsed) pluginObjects.push(parsed);
+    } else if (script.getAttribute("src")) {
+      const loaded = await loadPluginFromUrl(script.getAttribute("src"));
+      if (loaded) pluginObjects.push(loaded);
+    }
+  }
+
+  pluginObjects.forEach(registerPlugin);
+};
+
 const buildGenericMediaHost = (postId, resources) => ({
   name: "Generic Media",
   type: "single",
@@ -1387,19 +1587,46 @@ async function scanAndRepairLink(url) {
     const swappedProtocol = target.startsWith("https://") ? target.replace("https://", "http://") : target.replace("http://", "https://");
     const candidates = [target, withoutQuery, swappedProtocol];
 
-    if (/bunkrr?r?\./i.test(target) && target.includes("/v/")) {
-      candidates.push(target.replace("/v/", "/d/"));
+    const applyTrivialRewrites = (candidate) => {
+      const rewrites = [];
+      if (/\.(su)(?=\/|$)/i.test(candidate)) rewrites.push(candidate.replace(/\.(su)(?=\/|$)/i, ".cr"));
+      if (/\.(cr)(?=\/|$)/i.test(candidate)) rewrites.push(candidate.replace(/\.(cr)(?=\/|$)/i, ".su"));
+      if (/https?:\/\/cdn(\d+)?\./i.test(candidate)) {
+        rewrites.push(candidate.replace(/https?:\/\/cdn(\d+)?\./i, (_m, digits) => `https://stream${digits || ""}.`));
+      }
+      if (/https?:\/\/stream(\d+)?\./i.test(candidate)) {
+        rewrites.push(candidate.replace(/https?:\/\/stream(\d+)?\./i, (_m, digits) => `https://cdn${digits || ""}.`));
+      }
+      if (/cyberdrop\./i.test(candidate) && candidate.includes("/a/")) {
+        rewrites.push(candidate.replace("/a/", "/e/"));
+      }
+      if (/bunkrr?r?\./i.test(candidate) && candidate.includes("/v/")) {
+        rewrites.push(candidate.replace("/v/", "/d/"));
+      }
+      pluginFixers.forEach((fixer) => {
+        try {
+          const result = fixer(candidate);
+          if (Array.isArray(result)) rewrites.push(...result);
+          else if (result) rewrites.push(result);
+        } catch (error) {
+          log.warn?.("plugin", `${HUD_TAG} Plugin fixer failed: ${error}`, "HUD");
+        }
+      });
+      return rewrites;
+    };
+
+    for (const candidate of [...candidates]) {
+      candidates.push(...applyTrivialRewrites(candidate));
     }
-    if (/cyberdrop\./i.test(target) && target.includes("/a/")) {
-      candidates.push(target.replace("/a/", "/e/"));
-    }
+
     return h.unique(candidates.filter(Boolean));
   };
 
   const tryHead = async (target) => {
     try {
       const response = await h.http.gm_promise({ method: "HEAD", url: target, headers: { Referer: window.location.origin } });
-      return { ok: response.status < 400, status: response.status, url: target };
+      const contentLength = response.responseHeaders?.match(/content-length:\s*(\d+)/i)?.[1];
+      return { ok: response.status < 400, status: response.status, url: target, sizeBytes: contentLength ? Number(contentLength) : null };
     } catch (error) {
       return { ok: false, status: "Error", error: error.toString(), url: target };
     }
@@ -1408,9 +1635,15 @@ async function scanAndRepairLink(url) {
   const candidates = buildCandidates(url);
   for (const candidate of candidates) {
     const result = await tryHead(candidate);
-    if (result.ok) return { original: url, repaired: candidate, status: result.status };
+    if (result.ok) {
+      const cachedResult = { url, status: result.status, sizeBytes: result.sizeBytes, size: result.sizeBytes ? h.prettyBytes(result.sizeBytes) : null };
+      cacheLinkStatus(url, cachedResult, []);
+      cacheLinkStatus(candidate, { ...cachedResult, url: candidate }, []);
+      return { original: url, repaired: candidate, status: result.status };
+    }
   }
   const finalResult = await tryHead(url);
+  cacheLinkStatus(url, { url, status: finalResult.status, error: finalResult.error, sizeBytes: finalResult.sizeBytes, size: finalResult.sizeBytes ? h.prettyBytes(finalResult.sizeBytes) : null }, []);
   return { original: url, repaired: null, status: finalResult.status, error: finalResult.error };
 }
 
@@ -1572,10 +1805,10 @@ function buildExportRows(resolved, detail) {
   const includeThumbs = detail === "thumbnails";
   return resolved.map((r) => ({
     url: r.url,
-    host: r.host?.name || r.host?.id || r.host || null,
-    postNumber: r.postNumber ?? null,
-    folderName: r.folderName || null,
-    original: r.original || null,
+    host: includeContext ? r.host?.name || r.host?.id || r.host || null : null,
+    postNumber: includeContext ? r.postNumber ?? null : null,
+    folderName: includeContext ? r.folderName || null : null,
+    original: includeContext ? r.original || null : null,
     thumbnail: includeThumbs ? r.thumbnail || r.thumb || null : null
   }));
 }
@@ -1890,9 +2123,10 @@ async function resolvePostLinks(postData, statusLabel) {
         }
       }
     }
+    }
+    cacheResolvedLinks(postId, allResolved);
+    return allResolved;
   }
-  return allResolved;
-}
 
 const downloadPost = async (postData, statusContainerElement) => {
   const { parsedPost, getSettingsCB, postDownloadCallbacks } = postData;
@@ -1944,8 +2178,8 @@ const downloadPost = async (postData, statusContainerElement) => {
 
   if (!postSettings.skipDownload) {
     const resources = resolved.filter((r) => r.url);
-    const filenames = []; // To track filenames and avoid duplicates
-    const downloadPromises = resources.map(({ url, host, original, folderName }) => new Promise(async (resolve) => {
+      const filenames = []; // To track filenames and avoid duplicates
+      const downloadPromises = resources.map(({ url, original, folderName }) => new Promise(async (resolve) => {
       const ellipsedUrl = h.limit(url, 60);
       try {
         const response = await h.http.gm_promise({
@@ -2052,11 +2286,21 @@ const init = {
   }
 };
 
+function showToast(msg, timeout = 3300) {
+  let t = document.createElement("div");
+  t.className = "hud-toast";
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => {
+    t.style.opacity = 0.1;
+    setTimeout(() => t.remove(), 600);
+  }, timeout);
+}
+
 (function () {
   "use strict";
-
-  const parsedPosts = [];
   let currentTab = "scrape";
+  const quickFilterState = { query: "", regex: false, type: "all", status: "any", minSize: null };
 
   const hudStyle = `
   :root { --bg-dark:#0A131A; --accent-cyan:#00E5FF; --text-cyan-active:#67E8F9; --accent-cyan-border-hover:rgba(0,229,255,0.5); --accent-cyan-bg-active:rgba(0,229,255,0.2); --accent-cyan-glow-active:rgba(0,229,255,0.4); --text-primary:#EAEAEA; --text-secondary:#9E9E9E; --font-body:'Roboto Mono',monospace; --font-hud:'Orbitron',sans-serif; --panel-bg:#101827cc; --panel-bg-solid:#101827; --panel-border:#15adad; --panel-border-bright:#15fafa; --panel-glow:rgba(21,250,250,0.2); --panel-glow-intense:rgba(21,250,250,0.4); --primary-cyan:#15fafa; --scrollbar-thumb:#157d7d; --scrollbar-thumb-hover:#15fafa; --hud-z:999999; }
@@ -2134,16 +2378,92 @@ const init = {
     else if (tab === "settings") renderSettingsPanel(contentPanel);
   }
 
-  function showToast(msg, timeout = 3300) {
-    let t = document.createElement("div");
-    t.className = "hud-toast";
-    t.textContent = msg;
-    document.body.appendChild(t);
-    setTimeout(() => {
-      t.style.opacity = 0.1;
-      setTimeout(() => t.remove(), 600);
-    }, timeout);
-  }
+  const renderQuickFilterResults = async () => {
+    const resultsPanel = document.getElementById("quick-filter-results");
+    if (!resultsPanel) return;
+    const summaryEl = document.getElementById("quick-filter-count");
+    let resolved = getAggregatedResolved();
+    if (!resolved.length && parsedPosts.length) {
+      resultsPanel.innerHTML = "";
+      const { statusLabel, totalPB, wrapper } = createBulkStatus();
+      resultsPanel.appendChild(wrapper);
+      await resolveAllPosts(parsedPosts, statusLabel, totalPB, { respectSkipDuplicates: true });
+      resolved = getAggregatedResolved();
+    }
+
+    if (!resolved.length) {
+      resultsPanel.innerHTML = "<p style=\"color: var(--text-secondary);\">No resolved links available yet.</p>";
+      if (summaryEl) summaryEl.textContent = "0 matches";
+      return;
+    }
+
+    let regex = null;
+    if (quickFilterState.regex && quickFilterState.query) {
+      try {
+        regex = new RegExp(quickFilterState.query, "i");
+      } catch (error) {
+        resultsPanel.innerHTML = `<div style="color:#ffb3b3;">Invalid regex: ${error.message}</div>`;
+        if (summaryEl) summaryEl.textContent = "0 matches";
+        return;
+      }
+    }
+
+    const minBytes = quickFilterState.minSize;
+    const filtered = resolved.filter((entry) => {
+      const cached = linkStatusCache.get(entry.url);
+      if (!matchesStatusFilter(quickFilterState.status, cached?.status ?? "unknown")) return false;
+      if (quickFilterState.type !== "all" && determineLinkType(entry.url) !== quickFilterState.type) return false;
+      if (quickFilterState.query) {
+        if (regex && !regex.test(entry.url)) return false;
+        if (!regex && !entry.url.toLowerCase().includes(quickFilterState.query.toLowerCase())) return false;
+      }
+      if (minBytes && (!cached?.sizeBytes || cached.sizeBytes < minBytes)) return false;
+      return true;
+    });
+
+    if (summaryEl) summaryEl.textContent = `${filtered.length} match${filtered.length === 1 ? "" : "es"}`;
+    if (!filtered.length) {
+      resultsPanel.innerHTML = "<p style=\"color: var(--text-secondary);\">No links match the current filters.</p>";
+      return;
+    }
+
+    const rows = filtered.slice(0, 150).map((entry) => {
+      const cached = linkStatusCache.get(entry.url);
+      const statusChip = buildStatusChip(cached?.status ?? "unknown");
+      const typeLabel = determineLinkType(entry.url);
+      const sizeLabel = cached?.size || (cached?.sizeBytes ? h.prettyBytes(cached.sizeBytes) : "N/A");
+      return `<div style="margin-bottom:0.4em;">${statusChip} <span class="chip">${typeLabel}</span> <a href="${entry.url}" target="_blank" style="color: var(--text-secondary);">${h.limit(entry.url, 120)}</a> <span style="color: var(--text-secondary); font-size:0.9em;">${sizeLabel}</span></div>`;
+    });
+
+    if (filtered.length > 150) {
+      rows.push(`<div style="color: var(--text-secondary);">Showing first 150 of ${filtered.length} results.</div>`);
+    }
+    resultsPanel.innerHTML = rows.join("");
+  };
+
+  const bindQuickFilterHandlers = (contentPanel) => {
+    const queryInput = contentPanel.querySelector('#quick-filter-query');
+    const regexToggle = contentPanel.querySelector('#quick-filter-regex');
+    const typeSelect = contentPanel.querySelector('#quick-filter-type');
+    const statusSelect = contentPanel.querySelector('#quick-filter-status');
+    const sizeInput = contentPanel.querySelector('#quick-filter-size');
+
+    const handler = () => {
+      quickFilterState.query = queryInput?.value || "";
+      quickFilterState.regex = !!regexToggle?.checked;
+      quickFilterState.type = typeSelect?.value || "all";
+      quickFilterState.status = statusSelect?.value || "any";
+      quickFilterState.minSize = parseSizeInput(sizeInput?.value || "");
+      renderQuickFilterResults();
+    };
+
+    [queryInput, regexToggle, typeSelect, statusSelect, sizeInput].forEach((el) => {
+      if (!el) return;
+      el.oninput = handler;
+      el.onchange = handler;
+    });
+    handler();
+  };
 
   function renderScrapePanel(contentPanel) {
     if (parsedPosts.length === 0) {
@@ -2181,6 +2501,31 @@ const init = {
           <button id="scan-streams" class="hud-btn">📡 Scan Streams</button>
           <div id="bulk-status" style="flex:1; min-height: 32px;"></div>
       </div>
+      <div id="quick-filter-bar" style="display:flex; gap:0.6em; align-items:center; flex-wrap:wrap; padding:0.75em 0.9em; background: rgba(16,24,39,0.65); border:1px solid var(--panel-border); border-radius:0.9em; margin-bottom:0.7em;">
+          <strong style="font-family: var(--font-hud); letter-spacing:0.05em;">Quick Filter</strong>
+          <input id="quick-filter-query" type="text" placeholder="Substring or regex" style="flex:1; min-width:140px; background: var(--panel-bg-solid); border:1px solid var(--panel-border); border-radius:0.5em; color: var(--text-primary); padding:0.45em;" />
+          <label style="display:flex; align-items:center; gap:5px; color:var(--text-secondary); font-size:0.92em;"><input type="checkbox" id="quick-filter-regex">Regex</label>
+          <label style="display:flex; align-items:center; gap:6px; color:var(--text-secondary); font-size:0.92em;">Type
+            <select id="quick-filter-type" style="background: var(--panel-bg-solid); color: var(--text-primary); border: 1px solid var(--panel-border); border-radius: 6px; padding: 0.3em 0.5em;">
+              <option value="all">All</option>
+              <option value="images">Images</option>
+              <option value="videos">Videos</option>
+              <option value="documents">Documents</option>
+              <option value="compressed">Compressed</option>
+            </select>
+          </label>
+          <label style="display:flex; align-items:center; gap:6px; color:var(--text-secondary); font-size:0.92em;">Status
+            <select id="quick-filter-status" style="background: var(--panel-bg-solid); color: var(--text-primary); border: 1px solid var(--panel-border); border-radius: 6px; padding: 0.3em 0.5em;">
+              <option value="any">All</option>
+              <option value="good">Good</option>
+              <option value="bad">Bad</option>
+              <option value="unknown">Unknown</option>
+            </select>
+          </label>
+          <input id="quick-filter-size" type="text" placeholder="Min size (e.g., 5MB)" style="width: 160px; background: var(--panel-bg-solid); border:1px solid var(--panel-border); border-radius:0.5em; color: var(--text-primary); padding:0.45em;">
+          <span id="quick-filter-count" style="margin-left:auto; color: var(--text-secondary); font-size:0.9em;">Ready</span>
+      </div>
+      <div id="quick-filter-results" style="margin-bottom: 0.8em; word-break: break-all;"></div>
       <div id="posts-container"></div>`;
     contentPanel.innerHTML = headerHTML;
     const postsContainer = contentPanel.querySelector("#posts-container");
@@ -2198,7 +2543,8 @@ const init = {
           <label style="font-family: var(--font-hud); font-weight: 700; font-size: 1.1em;">
               Post <a href="#post-${parsedPost.postId}" style="color: var(--primary-cyan); text-decoration: none;">#${parsedPost.postNumber}</a>
           </label>
-          <span class="chip" style="margin-left:auto;">${totalResources} links</span>
+          <span id="status-chip-${parsedPost.postId}" class="chip unknown" style="margin-left:auto;">Unknown</span>
+          <span class="chip">${totalResources} links</span>
         </div>
         <div id="status-area-${parsedPost.postId}" style="margin-top: 0.8em;"></div>`;
 
@@ -2208,6 +2554,7 @@ const init = {
       postEntryDiv.insertBefore(btnDownloadPost, postEntryDiv.querySelector(`#status-area-${parsedPost.postId}`));
 
       postsContainer.appendChild(postEntryDiv);
+      updatePostStatusChip(parsedPost.postId);
 
       // Attach hover-preview tooltip
       const postLink = postEntryDiv.querySelector(`a[href="#post-${parsedPost.postId}"]`);
@@ -2291,6 +2638,7 @@ const init = {
     contentPanel.querySelector('#export-resolved').onclick = () => showExportModal(bulkStatus);
     contentPanel.querySelector('#scan-repair-urls').onclick = () => scanAndRepairResolvedUrls(bulkStatus);
     contentPanel.querySelector('#scan-streams').onclick = () => scanM3u8Streams(bulkStatus);
+    bindQuickFilterHandlers(contentPanel);
   }
 
   function renderCheckPanel(contentPanel) {
@@ -2313,6 +2661,16 @@ const init = {
             <textarea id="check-paste-area" style="width: 100%; height: 100px; background: #0A131A; border: 1.5px solid var(--panel-border); color: var(--text-primary); padding: 0.5em; border-radius: 0.4em; margin-bottom: 1em;" placeholder="Paste links here, one per line..."></textarea>
             <button id="check-pasted-btn" class="hud-btn active">Check Pasted Links</button>
         </div>
+        <div style="margin-top:0.8em; display:flex; gap:0.6em; align-items:center;">
+            <label style="color: var(--text-secondary);">Status Filter
+              <select id="check-status-filter" style="background: var(--panel-bg-solid); color: var(--text-primary); border: 1.5px solid var(--panel-border); border-radius: 0.5em; padding: 0.25em 0.4em;">
+                <option value="any">All</option>
+                <option value="good">Good</option>
+                <option value="bad">Bad</option>
+                <option value="unknown">Unknown</option>
+              </select>
+            </label>
+        </div>
         <div id="check-results" style="margin-top: 1.5em; word-break: break-all;"></div>`;
 
     if (parsedPosts.length > 0) {
@@ -2321,6 +2679,8 @@ const init = {
       contentPanel.querySelector('#check-scraped-btn').onclick = startLinkCheck;
     }
     contentPanel.querySelector('#check-pasted-btn').onclick = startLinkCheck;
+    const statusFilter = contentPanel.querySelector('#check-status-filter');
+    if (statusFilter) statusFilter.onchange = () => renderCheckResults();
   }
 
   async function startLinkCheck(event) {
@@ -2328,6 +2688,7 @@ const init = {
     resultsPanel.innerHTML = 'Resolving links...';
     let linksToCheck = [];
     const isPasted = event.target.id === 'check-pasted-btn';
+    const linkPostMap = new Map();
 
     if (isPasted) {
       const pastedText = h.element('#check-paste-area').value;
@@ -2341,7 +2702,15 @@ const init = {
       let resolvedLinks = [];
       for (const cb of selected) {
         const postData = parsedPosts.find(p => p.parsedPost.postId === cb.value);
-        if (postData) resolvedLinks.push(...await resolvePostLinks(postData));
+        if (postData) {
+          const resolved = await resolvePostLinks(postData);
+          resolvedLinks.push(...resolved);
+          resolved.forEach((link) => {
+            const holders = linkPostMap.get(link.url) || new Set();
+            holders.add(postData.parsedPost.postId);
+            linkPostMap.set(link.url, holders);
+          });
+        }
       }
       linksToCheck = h.unique(resolvedLinks, 'url').map(l => l.url);
     }
@@ -2352,30 +2721,41 @@ const init = {
     }
     resultsPanel.innerHTML = `Checking ${linksToCheck.length} unique links...`;
 
-    const results = await Promise.all(linksToCheck.map(url => checkLinkStatus(url)));
-    renderCheckResults(results);
+    const results = await Promise.all(linksToCheck.map(url => checkLinkStatus(url, [...(linkPostMap.get(url) || [])])));
+    lastCheckResults = results;
+    renderCheckResults();
   }
 
-  async function checkLinkStatus(url) {
+  async function checkLinkStatus(url, postIds = []) {
     try {
       const response = await h.http.gm_promise({ method: 'HEAD', url: url, headers: { 'Referer': window.location.origin } });
       const contentType = response.responseHeaders.match(/content-type:\s*(.*)/i)?.[1] || 'N/A';
       const contentLength = response.responseHeaders.match(/content-length:\s*(\d+)/i)?.[1];
-      return { url, status: response.status, contentType, size: contentLength ? h.prettyBytes(Number(contentLength)) : 'N/A' };
+      const result = { url, status: response.status, contentType, size: contentLength ? h.prettyBytes(Number(contentLength)) : 'N/A', sizeBytes: contentLength ? Number(contentLength) : null, postIds };
+      cacheLinkStatus(url, result, postIds);
+      return result;
     } catch (error) {
-      return { url, status: 'Error', error: error.toString() };
+      const result = { url, status: 'Error', error: error.toString(), postIds };
+      cacheLinkStatus(url, result, postIds);
+      return result;
     }
   }
 
   function renderCheckResults(results) {
+    if (results) lastCheckResults = results;
     const resultsPanel = document.getElementById('check-results');
+    if (!resultsPanel) return;
+    const filter = document.getElementById('check-status-filter')?.value || 'any';
+    const activeResults = (results || lastCheckResults || []).filter((res) => matchesStatusFilter(filter, res.status));
+
+    if (!activeResults.length) {
+      resultsPanel.innerHTML = '<p style="color: var(--text-secondary);">No results yet. Run a check to populate link statuses.</p>';
+      return;
+    }
+
     let html = '<h3>Check Complete</h3>';
-    results.forEach(res => {
-      let statusChip;
-      if (res.status === 'Error') statusChip = `<span class="chip dead">Error</span>`;
-      else if (res.status >= 200 && res.status < 300) statusChip = `<span class="chip ok">${res.status} OK</span>`;
-      else if (res.status >= 400) statusChip = `<span class="chip dead">${res.status} Error</span>`;
-      else statusChip = `<span class="chip unknown">${res.status}</span>`;
+    activeResults.forEach(res => {
+      const statusChip = buildStatusChip(res.status);
       const details = res.status !== 'Error' ? ` | ${res.contentType} | ${res.size}` : '';
       html += `<div style="margin-bottom: 0.5em;">${statusChip} <a href="${res.url}" target="_blank" style="color: var(--text-secondary);">${h.limit(res.url, 80)}</a><span style="font-size: 0.9em; color: var(--text-secondary);">${details}</span></div>`;
     });
@@ -2396,6 +2776,11 @@ const init = {
               <label for="gofile-token" style="display:block; margin-bottom: 0.5em; font-family: var(--font-hud);">GoFile Token (Optional)</label>
               <input type="password" id="gofile-token" value="${globalConfig.goFileToken}" style="width: 100%; background: #0A131A; border: 1.5px solid var(--panel-border); color: var(--text-primary); padding: 0.5em; border-radius: 0.4em;">
             </div>
+            <div>
+              <label for="plugin-sources" style="display:block; margin-bottom: 0.5em; font-family: var(--font-hud);">Plugin Sources (one per line)</label>
+              <textarea id="plugin-sources" style="width: 100%; min-height: 90px; background: #0A131A; border: 1.5px solid var(--panel-border); color: var(--text-primary); padding: 0.5em; border-radius: 0.4em; resize: vertical;">${(globalConfig.pluginSources || []).join("\n")}</textarea>
+              <small style="color: var(--text-secondary);">Add URLs for external LinkMasterΨ2 plugins or paste inline definitions. Plugins load without updating the main script.</small>
+            </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1em;">
                 <label><input type="checkbox" id="setting-zipped" ${globalConfig.defaultZipped ? 'checked' : ''}> Default to Zipped</label>
                 <label><input type="checkbox" id="setting-flatten" ${globalConfig.defaultFlatten ? 'checked' : ''}> Default to Flatten</label>
@@ -2415,6 +2800,11 @@ const init = {
       globalConfig.defaultGenerateLog = contentPanel.querySelector('#setting-gen-log').checked;
       globalConfig.defaultSkipDuplicates = contentPanel.querySelector('#setting-skip-dupes').checked;
       globalConfig.enableGenericMediaDetection = contentPanel.querySelector('#setting-generic-media').checked;
+      globalConfig.pluginSources = contentPanel
+        .querySelector('#plugin-sources')
+        .value.split('\n')
+        .map((src) => src.trim())
+        .filter(Boolean);
       saveSettings();
     };
   }
@@ -2436,6 +2826,7 @@ const init = {
       defaultGenerateLog: false,
       defaultSkipDuplicates: true,
       enableGenericMediaDetection: false,
+      pluginSources: [],
     };
     Object.assign(globalConfig, defaults, saved ? JSON.parse(saved) : {});
   }
@@ -2461,11 +2852,13 @@ const init = {
         }
       }
     });
+    resetResolvedCache();
     return true;
   };
 
   const start = async () => {
     loadSettings();
+    await initPlugins();
     init.injectCustomStyles();
     if (!document.getElementById("eglass-hud-css")) {
       const style = document.createElement("style");
@@ -2530,6 +2923,7 @@ const init = {
           resolvers,
           postDownloadCallbacks: {}
         });
+        resetResolvedCache();
         showToast(`${allHosts.reduce((acc, h) => acc + h.resources.length, 0)} links found on page.`);
       }
     }
