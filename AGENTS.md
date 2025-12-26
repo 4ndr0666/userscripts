@@ -1,7 +1,7 @@
 # Agent
 
-TARGET FILE: codex.user.js  
-OBJECTIVE: Integrate advanced HUD utilities, dead link fixer, copy/export functions, m3u8 parsing, and batch operations while preserving existing LinkMasterΨ2 functionality and resolver flow.
+**TARGET FILE:** codex.user.js  
+**OBJECTIVE:** Integrate advanced HUD utilities, dead link fixer, copy/export functions, m3u8 parsing, and batch operations while preserving existing functionality and resolver flow.
 
 ------------------------------------------------------------
 1. DEAD/BROKEN URL FIXER
