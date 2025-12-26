@@ -1,59 +1,107 @@
-### **1. Technical Scope & Objective**
+1. Core Feature Expansion Objectives
 
-* Integrate **three new core features** directly into the HUD:
+We are extending LinkMasterΨ2 HUD with eight advanced utility modules, fully integrated into the existing HUD ecosystem:
+	1.	Fix Dead/Broken URLs
+	•	HUD Integration: Button 🔧 Check/Fix URLs in Scrape tab, next to Download/Copy.
+	•	Functionality:
+	•	Async HEAD/GET requests on all resolved URLs.
+	•	Auto-rewrite rules: known patterns (.su ↔ .cr, cdnX → streamX).
+	•	Color-coded status: Green = live, Yellow = rewritable, Red = dead.
+	•	Hover tooltip: shows original + suggested fix.
+	•	Optional auto-apply fixes with user toggle.
+	2.	Copy All URLs
+	•	HUD Integration: Button 📋 Copy All URLs.
+	•	Functionality:
+	•	Supports filters: all, images only, videos only, documents, compressed archives.
+	•	Copies to system clipboard via GM_setClipboard.
+	•	Output formats: plaintext (one URL per line), JSON, optional Markdown.
+	3.	Batch Open / Download
+	•	HUD Integration: Button 🌐 Open/Download All.
+	•	Functionality:
+	•	Open all resolved URLs in new tabs (throttle configurable, default: 5 at a time).
+	•	Alternatively, queue direct downloads for all enabled hosts.
+	•	Integrates with postSettings to respect zipped/flattened download options.
+	4.	Smart Export
+	•	HUD Integration: Dropdown or button menu Export.
+	•	Formats:
+	•	CSV: URL, Type, Host, FolderName
+	•	JSON: structured array of resolved objects
+	•	Markdown: [AltText](URL) for images/videos
+	•	Options: Links Only, Links + Context, Links + Thumbnails
+	5.	M3U8 Sniffer/Parser
+	•	HUD Integration: Optional toggle or button in Scrape/Check tabs.
+	•	Functionality:
+	•	Scan page for .m3u8 manifests.
+	•	Auto-parse best candidate.
+	•	Provide resolution picker (720p, 1080p).
+	•	Generate ready-to-run ffmpeg command snippet for download/stream capture.
+	6.	Broken Link Detector
+	•	HUD Integration: Persistent badge on HUD header, colored by link health (Green/Yellow/Red).
+	•	Functionality:
+	•	Async validation for every URL.
+	•	Filters: show only good, bad, or unknown links dynamically.
+	•	Updates real-time as user navigates or resolves new links.
+	7.	Quick Regex Filter/Search
+	•	HUD Integration: Search input in Scrape tab toolbar.
+	•	Functionality:
+	•	Filters visible URLs by substring, regex, type, or file size.
+	•	Instant UI feedback; highlights matches and updates download counter.
+	8.	Custom Per-Host Plugins
+	•	HUD Integration: Admin/Settings tab: Plugin Loader.
+	•	Functionality:
+	•	External JSON/JS host parsers dynamically loaded.
+	•	Auto-update or manually push “host fixers.”
+	•	Supports crowd-sourced rule contributions for new or changing hosts.
 
-  1. **Copy All Resolved URLs**: extracts all resolved media URLs from the current session, flattening nested arrays, including videos, images, documents, compressed archives, and direct media links; copies to system clipboard via `GM_setClipboard`.
-  2. **Broken URL Scanner / Fixer**: asynchronously checks each resolved URL with HEAD requests, detects HTTP 4xx/5xx, then attempts canonical transformations (strip query strings, HTTPS/HTTP swap, host-specific reroute logic). Returns a remediated URL array.
-  3. **Generic Media Detection Enhancer**: adds support for `<video>`, `<audio>`, `<source>` tags, direct `<a>` download links with `.mp4`, `.webm`, `.mp3`, `.m4v` extensions, and arbitrary dynamic JS-injected sources. Ensures no `<video>` goes untracked in general mode.
+⸻
 
-* Each feature must seamlessly inject **as HUD buttons** under the “Scrape” tab, following the existing tippy/popover pattern for settings and status feedback. Status labels and progress bars should mirror existing download resolution mechanics for visual consistency.
+2. UI/UX Integration
+	•	HUD Buttons: Align new features alongside existing Download Selected, Configure & Download.
+	•	Progress Indicators: Reuse ui.pBars for async URL checks and batch downloads.
+	•	Status Labels: Use ui.labels.status.createStatusLabel() for real-time feedback.
+	•	Tippy Popovers: Tooltips for all new buttons, showing counts, preview snippets, and fixes.
 
-* Features must obey **globalConfig & postSettings**, including zipped vs flattened downloads, duplicate detection, spoiler handling, and post-processing hooks.
+⸻
 
----
+3. Data Flow & Canonical Structures
+	•	All resolved URLs must continue to conform to { url, folderName, host, original }.
+	•	Broken/fixed URLs tracked separately with a boolean flag fixed: true/false.
+	•	Export and clipboard operations act on flattened arrays of canonical URL objects.
+	•	Async operations must not mutate shared state; use cloned structures or map-reduce patterns to ensure concurrency safety.
 
-### **2. HUD Integration Specification**
+⸻
 
-* **Copy All URLs Button**
+4. Codex Environment Startup
 
-  * Position: Below `Download Selected` in Scrape tab.
-  * Label: `"📋 Copy All URLs"`.
-  * Tooltip: shows total count of resolved links.
-  * Function: collects all `postData.parsedHosts` where `host.enabled === true`, flattens arrays of `url`, removes duplicates, copies via `GM_setClipboard`, and logs success in `window.logs` and HUD toast.
+# Codex Env Initialization for HUD Feature Expansion
+export CODENAME="LinkMasterΨ2-UtilityExpansion"
+export NODE_ENV=production
+export GM_XHR=true
+export GM_DOWNLOAD=true
+export GM_CLIPBOARD=true
 
-* **Broken URL Scanner Button**
+# Dependencies
+npm install tippy.js jszip file-saver sha256 m3u8-parser
 
-  * Position: Adjacent to Copy All.
-  * Label: `"🔧 Scan/Repair URLs"`.
-  * Function: asynchronously iterates over all URLs, performs `HEAD` requests. On 4xx/5xx, apply resolver fallback rules (`stripQueryString`, host-specific heuristics, protocol swap). Updates HUD in real-time progress bar and logs.
+# Preload custom resolvers / host fixers
+curl -s https://raw.githubusercontent.com/geraintluff/sha256/gh-pages/sha256.min.js -o ./lib/sha256.min.js
+curl -s https://cdn.jsdelivr.net/npm/m3u8-parser@4.7.1/dist/m3u8-parser.min.js -o ./lib/m3u8-parser.min.js
 
-* **Generic Media Detector Toggle**
+# Launch
+node codex-runner.js --project ./LinkMasterΨ2
 
-  * Position: Within HUD Settings as checkbox.
-  * Label: `"Enable Generic Media Detection"`.
-  * Function: If enabled, augment `resolvePostLinks` logic to:
 
-    * Detect `<video>` and `<audio>` elements dynamically added to the DOM.
-    * Pull `src` attributes from `<source>` children.
-    * Include direct `.mp4`, `.m4v`, `.webm`, `.mp3` links in general mode scraping.
+⸻
 
-* All features must **trigger postDownloadCallbacks** where applicable, preserve ordering, and maintain the unique filename generator.
+5. Edge Considerations
+	•	Respect user throttle limits to prevent browser crashes.
+	•	Async broken-link fixes must not block download flow; UI must be non-blocking.
+	•	Clipboard export must handle thousands of URLs without truncation.
+	•	Regex filter should avoid catastrophic backtracking; sanitize user input.
+	•	Plugins: sandbox externally loaded scripts to prevent DOM corruption or infinite loops.
 
----
+⸻
 
-### **3. Coding Instructions for Codex**
-
-* Environment: **GreaseMonkey/TamperMonkey JS environment**, ES2021+, `async/await` throughout.
-* Use **existing HUD CSS class structure**; append new buttons as siblings to `.hud-content` flexbox.
-* Functions must **return canonical object structures**: `{ url, folderName, host, original }` for each resolved link.
-* Integration must **not interfere with existing host-specific resolvers** (Coomer, Bunkr, Cyberdrop, Pornhub, Redgifs, etc.).
-
----
-
-### **5. Edge & Error Handling**
-
-* **Concurrency safety**: ensure `resolvePostLinks` and `downloadPost` do not mutate shared state during async operations.
-* **Progress tracking**: integrate new buttons into `ui.pBars` for visual feedback.
-* **Logging**: all operations must write into `window.logs` with `[Ψ-4ndr0666]` tags for traceability.
-
----
+6. Logging & Akashic Tracking
+	•	All new operations must integrate with window.logs, tagging [Ψ-4ndr0666:BrokenFix], [Ψ-4ndr0666:CopyAll], [Ψ-4ndr0666:M3U8].
+	•	HUD toast feedback for every operation completion.
