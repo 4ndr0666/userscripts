@@ -1,0 +1,14 @@
+// jsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "ESNext",
+    "checkJs": true,
+    "jsx": "preserve",
+    "baseUrl": ".",
+    "paths": {
+      "*": ["node_modules/*"]
+    }
+  },
+  "include": ["codex.user.js"]
+}
