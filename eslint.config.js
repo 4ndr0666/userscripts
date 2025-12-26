@@ -1,15 +1,11 @@
-// eslint.config.js (ES Module version)
-export default {
-  root: true,
-  env: {
-    browser: true,
-    es2021: true,
-    greasemonkey: true
-  },
+import js from "@eslint/js";
+import globals from "globals";
+
+export default [
+  js.configs.recommended,
   {
-    ...js.configs.recommended,
+    files: ["**/*.js"],
     languageOptions: {
-      ...js.configs.recommended.languageOptions,
       ecmaVersion: "latest",
       sourceType: "module",
       globals: {
@@ -27,8 +23,8 @@ export default {
         tippy: "readonly",
         sha256: "readonly",
         saveAs: "readonly",
-        m3u8Parser: "readonly",
-      },
+        m3u8Parser: "readonly"
+      }
     },
     rules: {
       "no-unused-vars": ["warn"],
@@ -38,7 +34,7 @@ export default {
       "quotes": "off",
       "eqeqeq": ["error", "always"],
       "curly": ["warn", "multi-line"],
-      "no-empty-function": ["warn"],
-    },
-  },
+      "no-empty-function": ["warn"]
+    }
+  }
 ];
