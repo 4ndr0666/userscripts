@@ -1,17 +1,18 @@
 // ==UserScript==
-// @name         LinkMasterΨ2 – CandidShiny Dynamic Loader
+// @name         LinkMasterΨ2 – CandidShiny Plugin
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.2.0
-// @description  Correctly parse forum.candidshiny.com threads with dynamic content
+// @version      1.0.0
+// @description  Full support for forum.candidshiny.com threads
 // ==/UserScript==
 
 (function () {
   "use strict";
 
   const plugin = {
-    name: "Forum.CandidShiny",
+    name: "CandidShiny",
     hosts: [
-      ["CandidShiny:Attachments", [ /https?:\/\/forum\.candidshiny\.com\/attachments\/.+/i ]]
+      ["CandidShiny:Attachments", [ /https?:\/\/forum\.candidshiny\.com\/attachments\/.+/i ]],
+      ["CandidShiny:Images", [ /https?:\/\/forum\.candidshiny\.com\/attachments\/.*\.(jpg|png|gif|webp)/i ]]
     ],
     resolvers: [
       [
@@ -27,8 +28,8 @@
       ]
     ],
     parsePosts: (root) => {
-      const postEls = root.querySelectorAll("article.message, .message");
       const posts = [];
+      const postEls = root.querySelectorAll("article.message, .message");
       postEls.forEach(el => {
         const postId = el.dataset.postId || el.id;
         if (!postId) return;
@@ -49,16 +50,17 @@
     }
   };
 
-  const observePosts = () => {
-    const threadContainer = document.querySelector("#js-thread-content, .structItemContainer");
-    if (!threadContainer) return;
+  // Observe thread container for dynamic posts
+  const observe = () => {
+    const thread = document.querySelector("#js-thread-content, .structItemContainer");
+    if (!thread) return;
     const observer = new MutationObserver(() => {
       if (window.registerPlugin) window.registerPlugin(plugin);
       else window.LinkMasterPlugins = window.LinkMasterPlugins || [];
       if (!window.LinkMasterPlugins.includes(plugin)) window.LinkMasterPlugins.push(plugin);
     });
-    observer.observe(threadContainer, { childList: true, subtree: true });
+    observer.observe(thread, { childList: true, subtree: true });
   };
 
-  observePosts();
+  observe();
 })();
