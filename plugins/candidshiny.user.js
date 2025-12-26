@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         LinkMasterΨ2 – Forum.CandidShiny Plugin
+// @name         LinkMasterΨ2 – Forum.CandidShiny Full Plugin
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.0.0
-// @description  Plugin for LinkMasterΨ2 to parse and resolve media links on forum.candidshiny.com
+// @version      1.1.0
+// @description  Full parser and resolver for forum.candidshiny.com posts
 // @author       4ndr0666
 // ==/UserScript==
 
@@ -14,47 +14,54 @@
     hosts: [
       [
         "CandidShiny:Images",
-        [
-          /https?:\/\/forum\.candidshiny\.com\/attachments\/[a-zA-Z0-9_-]+\/.*\.(jpg|jpeg|png|gif)/i
-        ]
+        [ /https?:\/\/forum\.candidshiny\.com\/attachments\/[a-zA-Z0-9_-]+\/.*\.(jpg|jpeg|png|gif)/i ]
       ],
       [
         "CandidShiny:Videos",
-        [
-          /https?:\/\/forum\.candidshiny\.com\/attachments\/[a-zA-Z0-9_-]+\/.*\.(mp4|webm|mov)/i
-        ]
+        [ /https?:\/\/forum\.candidshiny\.com\/attachments\/[a-zA-Z0-9_-]+\/.*\.(mp4|webm|mov)/i ]
       ]
     ],
     resolvers: [
       [
         [ /https?:\/\/forum\.candidshiny\.com\/attachments\/[a-zA-Z0-9_-]+\/.+/i ],
         async (url, http, spoilers, postId) => {
-          // Use HEAD request to validate and return direct URL
           try {
-            const { ok, status } = await (async () => {
-              try {
-                const resp = await http.gm_promise({ method: "HEAD", url });
-                return { ok: resp.status < 400, status: resp.status };
-              } catch {
-                return { ok: false, status: "Error" };
-              }
-            })();
-            if (ok) return url;
+            const { status } = await http.gm_promise({ method: "HEAD", url });
+            if (status < 400) return url;
             return null;
-          } catch (e) {
-            console.error(`[Forum.CandidShiny Plugin] Failed to resolve ${url}: ${e}`);
+          } catch {
             return null;
           }
         }
       ]
     ],
     fixers: [
-      (url) => {
-        // Handle https/http or cdn variations
-        if (url.includes("http://")) return url.replace("http://", "https://");
-        return url;
-      }
-    ]
+      (url) => url.includes("http://") ? url.replace("http://", "https://") : url
+    ],
+    parsePosts: (root) => {
+      // Select all posts in CandidShiny threads
+      const postElements = root.querySelectorAll("article.message, .message");
+      const posts = [];
+      postElements.forEach((el) => {
+        const postId = el.dataset.postId || el.id || null;
+        if (!postId) return;
+
+        const postNumber = el.querySelector(".message-number")?.innerText.replace("#", "").trim() || postId;
+        const content = el.querySelector(".bbWrapper, .message-content")?.innerHTML || "";
+        const spoilers = [...el.querySelectorAll(".spoiler")].map(s => s.innerText.trim());
+
+        posts.push({
+          post: el,
+          postId,
+          postNumber,
+          content,
+          textContent: el.innerText,
+          spoilers,
+          contentContainer: el
+        });
+      });
+      return posts;
+    }
   };
 
   // Register plugin with LinkMasterΨ2
