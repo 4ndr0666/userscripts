@@ -1,95 +1,83 @@
-# AGENTS.md
+# Codex Work Order: LinkMasterΨ2 Flarum & General Media Scrape Fix
 
-## Agent Directive: Adapt `LinkMasterΨ2` for `forum.candidshiny.com`
+## Objective
+Enhance the existing `4ndr0tools - LinkMasterΨ2` userscript to correctly detect posts and collect media on **forum.candidshiny.com** (Flarum) and improve general media scraping across arbitrary pages.
 
-### Objective
-Update the `LinkMasterΨ2` userscript so that it fully supports scraping, previewing, checking, repairing, and downloading links from posts on `forum.candidshiny.com` (a Flarum-based forum). Maintain full feature parity with the existing functionality.
+---
 
-### Scope
-The agent must:
+## Tasks
 
-1. Detect and process all posts in the forum thread.
-2. Parse media links from each post.
-3. Populate the HUD correctly for:
-   - Scrape panel
-   - Check panel
-   - Export / Copy All URLs
-   - Scan / Repair URLs
-   - m3u8 stream analysis
-4. Ensure plugin fixers and generic media detection are fully functional.
+### 1. Post Detection Fix
+- Update `processPost` to reliably detect Flarum posts:
+  - Selector: `"article.CommentPost.Post"`
+  - Include `closest` fallback for dynamically nested elements.
+- Ensure `MutationObserver` triggers after dynamically loaded posts:
+  - Use `{ childList: true, subtree: true }` configuration.
+  - Add a small delay or `requestIdleCallback` to allow client-side rendering.
+- After detecting a post:
+  - Immediately reset resolved cache: `resetResolvedCache()`.
+  - Trigger HUD refresh if open: `setHudTab(currentTab)`.
 
-### Technical Details
+---
 
-#### 1. Post Detection
-- Current `LinkMasterΨ2` targets `.message-attribution-opposite`.
-- On `forum.candidshiny.com`, posts use:
-  ```html
-  <article class="CommentPost Post Post--by-start-user">
+### 2. Generic Media Collection
+- Expand `collectGenericMediaResources`:
+  - Accept `parsedPost.contentContainer` or fallback to the `post` node.
+  - Detect `<video>`, `<audio>` tags and their `<source>` children.
+  - Detect `<a>` tags with extensions `.mp4`, `.webm`, `.mp3`, `.jpg`, `.jpeg`, `.png`, `.gif`.
+- Ensure generic resources are appended to `parsedHosts` with proper folder names.
+- Log number of generic media resources detected per post for debug.
 
-	•	Task: Update post selection to:
+---
 
-document.querySelectorAll("article.CommentPost.Post")
+### 3. HTML Parsing Improvements
+- In `parsePost`:
+  - Ensure `.Post-body` exists and includes inner content.
+  - Avoid stripping `.Post-actions` or other nested nodes prematurely.
+- Adjust `collectSpoilers` to handle shadow DOM or deeply nested elements.
+- Confirm that parsed post includes `postId`, `postNumber`, `contentContainer`.
 
+---
 
+### 4. General Mode Improvements
+- For pages in general mode:
+  - Parse `document.body.innerHTML` to detect any media `<a>` links and `<video>/<audio>` sources.
+  - Include generic fallback host with type `"Links"`.
+  - Populate a virtual post object to feed into `parsedPosts`.
+- Update HUD after adding virtual general mode post.
 
-2. Post Content
-	•	The content container is .Post-body.
-	•	Update parsers.thread.parsePost to select:
+---
 
-const messageContent = post.querySelector(".Post-body");
+### 5. HUD & Scrape Tab Updates
+- Ensure scrape tab immediately refreshes after post detection.
+- Bind resolved links and generic resources to HUD elements.
+- Verify `parsedPosts` contains posts with resolved links and hosts.
+- Include logging of parsed posts count and detected hosts.
 
+---
 
+### 6. Debugging & Logging
+- Insert console logs:
+  - Post processed: `console.log("Processing postId:", parsedPost?.postId, "hosts:", parsedHosts.length);`
+  - Content container snapshot: `console.log(parsedPost.contentContainer?.innerHTML.slice(0,200));`
+  - Generic resources found: `console.log("Generic resources found:", genericResources);`
+- Ensure MutationObserver fires for dynamically added nodes.
 
-3. Footer & Actions
-	•	Update references to footer and actions for compatibility:
+---
 
-const footer = post.querySelector(".Post-footer");
-const actions = post.querySelector(".Post-actions"); // optional for buttons
+### Deliverables
+- Updated `processPost` and `collectGenericMediaResources` functions.
+- MutationObserver configured to handle dynamically loaded posts.
+- HUD refresh logic after post detection.
+- Properly appended generic media resources.
+- Debug logging for all new detection steps.
+- Full compatibility with `forum.candidshiny.com` and general mode pages.
 
+---
 
-
-4. Spoilers & Embedded Media
-	•	Verify and adjust selectors for:
-	•	spoilers
-	•	embedded images/videos
-	•	links hidden within HTML elements specific to candidshiny
-	•	Ensure parsing does not remove necessary elements.
-
-5. Generic Media Detection
-	•	Enable automatic detection of <video> and <audio> elements within .Post-body for posts that lack host-specific resolvers.
-
-6. Post Mutation Handling
-	•	Update MutationObserver for dynamically loaded posts:
-
-observer.observe(document.body, { childList: true, subtree: true });
-
-
-	•	Ensure new posts added to the DOM are automatically processed and HUD updates correctly.
-
-7. HUD Integration
-	•	All panels, buttons, and tooltips must work without modification.
-	•	Existing download logic, status chips, copy/export, m3u8 scanning, and repair functionality must integrate seamlessly.
-
-Deliverables
-	1.	Fully updated parsers.thread.parsePost function tailored to forum.candidshiny.com.
-	2.	Adjusted post detection logic for initial load and dynamically appended posts.
-	3.	Verified integration with:
-	•	resolvePostLinks
-	•	downloadPost
-	•	scanAndRepairResolvedUrls
-	•	scanM3u8Streams
-	•	copyAllResolvedUrls and exportResolvedUrls
-	4.	All updates should preserve backward compatibility for other supported forums.
-
-Constraints
-	•	Do not remove any existing features.
-	•	Ensure all async operations (HTTP requests, parsing, resolving) remain properly awaited and HUD progress bars update accurately.
-	•	Maintain all plugin loading and fixer logic.
-
-Success Criteria
-	•	All posts on forum.candidshiny.com are detected and parsed correctly.
-	•	Media links within posts are detected, categorized, and available for all HUD features.
-	•	Download, check, copy/export, and scan/repair features function without errors.
-	•	Generic media detection works for uncategorized media.
-	•	HUD remains fully interactive and responsive.
-
+### Notes
+- Maintain existing LinkMasterΨ2 functionality for all other hosts and resolvers.
+- Do not remove any preexisting parsing, resolver, or HUD logic.
+- Ensure any async operations are properly awaited.
+- Preserve strict Type/Host/Resolved tracking in `parsedPosts`.
+- Provide comments in code explaining each enhancement for academic traceability.
