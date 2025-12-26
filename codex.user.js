@@ -35,6 +35,11 @@ window.isFF = typeof InstallTrigger !== "undefined";
 window.logs = [];
 const globalConfig = {}; // Populated by loadSettings()
 const HUD_TAG = "[Ψ-4ndr0666]";
+const LOG_TAGS = {
+  copyAll: "[Ψ-4ndr0666:CopyAll]",
+  brokenFix: "[Ψ-4ndr0666:BrokenFix]",
+  m3u8: "[Ψ-4ndr0666:M3U8]",
+};
 
 const settings = {
   naming: {
@@ -1418,7 +1423,29 @@ const createBulkStatus = () => {
   return { statusLabel, totalPB, filePB, wrapper };
 };
 
-async function copyAllResolvedUrls(statusContainer) {
+const getResourceType = (url) => {
+  const ext = h.ext(url);
+  if (!ext) return "other";
+  if (settings.extensions.image.includes(ext)) return "image";
+  if (settings.extensions.video.includes(ext)) return "video";
+  if (settings.extensions.documents.includes(ext)) return "document";
+  if (settings.extensions.compressed.includes(ext)) return "compressed";
+  return "other";
+};
+
+const getFilterLabel = (filter) => {
+  const labels = {
+    all: "all",
+    images: "image",
+    videos: "video",
+    documents: "document",
+    compressed: "compressed",
+  };
+  return labels[filter] || filter;
+};
+
+async function copyAllResolvedUrls(statusContainer, options = {}) {
+  const { filter = "all", format = "text" } = options;
   if (!parsedPosts.length) {
     showToast("No posts available to resolve.");
     return;
@@ -1431,16 +1458,49 @@ async function copyAllResolvedUrls(statusContainer) {
   const resolved = await resolveAllPosts(parsedPosts, statusLabel, totalPB, { respectSkipDuplicates: true });
   const unique = h.unique(resolved.filter((r) => r.url), "url");
 
-  if (!unique.length) {
-    h.ui.setText(statusLabel, "No URLs resolved to copy.");
-    log.info("bulk", `${HUD_TAG} No URLs available to copy.`, "HUD");
+  const filtered = unique.filter((r) => {
+    const type = getResourceType(r.url);
+    if (filter === "all") return true;
+    if (filter === "images") return type === "image";
+    if (filter === "videos") return type === "video";
+    if (filter === "documents") return type === "document";
+    if (filter === "compressed") return type === "compressed";
+    return true;
+  });
+
+  if (!filtered.length) {
+    h.ui.setText(statusLabel, `No ${getFilterLabel(filter)} URLs resolved to copy.`);
+    log.info("bulk", `${LOG_TAGS.copyAll} No URLs available to copy for filter: ${filter}.`, "HUD");
     return;
   }
 
-  GM_setClipboard(unique.map((r) => r.url).join("\n"));
-  h.ui.setText(statusLabel, `Copied ${unique.length} unique URLs to clipboard.`);
-  showToast(`Copied ${unique.length} URL(s)!`);
-  log.info("bulk", `${HUD_TAG} Copied ${unique.length} resolved URL(s)`, "HUD");
+  let clipboardPayload = filtered.map((r) => r.url).join("\n");
+  const formatLabel = format === "json" ? "JSON" : format === "markdown" ? "Markdown" : "plaintext";
+
+  if (format === "json") {
+    clipboardPayload = JSON.stringify(
+      filtered.map((r) => ({
+        url: r.url,
+        type: getResourceType(r.url),
+        host: r.host?.name || r.host || null,
+        folderName: r.folderName || null,
+        original: r.original || null,
+      })),
+      null,
+      2
+    );
+  } else if (format === "markdown") {
+    clipboardPayload = filtered.map((r) => `[${h.basename(r.url)}](${r.url})`).join("\n");
+  }
+
+  GM_setClipboard(clipboardPayload);
+  h.ui.setText(statusLabel, `Copied ${filtered.length} ${getFilterLabel(filter)} URL(s) as ${formatLabel}.`);
+  showToast(`Copied ${filtered.length} URL(s)!`);
+  log.info(
+    "bulk",
+    `${LOG_TAGS.copyAll} Copied ${filtered.length} ${getFilterLabel(filter)} resolved URL(s) as ${formatLabel}`,
+    "HUD"
+  );
 }
 
 async function scanAndRepairResolvedUrls(statusContainer) {
@@ -1457,7 +1517,7 @@ async function scanAndRepairResolvedUrls(statusContainer) {
   const unique = h.unique(resolved.filter((r) => r.url), "url");
   if (!unique.length) {
     h.ui.setText(statusLabel, "No URLs found for scanning.");
-    log.info("bulk", `${HUD_TAG} No URLs available to scan.`, "HUD");
+    log.info("bulk", `${LOG_TAGS.brokenFix} No URLs available to scan.`, "HUD");
     return;
   }
 
@@ -1478,7 +1538,7 @@ async function scanAndRepairResolvedUrls(statusContainer) {
   }
   h.ui.setText(statusLabel, `Scan complete. ${successful.length} repaired / ${unique.length} checked.`);
   showToast(`Scan complete. ${successful.length} fixed link(s).`);
-  log.info("bulk", `${HUD_TAG} Scan/Repair complete: ${successful.length} repaired of ${unique.length}`, "HUD");
+  log.info("bulk", `${LOG_TAGS.brokenFix} Scan/Repair complete: ${successful.length} repaired of ${unique.length}`, "HUD");
   return repaired;
 }
 
@@ -1794,8 +1854,26 @@ const init = {
           <button id="scrape-select-none" class="hud-button">Select None</button>
           <button id="scrape-download-selected" class="hud-btn active" style="margin-left: auto;">Download Selected</button>
       </div>
-      <div style="display: flex; gap: 0.8em; align-items: center; margin: -0.4em 0 0.9em 0;">
+      <div style="display: flex; gap: 0.8em; align-items: center; margin: -0.4em 0 0.9em 0; flex-wrap: wrap;">
           <button id="copy-all-urls" class="hud-btn">📋 Copy All URLs</button>
+          <label style="display:flex; align-items:center; gap:6px; font-size: 0.9em; color: var(--text-secondary);">
+            Filter:
+            <select id="copy-filter" style="background: var(--panel-bg-solid); color: var(--text-primary); border: 1px solid var(--panel-border); border-radius: 6px; padding: 0.3em 0.5em;">
+              <option value="all">All</option>
+              <option value="images">Images only</option>
+              <option value="videos">Videos only</option>
+              <option value="documents">Documents only</option>
+              <option value="compressed">Compressed only</option>
+            </select>
+          </label>
+          <label style="display:flex; align-items:center; gap:6px; font-size: 0.9em; color: var(--text-secondary);">
+            Format:
+            <select id="copy-format" style="background: var(--panel-bg-solid); color: var(--text-primary); border: 1px solid var(--panel-border); border-radius: 6px; padding: 0.3em 0.5em;">
+              <option value="text">Plaintext</option>
+              <option value="json">JSON</option>
+              <option value="markdown">Markdown</option>
+            </select>
+          </label>
           <button id="scan-repair-urls" class="hud-btn">🔧 Scan/Repair URLs</button>
           <div id="bulk-status" style="flex:1; min-height: 32px;"></div>
       </div>
@@ -1900,7 +1978,12 @@ const init = {
       }
     };
     const bulkStatus = contentPanel.querySelector('#bulk-status');
-    contentPanel.querySelector('#copy-all-urls').onclick = () => copyAllResolvedUrls(bulkStatus);
+    const copyFilterSelect = contentPanel.querySelector('#copy-filter');
+    const copyFormatSelect = contentPanel.querySelector('#copy-format');
+    contentPanel.querySelector('#copy-all-urls').onclick = () => copyAllResolvedUrls(bulkStatus, {
+      filter: copyFilterSelect?.value || "all",
+      format: copyFormatSelect?.value || "text",
+    });
     contentPanel.querySelector('#scan-repair-urls').onclick = () => scanAndRepairResolvedUrls(bulkStatus);
   }
 
