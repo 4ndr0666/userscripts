@@ -1503,6 +1503,175 @@ async function copyAllResolvedUrls(statusContainer, options = {}) {
   );
 }
 
+const exportModalState = { instance: null };
+
+function closeExportModal() {
+  exportModalState.instance?.remove();
+  exportModalState.instance = null;
+}
+
+function showExportModal(statusContainer) {
+  closeExportModal();
+  const backdrop = document.createElement("div");
+  backdrop.className = "hud-modal-backdrop";
+  const modal = document.createElement("div");
+  modal.className = "hud-modal";
+  modal.innerHTML = `
+    <h3>Export Resolved Links</h3>
+    <div class="hud-form-row">
+      <label for="export-filter">Filter by type</label>
+      <select id="export-filter">
+        <option value="all">All</option>
+        <option value="images">Images only</option>
+        <option value="videos">Videos only</option>
+        <option value="documents">Documents only</option>
+        <option value="compressed">Compressed only</option>
+      </select>
+    </div>
+    <div class="hud-form-row">
+      <label for="export-detail">Include</label>
+      <select id="export-detail">
+        <option value="links">Links only</option>
+        <option value="context">Links + Context</option>
+        <option value="thumbnails">Links + Thumbnails</option>
+      </select>
+    </div>
+    <div class="hud-form-row">
+      <label for="export-format">Format</label>
+      <select id="export-format">
+        <option value="csv">CSV</option>
+        <option value="json">JSON</option>
+        <option value="markdown">Markdown</option>
+      </select>
+    </div>
+    <div class="hud-modal-actions">
+      <button class="hud-button" id="export-cancel">Cancel</button>
+      <button class="hud-btn active" id="export-confirm">Export</button>
+    </div>
+  `;
+  backdrop.appendChild(modal);
+
+  backdrop.addEventListener("click", (e) => {
+    if (e.target === backdrop) closeExportModal();
+  });
+  modal.querySelector("#export-cancel").onclick = closeExportModal;
+  modal.querySelector("#export-confirm").onclick = () => {
+    const filter = modal.querySelector("#export-filter").value;
+    const format = modal.querySelector("#export-format").value;
+    const detail = modal.querySelector("#export-detail").value;
+    closeExportModal();
+    exportResolvedUrls(statusContainer, { filter, format, detail });
+  };
+
+  exportModalState.instance = backdrop;
+  document.body.appendChild(backdrop);
+}
+
+function buildExportRows(resolved, detail) {
+  const includeContext = detail !== "links";
+  const includeThumbs = detail === "thumbnails";
+  return resolved.map((r) => ({
+    url: r.url,
+    host: r.host?.name || r.host?.id || r.host || null,
+    postNumber: r.postNumber ?? null,
+    folderName: r.folderName || null,
+    original: r.original || null,
+    thumbnail: includeThumbs ? r.thumbnail || r.thumb || null : null
+  }));
+}
+
+function exportAsCsv(rows, detail) {
+  const includeContext = detail !== "links";
+  const includeThumbs = detail === "thumbnails";
+  const headers = ["url"];
+  if (includeContext) headers.push("host", "postNumber", "folderName", "original");
+  if (includeThumbs) headers.push("thumbnail");
+  const escapeCell = (cell) => {
+    if (cell === null || cell === undefined) return "";
+    const str = String(cell).replace(/"/g, '""');
+    return `"${str}"`;
+  };
+  const lines = [headers.join(",")];
+  for (const row of rows) {
+    const values = headers.map((key) => escapeCell(row[key] ?? ""));
+    lines.push(values.join(","));
+  }
+  return lines.join("\n");
+}
+
+function exportAsMarkdown(rows, detail) {
+  const includeContext = detail !== "links";
+  const includeThumbs = detail === "thumbnails";
+  return rows
+    .map((row) => {
+      const title = h.basename(row.url) || row.url;
+      const thumb = includeThumbs && row.thumbnail ? `![thumb](${row.thumbnail}) ` : "";
+      const context = includeContext
+        ? ` — host: ${row.host || "unknown"}${row.postNumber ? ` | post #${row.postNumber}` : ""}${
+            row.folderName ? ` | folder: ${row.folderName}` : ""
+          }`
+        : "";
+      return `${thumb}- [${title}](${row.url})${context}`;
+    })
+    .join("\n");
+}
+
+function exportAsJson(rows) {
+  return JSON.stringify(rows, null, 2);
+}
+
+async function exportResolvedUrls(statusContainer, options = {}) {
+  const { filter = "all", format = "csv", detail = "links" } = options;
+  if (!parsedPosts.length) {
+    showToast("No posts available to resolve.");
+    return;
+  }
+  statusContainer.innerHTML = "";
+  const { statusLabel, totalPB, wrapper } = createBulkStatus();
+  statusContainer.appendChild(wrapper);
+  h.ui.setText(statusLabel, "Resolving links for export...");
+
+  const resolved = await resolveAllPosts(parsedPosts, statusLabel, totalPB, { respectSkipDuplicates: true });
+  const unique = h.unique(resolved.filter((r) => r.url), "url");
+
+  const filtered = unique.filter((r) => {
+    const type = getResourceType(r.url);
+    if (filter === "all") return true;
+    if (filter === "images") return type === "image";
+    if (filter === "videos") return type === "video";
+    if (filter === "documents") return type === "document";
+    if (filter === "compressed") return type === "compressed";
+    return true;
+  });
+
+  if (!filtered.length) {
+    h.ui.setText(statusLabel, `No ${getFilterLabel(filter)} URLs resolved to export.`);
+    log.info("bulk", `${HUD_TAG} No URLs available to export for filter: ${filter}.`, "HUD");
+    return;
+  }
+
+  const rows = buildExportRows(filtered, detail);
+  let payload = "";
+  let extension = "txt";
+  if (format === "csv") {
+    payload = exportAsCsv(rows, detail);
+    extension = "csv";
+  } else if (format === "markdown") {
+    payload = exportAsMarkdown(rows, detail);
+    extension = "md";
+  } else {
+    payload = exportAsJson(rows);
+    extension = "json";
+  }
+
+  const blob = new Blob([payload], { type: "text/plain;charset=utf-8" });
+  const filename = `linkmaster-export-${Date.now()}.${extension}`;
+  saveAs(blob, filename);
+  h.ui.setText(statusLabel, `Exported ${rows.length} ${getFilterLabel(filter)} URL(s) to ${filename}.`);
+  showToast("Export complete.");
+  log.info("bulk", `${HUD_TAG} Exported ${rows.length} entries as ${format}`, "HUD");
+}
+
 async function scanAndRepairResolvedUrls(statusContainer) {
   if (!parsedPosts.length) {
     showToast("No posts available to scan.");
@@ -1542,6 +1711,124 @@ async function scanAndRepairResolvedUrls(statusContainer) {
   return repaired;
 }
 
+function buildVariantLabel(variant) {
+  const res = variant.attributes?.RESOLUTION;
+  const bandwidth = variant.attributes?.BANDWIDTH;
+  const resolution = res ? `${res.width}x${res.height}` : "unknown";
+  return `${resolution} @ ${bandwidth ? Math.round(bandwidth / 1000) + "kbps" : "?"}`;
+}
+
+function buildFfmpegCommand(url, streamUrl) {
+  return `ffmpeg -i "${streamUrl}" -c copy -map 0 -f mp4 "${h.basename(url).replace(/\.m3u8.*/, "") || "stream"}.mp4"`;
+}
+
+async function scanM3u8Streams(statusContainer) {
+  if (!parsedPosts.length) {
+    showToast("No posts available to scan.");
+    return;
+  }
+  statusContainer.innerHTML = "";
+  const { statusLabel, totalPB, filePB, wrapper } = createBulkStatus();
+  statusContainer.appendChild(wrapper);
+  h.ui.setText(statusLabel, "Resolving links for m3u8 scan...");
+
+  const resolved = await resolveAllPosts(parsedPosts, statusLabel, totalPB, { respectSkipDuplicates: true });
+  const unique = h.unique(resolved.filter((r) => r.url && r.url.includes(".m3u8")), "url");
+  if (!unique.length) {
+    h.ui.setText(statusLabel, "No m3u8 URLs found.");
+    log.info("bulk", `${LOG_TAGS.m3u8} No m3u8 streams discovered.`, "HUD");
+    return;
+  }
+
+  const resultsPanel = document.createElement("div");
+  resultsPanel.style.marginTop = "0.8em";
+  statusContainer.appendChild(resultsPanel);
+
+  for (let i = 0; i < unique.length; i++) {
+    const link = unique[i];
+    h.ui.setText(statusLabel, `Analyzing (${i + 1}/${unique.length}): ${h.limit(link.url, 80)}`);
+    filePB.style.width = `${Math.round(((i + 1) / unique.length) * 100)}%`;
+    if (totalPB) totalPB.style.width = `${Math.round(((i + 1) / unique.length) * 100)}%`;
+
+    const entry = document.createElement("div");
+    entry.style.border = "1px solid var(--panel-border)";
+    entry.style.padding = "0.7em";
+    entry.style.borderRadius = "0.7em";
+    entry.style.marginBottom = "0.6em";
+    entry.innerHTML = `<div style="font-weight:700; font-family: var(--font-hud); margin-bottom: 0.4em;">${h.limit(link.url, 120)}</div>`;
+
+    try {
+      const { responseText } = await h.http.gm_promise({ method: "GET", url: link.url, responseType: "text" });
+      const Parser = window.m3u8Parser?.Parser || (typeof m3u8Parser !== "undefined" ? m3u8Parser.Parser : null);
+      if (!Parser) throw new Error("m3u8 parser unavailable");
+      const parser = new Parser();
+      parser.push(responseText);
+      parser.end();
+      const manifest = parser.manifest;
+      const playlists = manifest?.playlists || [];
+      if (!playlists.length) {
+        entry.innerHTML += `<div>No variants found; copied base URL.</div>`;
+        const baseCommand = buildFfmpegCommand(link.url, link.url);
+        const copyBtn = document.createElement("button");
+        copyBtn.className = "hud-btn";
+        copyBtn.textContent = "Copy ffmpeg";
+        copyBtn.onclick = () => {
+          GM_setClipboard(baseCommand);
+          showToast("ffmpeg command copied.");
+        };
+        entry.appendChild(copyBtn);
+        resultsPanel.appendChild(entry);
+        continue;
+      }
+
+      playlists.sort((a, b) => (b.attributes?.BANDWIDTH || 0) - (a.attributes?.BANDWIDTH || 0));
+      const defaultVariant = playlists[0];
+
+      const select = document.createElement("select");
+      select.style.background = "var(--panel-bg)";
+      select.style.color = "var(--text-primary)";
+      select.style.border = "1px solid var(--panel-border)";
+      select.style.borderRadius = "0.4em";
+      select.style.padding = "0.3em";
+      select.style.marginRight = "0.5em";
+
+      playlists.forEach((variant, idx) => {
+        const option = document.createElement("option");
+        option.value = idx;
+        option.textContent = buildVariantLabel(variant);
+        select.appendChild(option);
+      });
+
+      const copyBtn = document.createElement("button");
+      copyBtn.className = "hud-btn";
+      copyBtn.textContent = "Copy ffmpeg";
+
+      const updateCommand = () => {
+        const chosen = playlists[Number(select.value)] || defaultVariant;
+        const streamUrl = new URL(chosen.uri, link.url).toString();
+        const cmd = buildFfmpegCommand(link.url, streamUrl);
+        copyBtn.onclick = () => {
+          GM_setClipboard(cmd);
+          showToast("ffmpeg command copied.");
+          log.info("bulk", `${LOG_TAGS.m3u8} Copied ffmpeg for ${streamUrl}`, "HUD");
+        };
+      };
+
+      updateCommand();
+      entry.appendChild(select);
+      entry.appendChild(copyBtn);
+      resultsPanel.appendChild(entry);
+    } catch (error) {
+      entry.innerHTML += `<div style="color:#ffb3b3;">Error parsing playlist: ${error}</div>`;
+      log.warn?.("bulk", `${LOG_TAGS.m3u8} Failed to parse ${link.url}: ${error}`, "HUD");
+      resultsPanel.appendChild(entry);
+    }
+  }
+
+  h.ui.setText(statusLabel, `Analyzed ${unique.length} m3u8 stream(s).`);
+  log.info("bulk", `${LOG_TAGS.m3u8} Completed stream analysis for ${unique.length} URLs`, "HUD");
+}
+
 async function resolvePostLinks(postData, statusLabel) {
   const { parsedPost, parsedHosts, resolvers, getSettingsCB, enabledHostsCB } = postData;
   const { postId, postNumber } = parsedPost;
@@ -1578,7 +1865,15 @@ async function resolvePostLinks(postData, statusLabel) {
             if (h.isNullOrUndef(r)) continue;
 
             const addResolved = (url, folderName) => {
-              const item = h.isObject(url) ? { ...url, host, original: resource } : { url, host, original: resource, folderName };
+              const baseItem = h.isObject(url) ? url : { url, folderName };
+              const item = {
+                ...baseItem,
+                host,
+                original: baseItem.original || resource,
+                folderName: baseItem.folderName ?? folderName ?? null,
+                postId,
+                postNumber
+              };
               allResolved.push(item);
               if (statusLabel) log.post.info(postId, `::Resolved::: ${item.url}`, postNumber);
             };
@@ -1788,8 +2083,15 @@ const init = {
   .chip.unknown{color:#fffbe6;border-color:#b5b500;background:#4c4b12;}
   .hud-toast{position:fixed;z-index:calc(var(--hud-z)+2000);bottom:3.4em;right:3.1em;background:#111b1bcc;color:var(--primary-cyan);font-family:var(--font-hud);font-size:1em;border-radius:0.8em;border:2px solid var(--panel-border-bright);box-shadow:0 0 18px var(--panel-glow-intense);padding:1.15em 2.2em;opacity:0.97;pointer-events:none;transition:opacity 220ms;user-select:none;}
   .previews-container{display:none; flex-wrap:wrap; gap:10px; margin-top:10px; padding-top:10px; border-top:1px solid var(--panel-border);}
-  .previews-container img, .previews-container video { max-width:120px; max-height:120px; border:2px solid var(--panel-border); border-radius:4px; object-fit:cover; }
-  `;
+    .previews-container img, .previews-container video { max-width:120px; max-height:120px; border:2px solid var(--panel-border); border-radius:4px; object-fit:cover; }
+    .hud-modal-backdrop{position:fixed;inset:0;z-index:calc(var(--hud-z)+500);background:rgba(0,0,0,0.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;}
+    .hud-modal{background:var(--panel-bg-solid);border:2px solid var(--panel-border);box-shadow:0 0 24px var(--panel-glow-intense);border-radius:1em;padding:1.4em;min-width:360px;max-width:90vw;color:var(--text-primary);font-family:var(--font-body);}
+    .hud-modal h3{margin:0 0 0.9em 0;font-family:var(--font-hud);letter-spacing:0.08em;color:var(--primary-cyan);}
+    .hud-modal .hud-form-row{display:flex;flex-direction:column;gap:0.35em;margin-bottom:0.9em;font-size:0.95em;}
+    .hud-modal label{color:var(--text-secondary);}
+    .hud-modal select{background:var(--panel-bg);color:var(--text-primary);border:1.5px solid var(--panel-border);border-radius:0.5em;padding:0.45em;}
+    .hud-modal .hud-modal-actions{display:flex;gap:0.6em;justify-content:flex-end;margin-top:0.4em;}
+    `;
   const psiGlyphSVG = `<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" class="glyph" fill="none" stroke="var(--accent-cyan)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path class="glyph-ring-1" d="M 64,12 A 52,52 0 1 1 63.9,12 Z" stroke-dasharray="21.78 21.78" stroke-width="2" /><path class="glyph-ring-2" d="M 64,20 A 44,44 0 1 1 63.9,20 Z" stroke-dasharray="10 10" stroke-width="1.5" opacity="0.7" /><path class="glyph-hex" d="M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z" /><text x="64" y="67" text-anchor="middle" dominant-baseline="middle" fill="var(--accent-cyan)" stroke="none" font-size="56" font-weight="700" font-family="'Cinzel Decorative', serif" class="glyph-core-psi">Ψ</text></svg>`;
 
   function showHudPanel() {
@@ -1874,7 +2176,9 @@ const init = {
               <option value="markdown">Markdown</option>
             </select>
           </label>
+          <button id="export-resolved" class="hud-btn">📤 Export</button>
           <button id="scan-repair-urls" class="hud-btn">🔧 Scan/Repair URLs</button>
+          <button id="scan-streams" class="hud-btn">📡 Scan Streams</button>
           <div id="bulk-status" style="flex:1; min-height: 32px;"></div>
       </div>
       <div id="posts-container"></div>`;
@@ -1984,7 +2288,9 @@ const init = {
       filter: copyFilterSelect?.value || "all",
       format: copyFormatSelect?.value || "text",
     });
+    contentPanel.querySelector('#export-resolved').onclick = () => showExportModal(bulkStatus);
     contentPanel.querySelector('#scan-repair-urls').onclick = () => scanAndRepairResolvedUrls(bulkStatus);
+    contentPanel.querySelector('#scan-streams').onclick = () => scanM3u8Streams(bulkStatus);
   }
 
   function renderCheckPanel(contentPanel) {
