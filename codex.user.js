@@ -34,6 +34,7 @@ const http = window.GM_xmlhttpRequest;
 window.isFF = typeof InstallTrigger !== "undefined";
 window.logs = [];
 const globalConfig = {}; // Populated by loadSettings()
+const HUD_TAG = "[Ψ-4ndr0666]";
 
 const settings = {
   naming: {
@@ -1321,6 +1322,166 @@ const setProcessing = (isProcessing, postId) => {
   }
 };
 
+const buildGenericMediaHost = (postId, resources) => ({
+  name: "Generic Media",
+  type: "single",
+  category: "Links",
+  resources,
+  enabled: true,
+  id: `generic-${postId}-${Math.round(Math.random() * Number.MAX_SAFE_INTEGER)}`
+});
+
+const collectGenericMediaResources = () => {
+  const mediaExtensions = new Set(["mp4", "webm", "mkv", "mp3", "m4v", "m4a", "aac", "wav", "flac"]);
+  const collected = [];
+
+  const pushIfValid = (url) => {
+    if (!url) return;
+    try {
+      const normalized = url.split("?")[0];
+      const ext = h.ext(normalized);
+      if (ext && mediaExtensions.has(ext.toLowerCase())) {
+        collected.push(normalized);
+      }
+    } catch (e) {
+      log.info("generic", `${HUD_TAG} Error normalizing media url ${url}: ${e.message}`, "HUD");
+    }
+  };
+
+  document.querySelectorAll("video[src], audio[src]").forEach((el) => pushIfValid(el.getAttribute("src")));
+  document.querySelectorAll("video source[src], audio source[src], source[src]").forEach((el) => pushIfValid(el.getAttribute("src")));
+  document.querySelectorAll('a[href$=".mp4"], a[href$=".webm"], a[href$=".mp3"], a[href$=".m4v"], a[href$=".m4a"], a[href$=".aac"], a[href$=".wav"], a[href$=".flac"]').forEach((a) => {
+    pushIfValid(a.getAttribute("href"));
+  });
+
+  return h.unique(collected);
+};
+
+async function resolveAllPosts(postDatas, statusLabel, totalPB, options = {}) {
+  const { respectSkipDuplicates = true } = options;
+  const aggregate = [];
+  const totalTargets = postDatas.reduce((acc, postData) => acc + postData.enabledHostsCB(postData.parsedHosts).reduce((sum, hst) => sum + hst.resources.length, 0), 0) || 1;
+  let processed = 0;
+
+  for (const postData of postDatas) {
+    const resolved = await resolvePostLinks(postData, statusLabel);
+    const postSettings = typeof postData.getSettingsCB === "function" ? postData.getSettingsCB() : null;
+    const sanitized = respectSkipDuplicates && postSettings?.skipDuplicates ? h.unique(resolved, "url") : resolved;
+
+    aggregate.push(...sanitized);
+    processed += sanitized.length || 0;
+    if (totalPB) totalPB.style.width = `${Math.min(100, Math.round((processed / totalTargets) * 100))}%`;
+  }
+
+  return aggregate;
+}
+
+async function scanAndRepairLink(url) {
+  const buildCandidates = (target) => {
+    const withoutQuery = target.split(/[?#]/)[0];
+    const swappedProtocol = target.startsWith("https://") ? target.replace("https://", "http://") : target.replace("http://", "https://");
+    const candidates = [target, withoutQuery, swappedProtocol];
+
+    if (/bunkrr?r?\./i.test(target) && target.includes("/v/")) {
+      candidates.push(target.replace("/v/", "/d/"));
+    }
+    if (/cyberdrop\./i.test(target) && target.includes("/a/")) {
+      candidates.push(target.replace("/a/", "/e/"));
+    }
+    return h.unique(candidates.filter(Boolean));
+  };
+
+  const tryHead = async (target) => {
+    try {
+      const response = await h.http.gm_promise({ method: "HEAD", url: target, headers: { Referer: window.location.origin } });
+      return { ok: response.status < 400, status: response.status, url: target };
+    } catch (error) {
+      return { ok: false, status: "Error", error: error.toString(), url: target };
+    }
+  };
+
+  const candidates = buildCandidates(url);
+  for (const candidate of candidates) {
+    const result = await tryHead(candidate);
+    if (result.ok) return { original: url, repaired: candidate, status: result.status };
+  }
+  const finalResult = await tryHead(url);
+  return { original: url, repaired: null, status: finalResult.status, error: finalResult.error };
+}
+
+const createBulkStatus = () => {
+  const { el: statusLabel, container } = ui.labels.status.createStatusLabel();
+  const totalPB = ui.pBars.createTotalProgressBar();
+  const filePB = ui.pBars.createFileProgressBar("#15fafa");
+  const wrapper = document.createElement("div");
+  wrapper.append(totalPB, filePB, container);
+  return { statusLabel, totalPB, filePB, wrapper };
+};
+
+async function copyAllResolvedUrls(statusContainer) {
+  if (!parsedPosts.length) {
+    showToast("No posts available to resolve.");
+    return;
+  }
+  statusContainer.innerHTML = "";
+  const { statusLabel, totalPB, wrapper } = createBulkStatus();
+  statusContainer.appendChild(wrapper);
+  h.ui.setText(statusLabel, "Resolving links for clipboard...");
+
+  const resolved = await resolveAllPosts(parsedPosts, statusLabel, totalPB, { respectSkipDuplicates: true });
+  const unique = h.unique(resolved.filter((r) => r.url), "url");
+
+  if (!unique.length) {
+    h.ui.setText(statusLabel, "No URLs resolved to copy.");
+    log.info("bulk", `${HUD_TAG} No URLs available to copy.`, "HUD");
+    return;
+  }
+
+  GM_setClipboard(unique.map((r) => r.url).join("\n"));
+  h.ui.setText(statusLabel, `Copied ${unique.length} unique URLs to clipboard.`);
+  showToast(`Copied ${unique.length} URL(s)!`);
+  log.info("bulk", `${HUD_TAG} Copied ${unique.length} resolved URL(s)`, "HUD");
+}
+
+async function scanAndRepairResolvedUrls(statusContainer) {
+  if (!parsedPosts.length) {
+    showToast("No posts available to scan.");
+    return;
+  }
+  statusContainer.innerHTML = "";
+  const { statusLabel, totalPB, filePB, wrapper } = createBulkStatus();
+  statusContainer.appendChild(wrapper);
+  h.ui.setText(statusLabel, "Resolving links for scan...");
+
+  const resolved = await resolveAllPosts(parsedPosts, statusLabel, totalPB, { respectSkipDuplicates: true });
+  const unique = h.unique(resolved.filter((r) => r.url), "url");
+  if (!unique.length) {
+    h.ui.setText(statusLabel, "No URLs found for scanning.");
+    log.info("bulk", `${HUD_TAG} No URLs available to scan.`, "HUD");
+    return;
+  }
+
+  const repaired = [];
+  if (totalPB) totalPB.style.width = "0%";
+  for (let i = 0; i < unique.length; i++) {
+    const link = unique[i];
+    h.ui.setText(statusLabel, `Scanning (${i + 1}/${unique.length}): ${h.limit(link.url, 80)}`);
+    const result = await scanAndRepairLink(link.url);
+    repaired.push({ ...link, repairedUrl: result.repaired, status: result.status, error: result.error });
+    filePB.style.width = `${Math.round(((i + 1) / unique.length) * 100)}%`;
+    if (totalPB) totalPB.style.width = `${Math.round(((i + 1) / unique.length) * 100)}%`;
+  }
+
+  const successful = repaired.filter((r) => r.repairedUrl);
+  if (successful.length) {
+    GM_setClipboard(successful.map((r) => r.repairedUrl).join("\n"));
+  }
+  h.ui.setText(statusLabel, `Scan complete. ${successful.length} repaired / ${unique.length} checked.`);
+  showToast(`Scan complete. ${successful.length} fixed link(s).`);
+  log.info("bulk", `${HUD_TAG} Scan/Repair complete: ${successful.length} repaired of ${unique.length}`, "HUD");
+  return repaired;
+}
+
 async function resolvePostLinks(postData, statusLabel) {
   const { parsedPost, parsedHosts, resolvers, getSettingsCB, enabledHostsCB } = postData;
   const { postId, postNumber } = parsedPost;
@@ -1328,7 +1489,16 @@ async function resolvePostLinks(postData, statusLabel) {
   const enabledHosts = enabledHostsCB(parsedHosts);
   const allResolved = [];
 
-  for (const host of enabledHosts.filter(h => h.resources.length)) {
+  let hostsToProcess = [...enabledHosts];
+  if (globalConfig.enableGenericMediaDetection && globalConfig.appMode === "general") {
+    const genericResources = collectGenericMediaResources();
+    if (genericResources.length) {
+      hostsToProcess = hostsToProcess.concat(buildGenericMediaHost(postId, genericResources));
+      log.info(postId, `${HUD_TAG} Added ${genericResources.length} generic media source(s)`, "HUD");
+    }
+  }
+
+  for (const host of hostsToProcess.filter(h => h.resources.length)) {
     for (const resource of host.resources) {
       if (statusLabel) h.ui.setText(statusLabel, `Resolving: ${h.limit(resource, 80)}`);
       for (const resolver of resolvers) {
@@ -1624,6 +1794,11 @@ const init = {
           <button id="scrape-select-none" class="hud-button">Select None</button>
           <button id="scrape-download-selected" class="hud-btn active" style="margin-left: auto;">Download Selected</button>
       </div>
+      <div style="display: flex; gap: 0.8em; align-items: center; margin: -0.4em 0 0.9em 0;">
+          <button id="copy-all-urls" class="hud-btn">📋 Copy All URLs</button>
+          <button id="scan-repair-urls" class="hud-btn">🔧 Scan/Repair URLs</button>
+          <div id="bulk-status" style="flex:1; min-height: 32px;"></div>
+      </div>
       <div id="posts-container"></div>`;
     contentPanel.innerHTML = headerHTML;
     const postsContainer = contentPanel.querySelector("#posts-container");
@@ -1724,6 +1899,9 @@ const init = {
         if (postData) await downloadPost(postData, h.element(`#status-area-${postData.parsedPost.postId}`));
       }
     };
+    const bulkStatus = contentPanel.querySelector('#bulk-status');
+    contentPanel.querySelector('#copy-all-urls').onclick = () => copyAllResolvedUrls(bulkStatus);
+    contentPanel.querySelector('#scan-repair-urls').onclick = () => scanAndRepairResolvedUrls(bulkStatus);
   }
 
   function renderCheckPanel(contentPanel) {
@@ -1835,6 +2013,7 @@ const init = {
                 <label><input type="checkbox" id="setting-gen-links" ${globalConfig.defaultGenerateLinks ? 'checked' : ''}> Default to Generate links.txt</label>
                 <label><input type="checkbox" id="setting-gen-log" ${globalConfig.defaultGenerateLog ? 'checked' : ''}> Default to Generate log.txt</label>
                 <label><input type="checkbox" id="setting-skip-dupes" ${globalConfig.defaultSkipDuplicates ? 'checked' : ''}> Default to Skip Duplicates</label>
+                <label><input type="checkbox" id="setting-generic-media" ${globalConfig.enableGenericMediaDetection ? 'checked' : ''}> Enable Generic Media Detection</label>
             </div>
             <button id="save-settings-btn" class="hud-btn active">Save Settings & Reload</button>
         </div>`;
@@ -1846,6 +2025,7 @@ const init = {
       globalConfig.defaultGenerateLinks = contentPanel.querySelector('#setting-gen-links').checked;
       globalConfig.defaultGenerateLog = contentPanel.querySelector('#setting-gen-log').checked;
       globalConfig.defaultSkipDuplicates = contentPanel.querySelector('#setting-skip-dupes').checked;
+      globalConfig.enableGenericMediaDetection = contentPanel.querySelector('#setting-generic-media').checked;
       saveSettings();
     };
   }
@@ -1866,6 +2046,7 @@ const init = {
       defaultGenerateLinks: false,
       defaultGenerateLog: false,
       defaultSkipDuplicates: true,
+      enableGenericMediaDetection: false,
     };
     Object.assign(globalConfig, defaults, saved ? JSON.parse(saved) : {});
   }
