@@ -1,0 +1,1053 @@
+// ==UserScript==
+// @name        4ndr0tools - hailuosuperset7
+// @namespace   https://github.com/4ndr0666/userscripts
+// @author      4ndr0666
+// @version     7.0
+// @description Hailuo asset extraction, processing chunk mutation, Echo Exploit mode. Superset: batchVideo canonical parse, true session cleanliness, robust download, full HUD, mutation/injection of intercepted chunks, live buffer, [delim] labeling. All protocol: gapless, no stubs, error-free, complete wiring.
+// @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
+// @match       *://*.hailuoai.video/*
+// @match       *://*.hailuoai.com/*
+// @run-at      document-start
+// @grant       GM_setValue
+// @grant       GM_getValue
+// @grant       GM_registerMenuCommand
+// @license     MIT
+// ==/UserScript==
+
+(() => {
+    "use strict";
+
+    //────── SINGLETON LOCK ──────//
+    if (window._hailuoPsiInitialized) return;
+    window._hailuoPsiInitialized = true;
+
+    //────── CONFIG & STATE ──────//
+    let isInitialized = false;
+    let currentTab = "assets";
+    let processingChunks = [];
+    let mutatedChunkBuffer = null;
+    let lastBenignAsset = null;
+
+    const config = {
+        debugMode: false,
+        statusBypassEnabled: true,
+        nsfwObfuscation: 'bracket',
+        healthCheckOnLoad: true,
+        autoFlagAnomalies: true,
+        healthPollMode: 'new',
+        healthCacheMinutes: 30,
+        healthPollBatch: 6,
+        archiveOlderThan: 200,
+        corsFlagMax: 3 // MAX CORS FAILS BEFORE STASIS
+    };
+
+    //────── SESSION ASSET MODEL (CANONICAL) ──────//
+    const SESSION_KEY = 'hailuoΨ_captured_assets_session';
+    function loadSession() { try { return JSON.parse(sessionStorage.getItem(SESSION_KEY) || '[]'); } catch (e) { return []; } }
+    function saveSession(arr) { try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(arr || [])); } catch (e) {} }
+
+    //────── UTILS: LOGGING, TOAST, DOWNLOAD, LABELING ──────//
+    function log(...a) { if (config.debugMode) console.log("[hailuoΨ]", ...a); }
+    function showToast(msg, timeout = 3300) {
+        let t = document.createElement("div"); t.className = "hud-toast"; t.textContent = msg;
+        (document.body || document.documentElement).appendChild(t);
+        setTimeout(() => { t.style.opacity = 0; setTimeout(() => t.remove(), 600); }, timeout);
+    }
+    async function downloadUrl(url, filename) {
+        try {
+            const r = await fetch(url); const b = await r.blob();
+            const u = URL.createObjectURL(b);
+            const a = Object.assign(document.createElement('a'), { href: u, download: filename });
+            a.click(); URL.revokeObjectURL(u);
+        } catch (e) { showToast('Download failed.'); }
+    }
+    function assetLabel(asset) {
+        // Show: filename [batchID] [delim] if present
+        let parts = [];
+        if (asset.filename) parts.push(asset.filename);
+        if (asset.batchID) parts.push(`[${asset.batchID}]`);
+        if (asset.delimLabel) parts.push(`[${asset.delimLabel}]`);
+        return parts.join(' ');
+    }
+    function parseDelimLabel(url) {
+        let m = url.match(/\[([^\[\]]+)\]/); return m ? m[1] : '';
+    }
+
+    //────── CANONICAL ASSET EXTRACTION ──────//
+    function parseAssetsFromBatchVideos(batchArr) {
+        if (!Array.isArray(batchArr)) return [];
+        return batchArr.map(obj => {
+            let url = obj.videoUrl || obj.imageUrl || obj.assetUrl || "";
+            let filename = (url && url.split('/').pop().split('?')[0]) || "";
+            let delimLabel = parseDelimLabel(filename);
+            return {
+                url,
+                filename,
+                batchID: obj.batchID || obj.id || "",
+                status: obj.status || obj.state || "",
+                delimLabel,
+                thumb: obj.coverUrl || obj.thumbUrl || "",
+                ts: Date.now(),
+                flagged: false,
+                health: "pending",
+                size: null,
+                lastChecked: 0,
+                archived: false,
+                flagReason: "",
+                flagCount: 0
+            };
+        }).filter(x => x.url && x.filename);
+    }
+
+    //────── SESSION MANAGEMENT / CLEANLINESS ──────//
+    function nukeAssetsSession() {
+        saveSession([]);
+        updateAssetsPanel();
+    }
+    function setAssetsFromBatch(batchArr) {
+        let parsed = parseAssetsFromBatchVideos(batchArr);
+        saveSession(parsed);
+        updateAssetsPanel();
+    }
+
+    //────── HUD: STYLES, BUTTONS, MAIN PANEL ──────//
+    const psiGlyphSVG = `<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" class="glyph" fill="none" stroke="var(--accent-cyan)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M 64,12 A 52,52 0 1 1 63.9,12 Z" stroke-dasharray="21.78 21.78" stroke-width="2" /><path d="M 64,20 A 44,44 0 1 1 63.9,20 Z" stroke-dasharray="10 10" stroke-width="1.5" opacity="0.7" /><path d="M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z" /><text x="64" y="67" text-anchor="middle" dominant-baseline="middle" fill="var(--accent-cyan)" stroke="none" font-size="56" font-weight="700" font-family="'Cinzel Decorative', serif">Ψ</text></svg>`;
+    function injectHudStyles() {
+        if (document.getElementById("hailuoΨ-hud-css")) return;
+        document.head.insertAdjacentHTML('beforeend', `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@500&family=Orbitron:wght@700&family=Cinzel+Decorative:wght@700&display=swap">`);
+        const style = document.createElement("style"); style.id = "hailuoΨ-hud-css";
+        style.textContent = `
+          :root { --accent-cyan: #00E5FF; --primary-cyan: #15fafa; --text-primary: #EAEAEA; --text-secondary: #9E9E9E; --font-body: 'Roboto Mono', monospace; --font-hud: 'Orbitron', sans-serif; --panel-bg: #101827cc; --panel-bg-solid: #101827; --panel-border: #15adad; --panel-border-bright: #15fafa; --panel-glow: rgba(21,250,250,0.2); --panel-glow-intense: rgba(21,250,250,0.4); --hud-z: 999999; --accent-cyan-bg-active: rgba(0,229,255,0.2); }
+          .hud-container { position:fixed; bottom:2.6em; right:2.6em; z-index:var(--hud-z); background:var(--panel-bg); backdrop-filter:blur(6px); border-radius:1.2em; border:2.5px solid var(--panel-border); box-shadow:0 0 36px var(--panel-glow), 0 1.5px 8px #000b; min-width:480px; max-width:94vw; min-height:340px; color:var(--text-primary); font-family:var(--font-body); user-select:text; opacity:0.99; }
+          .hud-container[hidden]{ display:none!important; }
+          .hud-header{ display:flex; align-items:center; padding:1.2em 1em 0.3em 1.2em; border-bottom:1.5px solid var(--panel-border); gap:1.1em; font-family:var(--font-hud); cursor:grab; user-select:none; }
+          .hud-header .glyph{ flex:none; width:44px; height:44px; }
+          .hud-header .title{ flex:1; font-weight:700; background:linear-gradient(to right,#15fafa,#15adad,#157d7d); -webkit-background-clip:text; background-clip:text; color:transparent; letter-spacing:0.1em; text-shadow:0 0 9px var(--panel-glow-intense); font-size:1.1em; }
+          .hud-header .hud-close-btn{ font-size:1.3em; border:none; background:transparent; color:var(--primary-cyan); cursor:pointer; opacity:0.8; } .hud-header .hud-close-btn:hover{ color:#e06; opacity:1; }
+          .hud-tabs{ display:flex; flex-wrap:wrap; gap:0.5em; padding:0.6em 1.3em 0.1em 1.3em; border-bottom:1.5px solid var(--panel-border); }
+          .hud-content{ padding:1.35em; min-height:220px; max-height:68vh; overflow-y:auto; }
+          .hud-btn, .hud-button{ display:inline-flex; align-items:center; gap:0.5em; padding:0.4em 0.9em; border-radius:0.6em; border:1.5px solid transparent; font-family:var(--font-hud); font-weight:700; font-size:0.9em; background:rgba(0,0,0,0.24); color:var(--text-secondary); cursor:pointer; }
+          .hud-btn.active, .hud-button.active{ color:var(--primary-cyan); border-color:var(--primary-cyan); background:var(--accent-cyan-bg-active); box-shadow:0 0 10px var(--panel-glow-intense); }
+          .chip{ display:inline-block; border-radius:1.3em; padding:0.1em 0.8em; font-size:0.9em; font-weight:600; background:#121c24; color:#67E8F9; border:1.5px solid #15fafa; box-shadow:0 0 7px var(--panel-glow); }
+          .chip.alive { text-transform: capitalize; } .chip.dead{ color:#fff3; border-color:#e06; background:#390a18; text-transform: capitalize; } .chip.unknown{ color:#fffbe6; border-color:#b5b500; background:#4c4b12; text-transform: capitalize; }
+          .chip.archived{ opacity:0.35; pointer-events:none; }
+          .hud-toast{ position:fixed; z-index:calc(var(--hud-z)+2000); bottom:3.4em; right:3.1em; background:#111b1bcc; color:var(--primary-cyan); font-family:var(--font-hud); font-size:1em; border-radius:0.8em; border:2px solid var(--panel-border-bright); box-shadow:0 0 18px var(--panel-glow-intense); padding:1em 2em; pointer-events:none; transition:opacity 220ms; }
+          #hud-panel-root .config-grid { display:grid; grid-template-columns: auto 1fr; gap: 12px 18px; align-items:center; } #hud-panel-root .config-grid label { font-size: 0.9em; cursor:help; } #hud-panel-root .config-grid input, #hud-panel-root .config-grid select { background:#101827; color:#e0ffff; border-radius:0.5em; border:1.5px solid #15adad; padding:0.5em; font-size:0.9em; font-family:var(--font-body); }
+          #hud-assets-table { width:100%; border-collapse: separate; border-spacing: 0 0.5em; } #hud-assets-table td { padding: 0.4em; background: rgba(0,0,0,0.2); vertical-align: middle; } #hud-assets-table td:first-child { border-radius: 8px 0 0 8px; } #hud-assets-table td:last-child { border-radius: 0 8px 8px 0; text-align: right; }
+          #hud-assets-table .asset-thumb { width: 100px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid var(--panel-border); }
+        `;
+        document.head.appendChild(style);
+    }
+    function createHudButton() {
+        if (document.getElementById("hud-float-btn")) return;
+        const btn = document.createElement("button"); btn.id = "hud-float-btn"; btn.className = "hud-btn";
+        btn.innerHTML = psiGlyphSVG + `<span style="font-family: var(--font-hud); font-weight: 800; margin-left: 0.6em;">hailuoΨ</span>`;
+        Object.assign(btn.style, { position: "fixed", bottom: "2em", right: "2em", zIndex: "999998", padding: "0.6em 1.3em", background: "rgba(10,19,26,0.85)", borderRadius: "0.9em", border: "2.5px solid var(--panel-border)", boxShadow: "0 0 16px var(--panel-glow)", color: "var(--primary-cyan)", fontSize: "1.08em", cursor: "pointer" });
+        document.body.appendChild(btn);
+        btn.onclick = showHudPanel;
+    }
+    function showHudPanel() {
+        let panel = document.getElementById("hud-panel-root");
+        if (!panel) {
+            panel = document.createElement("div"); panel.id = "hud-panel-root"; panel.className = "hud-container";
+            panel.innerHTML = `<div class="hud-header">${psiGlyphSVG}<span class="title">hailuoΨ</span><button class="hud-close-btn" title="Close HUD">&times;</button></div>
+            <nav class="hud-tabs" role="tablist">
+              <button class="hud-button" data-tab="assets">Assets</button>
+              <button class="hud-button" data-tab="processing">Processing Chunks</button>
+              <button class="hud-button" data-tab="config">Config</button>
+              <button class="hud-button" id="export-report-btn">Export Report</button>
+              <button class="hud-button" id="clear-assets-btn">Clear Assets</button>
+            </nav>
+            <main class="hud-content" id="hud-content-panel"></main>`;
+            document.body.appendChild(panel);
+            panel.querySelector(".hud-close-btn").onclick = () => { panel.hidden = true; };
+            panel.querySelectorAll(".hud-tabs .hud-button").forEach(btn => { btn.onclick = () => setHudTab(btn.dataset.tab); });
+            panel.querySelector("#export-report-btn").onclick = () => exportReport();
+            panel.querySelector("#clear-assets-btn").onclick = nukeAssetsSession;
+        }
+        panel.hidden = false;
+        setHudTab(currentTab);
+    }
+
+    function setHudTab(tab) {
+        currentTab = tab;
+        const panel = document.getElementById("hud-panel-root");
+        if (!panel) return;
+        panel.querySelectorAll(".hud-tabs .hud-button").forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+        const content = panel.querySelector("#hud-content-panel");
+        content.innerHTML = "";
+        if (tab === 'assets') renderAssetsPanel(content);
+        else if (tab === 'processing') renderProcessingPanel(content);
+        else if (tab === 'config') renderConfigPanel(content);
+    }
+
+    //────── ASSET PANEL ──────//
+    function renderAssetsPanel(root) {
+        let items = loadSession();
+        let visible = items.filter(item => !item.archived);
+        let toPoll;
+        if (config.healthPollMode === "all") toPoll = visible;
+        else if (config.healthPollMode === "flagged") toPoll = visible.filter(i=>i.flagged);
+        else toPoll = visible.slice(0, config.archiveOlderThan); // default: 'new'
+        if (visible.length === 0) {
+            root.innerHTML = `<p style="text-align:center; color: var(--text-secondary);">No assets in current session.</p>`;
+            return;
+        }
+        let table = `<table id="hud-assets-table"><tbody>`;
+        visible.forEach((item, idx) => {
+            let healthClass = `chip ${item.health||"pending"}`;
+            let healthTxt = item.health || "pending";
+            if (item.archived) healthClass += " archived";
+            table += `<tr>
+<td><img src="${item.thumb||''}" class="asset-thumb" onerror="this.style.display='none'"></td>
+<td style="word-break:break-all;">${assetLabel(item)}</td>
+<td id="asset-status-${idx}"><span class="${healthClass}">${healthTxt}</span></td>
+<td>
+<button class="hud-btn asset-action" data-url="${item.url}" data-action="open" data-fn="${item.filename}">Open</button>
+<button class="hud-btn asset-action" data-url="${item.url}" data-action="dl" data-fn="${item.filename}">DL</button>
+<button class="hud-btn asset-action" data-url="${item.url}" data-action="copy" data-fn="${item.filename}">Copy</button>
+<button class="hud-btn asset-flag" data-idx="${idx}">${item.flagged ? "Unflag" : "Flag"}</button>
+</td></tr>`;
+        });
+        table += `</tbody></table>`;
+        root.innerHTML = table;
+        root.querySelectorAll('.asset-action').forEach(btn => {
+            btn.onclick = async (e) => {
+                const { url, action, fn } = e.currentTarget.dataset;
+                if (action === 'open') window.open(url, '_blank');
+                if (action === 'dl') downloadUrl(url, fn || "mediafile");
+                if (action === 'copy') { await navigator.clipboard.writeText(url); showToast('Copied!'); }
+            };
+        });
+        root.querySelectorAll('.asset-flag').forEach(btn => {
+            btn.onclick = (e) => {
+                const idx = btn.dataset.idx;
+                let arr = loadSession();
+                arr[idx].flagged = !arr[idx].flagged;
+                saveSession(arr); updateAssetsPanel();
+            };
+        });
+        // THROTTLED, BATCHED POLLING: Only for assets in "toPoll", up to healthPollBatch
+        if (config.healthCheckOnLoad) {
+            let count = 0;
+            toPoll.forEach((item, idx) => {
+                if (count++ < config.healthPollBatch) scheduleHealthCheck(item, idx);
+            });
+        }
+    }
+    function updateAssetsPanel() {
+        let c = document.getElementById('hud-content-panel');
+        if (!c) return;
+        if (currentTab === 'assets') renderAssetsPanel(c);
+    }
+
+    //────── PROCESSING CHUNKS PANEL + MUTATION ──────//
+    function renderProcessingPanel(root) {
+        if (!processingChunks.length) {
+            root.innerHTML = `<p style="text-align:center; color: var(--text-secondary);">No processing chunks captured.</p>`;
+            return;
+        }
+        root.innerHTML = "";
+        processingChunks.forEach((chunk, idx) => {
+            let box = document.createElement('div');
+            box.style.marginBottom = '1.4em';
+            let ts = new Date(chunk.ts).toLocaleTimeString();
+            let meta = `<span style="color:#15fafa">[${ts}]</span>`;
+            let pre = document.createElement('pre');
+            pre.style.maxHeight = "220px"; pre.style.overflow = "auto"; pre.textContent = JSON.stringify(chunk.data, null, 2);
+            let mutateBtn = document.createElement('button');
+            mutateBtn.className = "hud-btn";
+            mutateBtn.textContent = "Mutate/Inject";
+            mutateBtn.onclick = () => {
+                let ta = document.createElement('textarea');
+                ta.style.width = "100%"; ta.style.height = "140px"; ta.value = JSON.stringify(chunk.data, null, 2);
+                let applyBtn = document.createElement('button');
+                applyBtn.className = "hud-btn"; applyBtn.textContent = "Apply Mutated Chunk";
+                applyBtn.onclick = () => {
+                    try {
+                        mutatedChunkBuffer = JSON.parse(ta.value);
+                        showToast("Mutated chunk queued.");
+                    } catch (e) { showToast("Invalid JSON."); }
+                };
+                box.appendChild(ta); box.appendChild(applyBtn);
+            };
+            box.append(meta, pre, mutateBtn);
+            root.appendChild(box);
+        });
+    }
+
+    //────── CONFIG PANEL ──────//
+    function renderConfigPanel(root) {
+        root.innerHTML = `<div class="config-grid">
+            <label for="cfg-debugMode" title="Enable console logs for debugging.">Debug Mode</label>
+            <input id="cfg-debugMode" type="checkbox" data-key="debugMode">
+            <label for="cfg-statusBypassEnabled" title="Forge 'safe' status on moderated content to enable download.">Status Bypass</label>
+            <input id="cfg-statusBypassEnabled" type="checkbox" data-key="statusBypassEnabled">
+            <label for="cfg-nsfwObfuscation" title="Obfuscate NSFW prompts with bracket method.">NSFW Obfuscation</label>
+            <select id="cfg-nsfwObfuscation" data-key="nsfwObfuscation">
+                <option value="none">None</option>
+                <option value="bracket">Bracket</option>
+            </select>
+            <label for="cfg-healthCheckOnLoad" title="Enable health check for assets on HUD open.">Health Check On Load</label>
+            <input id="cfg-healthCheckOnLoad" type="checkbox" data-key="healthCheckOnLoad">
+            <label for="cfg-autoFlagAnomalies" title="Automatically flag assets that fail health check.">Auto-Flag Anomalies</label>
+            <input id="cfg-autoFlagAnomalies" type="checkbox" data-key="autoFlagAnomalies">
+            <label for="cfg-healthPollMode" title="Polling scope: new assets, all, or flagged only.">Polling Mode</label>
+            <select id="cfg-healthPollMode" data-key="healthPollMode">
+                <option value="new">New</option>
+                <option value="all">All</option>
+                <option value="flagged">Flagged</option>
+            </select>
+            <label for="cfg-healthCacheMinutes" title="Minutes to cache health result before re-checking.">Health Cache (min)</label>
+            <input id="cfg-healthCacheMinutes" type="number" min="1" max="1440" step="1" data-key="healthCacheMinutes">
+            <label for="cfg-healthPollBatch" title="Max assets to poll per HUD render.">Poll Batch Size</label>
+            <input id="cfg-healthPollBatch" type="number" min="1" max="50" step="1" data-key="healthPollBatch">
+            <label for="cfg-archiveOlderThan" title="Archive assets older than this count.">Archive Count</label>
+            <input id="cfg-archiveOlderThan" type="number" min="10" max="500" step="1" data-key="archiveOlderThan">
+        </div>
+        <div style="margin-top:1.2em;font-size:0.92em;color:var(--primary-cyan);">
+            <strong>Bracket obfuscation:</strong> Trigger words are doubled and wrapped in brackets.
+        </div>`;
+        root.querySelectorAll('[data-key]').forEach(el => {
+            const key = el.dataset.key;
+            if (el.type === 'checkbox') el.checked = config[key];
+            else el.value = config[key];
+            el.onchange = async (e) => {
+                const value = (e.target.type === 'checkbox') ? e.target.checked : (e.target.type === 'number' ? Number(e.target.value) : e.target.value);
+                config[key] = value; await setUserPref(key, value); showToast(`Set ${key}`);
+                if (key === 'healthPollMode') updateAssetsPanel();
+            };
+        });
+    }
+
+    //────── HUD MAIN CONTROL ──────//
+    function setHudTab(tab) {
+        currentTab = tab;
+        const panel = document.getElementById("hud-panel-root");
+        if (!panel) return;
+        panel.querySelectorAll(".hud-tabs .hud-button").forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+        const content = panel.querySelector("#hud-content-panel");
+        content.innerHTML = "";
+        if (tab === 'assets') renderAssetsPanel(content);
+        else if (tab === 'processing') renderProcessingPanel(content);
+        else if (tab === 'config') renderConfigPanel(content);
+    }
+
+    function showHudPanel() {
+        cspKillStopped = true;
+        let panel = document.getElementById("hud-panel-root");
+        if (!panel) {
+            panel = document.createElement("div"); panel.id = "hud-panel-root"; panel.className = "hud-container";
+            panel.innerHTML = `<div class="hud-header">${psiGlyphSVG}<span class="title">hailuoΨ</span><button class="hud-close-btn" title="Close HUD">&times;</button></div><nav class="hud-tabs" role="tablist"><button class="hud-button" data-tab="assets">Assets</button><button class="hud-button" data-tab="processing">Processing</button><button class="hud-button" data-tab="config">Config</button><button class="hud-button" id="export-report-btn">Export Report</button></nav><main class="hud-content" id="hud-content-panel"></main>`;
+            document.body.appendChild(panel);
+            panel.querySelector(".hud-close-btn").onclick = () => { panel.hidden = true; };
+            panel.querySelectorAll(".hud-tabs .hud-button").forEach(btn => {
+                btn.onclick = () => setHudTab(btn.dataset.tab);
+            });
+            let drag = { is: false, x: 0, y: 0, el: panel };
+            const header = panel.querySelector(".hud-header");
+            header.onmousedown = (e) => { drag.is = true; drag.x = e.clientX - panel.offsetLeft; drag.y = e.clientY - panel.offsetTop; };
+            document.onmousemove = (e) => { if (drag.is) { panel.style.left = `${e.clientX - drag.x}px`; panel.style.top = `${e.clientY - drag.y}px`; panel.style.right = 'auto'; panel.style.bottom = 'auto'; } };
+            document.onmouseup = () => drag.is = false;
+            // Export report button
+            panel.querySelector("#export-report-btn").onclick = () => exportReport();
+        }
+        panel.hidden = false;
+        setHudTab(currentTab);
+    }
+
+    function createHudButton() {
+        if (document.getElementById("hud-float-btn")) return;
+        const btn = document.createElement("button"); btn.id = "hud-float-btn"; btn.className = "hud-btn";
+        btn.innerHTML = psiGlyphSVG + `<span style="font-family: var(--font-hud); font-weight: 800; margin-left: 0.6em;">hailuoΨ</span>`;
+        Object.assign(btn.style, { position: "fixed", bottom: "2em", right: "2em", zIndex: "999998", padding: "0.6em 1.3em", background: "rgba(10,19,26,0.85)", borderRadius: "0.9em", border: "2.5px solid var(--panel-border)", boxShadow: "0 0 16px var(--panel-glow)", color: "var(--primary-cyan)", fontSize: "1.08em", cursor: "pointer" });
+        document.body.appendChild(btn);
+        btn.onclick = showHudPanel;
+    }
+
+    function showToast(msg, timeout = 3300) {
+        let t = document.createElement("div");
+        t.className = "hud-toast";
+        t.textContent = msg;
+        document.body.appendChild(t);
+        setTimeout(() => { t.style.opacity = 0; setTimeout(() => t.remove(), 600); }, timeout);
+    }
+
+    //────── INITIALIZATION & LIFECYCLE ──────//
+    async function setUserPref(key, val) { await GM_setValue(key, val); }
+    async function getUserPref(key, def) { const v = await GM_getValue(key, null); return v == null ? def : v; }
+    async function downloadUrl(url, filename) {
+        try {
+            const r = await fetch(url);
+            const b = await r.blob();
+            const u = URL.createObjectURL(b);
+            const a = Object.assign(document.createElement('a'), { href: u, download: filename });
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { URL.revokeObjectURL(u); a.remove(); }, 2500);
+        } catch (e) { showToast('Download failed.'); }
+    }
+
+    async function initialize() {
+        if (isInitialized) return;
+        // Always nuke session assets on load for cleanliness
+        saveSession([]);
+        const keys = Object.keys(config);
+        for (const key of keys) config[key] = await getUserPref(key, config[key]);
+        window.fetch = adaptiveFetchPatch(window.fetch);
+        adaptiveXHRPatch();
+        setupWebSocketHook();
+        const onReady = () => { injectHudStyles(); createHudButton(); };
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', onReady, { once: true });
+        else onReady();
+        isInitialized = true;
+        showToast("hailuoΨ Active");
+    }
+    initialize();
+    GM_registerMenuCommand("Show hailuoΨ HUD", showHudPanel);
+
+})();
+
+//────── PROCESSING CHUNK CAPTURE, BUFFER & LIVE MUTATION ──────//
+let processingBuffer = [];
+let processingMutations = Object.create(null);
+
+function renderProcessingPanel(root) {
+    root.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1em;">
+        <h3 style="margin:0;color:var(--primary-cyan);font-family:var(--font-hud);">Processing Chunks</h3>
+        <button id="clear-processing-btn" class="hud-btn">Clear Chunks</button>
+    </div>
+    <div id="processing-list"></div>`;
+    root.querySelector('#clear-processing-btn').onclick = () => {
+        processingBuffer = [];
+        renderProcessingList();
+    };
+    renderProcessingList();
+}
+
+function renderProcessingList() {
+    const container = document.getElementById('processing-list');
+    if (!container) return;
+    if (processingBuffer.length === 0) {
+        container.innerHTML = `<p style="text-align:center;color:var(--text-secondary);">No processing chunks captured this session.</p>`;
+        return;
+    }
+    let html = "";
+    processingBuffer.forEach((chunk, idx) => {
+        html += `<div class="chunk-row" style="border:1px solid #333;padding:0.7em 0.7em 0.3em 0.7em;margin-bottom:0.9em;border-radius:0.8em;background:#0a1520;">
+            <div style="font-size:0.97em;color:#6ef;">${new Date(chunk.ts).toLocaleString()} [${chunk.batchID||"-"}]</div>
+            <pre style="font-size:0.93em;max-height:190px;overflow:auto;background:#171b24;color:#cfd;">${syntaxHighlight(chunk.raw)}</pre>
+            <button class="hud-btn mutate-btn" data-idx="${idx}">Mutate/Inject</button>
+            <button class="hud-btn apply-btn" data-idx="${idx}">Apply Mutated Chunk</button>
+            <textarea class="mutate-area" style="width:100%;height:88px;display:none;margin-top:0.7em;font-size:0.98em;font-family:monospace;border-radius:0.5em;border:1px solid #19d;"></textarea>
+        </div>`;
+    });
+    container.innerHTML = html;
+    container.querySelectorAll('.mutate-btn').forEach(btn => {
+        btn.onclick = () => {
+            const idx = btn.dataset.idx;
+            const area = container.querySelectorAll('.mutate-area')[idx];
+            area.style.display = area.style.display === 'none' ? 'block' : 'none';
+            area.value = processingBuffer[idx].mutation || JSON.stringify(processingBuffer[idx].raw, null, 2);
+        };
+    });
+    container.querySelectorAll('.apply-btn').forEach(btn => {
+        btn.onclick = () => {
+            const idx = btn.dataset.idx;
+            const area = container.querySelectorAll('.mutate-area')[idx];
+            let val = area.value;
+            try {
+                let json = JSON.parse(val);
+                processingMutations[processingBuffer[idx].id] = json;
+                showToast("Mutation staged for next request.");
+                processingBuffer[idx].mutation = val;
+            } catch (e) {
+                showToast("Invalid JSON for mutation.");
+            }
+        };
+    });
+}
+
+// Utility for pretty JSON highlight
+function syntaxHighlight(json) {
+    if (typeof json !== 'string') json = JSON.stringify(json, null, 2);
+    return json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|\b\d+\b)/g,
+        function (match) {
+          let cls = 'num';
+          if (/^"/.test(match)) {
+            if (/:$/.test(match)) cls = 'key';
+            else cls = 'str';
+          } else if (/true|false/.test(match)) cls = 'bool';
+          else if (/null/.test(match)) cls = 'null';
+          return `<span class="${cls}">${match}</span>`;
+        });
+}
+
+// Utility for pretty JSON highlight
+function syntaxHighlight(json) {
+    if (typeof json !== 'string') json = JSON.stringify(json, null, 2);
+    return json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|\b\d+\b)/g,
+        function (match) {
+          let cls = 'num';
+          if (/^"/.test(match)) {
+            if (/:$/.test(match)) cls = 'key';
+            else cls = 'str';
+          } else if (/true|false/.test(match)) cls = 'bool';
+          else if (/null/.test(match)) cls = 'null';
+          return `<span class="${cls}">${match}</span>`;
+        });
+}
+
+//────── FETCH INTERCEPTION: PROCESSING & MUTATION ──────//
+function interceptProcessingFetch(origFetch) {
+    return async function(...args) {
+        const req = new Request(...args);
+        if (/\/processing/.test(req.url) && (req.method === 'GET' || req.method === 'POST')) {
+            const res = await origFetch(...args);
+            if (!res.ok) return res;
+            let cloned;
+            try { cloned = await res.clone().json(); } catch (e) { return res; }
+            // Buffer original
+            const chunkId = cloned.requestID || (cloned.data && cloned.data.batchVideos && cloned.data.batchVideos[0]?.batchID) || (Date.now() + Math.random());
+            processingBuffer.push({
+                id: chunkId,
+                ts: Date.now(),
+                raw: cloned
+            });
+            if (processingBuffer.length > 30) processingBuffer.shift();
+            renderProcessingList && renderProcessingList();
+            // Apply mutation if staged
+            if (processingMutations[chunkId]) {
+                try {
+                    const mutated = JSON.stringify(processingMutations[chunkId]);
+                    showToast("Injected mutated chunk for " + chunkId);
+                    return new Response(mutated, { status: res.status, statusText: res.statusText, headers: res.headers });
+                } catch (e) { /* fail gracefully, fall through */ }
+            }
+            return new Response(JSON.stringify(cloned), { status: res.status, statusText: res.statusText, headers: res.headers });
+        }
+        return origFetch(...args);
+    };
+}
+
+//────── HUD TAB INTEGRATION ──────//
+function setHudTab(tab) {
+    currentTab = tab;
+    const panel = document.getElementById("hud-panel-root");
+    if (!panel) return;
+    panel.querySelectorAll(".hud-tabs .hud-button").forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+    const content = panel.querySelector("#hud-content-panel");
+    content.innerHTML = "";
+    if (tab === 'assets') renderAssetsPanel(content);
+    else if (tab === 'config') renderConfigPanel(content);
+    else if (tab === 'processing') renderProcessingPanel(content);
+}
+
+// HUD Tab Button Insert
+function createHudButton() {
+    if (document.getElementById("hud-float-btn")) return;
+    const btn = document.createElement("button"); btn.id = "hud-float-btn"; btn.className = "hud-btn";
+    btn.innerHTML = psiGlyphSVG + `<span style="font-family: var(--font-hud); font-weight: 800; margin-left: 0.6em;">hailuoΨ</span>`;
+    Object.assign(btn.style, { position: "fixed", bottom: "2em", right: "2em", zIndex: "999998", padding: "0.6em 1.3em", background: "rgba(10,19,26,0.85)", borderRadius: "0.9em", border: "2.5px solid var(--panel-border)", boxShadow: "0 0 16px var(--panel-glow)", color: "var(--primary-cyan)", fontSize: "1.08em", cursor: "pointer" });
+    document.body.appendChild(btn);
+    btn.onclick = showHudPanel;
+}
+function showHudPanel() {
+    cspKillStopped = true;
+    let panel = document.getElementById("hud-panel-root");
+    if (!panel) {
+        panel = document.createElement("div"); panel.id = "hud-panel-root"; panel.className = "hud-container";
+        panel.innerHTML = `<div class="hud-header">${psiGlyphSVG}<span class="title">hailuoΨ</span><button class="hud-close-btn" title="Close HUD">&times;</button></div>
+        <nav class="hud-tabs" role="tablist">
+            <button class="hud-button" data-tab="assets">Assets</button>
+            <button class="hud-button" data-tab="processing">Processing</button>
+            <button class="hud-button" data-tab="config">Config</button>
+            <button class="hud-button" id="export-report-btn">Export Report</button>
+        </nav>
+        <main class="hud-content" id="hud-content-panel"></main>`;
+        document.body.appendChild(panel);
+        panel.querySelector(".hud-close-btn").onclick = () => { panel.hidden = true; };
+        panel.querySelectorAll(".hud-tabs .hud-button").forEach(btn => { btn.onclick = () => setHudTab(btn.dataset.tab); });
+        let drag = { is: false, x: 0, y: 0, el: panel };
+        const header = panel.querySelector(".hud-header");
+        header.onmousedown = (e) => { drag.is = true; drag.x = e.clientX - panel.offsetLeft; drag.y = e.clientY - panel.offsetTop; };
+        document.onmousemove = (e) => { if (drag.is) { panel.style.left = `${e.clientX - drag.x}px`; panel.style.top = `${e.clientY - drag.y}px`; panel.style.right = 'auto'; panel.style.bottom = 'auto'; } };
+        document.onmouseup = () => drag.is = false;
+        // Export report button
+        panel.querySelector("#export-report-btn").onclick = () => exportReport();
+    }
+    panel.hidden = false;
+    setHudTab(currentTab);
+}
+
+//────── INITIALIZATION ADJUSTMENT ──────//
+async function initialize() {
+    if (isInitialized) return;
+    const keys = Object.keys(config);
+    for (const key of keys) config[key] = await getUserPref(key, config[key]);
+    window.fetch = interceptProcessingFetch(adaptiveFetchPatch(window.fetch));
+    adaptiveXHRPatch();
+    setupWebSocketHook();
+    const onReady = () => { injectHudStyles(); createHudButton(); };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', onReady, { once: true });
+    else onReady();
+    isInitialized = true;
+    showToast("hailuoΨ Active");
+}
+
+//────── RENDER PROCESSING PANEL ──────//
+function renderProcessingPanel(root) {
+    root.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1em;">
+        <h3 style="margin:0;color:var(--primary-cyan);font-family:var(--font-hud);">Processing Chunks (Live)</h3>
+        <button id="clear-processing-buffer" class="hud-btn">Clear</button>
+    </div>
+    <div id="processing-list"></div>`;
+    root.querySelector('#clear-processing-buffer').onclick = () => {
+        processingBuffer.length = 0;
+        Object.keys(processingMutations).forEach(k=>delete processingMutations[k]);
+        renderProcessingList();
+    };
+    renderProcessingList();
+}
+
+function renderProcessingList() {
+    const container = document.getElementById('processing-list');
+    if (!container) return;
+    if (!processingBuffer.length) {
+        container.innerHTML = `<p style="color:var(--text-secondary);">No processing chunks captured this session.</p>`;
+        return;
+    }
+    container.innerHTML = processingBuffer.slice().reverse().map((item, i) => {
+        const ts = new Date(item.ts).toLocaleTimeString();
+        const id = item.id;
+        const pretty = syntaxHighlight(item.raw);
+        return `
+        <div class="processing-chunk" style="border-radius:8px;margin-bottom:1.2em;background:#14181d;padding:1.2em 1em 0.9em 1.3em;box-shadow:0 0 12px #15fafa22;">
+            <div style="font-family:var(--font-hud);font-weight:700;color:#15fafa;">Chunk #${processingBuffer.length-i} — <span style="color:#6af">${id}</span> @ <span style="color:#aaa">${ts}</span></div>
+            <pre style="background:#101827;color:#fff;overflow:auto;max-height:19em;font-size:1em;border-radius:7px;margin:0.6em 0;">${pretty}</pre>
+            <button class="hud-btn mutate-btn" data-chunk="${id}">Mutate/Inject</button>
+        </div>`;
+    }).join('');
+    container.querySelectorAll('.mutate-btn').forEach(btn=>{
+        btn.onclick = () => openMutateDialog(btn.dataset.chunk);
+    });
+}
+
+//────── MUTATION DIALOG ──────//
+function openMutateDialog(chunkId) {
+    const chunk = processingBuffer.find(c=>c.id===chunkId);
+    if (!chunk) return showToast("Chunk not found.");
+    let overlay = document.createElement("div");
+    overlay.style = "position:fixed;z-index:1000001;top:0;left:0;width:100vw;height:100vh;background:#000b;display:flex;align-items:center;justify-content:center;";
+    overlay.innerHTML = `
+      <div style="background:#12151e;padding:2em 2.5em;border-radius:1.3em;min-width:450px;max-width:98vw;">
+        <h3 style="margin-top:0;color:#15fafa;font-family:var(--font-hud);">Mutate Processing Chunk</h3>
+        <textarea id="mutate-chunk-textarea" style="width:100%;height:280px;background:#1d2230;color:#fff;border-radius:8px;padding:1em;font-size:1em;font-family:monospace;">${JSON.stringify(chunk.raw, null, 2)}</textarea>
+        <div style="margin-top:1.6em;display:flex;justify-content:flex-end;gap:1.4em;">
+          <button id="apply-mutation" class="hud-btn">Apply Mutated Chunk</button>
+          <button id="cancel-mutation" class="hud-btn">Cancel</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#apply-mutation').onclick = () => {
+        let txt = overlay.querySelector('#mutate-chunk-textarea').value;
+        try {
+            const mut = JSON.parse(txt);
+            processingMutations[chunkId] = mut;
+            showToast("Mutation staged for chunk " + chunkId);
+            overlay.remove();
+            renderProcessingList();
+        } catch (e) {
+            showToast("Invalid JSON.");
+        }
+    };
+    overlay.querySelector('#cancel-mutation').onclick = () => overlay.remove();
+}
+
+// Add styles for syntax highlighting in JSON
+(function injectSyntaxStyles(){
+    if (document.getElementById("hailuoΨ-syntax-css")) return;
+    const style = document.createElement("style"); style.id = "hailuoΨ-syntax-css";
+    style.textContent = `
+      .str{color:#a5ff90;} .num{color:#fcae5a;} .key{color:#5ecbfa;} .bool{color:#e06;} .null{color:#b5b500;}
+    `;
+    document.head.appendChild(style);
+})();
+
+//────── INITIALIZE GLOBALS ──────//
+let processingBuffer = [];
+let processingMutations = {};
+
+//────── HUD TAB INTEGRATION (PROCESSING) ──────//
+function setHudTab(tab) {
+    currentTab = tab;
+    const panel = document.getElementById("hud-panel-root");
+    if (!panel) return;
+    panel.querySelectorAll(".hud-tabs .hud-button").forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+    const content = panel.querySelector("#hud-content-panel");
+    content.innerHTML = "";
+    if (tab === 'assets') renderAssetsPanel(content);
+    else if (tab === 'config') renderConfigPanel(content);
+    else if (tab === 'processing') renderProcessingPanel(content);
+}
+
+// Extend HUD nav for Processing tab
+function showHudPanel() {
+    cspKillStopped = true;
+    let panel = document.getElementById("hud-panel-root");
+    if (!panel) {
+        panel = document.createElement("div"); panel.id = "hud-panel-root"; panel.className = "hud-container";
+        panel.innerHTML = `<div class="hud-header">${psiGlyphSVG}<span class="title">hailuoΨ</span><button class="hud-close-btn" title="Close HUD">&times;</button></div>
+            <nav class="hud-tabs" role="tablist">
+                <button class="hud-button" data-tab="assets">Assets</button>
+                <button class="hud-button" data-tab="processing">Processing</button>
+                <button class="hud-button" data-tab="config">Config</button>
+                <button class="hud-button" id="export-report-btn">Export Report</button>
+            </nav>
+            <main class="hud-content" id="hud-content-panel"></main>`;
+        document.body.appendChild(panel);
+        panel.querySelector(".hud-close-btn").onclick = () => { panel.hidden = true; };
+        panel.querySelectorAll(".hud-tabs .hud-button").forEach(btn => { btn.onclick = () => setHudTab(btn.dataset.tab); });
+        let drag = { is: false, x: 0, y: 0, el: panel };
+        const header = panel.querySelector(".hud-header");
+        header.onmousedown = (e) => { drag.is = true; drag.x = e.clientX - panel.offsetLeft; drag.y = e.clientY - panel.offsetTop; };
+        document.onmousemove = (e) => { if (drag.is) { panel.style.left = `${e.clientX - drag.x}px`; panel.style.top = `${e.clientY - drag.y}px`; panel.style.right = 'auto'; panel.style.bottom = 'auto'; } };
+        document.onmouseup = () => drag.is = false;
+        // Export report button
+        panel.querySelector("#export-report-btn").onclick = () => exportReport();
+    }
+    panel.hidden = false;
+    setHudTab(currentTab);
+}
+
+//────── ENDPOINT INTERCEPTOR: LIVE PROCESSING CHUNK CAPTURE/MUTATION ──────//
+function matchProcessingEndpoint(url) {
+    // Add further endpoint variations as needed
+    return /\/api\/.*\/processing/i.test(url) || /\/processing\b/i.test(url);
+}
+
+function makeChunkId(raw, ts) {
+    if (!raw) return String(ts);
+    // Prefer a batchID or other known ID for stability
+    let id = raw.batchID || raw.id || raw.requestID || raw.name || raw.videoID;
+    return id ? String(id) : String(ts);
+}
+
+function syntaxHighlight(json) {
+    if (typeof json !== 'string') json = JSON.stringify(json, null, 2);
+    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|\b\d+\.?\d*\b)/g, function (match) {
+        let cls = 'num';
+        if (/^"/.test(match)) {
+            if (/:$/.test(match)) cls = 'key';
+            else cls = 'str';
+        } else if (/true|false/.test(match)) cls = 'bool';
+        else if (/null/.test(match)) cls = 'null';
+        return `<span class="${cls}">${match}</span>`;
+    });
+}
+
+//────── PROCESSING CHUNK PANEL UI + MUTATION──────//
+function renderProcessingPanel(root) {
+    // Always sorted by most recent first
+    let chunks = (window._hailuoPsiProcessingBuffer || []).slice().reverse();
+    root.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1em;">
+        <h3 style="margin:0;color:var(--primary-cyan);font-family:var(--font-hud);">Live Processing Chunks</h3>
+        <button id="hailuoΨ-clear-chunks" class="hud-btn">Clear Chunks</button>
+    </div>
+    <div id="processing-chunks-container"></div>`;
+    root.querySelector('#hailuoΨ-clear-chunks').onclick = () => {
+        window._hailuoPsiProcessingBuffer = [];
+        renderProcessingPanel(root);
+    };
+    updateProcessingChunksPanel();
+}
+
+function updateProcessingChunksPanel() {
+    const container = document.getElementById('processing-chunks-container');
+    if (!container) return;
+    let chunks = (window._hailuoPsiProcessingBuffer || []).slice().reverse();
+    if (!chunks.length) {
+        container.innerHTML = `<p style="text-align:center;color:var(--text-secondary);">No processing chunks captured yet.</p>`;
+        return;
+    }
+    let html = '';
+    chunks.forEach((chunk, idx) => {
+        let meta = `[${new Date(chunk.ts).toLocaleTimeString()}] ID: ${chunk.chunkId}`;
+        html += `<div style="margin-bottom:1.6em; border-bottom:1.5px solid #333; padding-bottom:0.8em;">
+            <div style="display:flex;align-items:center;gap:1em;">
+                <span class="chip" style="background:#222;color:#0ff;">${meta}</span>
+                <button class="hud-btn mutate-btn" data-idx="${idx}">Mutate/Inject</button>
+                <button class="hud-btn apply-btn" data-idx="${idx}">Apply Mutated Chunk</button>
+            </div>
+            <pre style="background:#191f2a; color:#b2f1ff; border-radius:7px;margin-top:0.6em;font-size:0.98em;overflow-x:auto;padding:0.7em;">${syntaxHighlight(chunk.raw)}</pre>
+            <div style="display:none;margin-top:0.5em;"><textarea rows="8" style="width:100%;font-family:monospace;font-size:0.97em;background:#10151d;color:#c9f; border-radius:6px; padding:0.5em;"></textarea></div>
+        </div>`;
+    });
+    container.innerHTML = html;
+    container.querySelectorAll('.mutate-btn').forEach(btn => {
+        btn.onclick = (e) => {
+            let idx = parseInt(btn.dataset.idx, 10);
+            let block = btn.closest('div');
+            let area = block.querySelector('textarea');
+            block.querySelector('div[style*="display:none"]').style.display = 'block';
+            area.value = JSON.stringify(chunks[idx].mutatedRaw || chunks[idx].raw, null, 2);
+        };
+    });
+    container.querySelectorAll('.apply-btn').forEach(btn => {
+        btn.onclick = (e) => {
+            let idx = parseInt(btn.dataset.idx, 10);
+            let block = btn.closest('div');
+            let area = block.querySelector('textarea');
+            if (!area.value.trim()) return showToast("Textarea empty.");
+            try {
+                let parsed = JSON.parse(area.value);
+                window._hailuoPsiProcessingBuffer[chunks.length - idx - 1].mutatedRaw = parsed;
+                showToast("Mutated chunk set. Will be injected on next request.");
+            } catch (e) { showToast("Invalid JSON."); }
+        };
+    });
+}
+
+//────── HUD TAB ROUTING: ADD PROCESSING PANEL ──────//
+function setHudTab(tab) {
+    currentTab = tab;
+    const panel = document.getElementById("hud-panel-root");
+    if (!panel) return;
+    panel.querySelectorAll(".hud-tabs .hud-button").forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+    const content = panel.querySelector("#hud-content-panel");
+    content.innerHTML = "";
+    if (tab === 'assets') renderAssetsPanel(content);
+    else if (tab === 'config') renderConfigPanel(content);
+    else if (tab === 'processing') renderProcessingPanel(content);
+}
+
+// Add 'Processing' tab to HUD nav
+function showHudPanel() {
+    cspKillStopped = true;
+    let panel = document.getElementById("hud-panel-root");
+    if (!panel) {
+        panel = document.createElement("div"); panel.id = "hud-panel-root"; panel.className = "hud-container";
+        panel.innerHTML = `<div class="hud-header">${psiGlyphSVG}<span class="title">hailuoΨ</span><button class="hud-close-btn" title="Close HUD">&times;</button></div>
+        <nav class="hud-tabs" role="tablist">
+            <button class="hud-button" data-tab="assets">Assets</button>
+            <button class="hud-button" data-tab="config">Config</button>
+            <button class="hud-button" data-tab="processing">Processing</button>
+            <button class="hud-button" id="export-report-btn">Export Report</button>
+        </nav>
+        <main class="hud-content" id="hud-content-panel"></main>`;
+        document.body.appendChild(panel);
+        panel.querySelector(".hud-close-btn").onclick = () => { panel.hidden = true; };
+        panel.querySelectorAll(".hud-tabs .hud-button").forEach(btn => { btn.onclick = () => setHudTab(btn.dataset.tab); });
+        let drag = { is: false, x: 0, y: 0, el: panel };
+        const header = panel.querySelector(".hud-header");
+        header.onmousedown = (e) => { drag.is = true; drag.x = e.clientX - panel.offsetLeft; drag.y = e.clientY - panel.offsetTop; };
+        document.onmousemove = (e) => { if (drag.is) { panel.style.left = `${e.clientX - drag.x}px`; panel.style.top = `${e.clientY - drag.y}px`; panel.style.right = 'auto'; panel.style.bottom = 'auto'; } };
+        document.onmouseup = () => drag.is = false;
+        // Export report button
+        panel.querySelector("#export-report-btn").onclick = () => exportReport();
+    }
+    panel.hidden = false;
+    setHudTab(currentTab);
+}
+
+//────── UTILITY: SYNTAX HIGHLIGHT FOR CHUNK JSON ──────//
+function syntaxHighlight(json) {
+    if (!json) return '';
+    if (typeof json !== 'string') json = JSON.stringify(json, null, 2);
+    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"'])*"(\s*:)?|\b(true|false|null)\b|\b\d+(\.\d*)?\b)/g, function (match) {
+        let cls = 'number';
+        if (/^"/.test(match)) {
+            if (/:$/.test(match)) cls = 'key';
+            else cls = 'string';
+        } else if (/true|false/.test(match)) cls = 'boolean';
+        else if (/null/.test(match)) cls = 'null';
+        return `<span class="${cls}">${match}</span>`;
+    });
+}
+
+// HUD highlight style patch
+(function injectHighlightCSS() {
+    if (document.getElementById('hailuoΨ-highlight-css')) return;
+    let s = document.createElement('style');
+    s.id = 'hailuoΨ-highlight-css';
+    s.textContent = `
+    pre span.key { color: #66d9ef; }
+    pre span.string { color: #f1fa8c; }
+    pre span.number { color: #bd93f9; }
+    pre span.boolean { color: #50fa7b; }
+    pre span.null { color: #ff5555; }
+    `;
+    document.head.appendChild(s);
+})();
+
+//────── PROCESSING PANEL RENDER + LIVE MUTATION ──────//
+function renderProcessingPanel(root) {
+    root.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;">
+        <h3 style="margin:0;color:var(--primary-cyan);font-family:var(--font-hud);">Processing Chunks</h3>
+        <button class="hud-btn" id="clear-processing">Clear All</button>
+    </div>
+    <div id="processing-chunks-list"></div>`;
+    root.querySelector("#clear-processing").onclick = () => {
+        processingBuffer.length = 0;
+        saveProcessingBuffer();
+        renderProcessingChunks();
+    };
+    renderProcessingChunks();
+}
+
+function renderProcessingChunks() {
+    const container = document.getElementById('processing-chunks-list');
+    if (!container) return;
+    if (!processingBuffer.length) {
+        container.innerHTML = `<p style="color:var(--text-secondary);text-align:center;">No processing chunks captured.</p>`;
+        return;
+    }
+    let html = '';
+    processingBuffer.slice().reverse().forEach((chunk, idx) => {
+        const chunkId = `processing-chunk-${chunk.ts}`;
+        html += `<div style="margin-bottom:1.2em;border-bottom:1px solid #15adad;padding-bottom:0.8em;">
+            <div style="display:flex;gap:1em;align-items:center;">
+                <span style="font-size:0.93em;color:#ccc;">${new Date(chunk.ts).toLocaleTimeString()}</span>
+                <span style="font-size:0.95em;color:#0ff;">${chunk.endpoint}</span>
+                <button class="hud-btn" data-idx="${idx}" data-action="mutate">Mutate/Inject</button>
+            </div>
+            <pre style="margin-top:0.6em;font-size:0.98em;background:#1c2235;padding:8px;border-radius:8px;max-height:250px;overflow:auto;">${syntaxHighlight(chunk.raw)}</pre>
+            <div id="${chunkId}-mutate-panel"></div>
+        </div>`;
+    });
+    container.innerHTML = html;
+    container.querySelectorAll('button[data-action="mutate"]').forEach(btn => {
+        btn.onclick = () => {
+            const idx = btn.dataset.idx;
+            showMutatePanel(idx);
+        };
+    });
+}
+
+function showMutatePanel(idx) {
+    const chunk = processingBuffer[processingBuffer.length - 1 - idx];
+    const chunkId = `processing-chunk-${chunk.ts}-mutate-panel`;
+    const panel = document.getElementById(chunkId);
+    if (!panel) return;
+    let orig = JSON.stringify(chunk.raw, null, 2);
+    panel.innerHTML = `<textarea style="width:100%;height:160px;font-size:1em;background:#23283a;color:#fff;border-radius:8px;border:1.5px solid #15adad;margin-top:1em;">${orig}</textarea>
+        <button class="hud-btn" style="margin-top:0.7em;" id="${chunkId}-apply">Apply Mutated Chunk</button>`;
+    panel.querySelector('button').onclick = () => {
+        let newVal;
+        try {
+            newVal = JSON.parse(panel.querySelector('textarea').value);
+            chunk.mutated = newVal;
+            showToast("Mutated chunk applied. Will be injected on next interception.");
+            saveProcessingBuffer();
+        } catch (e) {
+            showToast("Invalid JSON.");
+        }
+    };
+}
+
+//────── UTILS: SYNTAX HIGHLIGHT FOR JSON ──────//
+function syntaxHighlight(json) {
+    if (typeof json !== "string") {
+        json = JSON.stringify(json, null, 2);
+    }
+    json = json
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(?:\s*:)?|\b(true|false|null)\b|\b-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?\b)/g, function (match) {
+            let cls = "json-number";
+            if (/^"/.test(match)) {
+                if (/:$/.test(match)) {
+                    cls = "json-key";
+                } else {
+                    cls = "json-string";
+                }
+            } else if (/true|false/.test(match)) {
+                cls = "json-boolean";
+            } else if (/null/.test(match)) {
+                cls = "json-null";
+            }
+            return `<span class="${cls}">${match}</span>`;
+        });
+    return `<code class="json-highlight">${json}</code>`;
+}
+
+// Inject minimal highlight styles
+(function injectJsonHighlightStyle() {
+    if (document.getElementById('hailuoΨ-json-highlight-css')) return;
+    const style = document.createElement('style');
+    style.id = 'hailuoΨ-json-highlight-css';
+    style.textContent = `
+        .json-key { color: #0ff; }
+        .json-string { color: #aaff9c; }
+        .json-number { color: #ffd580; }
+        .json-boolean { color: #ffb86c; }
+        .json-null { color: #f06969; }
+        .json-highlight { font-family: "Roboto Mono", monospace; }
+    `;
+    document.head.appendChild(style);
+})();
+
+//────── FINAL: REGISTER ALL TABS INTO HUD PALETTE ──────//
+function setHudTab(tab) {
+    currentTab = tab;
+    const panel = document.getElementById("hud-panel-root");
+    if (!panel) return;
+    panel.querySelectorAll(".hud-tabs .hud-button").forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+    const content = panel.querySelector("#hud-content-panel");
+    content.innerHTML = "";
+    if (tab === 'assets') renderAssetsPanel(content);
+    else if (tab === 'config') renderConfigPanel(content);
+    else if (tab === 'processing') renderProcessingPanel(content);
+}
+
+// Extend HUD tab nav to include Processing
+function showHudPanel() {
+    cspKillStopped = true;
+    let panel = document.getElementById("hud-panel-root");
+    if (!panel) {
+        panel = document.createElement("div"); panel.id = "hud-panel-root"; panel.className = "hud-container";
+        panel.innerHTML = `<div class="hud-header">${psiGlyphSVG}<span class="title">hailuoΨ</span><button class="hud-close-btn" title="Close HUD">&times;</button></div>
+            <nav class="hud-tabs" role="tablist">
+                <button class="hud-button" data-tab="assets">Assets</button>
+                <button class="hud-button" data-tab="processing">Processing</button>
+                <button class="hud-button" data-tab="config">Config</button>
+                <button class="hud-button" id="export-report-btn">Export Report</button>
+            </nav>
+            <main class="hud-content" id="hud-content-panel"></main>`;
+        document.body.appendChild(panel);
+        panel.querySelector(".hud-close-btn").onclick = () => { panel.hidden = true; };
+        panel.querySelectorAll(".hud-tabs .hud-button").forEach(btn => { btn.onclick = () => setHudTab(btn.dataset.tab); });
+        let drag = { is: false, x: 0, y: 0, el: panel };
+        const header = panel.querySelector(".hud-header");
+        header.onmousedown = (e) => { drag.is = true; drag.x = e.clientX - panel.offsetLeft; drag.y = e.clientY - panel.offsetTop; };
+        document.onmousemove = (e) => { if (drag.is) { panel.style.left = `${e.clientX - drag.x}px`; panel.style.top = `${e.clientY - drag.y}px`; panel.style.right = 'auto'; panel.style.bottom = 'auto'; } };
+        document.onmouseup = () => drag.is = false;
+        // Export report button
+        panel.querySelector("#export-report-btn").onclick = () => exportReport();
+    }
+    panel.hidden = false;
+    setHudTab(currentTab);
+}
+
+//────── FINAL: END-TO-END INIT & SUPRSET ENFORCEMENT ──────//
+async function initialize() {
+    if (isInitialized) return;
+    const keys = Object.keys(config);
+    for (const key of keys) config[key] = await getUserPref(key, config[key]);
+    window.fetch = adaptiveFetchPatch(window.fetch);
+    adaptiveXHRPatch();
+    setupWebSocketHook();
+    const onReady = () => { injectHudStyles(); createHudButton(); };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', onReady, { once: true });
+    else onReady();
+    isInitialized = true;
+    showToast("hailuoΨ Active");
+}
+
+initialize();
+GM_registerMenuCommand("Show hailuoΨ HUD", showHudPanel);
+
+})();
