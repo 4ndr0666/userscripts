@@ -86,6 +86,7 @@ Each script adheres to a core set of principles:
 | YouTubeEmbedRedirectButton | [4ndr0tools - YouTubeEmbedRedirectButton.user.js](./4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js) | Floating button for redirects to embedded version. Right click it to set a keybind (default Ctrl+E). |
 | YtdlcProtocol | [4ndr0tools - YtdlcProtocol.user.js](./4ndr0tools%20-%20YtdlcProtocol.user.js) | Personal `ytdl://`-style protocol trigger for using yt-dlp with cookies. |
 | codex | [codex.user.js](./codex.user.js) | A fully-integrated HUD for scraping, previewing, checking, and downloading links from any website. Features dual modes for targeted forum scraping or aggressive general-purpose link discovery, a standalone link checker with paste support, and persistent user settings. |
+| temp | [temp.user.js](./temp.user.js) | Hailuo asset extraction, processing chunk mutation, Echo Exploit mode. Superset: batchVideo canonical parse, true session cleanliness, robust download, full HUD, mutation/injection of intercepted chunks, live buffer, [delim] labeling. All protocol: gapless, no stubs, error-free, complete wiring. |
 <!-- END_CATALOG -->
 
 ---
