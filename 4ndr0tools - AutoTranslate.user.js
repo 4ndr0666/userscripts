@@ -9,8 +9,9 @@
 // @match       *://translate.google.cn/*
 // @grant       none
 // @noframes
-// @downloadURL https://update.greasyfork.org/scripts/378166/Google%20Translate%20Auto%20Languages.user.js
-// @updateURL https://update.greasyfork.org/scripts/378166/Google%20Translate%20Auto%20Languages.meta.js
+// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
+// @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20AutoTranslate.user.js
+// @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20AutoTranslate.user.js
 // ==/UserScript==
 "use strict";
 
