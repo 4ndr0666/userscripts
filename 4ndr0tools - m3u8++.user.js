@@ -2,12 +2,15 @@
 // @name         4ndr0tols - m3u8++
 // @namespace    http://github.com/4ndr0666/userscripts
 // @version      4.3
-// @description  Instantly detect the m3u8 url for any video that is playing for DL. Once detected the UI will appear in the upper right corner. Webapp for DL is buggy so click to copy and DL with yt-dlp or n-m3u8dl-re.
 // @author       4ndr0666
+// @description  Instantly detect the m3u8 url for any video that is playing for DL. Once detected the UI will appear in the upper right corner. Webapp for DL is buggy so click to copy and DL with yt-dlp or n-m3u8dl-re.
 // @match        *://*/*
 // @exclude      *://www.diancigaoshou.com/*
 // @require      https://cdn.jsdelivr.net/npm/m3u8-parser@4.7.1/dist/m3u8-parser.min.js
 // @connect      *
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20m3u8++.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20m3u8++.user.js
+// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @grant        unsafeWindow
 // @grant        GM_openInTab
 // @grant        GM.openInTab
