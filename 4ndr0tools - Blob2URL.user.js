@@ -4,8 +4,8 @@
 // @version      3.0
 // @description  Finds blob URLs in links, images, and videos (including dynamic ones), and adds a stateful button to download their contents with intelligent filename generation.
 // @author       4ndr0666
-// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Blob2URL.user.js
-// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Blob2URL.user.js
+// @downloadURL  https://raw.githubusercontent.com/4ndr0666/userscripts/refs/heads/main/4ndr0tools%20-%20Blob2URL.user.js
+// @updateURL    https://raw.githubusercontent.com/4ndr0666/userscripts/refs/heads/main/4ndr0tools%20-%20Blob2URL.user.js
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match        *://*/*
 // @grant        none
@@ -180,4 +180,3 @@
         subtree: true
     });
 })();
-
