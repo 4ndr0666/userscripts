@@ -1,22 +1,20 @@
 // ==UserScript==
-// @name         4ndr0tools - Blob2URL
-// @namespace    https://github.com/4ndr0666/userscripts
-// @version      3.0
-// @description  Finds blob URLs in links, images, and videos (including dynamic ones), and adds a stateful button to download their contents with intelligent filename generation.
-// @author       4ndr0666
-// @downloadURL  https://raw.githubusercontent.com/4ndr0666/userscripts/refs/heads/main/4ndr0tools%20-%20Blob2URL.user.js
-// @updateURL    https://raw.githubusercontent.com/4ndr0666/userscripts/refs/heads/main/4ndr0tools%20-%20Blob2URL.user.js
-// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
-// @match        *://*/*
-// @grant        none
+// @name        4ndr0tools - Blob2URL
+// @namespace   https://github.com/4ndr0666/userscripts
+// @version     3.1
+// @author      4ndr0666
+// @description Finds blob URLs in links, images, videos, audio (including dynamic ones), and adds a stateful button to download their contents with intelligent filename generation.
+// @downloadURL https://raw.githubusercontent.com/4ndr0666/userscripts/refs/heads/main/4ndr0tools%20-%20Blob2URL.user.js
+// @updateURL   https://raw.githubusercontent.com/4ndr0666/userscripts/refs/heads/main/4ndr0tools%20-%20Blob2URL.user.js
+// @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
+// @match       *://*/*
+// @grant       none
 // ==/UserScript==
-
 (function() {
     'use strict';
-
     const SCRIPT_NAME = '4ndr0tools - Blob2URL';
-    const log = (message) => console.log(`[${SCRIPT_NAME}] ${message}`);
-
+    const DEBUG = true;
+    const log = (message) => { if (DEBUG) console.log(`[${SCRIPT_NAME}] ${message}`); };
     // --- Centralized Configuration ---
     const CONFIG = {
         buttonText: {
@@ -44,9 +42,7 @@
         },
         resetDelay: 3000, // ms
     };
-
     // --- Helper Functions ---
-
     /**
      * Guesses a file extension from a MIME type.
      * @param {string} mimeType The MIME type (e.g., "video/mp4").
@@ -57,27 +53,30 @@
         const subtype = mimeType.split('/')[1]?.split('+')[0]; // Handles "svg+xml"
         const commonExtensions = {
             'mp4': 'mp4', 'webm': 'webm', 'ogg': 'ogv', 'mpeg': 'mp3', 'wav': 'wav',
+            'aac': 'aac', 'opus': 'opus', 'mp3': 'mp3', 'midi': 'mid', 'flac': 'flac',
             'jpeg': 'jpg', 'png': 'png', 'gif': 'gif', 'svg': 'svg', 'webp': 'webp',
-            'pdf': 'pdf', 'zip': 'zip', 'json': 'json',
+            'pdf': 'pdf', 'zip': 'zip', 'json': 'json', 'tar': 'tar', 'gzip': 'gz',
             'plain': 'txt', 'html': 'html', 'css': 'css', 'javascript': 'js',
+            'xml': 'xml', 'csv': 'csv', 'doc': 'doc', 'docx': 'docx', 'xlsx': 'xlsx',
+            'pptx': 'pptx', 'vnd.ms-excel': 'xls', 'vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
         };
         return commonExtensions[subtype] ? `.${commonExtensions[subtype]}` : '';
     };
-
     /**
      * Creates and styles a download button.
      * @param {string} text The initial text for the button.
+     * @param {string} uniqueId The unique ID for accessibility.
      * @returns {HTMLButtonElement} The styled button element.
      */
-    const createDownloadButton = (text) => {
+    const createDownloadButton = (text, uniqueId) => {
         const button = document.createElement('button');
         button.textContent = text;
+        button.setAttribute('aria-label', `Download blob content #${uniqueId}`);
         Object.assign(button.style, CONFIG.buttonStyle, {
             backgroundColor: CONFIG.buttonColors.initial,
         });
         return button;
     };
-
     /**
      * Asynchronously handles the blob download lifecycle.
      * @param {MouseEvent} event The click event from the button.
@@ -87,16 +86,13 @@
     const handleDownload = async (event, targetElement, uniqueId) => {
         event.preventDefault();
         event.stopPropagation();
-
         const button = event.currentTarget;
         button.disabled = true;
         button.textContent = CONFIG.buttonText.loading;
         button.style.backgroundColor = CONFIG.buttonColors.loading;
         button.title = ''; // Clear any previous error tooltips
-
-        const blobUrl = targetElement.href || targetElement.src;
+        const blobUrl = targetElement.href || targetElement.src || targetElement.currentSrc;
         log(`Initiating fetch for ${blobUrl}`);
-
         try {
             const response = await fetch(blobUrl);
             if (!response.ok) {
@@ -104,23 +100,18 @@
             }
             const extractedBlob = await response.blob();
             const fileExtension = getExtensionFromMimeType(extractedBlob.type);
-
             // Intelligently determine the base filename
             const baseFilename = targetElement.download || targetElement.title || targetElement.alt || `generated_blob_${uniqueId}`;
             // Ensure filename has the correct extension without duplication
             const filename = baseFilename.endsWith(fileExtension) ? baseFilename : `${baseFilename.replace(/\.[^/.]+$/, "")}${fileExtension}`;
-
             const newUrl = URL.createObjectURL(extractedBlob);
             const forceDownloadLink = document.createElement('a');
             forceDownloadLink.href = newUrl;
             forceDownloadLink.download = filename;
-
             document.body.appendChild(forceDownloadLink);
             forceDownloadLink.click();
             document.body.removeChild(forceDownloadLink);
-
             URL.revokeObjectURL(newUrl); // Memory cleanup
-
             log(`Successfully downloaded payload as "${filename}".`);
             button.textContent = CONFIG.buttonText.success;
             button.style.backgroundColor = CONFIG.buttonColors.success;
@@ -129,6 +120,10 @@
             button.textContent = CONFIG.buttonText.failure;
             button.style.backgroundColor = CONFIG.buttonColors.failure;
             button.title = error.message; // Add error details on hover
+            if (error.message.includes('cross-origin') || error.name === 'TypeError') {
+                button.title += ' (Possible CORS restriction - blob may be from third-party origin)';
+                log('CORS block detected—sandbox restriction likely.');
+            }
         } finally {
             // Revert button to its initial state after a delay
             setTimeout(() => {
@@ -139,41 +134,33 @@
             }, CONFIG.resetDelay);
         }
     };
-
     // --- Main Execution & Observation Logic ---
-
     /**
      * Scans the DOM for unprocessed elements with blob URLs and instruments them.
      */
     const processElements = () => {
-        const selector = 'a[href^="blob:"], img[src^="blob:"], video[src^="blob:"], iframe[src^="blob:"]';
+        const selector = 'a[href^="blob:"], img[src^="blob:"], video[src^="blob:"], audio[src^="blob:"], source[src^="blob:"], iframe[src^="blob:"]';
         const elements = document.querySelectorAll(`${selector}:not([data-blob2url-processed])`);
-
         if (elements.length === 0) return;
-
         log(`${elements.length} new blob target(s) acquired.`);
-
         elements.forEach((el, index) => {
             el.dataset.blob2urlProcessed = 'true'; // Mark immediately to prevent race conditions
-            const uniqueId = `${Date.now()}-${index}`;
-            const button = createDownloadButton(CONFIG.buttonText.initial(uniqueId));
-
+            const uniqueId = `${Date.now()}-${Math.floor(Math.random() * 10000)}-${index}`;
+            const button = createDownloadButton(CONFIG.buttonText.initial(uniqueId), uniqueId);
             button.addEventListener('click', (e) => handleDownload(e, el, uniqueId));
-
             el.parentNode?.insertBefore(button, el.nextSibling);
         });
     };
-
     // Initial scan on script injection
     log('Armed and performing initial scan.');
     processElements();
-
     // Establish a MutationObserver to dominate dynamic content
-    const observer = new MutationObserver(() => {
-        // Re-scan for any new blob-based elements
-        processElements();
+    const observer = new MutationObserver((mutations) => {
+        requestAnimationFrame(() => {
+            // Re-scan for any new blob-based elements, batched for perf
+            processElements();
+        });
     });
-
     log('MutationObserver deployed to monitor for dynamic targets.');
     observer.observe(document.body, {
         childList: true,
