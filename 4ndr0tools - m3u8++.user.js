@@ -3,7 +3,7 @@
 // @namespace    http://github.com/4ndr0666/userscripts
 // @version      4.3
 // @author       4ndr0666
-// @description  Instantly detect the m3u8 url for any video that is playing for DL. Once detected the UI will appear in the upper right corner. Webapp for DL is buggy so click to copy and DL with yt-dlp or n-m3u8dl-re.
+// @description  Instantly detect the m3u8 url for any video playing. Once detected the UI will appear in the upper right corner. Copy and DL with tools.thatwind.com, yt-dlp or n-m3u8dl-re.
 // @match        *://*/*
 // @exclude      *://www.diancigaoshou.com/*
 // @require      https://cdn.jsdelivr.net/npm/m3u8-parser@4.7.1/dist/m3u8-parser.min.js
