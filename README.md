@@ -71,7 +71,7 @@ Each script adheres to a core set of principles:
 | InstagramRedirect | [4ndr0tools - InstagramRedirect.user.js](./4ndr0tools%20-%20InstagramRedirect.user.js) | Privacy redirect for IG media to dumpor.com. |
 | LinkMasterΨ | [4ndr0tools - LinkMasterΨ.user.js](./4ndr0tools%20-%20LinkMaster%CE%A8.user.js) | Scrapes all the links. TODO: merge with LinkMasterΨ2 |
 | LinkMasterΨ2 | [4ndr0tools - LinkMasterΨ2.user.js](./4ndr0tools%20-%20LinkMaster%CE%A82.user.js) | A fully-integrated HUD for scraping, previewing, checking, and downloading links from any website. Features dual modes for targeted forum scraping or aggressive general-purpose link discovery, a standalone link checker with paste support, and persistent user settings. |
-| m3u8++ | [4ndr0tools - m3u8++.user.js](./4ndr0tools%20-%20m3u8++.user.js) | Instantly detect the m3u8 url for any video that is playing for DL. Once detected the UI will appear in the upper right corner. Webapp for DL is buggy so click to copy and DL with yt-dlp or n-m3u8dl-re. |
+| m3u8++ | [4ndr0tools - m3u8++.user.js](./4ndr0tools%20-%20m3u8++.user.js) | Instantly detect the m3u8 url for any video playing. Once detected the UI will appear in the upper right corner. Copy and DL with tools.thatwind.com, yt-dlp or n-m3u8dl-re. |
 | MegaEmbedRedirector | [4ndr0tools - MegaEmbedRedirector.user.js](./4ndr0tools%20-%20MegaEmbedRedirector.user.js) | Bypass to the embedded URL and autoplays. |
 | ModelSearch | [4ndr0tools - ModelSearch.user.js](./4ndr0tools%20-%20ModelSearch.user.js) | Direct SimpCity search UI to search models on Simpcity.su directly from any website. |
 | Pixverse++ | [4ndr0tools - Pixverse++.user.js](./4ndr0tools%20-%20Pixverse++.user.js) | For educational security research. |
