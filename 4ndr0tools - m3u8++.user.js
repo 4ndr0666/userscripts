@@ -540,7 +540,7 @@
 
         div.querySelector(".copy-link").addEventListener("click", () => {
             mgmapi.copyText(url.href);
-            mgmapi.message("已复制链接 (link copied)", 2000);
+            mgmapi.message("(link copied)", 2000);
         });
 
         div.querySelector(".download-btn").addEventListener("click", download);
@@ -564,16 +564,14 @@
     const reg = /magnet:\?xt=urn:btih:\w{10,}([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/;
 
     let l = navigator.language || "en";
-    if (l.startsWith("en-")) l = "en";
-    else if (l.startsWith("zh-")) l = "zh-CN";
-    else l = "en";
+	    l = "en";
+//    if (l.startsWith("en-")) l = "en";
+//    else if (l.startsWith("zh-")) l = "zh-CN";
+//    else l = "en";
 
     const T = {
         "en": {
             play: "Play"
-        },
-        "zh-CN": {
-            play: '播放'
         }
     }[l];
 
