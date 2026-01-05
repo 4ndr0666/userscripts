@@ -6,8 +6,8 @@
 // @description  Force a faster mobile skin where useful.
 // @match        http://www.planetsuzy.org/*
 // @match        https://www.planetsuzy.org/*
-// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-PlanetsuzyMobileSkinRedirect.user.js
-// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-PlanetsuzyMobileSkinRedirect.user.js
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20PlanetsuzyMobileSkinRedirect.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20PlanetsuzyMobileSkinRedirect.user.js
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @run-at       document-start
 // @grant        none
