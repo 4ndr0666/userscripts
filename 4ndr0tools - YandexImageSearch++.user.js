@@ -4,8 +4,8 @@
 // @author       4ndr0666 
 // @version      0.3.0
 // @description  Robust, event-driven slideshow, fullscreen preview, and on-screen status for Yandex reverse-image search.
-// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-YandexImageSearch++.user.js
-// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-YandexImageSearch++.user.js
+// @downloadURL  https://github.com/4ndr0666/userscripts/blob/main/4ndr0tools%20-%20YandexImageSearch%2B%2B.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/blob/main/4ndr0tools%20-%20YandexImageSearch%2B%2B.user.js
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match        http*://yandex.com/images/*
 // @match        http*://yandex.ru/images/*
