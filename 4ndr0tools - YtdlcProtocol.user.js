@@ -3,9 +3,9 @@
 // @namespace   https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
 // @version     2.1
-// @description Personal `ytdl://`-style protocol trigger for using yt-dlp with cookies.
-// @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-YtdlcProtocol.user.js
-// @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-YtdlcProtocol.user.js
+// @description Personal ytdl:// link handler for ytdlc script.
+// @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20YtdlcProtocol.user.js
+// @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20YtdlcProtocol.user.js
 // @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match       *://*.youtube.*/*
 // @match       *://*.youtu.be/*
