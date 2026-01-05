@@ -4,8 +4,8 @@
 // @author       4ndr0666
 // @version      1.2.0
 // @description  Toggle/auto-collapse all images with a mouse hover for reducing excessive I/O.
-// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20CollapseAllImages.user.js
-// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20CollapseAllImages.user.js
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Collapse%20All%20Images.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Collapse%20All%20Images.user.js
 // @match        *://*/*
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @license      AGPL-v3.0
