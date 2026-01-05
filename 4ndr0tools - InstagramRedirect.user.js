@@ -4,8 +4,8 @@
 // @author       4ndr0666
 // @version      1.0.0
 // @description  Privacy redirect for IG media to dumpor.com.
-// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-InstagramRedirect.user.js
-// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-InstagramRedirect.user.js
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20InstagramRedirect.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20InstagramRedirect.user.js
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @run-at       document-start
 // @match        *://instagram.com/*
