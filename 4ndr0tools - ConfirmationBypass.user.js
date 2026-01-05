@@ -4,8 +4,8 @@
 // @author       4ndr0666
 // @description  Unfucks the "Are you sure?" bullshit when opening links.
 // @version      2.1.0
-// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-ConfirmationBypass.user.js
-// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-ConfirmationBypass.user.js
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20ConfirmationBypass.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20ConfirmationBypass.user.js
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 //
 // ------ WARNING: ONLY use a specific url --------------
