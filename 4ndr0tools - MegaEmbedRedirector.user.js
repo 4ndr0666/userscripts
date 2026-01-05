@@ -4,8 +4,8 @@
 // @author       4ndr0666
 // @version      1.0.0
 // @description  Bypass to the embedded URL and autoplays.
-// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-MegaEmbedRedirector.user.js
-// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-MegaEmbedRedirector.user.js
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20MegaEmbedRedirector.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20MegaEmbedRedirector.user.js
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match        https://mega.nz/*
 // @icon         https://avatars.githubusercontent.com/u/4920706?s=200&v=4
