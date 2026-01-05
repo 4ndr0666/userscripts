@@ -3,8 +3,8 @@
 // @namespace    https://github.com/4ndr0666/userscripts
 // @version      1.4
 // @description  Floating button for redirects to embedded version. Right click it to set a keybind (default Ctrl+E).
-// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-YouTubeEmbedRedirectButton.user.js
-// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-YouTubeEmbedRedirectButton.user.js
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @author       4ndr0666
 // @match        https://*.youtube.com/*
