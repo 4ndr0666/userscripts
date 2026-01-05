@@ -159,10 +159,7 @@
         return;
     }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> 4a3295d (updated m3u8++)
     window.addEventListener("message", async (e) => {
         if (e.data === "3j4t9uj349-gm-get-title") {
             let name = `top-title-${Date.now()}`;
@@ -177,11 +174,7 @@
                 if (typeof e.data === "string") {
                     if (e.data.startsWith("3j4t9uj349-gm-top-title-name:")) {
                         let name = e.data.slice("3j4t9uj349-gm-top-title-name:".length);
-<<<<<<< HEAD
                         await new Promise(r => setTimeout(r, 5));
-=======
-                        await new Promise(r => setTimeout(r, 5)); 
->>>>>>> 4a3295d (updated m3u8++)
                         resolve(await mgmapi.getValue(name));
                         mgmapi.deleteValue(name);
                         window.removeEventListener("message", l);
@@ -471,11 +464,10 @@
         showVideo({
             type: "M3u8 URL:",
             url,
-<<<<<<< HEAD
+
             duration: manifest.duration ? `${Math.ceil(manifest.duration * 10 / 60) / 10} mins` : manifest.playlists ? `Streams(${manifest.playlists.length})` : "unknown",
-=======
-            duration: manifest.duration ? `${Math.ceil(manifest.duration * 10 / 60) / 10} mins` : manifest.playlists ? `Playlist(${manifest.playlists.length})` : "unknown",
->>>>>>> 4a3295d (updated m3u8++)
+
+
             async download() {
                 mgmapi.openInTab(
                     `https://tools.thatwind.com/tool/m3u8downloader#${new URLSearchParams({
