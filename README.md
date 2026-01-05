@@ -84,6 +84,7 @@ Each script adheres to a core set of principles:
 | SelectAllCheckboxes | [4ndr0tools - SelectAllCheckboxes.user.js](./4ndr0tools%20-%20SelectAllCheckboxes.user.js) | Check/Uncheck a fuckload of checkboxes at once with enhanced precision and modern code. |
 | Sora Toolkit | [4ndr0tools - Sora Toolkit.user.js](./4ndr0tools%20-%20Sora%20Toolkit.user.js) | Auto-refreshes stuck Sora generation jobs after a configurable timeout to help you get your assets faster. |
 | Wan++ | [4ndr0tools - Wan++.user.js](./4ndr0tools%20-%20Wan++.user.js) | For educational and security research only. |
+| Website Control Panel | [4ndr0tools - Website Control Panel.user.js](./4ndr0tools%20-%20Website%20Control%20Panel.user.js) | Ultimate ad suppression, age-restriction bypass, nag removal, deep DOM purification, visual noise elimination, and uBlock-inspired filter integration with cyberdeck HUD. |
 | YandexImageSearch++ | [4ndr0tools - YandexImageSearch++.user.js](./4ndr0tools%20-%20YandexImageSearch++.user.js) | Robust, event-driven slideshow, fullscreen preview, and on-screen status for Yandex reverse-image search. |
 | YouTubeEmbedRedirectButton | [4ndr0tools - YouTubeEmbedRedirectButton.user.js](./4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js) | Floating button for redirects to embedded version. Right click it to set a keybind (default Ctrl+E). |
 | YtdlcProtocol | [4ndr0tools - YtdlcProtocol.user.js](./4ndr0tools%20-%20YtdlcProtocol.user.js) | Personal ytdl:// link handler for ytdlc script. |
