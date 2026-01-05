@@ -4,8 +4,8 @@
 // @description  Force every single link, including dynamically loaded ones, to open in a new window/tab.
 // @version      0.3
 // @author       4ndr0666
-// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-AlwaysNewWindow.user.js
-// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-AlwaysNewWindow.user.js
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20AlwaysNewWindow.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20AlwaysNewWindow.user.js
 // @match        *://*/*
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @grant        none
