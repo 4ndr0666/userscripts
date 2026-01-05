@@ -6,6 +6,7 @@
 // @description     Intercepts Redgifs links on Reddit to open them in an enhanced, cinematic overlay. Cleans up the Redgifs site itself for a focused viewing experience.
 // @downloadURL     https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Redgifs++.user.js
 // @updateURL       https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Redgifs++.user.js
+// @icon            https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match           https://*.reddit.com/*
 // @match           https://*.redgifs.com/watch/*
 // @match           https://*.redgifs.com/ifr/*
