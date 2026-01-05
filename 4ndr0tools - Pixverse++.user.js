@@ -4,8 +4,8 @@
 // @author      4ndr0666
 // @version     4.1.0
 // @description For educational security research.
-// @downloadURL https://github.com/4ndr0666/userscripts/blob/main/4ndr0tools%20-%20Pixverse%2B%2B.user.js
-// @updateURL   https://github.com/4ndr0666/userscripts/blob/main/4ndr0tools%20-%20Pixverse%2B%2B.user.js
+// @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Pixverse++.user.js
+// @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Pixverse++.user.js
 // @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match       https://app.pixverse.ai/*
 // @run-at      document-start
