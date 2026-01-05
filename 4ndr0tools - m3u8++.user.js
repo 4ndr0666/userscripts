@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         4ndr0tols - m3u8++
 // @namespace    http://github.com/4ndr0666/userscripts
-// @version      4.3
+// @version      4.4
 // @author       4ndr0666
-// @description  Instantly detect the m3u8 url for any video playing. Once detected the UI will appear in the upper right corner. Copy and DL with tools.thatwind.com, yt-dlp or n-m3u8dl-re.
+// @description  Automatically displays the m3u8 url for ANY video playing in the top right corner of the video. Click url to copy or click download to use the webapp "tools.thatwind.com".
 // @match        *://*/*
 // @exclude      *://www.diancigaoshou.com/*
 // @require      https://cdn.jsdelivr.net/npm/m3u8-parser@4.7.1/dist/m3u8-parser.min.js
@@ -61,7 +61,6 @@
         copyText(text) {
             copyTextToClipboard(text);
             function copyTextToClipboard(text) {
-                // 复制文本
                 var copyFrom = document.createElement("textarea");
                 copyFrom.textContent = text;
                 document.body.appendChild(copyFrom);
@@ -107,11 +106,9 @@
         }
     };
 
-
     if (location.host === "tools.thatwind.com" || location.host === "localhost:3000") {
         mgmapi.addStyle("#userscript-tip{display:none !important;}");
 
-        // 对请求做代理
         const _fetch = unsafeWindow.fetch;
         unsafeWindow.fetch = async function (...args) {
             try {
@@ -119,9 +116,8 @@
                 if (response.status !== 200) throw new Error(response.status);
                 return response;
             } catch (e) {
-                // 失败请求使用代理
                 if (args.length == 1) {
-                    console.log(`请求代理：${args[0]}`);
+                    console.log(`Proxy request: ${args[0]}`);
                     return await new Promise((resolve, reject) => {
                         let referer = new URLSearchParams(location.hash.slice(1)).get("referer");
                         let headers = {};
@@ -163,9 +159,6 @@
         return;
     }
 
-
-    // iframe 信息交流
-    // 目前只用于获取顶部标题
     window.addEventListener("message", async (e) => {
         if (e.data === "3j4t9uj349-gm-get-title") {
             let name = `top-title-${Date.now()}`;
@@ -180,7 +173,7 @@
                 if (typeof e.data === "string") {
                     if (e.data.startsWith("3j4t9uj349-gm-top-title-name:")) {
                         let name = e.data.slice("3j4t9uj349-gm-top-title-name:".length);
-                        await new Promise(r => setTimeout(r, 5)); // 等5毫秒 确定 setValue 已经写入
+                        await new Promise(r => setTimeout(r, 5));
                         resolve(await mgmapi.getValue(name));
                         mgmapi.deleteValue(name);
                         window.removeEventListener("message", l);
@@ -193,7 +186,6 @@
 
 
     {
-        // 请求检测
         const _r_text = unsafeWindow.Response.prototype.text;
         unsafeWindow.Response.prototype.text = function () {
             return new Promise((resolve, reject) => {
@@ -215,7 +207,6 @@
             return _open.apply(this, args);
         }
 
-
         function checkContent(content) {
             if (content.trim().startsWith("#EXTM3U")) {
                 return true;
@@ -223,7 +214,6 @@
         }
 
 
-        // 检查纯视频
         setInterval(doVideos, 1000);
 
     }
@@ -242,7 +232,6 @@
     shadowDOM.appendChild(wrapper);
 
 
-    // 指示器
     const bar = document.createElement("div");
     bar.style = `
         text-align: right;
@@ -295,7 +284,6 @@
 
     wrapper.appendChild(bar);
 
-    // 样式
     const style = document.createElement("style");
     style.innerHTML = `
         .number-indicator{
@@ -307,7 +295,7 @@
             position: absolute;
             bottom: 0;
             right: 0;
-            color: #40a9ff;
+            color: #15FFFF;
             font-size: 14px;
             font-weight: bold;
             background: #000;
@@ -355,12 +343,7 @@
 
     wrapper.appendChild(style);
 
-
-
-
     const barBtn = bar.querySelector(".number-indicator");
-
-    // 关于显隐和移动
 
     (async function () {
 
@@ -410,7 +393,6 @@
                     mgmapi.setValue("shown", shown);
                     wrapper.setAttribute("data-shown", shown);
                 }
-
                 removeEventListener("mousemove", mousemove);
                 removeEventListener("mouseup", mouseup);
             }
@@ -419,14 +401,8 @@
         });
     })();
 
-
-
-
-
-
     let count = 0;
     let shownUrls = [];
-
 
     function doVideos() {
         for (let v of Array.from(document.querySelectorAll("video"))) {
@@ -485,9 +461,9 @@
         }
 
         showVideo({
-            type: "m3u8",
+            type: "M3u8 URL:",
             url,
-            duration: manifest.duration ? `${Math.ceil(manifest.duration * 10 / 60) / 10} mins` : manifest.playlists ? `多(Multi)(${manifest.playlists.length})` : "未知(unknown)",
+            duration: manifest.duration ? `${Math.ceil(manifest.duration * 10 / 60) / 10} mins` : manifest.playlists ? `Streams(${manifest.playlists.length})` : "unknown",
             async download() {
                 mgmapi.openInTab(
                     `https://tools.thatwind.com/tool/m3u8downloader#${new URLSearchParams({
@@ -500,8 +476,6 @@
         })
 
     }
-
-
 
     async function showVideo({
         type,
@@ -535,12 +509,12 @@
                 style="
                     margin-left: 10px;
                     cursor: pointer;
-            ">(Download)</span>
+            ">[Download]</span>
         `;
 
         div.querySelector(".copy-link").addEventListener("click", () => {
             mgmapi.copyText(url.href);
-            mgmapi.message("(link copied)", 2000);
+            mgmapi.message("Link copied", 2000, 'success');
         });
 
         div.querySelector(".download-btn").addEventListener("click", download);
@@ -563,11 +537,7 @@
 
     const reg = /magnet:\?xt=urn:btih:\w{10,}([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/;
 
-    let l = navigator.language || "en";
-	    l = "en";
-//    if (l.startsWith("en-")) l = "en";
-//    else if (l.startsWith("zh-")) l = "zh-CN";
-//    else l = "en";
+    let l = "en";
 
     const T = {
         "en": {
@@ -672,7 +642,7 @@
         for (let a of Array.from(document.querySelectorAll(
             ['href', 'value', 'data-clipboard-text', 'data-value', 'title', 'alt', 'data-url', 'data-magnet', 'data-copy'].map(n => `[${n}*="magnet:?xt=urn:btih:"]`).join(',')
         ))) {
-            if (a.nextSibling && a.nextSibling.hasAttribute && a.nextSibling.hasAttribute('data-wtmzjk-mag-url')) continue; // 已经添加
+            if (a.nextSibling && a.nextSibling.hasAttribute && a.nextSibling.hasAttribute('data-wtmzjk-mag-url')) continue;
             if (reg.test(a.textContent)) continue;
             for (let attr of a.getAttributeNames()) {
                 let val = a.getAttribute(attr);
