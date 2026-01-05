@@ -6,8 +6,8 @@
 // @description  Check/Uncheck a fuckload of checkboxes at once with enhanced precision and modern code.
 // @match        *://*/*
 // @require      https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js
-// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-SelectAllCheckboxes.user.js
-// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools-SelectAllCheckboxes.user.js
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20SelectAllCheckboxes.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20SelectAllCheckboxes.user.js
 // @icon         https://img.icons8.com/?size=30&id=48178&format=png
 // @license      MIT
 // @grant        GM_registerMenuCommand
