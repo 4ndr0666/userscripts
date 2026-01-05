@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name        4ndr0tools - Recon
 // @namespace   https://github.com/4ndr0666/userscripts
-// @author      4ndr0666 (Ψ-Anarch Revision)
+// @author      4ndr0666
 // @version     2.0.0-AHE
 // @description Red-team tool for automated recon. Passively captures all traffic and generates a heuristic analysis report on command. For educational and lab use only.
-// @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20ReconAnalysisEngine.user.js
-// @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20ReconAnalysisEngine.user.js
+// @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Recon.user.js
+// @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Recon.user.js
 // @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match       *://*/*
 // @run-at      document-start
