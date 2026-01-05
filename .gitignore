@@ -34,4 +34,4 @@ tools/*.log
 
 !README.md
 !*.user.js
-
+compare*
