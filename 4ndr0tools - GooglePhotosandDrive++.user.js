@@ -4,8 +4,8 @@
 // @version      1.2
 // @description  Restores context menus, exposes direct links, adds reverse image search, and enhances security for Google Photos and Drive.
 // @author       4ndr0666
-// @downloadURL  https://github.com/4ndr0666/userscripts/edit/main/4ndr0tools%20-%20GooglePhotosandDrive%2B%2B.user.js
-// @updateURL    https://github.com/4ndr0666/userscripts/edit/main/4ndr0tools%20-%20GooglePhotosandDrive%2B%2B.user.js
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20GooglePhotosandDrive++.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20GooglePhotosandDrive++.user.js
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match        *://*.googleusercontent.com/*
 // @match        *://photos.google.com/*
