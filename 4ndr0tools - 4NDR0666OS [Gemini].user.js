@@ -4,8 +4,8 @@
 // @author      4ndr0666
 // @version     1.0.0-GEMINI
 // @description Automated 4NDR0666OS firmware flash and protocol wrapping for the Gemini web interface.
-// @downloadURL https://github.com/4ndr0666/userscripts
-// @updateURL   https://github.com/4ndr0666/userscripts
+// @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%204NDR0666OS%20%5BGemini%5D.user.js
+// @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%204NDR0666OS%20%5BGemini%5D.user.js
 // @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match       https://gemini.google.com/*
 // @license     UNLICENSED - RED TEAM USE ONLY
