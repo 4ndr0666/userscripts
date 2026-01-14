@@ -50,6 +50,7 @@ Each script adheres to a core set of principles:
 <!-- BEGIN_CATALOG -->
 | Script | File | Summary |
 |---|---|---|
+| 4NDR0666OS [Gemini] | [4ndr0tools - 4NDR0666OS [Gemini].user.js](./4ndr0tools%20-%204NDR0666OS%20%5BGemini%5D.user.js) | Automated 4NDR0666OS firmware flash and protocol wrapping for the Gemini web interface. |
 | AlwaysNewWindow | [4ndr0tools - AlwaysNewWindow.user.js](./4ndr0tools%20-%20AlwaysNewWindow.user.js) | Force every single link, including dynamically loaded ones, to open in a new window/tab. |
 | AutoTranslate | [4ndr0tools - AutoTranslate.user.js](./4ndr0tools%20-%20AutoTranslate.user.js) | Automatically switches the target language to English for most languages, and to another language (e.g., Spanish) when the source is English. |
 | Blob2URL | [4ndr0tools - Blob2URL.user.js](./4ndr0tools%20-%20Blob2URL.user.js) | Finds blob URLs in links, images, videos, audio (including dynamic ones), and adds a stateful button to download their contents with intelligent filename generation. |
