@@ -4,6 +4,8 @@
 // @version      2.0.1Unified
 // @description  Features active moderation recovery, forensic traffic inspection, spicy-mode reinforcement. Security Research Only.
 // @author       4ndr0666
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Grok++.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Grok++.user.js
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match        https://grok.com/*
