@@ -11,7 +11,8 @@
 <!-- badges -->
 <a href="https://opensource.org/license/mit/">
   <img alt="License" src="https://img.shields.io/badge/License-MIT-yellow.svg">
-</a>
+</a> 
+<img alt="Passing" src="https://github.com/4ndr0666/userscripts/actions/workflows/update-catalog.yml/badge.svg"> 
 <img alt="Stars" src="https://img.shields.io/github/stars/4ndr0666/userscripts?style=flat">
 <img alt="Last commit" src="https://img.shields.io/github/last-commit/4ndr0666/userscripts">
 <img alt="Top language" src="https://img.shields.io/github/languages/top/4ndr0666/userscripts">
