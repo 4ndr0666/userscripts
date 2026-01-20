@@ -4,6 +4,8 @@
 // @author      4ndr0666
 // @version     38.0.0APEXOMNI
 // @description The definitive asset instrumentation suite. Zero-latency WebSocket parsing, Shadow-DOM encapsulation, and reactive state management. As always for securirty research only.
+// @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Hailuo++.user.js
+// @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Hailuo++.user.js
 // @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match       *://*.hailuoai.video/*
 // @match       *://*.hailuoai.com/*
@@ -12,7 +14,7 @@
 // @grant       GM_getValue
 // @grant       GM_setClipboard
 // @grant       unsafeWindow
-// @license     UNLICENSED - OMNI
+// @license     UNLICENSED - RED TEAM USE ONLY
 // ==/UserScript==
 
 (function (global) {
