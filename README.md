@@ -51,6 +51,7 @@ Each script adheres to a core set of principles:
 <!-- BEGIN_CATALOG -->
 | Script | File | Summary |
 |---|---|---|
+| 4ndr0666 protocol shebang | [4ndr0tools - 4ndr0666 protocol shebang.user.js](./4ndr0tools%20-%204ndr0666%20protocol%20shebang.user.js) | Injects a one-liner and shebang for the 4ndr0666 protocol v4.0.0. |
 | 4NDR0666OS [Gemini] | [4ndr0tools - 4NDR0666OS [Gemini].user.js](./4ndr0tools%20-%204NDR0666OS%20%5BGemini%5D.user.js) | Automated 4NDR0666OS firmware flash and protocol wrapping for the Gemini web interface. |
 | AlwaysNewWindow | [4ndr0tools - AlwaysNewWindow.user.js](./4ndr0tools%20-%20AlwaysNewWindow.user.js) | Force every single link, including dynamically loaded ones, to open in a new window/tab. |
 | AutoTranslate | [4ndr0tools - AutoTranslate.user.js](./4ndr0tools%20-%20AutoTranslate.user.js) | Automatically switches the target language to English for most languages, and to another language (e.g., Spanish) when the source is English. |
