@@ -152,7 +152,7 @@
             this.hookXHR();
             this.hookWS();
             SecurityContext.init();
-            Store.dispatch('LOG', { msg: 'OMNI v40.6.0: DRM Interceptor Engaged.', type: 'SYS' });
+            Store.dispatch('LOG', { msg: 'HAILUO++ v39.0.0: DRM Interceptor Engaged.', type: 'SYS' });
         },
 
         isTelemetry: (url) => /sentry|google-analytics|clarity|report|telemetry/i.test(url),
@@ -339,7 +339,7 @@
                         thumb: obj.coverUrl || obj.imageUrl || obj.imageUrlWithoutWatermark,
                         type: url.includes('.mp4') ? 'video' : 'image',
                         source,
-                        prompt: obj.prompt || obj.desc || "OMNI_HARVEST"
+                        prompt: obj.prompt || obj.desc || "HARVEST"
                     });
                 }
             }
@@ -451,7 +451,7 @@
             wrapper.className = 'panel';
             wrapper.innerHTML = `
                 <div class="header" id="drag">
-                    <span class="title">Ψ HAILUO OMNI v40.6</span>
+                    <span class="title">HAILUO++</span>
                     <button class="toggle-btn" id="tgl">▼</button>
                 </div>
                 <div class="tabs">
@@ -625,7 +625,7 @@
             HUD.init();
         }
         setInterval(Defense.pulse, 5000);
-        console.log(`${CORE.name} Ψ APEX-OMNI ENGINE ENGAGED.`);
+        console.log(`${CORE.name} HAILUO ENGINE ENGAGED.`);
     };
 
     main();
