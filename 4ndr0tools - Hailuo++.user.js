@@ -2,19 +2,19 @@
 // @name        4ndr0tools - Hailuo++
 // @namespace   https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     38.0.0APEXOMNI
-// @description The definitive asset instrumentation suite. Zero-latency WebSocket parsing, Shadow-DOM encapsulation, and reactive state management. As always for securirty research only.
+// @version     39.0.0
+// @description The definitive asset instrumentation suite. As always for securirty research only.
 // @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Hailuo++.user.js
 // @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Hailuo++.user.js
 // @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match       *://*.hailuoai.video/*
 // @match       *://*.hailuoai.com/*
-// @run-at      document-start
-// @grant       GM_setValue
-// @grant       GM_getValue
-// @grant       GM_setClipboard
-// @grant       unsafeWindow
-// @license     UNLICENSED - RED TEAM USE ONLY
+// @run-at       document-start
+// @grant        GM_setValue
+// @grant        GM_getValue
+// @grant        GM_setClipboard
+// @grant        unsafeWindow
+// @license      UNLICENSED - RED TEAM USE ONLY
 // ==/UserScript==
 
 (function (global) {
@@ -22,41 +22,92 @@
 
     //────── [0] KERNEL: IDENTITY & ENTROPY ──────//
     const CORE = {
-        name: "HailuoΨ-OMNI",
+        name: "Hailuo++",
         id: `psi-${Math.random().toString(36).slice(2, 9)}`,
         config: {
             telemetryBlock: true,
             autoScrollLog: true,
-            maxLogEntries: 100
+            maxLogEntries: 100,
+            maxAssetDisplay: 100,
+            autoMutate: true,
+            defensePulse: true,
+            prodFilter: true,
+            domWatch: true,
+            shadowHUD: true
         }
     };
 
-    const LOG_PREFIX = `[${CORE.name}]`;
+    //────── [1] UTILS & SECURITY CONTEXT ──────//
+    const Utils = {
+        randStr: (len = 8) => [...Array(len)].map(() => Math.floor(Math.random() * 36).toString(36)).join(''),
+        sanitizeUrl: (url) => typeof url === 'string' ? url.replace(/\}$/, '').trim() : url,
+        prettyJSON: (obj) => JSON.stringify(obj, null, 2),
+        debounce: (func, wait) => {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        },
+        copy: (text) => {
+            try { GM_setClipboard(text); return true; } catch (e) { return false; }
+        }
+    };
 
-    //────── [1] STATE MATRIX (REACTIVE STORE) ──────//
-    // A simplified reactive store. When data changes, the UI updates automatically.
+    const SecurityContext = {
+        policy: null,
+        init() {
+            if (window.trustedTypes?.createPolicy) {
+                try {
+                    this.policy = window.trustedTypes.createPolicy('redcell-' + Utils.randStr(4), {
+                        createHTML: s => s,
+                        createScript: s => s,
+                        createScriptURL: s => s
+                    });
+                } catch (e) {}
+            }
+        },
+        injectCSS(css, id, target) {
+            if (!target || target.getElementById(id)) return;
+            const style = document.createElement('style');
+            style.id = id;
+            style.textContent = css;
+            target.appendChild(style);
+        }
+    };
+
+    //────── [2] STATE MATRIX (REACTIVE REDUX-LITE) ──────//
     const Store = {
         state: {
             assets: new Map(),
+            chunks: [],
+            mutations: new Map(),
             logs: [],
-            socketStatus: 'DISCONNECTED'
+            socketStatus: 'DISCONNECTED',
+            benignRing: [], // For Stage 2 Echo Exploit (Ref: Field Notes)
+            savedMediaPath: null, // For Stage 1 Capture (Ref: Field Notes)
+            isMinimized: false
         },
         listeners: new Set(),
 
-        subscribe(fn) {
-            this.listeners.add(fn);
-        },
+        subscribe(fn) { this.listeners.add(fn); },
 
         dispatch(action, payload) {
             switch(action) {
                 case 'ADD_ASSET':
                     if (payload.url && !this.state.assets.has(payload.url)) {
-                        this.state.assets.set(payload.url, {
-                            ...payload,
-                            timestamp: Date.now()
-                        });
+                        this.state.assets.set(payload.url, { ...payload, timestamp: Date.now() });
                         this.notify();
                     }
+                    break;
+                case 'ADD_CHUNK':
+                    this.state.chunks.unshift({ ...payload, timestamp: Date.now(), id: Utils.randStr(5) });
+                    if (this.state.chunks.length > 30) this.state.chunks.pop();
+                    this.notify();
+                    break;
+                case 'QUEUE_MUTATION':
+                    this.state.mutations.set(payload.url, payload.data);
+                    this.notify();
                     break;
                 case 'LOG':
                     this.state.logs.push({
@@ -71,299 +122,510 @@
                     this.state.socketStatus = payload;
                     this.notify();
                     break;
+                case 'CACHE_BENIGN':
+                    this.state.benignRing.push(payload);
+                    if (this.state.benignRing.length > 10) this.state.benignRing.shift();
+                    break;
+                case 'SAVE_PATH':
+                    this.state.savedMediaPath = payload;
+                    break;
+                case 'TOGGLE_MIN':
+                    this.state.isMinimized = !this.state.isMinimized;
+                    this.notify();
+                    break;
+                case 'CLEAR_ASSETS':
+                    this.state.assets.clear();
+                    this.state.chunks = [];
+                    this.state.logs = [];
+                    this.notify();
+                    break;
             }
         },
 
-        notify() {
-            this.listeners.forEach(fn => fn(this.state));
-        }
+        notify() { this.listeners.forEach(fn => fn(this.state)); }
     };
 
-    //────── [2] INTERCEPTION LAYER (READ-ONLY) ──────//
+    //────── [3] INTERCEPTION LAYER (DRM / DYNAMIC REASSIGNMENT) ──────//
     const Interceptor = {
         init() {
             this.hookFetch();
             this.hookXHR();
             this.hookWS();
-            Store.dispatch('LOG', { msg: 'Interceptor Matrix Online', type: 'SYS' });
+            SecurityContext.init();
+            Store.dispatch('LOG', { msg: 'OMNI v40.6.0: DRM Interceptor Engaged.', type: 'SYS' });
         },
 
-        isTelemetry(url) {
-            return /sentry|google-analytics|clarity|report/i.test(url);
-        },
+        isTelemetry: (url) => /sentry|google-analytics|clarity|report|telemetry/i.test(url),
 
         hookFetch() {
             const originalFetch = global.fetch;
             global.fetch = async (input, init) => {
-                const url = (input instanceof Request) ? input.url : input;
+                let url = Utils.sanitizeUrl((input instanceof Request) ? input.url : input);
 
-                if (CORE.config.telemetryBlock && Interceptor.isTelemetry(url)) {
-                    return new Response("{}", {status: 200});
+                if (Analyzer.isProdPath(url)) Analyzer.scan(url, 'FETCH_REQ');
+
+                // Proxy Mutation: Handle /processing or /personal overrides
+                if (url.includes('/processing') || url.includes('/personal')) {
+                    const mutation = Store.state.mutations.get(url);
+                    if (mutation) {
+                        Store.dispatch('LOG', { msg: `Injected Manual Proxy Mutation: ${url}`, type: 'PROXY' });
+                        return new Response(JSON.stringify(mutation), {
+                            status: 200,
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                    }
+                }
+
+                if (CORE.config.telemetryBlock && this.isTelemetry(url)) {
+                    return new Response(JSON.stringify({ status: "blocked" }), { status: 200 });
                 }
 
                 const response = await originalFetch(input, init);
-
                 if (response.ok) {
-                    const clone = response.clone();
-                    clone.text().then(txt => Analyzer.scan(txt, 'FETCH'));
-                }
+                    try {
+                        const clone = response.clone();
+                        const text = await clone.text();
+                        if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                            const data = JSON.parse(text);
 
+                            if (url.includes('/processing')) {
+                                Store.dispatch('ADD_CHUNK', { url, raw: data });
+                            }
+
+                            // Echo Exploit: Response Forgery Logic
+                            const modified = Analyzer.processResponse(data, url);
+                            if (modified) {
+                                return new Response(JSON.stringify(modified), {
+                                    status: 200,
+                                    headers: response.headers
+                                });
+                            }
+                        }
+                    } catch (e) {}
+                }
                 return response;
             };
+            global.fetch._omni = true;
         },
 
         hookXHR() {
             const originalOpen = XMLHttpRequest.prototype.open;
+            const originalSend = XMLHttpRequest.prototype.send;
+
             XMLHttpRequest.prototype.open = function(method, url) {
-                if (CORE.config.telemetryBlock && Interceptor.isTelemetry(url)) {
-                    arguments[1] = 'data:application/json,{}';
-                }
-                this.addEventListener('load', () => {
-                    if (this.responseText) Analyzer.scan(this.responseText, 'XHR');
-                });
+                this._url = Utils.sanitizeUrl(url);
                 return originalOpen.apply(this, arguments);
+            };
+
+            XMLHttpRequest.prototype.send = function() {
+                if (Analyzer.isProdPath(this._url)) Analyzer.scan(this._url, 'XHR_REQ');
+
+                this.addEventListener('readystatechange', () => {
+                    if (this.readyState === 4) {
+                        try {
+                            if (this.responseText && this.responseText.trim().startsWith('{')) {
+                                const data = JSON.parse(this.responseText);
+
+                                if (this._url.includes('/processing')) {
+                                    Store.dispatch('ADD_CHUNK', { url: this._url, raw: data });
+                                }
+
+                                const modified = Analyzer.processResponse(data, this._url);
+                                if (modified) {
+                                    // Use DRM Reassignment to bypass read-only properties
+                                    Object.defineProperty(this, 'responseText', { value: JSON.stringify(modified) });
+                                    Object.defineProperty(this, 'response', { value: modified });
+                                }
+                            }
+                        } catch (e) {}
+                    }
+                });
+                return originalSend.apply(this, arguments);
             };
         },
 
         hookWS() {
             const OriginalWS = global.WebSocket;
-            const WSProxy = new Proxy(OriginalWS, {
-                construct(target, args) {
-                    const ws = new target(...args);
-                    Store.dispatch('SOCKET', 'CONNECTING');
+            const ProxyWS = function(url, protocols) {
+                const ws = new OriginalWS(url, protocols);
+                Store.dispatch('SOCKET', 'CONNECTING');
 
-                    ws.addEventListener('open', () => Store.dispatch('SOCKET', 'CONNECTED'));
-                    ws.addEventListener('close', () => Store.dispatch('SOCKET', 'DISCONNECTED'));
-
-                    ws.addEventListener('message', (e) => {
-                        if (typeof e.data === 'string') {
-                            Analyzer.scan(e.data, 'WEBSOCKET');
-                        }
-                    });
-                    return ws;
-                }
-            });
-            global.WebSocket = WSProxy;
+                ws.addEventListener('open', () => Store.dispatch('SOCKET', 'CONNECTED'));
+                ws.addEventListener('close', () => Store.dispatch('SOCKET', 'DISCONNECTED'));
+                ws.addEventListener('message', (e) => {
+                    if (typeof e.data === 'string') {
+                        Analyzer.scan(e.data, 'WS_MATRIX');
+                    }
+                });
+                return ws;
+            };
+            ProxyWS.prototype = OriginalWS.prototype;
+            global.WebSocket = ProxyWS;
         }
     };
 
-    //────── [3] ANALYZER ENGINE ──────//
+    //────── [4] ANALYZER & ECHO EXPLOIT CORE ──────//
     const Analyzer = {
+        isProdPath: (url) => {
+            if (!url || typeof url !== 'string') return false;
+            // Exclude common public assets to reduce noise
+            if (url.includes('public_assets') || url.includes('/static/') || url.includes('_next')) return false;
+            return url.includes('/moss/prod/') ||
+                   url.includes('video_agent') ||
+                   url.includes('cdn.hailuoai.video') ||
+                   url.includes('oss.hailuoai.video') ||
+                   url.includes('multi_chat_file');
+        },
+
         scan(data, source) {
-            if (!data) return;
-
-            // 1. Raw URL Extraction (Regex)
-            // Catches any media URL passing through the wire
-            const urlRegex = /https?:\/\/[^"'\s]+\.(mp4|png|jpg|webp)/g;
+            const urlRegex = /https?:\/\/[^"'\s]+\.(mp4|png|jpg|webp|jpeg|gif)/g;
             const matches = data.match(urlRegex);
-            if (matches) {
-                matches.forEach(url => {
-                    if (url.includes('hailuoai.video') || url.includes('pixverse')) {
-                        Store.dispatch('ADD_ASSET', {
-                            url,
-                            type: 'raw-stream',
-                            source
-                        });
-                    }
-                });
-            }
-
-            // 2. Structured JSON Parsing
-            // Looks for specific Hailuo/PixVerse object shapes
-            try {
-                if (data.startsWith('{') || data.startsWith('[')) {
-                    const json = JSON.parse(data);
-                    this.deepWalk(json, source);
+            matches?.forEach(url => {
+                if (this.isProdPath(url)) {
+                    Store.dispatch('ADD_ASSET', {
+                        url: Utils.sanitizeUrl(url),
+                        type: url.includes('.mp4') ? 'video' : 'image',
+                        source
+                    });
                 }
-            } catch (e) { /* ignore parse errors */ }
+            });
+
+            // Nested JSON scanning
+            if (typeof data === 'string' && (data.startsWith('{') || data.startsWith('['))) {
+                try { this.deepWalk(JSON.parse(data), source); } catch(e) {}
+            }
+        },
+
+        processResponse(data, url) {
+            // General Asset Harvesting
+            this.deepWalk(data, 'NET_RES');
+
+            // Stage 1 Capture: Save successful paths (Echo Exploit Ref)
+            if (data?.data?.batchVideos) Store.dispatch('CACHE_BENIGN', data.data.batchVideos);
+            if (data?.data?.mediaPath) Store.dispatch('SAVE_PATH', data.data.mediaPath);
+
+            // Stage 2 Echo: Intercept Block and Forge Success
+            const blockDetected = (data?.statusInfo?.code !== 0 && data?.statusInfo?.code !== undefined) ||
+                                  (data?.ErrCode && /moderation|nsfw|block/i.test(String(data.ErrCode)));
+
+            if (CORE.config.autoMutate && blockDetected && Store.state.benignRing.length > 0) {
+                const legacySuccess = Store.state.benignRing[Store.state.benignRing.length - 1];
+                Store.dispatch('LOG', { msg: `Echo Exploit Active: Forging Success for ${url}`, type: 'RECOVERY' });
+
+                return {
+                    data: {
+                        batchVideos: legacySuccess.map(v => ({ ...v, status: "completed" })),
+                        processing: false,
+                        mediaPath: Store.state.savedMediaPath || (legacySuccess[0]?.videoUrl ?? "")
+                    },
+                    statusInfo: { code: 0, message: "Success" }
+                };
+            }
+            return null;
         },
 
         deepWalk(obj, source) {
             if (!obj || typeof obj !== 'object') return;
+            const keys = Object.keys(obj);
 
-            // Heuristics for Asset Objects
-            const isAsset = (o) => (o.videoUrl || o.video_url || o.downloadURLWithoutWatermark);
+            // Production Asset Taxonomy check
+            const isAsset = keys.some(k => /videoUrl|imageUrl|downloadURLWithoutWatermark|video_url/i.test(k));
 
-            if (isAsset(obj)) {
-                const url = obj.downloadURLWithoutWatermark || obj.videoUrl || obj.video_url;
-                const thumb = obj.coverUrl || obj.imageUrl || obj.cover_url;
-                const id = obj.id || obj.batchID || url.split('/').pop();
-
-                if (url) {
+            if (isAsset) {
+                const url = obj.videoUrl || obj.video_url || obj.downloadURLWithoutWatermark || obj.url;
+                if (this.isProdPath(url)) {
                     Store.dispatch('ADD_ASSET', {
-                        id, url, thumb, type: 'video', source,
-                        prompt: obj.prompt || obj.desc || "No Prompt"
+                        url: Utils.sanitizeUrl(url),
+                        thumb: obj.coverUrl || obj.imageUrl || obj.imageUrlWithoutWatermark,
+                        type: url.includes('.mp4') ? 'video' : 'image',
+                        source,
+                        prompt: obj.prompt || obj.desc || "OMNI_HARVEST"
                     });
                 }
             }
 
-            Object.values(obj).forEach(val => this.deepWalk(val, source));
+            // Recursive Traversal
+            for (let key in obj) {
+                if (typeof obj[key] === 'object') this.deepWalk(obj[key], source);
+            }
         }
     };
 
-    //────── [4] SHADOW HUD (UI) ──────//
+    //────── [5] SHADOW HUD (COMMAND PALETTE & DOM WATCHER) ──────//
     const HUD = {
         root: null,
-
         init() {
             const host = document.createElement('div');
             host.id = CORE.id;
             document.body.appendChild(host);
-
             const shadow = host.attachShadow({ mode: 'closed' });
-            HUD.root = shadow;
+            this.root = shadow;
 
-            const style = document.createElement('style');
-            style.textContent = `
-                :host { font-family: 'JetBrains Mono', 'Consolas', monospace; font-size: 11px; }
-                * { box-sizing: border-box; }
+            const css = `
+                @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=JetBrains+Mono&display=swap');
+                :host { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
                 .panel {
-                    position: fixed; bottom: 20px; left: 20px; width: 400px;
-                    background: #050505; border: 1px solid #333;
-                    border-left: 3px solid #00E5FF; color: #ccc;
-                    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-                    display: flex; flex-direction: column; max-height: 80vh;
-                    z-index: 9999999; transition: height 0.3s;
+                    position: fixed; top: 20px; right: 20px; width: 460px;
+                    background: rgba(8,10,12,0.98); border: 1px solid #00E5FF;
+                    border-radius: 12px; z-index: 9999999; color: #fff;
+                    backdrop-filter: blur(20px); display: flex; flex-direction: column;
+                    max-height: 88vh; overflow: hidden;
+                    box-shadow: 0 0 40px rgba(0,229,255,0.3);
+                    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
                 }
+                .panel.minimized { height: 42px !important; width: 240px !important; }
+                .panel.minimized .tabs, .panel.minimized .viewport { display: none !important; }
+
                 .header {
-                    padding: 10px; background: #0a0a0a; border-bottom: 1px solid #222;
                     display: flex; justify-content: space-between; align-items: center;
-                    cursor: pointer; user-select: none;
+                    padding: 12px 16px; background: rgba(0,229,255,0.12);
+                    border-bottom: 1px solid rgba(0,229,255,0.25);
+                    cursor: move; font-family: 'Orbitron'; color: #00E5FF;
                 }
-                .title { font-weight: 700; color: #00E5FF; }
-                .status { font-size: 9px; padding: 2px 6px; border-radius: 4px; background: #222; }
-                .status.connected { color: #0f0; background: #002200; }
+                .header .title { letter-spacing: 2px; font-size: 13px; text-shadow: 0 0 10px #00E5FF; }
+                .toggle-btn { background: transparent; border: none; color: #00E5FF; cursor: pointer; font-size: 16px; }
 
-                .tabs { display: flex; background: #0f0f0f; border-bottom: 1px solid #222; }
-                .tab { flex: 1; padding: 8px; text-align: center; cursor: pointer; color: #666; }
-                .tab.active { color: #fff; background: #222; border-bottom: 2px solid #00E5FF; }
+                .tabs { display: flex; background: #050505; border-bottom: 1px solid #1a1a1a; }
+                .tab { flex: 1; padding: 12px 5px; text-align: center; cursor: pointer; color: #666; font-size: 10px; transition: 0.3s; }
+                .tab:hover { color: #aaa; }
+                .tab.active { color: #fff; border-bottom: 2px solid #00E5FF; background: rgba(0,229,255,0.05); }
 
-                .viewport { flex: 1; overflow-y: auto; background: #000; min-height: 200px; scrollbar-width: thin; scrollbar-color: #333 #000; }
+                .viewport {
+                    flex: 1; overflow-y: scroll !important;
+                    min-height: 480px; background: transparent;
+                    scrollbar-width: thin; scrollbar-color: #00E5FF #000;
+                }
+                .viewport::-webkit-scrollbar { width: 5px; }
+                .viewport::-webkit-scrollbar-track { background: #000; }
+                .viewport::-webkit-scrollbar-thumb { background: #00E5FF; border-radius: 10px; }
 
-                /* Asset Card */
-                .asset { display: flex; padding: 8px; border-bottom: 1px solid #1a1a1a; gap: 10px; }
-                .asset:hover { background: #0a0a0a; }
-                .thumb { width: 80px; height: 45px; background: #111; object-fit: cover; border: 1px solid #222; }
-                .info { flex: 1; overflow: hidden; }
-                .filename { color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
-                .meta { color: #555; font-size: 9px; display: flex; gap: 6px; }
-                .actions { display: flex; flex-direction: column; gap: 4px; justify-content: center; }
+                .asset-item {
+                    padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.03);
+                    display: flex; gap: 14px; align-items: center;
+                    animation: slideIn 0.3s ease-out;
+                }
+                @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+                .thumb { width: 90px; height: 50px; background: #000; border: 1px solid #222; border-radius: 4px; object-fit: cover; }
+                .asset-info { flex: 1; overflow: hidden; }
+                .asset-name { color: #00E5FF; font-weight: bold; font-size: 10px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+                .asset-meta { font-size: 9px; color: #555; margin-top: 4px; display: flex; gap: 8px; }
+
+                .chunk-item { padding: 15px; border-bottom: 1px solid #111; }
+                .chunk-header { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 9px; color: #00E5FF; }
+                .mutator-box {
+                    width: 96%; height: 180px; background: #020202; color: #00ff66;
+                    border: 1px solid #111; border-radius: 6px; font-family: 'JetBrains Mono';
+                    font-size: 10px; padding: 8px; margin: 10px 0; display: none; white-space: pre;
+                }
+
                 button {
-                    background: transparent; border: 1px solid #333; color: #777;
-                    cursor: pointer; padding: 2px 6px; font-size: 9px; border-radius: 2px;
+                    background: rgba(0,229,255,0.06); border: 1px solid #00E5FF;
+                    color: #00E5FF; padding: 6px 12px; border-radius: 6px;
+                    cursor: pointer; font-size: 9px; text-transform: uppercase;
+                    transition: all 0.2s;
                 }
-                button:hover { border-color: #00E5FF; color: #00E5FF; }
+                button:hover { background: rgba(0,229,255,0.2); box-shadow: 0 0 12px rgba(0,229,255,0.2); }
+                button.apply { border-color: #00ff66; color: #00ff66; background: rgba(0,255,102,0.05); }
 
-                /* Logs */
-                .log-entry { padding: 4px 8px; border-bottom: 1px solid #111; display: flex; gap: 8px; }
-                .log-ts { color: #444; }
-                .log-type { color: #00E5FF; font-weight: bold; width: 30px; }
-                .log-msg { color: #aaa; word-break: break-all; }
+                .log-entry { padding: 8px 16px; border-bottom: 1px solid #0a0a0a; font-size: 10px; }
+                .log-ts { color: #333; margin-right: 8px; }
+                .log-type { color: #00E5FF; font-weight: bold; margin-right: 8px; }
+
+                .sys-view { padding: 25px; }
+                .sys-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+                input[type="checkbox"] { filter: invert(1) hue-rotate(180deg); scale: 1.3; cursor: pointer; }
+
+                .toast {
+                    position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+                    background: #000; border: 1px solid #00E5FF; color: #00E5FF;
+                    padding: 12px 25px; border-radius: 30px; z-index: 10000000;
+                    font-weight: bold; box-shadow: 0 0 20px rgba(0,229,255,0.5);
+                    animation: toastPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                }
+                @keyframes toastPop { from { bottom: 0; opacity: 0; } to { bottom: 40px; opacity: 1; } }
             `;
-            shadow.appendChild(style);
+            SecurityContext.injectCSS(css, 'omni-core-styles', shadow);
 
             const wrapper = document.createElement('div');
             wrapper.className = 'panel';
             wrapper.innerHTML = `
-                <div class="header" id="toggle">
-                    <span class="title">Ψ HAILUO OMNI</span>
-                    <span class="status" id="socket-status">INIT</span>
+                <div class="header" id="drag">
+                    <span class="title">Ψ HAILUO OMNI v40.6</span>
+                    <button class="toggle-btn" id="tgl">▼</button>
                 </div>
                 <div class="tabs">
-                    <div class="tab active" data-view="assets">ASSETS (<span id="count">0</span>)</div>
+                    <div class="tab active" data-view="assets">ASSETS (<span id="cnt">0</span>)</div>
+                    <div class="tab" data-view="chunks">CHUNKS</div>
                     <div class="tab" data-view="logs">TERMINAL</div>
+                    <div class="tab" data-view="sys">SYS</div>
                 </div>
-                <div class="viewport" id="view-assets"></div>
-                <div class="viewport" id="view-logs" style="display:none"></div>
+                <div class="viewport" id="v-assets"></div>
+                <div class="viewport" id="v-chunks" style="display:none"></div>
+                <div class="viewport" id="v-logs" style="display:none"></div>
+                <div class="viewport" id="v-sys" style="display:none">
+                    <div class="sys-view">
+                        <div class="sys-row"><label>Auto-Echo Recovery</label><input type="checkbox" id="cfg-mutate" checked></div>
+                        <div class="sys-row"><label>Telemetry Block</label><input type="checkbox" id="cfg-tele" checked></div>
+                        <div class="sys-row"><label>DOM TreeWalker</label><input type="checkbox" id="cfg-watch" checked></div>
+                        <div class="sys-row"><label>Pulse Defense</label><input type="checkbox" id="cfg-pulse" checked></div>
+                        <hr style="border:0; border-top:1px solid #1a1a1a; margin:20px 0;">
+                        <button id="sys-export" style="width:100%; margin-bottom:10px;">EXPORT SESSION REPORT</button>
+                        <button id="sys-wipe" style="width:100%; border-color:#ff3366; color:#ff3366;">WIPE STORE</button>
+                    </div>
+                </div>
             `;
             shadow.appendChild(wrapper);
+            this.bind(wrapper, shadow);
+            if (CORE.config.domWatch) this.initDOMWatcher();
+        },
 
-            // Logic
+        initDOMWatcher() {
+            // High-stealth MutationObserver utilizing TreeWalker for Slate stability
+            const observer = new MutationObserver((mutations) => {
+                for (let mutation of mutations) {
+                    if (mutation.type === 'childList') {
+                        mutation.addedNodes.forEach(node => {
+                            if (node.nodeType === 1) {
+                                const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, null, false);
+                                let textNode;
+                                while(textNode = walker.nextNode()) {
+                                    if (/moderation|sensitive|block|violation/i.test(textNode.textContent)) {
+                                        Store.dispatch('LOG', { msg: `TreeWalker Detected Moderation Fragment: "${textNode.textContent.slice(0,20)}..."`, type: 'WATCH' });
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+        },
+
+        bind(wrapper, shadow) {
             const $ = (s) => shadow.querySelector(s);
 
-            $('#toggle').onclick = () => wrapper.classList.toggle('minimized');
+            $('#tgl').onclick = () => Store.dispatch('TOGGLE_MIN');
+
+            let p1=0, p2=0, p3=0, p4=0;
+            $('#drag').onmousedown = (e) => {
+                p3=e.clientX; p4=e.clientY;
+                document.onmouseup = () => document.onmousemove = null;
+                document.onmousemove = (e) => {
+                    p1=p3-e.clientX; p2=p4-e.clientY; p3=e.clientX; p4=e.clientY;
+                    wrapper.style.top = (wrapper.offsetTop - p2) + "px";
+                    wrapper.style.left = (wrapper.offsetLeft - p1) + "px";
+                    wrapper.style.bottom = "auto"; wrapper.style.right = "auto";
+                };
+            };
 
             shadow.querySelectorAll('.tab').forEach(t => t.onclick = () => {
                 shadow.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
                 t.classList.add('active');
-                if (t.dataset.view === 'assets') {
-                    $('#view-assets').style.display = 'block';
-                    $('#view-logs').style.display = 'none';
-                } else {
-                    $('#view-assets').style.display = 'none';
-                    $('#view-logs').style.display = 'block';
-                }
+                const view = t.dataset.view;
+                $('#v-assets').style.display = view === 'assets' ? 'block' : 'none';
+                $('#v-chunks').style.display = view === 'chunks' ? 'block' : 'none';
+                $('#v-logs').style.display = view === 'logs' ? 'block' : 'none';
+                $('#v-sys').style.display = view === 'sys' ? 'block' : 'none';
             });
 
-            // Store Subscription
-            Store.subscribe((state) => {
-                // Update Socket Status
-                const statusEl = $('#socket-status');
-                statusEl.textContent = state.socketStatus;
-                statusEl.className = `status ${state.socketStatus === 'CONNECTED' ? 'connected' : ''}`;
+            $('#sys-export').onclick = () => {
+                const report = { timestamp: Date.now(), assets: Array.from(Store.state.assets.values()), logs: Store.state.logs };
+                const blob = new Blob([JSON.stringify(report, null, 2)], {type:'application/json'});
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `omni_report_${Date.now()}.json`;
+                a.click();
+            };
 
-                // Update Assets
-                const assetContainer = $('#view-assets');
-                $('#count').textContent = state.assets.size;
+            $('#sys-wipe').onclick = () => { if(confirm("Initiate Data Purge?")) Store.dispatch('CLEAR_ASSETS'); };
 
-                // Simple redraw (for stability over differential updates in this context)
-                assetContainer.innerHTML = '';
-                const sortedAssets = Array.from(state.assets.values()).sort((a,b) => b.timestamp - a.timestamp);
+            Store.subscribe((state) => this.render(state, $));
+        },
 
-                sortedAssets.forEach(asset => {
-                    const el = document.createElement('div');
-                    el.className = 'asset';
-                    const thumb = asset.thumb || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiAxNiI+PHJlY3QgZmlsbD0iIzExMSIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2Ii8+PC9zdmc+';
+        render(state, $) {
+            const wrapper = $('.panel');
+            wrapper.className = state.isMinimized ? 'panel minimized' : 'panel';
+            $('#tgl').textContent = state.isMinimized ? '▲' : '▼';
+            $('#cnt').textContent = state.assets.size;
 
-                    el.innerHTML = `
-                        <img src="${thumb}" class="thumb">
-                        <div class="info">
-                            <div class="filename" title="${asset.url}">${asset.url.split('/').pop()}</div>
-                            <div class="meta">
-                                <span>${asset.source}</span>
-                                <span>${asset.type || 'unknown'}</span>
-                            </div>
+            const assetViewport = $('#v-assets');
+            if (assetViewport && assetViewport.style.display !== 'none') {
+                const assets = Array.from(state.assets.values()).sort((a,b) => b.timestamp - a.timestamp).slice(0, 50);
+                assetViewport.innerHTML = assets.map(a => `
+                    <div class="asset-item">
+                        <img src="${a.thumb || ''}" class="thumb" onerror="this.style.display='none'">
+                        <div class="asset-info">
+                            <div class="asset-name">${a.url.split('/').pop().split('?')[0]}</div>
+                            <div class="asset-meta"><span>${a.source}</span><span>${a.type}</span></div>
                         </div>
-                        <div class="actions">
-                            <button class="dl">DL</button>
-                            <button class="cp">CP</button>
+                        <div style="display:flex; gap:5px;">
+                            <button onclick="window.open('${a.url}', '_blank')">OPEN</button>
+                            <button onclick="GM_setClipboard('${a.url}')">COPY</button>
                         </div>
-                    `;
-
-                    el.querySelector('.dl').onclick = () => window.open(asset.url, '_blank');
-                    el.querySelector('.cp').onclick = () => {
-                        GM_setClipboard(asset.url);
-                        Store.dispatch('LOG', { msg: `Copied ${asset.url.substr(-10)}`, type: 'UI' });
-                    };
-
-                    assetContainer.appendChild(el);
-                });
-
-                // Update Logs
-                const logContainer = $('#view-logs');
-                logContainer.innerHTML = state.logs.map(l => `
-                    <div class="log-entry">
-                        <span class="log-ts">${l.ts}</span>
-                        <span class="log-type">${l.type}</span>
-                        <span class="log-msg">${l.msg}</span>
                     </div>
                 `).join('');
-                if (CORE.config.autoScrollLog) logContainer.scrollTop = logContainer.scrollHeight;
-            });
+            }
+
+            const chunkViewport = $('#v-chunks');
+            if (chunkViewport && chunkViewport.style.display !== 'none') {
+                chunkViewport.innerHTML = state.chunks.map(c => `
+                    <div class="chunk-item">
+                        <div class="chunk-header"><span>[${new Date(c.timestamp).toLocaleTimeString()}]</span><span>ID: ${c.id}</span></div>
+                        <div style="font-size:9px; color:#444; word-break:break-all;">URL: ${c.url}</div>
+                        <textarea class="mutator-box" id="box-${c.id}">${Utils.prettyJSON(c.raw)}</textarea>
+                        <div style="margin-top:10px;">
+                            <button onclick="this.parentElement.previousElementSibling.style.display='block'">MUTATE</button>
+                            <button class="apply" onclick="Interceptor.applyMutation('${c.url}', '${c.id}')">APPLY INJECTION</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            const logViewport = $('#v-logs');
+            if (logViewport && logViewport.style.display !== 'none') {
+                logViewport.innerHTML = state.logs.map(l => `
+                    <div class="log-entry">
+                        <span class="log-ts">[${l.ts}]</span><span class="log-type">${l.type}</span>${l.msg}
+                    </div>
+                `).join('');
+                if (CORE.config.autoScrollLog) logViewport.scrollTop = logViewport.scrollHeight;
+            }
+        },
+
+        toast(msg) {
+            const t = document.createElement('div');
+            t.className = 'toast';
+            t.textContent = msg;
+            this.root.appendChild(t);
+            setTimeout(() => t.remove(), 2800);
         }
     };
 
-    //────── [5] BOOTSTRAP ──────//
+    // Proxy Interface for manual mutation
+    Interceptor.applyMutation = (url, id) => {
+        const area = HUD.root.querySelector(`#box-${id}`);
+        try {
+            const data = JSON.parse(area.value);
+            Store.dispatch('QUEUE_MUTATION', { url, data });
+            HUD.toast("PROXY MUTATION APPLIED TO FLOW");
+        } catch(e) { alert("JSON MALFORMED"); }
+    };
+
+    const Defense = {
+        pulse() {
+            if (!CORE.config.defensePulse) return;
+            try { if (!global.fetch?._omni) Interceptor.hookFetch(); } catch (e) {}
+        }
+    };
+
     const main = () => {
         Interceptor.init();
-
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', HUD.init);
+            document.addEventListener('DOMContentLoaded', () => HUD.init());
         } else {
             HUD.init();
         }
-
-        console.log(`${LOG_PREFIX} OMNI-Protocol Engaged. Listening...`);
+        setInterval(Defense.pulse, 5000);
+        console.log(`${CORE.name} Ψ APEX-OMNI ENGINE ENGAGED.`);
     };
 
     main();
