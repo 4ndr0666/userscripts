@@ -51,7 +51,6 @@ Each script adheres to a core set of principles:
 <!-- BEGIN_CATALOG -->
 | Script | File | Summary |
 |---|---|---|
-| 4ndr0666 protocol shebang | [4ndr0tools - 4ndr0666 protocol shebang.user.js](./4ndr0tools%20-%204ndr0666%20protocol%20shebang.user.js) | Injects a one-liner and shebang for the 4ndr0666 protocol v4.0.0. |
 | 4NDR0666OS [Gemini] | [4ndr0tools - 4NDR0666OS [Gemini].user.js](./4ndr0tools%20-%204NDR0666OS%20%5BGemini%5D.user.js) | Automated 4NDR0666OS firmware flash and protocol wrapping for the Gemini web interface. |
 | AlwaysNewWindow | [4ndr0tools - AlwaysNewWindow.user.js](./4ndr0tools%20-%20AlwaysNewWindow.user.js) | Force every single link, including dynamically loaded ones, to open in a new window/tab. |
 | AutoTranslate | [4ndr0tools - AutoTranslate.user.js](./4ndr0tools%20-%20AutoTranslate.user.js) | Automatically switches the target language to English for most languages, and to another language (e.g., Spanish) when the source is English. |
@@ -72,7 +71,7 @@ Each script adheres to a core set of principles:
 | HDImgsOnly | [4ndr0tools - HDImgsOnly.user.js](./4ndr0tools%20-%20HDImgsOnly.user.js) | Prefer high-resolution assets when available. |
 | Images++ | [4ndr0tools - Images++.user.js](./4ndr0tools%20-%20Images++.user.js) | Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. |
 | InfiniteBrave | [4ndr0tools - InfiniteBrave.user.js](./4ndr0tools%20-%20InfiniteBrave.user.js) | Part of 4ndr0tools - Infinitely scroll Brave search results. |
-| InstagramRedirect | [4ndr0tools - InstagramRedirect.user.js](./4ndr0tools%20-%20InstagramRedirect.user.js) | Privacy redirect for IG media to dumpor.com. |
+| Instagram++ | [4ndr0tools - Instagram++.user.js](./4ndr0tools%20-%20Instagram++.user.js) | Entire profile media is DOM-orchestrated with memory sanitation and saves your scrolling spot. |
 | LinkMasterΨ | [4ndr0tools - LinkMasterΨ.user.js](./4ndr0tools%20-%20LinkMaster%CE%A8.user.js) | Scrapes all the links. TODO: merge with LinkMasterΨ2 |
 | LinkMasterΨ2 | [4ndr0tools - LinkMasterΨ2.user.js](./4ndr0tools%20-%20LinkMaster%CE%A82.user.js) | A fully-integrated HUD for scraping, previewing, checking, and downloading links from any website. Features dual modes for targeted forum scraping or aggressive general-purpose link discovery, a standalone link checker with paste support, and persistent user settings. |
 | m3u8++ | [4ndr0tools - m3u8++.user.js](./4ndr0tools%20-%20m3u8++.user.js) | Automatically displays the m3u8 url for ANY video playing in the top right corner of the video. Click url to copy or click download to use the webapp "tools.thatwind.com". |
