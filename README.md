@@ -56,6 +56,7 @@ Each script adheres to a core set of principles:
 | AutoTranslate | [4ndr0tools - AutoTranslate.user.js](./4ndr0tools%20-%20AutoTranslate.user.js) | Automatically switches the target language to English for most languages, and to another language (e.g., Spanish) when the source is English. |
 | Blob2URL | [4ndr0tools - Blob2URL.user.js](./4ndr0tools%20-%20Blob2URL.user.js) | Finds blob URLs in links, images, videos, audio (including dynamic ones), and adds a stateful button to download their contents with intelligent filename generation. |
 | BrokenImgFixer | [4ndr0tools - BrokenImgFixer.user.js](./4ndr0tools%20-%20BrokenImgFixer.user.js) | Detect and reload failed images gracefully with robust cache-busting. |
+| Bunkr++ | [4ndr0tools - Bunkr++.user.js](./4ndr0tools%20-%20Bunkr++.user.js) | Electric-glass HUD, regex/size/date filter/sort, direct CDN sniff/DL, Viewer.js gallery, canonical redirect |
 | BunkrCanonicalURL | [4ndr0tools - BunkrCanonicalURL.user.js](./4ndr0tools%20-%20BunkrCanonicalURL.user.js) | Normalize Bunkr links to a canonical host without losing the path, query, or sub-domain. |
 | BypassPaywalls | [4ndr0tools - BypassPaywalls.user.js](./4ndr0tools%20-%20BypassPaywalls.user.js) | A way to bypass paywalls for popular news sites |
 | ChatGPT++ | [4ndr0tools - ChatGPT++.user.js](./4ndr0tools%20-%20ChatGPT++.user.js) | Power-user UI with extras and editable one-click prompt buttons. |
