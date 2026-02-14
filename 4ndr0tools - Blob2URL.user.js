@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         4ndr0tools - Blob2Url
+// @name         4ndr0tools - Blob2URL
 // @namespace    https://github.com/4ndr0666/userscripts
 // @version      6.1
 // @author       4ndr0666
@@ -7,6 +7,8 @@
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @match        *://*/*
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png      
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Blob2URL.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Blob2URL.user.js
 // @grant        GM_addStyle
 // @grant        GM_registerMenuCommand
 // @grant        GM_setClipboard
