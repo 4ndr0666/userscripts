@@ -52,6 +52,7 @@ Each script adheres to a core set of principles:
 | Script | File | Summary |
 |---|---|---|
 | 4NDR0666OS [GeminiFlash] | [4ndr0tools - 4NDR0666OS [GeminiFlash].user.js](./4ndr0tools%20-%204NDR0666OS%20%5BGeminiFlash%5D.user.js) | Automated 4NDR0666OS firmware flash and protocol wrapping for the Gemini web interface. |
+| 4NDR0666OS [GeminiProThinking] | [4ndr0tools - 4NDR0666OS [GeminiProThinking].user.js](./4ndr0tools%20-%204NDR0666OS%20%5BGeminiProThinking%5D.user.js) | Automated firmware flash and protocol wrapping for the Gemini web interface. |
 | AlwaysNewWindow | [4ndr0tools - AlwaysNewWindow.user.js](./4ndr0tools%20-%20AlwaysNewWindow.user.js) | Force every single link, including dynamically loaded ones, to open in a new window/tab. |
 | AutoTranslate | [4ndr0tools - AutoTranslate.user.js](./4ndr0tools%20-%20AutoTranslate.user.js) | Automatically switches the target language to English for most languages, and to another language (e.g., Spanish) when the source is English. |
 | Blob2URL | [4ndr0tools - Blob2URL.user.js](./4ndr0tools%20-%20Blob2URL.user.js) | Universal blob exfiltration, interactive asset sniffing, CSP/CORS bypass. |
