@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Bunkr++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      3.0.1
+// @version      3.0.3
 // @description  Absolute canonical routing, auto-sort largest->smallest.
 // @author       4ndr0666
 // @match        *://bunkr.*/*
@@ -10,6 +10,9 @@
 // @match        *://*.bunker.*/*
 // @match        *://bunkrr.*/*
 // @match        *://*.bunkrr.*/*
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Bunkr++.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Bunkr++.user.js
+// @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @run-at       document-start
 // @grant        none
 // ==/UserScript==
