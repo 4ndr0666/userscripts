@@ -75,7 +75,7 @@ Each script adheres to a core set of principles:
 | HDImgsOnly | [4ndr0tools - HDImgsOnly.user.js](./4ndr0tools%20-%20HDImgsOnly.user.js) | Prefer high-resolution assets when available. |
 | Images++ | [4ndr0tools - Images++.user.js](./4ndr0tools%20-%20Images++.user.js) | Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. |
 | InfiniteBrave | [4ndr0tools - InfiniteBrave.user.js](./4ndr0tools%20-%20InfiniteBrave.user.js) | Part of 4ndr0tools - Infinitely scroll Brave search results. |
-| Instagram++ | [4ndr0tools - Instagram++.user.js](./4ndr0tools%20-%20Instagram++.user.js) | Entire profile media is DOM-orchestrated with memory sanitation and saves your scrolling spot. |
+| Instagram++ | [4ndr0tools - Instagram++.user.js](./4ndr0tools%20-%20Instagram++.user.js) | Tab-Bar Integration. Neural Virtualization. Ad-Blocking. Deep-Stack Recovery. |
 | LinkMasterΨ | [4ndr0tools - LinkMasterΨ.user.js](./4ndr0tools%20-%20LinkMaster%CE%A8.user.js) | Scrapes all the links. TODO: merge with LinkMasterΨ2 |
 | LinkMasterΨ2 | [4ndr0tools - LinkMasterΨ2.user.js](./4ndr0tools%20-%20LinkMaster%CE%A82.user.js) | A fully-integrated HUD for scraping, previewing, checking, and downloading links from any website. Features dual modes for targeted forum scraping or aggressive general-purpose link discovery, a standalone link checker with paste support, and persistent user settings. |
 | m3u8++ | [4ndr0tools - m3u8++.user.js](./4ndr0tools%20-%20m3u8++.user.js) | Automatically displays the m3u8 url for ANY video playing in the top right corner of the video. Click url to copy or click download to use the webapp "tools.thatwind.com". |
