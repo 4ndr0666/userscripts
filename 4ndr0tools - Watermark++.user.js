@@ -10,8 +10,8 @@
 // @connect      googleusercontent.com
 // @grant        GM_xmlhttpRequest
 // @run-at       document-end
-// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Watermark++.user.js
-// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Watermark++.user.js
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Watermark%2B%2B.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Watermark%2B%2B.user.js
 // ==/UserScript==
 
 (() => {
