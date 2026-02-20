@@ -50,7 +50,7 @@
         query: { hash: null, appId: '936619743392459', asbd: '129477' }
     };
 
-    const log = (msg) => console.log(`%c[ARES-9 V11.0] %c${msg}`, `color:${CONFIG.DISPLAY.ACCENT}; font-weight:bold;`, `color:#ccc;`);
+    const log = (msg) => console.log(`%c[Instagram++ V11.0] %c${msg}`, `color:${CONFIG.DISPLAY.ACCENT}; font-weight:bold;`, `color:#ccc;`);
 
     // --- [NETWORK INTERCEPTOR] ---
     const Interceptor = {
@@ -289,7 +289,7 @@
 
     function createComponent(media, parent, cur, total) {
         const wrapper = document.createElement('div');
-        wrapper.className = 'ares-media-wrap';
+        wrapper.className = '4ndr0666-media-wrap';
         wrapper.style = "margin-bottom: 80px; display: flex; flex-direction: column; align-items: center; width: 100%; transition: opacity 0.3s; pointer-events: auto;";
 
         const code = media.code || parent.code || 'recon';
@@ -330,7 +330,7 @@
     // --- [UI ENGINE] ---
     function buildUI() {
         // HIDE THE GLYPH WHEN UI IS ACTIVE
-        const dock = document.getElementById('ares-glyph-dock');
+        const dock = document.getElementById('4ndr0666-glyph-dock');
         if (dock) dock.style.display = 'none';
 
         document.body.style.overflow = 'hidden';
@@ -341,31 +341,31 @@
         gui.innerHTML = `
             <div style="position:sticky; top:0; background:rgba(0,0,0,0.95); padding:15px; border-bottom:1px solid #111; display:flex; justify-content:space-between; align-items:center; z-index:100000; backdrop-filter:blur(10px);">
                 <div style="display:flex; flex-direction:column;">
-                    <span style="color:${CONFIG.DISPLAY.ACCENT}; font-family:'Cinzel Decorative', monospace; font-weight:900; letter-spacing:1px;">ARES-9 // HORIZON V11.0</span>
-                    <span id="ares-stat" style="color:#666; font-family:monospace; font-size:10px;">INITIALIZING TELEMETRY...</span>
+                    <span style="color:${CONFIG.DISPLAY.ACCENT}; font-family:'Cinzel Decorative', monospace; font-weight:900; letter-spacing:1px;">Instagram++ // V11.0</span>
+                    <span id="4ndr0666-stat" style="color:#666; font-family:monospace; font-size:10px;">INITIALIZING TELEMETRY...</span>
                 </div>
                 <div style="display:flex; gap:15px;">
-                     <button id="ares-dump" style="background:transparent; color:#aaa; border:1px solid #333; padding:5px 15px; cursor:pointer; font-family:monospace;">DUMP</button>
-                     <button id="ares-kill" style="background:transparent; color:${CONFIG.DISPLAY.ERROR}; border:1px solid #500; padding:5px 15px; cursor:pointer; font-family:monospace; font-weight:bold;">EXIT</button>
+                     <button id="4ndr0666-dump" style="background:transparent; color:#aaa; border:1px solid #333; padding:5px 15px; cursor:pointer; font-family:monospace;">DUMP</button>
+                     <button id="4ndr0666-kill" style="background:transparent; color:${CONFIG.DISPLAY.ERROR}; border:1px solid #500; padding:5px 15px; cursor:pointer; font-family:monospace; font-weight:bold;">EXIT</button>
                 </div>
             </div>
             <div id="igAllImages" style="padding-top:80px; padding-bottom:300px; display:flex; flex-direction:column; align-items:center;"></div>
         `;
 
         document.documentElement.appendChild(gui);
-        document.getElementById('ares-kill').onclick = () => window.location.assign(window.location.href.split('?')[0]);
-        document.getElementById('ares-dump').onclick = () => {
+        document.getElementById('4ndr0666-kill').onclick = () => window.location.assign(window.location.href.split('?')[0]);
+        document.getElementById('4ndr0666-dump').onclick = () => {
             const blob = new Blob([document.querySelector('#igAllImages').innerHTML], {type: 'text/html'});
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = `ares_dump_${STATE.targetId}.html`;
+            a.download = `4ndr0666_dump_${STATE.targetId}.html`;
             a.click();
         };
 
         NeuralDOM.observe(gui);
         setInterval(() => {
             const active = STATE.domNodes.filter(n => !n.isPruned).length;
-            const stat = document.getElementById('ares-stat');
+            const stat = document.getElementById('4ndr0666-stat');
             if (stat) stat.textContent = `ACT: ${active} | TOT: ${STATE.totalLoaded} | UID: ${STATE.targetId} | MODE: ${STATE.MODE.toUpperCase()}`;
         }, 1000);
         return gui;
@@ -399,11 +399,11 @@
 
     function init() {
         // 1. Context Menu Failsafe
-        GM_registerMenuCommand("Ψ Initialize ARES-9", executeRecon);
+        GM_registerMenuCommand("Ψ Press If Btn Didnt Work", executeRecon);
 
         // 2. Tab Bar Injection Loop
         const daemon = setInterval(() => {
-            if (document.getElementById('ares-glyph-dock')) return;
+            if (document.getElementById('4ndr0666-glyph-dock')) return;
 
             // Strategy: Profile Tab List (Posts | Reels | Tagged | [Ψ])
             const tablist = document.querySelector('div[role="tablist"]');
@@ -413,9 +413,9 @@
 
             if (tablist) {
                 const dock = document.createElement('div');
-                dock.id = 'ares-glyph-dock';
+                dock.id = '4ndr0666-glyph-dock';
                 dock.innerHTML = GLYPH_SVG;
-                dock.title = "Initialize ARES-9";
+                dock.title = "Initialize Instagram++ v11";
                 dock.style = `
                     cursor: pointer;
                     margin-left: 20px;
@@ -439,7 +439,7 @@
             } else if (fallback && STATE.MODE !== 'profile') {
                 // Subtle fallback for Home/Explore if Tablist is missing
                 const dock = document.createElement('div');
-                dock.id = 'ares-glyph-dock';
+                dock.id = '4ndr0666-glyph-dock';
                 dock.innerHTML = GLYPH_SVG;
                 dock.style = "position:fixed; bottom:25px; left:90px; z-index:999999; cursor:pointer; opacity:0.6;";
                 dock.onclick = (e) => { e.preventDefault(); executeRecon(); };
@@ -449,7 +449,7 @@
         }, 1500);
     }
 
-    log("V11.0 Horizon Active.");
+    log("V11 Active.");
     if (document.body) init();
     else window.addEventListener('DOMContentLoaded', init);
 
