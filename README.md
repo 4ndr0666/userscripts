@@ -84,7 +84,6 @@ Each script adheres to a core set of principles:
 | RealLinkRevealer | [4ndr0tools - RealLinkRevealer.user.js](./4ndr0tools%20-%20RealLinkRevealer.user.js) | Reveal true URLs hidden as "premium" link wrappers using the parent bbCodeBlock--unfurl block's data-url attribute. |
 | Recon | [4ndr0tools - Recon.user.js](./4ndr0tools%20-%20Recon.user.js) | Red-team tool for automated recon. Passively captures all traffic and generates a heuristic analysis report on command. For security research only. |
 | Redgifs++ | [4ndr0tools - Redgifs++.user.js](./4ndr0tools%20-%20Redgifs++.user.js) | Intercepts Redgifs links on Reddit to open them in an enhanced, cinematic overlay. Cleans up the Redgifs site itself for a focused viewing experience. |
-| RmSignUpBanners | [4ndr0tools - RmSignUpBanners.user.js](./4ndr0tools%20-%20RmSignUpBanners.user.js) | A configurable and performant solution to hide nagging sign-up/login overlays, cookie banners, and other visual noise. |
 | Searxng Sticky Settings | [4ndr0tools - Searxng Sticky Settings.user.js](./4ndr0tools%20-%20Searxng%20Sticky%20Settings.user.js) | Always load your preferred SearXNG settings hash/bookmarklet on every visit |
 | SelectAllCheckboxes | [4ndr0tools - SelectAllCheckboxes.user.js](./4ndr0tools%20-%20SelectAllCheckboxes.user.js) | Check/Uncheck a fuckload of checkboxes at once with enhanced precision and modern code. |
 | Wan++ | [4ndr0tools - Wan++.user.js](./4ndr0tools%20-%20Wan++.user.js) | For educational and security research only. |
