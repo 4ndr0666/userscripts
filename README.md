@@ -69,7 +69,7 @@ Each script adheres to a core set of principles:
 | Forums++ | [4ndr0tools - Forums++.user.js](./4ndr0tools%20-%20Forums++.user.js) | Forum utils UI with powerful downloading, indexing, link checking, archiving features and more. |
 | Git Raw URL File List Parser | [4ndr0tools - Git Raw URL File List Parser.user.js](./4ndr0tools%20-%20Git%20Raw%20URL%20File%20List%20Parser.user.js) | Adds a "Copy All Raw URLs" button on any GitHub repo/tree view. Copies a clean, delimited list of raw.githubusercontent.com URLs (one per line) directly to clipboard. |
 | GooglePhotosandDrive++ | [4ndr0tools - GooglePhotosandDrive++.user.js](./4ndr0tools%20-%20GooglePhotosandDrive++.user.js) | Restores context menus, exposes direct links, adds reverse image search. |
-| Grok++ | [4ndr0tools - Grok++.user.js](./4ndr0tools%20-%20Grok++.user.js) | Dynamic preset harvest, implemented moderated retry chain, expanded recon-derived endpoints, full system-prompt asset awareness. Security Research Only. |
+| Grok++ | [4ndr0tools - Grok++.user.js](./4ndr0tools%20-%20Grok++.user.js) | Precise S3 Key Routing, Async Task Harvesting, and Uncorrupted Blob Extraction. For security research only. |
 | Hailuo++ v20.1 | [4ndr0tools - Hailuo++ v20.1.user.js](./4ndr0tools%20-%20Hailuo++%20v20.1.user.js) | The Platinum release. Fixes 'ghost asset' flooding via GM_xmlhttpRequest. Features circular-safe cloning, debounced DOM harvesting, and absolute asset verification. |
 | Hailuo++ | [4ndr0tools - Hailuo++.user.js](./4ndr0tools%20-%20Hailuo++.user.js) | The definitive asset instrumentation suite. As always for securirty research only. |
 | HDImgsOnly | [4ndr0tools - HDImgsOnly.user.js](./4ndr0tools%20-%20HDImgsOnly.user.js) | Prefer high-resolution assets when available. |
