@@ -6,7 +6,7 @@
 // @author       4ndr0666
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Anti-telemetry%20(Intelligent%20Cloud%20Computing).user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Anti-telemetry%20(Intelligent%20Cloud%20Computing).user.js
-// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
+// @icon         https://raw.githubusercontent.com/4ndr0666/nas/refs/heads/main/images/cyanglassarch.png
 // @match        *://*.wan.video/*
 // @match        *://*.kuaishou.com/*
 // @match        *://*.aliyun.com/*
