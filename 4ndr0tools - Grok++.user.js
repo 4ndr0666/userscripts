@@ -78,10 +78,10 @@
         const hud = document.createElement('div');
         hud.id = 'psi-hud';
         hud.innerHTML = `
-            <div class="header">4NDR0TOOLS // GROK++ 4.0</div>
-            <button id="toggle">${STATE.enabled ? 'Ψ : ON' : 'Ψ : OFF'}</button>
+            <div class="header">4NDR0TOOLS // GROK++ Ψ4.0.0</div>
+            <button id="toggle">${STATE.enabled ? 'Interceptor : ON' : 'Interceptor : OFF'}</button>
             <div class="row">FLAGS PURGED: <span id="kills">0</span></div>
-            <div class="row">HARVEST: <span id="vids">${STATE.vidLinks.size}</span></div>
+            <div class="row">HARVESTED: <span id="vids">${STATE.vidLinks.size}</span></div>
             <div id="links"></div>
             <button id="force-dl">XTRACT ALL BLOBS</button>
             <button id="clear-vault" style="background:#003344; font-size:9px;">CLR HARVEST</button>
@@ -92,18 +92,18 @@
         if (STATE.nonce) style.setAttribute('nonce', STATE.nonce);
         style.textContent = `
             #psi-hud {
-                position: fixed; top: 20px; right: 20px; z-index: 2147483647;
-                background: rgba(0, 10, 15, 0.98); border: 1px solid #00E5FF;
-                color: #00E5FF; font-family: 'Consolas', monospace; padding: 12px; width: 240px; border-radius: 4px;
+                position: fixed; top: 25px; right: 20px; z-index: 2147483647;
+                background: rgba(0, 10, 15, 0.98); border: 1px solid #15FFFF;
+                color: #00E5FF; font-family: 'Consolas', monospace; padding: 10px; width: 230px; border-radius: 4px;
             }
-            .header { font-weight: bold; border-bottom: 1px solid #00E5FF; padding-bottom: 5px; margin-bottom: 8px; text-align:center; }
-            button { width: 100%; padding: 7px; margin: 3px 0; border: 1px solid #00E5FF; background:#000; color:#00E5FF; cursor: pointer; font-weight: bold; font-size: 11px; }
+            .header { font-weight: bold; border-bottom: 1px solid #00E5FF; padding-bottom: 5px; margin-bottom: 3px; text-align:center; }
+            button { width: 100%; padding: 6px; margin: 3px 0; border: 1px solid #00E5FF; background:#000; color:#00E5FF; cursor: pointer; font-weight: bold; font-size: 9px; }
             #toggle { background: ${STATE.enabled ? '#005577' : '#001122'}; }
-            #links { max-height: 160px; overflow-y: auto; font-size: 10px; margin-top: 5px; border-top: 1px solid #005577; scrollbar-width: thin; }
-            .link-item { color: #fff; display: block; margin: 4px 0; text-decoration: none; border-bottom: 1px solid #003344; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+            #links { max-height: 160px; overflow-y: auto; font-size: 9px; margin-top: 5px; border-top: 1px solid #005577; scrollbar-width: thin; }
+            .link-item { color: #fff; display: block; margin: 5px 0; text-decoration: none; border-bottom: 1px solid #003344; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
             .link-item:hover { color: #00E5FF; background: #002233; }
             .link-item.image { color: #15FFFF; }
-            .status { color: #0f0; font-size: 9px; margin-top: 5px; text-align:center; }
+            .status { color: #0f0; font-size: 9px; margin-top: 3px; text-align:center; }
         `;
         shadow.appendChild(style); shadow.appendChild(hud);
 
@@ -118,7 +118,7 @@
         shadowElements.toggle.onclick = () => {
             STATE.enabled = !STATE.enabled;
             localStorage.setItem(CONFIG.lsKeys.enabled, STATE.enabled);
-            shadowElements.toggle.textContent = STATE.enabled ? 'Ψ : ON' : 'Ψ : OFF';
+            shadowElements.toggle.textContent = STATE.enabled ? 'Interceptor : ON' : 'Interceptor : OFF';
             shadowElements.toggle.style.background = STATE.enabled ? '#005577' : '#001122';
         };
 
@@ -150,7 +150,7 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(blobUrl);
-            updateStatus('Extraction Complete.');
+            updateStatus('Xtraction Complete.');
         } catch (e) {
             log('Blob fetch failed:', e.message, '| URL:', url);
             updateStatus('Blob failed. Opening native...');
@@ -370,5 +370,5 @@
     });
     boot.observe(document.documentElement, { childList: true });
 
-    log('Ψ-4.0.0 GROK++ DEPLOYED - S3 ROUTING IDENTIFIED');
+    log('GROK++ Ψ4.0.0 DEPLOYED - S3 ROUTING IDENTIFIED');
 })();
