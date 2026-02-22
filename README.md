@@ -146,5 +146,5 @@ Each script adheres to a core set of principles:
   <path d="M 50 15 V 10 L 45 10" fill="none" stroke="#00FFFF" stroke-width="1"/>
 </svg>
 <br>
-MIT License © 4ndr0666
+UNLICENSED - RED TEAM USE ONLY © 4ndr0666
 </div>
