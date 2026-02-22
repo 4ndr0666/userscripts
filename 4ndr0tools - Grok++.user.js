@@ -52,7 +52,7 @@
         nonce: null
     };
 
-    const log = (...args) => { console.log('%c[Ψ-GROK++]', 'color:#00E5FF;font-weight:bold', ...args); };
+    const log = (...args) => { console.log('%c[Ψ-GROK++]', 'color:#15FFFF;font-weight:bold', ...args); };
 
     // [Ψ-SHIELD] Suppress known UI/CSP collisions
     win.addEventListener('error', (e) => {
@@ -118,7 +118,7 @@
         shadowElements.toggle.onclick = () => {
             STATE.enabled = !STATE.enabled;
             localStorage.setItem(CONFIG.lsKeys.enabled, STATE.enabled);
-            shadowElements.toggle.textContent = STATE.enabled ? 'GROK++: ON' : 'GROK++: OFF';
+            shadowElements.toggle.textContent = STATE.enabled ? 'Ψ : ON' : 'Ψ : OFF';
             shadowElements.toggle.style.background = STATE.enabled ? '#005577' : '#001122';
         };
 
