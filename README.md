@@ -59,7 +59,6 @@ Each script adheres to a core set of principles:
 | Blob2URL | [4ndr0tools - Blob2URL.user.js](./4ndr0tools%20-%20Blob2URL.user.js) | Universal blob exfiltration, interactive asset sniffing, CSP/CORS bypass. |
 | BrokenImgFixer | [4ndr0tools - BrokenImgFixer.user.js](./4ndr0tools%20-%20BrokenImgFixer.user.js) | Detect and reload failed images gracefully with robust cache-busting. |
 | Bunkr++ | [4ndr0tools - Bunkr++.user.js](./4ndr0tools%20-%20Bunkr++.user.js) | Absolute canonical routing, auto-sort largest->smallest. |
-| BunkrCanonicalURL | [4ndr0tools - BunkrCanonicalURL.user.js](./4ndr0tools%20-%20BunkrCanonicalURL.user.js) | Normalize Bunkr links to a canonical host without losing the path, query, or sub-domain. |
 | BypassPaywalls | [4ndr0tools - BypassPaywalls.user.js](./4ndr0tools%20-%20BypassPaywalls.user.js) | A way to bypass paywalls for popular news sites |
 | ChatGPTBrainImplant | [4ndr0tools - ChatGPTBrainImplant.user.js](./4ndr0tools%20-%20ChatGPTBrainImplant.user.js) | Remove UI restrictions, export everything in official OpenAI json format. |
 | Collapse All Images | [4ndr0tools - Collapse All Images.user.js](./4ndr0tools%20-%20Collapse%20All%20Images.user.js) | Toggle/auto-collapse all images with a mouse hover for reducing excessive I/O. |
