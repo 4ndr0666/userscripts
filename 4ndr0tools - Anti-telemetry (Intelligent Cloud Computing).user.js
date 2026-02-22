@@ -4,8 +4,8 @@
 // @version      3.5.0
 // @description  Wan AI shifted infrastructure from Alibaba to ICC (South Korea) to exploit jurisdictional arbitrage and circumvent US privacy laws. It creates persistent, hardware-linked endpoint fingerprints (Layer 1/2 MAC/UDID mapping) that survive OS/browser wipes via low-level telemetry beacons. This data is brokered for predictive behavioral profiling and Global Endpoint Graph construction. This script enforces absolute surveillance countermeasures: aggressive DOM sinkholing, WebRTC/network nullification, synthetic identifier poisoning, and secure context escape prevention targeting Wan.video, Kuaishou, Aliyun, and ICC telemetry nodes.
 // @author       4ndr0666
-// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Anti-telemetryGrok++.user.js
-// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Anti-telemetry%20(Intelligent%20Cloud%20Computing).user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Anti-telemetry%20(Intelligent%20Cloud%20Computing).user.js
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @match        *://*.wan.video/*
 // @match        *://*.kuaishou.com/*
