@@ -78,14 +78,14 @@
         const hud = document.createElement('div');
         hud.id = 'psi-hud';
         hud.innerHTML = `
-            <div class="header">Ψ-4.0.0 \\ 4NDR0TOOLS GROK++</div>
-            <button id="toggle">${STATE.enabled ? 'GROK++: ON' : 'GROK++: OFF'}</button>
+            <div class="header">4NDR0TOOLS // GROK++ 4.0</div>
+            <button id="toggle">${STATE.enabled ? 'Ψ : ON' : 'Ψ : OFF'}</button>
             <div class="row">FLAGS PURGED: <span id="kills">0</span></div>
             <div class="row">HARVEST: <span id="vids">${STATE.vidLinks.size}</span></div>
             <div id="links"></div>
             <button id="force-dl">XTRACT ALL BLOBS</button>
-            <button id="clear-vault" style="background:#003344; font-size:9px;">PURGE STORAGE</button>
-            <div class="status" id="status">S3 Routing Identified.</div>
+            <button id="clear-vault" style="background:#003344; font-size:9px;">CLR HARVEST</button>
+            <div class="status" id="status">S3 Routing Tracked.</div>
         `;
 
         const style = document.createElement('style');
@@ -102,7 +102,7 @@
             #links { max-height: 160px; overflow-y: auto; font-size: 10px; margin-top: 5px; border-top: 1px solid #005577; scrollbar-width: thin; }
             .link-item { color: #fff; display: block; margin: 4px 0; text-decoration: none; border-bottom: 1px solid #003344; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
             .link-item:hover { color: #00E5FF; background: #002233; }
-            .link-item.image { color: #f0f; }
+            .link-item.image { color: #15FFFF; }
             .status { color: #0f0; font-size: 9px; margin-top: 5px; text-align:center; }
         `;
         shadow.appendChild(style); shadow.appendChild(hud);
