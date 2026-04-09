@@ -170,3 +170,4 @@ logs/
 
 testing/
 tools/*.log
+backups/
