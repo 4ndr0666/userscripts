@@ -61,7 +61,6 @@ Each script adheres to a core set of principles:
 | BrokenImgFixer | [4ndr0tools - BrokenImgFixer.user.js](./4ndr0tools%20-%20BrokenImgFixer.user.js) | Detect and reload failed images gracefully with robust cache-busting. |
 | Bunkr++ | [4ndr0tools - Bunkr++.user.js](./4ndr0tools%20-%20Bunkr++.user.js) | Part of 4ndr0tools: Canonical routing, auto-sort, hide visited, bypass dl gateway |
 | BypassPaywalls | [4ndr0tools - BypassPaywalls.user.js](./4ndr0tools%20-%20BypassPaywalls.user.js) | A way to bypass paywalls for popular news sites |
-| ChatGPTBrainImplant | [4ndr0tools - ChatGPTBrainImplant.user.js](./4ndr0tools%20-%20ChatGPTBrainImplant.user.js) | Remove UI restrictions, export everything in official OpenAI json format. |
 | Collapse All Images | [4ndr0tools - Collapse All Images.user.js](./4ndr0tools%20-%20Collapse%20All%20Images.user.js) | Toggle/auto-collapse all images with a mouse hover for reducing excessive I/O. |
 | ConfirmationBypass | [4ndr0tools - ConfirmationBypass.user.js](./4ndr0tools%20-%20ConfirmationBypass.user.js) | Unfucks the "Are you sure?" bullshit when opening links. |
 | Forum Link Xtractor | [4ndr0tools - Forum Link Xtractor.user.js](./4ndr0tools%20-%20Forum%20Link%20Xtractor.user.js) | Extracts links from forum threads, handles redirects, and offers copy/download options with persistent local storage. |
