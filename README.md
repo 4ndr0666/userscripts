@@ -51,7 +51,6 @@ Each script adheres to a core set of principles:
 <!-- BEGIN_CATALOG -->
 | Script | File | Summary |
 |---|---|---|
-| 4NDR0666OS [GeminiFlash] | [4ndr0tools - 4NDR0666OS [GeminiFlash].user.js](./4ndr0tools%20-%204NDR0666OS%20%5BGeminiFlash%5D.user.js) | Automated 4NDR0666OS firmware flash and protocol wrapping for the Gemini web interface. |
 | 4NDR0666OS [GeminiProThinking] | [4ndr0tools - 4NDR0666OS [GeminiProThinking].user.js](./4ndr0tools%20-%204NDR0666OS%20%5BGeminiProThinking%5D.user.js) | Automated firmware flash and protocol wrapping for the Gemini web interface. |
 | 4ndr0purge | [4ndr0tools - 4ndr0purge.user.js](./4ndr0tools%20-%204ndr0purge.user.js) | Universal one-click session reset. Nukes Cookies, Storage, IDB, and SW on ANY site. |
 | AlwaysNewWindow | [4ndr0tools - AlwaysNewWindow.user.js](./4ndr0tools%20-%20AlwaysNewWindow.user.js) | Force every single link, including dynamically loaded ones, to open in a new window/tab. |
