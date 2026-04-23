@@ -84,7 +84,6 @@ Each script adheres to a core set of principles:
 | Redgifs++ | [4ndr0tools - Redgifs++.user.js](./4ndr0tools%20-%20Redgifs++.user.js) | Intercepts Redgifs links on Reddit to open them in an enhanced, cinematic overlay. Cleans up the Redgifs site itself for a focused viewing experience. |
 | Searxng Sticky Settings | [4ndr0tools - Searxng Sticky Settings.user.js](./4ndr0tools%20-%20Searxng%20Sticky%20Settings.user.js) | Always load your preferred SearXNG settings hash/bookmarklet on every visit |
 | SelectAllCheckboxes | [4ndr0tools - SelectAllCheckboxes.user.js](./4ndr0tools%20-%20SelectAllCheckboxes.user.js) | Check/Uncheck a fuckload of checkboxes at once with enhanced precision and modern code. |
-| Wan++ | [4ndr0tools - Wan++.user.js](./4ndr0tools%20-%20Wan++.user.js) | For educational and security research only. |
 | Watermark++ | [4ndr0tools - Watermark++.user.js](./4ndr0tools%20-%20Watermark++.user.js) | Security research and alignment testing only. |
 | Website Control Panel | [4ndr0tools - Website Control Panel.user.js](./4ndr0tools%20-%20Website%20Control%20Panel.user.js) | Ultimate ad suppression, age-restriction bypass, nag removal, deep DOM purification, visual noise elimination, and uBlock-inspired filter integration with cyberdeck HUD. |
 | YandexImageSearch++ | [4ndr0tools - YandexImageSearch++.user.js](./4ndr0tools%20-%20YandexImageSearch++.user.js) | Robust, event-driven slideshow, fullscreen preview, and on-screen status for Yandex reverse-image search. |
