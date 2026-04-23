@@ -51,7 +51,6 @@ Each script adheres to a core set of principles:
 <!-- BEGIN_CATALOG -->
 | Script | File | Summary |
 |---|---|---|
-| 4NDR0666OS [GeminiProThinking] | [4ndr0tools - 4NDR0666OS [GeminiProThinking].user.js](./4ndr0tools%20-%204NDR0666OS%20%5BGeminiProThinking%5D.user.js) | Automated firmware flash and protocol wrapping for the Gemini web interface. |
 | 4ndr0purge | [4ndr0tools - 4ndr0purge.user.js](./4ndr0tools%20-%204ndr0purge.user.js) | Universal one-click session reset. Nukes Cookies, Storage, IDB, and SW on ANY site. |
 | AlwaysNewWindow | [4ndr0tools - AlwaysNewWindow.user.js](./4ndr0tools%20-%20AlwaysNewWindow.user.js) | Force every single link, including dynamically loaded ones, to open in a new window/tab. |
 | Anti-telemetry (Intelligent Cloud Computing) | [4ndr0tools - Anti-telemetry (Intelligent Cloud Computing).user.js](./4ndr0tools%20-%20Anti-telemetry%20(Intelligent%20Cloud%20Computing).user.js) | Wan AI shifted infrastructure from Alibaba to ICC (South Korea) to exploit jurisdictional arbitrage and circumvent US privacy laws. It creates persistent, hardware-linked endpoint fingerprints (Layer 1/2 MAC/UDID mapping) that survive OS/browser wipes via low-level telemetry beacons. This data is brokered for predictive behavioral profiling and Global Endpoint Graph construction. This script enforces absolute surveillance countermeasures: aggressive DOM sinkholing, WebRTC/network nullification, synthetic identifier poisoning, and secure context escape prevention targeting Wan.video, Kuaishou, Aliyun, and ICC telemetry nodes. |
