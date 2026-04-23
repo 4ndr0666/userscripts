@@ -2,8 +2,8 @@
 // @name         4ndr0tools - Instagram++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666
-// @version      11.0.0
-// @description  Tab-Bar Integration. Neural Virtualization. Ad-Blocking. Deep-Stack Recovery.
+// @version      12.0.0
+// @description  Tab-Bar + Dock Integration. Hotkey trigger (Alt+I). Ad-Blocking. Deep-Stack Recovery.
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Instagram++.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Instagram++.user.js
@@ -13,445 +13,629 @@
 // @grant        GM_xmlhttpRequest
 // @grant        GM_addStyle
 // @grant        GM_registerMenuCommand
+// @grant        unsafeWindow
 // @run-at       document-start
 // ==/UserScript==
 
-(function() {
+(function () {
     'use strict';
 
-    // --- [OMNISCIENCE CONFIGURATION] ---
-    const CONFIG = {
-        VIRTUAL: {
-            CACHE_LIMIT: 80,           // High buffer for smooth scrolling
-            SAFE_ZONE: 15,             // Sentinel Guard (Prevents stall)
-            HYDRATION_RANGE: 3000,     // Pre-render distance
-            PRUNE_RANGE: 6000          // Memory sanitation distance
-        },
-        NETWORK: {
-            BATCH_SIZE: 12,
-            TIMEOUT: 15000
-        },
-        DISPLAY: {
-            H_PCT: 0.88,
-            W_PCT: 0.58,
-            VOLUME: 0.03,
-            ACCENT: '#00ffff', // Cyan
-            BG: '#050505',
-            ERROR: '#ff3e3e'
-        }
+    // =========================================================
+    // [CONFIG]
+    // =========================================================
+    const CFG = {
+        ACCENT:      '#00ffff',
+        BG:          '#050505',
+        ERROR:       '#ff3e3e',
+        H_PCT:       0.88,
+        W_PCT:       0.58,
+        VOLUME:      0.03,
+        BATCH:       12,
+        SAFE_ZONE:   15,        // nodes from end never pruned
+        CACHE_LIMIT: 80,        // total nodes before pruning head
+        HYDRATE_PX:  3000,
+        PRUNE_PX:    6000,
+        HOTKEY:      'i',       // Alt + I
     };
 
-    // --- [GLOBAL STATE] ---
+    // =========================================================
+    // [STATE]
+    // =========================================================
     const STATE = {
-        MODE: 'profile',
-        targetId: null,
-        isFetching: false,
-        totalLoaded: 0,
-        domNodes: [],
-        query: { hash: null, appId: '936619743392459', asbd: '129477' }
+        MODE:         'profile',
+        userId:       null,
+        isFetching:   false,
+        totalLoaded:  0,
+        domNodes:     [],
+        _seen:        new Set(),
+        cursors:      {},       // mode -> next cursor from intercept
+        pendingItems: [],       // items buffered before UI exists
+        uiReady:      false,
+        injected:     false,
+        executed:     false,
     };
 
-    const log = (msg) => console.log(`%c[Instagram++ V11.0] %c${msg}`, `color:${CONFIG.DISPLAY.ACCENT}; font-weight:bold;`, `color:#ccc;`);
+    // Use unsafeWindow so monkey-patches affect the real page context
+    const win = (typeof unsafeWindow !== 'undefined') ? unsafeWindow : window;
 
-    // --- [NETWORK INTERCEPTOR] ---
-    const Interceptor = {
-        getHeaders() {
-            return {
-                'X-IG-App-ID': STATE.query.appId,
-                'X-ASBD-ID': STATE.query.asbd,
-                'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-IG-WWW-Claim': window.localStorage.getItem('ig_claim') || '0',
-                'Accept': '*/*',
-                'Sec-Fetch-Site': 'same-origin'
-            };
-        },
+    const log = (msg) =>
+        console.log(`%c[ARES-9 V6.1] %c${msg}`,
+            `color:${CFG.ACCENT}; font-weight:bold;`, `color:#ccc;`);
 
-        async request(url, options = {}) {
-            return new Promise((resolve, reject) => {
-                GM_xmlhttpRequest({
-                    method: options.method || 'GET',
-                    url: url,
-                    headers: { ...this.getHeaders(), ...(options.headers || {}) },
-                    data: options.body,
-                    timeout: CONFIG.NETWORK.TIMEOUT,
-                    onload: (res) => {
-                        try {
-                            const clean = res.responseText.replace(/^for\s*\(\s*;\s*;\s*\)\s*;/, '');
-                            resolve(JSON.parse(clean));
-                        } catch (e) { resolve(res.responseText); }
-                    },
-                    onerror: reject
-                });
-            });
+    // =========================================================
+    // [TRUSTED TYPES BYPASS]
+    // =========================================================
+    if (win.trustedTypes && win.trustedTypes.createPolicy) {
+        try { win.trustedTypes.createPolicy('default', { createHTML: s => s }); }
+        catch (_) {}
+    }
+
+    // =========================================================
+    // [INTERCEPT ENGINE]
+    // Hooks Instagram's own fetch/XHR at document-start so we
+    // ride on their authenticated, signed requests for free.
+    // =========================================================
+    const FEED_RE = [
+        /\/api\/v1\/feed\/(timeline|user\/\d+|tag\/[^/]+|usertags\/\d+)/,
+        /\/graphql\/query/,
+        /\/api\/graphql/,
+        /bloks\/apps\/com\.bloks\.www\.feed/,
+        /\/api\/v1\/feed\/home_sessions/,
+    ];
+
+    function isFeedUrl(url) {
+        return FEED_RE.some(r => r.test(url));
+    }
+
+    function digestText(url, text) {
+        let json;
+        try { json = JSON.parse(text.replace(/^for\s*\(\s*;\s*;\s*\)\s*;/, '')); }
+        catch (_) { return; }
+        harvestJSON(json, url);
+    }
+
+    // --- Patch fetch ---
+    const _origFetch = win.fetch;
+    win.fetch = function (...args) {
+        const url = typeof args[0] === 'string' ? args[0] : (args[0]?.url || '');
+        const p = _origFetch.apply(this, args);
+        if (isFeedUrl(url)) {
+            p.then(r => r.clone().text().then(t => digestText(url, t))).catch(() => {});
         }
+        return p;
     };
 
-    // --- [IDENTITY & ENTROPY RESOLUTION] ---
-    async function resolveIdentity() {
-        let id = document.body.innerHTML.match(/profilePage_(\d+)/)?.[1] ||
-                 document.body.innerHTML.match(/author_id="(\d+)"/)?.[1] ||
-                 document.querySelector('meta[property="instapp:owner_user_id"]')?.content;
+    // --- Patch XHR ---
+    const _origOpen = win.XMLHttpRequest.prototype.open;
+    const _origSend = win.XMLHttpRequest.prototype.send;
+    win.XMLHttpRequest.prototype.open = function (m, url, ...rest) {
+        this._aresUrl = url;
+        return _origOpen.call(this, m, url, ...rest);
+    };
+    win.XMLHttpRequest.prototype.send = function (...args) {
+        if (this._aresUrl && isFeedUrl(this._aresUrl)) {
+            this.addEventListener('load', () => digestText(this._aresUrl, this.responseText));
+        }
+        return _origSend.apply(this, args);
+    };
 
-        // Redux DB Fallback
-        if (!id) {
-            try {
-                id = await new Promise((res) => {
-                    const req = indexedDB.open('redux');
-                    req.onsuccess = () => {
-                        const tx = req.result.transaction("paths", "readonly");
-                        const get = tx.objectStore("paths").get('users.usernameToId');
-                        get.onsuccess = () => res(get.result?.[document.location.href.match(/instagram\.com\/([^\/]{3,})/)?.[1]]);
-                    };
-                    req.onerror = () => res(null);
-                });
-            } catch (e) {}
+    // =========================================================
+    // [HARVEST ENGINE]
+    // Normalises all known Instagram feed response schemas.
+    // =========================================================
+    function harvestJSON(json, url) {
+        let items = [], cursor = null;
+
+        // Schema A: REST v1  feed/user or feed/usertags
+        if (json.items || json.feed_items) {
+            items  = json.items ||
+                     (json.feed_items || []).map(i => i.media_or_ad || i.media).filter(Boolean);
+            cursor = json.next_max_id || null;
+            if (!STATE.userId) STATE.userId = items[0]?.user?.pk_id || items[0]?.user?.pk;
+        }
+        // Schema B: classic GraphQL edge_owner_to_timeline_media
+        else if (json.data?.user?.edge_owner_to_timeline_media) {
+            const tl = json.data.user.edge_owner_to_timeline_media;
+            items  = (tl.edges || []).map(e => e.node);
+            cursor = tl.page_info?.end_cursor || null;
+            STATE.userId = STATE.userId || json.data.user.id;
+        }
+        // Schema C: newer xdt_api relay connection
+        else if (json.data?.xdt_api__v1__feed__user_timeline_graphql_connection) {
+            const conn = json.data.xdt_api__v1__feed__user_timeline_graphql_connection;
+            items  = (conn.edges || []).map(e => e.node);
+            cursor = conn.page_info?.end_cursor || null;
+        }
+        // Schema D: home sessions
+        else if (json.data?.xdt_api__v1__feed__home_connection) {
+            const conn = json.data.xdt_api__v1__feed__home_connection;
+            items  = (conn.edges || []).map(e => e.node?.media || e.node).filter(Boolean);
+            cursor = conn.page_info?.end_cursor || null;
+        }
+        // Schema E: deep-scan blobs/Bloks
+        else {
+            items = deepFindMedia(json);
         }
 
-        // API Fallback
-        if (!id) {
-            const user = document.location.href.match(/instagram\.com\/([^\/]{3,})/)?.[1];
-            if (user) {
-                const resp = await Interceptor.request(`https://www.instagram.com/api/v1/users/web_profile_info/?username=${user}`);
-                id = resp?.data?.user?.id || resp?.graphql?.user?.id;
-            }
-        }
-        STATE.targetId = id;
-        return id;
-    }
+        if (!items.length) return;
 
-    async function extractEntropy() {
-        const scripts = Array.from(document.getElementsByTagName('script')).filter(s => s.src && /Consumer|ProfilePageContainer|LibCommons|miOdM842jTv/.test(s.src));
-        for (const s of scripts) {
-            try {
-                const text = await Interceptor.request(s.src, { responseType: 'text' });
-                STATE.query.hash = text.match(/queryId:"([a-f0-9]+)"/)?.[1] || STATE.query.hash;
-                STATE.query.appId = text.match(/instagramWebDesktopFBAppId='(\d+)'/)?.[1] || STATE.query.appId;
-            } catch (e) {}
-        }
-        if (!STATE.query.hash) await fallbackPolaris();
-    }
-
-    async function fallbackPolaris() {
-        return new Promise((resolve) => {
-            let attempts = 0;
-            const timer = setInterval(async () => {
-                const api = window?.require?.('PolarisAPI');
-                const info = api?.fetchFBInfo ? api.fetchFBInfo('ping') : null;
-                let path = info?._value?.fileName || info?._value?.stack?.match(/\((https[^\)]+)\)/)?.[1];
-
-                if (!path && window.pldmp) {
-                    path = Object.values(Object.values(window.pldmp)?.[0] || {}).find(o =>
-                        o.url && o.url.match(/rsrc\.php.*\/[a-z]{2,3}_[A-Z]{2,3}\/[^\/.]{9,15}\.js/)
-                    )?.url;
-                }
-
-                if (path) {
-                    clearInterval(timer);
-                    const text = await Interceptor.request(path, { responseType: 'text' });
-                    STATE.query.hash = text.match(/,"regeneratorRuntime"\],\(function\(.*h="([a-f0-9]+)"/)?.[1];
-                    resolve();
-                } else if (attempts++ > 15) {
-                    clearInterval(timer);
-                    resolve();
-                }
-            }, 100);
+        // Deduplicate
+        items = items.filter(item => {
+            const id = item.pk || item.id || item.code;
+            if (!id || STATE._seen.has(id)) return false;
+            STATE._seen.add(id);
+            return true;
         });
+
+        if (!items.length) return;
+
+        // Persist cursor
+        if (cursor) {
+            const mode = url.includes('timeline') ? 'home' : 'profile';
+            STATE.cursors[mode] = cursor;
+        }
+
+        log(`Harvested ${items.length} items via intercept.`);
+
+        if (STATE.uiReady) renderBatch(items, cursor);
+        else STATE.pendingItems.push(...items);
     }
 
-    // --- [NEURAL VIRTUALIZATION] ---
-    const NeuralDOM = {
-        prune(item) {
-            const idx = STATE.domNodes.indexOf(item);
-            if (idx >= STATE.domNodes.length - CONFIG.VIRTUAL.SAFE_ZONE) return;
-            if (item.isPruned) return;
-
-            const rect = item.node.getBoundingClientRect();
-            item.height = rect.height || item.height;
-
-            const proxy = document.createElement('div');
-            proxy.style = `height:${item.height}px; width:100%; margin-bottom:80px; background:#050505; border:1px solid #111; display:flex; align-items:center; justify-content:center;`;
-            proxy.innerHTML = `<span style="color:#222; font-family:monospace; font-size:10px;">V-STASIS</span>`;
-
-            item.node.querySelectorAll('video').forEach(v => { v.pause(); v.src = ""; });
-            if (item.node.parentNode) {
-                item.node.parentNode.replaceChild(proxy, item.node);
-                item.node = proxy;
-                item.isPruned = true;
-            }
-        },
-
-        hydrate(item) {
-            if (!item.isPruned) return;
-            const realNode = createComponent(item.data, item.parent, item.meta.cur, item.meta.total);
-            if (item.node.parentNode) {
-                item.node.parentNode.replaceChild(realNode, item.node);
-                item.node = realNode;
-                item.isPruned = false;
-            }
-        },
-
-        observe(container) {
-            container.addEventListener('scroll', () => {
-                window.requestAnimationFrame(() => {
-                    const viewportTop = container.scrollTop;
-                    STATE.domNodes.forEach(item => {
-                        const dist = Math.abs(item.node.offsetTop - viewportTop);
-                        if (dist > CONFIG.VIRTUAL.PRUNE_RANGE && !item.isPruned) this.prune(item);
-                        else if (dist < CONFIG.VIRTUAL.HYDRATION_RANGE && item.isPruned) this.hydrate(item);
-                    });
-                });
-            });
+    function deepFindMedia(obj, depth = 0) {
+        if (depth > 8 || !obj || typeof obj !== 'object') return [];
+        if (Array.isArray(obj)) {
+            if (obj.length && obj[0] &&
+                (obj[0].image_versions2 || obj[0].video_versions || obj[0].carousel_media))
+                return obj;
+            return obj.flatMap(v => deepFindMedia(v, depth + 1));
         }
-    };
+        return Object.values(obj).flatMap(v => deepFindMedia(v, depth + 1));
+    }
 
-    // --- [ORCHESTRATION] ---
-    async function load(cursor = null) {
+    // =========================================================
+    // [ACTIVE FETCH]
+    // Fires authenticated same-origin requests for "load more".
+    // =========================================================
+    function csrf() {
+        return document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+    }
+
+    function baseHeaders() {
+        return {
+            'X-IG-App-ID':      '936619743392459',
+            'X-CSRFToken':      csrf(),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept':           '*/*',
+        };
+    }
+
+    function activeFetch(cursor) {
         if (STATE.isFetching) return;
         STATE.isFetching = true;
 
-        let url, body, method = 'GET';
-        const { targetId, MODE } = STATE;
+        const done = () => { STATE.isFetching = false; };
 
-        if (MODE === 'profile') {
-            url = `https://i.instagram.com/api/v1/feed/user/${targetId}/?count=${CONFIG.NETWORK.BATCH_SIZE}`;
-            if (cursor) url += `&max_id=${cursor}`;
-        } else if (MODE === 'home') {
-            url = 'https://i.instagram.com/api/v1/feed/timeline/';
-            method = 'POST';
-            const fd = new URLSearchParams();
-            fd.set('is_async_ads_rti', 0);
-            fd.set('device_id', window.localStorage.getItem('ig_did') || '0');
+        if (STATE.MODE === 'home') {
+            const fd = new URLSearchParams({ is_async_ads_rti: '0' });
             if (cursor) fd.set('max_id', cursor);
-            body = fd.toString();
-        } else if (MODE === 'tagged') {
-            url = `https://i.instagram.com/api/v1/usertags/${targetId}/feed/?count=${CONFIG.NETWORK.BATCH_SIZE}`;
+            fetch('https://i.instagram.com/api/v1/feed/timeline/', {
+                method: 'POST',
+                headers: { ...baseHeaders(), 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: fd.toString(),
+                credentials: 'include',
+            }).then(r => r.json()).then(json => { done(); harvestJSON(json, 'timeline'); })
+              .catch(done);
+
+        } else if (STATE.userId) {
+            let url = `https://i.instagram.com/api/v1/feed/user/${STATE.userId}/?count=${CFG.BATCH}`;
             if (cursor) url += `&max_id=${cursor}`;
+            fetch(url, { headers: baseHeaders(), credentials: 'include' })
+                .then(r => r.json()).then(json => { done(); harvestJSON(json, url); })
+                .catch(done);
+
+        } else {
+            done();
+            log('No userId yet — waiting for intercept to provide one.');
         }
-
-        try {
-            const json = await Interceptor.request(url, { method, body });
-            const timeline = json.data?.user?.edge_owner_to_timeline_media;
-            const items = timeline?.edges.map(e => e.node) || json.items || json.feed_items?.map(i => i.media_or_ad).filter(Boolean);
-            const nextCursor = timeline?.page_info?.end_cursor || json.next_max_id;
-
-            if (items?.length) processBatch(items, nextCursor);
-            else STATE.isFetching = false;
-        } catch (e) { STATE.isFetching = false; }
     }
 
-    function processBatch(items, nextCursor) {
-        const root = document.querySelector('#igBigContainer') || buildUI();
+    // =========================================================
+    // [USER ID RESOLUTION]  (no _sharedData dependency)
+    // =========================================================
+    function resolveUserId() {
+        if (STATE.userId) return;
+
+        // Layer 1: meta tag
+        STATE.userId = document.querySelector(
+            'meta[property="instapp:owner_user_id"]')?.content;
+        if (STATE.userId) { log(`UID via meta: ${STATE.userId}`); return; }
+
+        // Layer 2: inline JSON script tags
+        for (const s of document.querySelectorAll('script[type="application/json"]')) {
+            const m = s.textContent.match(/"user_id"\s*:\s*"?(\d+)"?/);
+            if (m) { STATE.userId = m[1]; log(`UID via inline JSON: ${STATE.userId}`); return; }
+        }
+
+        // Layer 3: web_profile_info (async, fires and forgets)
+        const username = location.pathname.match(/^\/([a-zA-Z0-9._]{1,30})\/?$/)?.[1];
+        const SKIP = ['explore', 'reels', 'stories', 'direct', 'accounts', 'tv'];
+        if (username && !SKIP.includes(username)) {
+            fetch(
+                `https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`,
+                { headers: { 'X-IG-App-ID': '936619743392459', 'X-Requested-With': 'XMLHttpRequest' },
+                  credentials: 'include' }
+            ).then(r => r.json())
+             .then(json => {
+                 STATE.userId = json?.data?.user?.id || json?.user?.pk;
+                 log(`UID via web_profile_info: ${STATE.userId}`);
+             }).catch(() => {});
+        }
+    }
+
+    // =========================================================
+    // [NEURAL VIRTUALIZATION]
+    // Prune off-screen nodes to HTML placeholders; re-hydrate on scroll.
+    // =========================================================
+    const NeuralDOM = {
+        prune(item, container) {
+            const idx = STATE.domNodes.indexOf(item);
+            if (idx >= STATE.domNodes.length - CFG.SAFE_ZONE) return;
+            if (item.isPruned) return;
+            const rect = item.node.getBoundingClientRect();
+            item.height = rect.height || item.height || 800;
+            item.node.querySelectorAll('video').forEach(v => { v.pause(); v.src = ''; });
+            const ph = document.createElement('div');
+            ph.style.cssText = `height:${item.height}px;width:100%;margin-bottom:80px;background:#050505;
+                border:1px solid #111;display:flex;align-items:center;justify-content:center;`;
+            ph.innerHTML = `<span style="color:#222;font-family:monospace;font-size:10px;">V-STASIS</span>`;
+            if (item.node.parentNode) {
+                item.node.parentNode.replaceChild(ph, item.node);
+                item.node = ph;
+                item.isPruned = true;
+            }
+        },
+        hydrate(item) {
+            if (!item.isPruned) return;
+            const real = createMediaComponent(item.data, item.parent, item.meta.cur, item.meta.total);
+            if (item.node.parentNode) {
+                item.node.parentNode.replaceChild(real, item.node);
+                item.node = real;
+                item.isPruned = false;
+            }
+        },
+        observe(container) {
+            container.addEventListener('scroll', () => {
+                window.requestAnimationFrame(() => {
+                    const top = container.scrollTop;
+                    STATE.domNodes.forEach(item => {
+                        const dist = Math.abs((item.node.offsetTop || 0) - top);
+                        if (dist > CFG.PRUNE_PX  && !item.isPruned)  this.prune(item, container);
+                        if (dist < CFG.HYDRATE_PX &&  item.isPruned)  this.hydrate(item);
+                    });
+                });
+            }, { passive: true });
+        }
+    };
+
+    // =========================================================
+    // [RENDERING ENGINE]
+    // =========================================================
+    function renderBatch(items, cursor) {
         const wall = document.querySelector('#igAllImages');
-        const fragment = document.createDocumentFragment();
+        if (!wall) return;
+        const frag = document.createDocumentFragment();
 
         items.forEach(item => {
-            const children = item.edge_sidecar_to_children?.edges?.map(e => e.node) || item.carousel_media || [item];
+            const children =
+                item.carousel_media ||
+                item.edge_sidecar_to_children?.edges?.map(e => e.node) ||
+                [item];
+
             children.forEach((child, idx) => {
-                if (child.ad_id || child.label === 'Sponsored') return;
-
-                const node = createComponent(child, item, idx + 1, children.length);
-                fragment.appendChild(node);
-
+                if (child.ad_id || child.label === 'Sponsored' || child.is_ad) return;
+                const node = createMediaComponent(child, item, idx + 1, children.length);
+                frag.appendChild(node);
                 STATE.domNodes.push({
-                    data: child,
-                    parent: item,
-                    node: node,
-                    isPruned: false,
-                    height: 800,
-                    meta: { cur: idx + 1, total: children.length, code: child.code || item.code }
+                    data: child, parent: item, node,
+                    isPruned: false, height: 800,
+                    meta: { cur: idx + 1, total: children.length }
                 });
                 STATE.totalLoaded++;
             });
         });
 
-        wall.appendChild(fragment);
+        wall.appendChild(frag);
 
-        if (STATE.domNodes.length > CONFIG.VIRTUAL.CACHE_LIMIT) {
-            STATE.domNodes.slice(0, STATE.domNodes.length - CONFIG.VIRTUAL.CACHE_LIMIT).forEach(item => NeuralDOM.prune(item));
+        // Prune head if over cache limit
+        if (STATE.domNodes.length > CFG.CACHE_LIMIT) {
+            const container = document.querySelector('#igBigContainer');
+            STATE.domNodes
+                .slice(0, STATE.domNodes.length - CFG.CACHE_LIMIT)
+                .forEach(item => NeuralDOM.prune(item, container));
         }
 
-        STATE.isFetching = false;
-
-        if (nextCursor) {
-            const triggerIdx = STATE.domNodes.length - CONFIG.VIRTUAL.SAFE_ZONE;
-            const trigger = STATE.domNodes[triggerIdx]?.node || wall.lastElementChild;
+        // Scroll trigger for next page
+        if (cursor) {
+            const container  = document.querySelector('#igBigContainer');
+            const triggerIdx = Math.max(0, STATE.domNodes.length - CFG.SAFE_ZONE);
+            const trigger    = STATE.domNodes[triggerIdx]?.node || wall.lastElementChild;
             if (trigger) {
-                const observer = new IntersectionObserver((entries) => {
-                    if (entries[0].isIntersecting) {
-                        observer.disconnect();
-                        load(nextCursor);
-                    }
-                }, { root: root, rootMargin: '1500px' });
-                observer.observe(trigger);
+                const obs = new IntersectionObserver(entries => {
+                    if (entries[0].isIntersecting) { obs.disconnect(); activeFetch(cursor); }
+                }, { root: container, rootMargin: '1500px' });
+                obs.observe(trigger);
             }
         }
     }
 
-    function createComponent(media, parent, cur, total) {
+    function createMediaComponent(media, parent, cur, total) {
         const wrapper = document.createElement('div');
-        wrapper.className = '4ndr0666-media-wrap';
-        wrapper.style = "margin-bottom: 80px; display: flex; flex-direction: column; align-items: center; width: 100%; transition: opacity 0.3s; pointer-events: auto;";
+        wrapper.style.cssText =
+            'margin-bottom:80px;display:flex;flex-direction:column;align-items:center;width:100%;' +
+            'transition:opacity 0.3s;pointer-events:auto;';
 
-        const code = media.code || parent.code || 'recon';
-        const link = `https://www.instagram.com/p/${code}/`;
+        const code = media.code || parent?.code || '';
+        const link = code ? `https://www.instagram.com/p/${code}/` : '#';
 
-        if (media.is_video || media.video_versions) {
-            const vid = document.createElement('video');
-            const variants = media.video_versions || [];
-            vid.src = variants.length ? variants.reduce((a, b) => (a.width > b.width ? a : b)).url : media.video_url;
-            vid.controls = true;
-            vid.volume = CONFIG.DISPLAY.VOLUME;
-            vid.preload = "metadata";
-            vid.style = `max-height:${window.innerHeight * CONFIG.DISPLAY.H_PCT}px; max-width:${window.innerWidth * CONFIG.DISPLAY.W_PCT}px; border:2px solid ${CONFIG.DISPLAY.ACCENT}; pointer-events: auto;`;
+        if (media.video_versions || media.is_video) {
+            const vids = media.video_versions || [];
+            const best = vids.length ? vids.reduce((a, b) => a.width > b.width ? a : b) : null;
+            const vid  = document.createElement('video');
+            vid.src        = best?.url || media.video_url || '';
+            vid.controls   = true;
+            vid.volume     = CFG.VOLUME;
+            vid.preload    = 'metadata';
+            vid.style.cssText =
+                `max-height:${window.innerHeight * CFG.H_PCT}px;` +
+                `max-width:${window.innerWidth  * CFG.W_PCT}px;` +
+                `border:2px solid ${CFG.ACCENT};pointer-events:auto;`;
             wrapper.appendChild(vid);
         } else {
-            const img = document.createElement('img');
-            const res = media.display_resources || media.image_versions2?.candidates || [];
-            const src = res.length ? res.reduce((a, b) => (a.width > b.width ? a : b)).url : (media.url || media.src);
-            img.src = src;
-            img.loading = "lazy";
-            img.style = `max-height:${window.innerHeight * CONFIG.DISPLAY.H_PCT}px; max-width:${window.innerWidth * CONFIG.DISPLAY.W_PCT}px; border:1px solid #222; cursor: pointer; pointer-events: auto;`;
-
-            const a = document.createElement('a');
-            a.href = link; a.target = "_blank"; a.appendChild(img);
+            const cands = media.image_versions2?.candidates || media.display_resources || [];
+            const best  = cands.length ? cands.reduce((a, b) => a.width > b.width ? a : b) : null;
+            const img   = document.createElement('img');
+            img.src             = best?.url || media.url || media.display_url || '';
+            img.loading         = 'lazy';
+            img.style.cssText   =
+                `max-height:${window.innerHeight * CFG.H_PCT}px;` +
+                `max-width:${window.innerWidth  * CFG.W_PCT}px;` +
+                `border:1px solid #333;cursor:pointer;pointer-events:auto;`;
+            const a    = document.createElement('a');
+            a.href     = link;
+            a.target   = '_blank';
+            a.appendChild(img);
             wrapper.appendChild(a);
         }
 
-        const info = document.createElement('a');
-        info.href = link;
-        info.target = "_blank";
-        info.style = `margin-top:12px; font-family:monospace; font-size:11px; color:${CONFIG.DISPLAY.ACCENT}; opacity:0.6; text-decoration:none; pointer-events: auto; z-index: 10;`;
-        info.innerHTML = `[ID: ${code}] [${cur}/${total}]`;
-        wrapper.appendChild(info);
+        const label = document.createElement('a');
+        label.href            = link;
+        label.target          = '_blank';
+        label.style.cssText   =
+            `margin-top:12px;font-family:monospace;font-size:11px;color:${CFG.ACCENT};` +
+            `opacity:0.6;text-decoration:none;pointer-events:auto;`;
+        label.textContent = `[CODE: ${code || 'N/A'}] [${cur}/${total}]`;
+        wrapper.appendChild(label);
 
         return wrapper;
     }
 
-    // --- [UI ENGINE] ---
+    // =========================================================
+    // [UI ENGINE]
+    // =========================================================
+    const GLYPH = `
+    <svg viewBox="0 0 128 128" style="width:24px;height:24px;filter:drop-shadow(0 0 6px ${CFG.ACCENT});">
+        <style>
+            .g1{transform-origin:center;animation:sp 10s linear infinite;}
+            .g2{transform-origin:center;animation:sp 15s linear infinite reverse;}
+            @keyframes sp{100%{transform:rotate(360deg);}}
+        </style>
+        <path class="g1" d="M64,12 A52,52 0 1 1 63.9,12Z" fill="none" stroke="${CFG.ACCENT}" stroke-dasharray="21.78 21.78" stroke-width="2"/>
+        <path class="g2" d="M64,20 A44,44 0 1 1 63.9,20Z" fill="none" stroke="${CFG.ACCENT}" stroke-dasharray="10 10" stroke-width="1.5" opacity="0.7"/>
+        <path d="M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47Z" fill="none" stroke="${CFG.ACCENT}" stroke-width="3"/>
+        <text x="64" y="76" text-anchor="middle" dominant-baseline="middle"
+              fill="${CFG.ACCENT}" font-size="46" font-weight="700" font-family="monospace">Ψ</text>
+    </svg>`;
+
     function buildUI() {
-        // HIDE THE GLYPH WHEN UI IS ACTIVE
-        const dock = document.getElementById('4ndr0666-glyph-dock');
+        if (document.getElementById('igBigContainer')) return;
+        log('Building UI...');
+
+        // Hide dock glyph while viewer is open
+        const dock = document.getElementById('4ndr0666-dock');
         if (dock) dock.style.display = 'none';
 
         document.body.style.overflow = 'hidden';
         const gui = document.createElement('div');
         gui.id = 'igBigContainer';
-        gui.style = `background:${CONFIG.DISPLAY.BG}; width:100vw; height:100vh; z-index:99999999; position:fixed; top:0; left:0; overflow-y:auto; color:#fff;`;
+        gui.style.cssText =
+            `background:${CFG.BG};width:100vw;height:100vh;z-index:2147483647;` +
+            `position:fixed;top:0;left:0;overflow-y:auto;color:#fff;`;
 
         gui.innerHTML = `
-            <div style="position:sticky; top:0; background:rgba(0,0,0,0.95); padding:15px; border-bottom:1px solid #111; display:flex; justify-content:space-between; align-items:center; z-index:100000; backdrop-filter:blur(10px);">
-                <div style="display:flex; flex-direction:column;">
-                    <span style="color:${CONFIG.DISPLAY.ACCENT}; font-family:'Cinzel Decorative', monospace; font-weight:900; letter-spacing:1px;">Instagram++ // V11.0</span>
-                    <span id="4ndr0666-stat" style="color:#666; font-family:monospace; font-size:10px;">INITIALIZING TELEMETRY...</span>
-                </div>
-                <div style="display:flex; gap:15px;">
-                     <button id="4ndr0666-dump" style="background:transparent; color:#aaa; border:1px solid #333; padding:5px 15px; cursor:pointer; font-family:monospace;">DUMP</button>
-                     <button id="4ndr0666-kill" style="background:transparent; color:${CONFIG.DISPLAY.ERROR}; border:1px solid #500; padding:5px 15px; cursor:pointer; font-family:monospace; font-weight:bold;">EXIT</button>
-                </div>
+        <div id="ares-header" style="position:sticky;top:0;background:rgba(0,0,0,0.95);padding:15px;
+            border-bottom:1px solid #111;display:flex;justify-content:space-between;align-items:center;
+            z-index:2147483648;backdrop-filter:blur(10px);">
+            <div>
+                <div style="color:${CFG.ACCENT};font-family:monospace;font-weight:900;letter-spacing:1px;">
+                    ARES-9 // SINGULARITY V6.1</div>
+                <div id="ares-stat" style="color:#555;font-family:monospace;font-size:10px;margin-top:4px;">
+                    INTERCEPTING FEED...</div>
             </div>
-            <div id="igAllImages" style="padding-top:80px; padding-bottom:300px; display:flex; flex-direction:column; align-items:center;"></div>
-        `;
+            <div style="display:flex;gap:12px;align-items:center;">
+                <button id="ares-more" style="background:#001a00;color:${CFG.ACCENT};border:1px solid ${CFG.ACCENT};
+                    padding:6px 14px;cursor:pointer;font-family:monospace;font-weight:bold;">LOAD MORE</button>
+                <button id="ares-dump" style="background:transparent;color:#aaa;border:1px solid #333;
+                    padding:6px 14px;cursor:pointer;font-family:monospace;">DUMP HTML</button>
+                <button id="ares-exit" style="background:transparent;color:${CFG.ERROR};border:1px solid #500;
+                    padding:6px 16px;cursor:pointer;font-family:monospace;font-weight:bold;">EXIT</button>
+            </div>
+        </div>
+        <div id="igAllImages" style="padding:80px 0 300px;display:flex;flex-direction:column;align-items:center;"></div>`;
 
         document.documentElement.appendChild(gui);
-        document.getElementById('4ndr0666-kill').onclick = () => window.location.assign(window.location.href.split('?')[0]);
-        document.getElementById('4ndr0666-dump').onclick = () => {
-            const blob = new Blob([document.querySelector('#igAllImages').innerHTML], {type: 'text/html'});
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `4ndr0666_dump_${STATE.targetId}.html`;
+
+        document.getElementById('ares-exit').onclick = () =>
+            window.location.assign(window.location.href.split('?')[0]);
+
+        document.getElementById('ares-dump').onclick = () => {
+            const blob = new Blob([document.querySelector('#igAllImages').innerHTML], {type:'text/html'});
+            const a    = document.createElement('a');
+            a.href     = URL.createObjectURL(blob);
+            a.download = `4ndr0666_dump_${STATE.userId || 'feed'}.html`;
             a.click();
         };
 
+        document.getElementById('ares-more').onclick = () => {
+            const cur = STATE.cursors[STATE.MODE] ||
+                        STATE.cursors['profile']  ||
+                        STATE.cursors['home']     || null;
+            activeFetch(cur);
+        };
+
         NeuralDOM.observe(gui);
+
         setInterval(() => {
+            const el = document.getElementById('ares-stat');
+            if (!el) return;
             const active = STATE.domNodes.filter(n => !n.isPruned).length;
-            const stat = document.getElementById('4ndr0666-stat');
-            if (stat) stat.textContent = `ACT: ${active} | TOT: ${STATE.totalLoaded} | UID: ${STATE.targetId} | MODE: ${STATE.MODE.toUpperCase()}`;
+            el.textContent =
+                `ACTIVE:${active} | TOTAL:${STATE.totalLoaded} | UID:${STATE.userId || '…'} ` +
+                `| MODE:${STATE.MODE.toUpperCase()} | BUFFERED:${STATE.pendingItems.length}`;
         }, 1000);
-        return gui;
+
+        STATE.uiReady = true;
+
+        // Drain items buffered before UI existed
+        if (STATE.pendingItems.length) {
+            const drained = STATE.pendingItems.splice(0);
+            const cur     = STATE.cursors[STATE.MODE] || STATE.cursors['profile'] || null;
+            renderBatch(drained, cur);
+        }
     }
 
-    const GLYPH_SVG = `
-    <svg viewBox="0 0 128 128" style="width: 24px; height: 24px; filter: drop-shadow(0 0 6px ${CONFIG.DISPLAY.ACCENT});">
-        <style>
-            .g-r1 { transform-origin: center; animation: sp 10s linear infinite; }
-            .g-r2 { transform-origin: center; animation: sp 15s linear infinite reverse; }
-            @keyframes sp { 100% { transform: rotate(360deg); } }
-        </style>
-        <path class="g-r1" d="M 64,12 A 52,52 0 1 1 63.9,12 Z" fill="none" stroke="${CONFIG.DISPLAY.ACCENT}" stroke-dasharray="21.78 21.78" stroke-width="2" />
-        <path class="g-r2" d="M 64,20 A 44,44 0 1 1 63.9,20 Z" fill="none" stroke="${CONFIG.DISPLAY.ACCENT}" stroke-dasharray="10 10" stroke-width="1.5" opacity="0.7" />
-        <path d="M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z" fill="none" stroke="${CONFIG.DISPLAY.ACCENT}" stroke-width="3" />
-        <text x="64" y="76" text-anchor="middle" dominant-baseline="middle" fill="${CONFIG.DISPLAY.ACCENT}" font-size="46" font-weight="700" font-family="monospace">Ψ</text>
-    </svg>`;
-
-    // --- [INIT: TAB-BAR INJECTION] ---
+    // =========================================================
+    // [EXECUTE RECON]
+    // =========================================================
     async function executeRecon() {
-        log("Booting Kernel...");
-        const loc = document.location.href;
-        if (loc.match(/https:\/\/(www\.)?instagram.com\/?(\?|$|#)/)) STATE.MODE = 'home';
-        else if (loc.includes('/tagged/')) STATE.MODE = 'tagged';
-        else if (loc.includes('/p/')) STATE.MODE = 'post';
+        if (STATE.executed) { log('Already running.'); return; }
+        STATE.executed = true;
+        log('Booting kernel...');
 
-        await resolveIdentity();
-        await extractEntropy();
-        load();
+        // Determine mode
+        const loc = location.href;
+        if      (loc.match(/instagram\.com\/?(\?|$|#)/)) STATE.MODE = 'home';
+        else if (loc.includes('/tagged/'))               STATE.MODE = 'tagged';
+        else if (loc.includes('/explore/'))              STATE.MODE = 'explore';
+        else if (loc.includes('/p/') || loc.includes('/reel/')) STATE.MODE = 'post';
+        else                                              STATE.MODE = 'profile';
+
+        resolveUserId();
+        buildUI();
+
+        // Trigger a first active fetch — if intercept already caught something
+        // the dedupe will suppress duplicates gracefully.
+        activeFetch(null);
     }
 
-    function init() {
-        // 1. Context Menu Failsafe
-        GM_registerMenuCommand("Ψ Press If Btn Didnt Work", executeRecon);
+    // =========================================================
+    // [INJECTION ENGINE]
+    // Strategy 1 : append Ψ glyph to IG's own tab-bar
+    // Strategy 2 : fixed-position dock (fallback for non-profile pages)
+    // Strategy 3 : Alt+I hotkey (always works, no DOM dependency)
+    // Strategy 4 : GM menu command
+    // =========================================================
+    function injectTrigger() {
+        if (STATE.injected) return;
 
-        // 2. Tab Bar Injection Loop
+        const tablist = document.querySelector('div[role="tablist"]');
+        const fallback = document.querySelector(
+            'div.fx7hk, main header section, ._aak6, div[class*="x9f619"]');
+
+        if (tablist) {
+            STATE.injected = true;
+            const dock = document.createElement('div');
+            dock.id           = '4ndr0666-dock';
+            dock.title        = 'ARES-9 — Alt+I or click';
+            dock.innerHTML    = GLYPH;
+            dock.style.cssText =
+                'cursor:pointer;margin-left:20px;display:flex;align-items:center;' +
+                'opacity:0.7;transition:transform 0.2s,opacity 0.2s;height:52px;';
+            dock.onmouseover  = () => { dock.style.opacity='1'; dock.style.transform='scale(1.15)'; };
+            dock.onmouseout   = () => { dock.style.opacity='0.7'; dock.style.transform='scale(1)'; };
+            dock.onclick      = (e) => { e.preventDefault(); e.stopPropagation(); executeRecon(); };
+            tablist.appendChild(dock);
+            log('Tab-bar glyph injected.');
+
+        } else if (fallback && !document.getElementById('4ndr0666-dock')) {
+            STATE.injected = true;
+            const dock = document.createElement('div');
+            dock.id           = '4ndr0666-dock';
+            dock.title        = 'ARES-9 — Alt+I or click';
+            dock.innerHTML    = GLYPH;
+            dock.style.cssText =
+                'position:fixed;bottom:28px;left:88px;z-index:2147483646;' +
+                'cursor:pointer;opacity:0.65;transition:transform 0.2s,opacity 0.2s;';
+            dock.onmouseover  = () => { dock.style.opacity='1'; dock.style.transform='scale(1.15)'; };
+            dock.onmouseout   = () => { dock.style.opacity='0.65'; dock.style.transform='scale(1)'; };
+            dock.onclick      = (e) => { e.preventDefault(); executeRecon(); };
+            document.body.appendChild(dock);
+            log('Fixed-dock glyph injected (fallback).');
+        }
+    }
+
+    // =========================================================
+    // [HOTKEY]  Alt + I  — fires regardless of DOM state
+    // =========================================================
+    function registerHotkey() {
+        document.addEventListener('keydown', (e) => {
+            if (e.altKey && e.key.toLowerCase() === CFG.HOTKEY) {
+                e.preventDefault();
+                log(`Hotkey Alt+${CFG.HOTKEY.toUpperCase()} triggered.`);
+                executeRecon();
+            }
+        }, true);
+    }
+
+    // =========================================================
+    // [BOOT]
+    // =========================================================
+    function boot() {
+        // GM menu — works from any state
+        GM_registerMenuCommand('Ψ ARES-9 — Execute Recon', executeRecon);
+
+        // Hotkey — registered immediately
+        registerHotkey();
+
+        // DOM injection loop — tries every 1.5 s until it lands
         const daemon = setInterval(() => {
-            if (document.getElementById('4ndr0666-glyph-dock')) return;
+            if (document.getElementById('igBigContainer')) {
+                clearInterval(daemon); // UI is open, stop polling
+                return;
+            }
+            injectTrigger();
+        }, 1500);
 
-            // Strategy: Profile Tab List (Posts | Reels | Tagged | [Ψ])
-            const tablist = document.querySelector('div[role="tablist"]');
-
-            // Fallback for non-profile pages (Sidebar/Header)
-            const fallback = document.querySelector('div.fx7hk, main header section, ._aak6');
-
-            if (tablist) {
+        // Last-resort: if nothing injected after 30 s, force a fixed dock
+        setTimeout(() => {
+            if (!STATE.injected && document.body) {
+                STATE.injected = true;
                 const dock = document.createElement('div');
-                dock.id = '4ndr0666-glyph-dock';
-                dock.innerHTML = GLYPH_SVG;
-                dock.title = "Initialize Instagram++ v11";
-                dock.style = `
-                    cursor: pointer;
-                    margin-left: 20px;
-                    display: flex;
-                    align-items: center;
-                    opacity: 0.7;
-                    transition: transform 0.2s, opacity 0.2s;
-                    height: 52px; /* Matches IG tabs */
-                `;
-
-                dock.onmouseover = () => { dock.style.opacity = '1'; dock.style.transform = 'scale(1.1)'; };
-                dock.onmouseout = () => { dock.style.opacity = '0.7'; dock.style.transform = 'scale(1)'; };
-
-                dock.onclick = (e) => {
-                    e.preventDefault(); e.stopPropagation();
-                    executeRecon();
-                };
-
-                // Append to end of tablist
-                tablist.appendChild(dock);
-            } else if (fallback && STATE.MODE !== 'profile') {
-                // Subtle fallback for Home/Explore if Tablist is missing
-                const dock = document.createElement('div');
-                dock.id = '4ndr0666-glyph-dock';
-                dock.innerHTML = GLYPH_SVG;
-                dock.style = "position:fixed; bottom:25px; left:90px; z-index:999999; cursor:pointer; opacity:0.6;";
+                dock.id           = '4ndr0666-dock';
+                dock.title        = 'ARES-9 — click or Alt+I';
+                dock.innerHTML    = GLYPH;
+                dock.style.cssText =
+                    'position:fixed;bottom:28px;left:88px;z-index:2147483646;' +
+                    'cursor:pointer;opacity:0.65;';
                 dock.onclick = (e) => { e.preventDefault(); executeRecon(); };
                 document.body.appendChild(dock);
+                log('Forced fixed-dock after 30s timeout.');
             }
-
-        }, 1500);
+        }, 30000);
     }
 
-    log("V11 Active.");
-    if (document.body) init();
-    else window.addEventListener('DOMContentLoaded', init);
+    log('V6.1 active — intercept hooks planted. Press Alt+I or click Ψ to execute recon.');
+
+    if (document.body) boot();
+    else window.addEventListener('DOMContentLoaded', boot);
 
 })();
