@@ -72,6 +72,7 @@ Each script adheres to a core set of principles:
 | LinkMasterΨ | [4ndr0tools - LinkMasterΨ.user.js](./4ndr0tools%20-%20LinkMaster%CE%A8.user.js) | Scrapes all the links. TODO: merge with LinkMasterΨ2 |
 | LinkMasterΨ2 | [4ndr0tools - LinkMasterΨ2.user.js](./4ndr0tools%20-%20LinkMaster%CE%A82.user.js) | A fully-integrated HUD for scraping, previewing, checking, and downloading links from any website. Features dual modes for targeted forum scraping or aggressive general-purpose link discovery, a standalone link checker with paste support, and persistent user settings. |
 | m3u8++ | [4ndr0tools - m3u8++.user.js](./4ndr0tools%20-%20m3u8++.user.js) | Automatically displays the m3u8 url for ANY video playing in the top right corner of the video. Click url to copy or click download to use the webapp "tools.thatwind.com". |
+| Media Player Controller | [4ndr0tools - Media Player Controller.user.js](./4ndr0tools%20-%20Media%20Player%20Controller.user.js) | Speed • Alt+Shift Drag+Wheel Zoom/Pan • Rotation • Maximize • PiP |
 | MegaEmbedRedirector | [4ndr0tools - MegaEmbedRedirector.user.js](./4ndr0tools%20-%20MegaEmbedRedirector.user.js) | Bypass to the embedded URL and autoplays. |
 | ModelSearch | [4ndr0tools - ModelSearch.user.js](./4ndr0tools%20-%20ModelSearch.user.js) | Direct SimpCity search UI to search models on Simpcity.su directly from any website. |
 | Pixverse++ | [4ndr0tools - Pixverse++.user.js](./4ndr0tools%20-%20Pixverse++.user.js) | For educational security research. |
