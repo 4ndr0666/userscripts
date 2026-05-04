@@ -78,7 +78,7 @@ Each script adheres to a core set of principles:
 | PlanetsuzyMobileSkinRedirect | [4ndr0tools - PlanetsuzyMobileSkinRedirect.user.js](./4ndr0tools%20-%20PlanetsuzyMobileSkinRedirect.user.js) | Force a faster mobile skin where useful. |
 | RealLinkRevealer | [4ndr0tools - RealLinkRevealer.user.js](./4ndr0tools%20-%20RealLinkRevealer.user.js) | Reveal true URLs hidden as "premium" link wrappers using the parent bbCodeBlock--unfurl block's data-url attribute. |
 | Recon | [4ndr0tools - Recon.user.js](./4ndr0tools%20-%20Recon.user.js) | Red-team tool for automated recon. Passively captures all traffic and generates a heuristic analysis report on command. For security research only. |
-| Redgifs++ | [4ndr0tools - Redgifs++.user.js](./4ndr0tools%20-%20Redgifs++.user.js) | Intercepts Redgifs links on Reddit to open them in an enhanced, cinematic overlay. Cleans up the Redgifs site itself for a focused viewing experience. |
+| Redgifs++ | [4ndr0tools - Redgifs++.user.js](./4ndr0tools%20-%20Redgifs++.user.js) | Intercepts Redgifs links on Reddit for a cinematic overlay. On Redgifs itself, enters focused video-only mode. Falls back to JSON.parse intercept for direct /watch/ loads before SPA hydration. |
 | Searxng Sticky Settings | [4ndr0tools - Searxng Sticky Settings.user.js](./4ndr0tools%20-%20Searxng%20Sticky%20Settings.user.js) | Always load your preferred SearXNG settings hash/bookmarklet on every visit |
 | SelectAllCheckboxes | [4ndr0tools - SelectAllCheckboxes.user.js](./4ndr0tools%20-%20SelectAllCheckboxes.user.js) | Check/Uncheck a fuckload of checkboxes at once with enhanced precision and modern code. |
 | Watermark++ | [4ndr0tools - Watermark++.user.js](./4ndr0tools%20-%20Watermark++.user.js) | Security research and alignment testing only. |
