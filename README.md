@@ -86,6 +86,7 @@ Each script adheres to a core set of principles:
 | YandexImageSearch++ | [4ndr0tools - YandexImageSearch++.user.js](./4ndr0tools%20-%20YandexImageSearch++.user.js) | Robust, event-driven slideshow, fullscreen preview, and on-screen status for Yandex reverse-image search. |
 | Youtube Removed Video Revealer | [4ndr0tools - Youtube Removed Video Revealer.user.js](./4ndr0tools%20-%20Youtube%20Removed%20Video%20Revealer.user.js) | Restores titles for removed or private videos in YouTube playlists |
 | YouTubeEmbedRedirectButton | [4ndr0tools - YouTubeEmbedRedirectButton.user.js](./4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js) | Floating button for redirects to embedded version. Right click it to set a keybind (default Ctrl+E). |
+| YT Filter | [4ndr0tools - YT Filter.user.js](./4ndr0tools%20-%20YT%20Filter.user.js) | Electric-Glass YouTube video filter — views, date, duration |
 <!-- END_CATALOG -->
 
 ---
