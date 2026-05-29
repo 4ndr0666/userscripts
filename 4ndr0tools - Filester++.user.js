@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         4ndr0tools - Filester Universal Liberator
+// @name         4ndr0tools - Filester++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @version      7.4.0
 // @author       4ndr0666
