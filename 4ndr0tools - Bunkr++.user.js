@@ -464,29 +464,79 @@
     }
 
     // =========================================================================
-    // MODULE 6.5: HARDENED STREAM URL RESOLVER (with signing fallback)
+    // MODULE 6.5: HARDENED STREAM URL RESOLVER (dynamic media ID extraction)
     // =========================================================================
     async function getBunkrStreamUrl(slug) {
+        // Tier 1: Intercepted M3U8
         if (directMap.has('m3u8_stream')) {
             console.log('[Ψ-4NDR0666] Tier 1: M3U8 hit.');
             return directMap.get('m3u8_stream');
         }
 
+        // Tier 2: Native API clone
         if (directMap.has('native_api_resolved')) {
             console.log('[Ψ-4NDR0666] Tier 2: Native API clone hit.');
             return directMap.get('native_api_resolved');
         }
 
+        // Tier 3: Live DOM video src
         const vid = document.querySelector('video source, video');
         if (vid?.src && !vid.src.startsWith('blob:')) {
             console.log('[Ψ-4NDR0666] Tier 3: Live DOM src hit.');
             return vid.src;
         }
 
-        console.log('[Ψ-4NDR0666] Tier 4: Standalone signing + decryption.');
+        // Tier 4: Dynamic signing using current page media UUID
+        console.log('[Ψ-4NDR0666] Tier 4: Dynamic signing engine.');
 
+        let mediaUuid = null;
+
+        // Extract UUID from jsCDN variable (most reliable on single-asset pages)
+        if (typeof window.jsCDN !== 'undefined' && window.jsCDN) {
+            const match = window.jsCDN.match(/\/storage\/media\/([a-f0-9-]+)\.mp4/);
+            if (match) mediaUuid = match[1];
+        }
+
+        // Fallback: extract from any video source on page
+        if (!mediaUuid) {
+            const videoSrc = document.querySelector('video source')?.src || document.querySelector('video')?.src;
+            if (videoSrc) {
+                const match = videoSrc.match(/\/storage\/media\/([a-f0-9-]+)\.mp4/);
+                if (match) mediaUuid = match[1];
+            }
+        }
+
+        if (!mediaUuid) {
+            console.warn('[Ψ-4NDR0666] Could not extract media UUID. Falling back to slug-based /api/vs.');
+            // Original slug fallback
+            try {
+                const vsRes = await origFetch(`https://${TARGET_DOMAIN}/api/vs`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ slug })
+                });
+                const data = await vsRes.json();
+                if (data.encrypted) {
+                    const binaryString   = atob(data.url);
+                    const key            = `SECRET_KEY_${Math.floor(data.timestamp / 3600)}`;
+                    const keyBytes       = new TextEncoder().encode(key);
+                    const decryptedBytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                        decryptedBytes[i] = binaryString.charCodeAt(i) ^ keyBytes[i % keyBytes.length];
+                    }
+                    return new TextDecoder().decode(decryptedBytes);
+                }
+                return data.url;
+            } catch (e) {
+                console.error('[Ψ-4NDR0666] Slug fallback failed.', e);
+                return null;
+            }
+        }
+
+        // Dynamic signing path
         try {
-            const signRes = await fetch(`https://glb-apisign.cdn.cr/sign?path=%2Fstorage%2Fmedia%2F227a859b-6de0-436c-8811-55bed9632063.mp4`, {
+            const encodedPath = encodeURIComponent(`/storage/media/${mediaUuid}.mp4`);
+            const signRes = await fetch(`https://glb-apisign.cdn.cr/sign?path=${encodedPath}`, {
                 credentials: 'omit',
                 headers: { 'Referer': window.location.href }
             });
@@ -494,24 +544,21 @@
             if (!signRes.ok) throw new Error(`Sign failed: ${signRes.status}`);
 
             const { token, ex } = await signRes.json();
-            const base = "https://c4s9-b.cdn.cr/storage/media/227a859b-6de0-436c-8811-55bed9632063.mp4";
-            const signedUrl = `${base}?token=${token}&ex=${ex}`;
+            const signedUrl = `https://c4s9-b.cdn.cr/storage/media/${mediaUuid}.mp4?token=${token}&ex=${ex}`;
 
-            console.log('[Ψ-4NDR0666] Tier 4 Success → Signed URL acquired.');
+            console.log(`[Ψ-4NDR0666] Tier 4 Success → Signed URL for ${mediaUuid}`);
             return signedUrl;
 
         } catch (err) {
-            console.warn('[Ψ-4NDR0666] Direct signing failed, falling back to /api/vs.', err);
-
+            console.warn('[Ψ-4NDR0666] Dynamic signing failed, falling back to /api/vs.', err);
+            // Final fallback to slug-based
             try {
                 const vsRes = await origFetch(`https://${TARGET_DOMAIN}/api/vs`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ slug })
                 });
-
                 const data = await vsRes.json();
-
                 if (data.encrypted) {
                     const binaryString   = atob(data.url);
                     const key            = `SECRET_KEY_${Math.floor(data.timestamp / 3600)}`;
@@ -529,7 +576,7 @@
             }
         }
     }
-
+    
     // =========================================================================
     // MODULE 7: UNIFIED DIRECT ACQUISITION
     // =========================================================================
