@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         4ndr0tools - Bunkr++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      5.3.1
+// @version      5.3.4
 // @author       4ndr0666
 // @description  Part of 4ndr0tools: Canonical routing, auto-sort, hide visited, bypass dl gateway
-// @icon         data:image/png;base64,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
+// @icon         data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAH6UlEQVR42m2Xa49cxRGGn6o+15nd9d1mjdcxxgQvCeBgOQYikIzkD44SJPjGv+HfICV/ACGEQohQcCAIX2JjjGwTG8der9e7653LOX268qF7ZsdORjrTPTNnTr1VXfW+VaLqTAAQEAGd2U8u1Sc/S/xHXAUwMAMjrSHtQ/qcrmAz9xoCZPE5gj1tYNbw7KoKoqDJeMJCSIaDQQhpL8lw+l4TsMnLjIynjU+9TUZUwbnpKmkvEzAw9da6gIUOunSFAF1IkUrGg8W9CIRAhmj0YtagpIc73QaQZWhazQwz2z4GMQSH5DliBm1L8B7zHSIeuhSmkNAaEZxIjADCtvGnPMY5JMuQLEv7HLd3D7p7N1r3QMDalrC+TreyQlhfR1TRoiCITwA9dJO4Bwgacy1GQGIOTD2OXk4NOwdZDplD+33K06fR3Xui4a2tGOqyROfmsbYhrKzQXr2Kv/MzKoopWMtTiZtyQgTRsjZVwVJ4J5fkeTxnlyFlkYBk6N692GgE4zG6uBgNb0TvqSqypSUYj2kuXMQsQNNg3mOtB99GwL6D0CFdisCT4c6Rsohg5+bQqoK2hbqH+8VhtK4J6+vQtrEAhgO03wfvoSyh6+ju30f7PaxtY9KnpI71niLhYynq9tlHD6XIQQTduYve++9DXUNVof0+0gXCygqMx9B1ZC/8kvyVVwhbWzFCXYC2JTt066666666666666666666666eD80BEEF2d1aGqBAAAAAElFTkSuQmCC
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Bunkr++.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Bunkr++.user.js
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -26,7 +26,7 @@
 (function () {
     'use strict';
 
-    console.log('%c[4NDR0tools] Bunkr++ v5.3.1-Ψ', 'color:#00E5FF; font-family:monospace; font-weight:bold;');
+    console.log('%c[4NDR0tools] Bunkr++ v5.3.4-Ψ', 'color:#00E5FF; font-family:monospace; font-weight:bold;');
 
     // =========================================================================
     // INTERNAL STATE & CONSTANTS
@@ -464,9 +464,9 @@
     }
 
     // =========================================================================
-    // MODULE 6.5: HARDENED STREAM URL RESOLVER (dynamic media ID extraction)
+    // MODULE 6.5: HARDENED STREAM URL RESOLVER
     // =========================================================================
-    async function getBunkrStreamUrl(slug) {
+    async function getBunkrStreamUrl(slug, contextElement = null) {
         // Tier 1: Intercepted M3U8
         if (directMap.has('m3u8_stream')) {
             console.log('[Ψ-4NDR0666] Tier 1: M3U8 hit.');
@@ -486,57 +486,78 @@
             return vid.src;
         }
 
-        // Tier 4: Dynamic signing using current page media UUID
         console.log('[Ψ-4NDR0666] Tier 4: Dynamic signing engine.');
 
         let mediaUuid = null;
 
-        // Extract UUID from jsCDN variable (most reliable on single-asset pages)
-        if (typeof window.jsCDN !== 'undefined' && window.jsCDN) {
+        // 1. OpenGraph Metadata Analysis (Direct Context Validation)
+        const ogImg = document.querySelector('meta[property="og:image"]');
+        if (ogImg?.content) {
+            const match = ogImg.content.match(/\/thumbs\/([a-f0-9-]+)\./i) || ogImg.content.match(/\/([a-f0-9-]+)\.(mp4|jpg|png|webp)/i);
+            if (match) {
+                mediaUuid = match[1];
+                console.log(`[Ψ-4NDR0666] Identity extracted via OpenGraph: ${mediaUuid}`);
+            }
+        }
+
+        // 2. Live video element lookup (single asset page fallback context)
+        if (!mediaUuid && vid?.src) {
+            const match = vid.src.match(/\/storage\/media\/([a-f0-9-]+)\.mp4/);
+            if (match) mediaUuid = match[1];
+        }
+
+        // 3. Environment Object Inspection (single asset metadata context)
+        if (!mediaUuid && typeof window.videoCoverUrl !== 'undefined' && window.videoCoverUrl) {
+            const match = window.videoCoverUrl.match(/\/thumbs\/([a-f0-9-]+)\.mp4/);
+            if (match) mediaUuid = match[1];
+        }
+        if (!mediaUuid && typeof window.jsCDN !== 'undefined' && window.jsCDN) {
             const match = window.jsCDN.match(/\/storage\/media\/([a-f0-9-]+)\.mp4/);
             if (match) mediaUuid = match[1];
         }
 
-        // Fallback: extract from any video source on page
-        if (!mediaUuid) {
-            const videoSrc = document.querySelector('video source')?.src || document.querySelector('video')?.src;
-            if (videoSrc) {
-                const match = videoSrc.match(/\/storage\/media\/([a-f0-9-]+)\.mp4/);
-                if (match) mediaUuid = match[1];
-            }
-        }
-
-        if (!mediaUuid) {
-            console.warn('[Ψ-4NDR0666] Could not extract media UUID. Falling back to slug-based /api/vs.');
-            // Original slug fallback
-            try {
-                const vsRes = await origFetch(`https://${TARGET_DOMAIN}/api/vs`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ slug })
-                });
-                const data = await vsRes.json();
-                if (data.encrypted) {
-                    const binaryString   = atob(data.url);
-                    const key            = `SECRET_KEY_${Math.floor(data.timestamp / 3600)}`;
-                    const keyBytes       = new TextEncoder().encode(key);
-                    const decryptedBytes = new Uint8Array(binaryString.length);
-                    for (let i = 0; i < binaryString.length; i++) {
-                        decryptedBytes[i] = binaryString.charCodeAt(i) ^ keyBytes[i % keyBytes.length];
+        // 4. Context element thumbnail parsing (grid / related listings context)
+        if (!mediaUuid && contextElement) {
+            const imgs = contextElement.querySelectorAll('img, source, video');
+            for (const img of imgs) {
+                const targetSrc = img.src || img.getAttribute('data-src') || img.getAttribute('src');
+                if (targetSrc) {
+                    const match = targetSrc.match(/\/thumbs\/([a-f0-9-]+)\./i) || targetSrc.match(/\/([a-f0-9-]+)\.(mp4|jpg|png|webp)/i);
+                    if (match) {
+                        mediaUuid = match[1];
+                        break;
                     }
-                    return new TextDecoder().decode(decryptedBytes);
                 }
-                return data.url;
-            } catch (e) {
-                console.error('[Ψ-4NDR0666] Slug fallback failed.', e);
-                return null;
             }
         }
 
-        // Dynamic signing path
+        // 5. Multi-grid context lookup scan (whole document element matching)
+        if (!mediaUuid && slug) {
+            const links = document.querySelectorAll(`a[href*="${slug}"]`);
+            for (const link of links) {
+                const container = link.closest('.theItem, .grid-images_box') || link.parentElement;
+                if (container) {
+                    const img = container.querySelector('img[src*="/thumbs/"]');
+                    if (img?.src) {
+                        const match = img.src.match(/\/thumbs\/([a-f0-9-]+)\./i);
+                        if (match) {
+                            mediaUuid = match[1];
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!mediaUuid) {
+            console.warn(`[Ψ-4NDR0666] Extract failure for Media UUID belonging to identifier: ${slug}`);
+            return null;
+        }
+
+        // Dynamic edge cryptographic hash calculation
         try {
             const encodedPath = encodeURIComponent(`/storage/media/${mediaUuid}.mp4`);
-            const signRes = await fetch(`https://glb-apisign.cdn.cr/sign?path=${encodedPath}`, {
+            const signRes = await origFetch(`https://glb-apisign.cdn.cr/sign?path=${encodedPath}`, {
                 credentials: 'omit',
                 headers: { 'Referer': window.location.href }
             });
@@ -546,37 +567,15 @@
             const { token, ex } = await signRes.json();
             const signedUrl = `https://c4s9-b.cdn.cr/storage/media/${mediaUuid}.mp4?token=${token}&ex=${ex}`;
 
-            console.log(`[Ψ-4NDR0666] Tier 4 Success → Signed URL for ${mediaUuid}`);
+            console.log(`[Ψ-4NDR0666] Tier 4 Token Sign Complete → ${mediaUuid}`);
             return signedUrl;
 
         } catch (err) {
-            console.warn('[Ψ-4NDR0666] Dynamic signing failed, falling back to /api/vs.', err);
-            // Final fallback to slug-based
-            try {
-                const vsRes = await origFetch(`https://${TARGET_DOMAIN}/api/vs`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ slug })
-                });
-                const data = await vsRes.json();
-                if (data.encrypted) {
-                    const binaryString   = atob(data.url);
-                    const key            = `SECRET_KEY_${Math.floor(data.timestamp / 3600)}`;
-                    const keyBytes       = new TextEncoder().encode(key);
-                    const decryptedBytes = new Uint8Array(binaryString.length);
-                    for (let i = 0; i < binaryString.length; i++) {
-                        decryptedBytes[i] = binaryString.charCodeAt(i) ^ keyBytes[i % keyBytes.length];
-                    }
-                    return new TextDecoder().decode(decryptedBytes);
-                }
-                return data.url;
-            } catch (e2) {
-                console.error('[Ψ-4NDR0666] All tiers failed.', e2);
-                return null;
-            }
+            console.warn('[Ψ-4NDR0666] Dynamic validation infrastructure aborted.', err);
+            return null;
         }
     }
-    
+
     // =========================================================================
     // MODULE 7: UNIFIED DIRECT ACQUISITION
     // =========================================================================
@@ -604,7 +603,7 @@
             ? window.jsSlug
             : (urlSlugMatch ? urlSlugMatch[1] : null);
 
-        const mediaContainer = document.querySelector('.video-container, .lightgallery, img.w-full, video');
+        const mediaContainer = document.querySelector('.video-container, .lightgallery, img.w-full, video, #video-container');
         if (mediaContainer) {
             const wrapper = mediaContainer.parentElement;
             ensureRelative(wrapper);
@@ -734,23 +733,12 @@
                     addVisited(alphaId);
                     el.classList.add('psi-visited');
 
-                    if (/^\d+$/.test(alphaId)) {
-                        console.warn(`[Ψ-4NDR0666] Stream glyph: "${alphaId}" is a numeric file ID, not a slug. Navigate to the asset page.`);
-                        streamGlyph.style.color       = 'var(--red)';
-                        streamGlyph.style.borderColor = 'var(--red)';
-                        setTimeout(() => {
-                            streamGlyph.style.color       = '';
-                            streamGlyph.style.borderColor = '';
-                        }, 2500);
-                        return;
-                    }
-
                     const savedHtml = streamGlyph.innerHTML;
                     streamGlyph.innerHTML         = spinnerHtml;
                     streamGlyph.style.color       = '#fff';
                     streamGlyph.style.borderColor = '';
 
-                    const streamUrl = await getBunkrStreamUrl(alphaId);
+                    const streamUrl = await getBunkrStreamUrl(alphaId, el);
                     streamGlyph.innerHTML = savedHtml;
 
                     if (streamUrl) {
