@@ -256,6 +256,50 @@
         header, .bg-mute, .live-indicator-container, #liveCount, footer, [data-cl-spot],
         iframe[src*="ads"], iframe[src*="pop"], .banner, .ad-container, .ad-box,
         .adsbygoogle, .popup-ad, .ad-wrap { display: none !important; }
+
+        /* ── Toast Notification System ────────────────────────────────────── */
+        @keyframes psi-slide-in {
+            from { opacity: 0; transform: translateX(32px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes psi-fade-out {
+            from { opacity: 1; }
+            to   { opacity: 0; transform: translateX(16px); }
+        }
+        .psi-toast {
+            position: fixed; top: 16px; right: 16px; z-index: 9999999;
+            background: rgba(10, 15, 26, 0.97);
+            color: var(--cyan);
+            border: 1px solid var(--cyan);
+            border-radius: 6px;
+            padding: 10px 16px;
+            font: bold 11px monospace;
+            box-shadow: 0 0 14px rgba(0, 229, 255, 0.3);
+            pointer-events: none;
+            max-width: 420px;
+            animation: psi-slide-in 0.25s ease forwards;
+        }
+        .psi-toast--dying { animation: psi-fade-out 0.4s ease forwards; }
+
+        /* Ψ-glyph variant — flex row with SVG icon + label */
+        .psi-toast--glyph {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 14px 8px 10px;
+            border-color: var(--yellow);
+            box-shadow: 0 0 14px rgba(255, 215, 0, 0.25);
+        }
+        .psi-toast-icon {
+            flex-shrink: 0;
+            width: 36px; height: 36px;
+            color: var(--yellow);
+        }
+        .psi-toast-label {
+            color: var(--yellow);
+            font: bold 11px monospace;
+            letter-spacing: 0.04em;
+        }
     `);
 
     // =========================================================================
@@ -931,7 +975,7 @@
                         console.log(`[Ψ-4NDR0666] Stream URL acquired: ${streamUrl}`);
                         // Warn if URL is from Tier 8 (IP-bound signed URL)
                         if (streamUrl.includes('token=') && streamUrl.includes('ex=')) {
-                            showToast('⚠ Signed URL copied — IP-bound to this browser session. Open in this browser only.', 6000);
+                            showToast('⦒ █▓░URL copied for IP streaming.', 6000, true);
                         }
                     } else {
                         streamGlyph.style.color       = 'var(--red)';
@@ -1024,7 +1068,7 @@
                         robustCopy(streamUrl, streamGlyph);
                         console.log(`[Ψ-4NDR0666] Stream URL acquired: ${streamUrl}`);
                         if (streamUrl.includes('token=') && streamUrl.includes('ex=')) {
-                            showToast('⦒ █▓░URL copied for IP streaming.', 6000);
+                            showToast('⦒ █▓░URL copied for IP streaming.', 6000, true);
                         }
                     } else {
                         streamGlyph.style.color       = 'var(--red)';
@@ -1066,25 +1110,30 @@
     // =========================================================================
     // MODULE 8: DIAGNOSTIC PROBE INTEGRATION
     // =========================================================================
-    function showToast(msg, durationMs = 4000) {
+    /**
+     * showToast — display a timed notification overlay.
+     *
+     * @param {string}  msg        — Message text.
+     * @param {number}  durationMs
+     * @param {boolean} isPsi      — When true, renders the Ψ-glyph aesthetic
+     *                              (SVG hexagon + styled label). Used for the
+     *                              IP-streaming URL copy confirmation.
+     *                              When false, renders plain monospace text
+     *                              (diagnostic probe confirmations).
+     */
+    function showToast(msg, durationMs = 4000, isPsi = false) {
         const toast = document.createElement('div');
-        Object.assign(toast.style, {
-            position:      'fixed',
-            top:           '16px',
-            right:         '16px',
-            zIndex:        '9999999',
-            background:    'rgba(10,15,26,0.97)',
-            color:         '#00E5FF',
-            border:        '1px solid #00E5FF',
-            borderRadius:  '6px',
-            padding:       '10px 16px',
-            font:          'bold 11px monospace',
-            boxShadow:     '0 0 14px rgba(0,229,255,0.3)',
-            pointerEvents: 'none',
-            maxWidth:      '420px',
-        });
-        toast.textContent = msg;
+        toast.className = isPsi ? 'psi-toast psi-toast--glyph' : 'psi-toast';
+
+        if (isPsi) {
+            const psiSvg = `<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" class="psi-toast-icon" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M 64,12 A 52,52 0 1 1 63.9,12 Z" stroke-dasharray="21.78 21.78" stroke-width="2"/><path d="M 64,20 A 44,44 0 1 1 63.9,20 Z" stroke-dasharray="10 10" stroke-width="1.5" opacity="0.7"/><path d="M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z"/><text x="64" y="68" text-anchor="middle" dominant-baseline="middle" fill="currentColor" stroke="none" font-size="56" font-weight="700" font-family="serif">Ψ</text></svg>`;
+            toast.innerHTML = `${psiSvg}<span class="psi-toast-label">${msg}</span>`;
+        } else {
+            toast.textContent = msg;
+        }
+
         document.body.appendChild(toast);
+        setTimeout(() => toast.classList.add('psi-toast--dying'), Math.max(0, durationMs - 400));
         setTimeout(() => toast.remove(), durationMs);
     }
 
