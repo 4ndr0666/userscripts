@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Bunkr++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      5.4.0
+// @version      5.4.1
 // @author       4ndr0666
 // @description  Part of 4ndr0tools: Canonical routing, auto-sort, hide visited, bypass dl gateway
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
@@ -287,16 +287,16 @@
             align-items: center;
             gap: 10px;
             padding: 8px 14px 8px 10px;
-            border-color: var(--yellow);
+            border-color: var(--cyan);
             box-shadow: 0 0 14px rgba(255, 215, 0, 0.25);
         }
         .psi-toast-icon {
             flex-shrink: 0;
             width: 36px; height: 36px;
-            color: var(--yellow);
+            color: var(--cyan);
         }
         .psi-toast-label {
-            color: var(--yellow);
+            color: var(--cyan);
             font: bold 11px monospace;
             letter-spacing: 0.04em;
         }
