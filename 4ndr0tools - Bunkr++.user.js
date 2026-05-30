@@ -1024,7 +1024,7 @@
                         robustCopy(streamUrl, streamGlyph);
                         console.log(`[Ψ-4NDR0666] Stream URL acquired: ${streamUrl}`);
                         if (streamUrl.includes('token=') && streamUrl.includes('ex=')) {
-                            showToast('⚠ Signed URL copied — IP-bound to this browser session. Open in this browser only.', 6000);
+                            showToast('⦒ █▓░URL copied for IP streaming.', 6000);
                         }
                     } else {
                         streamGlyph.style.color       = 'var(--red)';
