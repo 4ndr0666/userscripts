@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Bunkr++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      5.4.1
+// @version      5.5.0
 // @author       4ndr0666
 // @description  Part of 4ndr0tools: Canonical routing, auto-sort, hide visited, bypass dl gateway
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
@@ -25,7 +25,7 @@
 // ==/UserScript==
 (function () {
     'use strict';
-    console.log('%c[4NDR0tools] Bunkr++ v5.4.0-Ψ', 'color:#00E5FF; font-family:monospace; font-weight:bold;');
+    console.log('%c[4NDR0tools] Bunkr++ v5.5.0-Ψ', 'color:#00E5FF; font-family:monospace; font-weight:bold;');
 
     // =========================================================================
     // INTERNAL STATE & CONSTANTS
@@ -330,9 +330,10 @@
     window.fetch = async function (...args) {
         const reqUrl = typeof args[0] === 'string' ? args[0] : (args[0]?.url || '');
 
-        // Intercept the native player's /api/vs (and /api/vs2) request and
+        // Intercept the native player's /api/vs (and variant paths) and
         // clone the decrypted payload into directMap for Tier 2 consumption.
-        if (/\/api\/vs2?($|\?)/.test(reqUrl)) {
+        // Loose substring match — covers /api/vs, /api/vs2, /api/vs/, /api/vs?*
+        if (reqUrl.includes('/api/vs')) {
             try {
                 const res    = await origFetch.apply(this, args);
                 const cloned = res.clone();
@@ -725,13 +726,16 @@
      * @returns {Promise<string|null>}
      */
     async function getBunkrStreamUrl(slug, contextElement = null) {
-        // ── Tier 0: Poll for native player intercept (up to 2 s) ─────────────
+        // ── Tier 0: Poll for native player intercept (up to 5 s) ─────────────
+        // The native player fires /api/vs after the JS bundle lazy-loads.
+        // On fast connections this is ~300-800 ms; on slow connections or with
+        // ad-blocker overhead it can reach 2-4 s. 25 × 200 ms = 5 s budget.
         if (!directMap.has('native_api_resolved') && !directMap.has('m3u8_stream')) {
-            console.log('[Ψ-4NDR0666] Tier 0: Polling for native player intercept (max 2 s)...');
+            console.log('[Ψ-4NDR0666] Tier 0: Polling for native player intercept (max 5 s)...');
             await new Promise(resolve => {
                 let ticks = 0;
                 const poll = setInterval(() => {
-                    if (directMap.has('native_api_resolved') || directMap.has('m3u8_stream') || ++ticks >= 10) {
+                    if (directMap.has('native_api_resolved') || directMap.has('m3u8_stream') || ++ticks >= 25) {
                         clearInterval(poll);
                         resolve();
                     }
@@ -751,11 +755,27 @@
             return directMap.get('native_api_resolved');
         }
 
-        // ── Tier 3: Live DOM video src ────────────────────────────────────────
-        const vid = document.querySelector('video source, video');
-        if (vid?.src && !vid.src.startsWith('blob:')) {
-            console.log('[Ψ-4NDR0666] Tier 3: Live DOM video object extraction hit.');
-            return vid.src;
+        // ── Tier 3: Live DOM video src / currentSrc ───────────────────────────
+        // LinkMasterΨ battle-tested pattern: read what the player actually loaded.
+        // video.currentSrc is the resolved URL after any redirect or blob swap —
+        // it returns the true CDN URL even when video.src is a blob: or empty.
+        // Query order: currentSrc on <video> first, then <source src>, then .src.
+        const vidEl = document.querySelector('video');
+        if (vidEl) {
+            const cSrc = vidEl.currentSrc;
+            if (cSrc && !cSrc.startsWith('blob:') && cSrc.startsWith('http')) {
+                console.log('[Ψ-4NDR0666] Tier 3a: video.currentSrc hit.');
+                return cSrc;
+            }
+            const srcEl = vidEl.querySelector('source[src]');
+            if (srcEl?.src && !srcEl.src.startsWith('blob:')) {
+                console.log('[Ψ-4NDR0666] Tier 3b: <source src> hit.');
+                return srcEl.src;
+            }
+            if (vidEl.src && !vidEl.src.startsWith('blob:')) {
+                console.log('[Ψ-4NDR0666] Tier 3c: video.src hit.');
+                return vidEl.src;
+            }
         }
 
         // ── Tier 4: Environment global (window.jsCDN) ────────────────────────
