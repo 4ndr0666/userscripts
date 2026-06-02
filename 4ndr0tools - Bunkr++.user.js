@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Bunkr++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      5.5.0
+// @version      5.6.0
 // @author       4ndr0666
 // @description  Part of 4ndr0tools: Canonical routing, auto-sort, hide visited, bypass dl gateway
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
@@ -16,6 +16,8 @@
 // @include      /^[^:]*?:\/\/[^/]*?\.bunkrr\.[^/]*?\/.*?$/
 // @grant        GM_download
 // @grant        GM_xmlhttpRequest
+// @grant        GM_setValue
+// @grant        GM_getValue
 // @grant        GM_addStyle
 // @grant        GM_registerMenuCommand
 // @connect      *
@@ -23,9 +25,10 @@
 // @noframes
 // @run-at       document-start
 // ==/UserScript==
+
 (function () {
     'use strict';
-    console.log('%c[4NDR0tools] Bunkr++ v5.5.0-Ψ', 'color:#00E5FF; font-family:monospace; font-weight:bold;');
+    console.log('%c[4NDR0tools] Bunkr++ v5.6.0-Ψ', 'color:#00E5FF; font-family:monospace; font-weight:bold;');
 
     // =========================================================================
     // INTERNAL STATE & CONSTANTS
@@ -189,7 +192,7 @@
             text-decoration: none !important;
         }
         .psi-dl-glyph:hover { background: var(--cyan); color: #000; box-shadow: 0 0 15px var(--cyan); transform: scale(1.05); }
-        .psi-dl-glyph:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+        .psi-dl-glyph:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
         .psi-dl-glyph svg { width: 18px; height: 18px; stroke-width: 2.5; pointer-events: none; }
 
         .psi-stream-glyph {
@@ -197,17 +200,17 @@
             bottom: 8px; right: 48px;
             width: 32px; height: 32px;
             background: rgba(10, 19, 26, 0.9);
-            border: 1px solid var(--yellow);
+            border: 1px solid var(--cyan);
             border-radius: 8px;
             display: flex; justify-content: center; align-items: center;
             cursor: pointer; z-index: 9999;
-            color: var(--yellow);
+            color: var(--cyan);
             transition: all 0.2s ease;
             -webkit-backdrop-filter: blur(4px);
             backdrop-filter: blur(4px);
             text-decoration: none !important;
         }
-        .psi-stream-glyph:hover { background: var(--yellow); color: #000; box-shadow: 0 0 15px var(--yellow); transform: scale(1.05); }
+        .psi-stream-glyph:hover { background: var(--cyan); color: #000; box-shadow: 0 0 15px var(--cyan); transform: scale(1.05); }
         .psi-stream-glyph:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
         .psi-stream-glyph svg { width: 18px; height: 18px; stroke-width: 2.5; pointer-events: none; fill: currentColor; }
 
@@ -257,48 +260,82 @@
         iframe[src*="ads"], iframe[src*="pop"], .banner, .ad-container, .ad-box,
         .adsbygoogle, .popup-ad, .ad-wrap { display: none !important; }
 
-        /* ── Toast Notification System ────────────────────────────────────── */
+        /* Full filenames in album grid — disables Bunkr's truncation ellipsis */
+        .truncate.theName {
+            white-space: normal !important;
+            overflow: visible !important;
+            text-overflow: unset !important;
+        }
+
+        /* ── Toast Notification System — Electric-Glass Morphism ─────────── */
         @keyframes psi-slide-in {
-            from { opacity: 0; transform: translateX(32px); }
-            to   { opacity: 1; transform: translateX(0); }
+            from { opacity: 0; transform: translateX(40px) scale(0.96); }
+            to   { opacity: 1; transform: translateX(0)    scale(1); }
         }
         @keyframes psi-fade-out {
-            from { opacity: 1; }
-            to   { opacity: 0; transform: translateX(16px); }
+            from { opacity: 1; transform: scale(1); }
+            to   { opacity: 0; transform: translateX(20px) scale(0.94); }
         }
+        /* Base toast — glass panel */
         .psi-toast {
             position: fixed; top: 16px; right: 16px; z-index: 9999999;
-            background: rgba(10, 15, 26, 0.97);
-            color: var(--cyan);
-            border: 1px solid var(--cyan);
-            border-radius: 6px;
+            /* Glass fill — layered for depth */
+            background:
+                linear-gradient(135deg,
+                    rgba(0, 229, 255, 0.07) 0%,
+                    rgba(10, 15, 26, 0.82) 40%,
+                    rgba(0, 20, 30, 0.92) 100%);
+            /* Crisp cyan border + inner highlight line */
+            border: 1px solid rgba(0, 229, 255, 0.55);
+            border-top-color: rgba(0, 229, 255, 0.9);
+            border-radius: 10px;
             padding: 10px 16px;
-            font: bold 11px monospace;
-            box-shadow: 0 0 14px rgba(0, 229, 255, 0.3);
+            font: bold 11px/1.4 monospace;
+            color: var(--cyan);
+            /* Multi-layer glow: outer halo + tight inner rim */
+            box-shadow:
+                0 0 0 1px rgba(0, 229, 255, 0.08) inset,
+                0 0 18px rgba(0, 229, 255, 0.22),
+                0 4px 24px rgba(0, 0, 0, 0.55);
+            /* Frosted glass blur */
+            -webkit-backdrop-filter: blur(14px) saturate(160%);
+            backdrop-filter: blur(14px) saturate(160%);
             pointer-events: none;
             max-width: 420px;
-            animation: psi-slide-in 0.25s ease forwards;
+            animation: psi-slide-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
-        .psi-toast--dying { animation: psi-fade-out 0.4s ease forwards; }
+        .psi-toast--dying { animation: psi-fade-out 0.38s ease forwards; }
 
-        /* Ψ-glyph variant — flex row with SVG icon + label */
+        /* Ψ-glyph variant — cyan accent glass panel */
         .psi-toast--glyph {
             display: flex;
             align-items: center;
             gap: 10px;
             padding: 8px 14px 8px 10px;
-            border-color: var(--cyan);
-            box-shadow: 0 0 14px rgba(255, 215, 0, 0.25);
+            background:
+                linear-gradient(135deg,
+                    rgba(255, 215, 0, 0.09) 0%,
+                    rgba(10, 15, 26, 0.82) 40%,
+                    rgba(15, 12, 0, 0.92) 100%);
+            border-color: rgba(255, 215, 0, 0.55);
+            border-top-color: rgba(255, 215, 0, 0.9);
+            box-shadow:
+                0 0 0 1px rgba(255, 215, 0, 0.08) inset,
+                0 0 18px rgba(255, 215, 0, 0.2),
+                0 4px 24px rgba(0, 0, 0, 0.55);
         }
         .psi-toast-icon {
             flex-shrink: 0;
             width: 36px; height: 36px;
             color: var(--cyan);
+            /* Subtle icon glow */
+            filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.6));
         }
         .psi-toast-label {
             color: var(--cyan);
-            font: bold 11px monospace;
-            letter-spacing: 0.04em;
+            font: bold 11px/1.4 monospace;
+            letter-spacing: 0.05em;
+            text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
         }
     `);
 
@@ -412,14 +449,59 @@
             }
         }, 400);
         window.addEventListener('beforeunload', () => clearInterval(sortInterval), { once: true });
+
+        // ── Advanced View Auto-Activation ─────────────────────────────────────
+        // Switches the album from pagination to infinite-scroll (advanced) view
+        // automatically, removing the need for any manual user action.
+        // Guard: only fires when pagination is active (i.e. page links present).
+        // Resilient selector: positional first, text-content fallback second.
+        activateAdvancedView();
+    }
+
+    function activateAdvancedView() {
+        if (!albumMatch) return;
+        let avAttempts = 0;
+        const avInterval = setInterval(() => {
+            avAttempts++;
+            // Already in advanced view if pagination is absent
+            const hasPagination = document.querySelector('.pagination, [aria-label="Pagination"], nav.pagination');
+            if (!hasPagination) { clearInterval(avInterval); return; }
+
+            // Primary selector (positional — matches the toolbar anchor)
+            let advBtn = document.querySelector('body > main > div.album-toolbar > div > a');
+            // Text-content fallback
+            if (!advBtn) {
+                advBtn = Array.from(document.querySelectorAll('.album-toolbar a, [class*="toolbar"] a')).find(
+                    a => /advanced|infinite|grid/i.test(a.textContent)
+                );
+            }
+            if (advBtn) {
+                clearInterval(avInterval);
+                console.log('[Ψ-4NDR0666] Advanced view anchor found. Activating infinite scroll.');
+                advBtn.click();
+            } else if (avAttempts > 20) {
+                clearInterval(avInterval);
+                console.log('[Ψ-4NDR0666] Advanced view anchor not found after 20 cycles. Aborting.');
+            }
+        }, 500);
+        window.addEventListener('beforeunload', () => clearInterval(avInterval), { once: true });
     }
 
     // =========================================================================
     // MODULE 5: FORENSIC STATE TRACKER
     // =========================================================================
     function _loadVisitedFromStorage() {
-        try { return new Set(JSON.parse(localStorage.getItem(VISITED_KEY) || '[]')); }
-        catch { return new Set(); }
+        // Primary: localStorage (fast, same-origin)
+        try {
+            const raw = localStorage.getItem(VISITED_KEY);
+            if (raw) return new Set(JSON.parse(raw));
+        } catch { /* fall through */ }
+        // Fallback: GM_setValue mirror (survives localStorage clears)
+        try {
+            const raw = GM_getValue(VISITED_KEY, null);
+            if (raw) return new Set(JSON.parse(raw));
+        } catch { /* fall through */ }
+        return new Set();
     }
 
     function getVisitedCache() {
@@ -444,6 +526,9 @@
     window.addEventListener('beforeunload', () => {
         if (_visitedDirty && _visitedCache) {
             try { localStorage.setItem(VISITED_KEY, JSON.stringify([..._visitedCache])); }
+            catch { /* silent */ }
+            // Mirror to GM storage — survives localStorage clears and private-browsing wipes
+            try { GM_setValue(VISITED_KEY, JSON.stringify([..._visitedCache])); }
             catch { /* silent */ }
         }
     });
@@ -470,7 +555,7 @@
         };
         toggleBtn.oncontextmenu = (e) => {
             e.preventDefault();
-            if (window.confirm('[Ψ-4NDR0666OS] PURGE WARNING:\nClear the forensic registry of all visited assets?')) {
+            if (window.confirm('[Ψ-4NDR0666OS] PURGE WARNING:\nClear the local storage of all visited assets?')) {
                 localStorage.removeItem(VISITED_KEY);
                 _visitedCache = new Set();
                 _visitedDirty = false;
@@ -478,11 +563,51 @@
             }
         };
         document.body.appendChild(toggleBtn);
-        GM_registerMenuCommand('🧹 Purge Visited Registry', () => {
+
+        GM_registerMenuCommand('💾 Save History', exportVisitedRegistry);
+        GM_registerMenuCommand('☠ Purge History', () => {
             localStorage.removeItem(VISITED_KEY);
+            try { GM_setValue(VISITED_KEY, null); } catch { /* silent */ }
             _visitedCache = new Set();
             _visitedDirty = false;
             location.reload();
+        });
+    }
+
+    /**
+     * exportVisitedRegistry — on-demand JSON file export via GM menu command.
+     *
+     * Persistence is localStorage (automatic, silent, always-on via beforeunload).
+     * This function is the opt-in file export for users who want a portable copy.
+     * Triggered only by the GM menu — never called automatically.
+     */
+    function exportVisitedRegistry() {
+        const cache   = getVisitedCache();
+        const fname   = 'bunkr_visited.json';
+        const payload = JSON.stringify({
+            version:  '1.0',
+            exported: new Date().toISOString(),
+            count:    cache.size,
+            domain:   TARGET_DOMAIN,
+            assets:   [...cache],
+        }, null, 2);
+
+        const blob = new Blob([payload], { type: 'application/json' });
+        const url  = URL.createObjectURL(blob);
+
+        GM_download({
+            url,
+            name: fname,
+            onload: () => {
+                URL.revokeObjectURL(url);
+                showToast(`💾 ${cache.size} assets exported → ${fname}`);
+                console.log(`[Ψ-4NDR0666] Visited registry exported: ${fname} (${cache.size} items)`);
+            },
+            onerror: (err) => {
+                URL.revokeObjectURL(url);
+                console.error('[Ψ-4NDR0666] exportVisitedRegistry failed:', err);
+                showToast('☠ Export failed — see F12 console.');
+            },
         });
     }
 
@@ -494,17 +619,39 @@
     const spinnerHtml = '<span style="font-size:8px;font-family:monospace;">...</span>';
 
     /**
-     * gmDownload — force a file save via GM_download.
+     * gmDownload — force a file save.
      *
-     * Bypasses Content-Disposition; the browser saves regardless of MIME type.
-     * Filename is derived from the URL's last path segment.
-     * Falls back to window.open on GM_download error so the file is still
-     * accessible (opened in a new tab) rather than silently dropped.
+     * Routing logic:
+     *   Signed CDN URLs (token= + ex=) are IP-bound to the browser session.
+     *   GM_download runs outside the browser's cookie/session context and will
+     *   receive a 404 from the CDN's token validator. For these URLs we use a
+     *   native hidden-anchor click which shares the page's session identity.
+     *
+     *   Unsigned CDN URLs use GM_download directly, which bypasses
+     *   Content-Disposition and forces a browser save regardless of MIME type.
+     *
+     * @param {string} url    — fully resolved CDN URL
+     * @param {string} [hint] — optional filename override
      */
     function gmDownload(url, hint) {
         const name = hint
             || url.split('/').pop().split('?')[0].split('#')[0]
             || 'bunkr_download';
+
+        const isSigned = url.includes('token=') && url.includes('ex=');
+        if (isSigned) {
+            // Native anchor download — preserves browser session for IP-bound tokens
+            console.log(`[Ψ-4NDR0666] Native anchor download (signed URL): ${name}`);
+            const a    = document.createElement('a');
+            a.href     = url;
+            a.download = name;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => a.remove(), 1000);
+            return;
+        }
+
         console.log(`[Ψ-4NDR0666] GM_download: ${name} <- ${url}`);
         GM_download({
             url,
@@ -937,38 +1084,64 @@
             ensureRelative(wrapper);
 
             // DL Glyph — single-asset view
-            // Clicks the native download anchor directly. If the SPA has not yet
-            // hydrated the anchor, polls for up to 1.5 s before giving up.
+            //
+            // Strategy (v5.7.0): getBunkrStreamUrl waterfall → gmDownload directly.
+            //   The stream waterfall already resolves the CDN URL (Tier 3a currentSrc
+            //   being the fastest path when the player is running). We reuse that
+            //   resolved URL for the download — zero gateway hops, no HTML parsing,
+            //   no new tabs. Falls back to gateway ghost-fetch only if waterfall fails.
             if (!document.querySelector('.psi-main-dl-glyph')) {
                 const dlGlyph     = document.createElement('div');
                 dlGlyph.className = 'psi-dl-glyph psi-main-dl-glyph';
                 dlGlyph.innerHTML = downloadSvg;
-                dlGlyph.title     = 'Direct Download Bypass';
-                const activateDl  = (e) => {
+                dlGlyph.title     = 'Direct Download';
+                const activateDl  = async (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    const btn = document.querySelector(NATIVE_DL_SEL);
-                    if (btn?.href && btn.href !== window.location.href && btn.href !== '#') {
-                        console.log(`[Ψ-4NDR0666] Native DL anchor clicked: ${btn.href}`);
-                        btn.click();
-                    } else {
-                        console.log('[Ψ-4NDR0666] Native DL anchor not ready. Polling (max 1.5 s)...');
-                        dlGlyph.innerHTML = spinnerHtml;
-                        let ticks = 0;
-                        const poll = setInterval(() => {
-                            const b = document.querySelector(NATIVE_DL_SEL);
-                            if (b?.href && b.href !== window.location.href && b.href !== '#') {
-                                clearInterval(poll);
-                                dlGlyph.innerHTML = downloadSvg;
-                                console.log(`[Ψ-4NDR0666] Native DL anchor resolved: ${b.href}`);
-                                b.click();
-                            } else if (++ticks >= 6) {
-                                clearInterval(poll);
-                                dlGlyph.innerHTML = downloadSvg;
-                                console.warn('[Ψ-4NDR0666] Native DL anchor not found within 1.5 s.');
-                            }
-                        }, 250);
+                    dlGlyph.innerHTML = spinnerHtml;
+
+                    // Primary: resolve CDN URL via stream waterfall
+                    // (Tier 3a video.currentSrc fires instantly when player is live)
+                    if (pageSlug) {
+                        const cdnUrl = await getBunkrStreamUrl(pageSlug, null);
+                        if (cdnUrl) {
+                            dlGlyph.innerHTML = downloadSvg;
+                            console.log(`[Ψ-4NDR0666] DL glyph: waterfall resolved → ${cdnUrl}`);
+                            gmDownload(cdnUrl);
+                            return;
+                        }
                     }
+
+                    // Fallback: gateway ghost-fetch
+                    const gatewayAnchor = document.querySelector(NATIVE_DL_SEL);
+                    if (!gatewayAnchor?.href || gatewayAnchor.href === window.location.href) {
+                        dlGlyph.innerHTML = downloadSvg;
+                        console.warn('[Ψ-4NDR0666] DL glyph: no CDN URL and no gateway anchor. Aborting.');
+                        return;
+                    }
+                    const gatewayUrl = gatewayAnchor.href;
+                    if (/\.(mp4|webm|mkv|mov|zip|rar|7z|jpg|jpeg|png|gif|webp)(\?|$)/i.test(gatewayUrl)) {
+                        dlGlyph.innerHTML = downloadSvg;
+                        gmDownload(gatewayUrl);
+                        return;
+                    }
+                    console.log(`[Ψ-4NDR0666] DL glyph: waterfall exhausted, ghost-fetching gateway: ${gatewayUrl}`);
+                    GM_xmlhttpRequest({
+                        method:  'GET',
+                        url:     gatewayUrl,
+                        headers: { 'Referer': `https://${TARGET_DOMAIN}/`, 'Accept': 'text/html,application/xhtml+xml' },
+                        timeout: 15_000,
+                        onload: (resp) => {
+                            dlGlyph.innerHTML = downloadSvg;
+                            if (resp.status < 200 || resp.status >= 300) { gmDownload(gatewayUrl); return; }
+                            const doc         = new DOMParser().parseFromString(resp.responseText, 'text/html');
+                            const finalAnchor = doc.querySelector('#download-btn[href], a[href*="cdn"][href$=".mp4"], a[href*="cdn"][href$=".zip"], a.ic-download-01[href], a[download][href]');
+                            const finalUrl    = finalAnchor ? new URL(finalAnchor.getAttribute('href'), gatewayUrl).href : gatewayUrl;
+                            gmDownload(finalUrl);
+                        },
+                        onerror:   () => { dlGlyph.innerHTML = downloadSvg; gmDownload(gatewayUrl); },
+                        ontimeout: () => { dlGlyph.innerHTML = downloadSvg; gmDownload(gatewayUrl); },
+                    });
                 };
                 dlGlyph.onclick = activateDl;
                 makeAccessible(dlGlyph, 'Download file', activateDl);
@@ -1013,8 +1186,22 @@
         }
 
         // ── Context 2: Grid View / Async Ghost Fetch Acquisition ─────────────
-        const items = document.querySelectorAll('.grid > div, .grid-images_box, .theItem');
-        items.forEach(el => {
+        // Selector battery covers all known Bunkr grid layouts:
+        //   Legacy:        .grid > div, .grid-images_box, .theItem
+        //   Advanced mode: main.grid > div  (album-sorting.js v6 grid parent)
+        const items = document.querySelectorAll(
+            '.grid > div, .grid-images_box, .theItem, main.grid > div, main[class*="grid"] > div'
+        );
+        // De-duplicate: advanced mode selectors may overlap with .grid > div.
+        // Also skip the album header div (first child of advanced-mode grid) —
+        // it contains the title/sort/stats UI and has no /f/ or /v/ anchor.
+        const seenItems = new Set();
+        [...items].filter(el => {
+            if (seenItems.has(el)) return false;
+            seenItems.add(el);
+            // Must contain a file or video anchor to be a valid item
+            return !!el.querySelector('a[href^="/f/"], a[href^="/v/"], a[href*="/d/"]');
+        }).forEach(el => {
             const link = el.querySelector('a[href^="/f/"], a[href^="/v/"], a[href*="/d/"]');
             if (!link) return;
             const alphaId = link.getAttribute('href').split('/').pop();
@@ -1040,8 +1227,8 @@
                         gmDownload(dlGlyph.dataset.resolvedUrl);
                         return;
                     }
-                    dlGlyph.style.color       = 'var(--yellow)';
-                    dlGlyph.style.borderColor = 'var(--yellow)';
+                    dlGlyph.style.color       = 'var(--cyan)';
+                    dlGlyph.style.borderColor = 'var(--cyan)';
                     try {
                         const fname    = link.href.split('/').pop();
                         console.log(`[Ψ-4NDR0666] Ghost Fetch engaging: ${link.href}`);
@@ -1192,61 +1379,134 @@
     // MODULE 9: AUTONOMOUS GATEWAY BYPASS
     // =========================================================================
     /**
-     * autoEngageDownloadEndpoint — poll for a native download anchor and click it.
+     * autoEngageDownloadEndpoint — auto-click the download button on the
+     * get.bunkr* /file/<id> intermediary gateway page only.
      *
-     * Covers two distinct page topologies:
-     *
-     *   A) get.bunkr* /file/<id>  — intermediary download gateway page.
-     *      Selectors: #download-btn, a.ic-download-01
-     *      Action: navigate self to the resolved href.
-     *
-     *   B) bunkr.cr /v/<slug>, /f/<slug>, /d/<slug>  — single-asset view pages.
-     *      Selectors: NATIVE_DL_SEL battery
-     *      Action: click the native anchor — triggers the browser's built-in
-     *      download flow without any URL guessing or synthetic construction.
-     *      A 1 s initial delay allows the SPA to fully hydrate before polling.
+     * This is intentionally restricted to the gateway hostname topology.
+     * The isAssetView branch (bunkr.cr /v/ /f/ /d/) was removed in v5.6.0
+     * because it fired unconditionally on every asset page navigation,
+     * triggering an unwanted download popup every time the user simply
+     * browsed to a media page. The DL glyph on single-asset pages now
+     * handles direct acquisition via background ghostFetch instead.
      */
     function autoEngageDownloadEndpoint() {
-        const isGateway   = /get\.bunkr/i.test(window.location.hostname)
-                            && window.location.pathname.includes('/file/');
-        const isAssetView = window.location.hostname === TARGET_DOMAIN
-                            && /^\/[vfd]\//.test(window.location.pathname);
+        const isGateway = /get\.bunkr/i.test(window.location.hostname)
+                          && window.location.pathname.includes('/file/');
+        if (!isGateway) return;
 
-        if (!isGateway && !isAssetView) return;
-
-        const label       = isGateway ? 'Gateway' : 'Asset-view';
-        const initialWait = isAssetView ? 1000 : 0;
+        console.log('[Ψ-4NDR0666] Gateway page detected. Hunting #download-btn...');
+        let attempts = 0;
         const MAX_ATTEMPTS = 30;
+        const engageInterval = setInterval(() => {
+            attempts++;
+            const dlBtn = document.getElementById('download-btn')
+                       || document.querySelector('a.ic-download-01');
+            if (dlBtn?.href && dlBtn.href !== window.location.href && dlBtn.href !== '#') {
+                clearInterval(engageInterval);
+                console.log(`[Ψ-4NDR0666] Gateway: anchor found after ${attempts} attempt(s). Navigating.`);
+                window.open(dlBtn.href, '_self');
+            } else if (attempts >= MAX_ATTEMPTS) {
+                clearInterval(engageInterval);
+                console.warn(`[Ψ-4NDR0666] Gateway: anchor not ready after ${MAX_ATTEMPTS} attempts. Aborting.`);
+            }
+        }, 500);
+        window.addEventListener('beforeunload', () => clearInterval(engageInterval), { once: true });
+    }
 
-        console.log(`[Ψ-4NDR0666] ${label} page detected. Scheduling download engagement.`);
+    // =========================================================================
+    // MODULE 11: HOVER VIDEO PREVIEW ENGINE
+    // =========================================================================
+    /**
+     * On mouseenter over a grid item that represents a video asset, resolves
+     * the CDN URL via getBunkrStreamUrl and injects a muted autoplay <video>
+     * overlay. Removed immediately on mouseleave, src nulled to release the
+     * media resource and prevent memory leaks on long album sessions.
+     *
+     * Guards:
+     *   - 300 ms dwell before fetch fires (prevents spam on fast hovering)
+     *   - AbortController per card (cancels in-flight resolve if user leaves)
+     *   - dataset.psiHoverBound flag prevents double-binding on re-injection
+     *   - Video type detection via thumbnail URL pattern and anchor path
+     */
+    const HOVER_DWELL_MS  = 300;
+    const VIDEO_EXTS_RE   = /\.(mp4|webm|mkv|mov|avi|flv|wmv|3gp)(\?|$)/i;
+    const VIDEO_THUMB_RE  = /\/thumbs\/|\.mp4\.(jpg|jpeg|png|webp)/i;
 
-        setTimeout(() => {
-            let attempts = 0;
-            const engageInterval = setInterval(() => {
-                attempts++;
-                let dlBtn = null;
-                if (isGateway) {
-                    dlBtn = document.getElementById('download-btn')
-                         || document.querySelector('a.ic-download-01');
-                } else {
-                    dlBtn = document.querySelector(NATIVE_DL_SEL);
-                }
-                if (dlBtn?.href && dlBtn.href !== window.location.href && dlBtn.href !== '#') {
-                    clearInterval(engageInterval);
-                    console.log(`[Ψ-4NDR0666] ${label}: anchor found after ${attempts} attempt(s).`);
-                    if (isGateway) {
-                        window.open(dlBtn.href, '_self');
-                    } else {
-                        dlBtn.click();
-                        console.log('[Ψ-4NDR0666] Asset-view: native download button clicked.');
-                    }
-                } else if (attempts >= MAX_ATTEMPTS) {
-                    clearInterval(engageInterval);
-                    console.warn(`[Ψ-4NDR0666] ${label}: anchor not ready after ${MAX_ATTEMPTS} attempts. Aborting.`);
-                }
-            }, 500);
-            window.addEventListener('beforeunload', () => clearInterval(engageInterval), { once: true });
-        }, initialWait);
+    function isVideoGridItem(el) {
+        const img = el.querySelector('img[src]');
+        if (img?.src && VIDEO_THUMB_RE.test(img.src)) return true;
+        const a = el.querySelector('a[href^="/v/"], a[href^="/f/"]');
+        if (!a) return false;
+        return VIDEO_EXTS_RE.test(a.href) || a.href.includes('/v/');
+    }
+
+    function initHoverPreviews() {
+        if (!albumMatch) return;
+        document.querySelectorAll('.grid > div, .grid-images_box, .theItem')
+                .forEach(attachHoverPreview);
+    }
+
+    function attachHoverPreview(el) {
+        if (el.dataset.psiHoverBound) return;
+        el.dataset.psiHoverBound = '1';
+        if (!isVideoGridItem(el)) return;
+
+        let dwellTimer = null;
+        let abortCtrl  = null;
+        let previewEl  = null;
+
+        const onEnter = () => {
+            dwellTimer = setTimeout(async () => {
+                abortCtrl?.abort();
+                abortCtrl = new AbortController();
+                const signal = abortCtrl.signal;
+
+                const a    = el.querySelector('a[href^="/v/"], a[href^="/f/"]');
+                if (!a) return;
+                const slug = a.getAttribute('href').split('/').pop();
+                if (!slug) return;
+
+                const cdnUrl = await getBunkrStreamUrl(slug, el);
+                if (!cdnUrl || signal.aborted) return;
+
+                const vid       = document.createElement('video');
+                vid.src         = cdnUrl;
+                vid.autoplay    = true;
+                vid.muted       = true;
+                vid.loop        = true;
+                vid.playsInline = true;
+                vid.preload     = 'auto';
+                Object.assign(vid.style, {
+                    position:      'absolute',
+                    inset:         '0',
+                    width:         '100%',
+                    height:        '100%',
+                    objectFit:     'cover',
+                    borderRadius:  'inherit',
+                    zIndex:        '10',
+                    background:    '#000',
+                    pointerEvents: 'none',
+                });
+                ensureRelative(el);
+                el.appendChild(vid);
+                previewEl = vid;
+                vid.play().catch(() => { /* autoplay blocked — silent */ });
+            }, HOVER_DWELL_MS);
+        };
+
+        const onLeave = () => {
+            clearTimeout(dwellTimer);
+            abortCtrl?.abort();
+            if (previewEl) {
+                previewEl.pause();
+                previewEl.src = '';
+                previewEl.remove();
+                previewEl = null;
+            }
+        };
+
+        el.addEventListener('mouseenter', onEnter, { passive: true });
+        el.addEventListener('mouseleave', onLeave, { passive: true });
     }
 
     // =========================================================================
@@ -1262,12 +1522,16 @@
         forceLargestFirst();
         autoEngageDownloadEndpoint();
         setTimeout(injectCaptureVector, 800);
+        setTimeout(initHoverPreviews,   1200);
 
         const observer = new MutationObserver((mutations) => {
             const structural = mutations.some(m => m.addedNodes.length > 0);
             if (!structural) return;
             clearTimeout(_debounceTimer);
-            _debounceTimer = setTimeout(injectCaptureVector, 400);
+            _debounceTimer = setTimeout(() => {
+                injectCaptureVector();
+                initHoverPreviews();
+            }, 400);
         });
         observer.observe(document.body, { childList: true, subtree: true });
         window.addEventListener('beforeunload', () => observer.disconnect(), { once: true });
@@ -1283,6 +1547,7 @@
                     initVisitedTracker();
                     forceLargestFirst();
                     injectCaptureVector();
+                    initHoverPreviews();
                 }
             }, 600);
         };
