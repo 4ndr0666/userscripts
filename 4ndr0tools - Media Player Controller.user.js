@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         4ndr0tools - Media Player Controller
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      5.0.0-Ψ
-// @author       Ψ-4NDR0666OS
+// @version      5.0.0
+// @author       4ndr0666
 // @description  Speed • Alt+Shift rAF Zoom/Pan • Rotation • Smart Maximize • PiP • Play • DblClick • Pause-on-Acquire • Virtual DOM Nodes • IG Story Nav • Story Repeat • Draggable HUD • Space Hotkey
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @match        *://*/*
@@ -16,6 +16,7 @@
 // @all_frames   true
 // @run-at       document-end
 // ==/UserScript==
+
 
 (function () {
     'use strict';
