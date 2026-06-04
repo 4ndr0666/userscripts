@@ -543,7 +543,7 @@
     const ui = document.createElement('div');
     ui.id = 'media-godmode-ui';
     ui.innerHTML = `
-        <div id="mg-title">Ψ 4NDR0666 // MEDIA GODMODE</div>
+        <div id="mg-title">4ndr0tools/Ψ/ Media Player Controller</div>
         <div class="mg-row speed-row">
             <button data-speed="0.25">0.25</button>
             <button data-speed="0.50">0.50</button>
