@@ -4,6 +4,7 @@
 // @version      6.0.0
 // @author       4ndr0666
 // @description  Ghost Protocol for Violentmonkey — Default-deny Service Worker & WebSocket control with whitelist
+// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @match        *://*/*
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%204ndr0purge.user.js
