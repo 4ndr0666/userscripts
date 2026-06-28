@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Hailuo++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      4.5
+// @version      5.0.0
 // @author       4ndr0666
 // @description  Enterprise-grade, idempotent automation engine for HailuoAI featuring image/video processing, advanced mutation defense, comprehensive telemetry, prompt queuing, Spintax, and bulk operations.
 // @license      UNLICENSED - RED TEAM USE ONLY
