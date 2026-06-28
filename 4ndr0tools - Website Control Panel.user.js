@@ -4,14 +4,14 @@
 // @description  Draggable Cyberdeck HUD, DOM Zapper, Ad suppression, validated-selector compiled deep-cleaning.
 // @version      5.1.0-Ψ
 // @author       Ψ-4NDR0666OS
+// @downloadUrl  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Website%20Control%20Panel.user.js
+// @updateUrl    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Website%20Control%20Panel.user.js
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @match        *://*/*
 // @grant        GM_addStyle
 // @grant        GM_getValue
 // @grant        GM_setValue
-// @downloadUrl  https
-// @updateUrl    
 // @run-at       document-idle
 // ==/UserScript==
 
