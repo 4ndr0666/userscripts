@@ -7,8 +7,8 @@
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @match        *://*.youtube.com/*
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
-// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20YT-Filter.user.js
-// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20YT-Filter.user.js
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20YT%20Filter.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20YT%20Filter.user.js
 // @grant        GM_addStyle
 // @run-at       document-end
 // ==/UserScript==
