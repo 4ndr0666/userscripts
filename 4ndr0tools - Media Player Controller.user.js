@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         4ndr0tools - Media Player Controller
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      5.0.0
+// @version      5.1.0
 // @author       4ndr0666
-// @description  Speed • Alt+Shift rAF Zoom/Pan • Rotation • Smart Maximize • PiP • Play • DblClick • Pause-on-Acquire • Virtual DOM Nodes • IG Story Nav • Story Repeat • Draggable HUD • Space Hotkey
+// @description  Speed • Alt+Shift rAF Zoom/Pan • Rotation • Smart Maximize • PiP • Play • DblClick • Pause-on-Acquire • Virtual DOM Nodes • Scrub Bar • IG Story Nav • Story Repeat • Draggable HUD • Space Hotkey
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @match        *://*/*
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
@@ -16,7 +16,6 @@
 // @all_frames   true
 // @run-at       document-end
 // ==/UserScript==
-
 
 (function () {
     'use strict';
@@ -31,7 +30,13 @@
     // INTERNAL STATE & TARGETING
     // ==========================================
     let activeVideo = null;
+    let activeImage = null; // Image-based story/post media — no play/scrub semantics, but trackable for download
     let targetSpeed = GM_getValue('media_speed', 1.0);
+
+    /** Returns whichever media element (video or image) is currently the active target. */
+    function getActiveMedia() {
+        return activeVideo || activeImage;
+    }
 
     const state = {
         rotation:    0,
@@ -390,6 +395,108 @@
 
         /* ── Nav arrows ── */
         #mg-nav-prev, #mg-nav-next { font-size: 13px !important; }
+
+        /* ── Cyan-Glass Scrub Bar (per-video floating seek control) ── */
+        .psi-scrub-bar {
+            position:        fixed;
+            z-index:         2147483645; /* below HUD, above maximized video chrome */
+            display:         flex;
+            align-items:     center;
+            gap:             8px;
+            padding:         6px 10px;
+            background:      var(--bg-glass-panel);
+            backdrop-filter: blur(14px);
+            border:          1px solid var(--accent-cyan-border);
+            border-radius:   5px;
+            box-shadow:      0 4px 18px rgba(0,0,0,0.4);
+            font-family:     var(--font-body);
+            font-size:       10px;
+            color:           #e0ffff;
+            user-select:     none;
+            opacity:         0;
+            pointer-events:  none;
+            transition:      opacity 0.15s ease;
+        }
+        .psi-scrub-bar.psi-scrub-visible {
+            opacity:        1;
+            pointer-events: auto;
+        }
+        .psi-scrub-time {
+            flex-shrink:  0;
+            white-space:  nowrap;
+            letter-spacing: 0.3px;
+            min-width:    78px;
+            text-align:   center;
+        }
+        .psi-scrub-track {
+            position:     relative;
+            flex:         1;
+            height:       4px;
+            min-width:    80px;
+            background:   rgba(0,229,255,0.15);
+            border-radius: 2px;
+            cursor:       pointer;
+        }
+        .psi-scrub-fill {
+            position:      absolute;
+            top: 0; left: 0; bottom: 0;
+            width:         0%;
+            background:    var(--accent-cyan);
+            border-radius: 2px;
+            box-shadow:    0 0 6px var(--glow-cyan-active);
+            pointer-events: none;
+        }
+        .psi-scrub-handle {
+            position:        absolute;
+            top:             50%;
+            left:            0%;
+            width:           10px;
+            height:          10px;
+            border-radius:   50%;
+            background:      var(--text-cyan-active);
+            box-shadow:      0 0 8px var(--glow-cyan-active);
+            transform:       translate(-50%, -50%);
+            pointer-events:  none;
+        }
+        .psi-scrub-track:hover .psi-scrub-fill,
+        .psi-scrub-bar.psi-scrub-dragging .psi-scrub-fill {
+            box-shadow: 0 0 10px var(--glow-cyan-active), 0 0 2px var(--accent-cyan);
+        }
+
+        /* ── Download button (active media) ── */
+        .psi-dl-btn {
+            position:        fixed;
+            z-index:         2147483645;
+            width:           30px;
+            height:          30px;
+            padding:         0;
+            display:         flex;
+            align-items:     center;
+            justify-content: center;
+            background:      var(--bg-glass-panel);
+            backdrop-filter: blur(14px);
+            border:          1px solid var(--accent-cyan-border);
+            border-radius:   50%;
+            box-shadow:      0 4px 14px rgba(0,0,0,0.4);
+            color:           var(--text-cyan-active);
+            font-size:       15px;
+            line-height:     1;
+            cursor:          pointer;
+            opacity:         0;
+            pointer-events:  none;
+            transition:      opacity 0.15s ease, transform 0.15s ease;
+        }
+        .psi-dl-btn.psi-dl-visible { opacity: 1; pointer-events: auto; }
+        .psi-dl-btn:hover {
+            border-color: var(--accent-cyan);
+            box-shadow:   0 0 12px var(--glow-cyan-active);
+            transform:    scale(1.08);
+        }
+        .psi-dl-btn.psi-dl-busy {
+            color:   #FFD600;
+            opacity: 0.7 !important;
+            cursor:  wait;
+        }
     `);
 
     // ==========================================
@@ -400,7 +507,7 @@
      * Synchronizes playback speed across ALL video elements in the frame.
      * Visual transforms (rotate/zoom/pan) are applied ONLY to the active target.
      */
-    const applyMediaState = () => {
+    let applyMediaState = () => {
         document.querySelectorAll('video').forEach(v => {
             if (v.playbackRate !== targetSpeed) v.playbackRate = targetSpeed;
         });
@@ -422,6 +529,7 @@
     function acquireTarget(video, autoPlay = false) {
         if (!video || video === activeVideo) return;
         activeVideo = video;
+        activeImage = null; // Video acquisition always supersedes a stale image target
         pauseAllExcept(video);
         applyMediaState();
         if (autoPlay) {
@@ -430,6 +538,32 @@
         if (window === window.top && typeof syncPlayButton === 'function') {
             syncPlayButton();
         }
+    }
+
+    /**
+     * Acquires a story/post <img> as the active media target.
+     *
+     * Images have no play/pause/scrub semantics, so this never touches
+     * pauseAllExcept or autoplay. It exists purely so the download button
+     * (and its position tracking) has something to anchor to when the
+     * current story slide is a photo rather than a video.
+     */
+    function acquireImage(img) {
+        if (!img || img === activeImage) return;
+        activeImage = img;
+        activeVideo = null; // Image acquisition always supersedes a stale video target
+        applyMediaState();
+    }
+
+    /**
+     * Identifies whether an element is a "real" story/post image worth
+     * tracking — excludes tiny avatars, icons, and emoji that litter the
+     * IG DOM, since those should never become the active download target.
+     */
+    function isTrackableImage(el) {
+        if (!el || el.tagName !== 'IMG') return false;
+        const rect = el.getBoundingClientRect();
+        return rect.width >= 150 && rect.height >= 150;
     }
 
     // Target acquisition via native play event (site or user initiates playback)
@@ -459,6 +593,8 @@
     document.addEventListener('mouseover', (e) => {
         if (e.target.tagName === 'VIDEO' && e.target !== activeVideo) {
             acquireTarget(e.target, false);
+        } else if (isTrackableImage(e.target) && e.target !== activeImage) {
+            acquireImage(e.target);
         }
     }, { passive: true, capture: true });
 
@@ -735,6 +871,253 @@
     });
 
     // ==========================================
+    // CYAN-GLASS SCRUB BAR (per-video floating seek control)
+    // ==========================================
+    //
+    // Replaces native <video controls> entirely — no browser chrome is ever
+    // enabled. A single floating bar tracks whichever video is `activeVideo`
+    // and re-positions itself under that video's live bounding rect on every
+    // rAF tied to the existing applyMediaState/sweep cadence, so it survives
+    // rotation, zoom, pan, maximize, and scroll without a second polling loop.
+    //
+    // Applies uniformly across Instagram contexts (feed, reels, stories) and
+    // any other site this script runs on — there is no IG-specific branch
+    // here, the bar simply tracks whatever activeVideo currently is.
+    //
+    // isScrubbing is exported on `state` so the Story Repeat engine (added
+    // below) can suppress its near-end timeupdate arming while the user is
+    // mid-drag, preventing a false repeat trigger from a manual seek.
+
+    state.isScrubbing = false;
+
+    const scrubBar = document.createElement('div');
+    scrubBar.className = 'psi-scrub-bar';
+    scrubBar.innerHTML = `
+        <span class="psi-scrub-time">0:00 / 0:00</span>
+        <div class="psi-scrub-track">
+            <div class="psi-scrub-fill"></div>
+            <div class="psi-scrub-handle"></div>
+        </div>
+    `;
+    document.body.appendChild(scrubBar);
+
+    const scrubTime   = scrubBar.querySelector('.psi-scrub-time');
+    const scrubTrack  = scrubBar.querySelector('.psi-scrub-track');
+    const scrubFill   = scrubBar.querySelector('.psi-scrub-fill');
+    const scrubHandle = scrubBar.querySelector('.psi-scrub-handle');
+
+    let scrubHideTimer  = null;
+    let scrubIsDragging = false;
+
+    /** Formats seconds as M:SS (or H:MM:SS for anything over an hour). */
+    function formatScrubTime(sec) {
+        if (!isFinite(sec) || sec < 0) sec = 0;
+        sec = Math.floor(sec);
+        const h = Math.floor(sec / 3600);
+        const m = Math.floor((sec % 3600) / 60);
+        const s = sec % 60;
+        const mm = h > 0 ? String(m).padStart(2, '0') : String(m);
+        const ss = String(s).padStart(2, '0');
+        return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+    }
+
+    /** Repositions the scrub bar directly under the active video's live rect. */
+    function positionScrubBar() {
+        if (!activeVideo || !document.body.contains(activeVideo)) {
+            scrubBar.classList.remove('psi-scrub-visible');
+            return;
+        }
+        const rect = activeVideo.getBoundingClientRect();
+        if (rect.width < 40 || rect.height < 40) {
+            scrubBar.classList.remove('psi-scrub-visible');
+            return;
+        }
+        const barWidth = Math.max(160, Math.min(rect.width - 16, 480));
+        scrubBar.style.width  = barWidth + 'px';
+        scrubBar.style.left   = (rect.left + (rect.width - barWidth) / 2) + 'px';
+        scrubBar.style.top    = (rect.bottom - 34) + 'px';
+        scrubBar.classList.add('psi-scrub-visible');
+    }
+
+    /** Updates fill/handle/time readout from the active video's current playback position. */
+    function updateScrubProgress() {
+        if (!activeVideo) return;
+        const dur = activeVideo.duration;
+        const cur = activeVideo.currentTime;
+        const pct = (isFinite(dur) && dur > 0) ? Math.max(0, Math.min(100, (cur / dur) * 100)) : 0;
+        scrubFill.style.width    = pct + '%';
+        scrubHandle.style.left   = pct + '%';
+        scrubTime.textContent    = `${formatScrubTime(cur)} / ${formatScrubTime(isFinite(dur) ? dur : 0)}`;
+    }
+
+    /** Computes a 0..1 ratio from a pointer clientX position over the track. */
+    function scrubRatioFromEvent(e) {
+        const r = scrubTrack.getBoundingClientRect();
+        if (r.width <= 0) return 0;
+        return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+    }
+
+    /** Seeks the active video to a given 0..1 ratio of its duration. */
+    function seekToRatio(ratio) {
+        if (!activeVideo) return;
+        const dur = activeVideo.duration;
+        if (!isFinite(dur) || dur <= 0) return;
+        activeVideo.currentTime = ratio * dur;
+        updateScrubProgress();
+    }
+
+    scrubTrack.addEventListener('mousedown', (e) => {
+        if (!activeVideo) return;
+        scrubIsDragging   = true;
+        state.isScrubbing = true;
+        scrubBar.classList.add('psi-scrub-dragging');
+        seekToRatio(scrubRatioFromEvent(e));
+        e.preventDefault();
+        e.stopPropagation();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!scrubIsDragging) return;
+        seekToRatio(scrubRatioFromEvent(e));
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (!scrubIsDragging) return;
+        scrubIsDragging   = false;
+        state.isScrubbing = false;
+        scrubBar.classList.remove('psi-scrub-dragging');
+    });
+
+    // Keep the bar glued to the active video on every relevant change.
+    document.addEventListener('timeupdate', (e) => {
+        if (e.target === activeVideo && !scrubIsDragging) updateScrubProgress();
+    }, { passive: true, capture: true });
+
+    document.addEventListener('loadedmetadata', (e) => {
+        if (e.target === activeVideo) updateScrubProgress();
+    }, true);
+
+    // Re-run positioning on the same rAF cadence as pan/zoom/rotation so the
+    // bar never lags behind a moving/resizing/maximizing video.
+    const _applyMediaStateBase = applyMediaState;
+    applyMediaState = function applyMediaStateWithScrub() {
+        _applyMediaStateBase();
+        positionScrubBar();
+        updateScrubProgress();
+    };
+
+    window.addEventListener('scroll', () => requestAnimationFrame(positionScrubBar), { passive: true });
+    window.addEventListener('resize', () => requestAnimationFrame(positionScrubBar), { passive: true });
+    setInterval(() => { if (activeVideo) positionScrubBar(); }, 400);
+
+    // ==========================================
+    // DOWNLOAD BUTTON (active media — cyan-glass icon)
+    // ==========================================
+    //
+    // Single hover-revealed icon button anchored to the top-right corner of
+    // whichever video is `activeVideo`. Fetches the element's current media
+    // URL as a blob and saves it locally with its original CDN filename —
+    // no renaming, no metadata template, no batch/profile/highlight scraping.
+    //
+    // This is an original, from-scratch implementation: fetch → blob →
+    // object URL → temporary <a download> click → revoke. If the fetch is
+    // blocked (CORS, auth-gated CDN response, network failure), it falls
+    // back to opening the raw media URL in a new tab so the person can still
+    // save it manually via the browser's native "Save As".
+
+    const dlBtn = document.createElement('button');
+    dlBtn.className   = 'psi-dl-btn';
+    dlBtn.title        = 'Download active media';
+    dlBtn.innerHTML    = '⭳';
+    dlBtn.type         = 'button';
+    document.body.appendChild(dlBtn);
+
+    /** Extracts a usable filename from a media URL's last path segment. */
+    function filenameFromUrl(url, fallbackExt) {
+        try {
+            const u  = new URL(url);
+            const seg = u.pathname.split('/').filter(Boolean).pop() || '';
+            if (seg && seg.includes('.')) return decodeURIComponent(seg);
+            if (seg) return decodeURIComponent(seg) + '.' + fallbackExt;
+        } catch (_) { /* fall through to generic name */ }
+        return 'media_' + Date.now() + '.' + fallbackExt;
+    }
+
+    /** Repositions the download button at the top-right of the active media (video or image). */
+    function positionDownloadButton() {
+        const m = getActiveMedia();
+        if (!m || !document.body.contains(m)) {
+            dlBtn.classList.remove('psi-dl-visible');
+            return;
+        }
+        const rect = m.getBoundingClientRect();
+        if (rect.width < 40 || rect.height < 40) {
+            dlBtn.classList.remove('psi-dl-visible');
+            return;
+        }
+        dlBtn.style.left = (rect.right - 38) + 'px';
+        dlBtn.style.top  = (rect.top + 8) + 'px';
+        dlBtn.classList.add('psi-dl-visible');
+    }
+
+    /** Fetches the active media's (video or image) current URL and saves it as a blob. */
+    async function downloadActiveMedia() {
+        const m = getActiveMedia();
+        if (!m) return;
+        const isImg = m.tagName === 'IMG';
+        const url    = m.currentSrc || m.src;
+        if (!url) return;
+
+        dlBtn.classList.add('psi-dl-busy');
+        try {
+            const res  = await fetch(url, { credentials: 'omit' });
+            if (!res.ok) throw new Error('fetch failed: ' + res.status);
+            const blob = await res.blob();
+            const defaultExt = isImg
+                ? ((blob.type && blob.type.includes('png')) ? 'png' : 'jpg')
+                : 'mp4';
+            const ext  = (blob.type && blob.type.includes('video')) ? 'mp4'
+                       : (blob.type && blob.type.includes('png'))   ? 'png'
+                       : (blob.type && blob.type.includes('image')) ? 'jpg'
+                       : defaultExt;
+            const name = filenameFromUrl(url, ext);
+
+            const objectUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href     = objectUrl;
+            a.download = name;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(objectUrl), 4000);
+        } catch (err) {
+            // CORS-blocked or otherwise unfetchable — fall back to a manual save path.
+            console.warn('[4NDR0666OS] Download fetch failed, opening media URL directly:', err);
+            window.open(url, '_blank', 'noopener');
+        } finally {
+            dlBtn.classList.remove('psi-dl-busy');
+        }
+    }
+
+    dlBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        downloadActiveMedia();
+    });
+
+    window.addEventListener('scroll', () => requestAnimationFrame(positionDownloadButton), { passive: true });
+    window.addEventListener('resize', () => requestAnimationFrame(positionDownloadButton), { passive: true });
+    setInterval(() => { if (activeVideo) positionDownloadButton(); }, 400);
+
+    // Route through the same wrapped applyMediaState so position stays glued
+    // to rotation/zoom/pan/maximize changes alongside the scrub bar.
+    const _applyMediaStateWithDownloadBtnBase = applyMediaState;
+    applyMediaState = function applyMediaStateWithDownloadBtn() {
+        _applyMediaStateWithDownloadBtnBase();
+        positionDownloadButton();
+    };
+
+    // ==========================================
     // INSTAGRAM STORY NAVIGATION
     // ==========================================
     //
@@ -844,6 +1227,7 @@
 
     /** Core repeat action — debounced 150ms to suppress double-fires. */
     function executeRepeat() {
+        if (state.isScrubbing) return; // User is mid-seek — never repeat-trigger off a manual drag
         clearTimeout(repeatDebounceTimer);
         repeatDebounceTimer = setTimeout(() => {
             if (!repeatActive) return;
@@ -872,6 +1256,7 @@
     function onTimeUpdate(e) {
         if (!repeatActive)            return;
         if (e.target !== activeVideo) return;
+        if (state.isScrubbing)        return; // Suppress arming while user is dragging the scrub bar
         const v = e.target;
         if (!isFinite(v.duration) || v.duration < 1) return;
         const nearEnd = v.currentTime >= v.duration - 0.4;
@@ -948,6 +1333,114 @@
         repeatNearEndArmed = false;
         clearTimeout(repeatDebounceTimer);
     }
+
+    // ==========================================
+    // ACTIVE-MEDIA OBSERVER (always-on, direction-agnostic)
+    // ==========================================
+    //
+    // BUG FIX: Stories navigated BACKWARD frequently restore a previously-
+    // buffered <video> in a paused state, or swap directly to an <img> slide,
+    // without ever firing a native 'play' event. The only acquisition paths
+    // that existed (native 'play' listener, hover) both depend on either
+    // autoplay firing or the mouse physically moving — neither is guaranteed
+    // on backward navigation, leaving activeVideo pointed at a detached node
+    // and every position function correctly-but-uselessly hiding the UI.
+    //
+    // This observer runs independently of the repeat-toggle (unlike Layer A
+    // above) and fires on every container mutation, in both directions:
+    //   - New <video> node appears  → acquireTarget() on it directly
+    //     (autoPlay:false — never force playback the user didn't request)
+    //   - New trackable <img> node appears → acquireImage() on it
+    //   - Neither present, but the currently active element has been
+    //     detached from the document → fall back to whatever video/img is
+    //     now actually visible in the container.
+
+    let mediaTrackedContainer = null;
+    let mediaObserver         = null;
+
+    function pickVisibleMedia(container) {
+        const vids = Array.from(container.querySelectorAll('video'));
+        const liveVideo = vids.find(v => v.getBoundingClientRect().width > 100);
+        if (liveVideo) return { el: liveVideo, kind: 'video' };
+
+        const imgs = Array.from(container.querySelectorAll('img')).filter(isTrackableImage);
+        if (imgs.length > 0) return { el: imgs[0], kind: 'image' };
+
+        return null;
+    }
+
+    function reacquireFromContainer(container) {
+        const picked = pickVisibleMedia(container);
+        if (!picked) return;
+        if (picked.kind === 'video') {
+            acquireTarget(picked.el, false);
+        } else {
+            acquireImage(picked.el);
+        }
+    }
+
+    function startMediaObserver() {
+        const seed = getActiveMedia() || document.querySelector('video, img');
+        if (!seed) return;
+
+        const container = (
+            seed.closest('[role="dialog"]') ||
+            seed.closest('section')         ||
+            seed.closest('main')            ||
+            document.body
+        );
+        if (!container) return;
+        if (mediaObserver && mediaTrackedContainer === container) return; // already watching this container
+
+        if (mediaObserver) mediaObserver.disconnect();
+        mediaTrackedContainer = container;
+
+        mediaObserver = new MutationObserver((mutations) => {
+            const current = getActiveMedia();
+            if (current && !document.body.contains(current)) {
+                // Active element was detached (either direction of story nav) — re-pick immediately.
+                reacquireFromContainer(container);
+                return;
+            }
+            for (const m of mutations) {
+                if (m.type !== 'childList') continue;
+                for (const node of m.addedNodes) {
+                    if (node.tagName === 'VIDEO' && node !== activeVideo) {
+                        acquireTarget(node, false);
+                        return;
+                    }
+                    if (isTrackableImage(node) && node !== activeImage) {
+                        acquireImage(node);
+                        return;
+                    }
+                    if (node.querySelector) {
+                        const nestedVideo = node.querySelector('video');
+                        if (nestedVideo && nestedVideo !== activeVideo) {
+                            acquireTarget(nestedVideo, false);
+                            return;
+                        }
+                        const nestedImg = Array.from(node.querySelectorAll ? node.querySelectorAll('img') : [])
+                            .find(isTrackableImage);
+                        if (nestedImg && nestedImg !== activeImage) {
+                            acquireImage(nestedImg);
+                            return;
+                        }
+                    }
+                }
+            }
+        });
+
+        mediaObserver.observe(container, { childList: true, subtree: true });
+    }
+
+    // Re-anchor the observer to a fresh container whenever the active video
+    // changes (e.g. a route change moves the story container entirely).
+    document.addEventListener('play', (e) => {
+        if (e.target.tagName === 'VIDEO') startMediaObserver();
+    }, true);
+
+    // Initial arm — covers page load landing directly on a story/post.
+    setTimeout(startMediaObserver, 1200);
 
     // Re-arm the observer when the active video changes while repeat is on
     document.addEventListener('play', (e) => {
@@ -1045,9 +1538,9 @@
     // BOOT LOG
     // ==========================================
     console.log(
-        '%c[4NDR0666OS] Media Godmode v5.0.0-Ψ — Unified Superset. ' +
+        '%c[4NDR0666OS] Media Godmode v5.1.0-Ψ — Unified Superset. ' +
         'Speed | rAF Zoom/Pan | Rotation | Smart Maximize | PiP | ' +
-        'Play | DblClick | Pause-on-Acquire | Virtual DOM | ' +
+        'Play | DblClick | Pause-on-Acquire | Virtual DOM | Scrub Bar | ' +
         'IG Nav (3-Layer) | IG Repeat (3-Layer) | Space Hotkey | Draggable HUD.',
         'color:#00E5FF;font-weight:bold;'
     );
