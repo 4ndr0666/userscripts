@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name           4ndr0tools - LinkMasterΨ
+// @name           4ndr0tools - LinkMaster
 // @namespace      https://github.com/4ndr0666/userscripts
 // @author         4ndr0666
-// @version        4.0.0
+// @version        4.1.0
 // @description    Accurately decodes, previews, exports, validates and scrapes all links.
 // @downloadURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
 // @updateURL      https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
