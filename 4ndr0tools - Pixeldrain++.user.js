@@ -6,8 +6,8 @@
 // @author       4ndr0666
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
-// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Blob2URL.user.js
-// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Blob2URL.user.js
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Pixeldrain++.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Pixeldrain++.user.js
 // @match           https://pixeldrain.com/*
 // @match           https://pixeldrain.net/*
 // @match           https://pixeldrain.dev/*
