@@ -12,8 +12,8 @@
 // @match        https://search.brave.com/search?q=https://t.me/*
 // @match        https://search.yahoo.com/search?p=https://t.me/*//
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
-// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Blob2URL.user.js
-// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Blob2URL.user.js
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Telegram_Web_Version_Redirect.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Telegram_Web_Version_Redirect.user.js
 // @grant        none
 // ==/UserScript==
 
