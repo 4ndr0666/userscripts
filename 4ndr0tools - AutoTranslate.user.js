@@ -16,8 +16,8 @@
 // @grant        GM_addStyle
 // @grant        GM_registerMenuCommand
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
-// @downloadURL
-// @updateURL    
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20AutoTranslate.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20AutoTranslate.user.js
 // ==/UserScript==
 
 (function () {
