@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - 4ndr0Purge
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.0.0
+// @version      1.0.1
 // @author       4ndr0666
 // @description  Universal one-click session reset. Nukes Cookies, Storage, IDB, and SW on ANY site.
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -21,7 +21,7 @@
   'use strict';
 
   /* ═══════════════════════════════════════════════════════════
-      §0  Core Configuration & Global Stealth
+     §0  Core Configuration & Global Stealth
      ═══════════════════════════════════════════════════════════ */
   const RESET_ON = GM_getValue('mod_reset', true);
 
@@ -43,7 +43,7 @@
   }
 
   /* ═══════════════════════════════════════════════════════════
-      §1  Shared Utilities
+     §1  Shared Utilities
      ═══════════════════════════════════════════════════════════ */
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -51,7 +51,7 @@
   const onReady = fn => document.body ? fn() : document.addEventListener('DOMContentLoaded', fn, { once: true });
 
   /* ═══════════════════════════════════════════════════════════
-      §2  The Purge Engine (Universal Implementation)
+     §2  The Purge Engine (Universal Implementation)
      ═══════════════════════════════════════════════════════════ */
   function getDomains() {
     const h = location.hostname;
@@ -73,6 +73,7 @@
     for (const part of parts) {
       cur += '/' + part;
       ps.add(cur);
+      ps.add(cur + '/');
     }
     return [...ps];
   }
@@ -81,6 +82,11 @@
     const exp = '=;expires=Thu, 01 Jan 1970 00:00:00 GMT';
     const paths = getPaths();
     const domains = getDomains();
+    
+    // Explicit root domain mitigation
+    const rootDomainClean = location.hostname.startsWith('www.') ? location.hostname.substring(4) : location.hostname;
+    domains.push(rootDomainClean, '.' + rootDomainClean);
+    
     for (const p of paths) {
       for (const d of domains) {
         const base = `${name}${exp};path=${p}${d ? ';domain=' + d : ''}`;
@@ -98,10 +104,11 @@
     try {
       const dbs = await indexedDB.databases();
       await Promise.all(dbs.map(db => new Promise(res => {
+        if (!db.name) return res(); // Gap mitigation: Prevent null reference blocks
         const req = indexedDB.deleteDatabase(db.name);
         req.onsuccess = req.onerror = req.onblocked = res;
       })));
-    } catch (e) { console.warn("[Ψ] IDB Wipe Interrupted"); }
+    } catch (e) { console.warn("[Ψ] IDB Wipe Interrupted", e); }
   }
 
   async function clearCaches() {
@@ -109,7 +116,7 @@
     try {
       const keys = await caches.keys();
       await Promise.all(keys.map(k => caches.delete(k)));
-    } catch (e) { console.warn("[Ψ] Cache Wipe Interrupted"); }
+    } catch (e) { console.warn("[Ψ] Cache Wipe Interrupted", e); }
   }
 
   async function unregSW() {
@@ -117,11 +124,11 @@
     try {
       const regs = await navigator.serviceWorker.getRegistrations();
       await Promise.all(regs.map(r => r.unregister()));
-    } catch (e) { console.warn("[Ψ] SW Unreg Interrupted"); }
+    } catch (e) { console.warn("[Ψ] SW Unreg Interrupted", e); }
   }
 
   /* ═══════════════════════════════════════════════════════════
-      §3  3LECTRIC GLASS UI (Design Spec 1.5.0-Ψ)
+     §3  3LECTRIC GLASS UI (Design Spec 1.5.0-Ψ)
      ═══════════════════════════════════════════════════════════ */
   GM_addStyle(`
     :root {
@@ -198,7 +205,7 @@
   `);
 
   /* ═══════════════════════════════════════════════════════════
-      §4  Orchestration
+     §4  Orchestration
      ═══════════════════════════════════════════════════════════ */
   const runPurge = async () => {
     const statusBox = $('#purge-status-float');
@@ -213,10 +220,13 @@
     statusBox.style.display = 'block';
     log("INITIALIZING SCORCHED EARTH...");
 
-    // Clear Storage
+    // Clear Storage vectors
     localStorage.clear();
     sessionStorage.clear();
-    log("LOCALSTORAGE/SESSION: NULLIFIED");
+    
+    // Window Name Wipe (Gap mitigation: Prevents covert cross-session tracking)
+    window.name = ''; 
+    log("STORAGE & WINDOW VECTORS: NULLIFIED");
 
     // Clear Cookies
     const cookies = document.cookie.split(';').map(c => c.split('=')[0].trim()).filter(Boolean);
