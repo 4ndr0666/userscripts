@@ -63,6 +63,7 @@ Each script adheres to a core set of principles:
 | BypassPaywalls | [4ndr0tools - BypassPaywalls.user.js](./4ndr0tools%20-%20BypassPaywalls.user.js) | A way to bypass paywalls for popular news sites |
 | Collapse All Images | [4ndr0tools - Collapse All Images.user.js](./4ndr0tools%20-%20Collapse%20All%20Images.user.js) | Toggle/auto-collapse all images with a mouse hover for reducing excessive I/O. |
 | Confirmation Bypass | [4ndr0tools - Confirmation Bypass.user.js](./4ndr0tools%20-%20Confirmation%20Bypass.user.js) | Full turbo.cr bypass suite: Confirmation auto-skip + force /embed/ redirect + XenForo "Upload videos" injector + direct URL overlay on embed + xcandid/vidara URL overlay + external link safety. |
+| Counter-surveillance | [4ndr0tools - Counter-surveillance.user.js](./4ndr0tools%20-%20Counter-surveillance.user.js) | — |
 | Filester++ | [4ndr0tools - Filester++.user.js](./4ndr0tools%20-%20Filester++.user.js) | Dynamic stream extraction + folder enumeration for any media on Filester.me. Network proxy + glyph injection. |
 | Forum Link Xtractor | [4ndr0tools - Forum Link Xtractor.user.js](./4ndr0tools%20-%20Forum%20Link%20Xtractor.user.js) | Extracts links from forum threads, handles redirects, and offers copy/download options with persistent local storage. |
 | Forums++ | [4ndr0tools - Forums++.user.js](./4ndr0tools%20-%20Forums++.user.js) | Forum utils UI with powerful downloading, indexing, link checking, archiving features and more. |
