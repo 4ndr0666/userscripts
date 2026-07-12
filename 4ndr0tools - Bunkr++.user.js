@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         4ndr0tools - Bunkr++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      5.6.16
+// @version      5.8.4
 // @author       4ndr0666
-// @description  Part of 4ndr0tools: Canonical routing, auto-sort, hide visited, bypass dl gateway
+// @description  Part of 4ndr0tools: Canonical routing, auto-sort, hide visited, bypass dl gateway, bulk acquisition
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Bunkr++.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Bunkr++.user.js
@@ -20,6 +20,7 @@
 // @grant        GM_addStyle
 // @grant        GM_registerMenuCommand
 // @grant        GM_setClipboard
+// @grant        GM_download
 // @grant        unsafeWindow
 // @connect      *
 // @require      https://code.jquery.com/jquery-3.6.0.min.js
@@ -29,17 +30,17 @@
 
 (function () {
     'use strict';
-    console.log('%c[4NDR0tools] Bunkr++ v5.6.16-Ψ', 'color:#00E5FF; font-family:monospace; font-weight:bold;');
+    console.log('%c[4NDR0tools] Bunkr++ v5.8.4-Ψ', 'color:#00E5FF; font-family:monospace; font-weight:bold;');
 
     // =========================================================================
     // MODULE 0.1: SYNCHRONOUS ENVIRONMENT MOCKING (Sandbox Escape)
     // =========================================================================
     try {
-        unsafeWindow.aclib = { 
-            runAutoTag: function(){}, 
-            runBanner: function(){}, 
-            runPop: function(){}, 
-            runVideo: function(){} 
+        unsafeWindow.aclib = {
+            runAutoTag: function(){},
+            runBanner: function(){},
+            runPop: function(){},
+            runVideo: function(){}
         };
         unsafeWindow.kxysy = function(){};
         unsafeWindow.ggihyqfb = function(){};
@@ -79,7 +80,7 @@
         const text = script.innerHTML || '';
         const src = script.src || '';
         if (textKeywords.some(w => text.includes(w)) || srcKeywords.some(w => src.includes(w))) {
-            script.type = 'javascript/blocked'; 
+            script.type = 'javascript/blocked';
             script.remove();
             console.log('[Ψ-4NDR0666] Aborted anti-analysis script safely.');
             return true;
@@ -126,7 +127,7 @@
     let _visitedMode   = 'DIM';
     let _sortExecuted  = false;
     let _debounceTimer = null;
-    
+
     let albumGalleryCache = new Map();
     let albumGalleryFetched = false;
 
@@ -173,42 +174,114 @@
     }
 
     // =========================================================================
-    // MODULE 2: SYSTEM STYLING & SURGICAL PURGE
+    // MODULE 2: SYSTEM STYLING & SURGICAL PURGE (ELECTRIC-GLASSMORPHISM)
     // =========================================================================
     GM_addStyle(`
-        :root { --cyan: #00E5FF; --yellow: #FFD700; --red: #FF0055; }
+        :root {
+            /* Foundations */
+            --bg-dark-base: #050A0F;
+            --bg-glass-panel: rgba(10, 19, 26, 0.75);
 
-        .psi-dl-glyph {
-            position: absolute; bottom: 8px; right: 8px; width: 32px; height: 32px;
-            background: rgba(10, 19, 26, 0.9); border: 1px solid var(--cyan); border-radius: 8px;
-            display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 9999;
-            color: var(--cyan); transition: all 0.2s ease; -webkit-backdrop-filter: blur(4px);
-            backdrop-filter: blur(4px); text-decoration: none !important;
-        }
-        .psi-dl-glyph:hover { background: var(--cyan); color: #000; box-shadow: 0 0 15px var(--cyan); transform: scale(1.05); }
-        .psi-dl-glyph:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
-        .psi-dl-glyph svg { width: 18px; height: 18px; stroke-width: 2.5; pointer-events: none; }
+            /* The Cyan Matrix */
+            --accent-cyan: #00E5FF;
+            --text-cyan-active: #67E8F9;
+            --accent-cyan-border-idle: rgba(0, 229, 255, 0.2);
+            --accent-cyan-border-hover: rgba(0, 229, 255, 0.5);
+            --accent-cyan-bg-hover: rgba(0, 229, 255, 0.05);
+            --accent-cyan-bg-active: rgba(0, 229, 255, 0.2);
 
-        .psi-stream-glyph {
-            position: absolute; bottom: 8px; right: 48px; width: 32px; height: 32px;
-            background: rgba(10, 19, 26, 0.9); border: 1px solid var(--cyan); border-radius: 8px;
-            display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 9999;
-            color: var(--cyan); transition: all 0.2s ease; -webkit-backdrop-filter: blur(4px);
-            backdrop-filter: blur(4px); text-decoration: none !important;
+            /* Glows & Shadows */
+            --glow-cyan-active: rgba(0, 229, 255, 0.4);
+            --shadow-glass-base: -4px 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --shadow-glass-glow: 0 8px 32px 0 rgba(0, 229, 255, 0.15);
+
+            /* Edge Lighting (3D Beveling) */
+            --edge-light-top: rgba(255, 255, 255, 0.1);
+            --edge-light-left: rgba(255, 255, 255, 0.1);
+
+            /* Typography */
+            --text-primary: #EAEAEA;
+            --text-secondary: #9E9E9E;
+            --font-body: 'Roboto Mono', monospace;
+            --font-glyph: 'Cinzel Decorative', serif, sans-serif;
+
+            --yellow: #FFD700;
+            --red: #FF0055;
         }
-        .psi-stream-glyph:hover { background: var(--cyan); color: #000; box-shadow: 0 0 15px var(--cyan); transform: scale(1.05); }
-        .psi-stream-glyph:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
-        .psi-stream-glyph svg { width: 18px; height: 18px; stroke-width: 2.5; pointer-events: none; fill: currentColor; }
+
+        /* The Glass Engine Base */
+        .psi-glass-panel {
+            background: var(--bg-glass-panel);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--accent-cyan-border-idle);
+            border-top: 1px solid var(--edge-light-top);
+            border-left: 1px solid var(--edge-light-left);
+            border-radius: 6px;
+            box-shadow: var(--shadow-glass-base);
+        }
+        @supports not (backdrop-filter: blur(1px)) {
+            .psi-glass-panel { background: rgba(10, 19, 26, 0.95) !important; }
+        }
+
+        /* Interactive Topology (Buttons & Links) */
+        .psi-btn {
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            color: var(--text-primary);
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid transparent;
+            border-radius: 4px;
+            transition: all 300ms ease-in-out;
+            cursor: pointer;
+            font-family: var(--font-body);
+        }
+        .psi-btn:hover:not(:disabled) {
+            color: var(--accent-cyan);
+            border-color: var(--accent-cyan-border-hover);
+            background-color: var(--accent-cyan-bg-hover);
+        }
+        .psi-btn:active:not(:disabled) {
+            color: var(--text-cyan-active);
+            background-color: var(--accent-cyan-bg-active);
+            border-color: var(--accent-cyan);
+            box-shadow: inset 0 0 10px var(--glow-cyan-active);
+        }
+        .psi-btn:focus-visible {
+            outline: 2px solid var(--accent-cyan);
+            outline-offset: 2px;
+        }
+        .psi-btn:disabled {
+            opacity: 0.3; cursor: not-allowed; border-color: rgba(0, 229, 255, 0.3); color: var(--text-secondary);
+        }
+
+        /* Specific Implementations */
+        .psi-dl-glyph, .psi-stream-glyph {
+            position: absolute; bottom: 8px; width: 32px; height: 32px;
+            display: flex; justify-content: center; align-items: center; z-index: 9999;
+            color: var(--accent-cyan); text-decoration: none !important;
+            padding: 0; border-radius: 6px;
+        }
+        .psi-dl-glyph { right: 8px; }
+        .psi-stream-glyph { right: 48px; }
+
+        .psi-dl-glyph svg, .psi-stream-glyph svg { width: 18px; height: 18px; stroke-width: 2.5; pointer-events: none; fill: currentColor; }
 
         .psi-main-dl-glyph { top: 42px !important; bottom: auto !important; right: 8px !important; z-index: 99999 !important; }
         .psi-main-stream-glyph { top: 42px !important; bottom: auto !important; right: 48px !important; z-index: 99999 !important; }
 
         #psi-visited-toggle {
-            position: fixed; bottom: 8px; left: 8px; z-index: 999999; background: rgba(10, 15, 26, 0.95); color: var(--cyan);
-            border: 1px solid var(--cyan); border-radius: 4px; padding: 6px 12px; font: bold 11px monospace; cursor: pointer;
-            box-shadow: 0 0 10px rgba(0, 229, 255, 0.2); user-select: none; transition: all 0.2s;
+            position: fixed; bottom: 8px; left: 8px; z-index: 999999;
+            padding: 6px 12px; font: 500 11px var(--font-body); color: var(--text-secondary);
+            user-select: none;
         }
-        #psi-visited-toggle:hover { background: var(--cyan); color: #000; }
+        #psi-visited-toggle:hover { color: var(--accent-cyan); }
 
         body[data-psi-visited-mode="DIM"] .psi-visited { opacity: 0.3 !important; filter: grayscale(100%); transition: opacity 0.3s, filter 0.3s; }
         body[data-psi-visited-mode="DIM"] .psi-visited:hover { opacity: 0.9 !important; filter: none; }
@@ -222,25 +295,86 @@
 
         @keyframes psi-slide-in { from { opacity: 0; transform: translateX(40px) scale(0.96); } to { opacity: 1; transform: translateX(0) scale(1); } }
         @keyframes psi-fade-out { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: translateX(20px) scale(0.94); } }
+        @keyframes psi-fadeIn { to { opacity: 1; } }
+
         .psi-toast {
             position: fixed; top: 16px; right: 16px; z-index: 9999999;
-            background: linear-gradient(135deg, rgba(0, 229, 255, 0.07) 0%, rgba(10, 15, 26, 0.82) 40%, rgba(0, 20, 30, 0.92) 100%);
-            border: 1px solid rgba(0, 229, 255, 0.55); border-top-color: rgba(0, 229, 255, 0.9); border-radius: 10px;
-            padding: 10px 16px; font: bold 11px/1.4 monospace; color: var(--cyan);
-            box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.08) inset, 0 0 18px rgba(0, 229, 255, 0.22), 0 4px 24px rgba(0, 0, 0, 0.55);
-            -webkit-backdrop-filter: blur(14px) saturate(160%); backdrop-filter: blur(14px) saturate(160%);
+            padding: 10px 16px; font: 500 11px/1.4 var(--font-body); color: var(--text-primary);
             pointer-events: none; max-width: 420px; animation: psi-slide-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
         .psi-toast--dying { animation: psi-fade-out 0.38s ease forwards; }
 
         .psi-toast--glyph {
             display: flex; align-items: center; gap: 10px; padding: 8px 14px 8px 10px;
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0.09) 0%, rgba(10, 15, 26, 0.82) 40%, rgba(15, 12, 0, 0.92) 100%);
-            border-color: rgba(255, 215, 0, 0.55); border-top-color: rgba(255, 215, 0, 0.9);
-            box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.08) inset, 0 0 18px rgba(255, 215, 0, 0.2), 0 4px 24px rgba(0, 0, 0, 0.55);
+            border-color: rgba(255, 215, 0, 0.55);
         }
-        .psi-toast-icon { flex-shrink: 0; width: 36px; height: 36px; color: var(--cyan); filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.6)); }
-        .psi-toast-label { color: var(--cyan); font: bold 11px/1.4 monospace; letter-spacing: 0.05em; text-shadow: 0 0 8px rgba(255, 215, 0, 0.4); }
+        .psi-toast-icon { flex-shrink: 0; width: 36px; height: 36px; color: var(--accent-cyan); filter: drop-shadow(0 0 4px var(--glow-cyan-active)); }
+        .psi-toast-label { color: var(--text-primary); font: 500 11px/1.4 var(--font-body); letter-spacing: 0.05em; }
+
+        /* Bulk Downloader Module CSS aligned with 4ndr0Purge Spec */
+        #psi-bulk-panel {
+            position: fixed; bottom: 85px; right: 0; z-index: 2147483646;
+            display: flex; border-radius: 6px 0 0 6px; overflow: hidden;
+            background: var(--bg-glass-panel);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--accent-cyan-border-idle);
+            border-right: none;
+            border-top: 1px solid var(--edge-light-top);
+            border-left: 1px solid var(--edge-light-left);
+            box-shadow: var(--shadow-glass-base);
+            transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1), background 300ms ease;
+            transform: translateX(calc(100% - 32px));
+        }
+        #psi-bulk-panel:hover {
+            transform: translateX(0);
+        }
+
+        #psi-bulk-peek {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            width: 32px; flex-shrink: 0;
+            background: rgba(0, 229, 255, 0.05);
+            border-right: 1px solid var(--accent-cyan-border-idle);
+            color: var(--accent-cyan);
+            cursor: pointer;
+        }
+        #psi-bulk-peek svg {
+            width: 20px; height: 20px;
+            filter: drop-shadow(0 0 8px var(--glow-cyan-active));
+            transition: filter 300ms ease, transform 300ms ease;
+        }
+        #psi-bulk-panel:hover #psi-bulk-peek svg {
+            filter: drop-shadow(0 0 12px var(--accent-cyan));
+        }
+
+        #psi-bulk-content {
+            width: 320px; max-height: 80vh; overflow-y: hidden;
+            padding: 12px;
+            color: var(--text-cyan-active); font: 11px var(--font-body);
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        #psi-bulk-content h3 {
+            margin: 0; font-size: 14px; text-transform: uppercase;
+            color: var(--accent-cyan); text-shadow: 0 0 8px var(--glow-cyan-active);
+            font-family: var(--font-body); font-weight: 500; letter-spacing: 0.05em;
+        }
+        #psi-bulk-content .controls { display: flex; gap: 6px; margin-top: 4px; }
+
+        #psi-bulk-progress { width: 100%; height: 6px; background: rgba(0,0,0,0.5); border-radius: 3px; overflow: hidden; border: 1px solid rgba(0, 0, 0, 0.5); }
+        #psi-bulk-bar { width: 0%; height: 100%; background: var(--accent-cyan); box-shadow: 0 0 8px var(--glow-cyan-active); transition: width 0.3s; }
+
+        #psi-bulk-log {
+            max-height: 180px; overflow-y: auto; background: transparent;
+            padding: 4px 0 0 0; display: none; margin-top: 4px;
+        }
+        #psi-bulk-log span {
+            display: block; margin-bottom: 4px; border-left: 2px solid var(--accent-cyan);
+            padding-left: 8px; opacity: 0; animation: psi-fadeIn 0.3s forwards;
+            color: var(--text-cyan-active); font-size: 11px; word-break: break-all;
+        }
+        .psi-log-inf { color: var(--text-cyan-active); }
+        .psi-log-ok { color: #4ade80 !important; border-left-color: #4ade80 !important; }
+        .psi-log-err { color: var(--red) !important; border-left-color: var(--red) !important; }
+        .psi-log-dbg { color: #6b7280 !important; border-left-color: #6b7280 !important; display: none; }
     `);
 
     // =========================================================================
@@ -354,8 +488,10 @@
         if (document.getElementById('psi-visited-toggle')) return;
         _visitedMode = localStorage.getItem(MODE_KEY) || 'DIM';
         document.body.setAttribute('data-psi-visited-mode', _visitedMode);
-        const toggleBtn       = document.createElement('div');
+        const toggleBtn       = document.createElement('button');
         toggleBtn.id          = 'psi-visited-toggle';
+        toggleBtn.className   = 'psi-glass-panel psi-btn';
+        toggleBtn.setAttribute('aria-label', 'Toggle visited assets visibility');
         toggleBtn.textContent = `👁 VISITED: ${_visitedMode}`;
         toggleBtn.title       = 'Left-Click: Cycle Mode (DIM/HIDE/SHOW)\nRight-Click: Purge Registry\nBuffer: 10,000 items max (FIFO)';
         toggleBtn.onclick     = (e) => {
@@ -414,7 +550,10 @@
     // =========================================================================
     const downloadSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
     const streamSvg   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`;
-    const spinnerHtml = '<span style="font-size:8px;font-family:monospace;">...</span>';
+    const spinnerHtml = '<span style="font-size:8px;font-family:var(--font-body);">...</span>';
+
+    // Core Spec Glyph mapping to current Color inheritances
+    const specPsiSvg = `<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" class="psi-toast-icon" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path class="glyph-ring-1" d="M 64,12 A 52,52 0 1 1 63.9,12 Z" stroke-dasharray="21.78 21.78" stroke-width="2" /><path class="glyph-ring-2" d="M 64,20 A 44,44 0 1 1 63.9,20 Z" stroke-dasharray="10 10" stroke-width="1.5" opacity="0.7" /><path class="glyph-hex" d="M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z" /><text x="64" y="67" text-anchor="middle" dominant-baseline="middle" fill="currentColor" stroke="none" font-size="56" font-weight="700" font-family="'Cinzel Decorative', serif" class="glyph-core-psi">Ψ</text></svg>`;
 
     function isCdnUrl(url) {
         if (!url || typeof url !== 'string') return false;
@@ -439,12 +578,12 @@
         const origContent = isGlyph ? overlay.innerHTML : '';
         const origColor   = isGlyph ? overlay.style.color : '';
         const origBorder  = isGlyph ? overlay.style.borderColor : '';
-        
+
         const onCopied    = () => {
-            if (isGlyph) overlay.innerHTML = '<span style="font-size:14px;font-family:monospace;font-weight:bold;">✓</span>';
+            if (isGlyph) overlay.innerHTML = '<span style="font-size:14px;font-family:var(--font-body);font-weight:bold;">✓</span>';
             if (isGlyph) {
-                overlay.style.color       = 'var(--cyan)';
-                overlay.style.borderColor = 'var(--cyan)';
+                overlay.style.color       = 'var(--accent-cyan)';
+                overlay.style.borderColor = 'var(--accent-cyan)';
                 setTimeout(() => {
                     overlay.innerHTML = origContent;
                     overlay.style.color       = origColor;
@@ -453,7 +592,7 @@
             }
         };
         const onFailed = () => {
-            if (isGlyph) overlay.innerHTML = '<span style="font-size:14px;font-family:monospace;font-weight:bold;">X</span>';
+            if (isGlyph) overlay.innerHTML = '<span style="font-size:14px;font-family:var(--font-body);font-weight:bold;">X</span>';
             if (isGlyph) {
                 overlay.style.color       = 'var(--red)';
                 overlay.style.borderColor = 'var(--red)';
@@ -492,7 +631,7 @@
         if (albumGalleryFetched || !albumMatch) return;
         albumGalleryFetched = true;
         const albumSlug = albumMatch[1];
-        
+
         try {
             console.log(`[Ψ-4NDR0666] Prefetching album gallery API for slug: ${albumSlug}`);
             const response = await fetch("/api/album/gallery", {
@@ -500,7 +639,7 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ slug: albumSlug })
             });
-            
+
             if (response.ok) {
                 const data = await response.json();
                 if (data && data.data && Array.isArray(data.data)) {
@@ -539,10 +678,10 @@
                         ontimeout: () => resolve({ status: 408 })
                     });
                 });
-                
+
                 if (res.status >= 200 && res.status < 300) {
                     const doc = new DOMParser().parseFromString(res.responseText, 'text/html');
-                    
+
                     const ogVideo = doc.querySelector("meta[property='og:video']");
                     if (ogVideo?.content && isCdnUrl(ogVideo.content)) return ogVideo.content;
 
@@ -624,8 +763,8 @@
             ensureRelative(wrapper);
 
             if (!document.querySelector('.psi-main-dl-glyph')) {
-                const dlGlyph     = document.createElement('div');
-                dlGlyph.className = 'psi-dl-glyph psi-main-dl-glyph';
+                const dlGlyph     = document.createElement('a');
+                dlGlyph.className = 'psi-dl-glyph psi-main-dl-glyph psi-glass-panel psi-btn';
                 dlGlyph.innerHTML = downloadSvg;
                 dlGlyph.title     = 'Direct Download';
                 const activateDl  = async (e) => {
@@ -644,7 +783,7 @@
                     let targetUrl = gatewayAnchor?.href && gatewayAnchor.href !== window.location.href ? gatewayAnchor.href : window.location.href;
 
                     const cdnUrl = await resolveDomStreamUrl(targetUrl);
-                    
+
                     if (cdnUrl) {
                         dlGlyph.innerHTML = downloadSvg;
                         nativeDownload(cdnUrl);
@@ -660,8 +799,8 @@
             }
 
             if (!document.querySelector('.psi-main-stream-glyph')) {
-                const streamGlyph     = document.createElement('div');
-                streamGlyph.className = 'psi-stream-glyph psi-main-stream-glyph';
+                const streamGlyph     = document.createElement('a');
+                streamGlyph.className = 'psi-stream-glyph psi-main-stream-glyph psi-glass-panel psi-btn';
                 streamGlyph.innerHTML = streamSvg;
                 streamGlyph.title     = 'Copy Stream URL';
                 const activateStream  = async (e) => {
@@ -671,7 +810,7 @@
                     streamGlyph.innerHTML         = spinnerHtml;
                     streamGlyph.style.color       = '#fff';
                     streamGlyph.style.borderColor = '';
-                    
+
                     const vidEl = document.querySelector('video');
                     let streamUrl = (vidEl && vidEl.currentSrc && !vidEl.currentSrc.startsWith('blob:') && isCdnUrl(vidEl.currentSrc)) ? vidEl.currentSrc : null;
 
@@ -712,7 +851,7 @@
             if (!link) return;
             const alphaId = link.getAttribute('href').split('/').pop();
             if (visited.has(alphaId)) el.classList.add('psi-visited');
-            
+
             // Retain forensic mousedown tracking
             link.addEventListener('mousedown', () => {
                 addVisited(alphaId);
@@ -726,10 +865,9 @@
     // =========================================================================
     function showToast(msg, durationMs = 4000, isPsi = false) {
         const toast = document.createElement('div');
-        toast.className = isPsi ? 'psi-toast psi-toast--glyph' : 'psi-toast';
+        toast.className = isPsi ? 'psi-toast psi-toast--glyph psi-glass-panel' : 'psi-toast psi-glass-panel';
         if (isPsi) {
-            const psiSvg = `<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" class="psi-toast-icon" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M 64,12 A 52,52 0 1 1 63.9,12 Z" stroke-dasharray="21.78 21.78" stroke-width="2"/><path d="M 64,20 A 44,44 0 1 1 63.9,20 Z" stroke-dasharray="10 10" stroke-width="1.5" opacity="0.7"/><path d="M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z"/><text x="64" y="68" text-anchor="middle" dominant-baseline="middle" fill="currentColor" stroke="none" font-size="56" font-weight="700" font-family="serif">Ψ</text></svg>`;
-            toast.innerHTML = `${psiSvg}<span class="psi-toast-label">${msg}</span>`;
+            toast.innerHTML = `${specPsiSvg}<span class="psi-toast-label">${msg}</span>`;
         } else {
             toast.textContent = msg;
         }
@@ -786,6 +924,352 @@
     }
 
     // =========================================================================
+    // MODULE 11: BULK ACQUISITION ENGINE
+    // =========================================================================
+    function initBulkEngine() {
+        if (!albumMatch) return;
+
+        const panel = document.createElement('div');
+        panel.id = 'psi-bulk-panel';
+
+        const specPsiSvg = `<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path class="glyph-ring-1" d="M 64,12 A 52,52 0 1 1 63.9,12 Z" stroke-dasharray="21.78 21.78" stroke-width="2" /><path class="glyph-ring-2" d="M 64,20 A 44,44 0 1 1 63.9,20 Z" stroke-dasharray="10 10" stroke-width="1.5" opacity="0.7" /><path class="glyph-hex" d="M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z" /><text x="64" y="67" text-anchor="middle" dominant-baseline="middle" fill="currentColor" stroke="none" font-size="56" font-weight="700" font-family="'Cinzel Decorative', serif" class="glyph-core-psi">Ψ</text></svg>`;
+
+        panel.innerHTML = `
+            <div id="psi-bulk-peek">
+                ${specPsiSvg}
+            </div>
+            <div id="psi-bulk-content">
+                <h3>// DOWNLOAD ALL</h3>
+                <div id="psi-bulk-status">Scanning files...</div>
+                <div id="psi-bulk-info">0 OK / 0 ERR / 0 TOTAL</div>
+                <div id="psi-bulk-progress"><div id="psi-bulk-bar"></div></div>
+                <div class="controls">
+                    <button id="btn-bulk-start" class="psi-btn" aria-label="Start Bulk Download" style="flex: 1;" disabled>START</button>
+                    <button id="btn-bulk-pause" class="psi-btn" aria-label="Pause Bulk Download" style="flex: 1;" disabled>PAUSE</button>
+                    <button id="btn-bulk-stop" class="psi-btn" aria-label="Stop Bulk Download" style="flex: 1;" disabled>STOP</button>
+                    <button id="btn-bulk-log-tog" class="psi-btn" aria-label="Toggle Log Display" style="flex: 0 0 auto; padding: 0.5rem 0.75rem;">LOG</button>
+                </div>
+                <div id="psi-bulk-log"></div>
+            </div>
+        `;
+        document.body.appendChild(panel);
+
+        const BulkState = {
+            queue: [], running: 0, done: 0, failed: 0, total: 0,
+            paused: false, aborted: false,
+            DELAY_MS: 1200, MAX_CONCURRENT: 2, API_TIMEOUT: 20000
+        };
+
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+        function logBulk(msg, level='inf') {
+            const logEl = document.getElementById('psi-bulk-log');
+            if (!logEl) return;
+            const span = document.createElement('span');
+            span.className = `psi-log-${level}`;
+            span.textContent = `[Ψ] ${msg}`;
+            logEl.appendChild(span);
+            logEl.scrollTop = logEl.scrollHeight;
+            if (level !== 'dbg') console.log(`[Ψ-BULK] ${msg}`);
+        }
+
+        function setBulkStatus(msg) {
+            const st = document.getElementById('psi-bulk-status');
+            if (st) st.textContent = msg;
+        }
+
+        function updateBulkUI() {
+            const bar = document.getElementById('psi-bulk-bar');
+            const info = document.getElementById('psi-bulk-info');
+            if (!BulkState.total) return;
+            const pct = ((BulkState.done + BulkState.failed) / BulkState.total) * 100;
+            if (bar) bar.style.width = `${pct}%`;
+            if (info) info.textContent = `${BulkState.done} OK / ${BulkState.failed} ERR / ${BulkState.total} TOTAL`;
+        }
+
+        // --- CANONICAL BACKEND EXTRACTION LOGIC ---
+        function scanFiles() {
+            const seen  = new Set();
+            const files = [];
+            for (const a of document.querySelectorAll('a[href*="/f/"]')) {
+                try {
+                    const url = new URL(a.href);
+                    if (!url.pathname.startsWith('/f/') || seen.has(url.pathname)) continue;
+                    seen.add(url.pathname);
+                    const slug = url.pathname.split('/').pop();
+                    let name = a.getAttribute('title') || '';
+                    if (!name) { const img = a.querySelector('img'); name = img ? (img.alt || '') : ''; }
+                    if (!name) { const sp  = a.querySelector('p,span'); name = sp ? sp.textContent.trim() : ''; }
+                    files.push({ filePageURL: a.href, slug, name: name || slug });
+                } catch (_) {}
+            }
+            return files;
+        }
+
+        function gmFetch(opts) {
+            return new Promise((resolve, reject) => {
+                GM_xmlhttpRequest({
+                    timeout: BulkState.API_TIMEOUT,
+                    ...opts,
+                    onload:    r  => resolve(r),
+                    onerror:   () => reject(new Error('Network error: ' + opts.url)),
+                    ontimeout: () => reject(new Error('Timeout: ' + opts.url)),
+                });
+            });
+        }
+
+        async function getNumericId(item) {
+            const res  = await gmFetch({
+                method: 'GET',
+                url: item.filePageURL,
+                headers: { 'User-Agent': navigator.userAgent, 'Referer': window.location.href },
+            });
+            const html = res.responseText;
+
+            const ndm = html.match(/<script[^>]+id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i);
+            if (ndm) {
+                try {
+                    const nd   = JSON.parse(ndm[1]);
+                    const pp   = nd?.props?.pageProps || {};
+                    const keys = ['file', 'media', 'item', 'data', 'video', 'image'];
+                    for (const k of keys) {
+                        if (pp[k]?.id) {
+                            const numId = String(pp[k].id);
+                            const fname = pp[k].name || pp[k].filename || pp[k].original || item.name;
+                            logBulk(`  [ND] ${k}.id=${numId}`, 'dbg');
+                            return { numId, fname };
+                        }
+                    }
+                    if (pp.id) return { numId: String(pp.id), fname: pp.name || item.name };
+
+                    const found = findFileObj(nd);
+                    if (found) {
+                        logBulk(`  [ND-deep] id=${found.id}`, 'dbg');
+                        return { numId: String(found.id), fname: found.name || item.name };
+                    }
+                } catch (e) {
+                    logBulk(`  ND err: ${e.message}`, 'dbg');
+                }
+            }
+
+            const dlm = html.match(/dl\.bunkr\.cr\/file\/(\d+)/i);
+            if (dlm) return { numId: dlm[1], fname: item.name };
+
+            const idMatches = [...html.matchAll(/"id"\s*:\s*(\d{5,12})/g)];
+            if (idMatches.length) {
+                const numId = idMatches[idMatches.length - 1][1];
+                logBulk(`  [regex] id=${numId}`, 'dbg');
+                return { numId, fname: item.name };
+            }
+
+            throw new Error('Numeric ID resolution failure.');
+        }
+
+        function findFileObj(obj, depth = 0) {
+            if (depth > 12 || !obj || typeof obj !== 'object') return null;
+            if (Array.isArray(obj)) {
+                for (const v of obj) { const r = findFileObj(v, depth+1); if (r) return r; }
+                return null;
+            }
+            const hasNumId = obj.id && /^\d{5,12}$/.test(String(obj.id));
+            const hasName  = obj.name || obj.filename || obj.original;
+            if (hasNumId && hasName) return { id: String(obj.id), name: obj.name || obj.filename || obj.original };
+            for (const v of Object.values(obj)) { const r = findFileObj(v, depth+1); if (r) return r; }
+            return null;
+        }
+
+        async function callMainAPI(numId) {
+            logBulk(`  POST _001_v2 {id:"${numId}"}`, 'dbg');
+            const res = await gmFetch({
+                method: 'POST',
+                url: 'https://dl.bunkr.cr/api/_001_v2',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Origin':       'https://dl.bunkr.cr',
+                    'Referer':      'https://dl.bunkr.cr/',
+                    'User-Agent':   navigator.userAgent,
+                },
+                data: JSON.stringify({ id: numId }),
+            });
+
+            logBulk(`  API ${res.status}: ${res.responseText.slice(0, 120)}`, 'dbg');
+            if (res.status < 200 || res.status >= 300)
+                throw new Error(`API ${res.status}: ${res.responseText.slice(0, 80)}`);
+
+            let json;
+            try { json = JSON.parse(res.responseText); }
+            catch (_) { throw new Error('JSON: ' + res.responseText.slice(0, 80)); }
+
+            if (!json?.mediafiles || !json?.path)
+                throw new Error('API routing payload empty: ' + res.responseText.slice(0, 80));
+
+            return {
+                cdnBase:  json.mediafiles.replace(/\/$/, ''),
+                filePath: json.path,
+                original: json.original || '',
+            };
+        }
+
+        async function getSignedToken(filePath) {
+            const signURL = `https://glb-apisign.cdn.cr/sign?path=${encodeURIComponent(filePath)}`;
+            logBulk(`  SIGN ${signURL}`, 'dbg');
+
+            const res = await gmFetch({
+                method: 'GET',
+                url: signURL,
+                headers: {
+                    'Origin':     'https://dl.bunkr.cr',
+                    'Referer':    'https://dl.bunkr.cr/',
+                    'User-Agent': navigator.userAgent,
+                },
+            });
+
+            logBulk(`  SIGN ${res.status}: ${res.responseText.slice(0, 120)}`, 'dbg');
+            if (res.status < 200 || res.status >= 300)
+                throw new Error(`Sign API ${res.status}: ${res.responseText.slice(0, 80)}`);
+
+            let json;
+            try { json = JSON.parse(res.responseText); }
+            catch (_) { throw new Error('Sign JSON: ' + res.responseText.slice(0, 80)); }
+
+            if (!json?.token || !json?.ex)
+                throw new Error('Sign response payload empty: ' + res.responseText.slice(0, 80));
+
+            return { token: json.token, ex: json.ex };
+        }
+
+        async function resolveBulkFile(item) {
+            const { numId, fname }                = await getNumericId(item);
+            const { cdnBase, filePath, original } = await callMainAPI(numId);
+            const { token, ex }                   = await getSignedToken(filePath);
+
+            const n      = original || fname || item.name;
+            const cdnURL = `${cdnBase}${filePath}?n=${encodeURIComponent(n)}&token=${token}&ex=${ex}`;
+
+            logBulk(`  CDN: ${cdnURL.slice(0, 80)}…`, 'dbg');
+            return { cdnURL, fname: n };
+        }
+
+        function downloadBulkFile(url, filename) {
+            return new Promise((resolve, reject) => {
+                GM_download({
+                    url,
+                    name: (filename || 'bunkr_file').replace(/[\\/:*?"<>|]/g, '_').substring(0, 200),
+                    saveAs: false,
+                    headers: { 'Referer': 'https://dl.bunkr.cr/' },
+                    onerror(e) { reject(new Error(JSON.stringify(e))); },
+                    onload()   { resolve(); },
+                    ontimeout() { reject(new Error('Download timeout exceeded')); }
+                });
+            });
+        }
+
+        async function processBulkQueue() {
+            while (BulkState.queue.length > 0 && !BulkState.aborted) {
+                if (BulkState.paused) { await sleep(400); continue; }
+                if (BulkState.running >= BulkState.MAX_CONCURRENT) { await sleep(200); continue; }
+
+                const item = BulkState.queue.shift();
+                BulkState.running++;
+
+                (async () => {
+                    try {
+                        setBulkStatus(`⟳ Res: ${item.name}`);
+                        logBulk(`→ Res: ${item.name}`, 'inf');
+                        const { cdnURL, fname } = await resolveBulkFile(item);
+
+                        setBulkStatus(`⟳ DL: ${fname}`);
+                        logBulk(`↓ DL: ${fname}`, 'inf');
+                        await downloadBulkFile(cdnURL, fname);
+
+                        BulkState.done++;
+                        logBulk(`✓ OK: ${fname}`, 'ok');
+                    } catch (e) {
+                        BulkState.failed++;
+                        logBulk(`✗ ERR: ${item.name} — ${e.message}`, 'err');
+                    } finally {
+                        BulkState.running--;
+                        updateBulkUI();
+                    }
+                    if (BulkState.queue.length > 0) await sleep(BulkState.DELAY_MS);
+                })();
+            }
+
+            await new Promise(r => {
+                const iv = setInterval(() => { if (!BulkState.running) { clearInterval(iv); r(); } }, 300);
+            });
+
+            if (!BulkState.aborted) {
+                setBulkStatus(`✅ Complete: ${BulkState.done} OK / ${BulkState.failed} ERR`);
+                document.getElementById('psi-bulk-bar').style.background = '#4ade80';
+                document.getElementById('psi-bulk-bar').style.boxShadow = '0 0 10px #4ade80';
+            }
+
+            document.getElementById('btn-bulk-start').disabled = false;
+            document.getElementById('btn-bulk-pause').disabled = true;
+            document.getElementById('btn-bulk-stop').disabled = true;
+        }
+
+        document.getElementById('btn-bulk-log-tog').onclick = () => {
+            const l = document.getElementById('psi-bulk-log');
+            l.style.display = l.style.display === 'block' ? 'none' : 'block';
+        };
+
+        document.getElementById('btn-bulk-start').onclick = async () => {
+            const files = scanFiles();
+            if (!files.length) { setBulkStatus('⚠ No files found!'); return; }
+
+            Object.assign(BulkState, {
+                queue: files, total: files.length,
+                done: 0, failed: 0, running: 0,
+                paused: false, aborted: false
+            });
+
+            document.getElementById('psi-bulk-log').innerHTML = '';
+            document.getElementById('psi-bulk-log').style.display = 'block';
+            document.getElementById('psi-bulk-bar').style.background = 'var(--accent-cyan)';
+            document.getElementById('psi-bulk-bar').style.boxShadow = '0 0 8px var(--glow-cyan-active)';
+            document.getElementById('btn-bulk-start').disabled = true;
+            document.getElementById('btn-bulk-pause').disabled = false;
+            document.getElementById('btn-bulk-stop').disabled = false;
+
+            updateBulkUI();
+            setBulkStatus('Initiating Pipeline…');
+            logBulk(`Registered ${files.length} payload(s) from DOM matrix.`, 'inf');
+            processBulkQueue();
+        };
+
+        document.getElementById('btn-bulk-pause').onclick = () => {
+            BulkState.paused = !BulkState.paused;
+            document.getElementById('btn-bulk-pause').textContent = BulkState.paused ? 'RESUME' : 'PAUSE';
+            setBulkStatus(BulkState.paused ? '⏸ Pipeline Suspended' : '▶ Resuming Pipeline…');
+        };
+
+        document.getElementById('btn-bulk-stop').onclick = () => {
+            BulkState.aborted = true;
+            BulkState.queue = [];
+            setBulkStatus('✕ Pipeline Cancelled');
+            document.getElementById('btn-bulk-start').disabled = false;
+            document.getElementById('btn-bulk-pause').disabled = true;
+            document.getElementById('btn-bulk-stop').disabled = true;
+        };
+
+        const scanAndShow = () => {
+            const files = scanFiles();
+            const status = document.getElementById('psi-bulk-status');
+            const startBtn = document.getElementById('btn-bulk-start');
+            if (files.length) {
+                status.textContent = `${files.length} grid files acquired.`;
+                startBtn.disabled = false;
+            } else {
+                status.textContent = 'Awaiting grid population…';
+                setTimeout(scanAndShow, 1500);
+            }
+        };
+        setTimeout(scanAndShow, 1000);
+    }
+
+    // =========================================================================
     // MODULE 10: DEFENSIVE ORCHESTRATION
     // =========================================================================
     function bootstrap() {
@@ -794,11 +1278,14 @@
 
         // Initialize Native API preloading immediately for 0-latency grid downloads
         prefetchAlbumGallery();
-        
+
         initVisitedTracker();
         forceLargestFirst();
         autoEngageDownloadEndpoint();
         setTimeout(injectCaptureVector, 800);
+
+        // Boot up the unified bulk engine
+        initBulkEngine();
 
         const observer = new MutationObserver((mutations) => {
             const structural = mutations.some(m => m.addedNodes.length > 0);
@@ -820,6 +1307,7 @@
                     initVisitedTracker();
                     forceLargestFirst();
                     injectCaptureVector();
+                    if (!document.getElementById('psi-bulk-panel')) initBulkEngine();
                 }
             }, 600);
         };
