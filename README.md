@@ -62,7 +62,7 @@ Each script adheres to a core set of principles:
 | Bunkr++ | [4ndr0tools - Bunkr++.user.js](./4ndr0tools%20-%20Bunkr++.user.js) | Part of 4ndr0tools: Canonical routing, auto-sort, hide visited, bypass dl gateway, bulk acquisition |
 | BypassPaywalls | [4ndr0tools - BypassPaywalls.user.js](./4ndr0tools%20-%20BypassPaywalls.user.js) | A way to bypass paywalls for popular news sites |
 | Collapse All Images | [4ndr0tools - Collapse All Images.user.js](./4ndr0tools%20-%20Collapse%20All%20Images.user.js) | Toggle/auto-collapse all images with a mouse hover for reducing excessive I/O. |
-| Confirmation Bypass | [4ndr0tools - Confirmation Bypass.user.js](./4ndr0tools%20-%20Confirmation%20Bypass.user.js) | Full turbo.cr bypass suite: Confirmation auto-skip + force /embed/ redirect + XenForo "Upload videos" injector + direct URL overlay on embed + xcandid/vidara URL overlay + external link safety. |
+| Confirmation Bypass | [4ndr0tools - Confirmation Bypass.user.js](./4ndr0tools%20-%20Confirmation%20Bypass.user.js) | Forum enhancements: reveal invisi text, view all replies, Download Gate: bypasses all confirm btns, context overlay to copy URL, auto resolve captcha, right-click scrollbar to-top. |
 | Counter-surveillance | [4ndr0tools - Counter-surveillance.user.js](./4ndr0tools%20-%20Counter-surveillance.user.js) | — |
 | Filester++ | [4ndr0tools - Filester++.user.js](./4ndr0tools%20-%20Filester++.user.js) | Dynamic stream extraction + folder enumeration for any media on Filester.me. Network proxy + glyph injection. |
 | Forum Link Xtractor | [4ndr0tools - Forum Link Xtractor.user.js](./4ndr0tools%20-%20Forum%20Link%20Xtractor.user.js) | Extracts links from forum threads, handles redirects, and offers copy/download options with persistent local storage. |
