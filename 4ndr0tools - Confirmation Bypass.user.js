@@ -1,19 +1,18 @@
 // ==UserScript==
 // @name         4ndr0tools - Confirmation Bypass
 // @namespace    https://github.com/4ndr0666/userscripts
+// @version      3.5.2
 // @author       4ndr0666
-// @version      3.0.0
-// @description  Full turbo.cr bypass suite: Confirmation auto-skip + force /embed/ redirect + XenForo "Upload videos" injector + direct URL overlay on embed + xcandid/vidara URL overlay + external link safety.
-// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Confirmation%20Bypass.user.js
-// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Confirmation%20Bypass.user.js
-// @icon         data:image/png;base64,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
+// @description  Forum enhancements: reveal invisi text, view all replies, Download Gate: bypasses all confirm btns, context overlay to copy URL, auto resolve captcha, right-click scrollbar to-top.
+// @license      UNLICENSED - RED TEAM USE ONLY
 // @match        *://forums.socialmediagirls.com/*
 // @match        *://forums.socialmediagirls.com/goto/link-confirmation*
 // @match        *://simpcity.cr/redirect/*
 // @match        *://turbo.cr/*
 // @match        *://turbo.cr/embed/*
-// @match        *://*.xcandid.vip/*
-// @license      UNLICENSED - RED TEAM USE ONLY
+// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Confirmation%20Bypass.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Confirmation%20Bypass.user.js
 // @noframes
 // @run-at       document-idle
 // @grant        GM_addStyle
@@ -22,93 +21,185 @@
 (function () {
     'use strict';
 
-    console.log('%c[4ndr0tools] TurboBypass v3.0.0 — INITIATING SEQUENCE', 'color:#15FFFF; font-family:monospace; font-weight:bold;');
-
     const currentUrl  = window.location.href;
     const currentHost = window.location.hostname;
+    const params      = new URLSearchParams(window.location.search);
+    const _overlaidUrls = new Set();
 
-    // =========================================================================
-    // MODULE 0: GLOBAL STYLES
-    // =========================================================================
-    // GM_addStyle is granted; apply consistently across all matched sites.
+    console.log('%c[4ndr0tools] Unified Pipeline v3.5.2 — SECURED', 'color:#00E5FF; font-family:"Roboto Mono",monospace; font-weight:bold;');
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // [ U_Global_Styles ] — Electric-Glass Design Spec v1.5.0-Ψ
+    // Selectors prefixed cb4- to prevent host-site bleed (§4 §2).
+    // Tokens on :root with cb4-- prefix — unique enough not to clash.
+    // ══════════════════════════════════════════════════════════════════════════
     GM_addStyle(`
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&family=Cinzel+Decorative:wght@700&display=swap');
+
         :root {
-            --tb-cyan:   #15FFFF;
-            --tb-yellow: #FFD700;
-            --tb-glass:  rgba(10, 15, 26, 0.93);
+            --cb4-bg-dark-base:   #050A0F;
+            --cb4-bg-glass-panel: rgba(10, 19, 26, 0.25);
+            --cb4-accent-cyan:    #00E5FF;
+            --cb4-text-active:    #67E8F9;
+            --cb4-border-idle:    rgba(0, 229, 255, 0.2);
+            --cb4-border-hover:   rgba(0, 229, 255, 0.5);
+            --cb4-bg-hover:       rgba(0, 229, 255, 0.05);
+            --cb4-bg-active:      rgba(0, 229, 255, 0.2);
+            --cb4-glow:           rgba(0, 229, 255, 0.4);
+            --cb4-shadow-base:    0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --cb4-shadow-glow:    0 8px 32px 0 rgba(0, 229, 255, 0.15);
+            --cb4-edge-top:       rgba(255, 255, 255, 0.1);
+            --cb4-edge-left:      rgba(255, 255, 255, 0.1);
+            --cb4-text-primary:   #EAEAEA;
+            --cb4-text-secondary: #9E9E9E;
+            --cb4-font-body:      'Roboto Mono', monospace;
         }
-        .tb-url-overlay {
-            position:     absolute;
-            top:          12px;
-            right:        12px;
-            background:   var(--tb-glass);
-            color:        var(--tb-cyan);
-            padding:      6px 10px;
-            font-size:    12px;
-            font-family:  ui-monospace, monospace;
-            border:       1px solid var(--tb-cyan);
-            border-radius: 4px;
-            z-index:      999999;
-            cursor:       pointer;
-            user-select:  none;
-            max-width:    380px;
-            word-break:   break-all;
-            box-shadow:   0 0 12px rgba(21, 255, 255, 0.35);
-            transition:   background 0.2s, color 0.2s;
+
+        /* ── URL CONTEXT OVERLAY — Glass Engine §2 ──────────────────────── */
+        .cb4-url-overlay {
+            position:              absolute;
+            top:                   12px;
+            right:                 12px;
+            background:            var(--cb4-bg-glass-panel);
+            backdrop-filter:       blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border:                1px solid var(--cb4-border-idle);
+            border-top:            1px solid var(--cb4-edge-top);
+            border-left:           1px solid var(--cb4-edge-left);
+            box-shadow:            var(--cb4-shadow-base), var(--cb4-shadow-glow);
+            border-radius:         6px;
+            color:                 var(--cb4-accent-cyan);
+            font-size:             11px;
+            font-family:           var(--cb4-font-body);
+            padding:               10px 14px;
+            z-index:               2147483647;
+            cursor:                pointer;
+            user-select:           none;
+            max-width:             440px;
+            word-break:            break-all;
+            transition:            all 300ms ease-in-out;
         }
-        .tb-url-overlay:hover {
-            background: var(--tb-cyan);
-            color: #000;
+
+        /* Fallback: no backdrop-filter support §4 §1 */
+        @supports not (backdrop-filter: blur(1px)) {
+            .cb4-url-overlay { background: rgba(10, 19, 26, 0.95); }
+        }
+
+        .cb4-url-overlay:hover {
+            color:        var(--cb4-bg-dark-base);
+            background:   var(--cb4-accent-cyan);
+            border-color: var(--cb4-accent-cyan);
+            box-shadow:   0 0 25px var(--cb4-glow);
+            transform:    translateY(-2px);
+        }
+
+        .cb4-copy-hint {
+            display:        block;
+            font-size:      8px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            opacity:        0.7;
+            margin-top:     6px;
+            padding-top:    4px;
+            border-top:     1px solid var(--cb4-border-idle);
+        }
+
+        /* ── UPLOAD BUTTON — Interactive Topology §3 ─────────────────────── */
+        #cb4-upload-btn {
+            display:         inline-flex;
+            align-items:     center;
+            justify-content: center;
+            padding:         0.5rem 1rem;
+            font-family:     var(--cb4-font-body);
+            font-size:       0.875rem;
+            font-weight:     500;
+            letter-spacing:  0.05em;
+            text-transform:  uppercase;
+            cursor:          pointer;
+            color:           var(--cb4-text-secondary);
+            background:      rgba(0, 0, 0, 0.3);
+            border:          1px solid transparent;
+            border-radius:   6px;
+            transition:      all 300ms ease-in-out;
+            text-decoration: none;
+        }
+        #cb4-upload-btn:hover {
+            color:            var(--cb4-accent-cyan);
+            border-color:     var(--cb4-border-hover);
+            background-color: var(--cb4-bg-hover);
+        }
+        #cb4-upload-btn:active {
+            color:            var(--cb4-text-active);
+            background-color: var(--cb4-bg-active);
+            border-color:     var(--cb4-accent-cyan);
+            box-shadow:       0 0 15px var(--cb4-glow);
+        }
+        #cb4-upload-btn:focus-visible {
+            outline:        2px solid var(--cb4-accent-cyan);
+            outline-offset: 2px;
+        }
+
+        /* ── ALTCHA PROCESSING INDICATOR §3 active ───────────────────────── */
+        .cb4-altcha-processing .altcha-checkbox input[type="checkbox"] {
+            outline:        2px solid var(--cb4-accent-cyan) !important;
+            outline-offset: 2px !important;
+            box-shadow:     0 0 8px var(--cb4-glow) !important;
+            transition:     all 300ms ease-in-out !important;
         }
     `);
 
-    // =========================================================================
-    // MODULE 1: UTILITIES
-    // =========================================================================
-
-    /**
-     * Copies `text` to the clipboard.
-     * Primary path: modern Clipboard API.
-     * Fallback: execCommand (works in restricted / non-secure contexts).
-     * Visual feedback is applied directly to `overlayEl`.
-     *
-     * @param {string}      text
-     * @param {HTMLElement} overlayEl
-     */
+    // ══════════════════════════════════════════════════════════════════════════
+    // [ U_Robust_Copy ]
+    // Source: A (primary) + C onFailure path cherry-picked.
+    // Saves innerHTML+color+border+background+shadow; restores all on timeout.
+    // legacyCopy: try/catch/finally with execCommand return-value check.
+    // ══════════════════════════════════════════════════════════════════════════
     function robustCopy(text, overlayEl) {
-        const original = overlayEl.textContent;
+        const originalHTML   = overlayEl.innerHTML;
+        const originalColor  = overlayEl.style.color;
+        const originalBorder = overlayEl.style.borderColor;
+        const originalBg     = overlayEl.style.background;
+        const originalShadow = overlayEl.style.boxShadow;
 
-        const onSuccess = () => {
-            overlayEl.textContent      = 'COPIED ✓';
-            overlayEl.style.color      = 'var(--tb-yellow)';
-            overlayEl.style.borderColor = 'var(--tb-yellow)';
-            setTimeout(() => {
-                overlayEl.textContent      = original;
-                overlayEl.style.color      = '';
-                overlayEl.style.borderColor = '';
-            }, 1400);
-            console.log(`[4ndr0tools] Copied: ${text}`);
+        const restore = () => {
+            overlayEl.innerHTML        = originalHTML;
+            overlayEl.style.color      = originalColor;
+            overlayEl.style.borderColor = originalBorder;
+            overlayEl.style.background  = originalBg;
+            overlayEl.style.boxShadow   = originalShadow;
         };
 
+        const onSuccess = () => {
+            overlayEl.textContent       = 'COPIED TO CLIPBOARD ✓';
+            // Literal values — var() is inert on inline style
+            overlayEl.style.color       = '#67E8F9';
+            overlayEl.style.borderColor = '#00E5FF';
+            overlayEl.style.background  = 'rgba(0, 229, 255, 0.2)';
+            overlayEl.style.boxShadow   = '0 0 15px rgba(0, 229, 255, 0.4)';
+            setTimeout(restore, 1400);
+            console.log(`[4ndr0tools] Payload buffered: ${text}`);
+        };
+
+        // Cherry-picked from C: explicit failure feedback
         const onFailure = (err) => {
-            overlayEl.textContent = 'FAILED ✗';
-            setTimeout(() => { overlayEl.textContent = original; }, 1500);
+            overlayEl.textContent = 'COPY FAILED ✗';
+            overlayEl.style.color = '#FF4444';
+            setTimeout(restore, 1500);
             console.error('[4ndr0tools] Copy failed:', err);
         };
 
         const legacyCopy = () => {
-            const ta = Object.assign(document.createElement('textarea'), {
-                value: text,
-            });
+            const ta = Object.assign(document.createElement('textarea'), { value: text });
             Object.assign(ta.style, { position: 'fixed', left: '-9999px', top: '-9999px', opacity: '0' });
             document.body.appendChild(ta);
             ta.focus();
             ta.select();
             try {
+                // Cherry-picked from C: check return value
                 if (document.execCommand('copy')) { onSuccess(); }
-                else                              { onFailure(new Error('execCommand returned false')); }
-            } catch (e) {
-                onFailure(e);
+                else { onFailure(new Error('execCommand returned false')); }
+            } catch (err) {
+                onFailure(err);
             } finally {
                 ta.remove();
             }
@@ -121,88 +212,63 @@
         }
     }
 
-    // =========================================================================
-    // MODULE 2: CONFIRMATION PAGE BYPASS
-    // Targets: /goto/link-confirmation, /redirect
-    // =========================================================================
-
+    // ══════════════════════════════════════════════════════════════════════════
+    // [ U_Confirmation_Bypass ]
+    // Source: A canonical. MutationObserver + static pre-check + dispatchEvent.
+    // B's plain btn.click() dropped (less faithful to real user interaction).
+    // C's setInterval polling dropped (§4.6 LBYL fail).
+    // ══════════════════════════════════════════════════════════════════════════
     function initializeConfirmationBypass() {
-        console.log('[4ndr0tools] Confirmation gateway detected. Hunting bypass vector…');
-
-        // Covers XenForo CTA button, button-text child, and SimpCity proxy link.
         const SELECTOR = '.button--cta, .button--cta .button-text, .simpLinkProxy-continue';
 
-        const tryClick = () => {
-            const btn = document.querySelector(SELECTOR);
-            if (!btn) return false;
-            btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-            console.log('[4ndr0tools] Confirmation button triggered.');
+        const triggerExecution = (element) => {
+            if (!element) return false;
+            element.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+            console.log('[4ndr0tools] Gateway validation signal bypassed.');
             return true;
         };
 
-        // Immediate attempt (page may already be ready).
-        if (tryClick()) return;
+        const staticCheck = document.querySelector(SELECTOR);
+        if (staticCheck && triggerExecution(staticCheck)) return;
 
-        // DOM-aware fallback — bounded by MAX_ATTEMPTS to prevent leaks.
-        let attempts = 0;
-        const MAX    = 60; // 30 s @ 500 ms
-        const iv     = setInterval(() => {
-            attempts++;
-            if (tryClick() || attempts >= MAX) {
-                clearInterval(iv);
-                if (attempts >= MAX) {
-                    console.warn('[4ndr0tools] Confirmation button not found after 30 s. Aborting.');
-                }
-            }
-        }, 500);
-
-        window.addEventListener('beforeunload', () => clearInterval(iv), { once: true });
+        const observer = new MutationObserver((_, obs) => {
+            const targetNode = document.querySelector(SELECTOR);
+            if (targetNode && triggerExecution(targetNode)) { obs.disconnect(); }
+        });
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+        window.addEventListener('beforeunload', () => observer.disconnect(), { once: true });
     }
 
-    // =========================================================================
-    // MODULE 3: TURBO.CR ROUTING
-    // Redirects non-embed turbo.cr pages to the clean /embed/ player.
-    // =========================================================================
-
+    // ══════════════════════════════════════════════════════════════════════════
+    // [ U_Turbo_Redirect ]
+    // Source: A canonical. Matches /v/, /d/, and bare IDs. bypass=0 guard kept.
+    // B's narrowed regex (dropped /d/) is a regression — kept A's.
+    // ══════════════════════════════════════════════════════════════════════════
     function initializeTurboRedirect() {
+        if (params.get('bypass') === '0') {
+            console.log('[4ndr0tools] Direct diagnostic land verified. Redirection bypassed.');
+            return;
+        }
         const path    = window.location.pathname;
-        // Matches /v/ID and bare /ID, including IDs with hyphens and underscores.
-        const idMatch = path.match(/^\/(?:v\/)?([\w-]+)$/);
-
+        const idMatch = path.match(/^\/(?:v\/|d\/)?([\w-]+)$/);
         if (idMatch && idMatch[1] && !path.startsWith('/embed/')) {
-            const target = `https://turbo.cr/embed/${idMatch[1]}`;
-            console.log(`[4ndr0tools] Canonical routing: → ${target}`);
-            window.location.replace(target);
+            window.location.replace(`https://turbo.cr/embed/${idMatch[1]}`);
         }
     }
 
-    // =========================================================================
-    // MODULE 4: VIDEO URL OVERLAY
-    // Creates a click-to-copy overlay on top of a video element.
-    // Supports: #main-video (turbo.cr), vidara iframes/sources (xcandid).
-    // =========================================================================
-
-    /** Tracks URLs that already have an overlay so we never double-inject. */
-    const _overlaidUrls = new Set();
-
-    /**
-     * Attaches a copy overlay to the nearest positioned ancestor of `videoEl`.
-     * The overlay auto-removes after `ttl` ms (default 20 s) to keep the UI clean.
-     *
-     * @param {Element} videoEl   - The source video/iframe/source element.
-     * @param {string}  url       - The URL to display and copy.
-     * @param {number}  [ttl]     - Auto-remove timeout in ms (0 = never).
-     */
+    // ══════════════════════════════════════════════════════════════════════════
+    // [ U_Attach_Overlay ]
+    // Source: A canonical. stopImmediatePropagation on click kept (B dropped it).
+    // ══════════════════════════════════════════════════════════════════════════
     function attachOverlay(videoEl, url, ttl = 20000) {
         if (!url || _overlaidUrls.has(url)) return;
         _overlaidUrls.add(url);
 
-        // Build overlay element.
-        const el       = document.createElement('div');
-        el.id          = `tb-overlay-${Math.random().toString(36).slice(2, 8)}`;
-        el.className   = 'tb-url-overlay';
-        el.textContent = url.length > 65 ? url.slice(0, 62) + '…' : url;
-        el.title       = url; // full URL on hover
+        const el = document.createElement('div');
+        el.className = 'cb4-url-overlay';
+        const displayUrl = url.length > 60 ? url.substring(0, 57) + '...' : url;
+        el.innerHTML = `${displayUrl}<span class="cb4-copy-hint">Click: Copy URL \u2502 Right-Click: Download</span>`;
+        el.title = url;
 
         el.addEventListener('click', (e) => {
             e.preventDefault();
@@ -210,7 +276,19 @@
             robustCopy(url, el);
         });
 
-        // Walk upward until we find a positioned container.
+        el.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            if (currentHost.includes('turbo.cr')) {
+                const idMatch = window.location.pathname.match(/^\/(?:v\/|d\/|embed\/)?([\w-]+)$/);
+                if (idMatch && idMatch[1]) {
+                    window.open(`https://turbo.cr/d/${idMatch[1]}?bypass=0`, '_blank');
+                    return;
+                }
+            }
+            const dlUrlFallback = url.replace('/embed/', '/d/').split('?')[0] + '?bypass=0';
+            window.open(dlUrlFallback, '_blank');
+        });
+
         let container = videoEl.parentElement;
         while (container && getComputedStyle(container).position === 'static') {
             container = container.parentElement;
@@ -220,187 +298,341 @@
             container.style.position = 'relative';
         }
         container.appendChild(el);
-        console.log(`[4ndr0tools] Overlay attached: ${url}`);
 
         if (ttl > 0) {
             setTimeout(() => { el.remove(); _overlaidUrls.delete(url); }, ttl);
         }
     }
 
-    /**
-     * Polls for #main-video on turbo.cr embed pages, then attaches the overlay.
-     */
+    // ══════════════════════════════════════════════════════════════════════════
+    // [ U_Turbo_Embed_Scan ]
+    // Source: A canonical. Static pre-check before observer (B dropped this).
+    // Observer disconnects on match (B leaked indefinitely).
+    // ══════════════════════════════════════════════════════════════════════════
     function addVideoUrlOverlay() {
-        console.log('[4ndr0tools] Embed context — polling for #main-video…');
-        let attempts = 0;
-        const MAX    = 30; // 15 s @ 500 ms
-
-        const iv = setInterval(() => {
-            attempts++;
+        const staticTarget = document.querySelector('#main-video');
+        if (staticTarget && staticTarget.src) {
+            attachOverlay(staticTarget, staticTarget.src, 0);
+            return;
+        }
+        const obs = new MutationObserver((_, observerInstance) => {
             const video = document.querySelector('#main-video');
             if (video && video.src) {
-                clearInterval(iv);
-                attachOverlay(video, video.src, 0); // permanent on embed page
-            } else if (attempts >= MAX) {
-                clearInterval(iv);
-                console.warn('[4ndr0tools] #main-video not found after 15 s. Aborting overlay.');
+                attachOverlay(video, video.src, 0);
+                observerInstance.disconnect();
             }
-        }, 500);
-
-        window.addEventListener('beforeunload', () => clearInterval(iv), { once: true });
-    }
-
-    /**
-     * Scans for vidara/xcandid video sources and attaches overlays.
-     * Called on load and via a lightweight MutationObserver.
-     */
-    function scanForVideos() {
-        // vidara iframes, <video>, and <source> elements
-        document.querySelectorAll(
-            'iframe[src*="vidara.to"], video[src*="vidara.to"], source[src*="vidara.to"]'
-        ).forEach(el => {
-            const src = el.src || el.getAttribute('src') || '';
-            if (src) attachOverlay(el, src, 20000);
         });
-
-        // Also pick up #main-video if somehow present on xcandid
-        const mv = document.querySelector('#main-video');
-        if (mv && mv.src) attachOverlay(mv, mv.src, 0);
-    }
-
-    function initializeXcandidOverlay() {
-        setTimeout(scanForVideos, 800);
-        setTimeout(scanForVideos, 2500);
-
-        const obs = new MutationObserver(scanForVideos);
         obs.observe(document.body, { childList: true, subtree: true });
         window.addEventListener('beforeunload', () => obs.disconnect(), { once: true });
     }
 
-    // =========================================================================
-    // MODULE 5: FORUM ENHANCEMENTS (XenForo)
-    // Injects "Upload videos" button and handles postMessage from turbo.cr upload.
-    // =========================================================================
-
-    function initializeForumEnhancements() {
-        // --- Upload button injection via bounded MutationObserver ---
-        const btnObserver = new MutationObserver((_, obs) => {
-            const groups = document.getElementsByClassName('formButtonGroup-extra');
-            if (groups.length > 0 && !document.getElementById('turbo-video-upload-btn')) {
-                groups[0].insertAdjacentHTML('beforeend', `
-                    <div class="formButtonGroup">
-                        <button id="turbo-video-upload-btn"
-                                type="button" tabindex="-1" role="button"
-                                title="Upload videos to turbo.cr"
-                                class="button--link js-attachmentUpload button button--icon button--icon--upload fa--xf rippleButton"
-                                onclick="window.__turboPrepareTurboFrame()">
-                            <span class="button-text">Upload videos</span>
-                        </button>
-                    </div>
-                `);
-                console.log('[4ndr0tools] XenForo upload button injected.');
-                obs.disconnect(); // single-use; release immediately
-            }
-        });
-        btnObserver.observe(document.documentElement, { childList: true, subtree: true });
-        window.addEventListener('beforeunload', () => btnObserver.disconnect(), { once: true });
-
-        // Expose via namespaced global to avoid collisions with other scripts.
-        window.__turboPrepareTurboFrame = function () {
-            const features = 'screenX=0,screenY=0,top=0,left=0,scrollbars,width=100,height=100';
-            const win      = window.open('https://turbo.cr/upload/api', 'turboUpload', features);
-            if (win) win.resizeBy(400, 600);
-            window.__turboUploadFrame = win;
+    // ══════════════════════════════════════════════════════════════════════════
+    // [ U_Altcha_Solver ]
+    // Source: A canonical — verbatim from the provided reference implementation.
+    // CONFIG.lockAttr kept as data-cb4-lock (namespaced).
+    // cb4-altcha-processing class adds Electric-Glass glow during solve.
+    // ══════════════════════════════════════════════════════════════════════════
+    function initializeAltchaSolver() {
+        const CONFIG = {
+            debounceMs: 50,
+            lockoutMs:  3000,
+            lockAttr:   'data-cb4-lock',
         };
 
-        // --- postMessage handler: inject BBCode / rich-text after upload ---
-        const onMessage = (event) => {
-            if (!event.origin.startsWith('https://turbo.cr')) return;
+        function interactWithCaptcha(container, checkbox) {
+            const label         = container.querySelector(`label[for="${checkbox.id}"]`);
+            const targetElement = label || checkbox;
 
-            if (String(event.data).includes('close')) {
-                window.__turboUploadFrame?.close();
-                return;
+            container.classList.add('cb4-altcha-processing');
+            checkbox.setAttribute(CONFIG.lockAttr, 'true');
+            console.log('[4ndr0tools] Solving Altcha...');
+
+            targetElement.focus();
+
+            // view: window throws in GM sandboxes — the sandbox proxy is not a
+            // real Window and WebIDL rejects it. Resolve the page's actual
+            // Window via the element's ownerDocument.defaultView (null is valid).
+            const view = targetElement.ownerDocument?.defaultView ?? null;
+            ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'].forEach(eventType => {
+                targetElement.dispatchEvent(new MouseEvent(eventType, {
+                    view, bubbles: true, cancelable: true, buttons: 1,
+                }));
+            });
+
+            if (!checkbox.checked) {
+                checkbox.checked = true;
+                checkbox.dispatchEvent(new Event('input',  { bubbles: true }));
+                checkbox.dispatchEvent(new Event('change', { bubbles: true }));
             }
 
+            setTimeout(() => {
+                if (checkbox.hasAttribute(CONFIG.lockAttr)) {
+                    checkbox.removeAttribute(CONFIG.lockAttr);
+                }
+                container.classList.remove('cb4-altcha-processing');
+            }, CONFIG.lockoutMs);
+        }
+
+        function scanAndSolve() {
+            try {
+                document.querySelectorAll('.altcha[data-state="unverified"]').forEach(container => {
+                    const checkbox = container.querySelector('.altcha-checkbox input[type="checkbox"]');
+                    if (checkbox && !checkbox.hasAttribute(CONFIG.lockAttr)) {
+                        interactWithCaptcha(container, checkbox);
+                    }
+                });
+            } catch (error) {
+                console.error('[4ndr0tools] Altcha scan error:', error);
+            }
+        }
+
+        let debounceTimer;
+        const observer = new MutationObserver(() => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(scanAndSolve, CONFIG.debounceMs);
+        });
+
+        const targetNode = document.body || document.documentElement;
+        if (targetNode) {
+            observer.observe(targetNode, {
+                childList:       true,
+                subtree:         true,
+                attributes:      true,
+                attributeFilter: ['data-state'],
+            });
+        }
+
+        window.addEventListener('beforeunload', () => observer.disconnect(), { once: true });
+
+        scanAndSolve();
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // [ U_Forum_Enhancements ]
+    // Source: A DOM construction + cleanup (retained).
+    // Cherry-picked from C: tabindex="-1", role="button", title attr for ARIA;
+    // __cb4OpenUpload namespace (avoids collision); index-safe fr-element access;
+    // postMessage listener torn down in beforeunload.
+    // B's insertAdjacentHTML string approach dropped (no ARIA, no cleanup).
+    // ══════════════════════════════════════════════════════════════════════════
+    function initializeForumEnhancements() {
+        const btnObs = new MutationObserver((_, obs) => {
+            const group = document.querySelector('.formButtonGroup-extra');
+            if (group && !document.getElementById('cb4-upload-btn')) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'formButtonGroup';
+
+                const btn = document.createElement('button');
+                btn.id        = 'cb4-upload-btn';
+                btn.type      = 'button';
+                btn.tabIndex  = -1;
+                btn.setAttribute('role',  'button');
+                btn.setAttribute('title', 'Upload videos to turbo.cr');
+                btn.setAttribute('aria-label', 'Upload video via Turbo');
+                btn.className = 'button--link button button--icon button--icon--upload';
+                btn.textContent = 'Upload Video';
+                btn.addEventListener('click', () => window.__cb4OpenUpload?.());
+
+                wrapper.appendChild(btn);
+                group.appendChild(wrapper);
+                obs.disconnect();
+            }
+        });
+        btnObs.observe(document.documentElement, { childList: true, subtree: true });
+
+        // Cherry-picked from C: namespaced global, resizeBy for better UX
+        window.__cb4OpenUpload = () => {
+            const features = 'screenX=0,screenY=0,top=0,left=0,scrollbars,width=100,height=100';
+            const win = window.open('https://turbo.cr/upload/api', 'turboUpload', features);
+            if (win) win.resizeBy(400, 600);
+            window.__turboUploadWin = win;
+        };
+
+        const receivePostMessage = (e) => {
+            if (!e.origin.startsWith('https://turbo.cr')) return;
+            if (String(e.data).includes('close')) {
+                window.__turboUploadWin?.close();
+                return;
+            }
+            // Cherry-picked from C: index-safe access (frElements[0], boxes[0])
             const frElements = document.getElementsByClassName('fr-element');
             if (frElements.length === 0) return;
 
-            const bbCode  = `[MEDIA=saint_vid]${event.data}[/MEDIA]`;
+            const bb       = `[MEDIA=saint_vid]${e.data}[/MEDIA]`;
             const wrappers = document.getElementsByClassName('fr-wrapper');
 
             if (wrappers.length > 0 && wrappers[0].style.display === 'none') {
-                // BBCode mode: find the plain-text rich-text box
                 const boxes = document.querySelectorAll('[aria-label="Rich text box"]');
-                if (boxes.length > 0) boxes[0].value += bbCode;
+                if (boxes.length > 0) boxes[0].value += bb;
             } else {
-                // WYSIWYG (Froala) mode
-                frElements[0].insertAdjacentHTML('beforeend', `<p>${bbCode}</p>`);
+                frElements[0].insertAdjacentHTML('beforeend', `<p>${bb}</p>`);
             }
-            console.log(`[4ndr0tools] Media ID injected: ${event.data}`);
+            console.log(`[4ndr0tools] Media payload embedded: ${e.data}`);
         };
 
-        window.addEventListener('message', onMessage);
-        window.addEventListener('beforeunload', () => window.removeEventListener('message', onMessage), { once: true });
+        window.addEventListener('message', receivePostMessage);
+        window.addEventListener('beforeunload', () => {
+            btnObs.disconnect();
+            window.removeEventListener('message', receivePostMessage);
+        }, { once: true });
     }
 
-    // =========================================================================
-    // MODULE 6: EXTERNAL LINK SAFETY (forum pages)
-    // Forces external links to open in new tabs with noopener + noreferrer.
-    // =========================================================================
-
+    // ══════════════════════════════════════════════════════════════════════════
+    // [ U_External_Link_Safety ]
+    // Source: A Set-based rel handling (superset of B's string assignment).
+    // Cherry-picked from C: try/catch around new URL() parse to silently
+    // ignore javascript:, data:, and other non-parseable href schemes.
+    // ══════════════════════════════════════════════════════════════════════════
     function initializeExternalLinkSafety() {
         const internalOrigin = location.origin;
 
-        const secureLink = (event) => {
-            const anchor = event.target.closest('a[href]');
-            if (!anchor) return;
-
+        const secureLink = (e) => {
+            const a = e.target.closest('a[href]');
+            if (!a) return;
             try {
-                const dest = new URL(anchor.href, location.href);
-                if (dest.origin === internalOrigin) return; // internal — leave alone
-
-                anchor.target = '_blank';
-                const relSet  = new Set((anchor.rel || '').split(/\s+/).filter(Boolean));
-                relSet.add('noopener');
-                relSet.add('noreferrer');
-                anchor.rel = [...relSet].join(' ');
-            } catch (e) {
-                // Silently ignore unparseable hrefs (data:, javascript:, etc.)
+                const dest = new URL(a.href, location.href);
+                if (dest.origin === internalOrigin) return;
+            } catch {
+                return; // silently ignore javascript:, data:, etc.
             }
+            a.target = '_blank';
+            const relSet = new Set((a.rel || '').split(/\s+/).filter(Boolean));
+            relSet.add('noopener');
+            relSet.add('noreferrer');
+            a.rel = [...relSet].join(' ');
         };
 
         document.body.addEventListener('click', secureLink, true);
     }
 
-    // =========================================================================
-    // ORCHESTRATOR
-    // Single decision point — exactly one branch executes per page load.
-    // =========================================================================
+    // ══════════════════════════════════════════════════════════════════════════
+    // [ U_Scrollbar_Top ] — NEW in v3.5.0
+    // Source: right-click snippet, verbatim logic.
+    // Detects right-click on scrollbar track via clientX vs innerWidth heuristic.
+    // HTML tag → page top; nested element tag → element top; BODY → ignored.
+    // Suppresses context menu only when scrollbar is the target.
+    // ══════════════════════════════════════════════════════════════════════════
+    function getScrollBarWidth() {
+        const div = document.createElement('div');
+        Object.assign(div.style, {
+            overflow:   'scroll',
+            visibility: 'hidden',
+            width:      '100px',
+            height:     '100px',
+        });
+        document.body.appendChild(div);
 
+        const innerDiv = document.createElement('div');
+        Object.assign(innerDiv.style, { width: '100%', height: '100%' });
+        div.appendChild(innerDiv);
+
+        const width = div.offsetWidth - innerDiv.offsetWidth;
+        div.parentNode.removeChild(div);
+        return width;
+    }
+
+    function initializeScrollbarContextMenu() {
+        const scrollBarWidth = getScrollBarWidth() || 15;
+
+        document.addEventListener('contextmenu', (e) => {
+            const isScrollbar = e.clientX > window.innerWidth - scrollBarWidth - 10;
+            if (!isScrollbar) return;
+
+            if (e.target.tagName === 'HTML') {
+                window.scrollTo(0, 0);
+            } else if (e.target.tagName !== 'BODY') {
+                e.target.scrollTo(0, 0);
+            }
+            e.preventDefault();
+            e.stopPropagation();
+        });
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // [ U_Download_Trigger ]
+    // Fires after Altcha resolves on the turbo.cr download landing page.
+    // Watches for #downloadBtn to appear (it may render after the captcha
+    // state change) then clicks it programmatically.
+    // Uses ownerDocument.defaultView for the MouseEvent view to avoid the
+    // GM sandbox proxy rejection (same fix as U_Altcha_Solver).
+    // A 300 ms grace delay lets the page re-enable the button after the
+    // captcha completes before the click fires.
+    // ══════════════════════════════════════════════════════════════════════════
+    function initializeDownloadTrigger() {
+        const SELECTOR = '#downloadBtn';
+        const GRACE_MS = 300; // allow page to re-enable btn after captcha
+
+        const clickDownload = (btn) => {
+            if (btn.hasAttribute('data-cb4-dl-clicked')) return;
+            btn.setAttribute('data-cb4-dl-clicked', 'true');
+            console.log('[4ndr0tools] Download button triggered.');
+            const view = btn.ownerDocument?.defaultView ?? null;
+            ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'].forEach(type => {
+                btn.dispatchEvent(new MouseEvent(type, {
+                    view, bubbles: true, cancelable: true, buttons: 1,
+                }));
+            });
+        };
+
+        const attempt = () => {
+            const btn = document.querySelector(SELECTOR);
+            if (btn) {
+                setTimeout(() => clickDownload(btn), GRACE_MS);
+                return true;
+            }
+            return false;
+        };
+
+        if (attempt()) return;
+
+        // Button may not exist yet — watch for it
+        const obs = new MutationObserver((_, observerInstance) => {
+            if (attempt()) observerInstance.disconnect();
+        });
+        obs.observe(document.documentElement, { childList: true, subtree: true });
+        window.addEventListener('beforeunload', () => obs.disconnect(), { once: true });
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // [ U_Orchestrator ]
+    // Altcha runs only where captchas can actually appear:
+    //   - confirmation/redirect pages (before bypass fires)
+    //   - turbo.cr download landing (bypass=0, opened via right-click)
+    //   - forum pages (login/registration flows)
+    // Scrollbar right-click-to-top runs on every matched page unconditionally.
+    // ══════════════════════════════════════════════════════════════════════════
     function orchestrate() {
-        // --- Confirmation / redirect gateway ---
+        // Scrollbar context-menu is UI utility — runs everywhere
+        initializeScrollbarContextMenu();
+
+        // ── Confirmation / redirect gate ──────────────────────────────────────
         if (currentUrl.includes('/goto/link-confirmation') || currentUrl.includes('/redirect')) {
+            initializeAltchaSolver();
             initializeConfirmationBypass();
             return;
         }
 
-        // --- turbo.cr ---
+        // ── turbo.cr ──────────────────────────────────────────────────────────
         if (currentHost.includes('turbo.cr')) {
             if (currentUrl.includes('/embed/')) {
-                addVideoUrlOverlay();   // overlay on clean embed page
+                // Embed player: overlay shows URL; right-click opens download landing
+                addVideoUrlOverlay();
+            } else if (params.get('bypass') === '0') {
+                // Download landing (opened via right-click on overlay).
+                // Altcha solves first; once it resolves the download button
+                // appears/enables and U_Download_Trigger clicks it.
+                initializeAltchaSolver();
+                initializeDownloadTrigger();
             } else {
-                initializeTurboRedirect(); // force redirect to /embed/
+                // All other turbo.cr paths → canonical redirect to /embed/
+                initializeTurboRedirect();
             }
             return;
         }
 
-        // --- xcandid / vidara ---
-        if (currentHost.includes('xcandid.vip')) {
-            initializeXcandidOverlay();
-            return;
-        }
 
-        // --- Forum pages (socialmediagirls, etc.) ---
+        // ── Forum pages (SMG / Simpcity) ──────────────────────────────────────
+        initializeAltchaSolver();
         initializeForumEnhancements();
         initializeExternalLinkSafety();
     }
