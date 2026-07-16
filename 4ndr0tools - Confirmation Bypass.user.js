@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         4ndr0tools - Confirmation Bypass
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      3.5.2
+// @version      3.6.0
 // @author       4ndr0666
-// @description  Forum enhancements: reveal invisi text, view all replies, Download Gate: bypasses all confirm btns, context overlay to copy URL, auto resolve captcha, right-click scrollbar to-top.
+// @description  Forum: reveal invisi-text, view all replies, rewrite redirect links. Download Gate: bypass confirm pages, glass overlay copy/download URL, auto-solve Altcha, auto-click download. Turbo: embed routing, upload injector. Util: external link safety, right-click scrollbar to top.
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @match        *://forums.socialmediagirls.com/*
 // @match        *://forums.socialmediagirls.com/goto/link-confirmation*
+// @match        *://simpcity.cr/*
 // @match        *://simpcity.cr/redirect/*
 // @match        *://turbo.cr/*
 // @match        *://turbo.cr/embed/*
@@ -16,6 +17,7 @@
 // @noframes
 // @run-at       document-idle
 // @grant        GM_addStyle
+// @grant        GM_xmlhttpRequest
 // ==/UserScript==
 
 (function () {
@@ -26,7 +28,7 @@
     const params      = new URLSearchParams(window.location.search);
     const _overlaidUrls = new Set();
 
-    console.log('%c[4ndr0tools] Unified Pipeline v3.5.2 — SECURED', 'color:#00E5FF; font-family:"Roboto Mono",monospace; font-weight:bold;');
+    console.log('%c[4ndr0tools] Unified Pipeline v3.6.0 — SECURED', 'color:#00E5FF; font-family:"Roboto Mono",monospace; font-weight:bold;');
 
     // ══════════════════════════════════════════════════════════════════════════
     // [ U_Global_Styles ] — Electric-Glass Design Spec v1.5.0-Ψ
@@ -139,6 +141,104 @@
             outline-offset: 2px;
         }
 
+
+        /* ── INVISIBLE TEXT REVEALER ─────────────────────────────────────── */
+        span[style*="Transparent"],
+        span[style*="transparent"],
+        span[style*="TRANSPARENT"] {
+            border:     1px dotted #99CC00 !important;
+            background: #000000 !important;
+        }
+        span[style*="Transparent"]:hover,
+        span[style*="transparent"]:hover,
+        span[style*="TRANSPARENT"]:hover {
+            color: #99CC00 !important;
+        }
+
+        /* ── VIEW REPLIES ────────────────────────────────────────────────── */
+        .cb4-replies-btn {
+            margin-top:       10px;
+            cursor:           pointer;
+            padding:          5px 10px;
+            border:           1px solid var(--cb4-border-idle);
+            background:       var(--cb4-bg-glass-panel);
+            backdrop-filter:  blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color:            var(--cb4-accent-cyan);
+            border-radius:    6px;
+            font-family:      var(--cb4-font-body);
+            font-size:        0.8rem;
+            letter-spacing:   0.05em;
+            text-transform:   uppercase;
+            transition:       all 300ms ease-in-out;
+        }
+        .cb4-replies-btn:hover {
+            background-color: var(--cb4-bg-hover);
+            border-color:     var(--cb4-border-hover);
+            color:            var(--cb4-accent-cyan);
+        }
+        .cb4-replies-container {
+            margin-top:  10px;
+            border:      1px solid var(--cb4-border-idle);
+            border-top:  1px solid var(--cb4-edge-top);
+            border-left: 1px solid var(--cb4-edge-left);
+            padding:     10px;
+            background:  var(--cb4-bg-glass-panel);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 6px;
+            box-shadow:  var(--cb4-shadow-base), var(--cb4-shadow-glow);
+        }
+        @supports not (backdrop-filter: blur(1px)) {
+            .cb4-replies-container { background: rgba(10, 19, 26, 0.95); }
+        }
+        .cb4-replies-loading-dots::after {
+            display:   inline-block;
+            animation: cb4-ellipsis 1.25s infinite;
+            content:   ".";
+            width:     1em;
+            text-align: left;
+        }
+        @keyframes cb4-ellipsis {
+            0%  { content: ".";   }
+            33% { content: "..";  }
+            66% { content: "..."; }
+        }
+        .cb4-replies-table {
+            width:           100%;
+            border-collapse: collapse;
+            margin-top:      10px;
+            font-family:     var(--cb4-font-body);
+            font-size:       0.8rem;
+            color:           var(--cb4-text-primary);
+        }
+        .cb4-replies-table th,
+        .cb4-replies-table td {
+            padding: 8px;
+            border:  1px solid var(--cb4-border-idle);
+            text-align: left;
+        }
+        .cb4-replies-table th {
+            background:  var(--cb4-bg-active);
+            color:       var(--cb4-accent-cyan);
+            text-align:  center;
+            font-weight: bold;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+        .cb4-replies-table tr:nth-child(even) td {
+            background: rgba(0, 229, 255, 0.03);
+        }
+        .cb4-replies-table td:nth-child(1),
+        .cb4-replies-table td:nth-child(2) {
+            text-align:  center;
+            white-space: nowrap;
+        }
+        .cb4-replies-table th:nth-child(1),
+        .cb4-replies-table th:nth-child(2) { width: 12%; }
+        .cb4-replies-table th:nth-child(3)  { width: 76%; text-align: left; }
+        .cb4-replies-table a               { color: var(--cb4-accent-cyan); }
+        .cb4-replies-table a:hover         { text-decoration: underline; }
         /* ── ALTCHA PROCESSING INDICATOR §3 active ───────────────────────── */
         .cb4-altcha-processing .altcha-checkbox input[type="checkbox"] {
             outline:        2px solid var(--cb4-accent-cyan) !important;
@@ -323,6 +423,26 @@
             }
         });
         obs.observe(document.body, { childList: true, subtree: true });
+        window.addEventListener('beforeunload', () => obs.disconnect(), { once: true });
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // [ U_Xcandid_Scan ]
+    // Source: A canonical. Null-guard on sourceUrl kept (B dropped it).
+    // C's double-setTimeout warm-up not carried: MutationObserver + initial
+    // scan() call is sufficient and cleaner.
+    // ══════════════════════════════════════════════════════════════════════════
+    function initializeXcandidOverlay() {
+        const scanTargets = () => {
+            document.querySelectorAll('iframe[src*="vidara.to"], video[src*="vidara.to"], source[src*="vidara.to"]')
+                .forEach(el => {
+                    const sourceUrl = el.src || el.getAttribute('src');
+                    if (sourceUrl) attachOverlay(el, sourceUrl, 20000);
+                });
+        };
+        const obs = new MutationObserver(scanTargets);
+        obs.observe(document.body, { childList: true, subtree: true });
+        scanTargets();
         window.addEventListener('beforeunload', () => obs.disconnect(), { once: true });
     }
 
@@ -594,6 +714,237 @@
     }
 
     // ══════════════════════════════════════════════════════════════════════════
+    // [ U_Invis_Text ]
+    // Reveals forum posts that hide spoiler/answer text by setting color to
+    // Transparent. CSS handles the reveal on hover; this unit is pure style
+    // (no JS needed beyond the GM_addStyle block above). Unit kept as a
+    // named placeholder so it appears in the manifest and can be toggled.
+    // ══════════════════════════════════════════════════════════════════════════
+    // (Implemented entirely in U_Global_Styles — no runtime JS required.)
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // [ U_View_Replies ]
+    // Injects a "View Replies" button under each XenForo post. On click,
+    // fetches the search endpoint for posts quoting/replying to this post,
+    // parses results, and renders them in a glass-panel table inline.
+    // Toggle hides/shows without re-fetching. Uses GM_xmlhttpRequest to
+    // bypass same-origin restrictions on the search API.
+    // ══════════════════════════════════════════════════════════════════════════
+    function initializeViewReplies() {
+        const BUTTON_TEXT_VIEW = 'View Replies';
+        const BUTTON_TEXT_HIDE = 'Hide Replies';
+        const LOADING_TEXT     = 'Loading replies';
+        const NO_REPLIES_HTML  = '<strong>No replies found.</strong>';
+        const ERROR_PREFIX     = '<strong style="color:#FF4444;">Error:</strong>';
+
+        const mainDomain = window.location.hostname.split('.').slice(-2).join('.');
+
+        const extractThreadId = (href) => {
+            const m = href?.match(/\.([0-9]+)\/post-/);
+            return m ? m[1] : null;
+        };
+
+        // Safe text → anchor conversion (no raw-HTML injection)
+        const convertLinks = (text) => {
+            if (!text) return '';
+            const safe = document.createElement('div');
+            safe.textContent = text;
+            return safe.innerHTML.replace(
+                /((https?):\/\/[-A-Z0-9+&@#/%?=~_|!:,.;]*[-A-Z0-9+&@#/%=~_|])/ig,
+                (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`
+            );
+        };
+
+        const showError = (container, msg) => {
+            container.innerHTML = `${ERROR_PREFIX} ${msg}`;
+            delete container.dataset.loading;
+        };
+
+        const fetchReplies = (searchURL, container) => {
+            GM_xmlhttpRequest({
+                method:  'GET',
+                url:     searchURL,
+                timeout: 15000,
+                onload: (res) => {
+                    delete container.dataset.loading;
+                    if (res.status < 200 || res.status >= 300) {
+                        showError(container, `Status ${res.status}`);
+                        return;
+                    }
+                    const doc = new DOMParser().parseFromString(res.responseText, 'text/html');
+                    const blocks = doc.querySelectorAll(
+                        'li.block-row.block-row--separated.js-inlineModContainer[data-author]'
+                    );
+                    if (!blocks.length) { container.innerHTML = NO_REPLIES_HTML; return; }
+
+                    container.innerHTML = '';
+                    const table = document.createElement('table');
+                    table.className = 'cb4-replies-table';
+                    table.innerHTML = `<thead><tr>
+                        <th>Post #</th><th>Date</th><th>Reply</th>
+                    </tr></thead>`;
+                    const tbody   = document.createElement('tbody');
+                    const frag    = document.createDocumentFragment();
+
+                    blocks.forEach(block => {
+                        const postLink   = block.querySelector('.contentRow-main a[href*="/post-"]');
+                        const postTime   = block.querySelector('time.u-dt');
+                        const snippet    = block.querySelector('.contentRow-snippet');
+                        if (!postLink?.href || !postTime || !snippet) return;
+
+                        const idMatch = postLink.href.match(/\/post-(\d+)/);
+                        const postNum = idMatch ? `#${idMatch[1]}` : 'N/A';
+
+                        const row = document.createElement('tr');
+
+                        const tdNum = document.createElement('td');
+                        const a = document.createElement('a');
+                        a.href = postLink.href; a.textContent = postNum;
+                        a.target = '_blank'; a.rel = 'noopener noreferrer';
+                        tdNum.appendChild(a);
+
+                        const tdDate = document.createElement('td');
+                        tdDate.textContent = postTime.textContent.trim();
+                        tdDate.title = postTime.getAttribute('datetime') || '';
+
+                        const tdContent = document.createElement('td');
+                        tdContent.innerHTML = convertLinks(snippet.textContent.trim());
+
+                        row.append(tdNum, tdDate, tdContent);
+                        frag.appendChild(row);
+                    });
+
+                    tbody.appendChild(frag);
+                    table.appendChild(tbody);
+                    container.appendChild(table);
+                },
+                onerror:   () => showError(container, 'Network error.'),
+                ontimeout: () => showError(container, 'Request timed out.'),
+            });
+        };
+
+        const addReplyButton = (postEl) => {
+            const anchor = postEl.querySelector('.message-main.js-quickEditTarget') || postEl;
+            if (!anchor || anchor.querySelector('.cb4-replies-btn')) return;
+
+            const btn = document.createElement('button');
+            btn.textContent = BUTTON_TEXT_VIEW;
+            btn.className   = 'cb4-replies-btn';
+            anchor.appendChild(btn);
+
+            btn.addEventListener('click', () => {
+                let box = postEl.querySelector('.cb4-replies-container');
+                if (box) {
+                    const hidden = box.style.display === 'none';
+                    box.style.display   = hidden ? 'block' : 'none';
+                    btn.textContent     = hidden ? BUTTON_TEXT_HIDE : BUTTON_TEXT_VIEW;
+                    return;
+                }
+
+                // Build loading container
+                box = document.createElement('div');
+                box.className       = 'cb4-replies-container';
+                box.dataset.loading = 'true';
+                const spinner = document.createElement('strong');
+                spinner.textContent = LOADING_TEXT;
+                spinner.className   = 'cb4-replies-loading-dots';
+                box.appendChild(spinner);
+                anchor.appendChild(box);
+                btn.textContent = BUTTON_TEXT_HIDE;
+
+                // Resolve post ID
+                const msgEl  = postEl.closest('.message[data-content]');
+                const postId = msgEl?.getAttribute('data-content')?.replace('post-', '')
+                            || postEl.querySelector('[data-lb-id]')?.getAttribute('data-lb-id')?.replace('post-', '');
+                if (!postId) { showError(box, 'Could not determine Post ID.'); btn.textContent = BUTTON_TEXT_VIEW; return; }
+
+                // Resolve thread ID
+                const hrefEl   = postEl.querySelector('.message-attribution-main a[href*="/threads/"]');
+                const threadId = extractThreadId(hrefEl?.getAttribute('href'));
+                if (!threadId) { showError(box, 'Could not determine Thread ID.'); btn.textContent = BUTTON_TEXT_VIEW; return; }
+
+                const searchURL = `https://${mainDomain}/search/1/?q=post-${postId}&t=post&c[thread]=${threadId}&o=date`;
+                fetchReplies(searchURL, box);
+            });
+        };
+
+        // Initial pass + observer for dynamically loaded posts
+        const processPosts = () =>
+            document.querySelectorAll('.message.message--post .message-inner').forEach(addReplyButton);
+
+        processPosts();
+
+        const obs = new MutationObserver(processPosts);
+        obs.observe(document.body, { childList: true, subtree: true });
+        window.addEventListener('beforeunload', () => obs.disconnect(), { once: true });
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // [ U_Redirect_Rewrite ]
+    // Two complementary redirect-bypass strategies for simpcity.cr:
+    //
+    // 1. INLINE REWRITE — Intercepts anchor elements whose href contains
+    //    /redirect/?to= before the user clicks them. Decodes base64 (m=b64)
+    //    or plain-text targets and rewrites the href directly, removing proxy
+    //    handler attributes. MutationObserver picks up lazily-rendered links.
+    //
+    // 2. LANDING PAGE BYPASS — If the user lands on a /redirect/ page directly
+    //    (e.g. opened in a new tab), extracts the true destination from
+    //    .simpLinkProxy-targetLink and replaces the current location.
+    //
+    // Note: the existing U_Confirmation_Bypass handles /goto/link-confirmation
+    // pages by clicking the CTA button. This unit handles a different class of
+    // redirect (the ?to= query-string pattern) and is additive, not redundant.
+    // ══════════════════════════════════════════════════════════════════════════
+    function initializeRedirectRewrite() {
+        // Strategy 2: already on a /redirect/ landing page
+        if (currentUrl.includes('/redirect/')) {
+            const target = document.querySelector('.simpLinkProxy-targetLink');
+            if (target?.href) {
+                window.location.replace(target.href);
+                return; // navigation imminent; no point setting up observer
+            }
+        }
+
+        // Strategy 1: rewrite ?to= links inline
+        const decodeTarget = (str) => {
+            try {
+                return atob(str.replace(/-/g, '+').replace(/_/g, '/'));
+            } catch {
+                return null;
+            }
+        };
+
+        const processLinks = () => {
+            document.querySelectorAll('a[href*="/redirect/?to="]:not([data-cb4-bypassed])').forEach(link => {
+                link.dataset.cb4Bypassed = 'true';
+                try {
+                    const url    = new URL(link.href, window.location.origin);
+                    let target   = url.searchParams.get('to');
+                    const mode   = url.searchParams.get('m');
+                    if (target && mode === 'b64') target = decodeTarget(target);
+                    if (target) {
+                        link.href = target;
+                        link.removeAttribute('data-proxy-handler');
+                        link.removeAttribute('data-blank-handler');
+                        link.removeAttribute('data-proxy-href');
+                    }
+                } catch { /* silently ignore unparseable hrefs */ }
+            });
+        };
+
+        const obs = new MutationObserver(processLinks);
+        obs.observe(document.documentElement, { childList: true, subtree: true });
+        window.addEventListener('beforeunload', () => obs.disconnect(), { once: true });
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', processLinks);
+        } else {
+            processLinks();
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
     // [ U_Orchestrator ]
     // Altcha runs only where captchas can actually appear:
     //   - confirmation/redirect pages (before bypass fires)
@@ -607,6 +958,7 @@
 
         // ── Confirmation / redirect gate ──────────────────────────────────────
         if (currentUrl.includes('/goto/link-confirmation') || currentUrl.includes('/redirect')) {
+            initializeRedirectRewrite(); // handles /redirect/?to= landing-page bypass
             initializeAltchaSolver();
             initializeConfirmationBypass();
             return;
@@ -630,8 +982,15 @@
             return;
         }
 
+        // ── xcandid.vip ───────────────────────────────────────────────────────
+        if (currentHost.includes('xcandid.vip')) {
+            initializeXcandidOverlay();
+            return;
+        }
 
         // ── Forum pages (SMG / Simpcity) ──────────────────────────────────────
+        initializeRedirectRewrite();
+        initializeViewReplies();
         initializeAltchaSolver();
         initializeForumEnhancements();
         initializeExternalLinkSafety();
