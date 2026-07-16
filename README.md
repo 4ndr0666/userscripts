@@ -59,7 +59,7 @@ Each script adheres to a core set of principles:
 | AutoTranslate | [4ndr0tools - AutoTranslate.user.js](./4ndr0tools%20-%20AutoTranslate.user.js) | Automatically translates any non-English page to English via translate.goog redirect. No broken Element API. No cookies. No banners. |
 | Blob2URL | [4ndr0tools - Blob2URL.user.js](./4ndr0tools%20-%20Blob2URL.user.js) | Universal blob exfiltration, interactive asset sniffing, CSP/CORS bypass. |
 | BrokenImgFixer | [4ndr0tools - BrokenImgFixer.user.js](./4ndr0tools%20-%20BrokenImgFixer.user.js) | Detect and reload failed images gracefully with robust cache-busting. |
-| Bunkr++ | [4ndr0tools - Bunkr++.user.js](./4ndr0tools%20-%20Bunkr++.user.js) | Part of 4ndr0tools: Canonical routing, auto-sort, hide visited, bypass dl gateway, bulk acquisition |
+| Bunkr++ | [4ndr0tools - Bunkr++.user.js](./4ndr0tools%20-%20Bunkr++.user.js) | Part of 4ndr0tools: Direct URL routing, auto-sort, hide visited, bypass dl gateway, bulk download |
 | BypassPaywalls | [4ndr0tools - BypassPaywalls.user.js](./4ndr0tools%20-%20BypassPaywalls.user.js) | A way to bypass paywalls for popular news sites |
 | Collapse All Images | [4ndr0tools - Collapse All Images.user.js](./4ndr0tools%20-%20Collapse%20All%20Images.user.js) | Toggle/auto-collapse all images with a mouse hover for reducing excessive I/O. |
 | Confirmation Bypass | [4ndr0tools - Confirmation Bypass.user.js](./4ndr0tools%20-%20Confirmation%20Bypass.user.js) | Forum: reveal invisi-text, view all replies, rewrite redirect links. Download Gate: bypass confirm pages, glass overlay copy/download URL, auto-solve Altcha, auto-click download. Turbo: embed routing, upload injector. Util: external link safety, right-click scrollbar to top. |
