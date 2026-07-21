@@ -3,7 +3,7 @@
 // @namespace           https://github.com/4ndr0666/userscripts
 // @version             1.0.0
 // @author              4ndr0666
-// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
+// @icon                https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @license             UNLICENSED - RED TEAM USE ONLY
 // @description         Universal Prompt Manager.
 // @match               *://grok.com/*
@@ -48,8 +48,8 @@
 // @compatible          edge
 // @compatible          brave
 // @compatible          opera
-// @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Prompt%20Master.user.js
-// @updateURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Prompt%20Master.user.js
+// @downloadURL         https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Prompt%20Master.user.js
+// @updateURL           https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Prompt%20Master.user.js
 // ==/UserScript==
 
 (function() {
