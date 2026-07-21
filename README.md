@@ -85,6 +85,7 @@ Each script adheres to a core set of principles:
 | ModelSearch | [4ndr0tools - ModelSearch.user.js](./4ndr0tools%20-%20ModelSearch.user.js) | Electric-Glass UI — direct SimpCity model search from any page. |
 | Pixeldrain++ | [4ndr0tools - Pixeldrain++.user.js](./4ndr0tools%20-%20Pixeldrain++.user.js) | Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c. |
 | PlanetsuzyMobileSkinRedirect | [4ndr0tools - PlanetsuzyMobileSkinRedirect.user.js](./4ndr0tools%20-%20PlanetsuzyMobileSkinRedirect.user.js) | Force a faster mobile skin where useful. |
+| Prompt Master | [4ndr0tools - Prompt Master.user.js](./4ndr0tools%20-%20Prompt%20Master.user.js) | Universal Prompt Manager. |
 | RealLinkRevealer | [4ndr0tools - RealLinkRevealer.user.js](./4ndr0tools%20-%20RealLinkRevealer.user.js) | Reveal true URLs hidden as "premium" link wrappers using the parent bbCodeBlock--unfurl block's data-url attribute. |
 | Recon | [4ndr0tools - Recon.user.js](./4ndr0tools%20-%20Recon.user.js) | Red-team tool for automated recon. Passively captures all traffic and generates a heuristic analysis report on command. For security research only. |
 | Redgifs++ | [4ndr0tools - Redgifs++.user.js](./4ndr0tools%20-%20Redgifs++.user.js) | Intercepts Redgifs links on Reddit for a cinematic overlay. On Redgifs itself, enters focused video-only mode. Falls back to JSON.parse intercept for direct /watch/ loads before SPA hydration. |
