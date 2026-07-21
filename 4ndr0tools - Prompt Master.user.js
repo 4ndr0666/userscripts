@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name                4ndr0tools - Prompt Master
-// @namespace           https://github.com/4ndr0666/userscripts
+// @namespace           https://github.com/4ndr0666/userscripts/
 // @version             1.0.0
 // @author              4ndr0666
 // @icon                https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
