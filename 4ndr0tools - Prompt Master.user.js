@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name                Prompt Master
+// @name                4ndr0tools - Prompt Master
 // @namespace           https://github.com/4ndr0666/userscripts
 // @version             26.1.1
 // @author              4ndr0666
