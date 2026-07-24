@@ -45,8 +45,8 @@
 // @compatible          edge
 // @compatible          brave
 // @compatible          opera
-// @downloadURL https://update.greasyfork.org/scripts/549921/My%20Prompt.user.js
-// @updateURL https://update.greasyfork.org/scripts/549921/My%20Prompt.meta.js
+// @downloadURL         https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Prompt%20Master.user.js
+// @updateURL           https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Prompt%20Master.user.js
 // ==/UserScript==
 
 (function() {
