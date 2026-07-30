@@ -171,3 +171,4 @@ logs/
 testing/
 backups/
 package-lock.json
+compare
