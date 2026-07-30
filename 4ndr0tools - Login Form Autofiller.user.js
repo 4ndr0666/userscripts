@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name        4ndr0tools - Login Form Autofiller
 // @namespace   https://www.github.com/4ndr0666/userscripts
-// @version     2017.12.15
+// @version     1.2.0
 // @description It integrates BugMeNot into any login form (it retrieves all matching logins from bugmenot.com and autofills the login form)
-// @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png      
-// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Login%20Form%20Autofiller.user.js
-// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Login%20Form%20Autofiller.user.js
+// @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png      
+// @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Login%20Form%20Autofiller.user.js
+// @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Login%20Form%20Autofiller.user.js
 // @author      4ndr0666
-// @license      UNLICENSED - RED TEAM USE ONLY
+// @license     UNLICENSED - RED TEAM USE ONLY
 // @include     http://*
 // @include     https://*
 // @exclude     http://bugmenot.com/*
