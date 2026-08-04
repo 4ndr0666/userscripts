@@ -2,6 +2,7 @@
 // @name         4ndr0tools - ModelSearch
 // @namespace    https://www.github.com/4ndr0666/userscripts
 // @version      2.1
+// @author       4ndr0666
 // @description  Electric-Glass UI — direct SimpCity model search from any page.
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20ModelSearch.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20ModelSearch.user.js
