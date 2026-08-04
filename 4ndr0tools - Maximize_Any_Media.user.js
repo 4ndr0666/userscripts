@@ -3,7 +3,7 @@
 // @namespace    https://github.com/4ndr0666/userscripts
 // @version      1.0
 // @author       4ndr0666
-// @descriptsion Adds PIP and Maximize buttons to all media.
+// @description  Adds PIP and Maximize buttons to all media.
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @include      *
 // @exclude      *www.w3school.com.*
