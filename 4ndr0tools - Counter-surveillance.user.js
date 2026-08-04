@@ -3,7 +3,7 @@
 // @namespace    https://github.com/4ndr0666/userscripts
 // @version      4.0.0
 // @author       4ndr0666 & Rob W & Giwayume
-// @descriptsion Part of 4ndr0tools: counter-surveillance toolkit integrates deep DOM sinkholing, network nullification (WebRTC/Fetch/XHR), canvas blinding, anti-user patterns, frustrating UI constraints and aggressive URL sanitization (Google/ICC/Aliyun)
+// @description  Part of 4ndr0tools: counter-surveillance toolkit integrates deep DOM sinkholing, network nullification (WebRTC/Fetch/XHR), canvas blinding, anti-user patterns, frustrating UI constraints and aggressive URL sanitization (Google/ICC/Aliyun)
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @match        *://*/*
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
