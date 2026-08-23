@@ -183,6 +183,20 @@
 (function () {
     'use strict';
 
+    function isSafeImageSrc(url) {
+        if (!url)
+            return false;
+        const trimmed = url.trim();
+        if (!trimmed)
+            return false;
+        try {
+            const parsed = new URL(trimmed, window.location.href);
+            return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+        } catch (e) {
+            return false;
+        }
+    }
+
     if (!matchDomain(['seekingalpha.com', 'sfchronicle.com', 'cen.acs.org', 'elmundo.es', 'scmp.com', 'nytimes.com'])) {
         window.localStorage.clear();
     }
@@ -372,8 +386,8 @@
                 const src = image.src;
                 if ('src: ' + src.indexOf('.gif') !== -1) {
                     const dataSrc = image.getAttribute('data-src');
-                    if (dataSrc) {
-                        image.setAttribute('src', dataSrc);
+                    if (isSafeImageSrc(dataSrc)) {
+                        image.setAttribute('src', dataSrc.trim());
                     }
                 }
             }
