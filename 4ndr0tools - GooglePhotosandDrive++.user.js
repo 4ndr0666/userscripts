@@ -312,6 +312,8 @@
     /**
      * Initialization Vector
      */
+    const isAllowedHost = (host, domain) => host === domain || host.endsWith(`.${domain}`);
+
     const initialize = () => {
         injectStyles();
 
@@ -321,12 +323,12 @@
 
         const isImage = document.contentType && document.contentType.startsWith('image/');
 
-        if (currentHost.includes('googleusercontent.com') && isImage) {
+        if (isAllowedHost(currentHost, 'googleusercontent.com') && isImage) {
             getDirectPhotoLink();
             displaySearchLinks();
         }
 
-        if (currentHost.includes('google.com') || currentHost.includes('googleusercontent.com')) {
+        if (isAllowedHost(currentHost, 'google.com') || isAllowedHost(currentHost, 'googleusercontent.com')) {
             showNotification('GLASSMORPHISM OVERRIDE ENGAGED');
         }
     };
