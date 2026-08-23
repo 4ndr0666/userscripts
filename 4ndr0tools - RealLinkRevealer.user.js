@@ -29,9 +29,18 @@
             const block = link.closest('.bbCodeBlock--unfurl');
             if (!block) continue;
             const realUrl = block.getAttribute('data-url');
-            if (!realUrl || !/^https?:\/\//.test(realUrl)) continue;
-            // Patch href
-            link.href = realUrl;
+            if (!realUrl) continue;
+
+            let parsedUrl;
+            try {
+                parsedUrl = new URL(realUrl, window.location.href);
+            } catch (_) {
+                continue;
+            }
+            if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') continue;
+
+            // Patch href with validated, normalized URL
+            link.href = parsedUrl.href;
             // Optional: visually style or annotate the link
             link.title = "Direct link restored";
             link.classList.add("real-link-restored");
