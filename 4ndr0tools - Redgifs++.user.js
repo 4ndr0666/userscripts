@@ -27,7 +27,7 @@
     // ─────────────────────────────────────────────────────────────────────────
     // BRANCH A — Reddit side: cinematic iframe overlay
     // ─────────────────────────────────────────────────────────────────────────
-    if (HOST.includes('reddit.com')) {
+    if (HOST === 'reddit.com' || HOST.endsWith('.reddit.com')) {
         const MODAL_BG_COLOR    = 'rgba(0, 0, 0, 0.85)';
         const SPINNER_COLOR     = '#d96946';
         const TRANSITION_SPEED  = '0.25s';
