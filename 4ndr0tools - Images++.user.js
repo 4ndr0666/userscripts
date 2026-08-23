@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name 4ndr0tools - Images++
 // @namespace https://github.com/4ndr0666/userscripts
-// @version 2.0.1
+// @version 3.0.0
 // @description Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance.
 // @author 4ndr0666
 // @match  *://*/*
@@ -86,7 +86,7 @@ const PREFIX = 'mpiv-';
 
 const NOAA_ATTR = 'data-no-aa';
 
-const STATUS_ATTR = ${PREFIX}status;
+const STATUS_ATTR = `${PREFIX}status`;
 
 const MSG = Object.assign({}, ...[
 
@@ -94,7 +94,7 @@ const MSG = Object.assign({}, ...[
 
 'viewSize',
 
-].map(k => ({[k]: ${PREFIX}${k}})));
+].map(k => ({[k]: `${PREFIX}${k}`})));
 
 const WHEEL_EVENT = 'onwheel' in doc ? 'wheel' : 'mousewheel';
 
@@ -244,7 +244,7 @@ ai.force = Events.ctrl;
 
 ai.gNum = 0;
 
-ai.zooming = cfg.css.includes(${PREFIX}zooming);
+ai.zooming = cfg.css.includes(`${PREFIX}zooming`);
 
 Util.suppressTooltip();
 
@@ -2262,11 +2262,11 @@ const Ruler = {
             const meta = img.metadata || img;
             items.push({
               url: img.url ??
-                (u = `https://i.imgur.com/${img.hash}`) && (
+                ((u = `https://i.imgur.com/${img.hash}`) && (
                   img.ext === '.gif' && img.animated !== false ?
                     [`${u}.webm`, `${u}.mp4`, u] :
                     u + img.ext
-                ),
+                )),
               desc: [meta.title, meta.description].filter(Boolean).join(' - '),
             });
           }
