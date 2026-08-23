@@ -962,7 +962,8 @@ const resolvers = [
               .map((s) => s.trim())
               .map((s) => {
                 let value = new RegExp(`var ${s}=".*?"`, "isg").exec(script)[0];
-                return value.replace(/.*?"/i, "").replace(/"/i, "");
+                const match = value.match(/^[^"]*"([^"]*)"/s);
+                return match ? match[1] : "";
               })
               .join("");
           })
