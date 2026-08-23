@@ -1560,6 +1560,15 @@ const CollapseMode = {
 
 const Popup = {
 
+  getSafeMediaSrc(src) {
+    try {
+      const u = new URL(`${src}`, location.href);
+      return /^(https?:|blob:)$/i.test(u.protocol) ? u.href : null;
+    } catch {
+      return null;
+    }
+  },
+
   async create(src, pageUrl, error) {
     let p = ai.popup, blank;
     const inGallery = p && !cfg.uiFadeinGallery && ai.gItems && !ai.zooming;
@@ -1594,7 +1603,12 @@ const Popup = {
       ai.popupLoaded = false;
     } else p = ai.popup = isVideo ? PopupVideo.create(vol) : $new('img');
     p.id = `${PREFIX}popup`;
-    p.src = src;
+    const safeSrc = Popup.getSafeMediaSrc(src);
+    if (!safeSrc) {
+      App.handleError(`Blocked unsafe popup URL: ${src}`);
+      return;
+    }
+    p.src = safeSrc;
     p.addEventListener('error', App.handleError);
     if ((ai.night = (ai.night != null ? ai.night : cfg.night)))
       p.classList.add(`${PREFIX}night`);
