@@ -1606,7 +1606,7 @@ const Popup = {
     ai.popover = poo && poo.getBoundingClientRect().width && ($css(poo, {opacity: 0}), poo) || null;
     if (p.parentElement !== doc.body) {
       const tn = p && p.tagName;
-      if (!(p instanceof Element) || /^(SCRIPT|IFRAME|OBJECT|EMBED|LINK|STYLE|META|TEMPLATE)$/i.test(tn || '')) {
+      if (!(p instanceof Element) || !/^(IMG|VIDEO)$/i.test(tn || '')) {
         App.handleError(['Unsafe popup element blocked: %o', p]);
         return;
       }
