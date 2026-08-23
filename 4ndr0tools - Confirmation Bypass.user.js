@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Confirmation Bypass
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      3.6.0
+// @version      3.6.1
 // @author       4ndr0666
 // @description  Forum: reveal invisi-text, view all replies, rewrite redirect links. Download Gate: bypass confirm pages, glass overlay copy/download URL, auto-solve Altcha, auto-click download. Turbo: embed routing, upload injector. Util: external link safety, right-click scrollbar to top.
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -11,6 +11,7 @@
 // @match        *://simpcity.cr/redirect/*
 // @match        *://turbo.cr/*
 // @match        *://turbo.cr/embed/*
+// @match        *://*.xcandid.vip/*
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Confirmation%20Bypass.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Confirmation%20Bypass.user.js
@@ -28,7 +29,7 @@
     const params      = new URLSearchParams(window.location.search);
     const _overlaidUrls = new Set();
 
-    console.log('%c[4ndr0tools] Unified Pipeline v3.6.0 — SECURED', 'color:#00E5FF; font-family:"Roboto Mono",monospace; font-weight:bold;');
+    console.log('%c[4ndr0tools] Unified Pipeline v3.6.1 — SECURED', 'color:#00E5FF; font-family:"Roboto Mono",monospace; font-weight:bold;');
 
     // ══════════════════════════════════════════════════════════════════════════
     // [ U_Global_Styles ] — Electric-Glass Design Spec v1.5.0-Ψ
@@ -366,8 +367,18 @@
 
         const el = document.createElement('div');
         el.className = 'cb4-url-overlay';
+
+        // url is sourced from video/iframe .src — potentially attacker-
+        // controlled if the host page is compromised. Build with textContent
+        // instead of interpolating into innerHTML to prevent DOM XSS.
         const displayUrl = url.length > 60 ? url.substring(0, 57) + '...' : url;
-        el.innerHTML = `${displayUrl}<span class="cb4-copy-hint">Click: Copy URL \u2502 Right-Click: Download</span>`;
+        const urlText  = document.createTextNode(displayUrl);
+        const hint     = document.createElement('span');
+        hint.className = 'cb4-copy-hint';
+        hint.textContent = 'Click: Copy URL \u2502 Right-Click: Download';
+
+        el.appendChild(urlText);
+        el.appendChild(hint);
         el.title = url;
 
         el.addEventListener('click', (e) => {
@@ -568,8 +579,20 @@
             window.__turboUploadWin = win;
         };
 
+        // Exact-hostname allowlist — startsWith('https://turbo.cr') would also
+        // match an attacker origin like https://turbo.cr.evil.com. Parse the
+        // origin and compare the real hostname instead.
+        const ALLOWED_MESSAGE_HOSTS = new Set(['turbo.cr']);
+
         const receivePostMessage = (e) => {
-            if (!e.origin.startsWith('https://turbo.cr')) return;
+            let originHost;
+            try {
+                originHost = new URL(e.origin).hostname;
+            } catch {
+                return; // unparseable origin — reject
+            }
+            if (!ALLOWED_MESSAGE_HOSTS.has(originHost)) return;
+
             if (String(e.data).includes('close')) {
                 window.__turboUploadWin?.close();
                 return;
@@ -578,14 +601,20 @@
             const frElements = document.getElementsByClassName('fr-element');
             if (frElements.length === 0) return;
 
+            // e.data is cross-origin postMessage input — never trusted as HTML.
             const bb       = `[MEDIA=saint_vid]${e.data}[/MEDIA]`;
             const wrappers = document.getElementsByClassName('fr-wrapper');
 
             if (wrappers.length > 0 && wrappers[0].style.display === 'none') {
                 const boxes = document.querySelectorAll('[aria-label="Rich text box"]');
-                if (boxes.length > 0) boxes[0].value += bb;
+                if (boxes.length > 0) boxes[0].value += bb; // textarea .value — not parsed as HTML
             } else {
-                frElements[0].insertAdjacentHTML('beforeend', `<p>${bb}</p>`);
+                // Build the node and assign textContent instead of parsing bb
+                // as HTML — BBCode is plain text and must never be interpreted
+                // as markup, regardless of what e.data contains.
+                const p = document.createElement('p');
+                p.textContent = bb;
+                frElements[0].appendChild(p);
             }
             console.log(`[4ndr0tools] Media payload embedded: ${e.data}`);
         };
