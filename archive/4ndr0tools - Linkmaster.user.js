@@ -813,6 +813,15 @@
       });
   }
 
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   function renderCheckResult(status, info, td) {
     const chip = document.createElement("span");
     chip.className = "chip";
@@ -856,12 +865,13 @@
       </tr>
     </thead><tbody>`;
     urls.forEach((url, idx) => {
+      const safeUrl = escapeHtml(url);
       const isBunkr  = isBunkrUrl(url);
       const streamBtn = isBunkr
         ? `<button class="hud-btn" data-bulk-idx="${idx}" data-action="stream">Stream</button>`
         : "";
       html += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-        <td style="max-width:300px;overflow-x:auto;padding:8px 4px;">${url}</td>
+        <td style="max-width:300px;overflow-x:auto;padding:8px 4px;">${safeUrl}</td>
         <td id="bulk-check-${idx}" style="padding:8px 4px;"><span class="chip unknown">…</span></td>
         <td class="hud-action-cell" style="padding:8px 4px;">
           <button class="hud-btn" data-bulk-idx="${idx}" data-action="copy">Copy</button>
