@@ -681,7 +681,7 @@ const parsers = {
                         patternStr = patternStr.replace('!!', '');
                         pattern = h.re.toRegExp(h.re.toString(patternStr), 'igs');
                     } else { // Default pattern for href, src, data-url attributes or direct URLs
-                        const pat = `(?<=data-url="|src="|href=")${h.re.toString(patternStr)}.*?(?=")|https?:\/\/(www.)?${h.re.toString(patternStr)}.*?(?=("|<|$|\]|'))`;
+                        const pat = `(?<=data-url="|src="|href=")${h.re.toString(patternStr)}.*?(?=")|https?:\/\/(www.)?${h.re.toString(patternStr)}.*?(?=("|<|$|\\]|'))`;
                         pattern = h.re.toRegExp(pat, 'igs');
                     }
 
