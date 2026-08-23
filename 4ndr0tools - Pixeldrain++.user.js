@@ -2112,7 +2112,10 @@
         const badge = document.createElement('div');
         badge.className = `${NS}-badge`;
         badge.title = 'Pixeldrain Bypass Pro — click for settings';
-        badge.innerHTML = `<strong>PD Pro</strong> v${VERSION} · ${stats.count} DLs · ${formatBytes(stats.savedBandwidth || 0)} saved`;
+        const strong = document.createElement('strong');
+        strong.textContent = 'PD Pro';
+        badge.appendChild(strong);
+        badge.appendChild(document.createTextNode(` v${VERSION} · ${stats.count} DLs · ${formatBytes(stats.savedBandwidth || 0)} saved`));
         badge.addEventListener('click', openSettingsPanel);
         (document.body || document.documentElement).appendChild(badge);
     }
