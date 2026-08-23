@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - YouTube_Filter
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      2.3
+// @version      2.4
 // @author       4ndr0666
 // @description  Electric-Glass YouTube video filter — views, date, duration
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -27,22 +27,31 @@
     enabled:     false,
   };
 
-  // v5: bumped to invalidate stale selector-dependent state and enforce superset matrix
+  // v5: invalidates stale v4 state; superset matrix enforced
   const STORAGE_KEY = 'ytVideoFilter:v5';
 
-  // Superset: original 4 + 2024/2025/2026 Polymer & Custom Elements additions
+  // VIDEO host selectors only — Shorts renderers belong in isShorts(), not here.
+  // Including a Shorts renderer here causes wasted querySelectorAll hits and risks
+  // bypassing the isShorts() guard if that guard ever has a false-negative.
   const VIDEO_HOST_SELECTORS = [
-    'ytd-rich-item-renderer',
-    'ytd-video-renderer',
-    'ytd-grid-video-renderer',
-    'ytd-compact-video-renderer',
-    'ytd-playlist-panel-video-renderer',
-    'ytd-reel-item-renderer',
-    'ytd-rich-item-renderer[is-slim-media]',
-    'yt-lockup-view-model',
-    'yt-reel-item-renderer',
-    'ytd-shorts-lockup-view-model'
+    'ytd-rich-item-renderer',              // home feed
+    'ytd-video-renderer',                  // search results
+    'ytd-grid-video-renderer',             // channel grid (legacy)
+    'ytd-compact-video-renderer',          // sidebar / watch-next
+    'ytd-playlist-panel-video-renderer',   // playlist panel
+    'ytd-playlist-video-renderer',         // playlist page (confirmed 2026)
+    'ytd-rich-item-renderer[is-slim-media]', // slim shelf variant
+    'yt-lockup-view-model',                // new lockup renderer (2024+)
   ];
+
+  // Shorts renderers — kept separate and authoritative for isShorts()
+  const SHORTS_TAGS = new Set([
+    'ytd-reel-item-renderer',
+    'yt-reel-item-renderer',
+    'ytd-shorts-lockup-view-model',
+    'ytm-shorts-lockup-view-model',
+    'ytm-shorts-lockup-view-model-v2',     // confirmed active 2026
+  ]);
 
   // ---------- Styles ----------
   GM_addStyle(`
@@ -113,9 +122,7 @@
       border-color: var(--accent-cyan);
       box-shadow: -4px 0 20px var(--accent-cyan-glow-hi);
     }
-    #yt-filter-toggle:hover::before {
-      color: var(--accent-cyan);
-    }
+    #yt-filter-toggle:hover::before { color: var(--accent-cyan); }
     #yt-filter-toggle.active {
       transform: translateY(-50%) translateX(0);
       color: var(--accent-cyan);
@@ -124,9 +131,7 @@
       box-shadow: -4px 0 24px var(--accent-cyan-glow-hi);
       z-index: 9999;
     }
-    #yt-filter-toggle.active::before {
-      color: var(--accent-cyan);
-    }
+    #yt-filter-toggle.active::before { color: var(--accent-cyan); }
 
     /* ── Slide panel: starts off-screen right, slides in via right property ── */
     #yt-filter-panel {
@@ -154,15 +159,10 @@
       font-size: 13px;
       line-height: 1.4;
     }
-    #yt-filter-panel.visible {
-      right: 0;
-    }
+    #yt-filter-panel.visible { right: 0; }
     #yt-filter-panel::-webkit-scrollbar { width: 6px; }
     #yt-filter-panel::-webkit-scrollbar-track  { background: var(--bg-panel); }
-    #yt-filter-panel::-webkit-scrollbar-thumb  {
-      background: var(--accent-cyan-dark);
-      border-radius: 3px;
-    }
+    #yt-filter-panel::-webkit-scrollbar-thumb  { background: var(--accent-cyan-dark); border-radius: 3px; }
     #yt-filter-panel::-webkit-scrollbar-thumb:hover { background: var(--accent-cyan); }
 
     /* ── Header ── */
@@ -204,9 +204,7 @@
     }
 
     /* ── Field groups ── */
-    .ytf-group {
-      margin-bottom: 16px;
-    }
+    .ytf-group { margin-bottom: 16px; }
     .ytf-group label {
       display: block;
       margin-bottom: 8px;
@@ -216,16 +214,8 @@
       text-transform: uppercase;
       letter-spacing: 0.12em;
     }
-    .ytf-row {
-      display: flex;
-      gap: 8px;
-      position: relative;
-      z-index: 1;
-    }
-    .ytf-input-wrapper {
-      flex: 1;
-      position: relative;
-    }
+    .ytf-row { display: flex; gap: 8px; position: relative; z-index: 1; }
+    .ytf-input-wrapper { flex: 1; position: relative; }
 
     /* ── Inputs ── */
     .ytf-input {
@@ -239,8 +229,7 @@
       font-family: var(--font-ui);
       font-size: 12px;
       letter-spacing: 0.03em;
-      transition: border-color var(--transition-snap),
-                  box-shadow   var(--transition-snap);
+      transition: border-color var(--transition-snap), box-shadow var(--transition-snap);
       position: relative;
       z-index: 2;
     }
@@ -249,13 +238,9 @@
       outline: none;
       border-color: var(--accent-cyan);
       z-index: 3;
-      box-shadow: 0 0 0 2px rgba(21, 250, 250, 0.15),
-                  0 0 10px rgba(21, 250, 250, 0.10);
+      box-shadow: 0 0 0 2px rgba(21, 250, 250, 0.15), 0 0 10px rgba(21, 250, 250, 0.10);
     }
-    .ytf-input.error {
-      border-color: var(--error-border);
-      background: var(--error-bg);
-    }
+    .ytf-input.error { border-color: var(--error-border); background: var(--error-bg); }
     .ytf-input[type="date"] {
       appearance: none;
       -webkit-appearance: none;
@@ -290,11 +275,7 @@
     }
 
     /* ── HUD action buttons ── */
-    .ytf-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 20px;
-    }
+    .ytf-actions { display: flex; gap: 8px; margin-top: 20px; }
     .ytf-btn {
       flex: 1;
       padding: 11px;
@@ -317,7 +298,6 @@
     }
     .ytf-btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .ytf-btn:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 2px; }
-
     .ytf-btn.primary {
       color: var(--text-secondary);
       border-color: var(--accent-cyan-mid);
@@ -334,9 +314,7 @@
       background: var(--accent-cyan-bg-active);
       box-shadow: 0 0 18px var(--accent-cyan-glow);
     }
-    .ytf-btn.primary.active:hover:not(:disabled) {
-      box-shadow: 0 0 26px var(--accent-cyan-glow-hi);
-    }
+    .ytf-btn.primary.active:hover:not(:disabled) { box-shadow: 0 0 26px var(--accent-cyan-glow-hi); }
 
     /* ── Stats bar ── */
     .ytf-stats {
@@ -444,56 +422,76 @@
   };
 
   // ---------- Shorts detection ----------
+  // Authoritative: tag-based set lookup + href attribute scan.
+  // Shorts renderers are NOT in VIDEO_HOST_SELECTORS — this guard is the only gate.
   const isShorts = (host) => {
+    if (SHORTS_TAGS.has(host.tagName?.toLowerCase())) return true;
     if (qs(host, 'a[href*="/shorts/"]'))              return true;
-    if (qs(host, '[is-shorts], [href^="/shorts/"]'))  return true;
-    const tag = host.tagName?.toLowerCase();
-    if (tag === 'ytd-reel-item-renderer' || tag === 'yt-reel-item-renderer' || tag === 'ytd-shorts-lockup-view-model') return true;
+    if (qs(host, '[is-shorts]'))                      return true;
     return false;
   };
 
-  // ---------- Metadata extraction (Updated Gap Mitigation for 2026 Polymer Integration) ----------
+  // ---------- Metadata extraction ----------
+  // Strategy: tightest reliable scope first, broadening only as fallback.
+  // Avoids the noisy full-span scan that false-positives on channel/category text.
   const getVideoMeta = (host) => {
-    // Gap Mitigation: Broaden textual scope across shadow barriers
-    const metaElements = qsa(host, 'span, yt-formatted-string, #metadata-line span, .inline-metadata-item, .yt-content-metadata-view-model span');
+    // ── Views & date ──
+    // Tier 1: scoped metadata-line spans (classic renderers)
+    let metaSpans = qsa(host, '#metadata-line span, .inline-metadata-item');
+    // Tier 2: new content-metadata view model (2024+ renderers)
+    const cmvSpans = qsa(host, '.yt-content-metadata-view-model__metadata-row span');
+    // Merge: cmv first (more authoritative on new layouts), then classic
+    const allMetaSpans = [...cmvSpans, ...metaSpans];
 
-    const viewsTxt = byText(metaElements, t => /view/i.test(t) && !/watching/i.test(t));
-    const timeTxt  = byText(metaElements, t => /(ago|streamed|premiered)/i.test(t));
+    let viewsTxt = byText(allMetaSpans, t => /view/i.test(t) && !/watching/i.test(t));
+    let timeTxt  = byText(allMetaSpans, t => /(ago|streamed|premiered)/i.test(t));
 
-    // Duration: Extended 6-tier fallback chain ensuring absolute resolution
-    let durationTxt = '';
-    const durationSelectors = [
-      '.yt-thumbnail-overlay-badge-view-model .yt-badge-shape__text',
-      '.yt-thumbnail-overlay-badge-view-model span',
-      'ytd-thumbnail-overlay-time-status-renderer #text',
-      'ytd-thumbnail-overlay-time-status-renderer [id="text"]',
-      'yt-thumbnail-overlay-badge-view-model span[class*="badge"]',
-      'ytd-thumbnail-overlay-time-status-renderer badge-shape span'
-    ];
-
-    for (const sel of durationSelectors) {
-      const el = qs(host, sel);
-      if (el && el.textContent.trim()) {
-        durationTxt = el.textContent.trim();
-        break;
-      }
+    // Tier 3: yt-lockup-view-model — metadata in generic span rows, no scoped IDs.
+    // Only fall through here if both are still empty (avoids false-positives).
+    if (!viewsTxt || !timeTxt) {
+      // Constrained to yt-formatted-string children to avoid channel-name spans
+      const lockupSpans = qsa(host, 'yt-formatted-string span, .yt-lockup-metadata-view-model span');
+      if (!viewsTxt) viewsTxt = byText(lockupSpans, t => /view/i.test(t) && !/watching/i.test(t));
+      if (!timeTxt)  timeTxt  = byText(lockupSpans, t => /(ago|streamed|premiered)/i.test(t));
     }
 
-    // Deep attribute extraction fallback
+    // ── Duration: 6-tier fallback chain ──
+    let durationTxt = '';
+    const durationSelectors = [
+      '.yt-thumbnail-overlay-badge-view-model .yt-badge-shape__text', // 2024+ badge model
+      '.yt-thumbnail-overlay-badge-view-model span',                  // badge model fallback
+      'ytd-thumbnail-overlay-time-status-renderer #text',             // classic overlay
+      'ytd-thumbnail-overlay-time-status-renderer [id="text"]',       // classic overlay alt
+      'yt-thumbnail-overlay-badge-view-model span[class*="badge"]',   // badge variant
+      'badge-shape span',                                              // raw badge-shape (2025+)
+    ];
+    for (const sel of durationSelectors) {
+      const el = qs(host, sel);
+      if (el?.textContent?.trim()) { durationTxt = el.textContent.trim(); break; }
+    }
+
+    // Tier 5: aria-label on thumbnail element
     if (!durationTxt) {
       const thumb = qs(host, 'ytd-thumbnail[aria-label], a#thumbnail[aria-label], yt-image[aria-label], a.ytd-thumbnail[aria-label]');
       const m = (thumb?.getAttribute('aria-label') || '').match(/(\d+:\d+(?::\d+)?)/);
       if (m) durationTxt = m[1];
     }
+    // Tier 6: aria-label on the host element itself (compact renderers)
     if (!durationTxt) {
       const m = (host.getAttribute('aria-label') || '').match(/(\d+:\d+(?::\d+)?)/);
       if (m) durationTxt = m[1];
     }
 
-    // View count fallback: aria-label on deep title bindings
+    // ── View count fallback: aria-label on title link ──
+    // Covers yt-lockup-view-model where no visible view-count span exists.
     let views = parseViews(viewsTxt);
     if (!views) {
-      const link  = qs(host, 'a#video-title, a.yt-lockup-metadata-view-model__title');
+      // Standard title link
+      let link = qs(host, 'a#video-title');
+      // yt-lockup-view-model title link
+      if (!link) link = qs(host, 'a.yt-lockup-metadata-view-model__title');
+      // lockup model stores video ID in CSS class; title link may be generic <a>
+      if (!link) link = qs(host, 'h3 a, .yt-lockup-view-model--metadata a');
       const mView = (link?.getAttribute('aria-label') || '').match(/([\d,.]+[KMB]?)\s*views?/i);
       if (mView) views = parseViews(mView[1]);
     }
@@ -508,15 +506,15 @@
   // ---------- Filtering ----------
   const matches = (host) => {
     if (!filters.enabled) return true;
-    if (isShorts(host))   return true;
+    if (isShorts(host))   return true;  // never hide Shorts
 
     const { views, daysAgo, duration } = getVideoMeta(host);
 
     const dateFilterActive = filters.minDays > 0 || filters.maxDays < Infinity;
     if (daysAgo === Infinity && dateFilterActive) return false;
 
-    if (views   < filters.minViews    || views   > filters.maxViews)    return false;
-    if (daysAgo < filters.minDays     || daysAgo > filters.maxDays)     return false;
+    if (views   < filters.minViews || views   > filters.maxViews)   return false;
+    if (daysAgo < filters.minDays  || daysAgo > filters.maxDays)    return false;
 
     const durationKnown = Number.isFinite(duration) && duration >= 0;
     if (durationKnown && (duration < filters.minDuration || duration > filters.maxDuration)) return false;
@@ -685,7 +683,7 @@
     h.appendChild(close);
     panel.appendChild(h);
 
-    // Toggle wired here — single handler, no duplication
+    // Single toggle handler
     btn.addEventListener('click', () => {
       const isVisible = panel.classList.toggle('visible');
       btn.classList.toggle('active', isVisible);

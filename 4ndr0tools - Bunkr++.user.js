@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Bunkr++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      5.9.0
+// @version      6.0.0
 // @author       4ndr0666
 // @description  Part of 4ndr0tools: Direct URL routing, auto-sort, hide visited, bypass dl gateway, bulk download
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
@@ -140,10 +140,6 @@
     let _visitedMode    = 'DIM';
     let _sortExecuted   = false;
     let _debounceTimer  = null;
-
-    // Gallery prefetch cache: numericId → direct CDN image_url (fast-path bypass)
-    let albumGalleryCache   = new Map();
-    let albumGalleryFetched = false;
 
     // Module-scope reference populated by initBulkEngine so M7 grid glyphs can call it
     let resolveBulkFile = null;
@@ -637,6 +633,7 @@
         document.body.appendChild(toggleBtn);
 
         GM_registerMenuCommand('💾 Save History',  exportVisitedRegistry);
+        GM_registerMenuCommand('📂 Load History',  importVisitedRegistry);
         GM_registerMenuCommand('☠ Purge History', () => {
             localStorage.removeItem(VISITED_KEY);
             try { GM_setValue(VISITED_KEY, null); } catch {}
@@ -665,6 +662,86 @@
         a.click();
         URL.revokeObjectURL(url);
         showToast(`💾 ${cache.size} assets exported → ${fname}`);
+    }
+
+    // Persists the live cache through both storage backends. Mirrors the
+    // dual-write already used by the beforeunload handler — kept identical
+    // rather than factored into a shared helper, so this unit stays a
+    // faithful drop-in twin of the existing save path (no new abstraction
+    // layer introduced for a two-line write).
+    function _persistVisitedNow(cache) {
+        try { localStorage.setItem(VISITED_KEY, JSON.stringify([...cache])); } catch { /* EAFP */ }
+        try { GM_setValue(VISITED_KEY, JSON.stringify([...cache])); } catch { /* EAFP */ }
+    }
+
+    function importVisitedRegistry() {
+        const input       = document.createElement('input');
+        input.type        = 'file';
+        input.accept       = 'application/json,.json';
+        input.style.display = 'none';
+
+        input.addEventListener('change', () => {
+            const file = input.files && input.files[0];
+            input.remove();
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onerror = () => showToast('⚠ Import failed: could not read file.', 4000);
+            reader.onload = () => {
+                let parsed;
+                try {
+                    parsed = JSON.parse(reader.result);
+                } catch (e) {
+                    showToast('⚠ Import failed: not valid JSON.', 4000);
+                    return;
+                }
+
+                // Accept both the exportVisitedRegistry() envelope
+                // ({assets:[...]}) and a bare array, for portability with
+                // hand-edited or externally generated registries.
+                const assets = Array.isArray(parsed) ? parsed : parsed?.assets;
+                if (!Array.isArray(assets)) {
+                    showToast('⚠ Import failed: no assets[] array found.', 4000);
+                    return;
+                }
+
+                const cache = getVisitedCache();
+                let added   = 0;
+                for (const id of assets) {
+                    if (typeof id !== 'string' || !id || cache.has(id)) continue;
+                    cache.add(id);
+                    added++;
+                }
+                // Same FIFO eviction policy as addVisited() — a bulk import
+                // must not silently blow past the cap it would otherwise
+                // respect one addVisited() call at a time.
+                while (cache.size > MAX_VISITED) {
+                    const [oldest] = cache;
+                    cache.delete(oldest);
+                }
+
+                _visitedDirty = false; // just wrote it below; beforeunload has nothing further to do
+                _persistVisitedNow(cache);
+
+                // Re-tag any grid items already rendered on the current page
+                // so the imported registry takes visible effect immediately,
+                // without requiring a reload.
+                document.querySelectorAll(
+                    '.grid > div, .grid-images_box, .theItem, main.grid > div, main[class*="grid"] > div'
+                ).forEach(el => {
+                    const link = el.querySelector('a[href^="/f/"], a[href^="/v/"], a[href*="/d/"]');
+                    if (!link) return;
+                    const alphaId = link.getAttribute('href').split('/').pop();
+                    if (cache.has(alphaId)) el.classList.add('psi-visited');
+                });
+
+                showToast(`📂 Imported ${added} new / ${cache.size} total assets.`, 4000, true);
+            };
+            reader.readAsText(file);
+        }, { once: true });
+
+        document.body.appendChild(input);
+        input.click();
     }
 
     // =========================================================================
@@ -749,45 +826,8 @@
     }
 
     // =========================================================================
-    // MODULE 6.4: DOM-DRIVEN CDN EXTRACTOR & GALLERY PREFETCH
+    // MODULE 6.4: DOM-DRIVEN CDN EXTRACTOR
     // =========================================================================
-    /**
-     * prefetchAlbumGallery — fetches the album gallery API and caches
-     * numericId → image_url mappings. These cached CDN URLs are used as a
-     * fast-path bypass in resolveBulkFile, skipping getNumericId +
-     * callMainAPI when the cache already holds a direct CDN URL for the item.
-     *
-     * Cache key: String(item.id)   Value: item.image_url (CDN URL)
-     */
-    async function prefetchAlbumGallery() {
-        if (albumGalleryFetched || !albumMatch) return;
-        albumGalleryFetched = true;
-        const albumSlug = albumMatch[1];
-        try {
-            console.log(`[Ψ-4NDR0666] Prefetching album gallery API for slug: ${albumSlug}`);
-            const response = await fetch('/api/album/gallery', {
-                method:  'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify({ slug: albumSlug }),
-            });
-            if (response.ok) {
-                const data = await response.json();
-                if (data && data.data && Array.isArray(data.data)) {
-                    data.data.forEach(item => {
-                        if (item.id && item.image_url) {
-                            albumGalleryCache.set(String(item.id), item.image_url);
-                        }
-                    });
-                    console.log(
-                        `[Ψ-4NDR0666] Gallery prefetch: cached ${albumGalleryCache.size} CDN entries.`
-                    );
-                }
-            }
-        } catch (e) {
-            console.warn('[Ψ-4NDR0666] Album gallery prefetch failed.', e);
-        }
-    }
-
     /**
      * resolveDomStreamUrl — DOM-first single-asset CDN URL resolver.
      *
@@ -1049,24 +1089,54 @@
         }
 
         // ── Context 2: Grid View — Visited Tracking + Per-Item DL Glyphs ─────
-        const items = document.querySelectorAll(
-            '.grid > div, .grid-images_box, .theItem, main.grid > div, main[class*="grid"] > div'
-        );
-        const seenItems = new Set();
-        [...items].filter(el => {
-            if (seenItems.has(el)) return false;
-            seenItems.add(el);
-            return !!el.querySelector('a[href^="/f/"], a[href^="/v/"], a[href*="/d/"]');
-        }).forEach(el => {
-            const link = el.querySelector('a[href^="/f/"], a[href^="/v/"], a[href*="/d/"]');
-            if (!link) return;
+        // GAP 11 fix: was container-first — querySelectorAll a broad, OR'd
+        // list of container-level selectors, then find the first link
+        // inside each match and treat that whole match as "one item." If any
+        // one of those OR'd selectors (e.g. `main[class*="grid"] > div`)
+        // matched an *outer* wrapper spanning the whole grid rather than a
+        // single card, that wrapper was iterated as one more "item," its
+        // first descendant link received a second click listener bound to
+        // the wrapper, and clicking that one link added .psi-visited to the
+        // whole-grid wrapper — hiding every item at once in HIDE mode, not
+        // just the one clicked. Link-first + closest() structurally cannot
+        // make that mistake: closest() always returns the *smallest*
+        // enclosing ancestor, and the distinct-href guard below refuses to
+        // treat any candidate as a single item's wrapper if it encloses
+        // links to more than one distinct file (while still tolerating a
+        // thumbnail+title anchor pair that both point at the *same* file,
+        // which is normal markup).
+        const LINK_SEL = 'a[href^="/f/"], a[href^="/v/"], a[href*="/d/"]';
+        const ITEM_SEL = '.theItem, .grid-images_box, .grid > div, main.grid > div, main[class*="grid"] > div';
+        const seenEls  = new Set();
+
+        document.querySelectorAll(LINK_SEL).forEach(link => {
+            // GAP 12 fix: injectCaptureVector re-runs on every debounced
+            // MutationObserver pass; without this guard, an already-bound
+            // link accumulated one more pair of click/auxclick listeners
+            // on every pass instead of being skipped.
+            if (link.dataset.psiVisitedBound) return;
+
+            let el = link.closest(ITEM_SEL);
+            if (el) {
+                const hrefs = new Set(
+                    [...el.querySelectorAll(LINK_SEL)].map(a => a.getAttribute('href'))
+                );
+                if (hrefs.size > 1) el = null; // spans distinct files — reject, too broad
+            }
+            if (!el) el = link.parentElement; // conservative single-link fallback scope
+            if (!el || seenEls.has(el)) return;
+            seenEls.add(el);
+            link.dataset.psiVisitedBound = '1';
+
             const alphaId = link.getAttribute('href').split('/').pop();
 
             if (visited.has(alphaId)) el.classList.add('psi-visited');
-            link.addEventListener('mousedown', () => {
+            const markVisited = () => {
                 addVisited(alphaId);
                 el.classList.add('psi-visited');
-            }, { passive: true });
+            };
+            link.addEventListener('click',    markVisited, { passive: true });
+            link.addEventListener('auxclick', markVisited, { passive: true }); // middle-click / new-tab
 
             // Per-item DL glyph — uses resolveBulkFile 3-hop pipeline when available
             if (!el.querySelector('.psi-dl-glyph') && resolveBulkFile) {
@@ -1158,7 +1228,6 @@
                                id:        a.id,
                              })),
             gridItemsCount:  document.querySelectorAll('.grid > div, .grid-images_box, .theItem').length,
-            apiCacheCount:   albumGalleryCache.size,
             lastCdnMedia:    _lastCdnMedia || 'none',
             bulkEngineReady: !!resolveBulkFile,
             envGlobals: {
@@ -1242,6 +1311,8 @@
             DELAY_MS:       1200,
             MAX_CONCURRENT: 2,
             API_TIMEOUT:    20000,
+            DOWNLOAD_TIMEOUT: 60000, // GAP 8 fix: GM_download had no hard bound at all
+            activeRequests: new Set(), // GAP 9 fix: live GM_* control handles, so STOP can abort() them
         };
 
         const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -1295,13 +1366,19 @@
         // ── GM_xmlhttpRequest wrapper ─────────────────────────────────────────
         function gmFetch(opts) {
             return new Promise((resolve, reject) => {
-                GM_xmlhttpRequest({
+                // GAP 9 fix: capture the control handle so an in-flight
+                // request can be abort()-ed from the STOP button, and
+                // deregister on every terminal path (finally-equivalent —
+                // GM_xmlhttpRequest has no promise/finally of its own).
+                const control = GM_xmlhttpRequest({
                     timeout:   BulkState.API_TIMEOUT,
                     ...opts,
-                    onload:    r  => resolve(r),
-                    onerror:   () => reject(new Error('Network error: ' + opts.url)),
-                    ontimeout: () => reject(new Error('Timeout: '       + opts.url)),
+                    onload:    r  => { BulkState.activeRequests.delete(control); resolve(r); },
+                    onerror:   () => { BulkState.activeRequests.delete(control); reject(new Error('Network error: ' + opts.url)); },
+                    ontimeout: () => { BulkState.activeRequests.delete(control); reject(new Error('Timeout: '       + opts.url)); },
+                    onabort:   () => { BulkState.activeRequests.delete(control); reject(new Error('Aborted: '       + opts.url)); },
                 });
+                BulkState.activeRequests.add(control);
             });
         }
 
@@ -1439,11 +1516,19 @@
         }
 
         // ── resolveBulkFile (module-scope export) ─────────────────────────────
-        // GAP 2 fix: albumGalleryCache fast-path wired here.
+        // GAP 13 fix: removed the albumGalleryCache "fast-path" (GAP 2, prior
+        // revision). `/api/album/gallery`'s `image_url` is a preview/thumbnail
+        // asset — it is never the signed, authenticated original-file CDN URL
+        // that dl.bunkr.cr's sign pipeline produces. Every bulk (and per-item
+        // grid glyph) download that hit this cache was handed a thumbnail URL
+        // to download as if it were the file; the CDN correctly rejected the
+        // request, surfacing as a uniform SERVER_BAD_CONTENT across every
+        // item. There is no valid fast-path around the signed-URL requirement
+        // — every file must go through getNumericId → callMainAPI →
+        // getSignedToken.
         // GAP 6 fix: 3-retry exponential backoff on API failures.
         //
         // Resolution order:
-        //   0. albumGalleryCache fast-path (pre-fetched CDN URL — skips hops 1+2)
         //   1. getNumericId (fetch /f/<slug> page, parse __NEXT_DATA__)
         //   2. callMainAPI  (POST dl.bunkr.cr/api/_001_v2 → CDN base + file path)
         //   3. getSignedToken (GET glb-apisign.cdn.cr/sign → token + ex)
@@ -1451,33 +1536,9 @@
         resolveBulkFile = async function _resolveBulkFile(item, attempt = 0) {
             const MAX_RETRIES = 3;
 
-            // Fast-path: gallery prefetch cache hit (numericId → image_url)
-            // The cache key is the numeric id. We do not have it yet at this
-            // point (we have the alpha slug), so we attempt a slug→id lookup
-            // by checking if the fetched page HTML leaks the id early.
-            // The full fast-path activates after the first resolution caches
-            // the numeric id back into the item object.
-            if (item._numId && albumGalleryCache.has(item._numId)) {
-                const cachedUrl = albumGalleryCache.get(item._numId);
-                if (isCdnUrl(cachedUrl)) {
-                    logBulk(`  [cache] Fast-path hit for ${item._numId}`, 'dbg');
-                    return { cdnURL: cachedUrl, fname: item.name };
-                }
-            }
-
             try {
                 const { numId, fname }                = await getNumericId(item);
-                // Store numId on item for future cache lookups
                 item._numId = numId;
-
-                // Re-check cache now that we have the numId
-                if (albumGalleryCache.has(numId)) {
-                    const cachedUrl = albumGalleryCache.get(numId);
-                    if (isCdnUrl(cachedUrl)) {
-                        logBulk(`  [cache] Post-ID cache hit for ${numId}`, 'dbg');
-                        return { cdnURL: cachedUrl, fname };
-                    }
-                }
 
                 const { cdnBase, filePath, original } = await callMainAPI(numId);
                 const { token, ex }                   = await getSignedToken(filePath);
@@ -1502,18 +1563,48 @@
         };
 
         // ── downloadBulkFile ──────────────────────────────────────────────────
-        // GAP 5 fix: GM_download does not expose ontimeout — removed.
-        // Timeout is handled at the gmFetch layer (API_TIMEOUT covers each hop).
+        // GAP 5/8 fix: GM_download exposes no native `timeout` option, so the
+        // prior comment's claim that "API_TIMEOUT covers each hop" was false —
+        // gmFetch's timeout only bounds the 3-hop resolution, never the actual
+        // file transfer. A stalled transfer previously held `running` open
+        // forever, hanging processBulkQueue's completion-wait indefinitely.
+        // We now race the transfer against an explicit setTimeout and abort()
+        // the control handle if it fires (Gate 4.2). GAP 9 fix: the handle is
+        // also registered in activeRequests so STOP can abort it directly.
         function downloadBulkFile(url, filename) {
             return new Promise((resolve, reject) => {
-                GM_download({
+                let settled = false;
+                const cleanup = () => {
+                    clearTimeout(hardTimeout);
+                    BulkState.activeRequests.delete(control);
+                };
+                const control = GM_download({
                     url,
                     name:   (filename || 'bunkr_file').replace(/[\\/:*?"<>|]/g, '_').substring(0, 200),
                     saveAs: false,
                     headers: { 'Referer': 'https://dl.bunkr.cr/' },
-                    onerror(e)  { reject(new Error(JSON.stringify(e))); },
-                    onload()    { resolve(); },
+                    onerror(e) {
+                        if (settled) return;
+                        settled = true;
+                        cleanup();
+                        const reason = (e && (e.error || e.message)) ? (e.error || e.message) : 'unknown GM_download error';
+                        reject(new Error(String(reason)));
+                    },
+                    onload() {
+                        if (settled) return;
+                        settled = true;
+                        cleanup();
+                        resolve();
+                    },
                 });
+                BulkState.activeRequests.add(control);
+                const hardTimeout = setTimeout(() => {
+                    if (settled) return;
+                    settled = true;
+                    try { control && typeof control.abort === 'function' && control.abort(); } catch (_) { /* EAFP */ }
+                    cleanup();
+                    reject(new Error('Download timeout (' + (BulkState.DOWNLOAD_TIMEOUT / 1000) + 's): ' + url));
+                }, BulkState.DOWNLOAD_TIMEOUT);
             });
         }
 
@@ -1542,10 +1633,19 @@
                         BulkState.failed++;
                         logBulk(`✗ ERR: ${item.name} — ${e.message}`, 'err');
                     } finally {
+                        // GAP 10 fix: previously `running--` happened here and
+                        // the DELAY_MS sleep ran *after*, outside the finally.
+                        // That freed the concurrency slot immediately, so the
+                        // outer while-loop admitted the next item before any
+                        // delay elapsed — DELAY_MS traced through the code but
+                        // never actually paced requests against the CDN. The
+                        // sleep now runs while the slot is still held.
+                        if (!BulkState.aborted && BulkState.queue.length > 0) {
+                            await sleep(BulkState.DELAY_MS);
+                        }
                         BulkState.running--;
                         updateBulkUI();
                     }
-                    if (BulkState.queue.length > 0) await sleep(BulkState.DELAY_MS);
                 })();
             }
 
@@ -1617,6 +1717,13 @@
         document.getElementById('btn-bulk-stop').onclick = () => {
             BulkState.aborted = true;
             BulkState.queue   = [];
+            // GAP 9 fix: previously left already-running GM_xmlhttpRequest /
+            // GM_download calls to finish on their own — STOP only prevented
+            // *new* items from starting. Now actively abort every live handle.
+            for (const control of BulkState.activeRequests) {
+                try { control && typeof control.abort === 'function' && control.abort(); } catch (_) { /* EAFP */ }
+            }
+            BulkState.activeRequests.clear();
             setBulkStatus('✕ Pipeline Cancelled');
             document.getElementById('btn-bulk-start').disabled = false;
             document.getElementById('btn-bulk-pause').disabled = true;
@@ -1645,9 +1752,6 @@
     function bootstrap() {
         if (!document.body) { setTimeout(bootstrap, 50); return; }
         console.log('[Ψ-4NDR0666] Intelligence baseline established. Injecting payloads.');
-
-        // Prefetch album gallery for fast-path cache (albumGalleryCache)
-        prefetchAlbumGallery();
 
         initVisitedTracker();
         forceLargestFirst();
