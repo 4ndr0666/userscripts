@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         4ndr0tools - YouTube_Filter
+// @name         4ndr0tools - YT Filter
 // @namespace    https://github.com/4ndr0666/userscripts
 // @version      2.4
 // @author       4ndr0666
