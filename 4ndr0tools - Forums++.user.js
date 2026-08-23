@@ -2449,7 +2449,7 @@ const resolvers = [
             return url;
         },
     ],
-    [[/(thumbs|images)(\d+)?.imgbox.com\//, /:!imgbox.com\/g\//], url => url.replace(/_t\./gi, '_o.').replace(/thumbs/i, 'images')],
+    [[/(thumbs|images)(\d+)?\.imgbox\.com\//, /:!imgbox.com\/g\//], url => url.replace(/_t\./gi, '_o.').replace(/thumbs/i, 'images')],
     [
         [/imgbox.com\/g\//],
         async (url, http) => {
