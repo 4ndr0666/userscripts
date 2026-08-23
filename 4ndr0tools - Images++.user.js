@@ -1604,8 +1604,14 @@ const Popup = {
     p.toggleAttribute('loaded', !!inGallery);
     const poo = ai.popover || typeof p.showPopover === 'function' && $('[popover]:popover-open');
     ai.popover = poo && poo.getBoundingClientRect().width && ($css(poo, {opacity: 0}), poo) || null;
-    if (p.parentElement !== doc.body)
+    if (p.parentElement !== doc.body) {
+      const tn = p && p.tagName;
+      if (!(p instanceof Element) || /^(SCRIPT|IFRAME|OBJECT|EMBED|LINK|STYLE|META|TEMPLATE)$/i.test(tn || '')) {
+        App.handleError(['Unsafe popup element blocked: %o', p]);
+        return;
+      }
       doc.body.insertBefore(p, ai.bar && ai.bar.parentElement === doc.body && ai.bar || null);
+    }
     await 0;
     if (ai.popup !== p || App.checkProgress({start: true}) === false)
       return;
