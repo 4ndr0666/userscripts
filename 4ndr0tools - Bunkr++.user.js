@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Bunkr++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      6.0.0
+// @version      6.0.1
 // @author       4ndr0666
 // @description  Part of 4ndr0tools: Direct URL routing, auto-sort, hide visited, bypass dl gateway, bulk download
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
@@ -1203,7 +1203,22 @@
             ? 'psi-toast psi-toast--glyph psi-glass-panel'
             : 'psi-toast psi-glass-panel';
         if (isPsi) {
-            toast.innerHTML = `${specPsiSvg}<span class="psi-toast-label">${msg}</span>`;
+            // GAP 14 fix (CodeQL js/xss-through-dom): `msg` is not always a
+            // literal — several call sites (e.g. nativeDownload's `hint`)
+            // build it from a resolved filename, which traces back to
+            // whoever uploaded the file to bunkr.cr, not to us. The old code
+            // interpolated `msg` directly into an innerHTML template, so a
+            // filename like `<img src=x onerror=...>` would execute as
+            // markup the instant the toast rendered. specPsiSvg is a static
+            // constant defined once in this script (never derived from page,
+            // API, or DOM data), so it's still safe to inject as markup; the
+            // label is now a real text node, which cannot be reinterpreted
+            // as HTML no matter what it contains.
+            toast.innerHTML   = specPsiSvg;
+            const label       = document.createElement('span');
+            label.className   = 'psi-toast-label';
+            label.textContent = msg;
+            toast.appendChild(label);
         } else {
             toast.textContent = msg;
         }
