@@ -2,8 +2,8 @@
 // @name           4ndr0tools - LinkMaster
 // @namespace      https://github.com/4ndr0666/userscripts
 // @author         4ndr0666
-// @version        4.1.0
-// @description    Accurately decodes, previews, exports, validates and scrapes all links.
+// @version        5.0.0
+// @description    Accurately decodes, previews, exports, validates and scrapes all links. (Dual MPV Support)
 // @downloadURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
 // @updateURL      https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
 // @icon           https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
@@ -17,6 +17,7 @@
 // @grant          GM_registerMenuCommand
 // @grant          GM_addStyle
 // @connect        *
+// @connect        127.0.0.1
 // ==/UserScript==
 
 (() => {
@@ -79,7 +80,7 @@
       transform: translateX(calc(100% - 22px));
     }
 
-    #linkmaster-dock:hover {
+#linkmaster-dock:hover {
       transform: translateX(0);
     }
 
@@ -160,7 +161,7 @@
       border-radius: 6px 6px 0 0; border: 1px solid transparent; border-bottom: none;
       color: var(--text-secondary); cursor: pointer; transition: all 300ms ease-in-out; box-shadow: none;
     }
-    .hud-tabs .hud-button.active {
+.hud-tabs .hud-button.active {
       color: var(--text-cyan-active); border-color: var(--accent-cyan-border-idle);
       background: rgba(0, 229, 255, 0.05); box-shadow: inset 0 4px 10px -4px var(--glow-cyan-active);
     }
@@ -235,7 +236,7 @@
       outline: none; border-color: var(--accent-cyan); box-shadow: inset 0 0 8px var(--glow-cyan-active);
     }
 
-    /* Table Typography Hardening */
+/* Table Typography Hardening */
     .hud-content th {
       font-family: var(--font-hud);
       text-transform: uppercase;
@@ -265,12 +266,12 @@
   let currentTab = "scrape";
 
   const HOSTER_PATTERNS = [
-    /:\/\/([a-z0-9-]+\.)?bunkr\.(ac|cr|pk|ru|ws|la|to|is|bz|sx|re|co|sh|pl|gg|mn|yt|site|si|red|org|su|io|net)/i,
+    /:\/\/([a-z0-9-]+\.)?bunkr\.(ac|cr|pk|ru|ws|la|to|is|bz|sx|re|co|sh|pl|gg|mn|yt|site|si|red|org|su|io|net|black)/i,
+    /:\/\/([a-z0-9-]+\.)?bunkrrr\.org/i,
+    /:\/\/([a-z0-9-]+\.)?cyberdrop\.(me|cc|nl|to|xyz)/i,
     /:\/\/([a-z0-9-]+\.)?gofile\.io/i,
     /:\/\/([a-z0-9-]+\.)?1fichier\.com/i,
-    /:\/\/([a-z0-9-]+\.)?motherless\.com/i,
-    /:\/\/([a-z0-9-]+\.)?motherlessmedia\.com/i,
-    /:\/\/([a-z0-9-]+\.)?bunkrrr\.org/i,
+    /:\/\/([a-z0-9-]+\.)?motherless(media)?\.com/i,
     /:\/\/([a-z0-9-]+\.)?pixeldrain\.com/i,
     /:\/\/([a-z0-9-]+\.)?pixhost\.to/i,
     /:\/\/([a-z0-9-]+\.)?imgbox\.com/i,
@@ -278,14 +279,17 @@
     /:\/\/([a-z0-9-]+\.)?imagetwist\.com/i,
     /:\/\/([a-z0-9-]+\.)?nudbay\.com/i,
     /:\/\/([a-z0-9-]+\.)?spankbang\.com/i,
-    /:\/\/([a-z0-9-]+\.)?thothub\.vip/i,
+    /:\/\/([a-z0-9-]+\.)?thothub\.(vip|to|is)/i,
     /:\/\/([a-z0-9-]+\.)?vimeo\.com/i,
     /:\/\/([a-z0-9-]+\.)?youtube\.com/i,
     /:\/\/([a-z0-9-]+\.)?simpcity\.su/i,
-    /:\/\/([a-z0-9-]+\.)?bunkr\.site/i,
-    /:\/\/([a-z0-9-]+\.)?bunkr\.si/i,
-    /:\/\/([a-z0-9-]+\.)?bunkr\.red/i,
     /:\/\/([a-z0-9-]+\.)?bilibili\.com/i,
+    /:\/\/([a-z0-9-]+\.)?erome\.com/i,
+    /:\/\/([a-z0-9-]+\.)?coomer\.(party|su)/i,
+    /:\/\/([a-z0-9-]+\.)?kemono\.(party|su)/i,
+    /:\/\/([a-z0-9-]+\.)?streamtape\.com/i,
+    /:\/\/([a-z0-9-]+\.)?voe\.sx/i,
+    /:\/\/([a-z0-9-]+\.)?fapello\.com/i
   ];
 
   const MEDIA_TYPES = [
@@ -299,6 +303,22 @@
   // ===========================================================================
   function setUserPref(key, val) { GM_setValue(key, val); }
   function getUserPref(key, def) { const v = GM_getValue(key, null); return v == null ? def : v; }
+
+  function escapeHTML(str) {
+    if (!str) return "";
+    return String(str).replace(/[&<>'"]/g, (match) => {
+const escape = { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' };
+      return escape[match];
+    });
+  }
+
+  function analyzeThreatHeuristics(url) {
+    const tags = [];
+    if (/javascript:/i.test(url)) tags.push("XSS");
+    if (/\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/.test(url)) tags.push("IP-HOST");
+    if (url.length > 2000) tags.push("ANOMALY");
+    return tags;
+  }
 
   let previewThumbMap = null;
   function buildPreviewThumbMap() {
@@ -354,6 +374,18 @@
     return MEDIA_TYPES.some(ext => u.endsWith("." + ext));
   }
 
+  function isJunkMedia(url) {
+    const u = url.toLowerCase();
+    const path = u.split("?")[0];
+    // Filter common UI vectors and static delivery networks to reduce HUD noise
+    if (path.endsWith(".svg")) return true;
+    if (u.includes("static.scdn.st")) return true;
+    if (u.includes("favicon")) return true;
+    if (/\/(icon|logo|avatar|banner)s?\//i.test(u)) return true;
+    if (/^(icon|logo|avatar|banner)[-_]/i.test(path.split("/").pop())) return true;
+    return false;
+  }
+
   function isBunkrUrl(url) {
     try {
       const host = new URL(url).hostname;
@@ -361,7 +393,7 @@
     } catch { return false; }
   }
 
-  function copyText(txt) {
+function copyText(txt) {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(txt).catch(() => copyTextLegacy(txt));
     } else {
@@ -378,6 +410,39 @@
     ta.select();
     document.execCommand("copy");
     ta.remove();
+  }
+
+  function launchMpvProtocol(url) {
+    window.location.href = `mpv://${encodeURIComponent(url)}`;
+  }
+
+  function streamToLocalMpv(url, btnEl) {
+    const origText = btnEl.textContent;
+    btnEl.textContent = "…";
+    btnEl.disabled = true;
+    GM_xmlhttpRequest({
+      method: "POST",
+      url: "http://127.0.0.1:19999",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      data: `url=${encodeURIComponent(url)}`,
+      timeout: 5000,
+      onload: (resp) => {
+        btnEl.textContent = origText;
+        btnEl.disabled = false;
+        if (resp.status === 200) showToast("⦒ █▓░ Stream dispatched to MPV bridge.");
+        else showToast(`MPV bridge error: HTTP ${resp.status}`);
+      },
+      onerror: () => {
+        btnEl.textContent = origText;
+        btnEl.disabled = false;
+        showToast("MPV bridge unavailable (127.0.0.1:19999).");
+      },
+      ontimeout: () => {
+        btnEl.textContent = origText;
+        btnEl.disabled = false;
+        showToast("MPV bridge timed out.");
+      }
+    });
   }
 
   // ===========================================================================
@@ -402,17 +467,17 @@
       let url = a.href.trim();
       const deprox = decodeConfirmationHref(a);
       if (deprox) url = deprox.trim();
-      if (isMediaFile(url)) links.add(url);
+      if (isMediaFile(url) && !isJunkMedia(url)) links.add(url);
     });
     document.querySelectorAll("img[src]").forEach(img => {
       const url = img.src.trim();
-      if (isMediaFile(url)) links.add(url);
+      if (isMediaFile(url) && !isJunkMedia(url)) links.add(url);
     });
     document.querySelectorAll("video, audio").forEach(el => {
-      if (el.src && isMediaFile(el.src.trim())) links.add(el.src.trim());
+      if (el.src && isMediaFile(el.src.trim()) && !isJunkMedia(el.src.trim())) links.add(el.src.trim());
       el.querySelectorAll("source[src]").forEach(src => {
-        const url = src.src.trim();
-        if (isMediaFile(url)) links.add(url);
+const url = src.src.trim();
+        if (isMediaFile(url) && !isJunkMedia(url)) links.add(url);
       });
     });
     return Array.from(links);
@@ -492,7 +557,7 @@
         <button class="hud-btn${extractionMode === "media" ? " active" : ""}" id="hud-media-mode-btn">Media Mode</button>
         <span id="hud-scrape-status" class="hud-status-text" style="color:var(--text-secondary);"></span>
       </div>
-      <div id="hud-media-table-root" style="margin-top:12px;"></div>
+<div id="hud-media-table-root" style="margin-top:12px;"></div>
       <div style="color:var(--text-cyan-active); margin-top:12px;" class="hud-status-text">
         <b>Mode:</b> <span id="hud-current-mode">${extractionMode === "host" ? "External Host Links (decoded, deproxied)" : "All Media (images/videos/audio on page)"}</span>
       </div>
@@ -571,7 +636,7 @@
         }
       } catch { /* ignore */ }
     }
-    const ext = url.split(".").pop().split("?")[0].toLowerCase();
+const ext = url.split(".").pop().split("?")[0].toLowerCase();
     if (["jpg","jpeg","png","webp","gif","bmp","svg"].includes(ext)) {
       const img = document.createElement("img");
       img.src = url;
@@ -608,20 +673,33 @@
       </tr>
     </thead><tbody>`;
     links.forEach((url, idx) => {
-      const file     = url.split("/").pop().split("?")[0].slice(0, 40) || "(index)";
-      const host     = (() => { try { return new URL(url).hostname; } catch { return ""; } })();
+      const fileRaw  = url.split("/").pop().split("?")[0].slice(0, 40) || "(index)";
+      const hostRaw  = (() => { try { return new URL(url).hostname; } catch { return ""; } })();
+
+      const fileSafe = escapeHTML(fileRaw);
+      const hostSafe = escapeHTML(hostRaw);
+      const urlSafe  = encodeURIComponent(url);
+
+      const heuristics = analyzeThreatHeuristics(url);
+      const threatChips = heuristics.length > 0 ? ' ' + heuristics.map(h => `<span class="chip dead">${h}</span>`).join(" ") : "";
+
       const isBunkr  = isBunkrUrl(url);
       const streamBtn = isBunkr
         ? `<button class="hud-btn" data-idx="${idx}" data-action="stream" title="Resolve direct CDN link via DOM-first acquisition">Stream</button>`
         : "";
-      html += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);" data-url="${encodeURIComponent(url)}">
+      const mpvUriBtn = `<button class="hud-btn" data-idx="${idx}" data-action="mpv-uri" title="Stream via OS protocol handler">MPV (URI)</button>`;
+      const mpvBridgeBtn = `<button class="hud-btn" data-idx="${idx}" data-action="mpv-bridge" title="Stream via local HTTP bridge">MPV (Brdg)</button>`;
+
+      html += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);" data-url="${urlSafe}">
         <td id="media-preview-${idx}" style="min-width:72px;max-width:80px;padding:8px 4px;"></td>
-        <td style="max-width:200px;overflow-x:auto;padding:8px 4px;">${file}</td>
-        <td style="color:var(--text-cyan-active);max-width:140px;overflow-x:auto;padding:8px 4px;">${host}</td>
+        <td style="max-width:200px;overflow-x:auto;padding:8px 4px;">${fileSafe}${threatChips}</td>
+        <td style="color:var(--text-cyan-active);max-width:140px;overflow-x:auto;padding:8px 4px;">${hostSafe}</td>
         <td class="hud-action-cell" style="padding:8px 4px;">
           <button class="hud-btn" data-idx="${idx}" data-action="copy">Copy</button>
           <button class="hud-btn" data-idx="${idx}" data-action="open">Open</button>
           ${streamBtn}
+          ${mpvUriBtn}
+          ${mpvBridgeBtn}
         </td>
         <td id="media-check-${idx}" style="padding:8px 4px;"><span class="chip unknown">…</span></td>
       </tr>`;
@@ -635,7 +713,7 @@
       if (prevTd && prev) prevTd.appendChild(prev);
     });
 
-    root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
+root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
       btn.onclick = function () {
         const idx    = +this.getAttribute("data-idx");
         const action = this.getAttribute("data-action");
@@ -647,6 +725,11 @@
           window.open(url, "_blank", "noopener");
         } else if (action === "stream") {
           resolveBunkrStreamLink(url, this);
+        } else if (action === "mpv-uri") {
+          launchMpvProtocol(url);
+          showToast("Dispatched via MPV URI.");
+        } else if (action === "mpv-bridge") {
+          streamToLocalMpv(url, this);
         }
       };
     });
@@ -707,7 +790,7 @@
           "a[href*='cdn'][href$='.zip']",
           "a[download][href]",
         ].join(", "));
-        if (anchor?.href) {
+if (anchor?.href) {
           copyText(anchor.href);
           showToast("⦒ █▓░ CDN link copied.");
           return;
@@ -782,7 +865,7 @@
       return;
     }
 
-    if (checker && checker.type === "fetch") {
+if (checker && checker.type === "fetch") {
       fetch(url, { method: checker.method, mode: "no-cors", cache: "no-store" })
         .then(resp => {
           let status = "unknown";
@@ -849,23 +932,32 @@
   function renderBulkCheckTable(urls, root) {
     root.innerHTML = `<div class="hud-status-text" style="color:var(--text-secondary);margin-bottom:8px;">Checking ${urls.length} links...</div>`;
     let html = `<table style="width:100%;border-collapse:collapse; text-align:left;"><thead>
-      <tr style="border-bottom: 1px solid var(--accent-cyan-border-idle); color:var(--text-cyan-active);">
+<tr style="border-bottom: 1px solid var(--accent-cyan-border-idle); color:var(--text-cyan-active);">
         <th style="padding:8px 4px;">Link</th>
         <th style="padding:8px 4px;">Status</th>
         <th style="padding:8px 4px;">Actions</th>
       </tr>
     </thead><tbody>`;
     urls.forEach((url, idx) => {
+      const urlSafe  = escapeHTML(url);
       const isBunkr  = isBunkrUrl(url);
+      const heuristics = analyzeThreatHeuristics(url);
+      const threatChips = heuristics.length > 0 ? ' ' + heuristics.map(h => `<span class="chip dead">${h}</span>`).join(" ") : "";
+
       const streamBtn = isBunkr
         ? `<button class="hud-btn" data-bulk-idx="${idx}" data-action="stream">Stream</button>`
         : "";
+      const mpvUriBtn = `<button class="hud-btn" data-bulk-idx="${idx}" data-action="mpv-uri" title="Stream via OS protocol handler">MPV (URI)</button>`;
+      const mpvBridgeBtn = `<button class="hud-btn" data-bulk-idx="${idx}" data-action="mpv-bridge" title="Stream via local HTTP bridge">MPV (Brdg)</button>`;
+
       html += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-        <td style="max-width:300px;overflow-x:auto;padding:8px 4px;">${url}</td>
+        <td style="max-width:300px;overflow-x:auto;padding:8px 4px;">${urlSafe}${threatChips}</td>
         <td id="bulk-check-${idx}" style="padding:8px 4px;"><span class="chip unknown">…</span></td>
         <td class="hud-action-cell" style="padding:8px 4px;">
           <button class="hud-btn" data-bulk-idx="${idx}" data-action="copy">Copy</button>
           ${streamBtn}
+          ${mpvUriBtn}
+          ${mpvBridgeBtn}
         </td>
       </tr>`;
     });
@@ -878,6 +970,8 @@
         const action = this.getAttribute("data-action");
         if (action === "copy") { copyText(urls[idx]); showToast("Copied."); }
         else if (action === "stream") { resolveBunkrStreamLink(urls[idx], this); }
+        else if (action === "mpv-uri") { launchMpvProtocol(urls[idx]); showToast("Dispatched via MPV URI."); }
+        else if (action === "mpv-bridge") { streamToLocalMpv(urls[idx], this); }
       };
     });
 
@@ -910,7 +1004,7 @@
         <button class="hud-btn" id="hud-hostlist-btn">Show Host Patterns</button>
         <button class="hud-btn" id="hud-clear-prefs-btn" style="border-color:rgba(255, 77, 77, 0.5);color:#ff4d4d;">Reset Prefs</button>
       </div>
-      <div style="margin-bottom:16px;">
+<div style="margin-bottom:16px;">
         <textarea id="hud-export-area" class="hud-input" rows="8" readonly placeholder="Exported links or pattern list will appear here."></textarea>
       </div>
       <div class="hud-status-text" style="color:var(--text-secondary);">
