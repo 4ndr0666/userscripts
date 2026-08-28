@@ -1,13 +1,10 @@
 // ==UserScript==
 // @name        4ndr0tools - Login Form Autofiller
 // @namespace   https://www.github.com/4ndr0666/userscripts
-// @version     1.2.0
+// @version     2017.12.15
 // @description It integrates BugMeNot into any login form (it retrieves all matching logins from bugmenot.com and autofills the login form)
-// @icon        https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png      
-// @downloadURL https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Login%20Form%20Autofiller.user.js
-// @updateURL   https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Login%20Form%20Autofiller.user.js
-// @author      4ndr0666
-// @license     UNLICENSED - RED TEAM USE ONLY
+// @authors     4ndr0666, Matt McCarthy, darkred
+// @license     MIT
 // @include     http://*
 // @include     https://*
 // @exclude     http://bugmenot.com/*
@@ -23,46 +20,57 @@
 // @require     https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js
 // @noframes
 // @run-at      document-idle
+// @supportURL  https://github.com/darkred/Userscripts/issues
 // ==/UserScript==
 
 /* global GM */
 
 // ---------------------------------------------------------------------------
-// FIX 5: Upgraded all BugMeNot URLs to HTTPS to prevent mixed-content blocks
-// in modern userscript managers (Tampermonkey, Violentmonkey).
+// FIX 5: All BugMeNot URLs upgraded to HTTPS.
 // ---------------------------------------------------------------------------
 const bmnView    = 'https://bugmenot.com/view';
 const bmnHomeUri = 'https://bugmenot.com/';
 
 // ---------------------------------------------------------------------------
-// FIX 10: Made trailing path component optional in the domain-extraction regex
-// so URLs with no explicit path (e.g. https://example.com) are handled.
-// Original: '(?:https?://)(www\\.)?(.*?)/.*?'  — required a trailing slash.
-// Fixed:    '(?:https?://)(www\\.)?(.*?)(?:/|$)' — slash OR end-of-string.
+// FIX 10: Trailing path optional — handles https://example.com with no slash.
 // ---------------------------------------------------------------------------
-const myString    = location.href;
-const domainnameRE = /(?:https?:\/\/)(www\.)?(.*?)(?:\/|$)/i;
+const myString      = location.href;
+const domainnameRE  = /(?:https?:\/\/)(www\.)?(.*?)(?:\/|$)/i;
 const domainnameMatch = myString.match(domainnameRE);
-const domainname  = domainnameMatch ? domainnameMatch[2] : location.hostname;
+const domainname    = domainnameMatch ? domainnameMatch[2] : location.hostname;
 
 const bmnUri = bmnView + '/' + domainname;
 
-// ---------------------------------------------------------------------------
-// Timing constant: millisecond delay between a field losing focus and checking
-// whether any other BugMeNot-managed field has acquired focus. Must be long
-// enough that the menu's onclick fires before display:none hides it.
-// ---------------------------------------------------------------------------
+// Millisecond delay between blur and focus-check — must be long enough for
+// the menu onclick to fire before display:none hides the wrapper.
 const BLUR_TIMEOUT = 250;
 
 const DEBUG = false;
 
-// new logins retrieved from the current page — reset on every page load
+// Tracks XHR fetches this page-load session; reset on every page load.
 var retrievals = 0;
 
-// counter: persisted across page loads via GM storage, tracks which cached
-// login entry to serve next. Initialized asynchronously in the bootstrap IIFE
-// below; processPasswordFields() is only called after counter is resolved.
+// Persisted counter: which cached credential index to serve next.
+// Fully resolved before main() is called — eliminates the FIX 2 race.
 var counter;
+
+// ---------------------------------------------------------------------------
+// FIX (SPA): Tracks which username field indices have had a BugMeNot wrapper
+// injected, preventing the MutationObserver from double-injecting.
+// ---------------------------------------------------------------------------
+var injectedUsernameIndices = new Set();
+
+// ---------------------------------------------------------------------------
+// TWO-PHASE STATE
+//
+// Phase 1 — Only an email/text field is visible (multi-step form). Credentials
+// are fetched, email filled immediately, password stored in pendingPasswordValue.
+// Phase 2 — MutationObserver detects the password field appearing and injects
+// the pending value immediately.
+//
+// For standard single-step forms both phases complete in a single click.
+// ---------------------------------------------------------------------------
+var pendingPasswordValue = null;
 
 
 // ---------------------------------------------------------------------------
@@ -110,6 +118,12 @@ var Utility = {
         } else if (target.attachEvent) {
             target.attachEvent('on' + eventName, eventHandler);
         }
+    },
+    // Returns true if the element is part of the visible layout.
+    // offsetParent is null for display:none elements and detached nodes.
+    isVisible: function (el) {
+        var rect = el.getBoundingClientRect();
+        return el.offsetParent !== null || (rect.width > 0 && rect.height > 0);
     }
 };
 
@@ -185,69 +199,252 @@ function copyProperties(to, from) {
 
 
 // ---------------------------------------------------------------------------
+// setNativeValue
+//
+// FIX (MegaPass / Angular / React trusted-event requirement):
+//
+// Three-layer field injection strategy, applied in order until one succeeds:
+//
+// Layer 1 — execCommand('insertText'):
+//   The ONLY mechanism in Chromium that produces a genuinely isTrusted=true
+//   'input' event from script. Required to bypass password managers such as
+//   MegaPass that explicitly check event.isTrusted and block synthetic events.
+//   Procedure: focus the field, select-all existing content, then execCommand
+//   replaces the selection with the new value, firing a trusted InputEvent.
+//   execCommand is deprecated but still functional in all current Chromium
+//   builds and Firefox. It is tried first because it produces the most
+//   compatible result with framework change-detection AND trusted-event checks.
+//
+// Layer 2 — Native prototype setter + synthetic events:
+//   Fallback for browsers where execCommand('insertText') is unavailable or
+//   returns false. Writes through HTMLInputElement.prototype's native value
+//   setter (bypassing Angular/React's Object.defineProperty interception),
+//   then dispatches synthetic 'input' and 'change' events. These events have
+//   isTrusted=false and will be blocked by MegaPass, but will work on sites
+//   that only require framework change-detection without trusted-event guards.
+//
+// Layer 3 — Direct .value assignment:
+//   Final fallback for non-standard environments where prototype access fails.
+//   Least compatible; does not trigger any framework or password manager hooks.
+// ---------------------------------------------------------------------------
+function setNativeValue(field, value) {
+    // Layer 1: execCommand — produces isTrusted=true InputEvent in Chromium.
+    try {
+        field.focus();
+        field.select();
+        // For password/email fields, select() may be a no-op; use setSelectionRange.
+        try { field.setSelectionRange(0, field.value.length); } catch (e) { /* ok */ }
+
+        var execResult = document.execCommand('insertText', false, value);
+
+        if (execResult) {
+            // execCommand succeeded and fired a trusted InputEvent.
+            // Dispatch 'change' explicitly since execCommand only fires 'input'.
+            field.dispatchEvent(new Event('change', { bubbles: true }));
+            field.blur();
+            return;
+        }
+    } catch (e) {
+        if (DEBUG) console.warn('BugMeNot: execCommand layer failed —', e);
+    }
+
+    // Layer 2: Native prototype setter + synthetic events.
+    // Fallback for when execCommand is unavailable or returned false.
+    try {
+        var nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+            window.HTMLInputElement.prototype, 'value'
+        ).set;
+        nativeInputValueSetter.call(field, value);
+    } catch (e) {
+        // Layer 3: Direct assignment as last resort.
+        field.value = value;
+    }
+    field.dispatchEvent(new Event('input',  { bubbles: true }));
+    field.dispatchEvent(new Event('change', { bubbles: true }));
+    field.dispatchEvent(new Event('focus',  { bubbles: true }));
+    field.dispatchEvent(new Event('blur',   { bubbles: true }));
+}
+
+
+// ---------------------------------------------------------------------------
+// getBmnWrapper — retrieves the BugMeNot UI panel by username-field index
+// ---------------------------------------------------------------------------
+function getBmnWrapper(usernameFieldIndex) {
+    return document.getElementById('reify-bugmenot-bmnWrapper' + usernameFieldIndex);
+}
+
+
+// ---------------------------------------------------------------------------
+// updateGetLoginLinkLabel
+//
+// FIX (dynamic label): Rebuilds the "Get login" button text after each
+// successful injection. Injects "Reset counter" link on first counter advance.
+// ---------------------------------------------------------------------------
+function updateGetLoginLinkLabel(usernameFieldIndex) {
+    var bmnWrapper = getBmnWrapper(usernameFieldIndex);
+    if (!bmnWrapper) return;
+
+    var anchors = bmnWrapper.getElementsByTagName('a');
+    if (!anchors.length) return;
+    var getLoginAnchor = anchors[0];
+
+    (async function () {
+        var total          = JSON.parse(await GM.getValue('allUsernames', '[]')).length;
+        var currentCounter = parseInt(await GM.getValue('counter', 0));
+
+        var newText, newTitle;
+        if (currentCounter + 1 <= total) {
+            newText  = 'Try next login from BugMeNot (' + (currentCounter + 1) + '/' + total + ')';
+            newTitle = 'Try next login';
+        } else {
+            newText  = 'No other logins';
+            newTitle = 'No other logins available';
+        }
+
+        while (getLoginAnchor.firstChild) {
+            getLoginAnchor.removeChild(getLoginAnchor.firstChild);
+        }
+        getLoginAnchor.appendChild(document.createTextNode(newText));
+        getLoginAnchor.title = newTitle;
+
+        if (currentCounter > 0 &&
+                !document.getElementById('reify-bugmenot-resetLink' + usernameFieldIndex)) {
+            var resetCounterLink = menuLink(
+                '', 'Reset login attempt counter',
+                'Resets the login attempt counter (reloads the page)',
+                resetCounterLink_onclick, Style.menuLink,
+                usernameFieldIndex, -1,
+                menuLink_onmouseover, menuLink_onmouseout
+            );
+            resetCounterLink.id = 'reify-bugmenot-resetLink' + usernameFieldIndex;
+            var resetCounterLinkWrapper = menuEntry(resetCounterLink, Style.menuLinkWrapper);
+            var firstChild = bmnWrapper.firstChild;
+            if (firstChild && firstChild.nextSibling) {
+                bmnWrapper.insertBefore(resetCounterLinkWrapper, firstChild.nextSibling);
+            } else {
+                bmnWrapper.appendChild(resetCounterLinkWrapper);
+            }
+        }
+    })();
+}
+
+
+// ---------------------------------------------------------------------------
 // main — entry point, called after async counter initialization resolves
 // ---------------------------------------------------------------------------
 function main() {
-    processPasswordFields();
+    processLoginFields();
+    installMutationObserver();
 }
 
 
 // ---------------------------------------------------------------------------
-// getBmnWrapper — retrieves the floating BugMeNot UI panel by password-field index
+// installMutationObserver
+//
+// FIX (SPA root cause): SPAs render login forms dynamically after
+// document-idle. Watches for DOM mutations and re-runs processLoginFields()
+// on a 300ms debounce. Also calls attemptPhase2PasswordInjection() on every
+// firing to complete multi-step form injection when the password field appears.
 // ---------------------------------------------------------------------------
-function getBmnWrapper(pwFieldIndex) {
-    return document.getElementById('reify-bugmenot-bmnWrapper' + pwFieldIndex);
+function installMutationObserver() {
+    var debounceTimer = null;
+
+    var observer = new MutationObserver(function (mutations) {
+        var hasNewNodes = mutations.some(function (m) {
+            return m.addedNodes.length > 0;
+        });
+        if (!hasNewNodes) return;
+
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function () {
+            processLoginFields();
+            attemptPhase2PasswordInjection();
+        }, 300);
+    });
+
+    var bodyEl = document.getElementsByTagName('body')[0];
+    if (bodyEl) {
+        observer.observe(bodyEl, { childList: true, subtree: true });
+    }
 }
 
 
 // ---------------------------------------------------------------------------
-// processPasswordFields
+// attemptPhase2PasswordInjection
 //
-// FIX 2: counter is guaranteed initialized before this is called (bootstrap
-// IIFE at bottom calls main() only after GM.getValue resolves).
-//
-// FIX 7: myprompt/myprompt2 declared with `let` in outer scope so both
-// branches of the if/else assign into the same binding — no implicit globals.
+// TWO-PHASE — Phase 2: If a password was stored during Phase 1, inject it
+// into the first visible password field that has appeared since. Clears
+// pendingPasswordValue on success so this fires exactly once per login.
 // ---------------------------------------------------------------------------
-function processPasswordFields() {
+function attemptPhase2PasswordInjection() {
+    if (pendingPasswordValue === null) return;
+
+    var allInputs = document.getElementsByTagName('input');
+    for (var i = 0; i < allInputs.length; i++) {
+        var field = allInputs[i];
+        if (field.type && field.type.toLowerCase() === 'password' &&
+                Utility.isVisible(field)) {
+            setNativeValue(field, pendingPasswordValue);
+            console.log('BugMeNot: Phase 2 — password field appeared, injected cached password.');
+            pendingPasswordValue = null;
+            return;
+        }
+    }
+}
+
+
+// ---------------------------------------------------------------------------
+// processLoginFields
+//
+// Attaches the BugMeNot wrapper to any visible email/text field that does not
+// already have one. Password field presence is not required — multi-step forms
+// are handled via Phase 2. Wrapper id and Set guard keyed to username index.
+//
+// FIX 1: continue unconditional when field unusable; DEBUG gates log only.
+// FIX 2: counter guaranteed initialized before first call.
+// FIX 7: myprompt/myprompt2 declared with let in outer scope.
+// FIX (SPA): injectedUsernameIndices prevents double-injection.
+// FIX (visibility): Only visible fields processed — skips hidden duplicates.
+// ---------------------------------------------------------------------------
+function processLoginFields() {
     (async function () {
-        var allInputs    = document.getElementsByTagName('input');
-        var bmnContainer = document.createElement('div');
-        bmnContainer.id  = 'reify-bugmenot-container';
-        var bodyEl = document.getElementsByTagName('body')[0];
+        var allInputs = document.getElementsByTagName('input');
+        var bodyEl    = document.getElementsByTagName('body')[0];
         if (!bodyEl) return;
 
+        var bmnContainer = document.getElementById('reify-bugmenot-container');
+        if (!bmnContainer) {
+            bmnContainer = document.createElement('div');
+            bmnContainer.id = 'reify-bugmenot-container';
+            bodyEl.appendChild(bmnContainer);
+        }
+
         for (var i = 0; i < allInputs.length; i++) {
-            var pwField = allInputs[i];
-            if (!(pwField.type && pwField.type.toLowerCase() === 'password')) {
-                continue;
-            }
+            var field     = allInputs[i];
+            var fieldType = field.type ? field.type.toLowerCase() : '';
 
-            var previousTextFieldInd = getPreviousTextField(i, allInputs);
+            if (fieldType !== 'email' && fieldType !== 'text') continue;
+            if (!Utility.isVisible(field)) continue;
+            if (injectedUsernameIndices.has(i)) continue;
 
-            // FIX 1: The original code placed `continue` inside the DEBUG
-            // block, meaning the loop only skipped the field when DEBUG===true.
-            // The continue must execute unconditionally when no text field
-            // precedes the password field; the DEBUG block only gates logging.
-            if (previousTextFieldInd === -1) {
-                if (DEBUG) {
-                    console.log('Couldn\'t find text field before password input ' + i + '.');
-                }
-                continue;
-            }
+            var usernameField = field;
+            var usernameIndex = i;
+            var passwordIndex = getFollowingPasswordField(i, allInputs);
+            var pwField       = passwordIndex !== -1 ? allInputs[passwordIndex] : null;
 
-            var usernameField = allInputs[previousTextFieldInd];
-            usernameField.blur();   // Workaround: defocus default-focused username field
-            usernameField.setAttribute('usernameInputIndex', previousTextFieldInd);
-            usernameField.setAttribute('passwordInputIndex', i);
+            usernameField.blur();
+            usernameField.setAttribute('usernameInputIndex', usernameIndex);
+            usernameField.setAttribute('passwordInputIndex', passwordIndex);
             Utility.addEventHandler(usernameField, 'focus', usernameField_onfocus);
             Utility.addEventHandler(usernameField, 'blur',  usernameField_onblur);
-            Utility.addEventHandler(pwField, 'focus', pwField_onfocus);
-            Utility.addEventHandler(pwField, 'blur',  pwField_onblur);
-            pwField.setAttribute('usernameInputIndex', previousTextFieldInd);
-            pwField.setAttribute('passwordInputIndex', i);
 
-            // FIX 7: Declare prompt vars in outer scope; assign in both branches.
+            if (pwField) {
+                Utility.addEventHandler(pwField, 'focus', pwField_onfocus);
+                Utility.addEventHandler(pwField, 'blur',  pwField_onblur);
+                pwField.setAttribute('usernameInputIndex', usernameIndex);
+                pwField.setAttribute('passwordInputIndex', passwordIndex);
+            }
+
             let myprompt, myprompt2;
 
             if (counter === 0) {
@@ -267,15 +464,13 @@ function processPasswordFields() {
             var getLoginLink = menuLink(
                 bmnUri, myprompt, myprompt2,
                 getLoginLink_onclick, Style.menuLink,
-                previousTextFieldInd, i,
+                usernameIndex, passwordIndex,
                 menuLink_onmouseover, menuLink_onmouseout
             );
             var getLoginLinkWrapper = menuEntry(getLoginLink, Style.menuLinkWrapper);
 
-            // FIX 8: Scoped with block + explicit let so resetCounterLinkWrapper
-            // is never referenced outside this guarded branch.
             var bmnWrapper = document.createElement('div');
-            bmnWrapper.id        = 'reify-bugmenot-bmnWrapper' + i;
+            bmnWrapper.id        = 'reify-bugmenot-bmnWrapper' + usernameIndex;
             bmnWrapper.className = 'reify-bugmenot-bmnWrapper';
             bmnWrapper.appendChild(getLoginLinkWrapper);
 
@@ -284,9 +479,10 @@ function processPasswordFields() {
                     '', 'Reset login attempt counter',
                     'Resets the login attempt counter (reloads the page)',
                     resetCounterLink_onclick, Style.menuLink,
-                    previousTextFieldInd, i,
+                    usernameIndex, passwordIndex,
                     menuLink_onmouseover, menuLink_onmouseout
                 );
+                resetCounterLink.id = 'reify-bugmenot-resetLink' + usernameIndex;
                 let resetCounterLinkWrapper = menuEntry(resetCounterLink, Style.menuLinkWrapper);
                 bmnWrapper.appendChild(resetCounterLinkWrapper);
             }
@@ -295,7 +491,7 @@ function processPasswordFields() {
                 bmnUri, 'More options',
                 'See more options for getting logins from BugMeNot.com (opens a new window)',
                 openMenuLink_onclick, Style.menuLink,
-                previousTextFieldInd, i,
+                usernameIndex, passwordIndex,
                 menuLink_onmouseover, menuLink_onmouseout
             );
             var fullFormLinkWrapper = menuEntry(fullFormLink, Style.menuLinkWrapper);
@@ -304,7 +500,7 @@ function processPasswordFields() {
                 bmnHomeUri, 'Visit BugMeNot',
                 'Go to the BugMeNot home page (opens a new window)',
                 openMenuLink_onclick, Style.menuLink,
-                previousTextFieldInd, i,
+                usernameIndex, passwordIndex,
                 menuLink_onmouseover, menuLink_onmouseout
             );
             var visitBmnLinkWrapper = menuEntry(visitBmnLink, Style.menuLinkWrapper);
@@ -314,10 +510,13 @@ function processPasswordFields() {
 
             copyProperties(bmnWrapper.style, Style.bmnWrapper);
             bmnContainer.appendChild(bmnWrapper);
-        }
 
-        if (bmnContainer.hasChildNodes()) {
-            bodyEl.appendChild(bmnContainer);
+            injectedUsernameIndices.add(usernameIndex);
+
+            if (DEBUG) {
+                console.log('BugMeNot: Attached to username field', usernameIndex,
+                    '| password field:', passwordIndex === -1 ? 'NONE (multi-step)' : passwordIndex);
+            }
         }
     })();
 }
@@ -373,10 +572,10 @@ function menuLink_onmouseout(event) {
 // ---------------------------------------------------------------------------
 function getLoginLink_onclick(event) {
     var allInputs = document.getElementsByTagName('input');
-    var pwIdx   = this.getAttribute('passwordInputIndex');
-    var unIdx   = this.getAttribute('usernameInputIndex');
-    var pwVal   = allInputs[pwIdx].value;
-    var unVal   = allInputs[unIdx].value;
+    var unIdx = this.getAttribute('usernameInputIndex');
+    var pwIdx = this.getAttribute('passwordInputIndex');
+    var unVal = allInputs[unIdx] ? allInputs[unIdx].value : '';
+    var pwVal = (pwIdx !== '-1' && allInputs[pwIdx]) ? allInputs[pwIdx].value : '';
     if ((!pwVal.length && !unVal.length) || confirm('Overwrite the current login entry?')) {
         getLogin(bmnUri, unIdx, pwIdx);
     }
@@ -388,11 +587,7 @@ function getLoginLink_onclick(event) {
 
 // ---------------------------------------------------------------------------
 // openMenuLink_onclick — opens BugMeNot page in a new tab
-//
-// FIX 9: typeof check on GM.openInTab was unreliable (the property exists on
-// the GM object even when the underlying API is absent, resulting in undefined
-// rather than a missing property). Now calls GM.openInTab directly and falls
-// back to window.open on any error.
+// FIX 9: try/catch fallback replaces unreliable typeof check.
 // ---------------------------------------------------------------------------
 function openMenuLink_onclick(event) {
     try {
@@ -418,14 +613,14 @@ function resetCounterLink_onclick() {
 
 
 // ---------------------------------------------------------------------------
-// Focus / blur handlers — show or hide the BugMeNot wrapper panel
+// Focus / blur handlers
 // ---------------------------------------------------------------------------
 function usernameField_onfocus(event) {
-    var allInputs = document.getElementsByTagName('input');
     event = event || window.event;
     var target = event.currentTarget || event.srcElement;
     target.setAttribute('hasFocus', true);
-    showHideBmnWrapper(target, allInputs[target.getAttribute('passwordInputIndex')], true);
+    var unIdx = target.getAttribute('usernameInputIndex');
+    showHideBmnWrapper(unIdx, target, true);
 }
 
 function usernameField_onblur(event) {
@@ -433,12 +628,10 @@ function usernameField_onblur(event) {
     event = event || window.event || this;
     var target = event.currentTarget || event.srcElement;
     target.setAttribute('hasFocus', false);
-    var fRef = hideIfNoFocus(
-        allInputs[target.getAttribute('usernameInputIndex')],
-        allInputs[target.getAttribute('passwordInputIndex')]
-    );
-    // Race condition guard: wait for the sibling field's onfocus to fire
-    // before collapsing the wrapper, so clicks inside the menu register.
+    var unIdx = target.getAttribute('usernameInputIndex');
+    var pwIdx = target.getAttribute('passwordInputIndex');
+    var pwField = (pwIdx !== '-1' && allInputs[pwIdx]) ? allInputs[pwIdx] : null;
+    var fRef = hideIfNoFocus(target, pwField, unIdx);
     setTimeout(fRef, BLUR_TIMEOUT);
 }
 
@@ -447,7 +640,8 @@ function pwField_onfocus(event) {
     event = event || window.event;
     var target = event.currentTarget || event.srcElement;
     target.setAttribute('hasFocus', true);
-    showHideBmnWrapper(allInputs[target.getAttribute('usernameInputIndex')], target, true);
+    var unIdx = target.getAttribute('usernameInputIndex');
+    showHideBmnWrapper(unIdx, allInputs[unIdx], true);
 }
 
 function pwField_onblur(event) {
@@ -455,52 +649,48 @@ function pwField_onblur(event) {
     event = event || window.event;
     var target = event.currentTarget || event.srcElement;
     target.setAttribute('hasFocus', false);
-    var fRef = hideIfNoFocus(
-        allInputs[target.getAttribute('usernameInputIndex')],
-        allInputs[target.getAttribute('passwordInputIndex')]
-    );
+    var unIdx = target.getAttribute('usernameInputIndex');
+    var unField = allInputs[unIdx];
+    var fRef = hideIfNoFocus(unField, target, unIdx);
     setTimeout(fRef, BLUR_TIMEOUT);
 }
 
 
 // ---------------------------------------------------------------------------
-// hideIfNoFocus — returns a closure that hides the wrapper if neither field
-// has focus (deferred via setTimeout to survive the focus-switch gap)
+// hideIfNoFocus — deferred closure that collapses the wrapper if neither
+// field has focus. pwField may be null for multi-step forms.
 // ---------------------------------------------------------------------------
-function hideIfNoFocus(usernameField, pwField) {
+function hideIfNoFocus(usernameField, pwField, usernameIndex) {
     return (function () {
-        var bUsernameFocus = usernameField.getAttribute('hasFocus');
+        var bUsernameFocus = usernameField ? usernameField.getAttribute('hasFocus') : false;
         if (typeof bUsernameFocus === 'string') {
             bUsernameFocus = (bUsernameFocus && bUsernameFocus !== 'false');
         }
-        var bPasswordFocus = pwField.getAttribute('hasFocus');
+        var bPasswordFocus = pwField ? pwField.getAttribute('hasFocus') : false;
         if (typeof bPasswordFocus === 'string') {
             bPasswordFocus = (bPasswordFocus && bPasswordFocus !== 'false');
         }
         if (!bUsernameFocus && !bPasswordFocus) {
-            showHideBmnWrapper(usernameField, pwField, false);
+            showHideBmnWrapper(usernameIndex, usernameField, false);
         }
     });
 }
 
 
 // ---------------------------------------------------------------------------
-// showHideBmnWrapper — toggles wrapper visibility and repositions on show
-//
-// FIX 12: The original hover-style reset loop targeted `div` elements;
-// the menu items are `<a>` tags. Fixed to query `a` elements so hover styles
-// are correctly cleared when the wrapper hides without a mouseout event.
+// showHideBmnWrapper — toggles wrapper visibility; keyed to usernameIndex.
+// FIX 12: Reset loop targets <a> elements (not <div>).
 // ---------------------------------------------------------------------------
-function showHideBmnWrapper(usernameField, pwField, show) {
-    var bmnWrapper = getBmnWrapper(pwField.getAttribute('passwordInputIndex'));
+function showHideBmnWrapper(usernameIndex, referenceField, show) {
+    var bmnWrapper = getBmnWrapper(usernameIndex);
     if (!bmnWrapper) return;
     if (show) {
         bmnWrapper.style.display = 'block';
-        positionBmnWrapper(bmnWrapper, usernameField, pwField);
+        if (referenceField) {
+            positionBmnWrapper(bmnWrapper, referenceField);
+        }
     } else {
         bmnWrapper.style.display = 'none';
-        // Reset hover styles on all menu link <a> elements in case onmouseout
-        // was never fired (e.g., the wrapper was hidden programmatically).
         var menuLinks = bmnWrapper.getElementsByTagName('a');
         for (var i = 0; i < menuLinks.length; i++) {
             copyProperties(menuLinks[i].style, Style.menuLink);
@@ -510,20 +700,20 @@ function showHideBmnWrapper(usernameField, pwField, show) {
 
 
 // ---------------------------------------------------------------------------
-// positionBmnWrapper — places the wrapper to the right of the password field,
-// or to the left of the username field if right placement would overflow the
-// visible viewport.
+// positionBmnWrapper — places the wrapper right of the anchor field, or to
+// its left if right placement would overflow the viewport.
 // ---------------------------------------------------------------------------
-function positionBmnWrapper(bmnWrapper, usernameField, pwField) {
-    var pwLeft = Utility.elementLeft(pwField);
-    if (pwLeft + pwField.offsetWidth + bmnWrapper.offsetWidth +
-            Utility.scrollLeft() + 10 < Utility.viewportWidth()) {
-        bmnWrapper.style.left = (pwLeft + pwField.offsetWidth + 2) + 'px';
-        bmnWrapper.style.top  = Utility.elementTop(pwField) + 'px';
+function positionBmnWrapper(bmnWrapper, anchorField) {
+    var fieldLeft  = Utility.elementLeft(anchorField);
+    var fieldTop   = Utility.elementTop(anchorField);
+    var fieldRight = fieldLeft + anchorField.offsetWidth;
+
+    if (fieldRight + bmnWrapper.offsetWidth + Utility.scrollLeft() + 10 < Utility.viewportWidth()) {
+        bmnWrapper.style.left = (fieldRight + 2) + 'px';
+        bmnWrapper.style.top  = fieldTop + 'px';
     } else {
-        bmnWrapper.style.left = (Utility.elementLeft(usernameField) -
-            bmnWrapper.offsetWidth - 2) + 'px';
-        bmnWrapper.style.top  = Utility.elementTop(usernameField) + 'px';
+        bmnWrapper.style.left = (fieldLeft - bmnWrapper.offsetWidth - 2) + 'px';
+        bmnWrapper.style.top  = fieldTop + 'px';
     }
 }
 
@@ -531,29 +721,29 @@ function positionBmnWrapper(bmnWrapper, usernameField, pwField) {
 // ---------------------------------------------------------------------------
 // getLogin — core credential retrieval and injection function
 //
-// FIX 3: waitOrRestoreFields on restore=true no longer clears the username
-// field value. The "Loading..." placeholder is set on restore=false; on
-// restore=true the cursor is simply reset to default without wiping fields.
+// TWO-PHASE: If passwordIndex is -1, password is stored in pendingPasswordValue
+// for Phase 2 injection when Angular renders the password step.
 //
-// FIX 4: retrievals tracks actual XHR fetches this page-load session.
-// counter is the persisted index into the cached credentials array.
-// When counter===0 a fresh XHR fetch is performed; subsequent calls
-// consume the cached GM storage arrays without additional network requests.
+// FIX 3: waitOrRestoreFields restore=true only clears 'Loading...' sentinel.
+// FIX 4: counter increment inside onload/cached branch only.
+// FIX (Angular/React/MegaPass): All field writes via setNativeValue().
+// FIX (dynamic label): updateGetLoginLinkLabel called after injection.
 // ---------------------------------------------------------------------------
 function getLogin(uri, usernameInputIndex, passwordInputIndex) {
     (async function () {
-        var allInputs    = document.getElementsByTagName('input');
+        var allInputs     = document.getElementsByTagName('input');
         var usernameField = allInputs[usernameInputIndex];
-        var pwField       = allInputs[passwordInputIndex];
+        var pwField       = (passwordInputIndex !== '-1' && passwordInputIndex !== -1)
+                            ? allInputs[passwordInputIndex]
+                            : null;
 
-        waitOrRestoreFields(usernameField, pwField, false);
+        waitOrRestoreFields(usernameField, false);
 
         var firstAttempt = (retrievals === 0);
         var submitData   = 'submit=This+login+didn%27t+work&num=' + retrievals +
             '&site=' + encodeURI(location.hostname);
 
         if (counter === 0) {
-            // No cached credentials — perform XHR to BugMeNot
             console.log('( retrieving logins from bugmenot.com via XHR... )');
 
             GM.xmlHttpRequest({
@@ -563,25 +753,19 @@ function getLogin(uri, usernameInputIndex, passwordInputIndex) {
                 url:     firstAttempt ? uri   : bmnView,
 
                 onload: function (responseDetails) {
-                    waitOrRestoreFields(usernameField, pwField, true);
+                    waitOrRestoreFields(usernameField, true);
 
                     if (responseDetails.status !== 200) {
                         return Errors.say(Errors.xmlHttpFailure);
                     }
 
-                    var decoded = responseDetails.responseText;
-
-                    // FIX 11: Surface parse failure to console before returning.
-                    var doc = textToXml(decoded);
+                    // FIX 11: Surface parse failure to console.
+                    var doc = textToXml(responseDetails.responseText);
                     if (!(doc && doc.documentElement)) {
                         console.warn('BugMeNot: textToXml returned null — response may be malformed.');
                         return Errors.say(Errors.malformedResponse);
                     }
 
-                    // Parse all username/password pairs from the BugMeNot HTML response.
-                    // Credentials are encoded inside <kbd> elements within <dd> list items:
-                    //   dd:nth-child(2) > kbd  =>  username
-                    //   dd:nth-child(4) > kbd  =>  password
                     var allUsernames      = doc.documentElement.querySelectorAll('dd:nth-child(2) > kbd');
                     var allPasswords      = doc.documentElement.querySelectorAll('dd:nth-child(4) > kbd');
                     var allUsernamesArray = [];
@@ -592,43 +776,50 @@ function getLogin(uri, usernameInputIndex, passwordInputIndex) {
                         allPasswordsArray.push(allPasswords[i].innerHTML);
                     }
 
-                    // Log the full credential list to the console for diagnostics
                     var temp = '';
                     for (var j = 0; j < allUsernamesArray.length; j++) {
                         temp += (j + 1) + ': ' + allUsernamesArray[j] + ', ' + allPasswordsArray[j] + '\n';
                     }
                     console.log('Found logins (' + allUsernamesArray.length + '):\n' + temp);
 
-                    // Persist credential arrays to GM storage for subsequent calls
                     GM.setValue('allUsernames', JSON.stringify(allUsernamesArray));
                     GM.setValue('allPasswords', JSON.stringify(allPasswordsArray));
 
-                    // Inject the first credential pair into the login form
                     var accountInfo = doc.documentElement.getElementsByTagName('kbd')[0];
                     if (!accountInfo) {
                         return Errors.say(Errors.noLoginAvailable);
                     }
-                    usernameField.value = accountInfo.childNodes[0].nodeValue;
 
-                    var pwsField = doc.documentElement.getElementsByTagName('kbd')[1];
-                    pwField.value = pwsField.childNodes[0].nodeValue;
+                    var injectUsername = accountInfo.childNodes[0].nodeValue;
+                    var pwKbd          = doc.documentElement.getElementsByTagName('kbd')[1];
+                    var injectPassword = pwKbd ? pwKbd.childNodes[0].nodeValue : '';
+
+                    setNativeValue(usernameField, injectUsername);
+
+                    if (pwField) {
+                        setNativeValue(pwField, injectPassword);
+                    } else {
+                        // TWO-PHASE: stash password for Phase 2.
+                        pendingPasswordValue = injectPassword;
+                        console.log('BugMeNot: Phase 1 complete — password cached for Phase 2.');
+                    }
 
                     retrievals++;
-
-                    // Increment and persist counter AFTER successful injection
                     counter = parseInt(counter) + 1;
                     GM.setValue('counter', counter);
                     GM.setValue('lastURL', String(window.location));
+
+                    updateGetLoginLinkLabel(usernameInputIndex);
                 },
 
                 onerror: function () {
-                    waitOrRestoreFields(usernameField, pwField, true);
+                    waitOrRestoreFields(usernameField, true);
                     Errors.say(Errors.xmlHttpFailure);
                 }
             });
 
         } else {
-            // Cached credentials exist — serve from GM storage without XHR
+            // Cached credentials — serve from GM storage without XHR.
             var retrievedUsernames = JSON.parse(await GM.getValue('allUsernames', '[]'));
             var retrievedPasswords = JSON.parse(await GM.getValue('allPasswords', '[]'));
 
@@ -639,54 +830,59 @@ function getLogin(uri, usernameInputIndex, passwordInputIndex) {
             console.log('Found logins (' + retrievedUsernames.length + '):\n' + temp);
 
             if (counter < retrievedUsernames.length) {
-                usernameField.value = retrievedUsernames[counter];
-                pwField.value       = retrievedPasswords[counter];
+                setNativeValue(usernameField, retrievedUsernames[counter]);
+
+                if (pwField) {
+                    setNativeValue(pwField, retrievedPasswords[counter]);
+                } else {
+                    pendingPasswordValue = retrievedPasswords[counter];
+                    console.log('BugMeNot: Phase 1 complete (cached) — password cached for Phase 2.');
+                }
             } else {
-                // counter has exceeded the available credential list
-                waitOrRestoreFields(usernameField, pwField, true);
+                waitOrRestoreFields(usernameField, true);
                 return Errors.say(Errors.noLoginAvailable);
             }
 
-            waitOrRestoreFields(usernameField, pwField, true);
-
-            // Increment and persist counter AFTER successful injection
+            waitOrRestoreFields(usernameField, true);
             counter = parseInt(counter) + 1;
             GM.setValue('counter', counter);
             GM.setValue('lastURL', String(window.location));
+
+            updateGetLoginLinkLabel(usernameInputIndex);
         }
     })();
 }
 
 
 // ---------------------------------------------------------------------------
-// waitOrRestoreFields — sets UI into loading or normal state
+// waitOrRestoreFields — loading/normal state toggle for the username field.
 //
-// FIX 3: restore=true resets cursor and clears the "Loading..." placeholder
-// from the username field only if it still contains that sentinel text,
-// avoiding destruction of a user-typed value or a just-injected credential.
+// FIX 3: restore=true only clears 'Loading...' sentinel.
+// Uses setNativeValue so the Loading sentinel itself triggers framework hooks,
+// keeping Angular's model in sync during the XHR wait period.
 // ---------------------------------------------------------------------------
-function waitOrRestoreFields(usernameField, pwField, restore) {
+function waitOrRestoreFields(usernameField, restore) {
     document.documentElement.style.cursor = restore ? 'default' : 'progress';
     if (!restore) {
-        usernameField.value = 'Loading...';
+        setNativeValue(usernameField, 'Loading...');
     } else {
-        // Only clear the sentinel; do not destroy injected or user-typed values
         if (usernameField.value === 'Loading...') {
-            usernameField.value = '';
+            setNativeValue(usernameField, '');
         }
     }
 }
 
 
 // ---------------------------------------------------------------------------
-// getPreviousTextField — walks backwards from a password field index to find
-// the nearest preceding text or email input (the username field)
+// getFollowingPasswordField — scans forward from username field index for
+// the next visible password field. Returns -1 if none found (multi-step form).
+// FIX (visibility): Skips hidden Angular duplicate inputs.
 // ---------------------------------------------------------------------------
-function getPreviousTextField(pwFieldIndex, allInputs) {
-    for (var i = pwFieldIndex - 1; i >= 0; i--) {
+function getFollowingPasswordField(usernameFieldIndex, allInputs) {
+    for (var i = usernameFieldIndex + 1; i < allInputs.length; i++) {
         if (allInputs[i].type &&
-            (allInputs[i].type.toLowerCase() === 'text' ||
-             allInputs[i].type.toLowerCase() === 'email')) {
+                allInputs[i].type.toLowerCase() === 'password' &&
+                Utility.isVisible(allInputs[i])) {
             return i;
         }
     }
@@ -695,10 +891,8 @@ function getPreviousTextField(pwFieldIndex, allInputs) {
 
 
 // ---------------------------------------------------------------------------
-// textToXml — parses an HTML string into a DOM document via DOMParser
-//
-// FIX 11: Logs a console warning on parse failure so errors are surfaced
-// rather than silently swallowed.
+// textToXml — parses an HTML string into a DOM document via DOMParser.
+// FIX 11: Logs a console warning on parse failure.
 // ---------------------------------------------------------------------------
 function textToXml(t) {
     try {
@@ -717,20 +911,14 @@ function textToXml(t) {
 
 
 // ---------------------------------------------------------------------------
-// Bootstrap IIFE — async initialization of counter before main() is called
-//
-// FIX 2 / FIX 14: counter is fully resolved from GM storage before
-// processPasswordFields() runs, eliminating the race condition where the UI
-// was built with counter === undefined.
-//
-// Domain comparison uses exact hostname matching (indexOf against stored
-// lastURL) to reset the counter when navigating to a different site.
+// Bootstrap IIFE — async initialization of counter before main() is called.
+// FIX 2: counter fully resolved before processLoginFields() runs.
+// FIX 14: Domain comparison uses indexOf against stored lastURL.
 // ---------------------------------------------------------------------------
 (async function () {
     var lastURL = await GM.getValue('lastURL', '');
 
     if (lastURL.indexOf(domainname) === -1) {
-        // Different domain (or first run) — reset counter to start fresh
         counter = 0;
         await GM.setValue('counter', 0);
     } else {
