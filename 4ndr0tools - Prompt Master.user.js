@@ -9359,39 +9359,42 @@
                       ? "kimi"
                       : matchesHost(e, "claude.ai")
                         ? "claude"
-                        : e.includes("grok.com")
+                        : matchesHost(e, "grok.com")
                           ? "grok"
-                          : e.includes("www.perplexity.ai")
+                          : matchesHost(e, "www.perplexity.ai")
                             ? "perplexity"
-                            : e.includes("longcat.chat")
+                            : matchesHost(e, "longcat.chat")
                               ? "longcat"
-                              : e.includes("mistral.ai")
+                              : matchesHost(e, "mistral.ai")
                                 ? "mistral"
-                                : e.includes("yuanbao.tencent.com")
+                                : matchesHost(e, "yuanbao.tencent.com")
                                   ? "yuanbao"
-                                  : e.includes("chatglm.cn")
+                                  : matchesHost(e, "chatglm.cn")
                                     ? "chatglm"
-                                    : e.includes("poe.com")
+                                    : matchesHost(e, "poe.com")
                                       ? "poe"
-                                      : e.includes("notebooklm.google.com")
+                                      : matchesHost(e, "notebooklm.google.com")
                                         ? "notebooklm"
-                                        : e.includes("doubao.com")
+                                        : matchesHost(e, "doubao.com")
                                           ? "doubao"
-                                          : e.includes("copilot.microsoft.com")
+                                          : matchesHost(e, "copilot.microsoft.com")
                                             ? "copilot"
-                                            : e.includes("image.z.ai")
+                                            : matchesHost(e, "image.z.ai")
                                               ? "glmimage"
-                                              : e.includes("ernie.baidu.com")
+                                              : matchesHost(e, "ernie.baidu.com")
                                                 ? "ernie"
-                                                : e.includes(
+                                                : matchesHost(
+                                                      e,
                                                       "dreamina.capcut.com",
                                                     )
                                                   ? "dreamina"
-                                                  : e.includes(
+                                                  : matchesHost(
+                                                        e,
                                                         "jimeng.jianying.com",
                                                       )
                                                     ? "jimengJianying"
-                                                    : e.includes(
+                                                    : matchesHost(
+                                                          e,
                                                           "build.nvidia.com",
                                                         )
                                                       ? "nvidiaNim"
