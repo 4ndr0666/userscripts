@@ -9301,11 +9301,7 @@
     };
   })();
   function initKofiPatreonFeature() {
-    if (
-      window.location.hostname !== "ko-fi.com" &&
-      !window.location.hostname.endsWith(".ko-fi.com")
-    )
-      return;
+    if (!window.location.hostname.includes("ko-fi.com")) return;
     const e = () => {
       const e = getTranslation("buyPatreon"),
         t = document.querySelector(".mp-patreon-button");
@@ -9334,67 +9330,61 @@
     }).observe(document.body, { childList: !0, subtree: !0 }),
       e());
   }
-  function matchesHost(e, t) {
-    return e === t || e.endsWith(`.${t}`);
-  }
   function detectPlatform() {
     const e = window.location.hostname;
-    return matchesHost(e, "chatgpt.com")
+    return e.includes("chatgpt.com")
       ? "chatgpt"
-      : matchesHost(e, "deepseek.com")
+      : e.includes("deepseek.com")
         ? "deepseek"
-        : matchesHost(e, "aistudio.google.com")
+        : e.includes("aistudio.google.com")
           ? "googleaistudio"
-          : matchesHost(e, "chat.qwen.ai")
+          : e.includes("chat.qwen.ai")
             ? "qwen"
-            : matchesHost(e, "chat.z.ai")
+            : e.includes("chat.z.ai")
               ? "zai"
-              : matchesHost(e, "gemini.google.com")
+              : e.includes("gemini.google.com")
                 ? "gemini"
-                : matchesHost(e, "arena.ai4bharat.org")
+                : e.includes("arena.ai4bharat.org")
                   ? "indicArena"
-                  : matchesHost(e, "arena.ai")
+                  : e.includes("arena.ai")
                     ? "arena"
-                    : matchesHost(e, "kimi.com")
+                    : e.includes("kimi.com")
                       ? "kimi"
-                      : matchesHost(e, "claude.ai")
+                      : e.includes("claude.ai")
                         ? "claude"
-                        : matchesHost(e, "grok.com")
+                        : e.includes("grok.com")
                           ? "grok"
-                          : matchesHost(e, "www.perplexity.ai")
+                          : e.includes("www.perplexity.ai")
                             ? "perplexity"
-                            : matchesHost(e, "longcat.chat")
+                            : e.includes("longcat.chat")
                               ? "longcat"
-                              : matchesHost(e, "mistral.ai")
+                              : e.includes("mistral.ai")
                                 ? "mistral"
-                                : matchesHost(e, "yuanbao.tencent.com")
+                                : e.includes("yuanbao.tencent.com")
                                   ? "yuanbao"
-                                  : matchesHost(e, "chatglm.cn")
+                                  : e.includes("chatglm.cn")
                                     ? "chatglm"
-                                    : matchesHost(e, "poe.com")
+                                    : e.includes("poe.com")
                                       ? "poe"
-                                      : matchesHost(e, "notebooklm.google.com")
+                                      : e.includes("notebooklm.google.com")
                                         ? "notebooklm"
-                                        : matchesHost(e, "doubao.com")
+                                        : e.includes("doubao.com")
                                           ? "doubao"
-                                          : matchesHost(e, "copilot.microsoft.com")
+                                          : e.includes("copilot.microsoft.com")
                                             ? "copilot"
-                                            : matchesHost(e, "image.z.ai")
+                                            : e.includes("image.z.ai")
                                               ? "glmimage"
-                                              : matchesHost(e, "ernie.baidu.com")
+                                              : e.includes("ernie.baidu.com")
                                                 ? "ernie"
-                                                : matchesHost(
-                                                      e,
+                                                : e.includes(
                                                       "dreamina.capcut.com",
                                                     )
                                                   ? "dreamina"
-                                                  : matchesHost(
-                                                        e,
+                                                  : e.includes(
                                                         "jimeng.jianying.com",
                                                       )
                                                     ? "jimengJianying"
-                                                    : matchesHost(
-                                                          e,
+                                                    : e.includes(
                                                           "build.nvidia.com",
                                                         )
                                                       ? "nvidiaNim"
