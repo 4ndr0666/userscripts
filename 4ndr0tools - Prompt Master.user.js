@@ -9330,27 +9330,30 @@
     }).observe(document.body, { childList: !0, subtree: !0 }),
       e());
   }
+  function matchesHost(e, t) {
+    return e === t || e.endsWith(`.${t}`);
+  }
   function detectPlatform() {
     const e = window.location.hostname;
-    return e.includes("chatgpt.com")
+    return matchesHost(e, "chatgpt.com")
       ? "chatgpt"
-      : e.includes("deepseek.com")
+      : matchesHost(e, "deepseek.com")
         ? "deepseek"
-        : e.includes("aistudio.google.com")
+        : matchesHost(e, "aistudio.google.com")
           ? "googleaistudio"
-          : e.includes("chat.qwen.ai")
+          : matchesHost(e, "chat.qwen.ai")
             ? "qwen"
-            : e.includes("chat.z.ai")
+            : matchesHost(e, "chat.z.ai")
               ? "zai"
-              : e.includes("gemini.google.com")
+              : matchesHost(e, "gemini.google.com")
                 ? "gemini"
-                : e.includes("arena.ai4bharat.org")
+                : matchesHost(e, "arena.ai4bharat.org")
                   ? "indicArena"
-                  : e.includes("arena.ai")
+                  : matchesHost(e, "arena.ai")
                     ? "arena"
-                    : e.includes("kimi.com")
+                    : matchesHost(e, "kimi.com")
                       ? "kimi"
-                      : e.includes("claude.ai")
+                      : matchesHost(e, "claude.ai")
                         ? "claude"
                         : e.includes("grok.com")
                           ? "grok"
