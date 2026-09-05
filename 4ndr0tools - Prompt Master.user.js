@@ -9301,7 +9301,11 @@
     };
   })();
   function initKofiPatreonFeature() {
-    if (!window.location.hostname.includes("ko-fi.com")) return;
+    if (
+      window.location.hostname !== "ko-fi.com" &&
+      !window.location.hostname.endsWith(".ko-fi.com")
+    )
+      return;
     const e = () => {
       const e = getTranslation("buyPatreon"),
         t = document.querySelector(".mp-patreon-button");
