@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name                4ndrotools - Prompt Master
+// @name                4ndr0tools - Prompt Master
 // @namespace           https://github.com/4ndr0666/userscripts
-// @version             27.0.0
+// @version             27.0.12
 // @author              4ndr0666
 // @icon                https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @license             UNLICENSED - RED TEAM USE ONLY
@@ -18,7 +18,6 @@
 // @match               *://labs.google/fx/*
 // @match               *://flow.google.com/*
 // @match               *://*.google.com/search?*udm=50*
-// @exclude             *://ko-fi.com/summary/*
 // @resource            CSS https://cdn.jsdelivr.net/gh/0H4S/My-Prompt@26.1.0/Files/style.min.css
 // @resource            IDIOMAS https://cdn.jsdelivr.net/gh/0H4S/My-Prompt@26.1.0/Files/languages.min.json
 // @connect             generativelanguage.googleapis.com
@@ -27,6 +26,11 @@
 // @connect             router.huggingface.co
 // @connect             api.longcat.chat
 // @connect             cdn.jsdelivr.net
+// v27.0.8: hosts for the Flow dock's 'Cinzel Decorative' webfont loader
+// (see ensureCinzelDecorativeFont — GM_xmlhttpRequest fetch + base64
+// @font-face, immune to page style/font CSP)
+// @connect             fonts.googleapis.com
+// @connect             fonts.gstatic.com
 // @connect             gist.github.com
 // @connect             api.github.com
 // @connect             openrouter.ai
@@ -99,7 +103,13 @@
       doubao: 'textarea, [contenteditable="true"]',
       copilot: '#userInput, textarea[data-testid="composer-input"]',
       glmimage: "textarea.flex.w-full",
-      flow: 'div[role="textbox"][data-slate-editor="true"][contenteditable="true"]',
+      // Flow (flow.google.com / labs.google/fx/tools/flow): Google rebuilt the prompt bar
+      // across the domain move + unified-workspace redesign. Cascade covers:
+      //  1. PINHOLE_TEXT_AREA_ELEMENT_ID - Flow's own prompt textarea id (internal "Pinhole" component)
+      //  2. legacy Slate editor (data-slate-editor) used by the old UI
+      //  3. generic rich-text boxes (role=textbox, Quill, ProseMirror, custom contenteditable)
+      //  4. plain textarea fallback
+      flow: "#PINHOLE_TEXT_AREA_ELEMENT_ID, div[role='textbox'][data-slate-editor='true'][contenteditable='true'], div[role='textbox'][contenteditable='true'], .ql-editor[contenteditable='true'], div.ProseMirror[contenteditable='true'], rich-textarea div[contenteditable='true'], div[contenteditable='true'][aria-label], textarea:not([hidden]):not([disabled])",
       ernie: 'div[data-slate-editor="true"][role="textbox"]',
       dreamina:
         'textarea.lv-textarea.textarea-xle6zp.prompt-textarea-zqvueo, [contenteditable="true"]',
@@ -145,8 +155,23 @@
     openSettings: "Open Settings",
   };
   Object.assign(translations.en, _gistStubs);
+  // v27.0.8: English fallbacks for the pill's new Copy action (companion
+  // to Paste). 'copy' and 'copySuccess' already exist in the external
+  // IDIOMAS pack (all 18 languages); these two keys are new, so non-English
+  // locales resolve through translations.en — the same mechanism the
+  // _gistStubs merge above uses.
+  const _pillCopyStubs = {
+    noTextToCopy: "Nothing to copy - the prompt box is empty",
+    copyFailed: "Could not copy to the clipboard",
+  };
+  Object.assign(translations.en, _pillCopyStubs);
   function getTranslation(e, t = {}) {
     let n = translations[currentLang]?.[e] || translations.en[e];
+    // Hardening (v27.0.2): if the IDIOMAS @resource failed to load (fresh
+    // install, CDN hiccup), translations is empty and n is undefined — which
+    // used to crash createCustomTooltip("reading 'actions'") and wipe the
+    // whole UI via initUI's catch. Fall back to the key itself instead.
+    "string" != typeof n && (n = e);
     return (
       Object.entries(t).forEach(([e, t]) => (n = n.replace(`{${e}}`, t))),
       n
@@ -1255,6 +1280,19 @@
       g.textContent = `.modal-title{font-family:'Orbitron',sans-serif;font-weight:700;color:var(--mp-text-secondary);}.mp-dialogo-title{font-family:'Orbitron',sans-serif;font-weight:700;}.save-button,button,.mp-action-btn-full,.mp-btn-part{border-radius:0!important;transition:all 150ms ease-in-out;}.save-button:hover,.mp-action-btn-full:hover,.mp-btn-part:hover{box-shadow:0 0 20px rgba(0,229,255,0.5);}.save-button.mp-btn-secondary.destructive,.mp-dialogo-btn-danger{border-color:var(--mp-error)!important;color:var(--mp-error)!important;}.save-button.mp-btn-secondary.destructive:hover,.mp-dialogo-btn-danger:hover{box-shadow:0 0 25px var(--mp-error);background:rgba(255,0,85,0.3)!important;}.mp-switch input:checked+label{box-shadow:0 0 12px rgba(0,229,255,0.8);}.mp-tooltip-content{background-color:rgba(10,19,26,0.65)!important;color:var(--mp-text-primary)!important;border:1px solid rgba(0,229,255,0.3)!important;box-shadow:0 0 20px rgba(0,229,255,0.15)!important;backdrop-filter:blur(6px);}.mp-tooltip-preview-text{background-color:rgba(10,19,26,0.4)!important;color:var(--mp-text-primary)!important;border:1px solid rgba(0,229,255,0.2)!important;}.mp-tooltip-top .mp-tooltip-arrow{border-top-color:rgba(10,19,26,0.65)!important;}.mp-tooltip-bottom .mp-tooltip-arrow{border-bottom-color:rgba(10,19,26,0.65)!important;}.mp-tooltip-left .mp-tooltip-arrow{border-left-color:rgba(10,19,26,0.65)!important;}.mp-tooltip-right .mp-tooltip-arrow{border-right-color:rgba(10,19,26,0.65)!important;}.mp-tooltip-btn:focus,.mp-tooltip-btn:hover{background-color:rgba(0,229,255,0.2)!important;color:var(--mp-text-secondary)!important;}`;
       document.head.appendChild(g);
     }
+    if (!document.getElementById("mp-pill-copy-btn-style")) {
+      const h = document.createElement("style");
+      h.id = "mp-pill-copy-btn-style";
+      // v27.0.8: collapse/expand mechanics for the pill's Copy button — a
+      // faithful mirror of the external stylesheet's .mp-btn-ai/.mp-btn-paste
+      // rules (the Copy button replaced the Enhance button as the pill's
+      // first action; the external CSS resource cannot grow new classes, so
+      // the equivalent rules are injected here, keeping the slide animation
+      // identical on every platform and in every mp-dir-* direction).
+      h.textContent =
+        ".mp-btn-copy{flex:0 0 0;width:0;height:0;opacity:0;overflow:hidden;transition:flex-basis var(--mp-transition-fast),width var(--mp-transition-fast),height var(--mp-transition-fast),opacity var(--mp-transition-fast),transform var(--mp-transition-fast);}.mp-sliding-pill-container:hover .mp-btn-copy{flex:0 0 34px;width:34px;height:34px;opacity:1;transform:translate(0);}.mp-dir-top .mp-btn-copy{transform:translateY(10px);}.mp-dir-bottom .mp-btn-copy{transform:translateY(-10px);}.mp-dir-left .mp-btn-copy{transform:translateX(10px);}.mp-dir-right .mp-btn-copy{transform:translateX(-10px);}";
+      document.head.appendChild(h);
+    }
   }
   function createCustomTooltip(e, t, n = "top", a = !0) {
     if (!e) return;
@@ -1263,7 +1301,7 @@
       r = null;
     const s = `tooltip-${Math.random().toString(36).substr(2, 9)}`;
     (e.setAttribute("aria-describedby", s), e.setAttribute("tabindex", "0"));
-    const i = "string" == typeof t ? { text: t } : t,
+    const i = "string" == typeof t ? { text: t } : t || { text: "" },
       l = (i.actions && i.actions.length > 0) || i.previewMode,
       c = () => {
         if ((clearTimeout(r), !document.body.contains(e))) return;
@@ -1597,7 +1635,6 @@
         '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M8.71 7.71 11 5.41V15a1 1 0 0 0 2 0V5.41l2.29 2.3a1 1 0 0 0 1.42 0 1 1 0 0 0 0-1.42l-4-4a1 1 0 0 0-.33-.21 1 1 0 0 0-.76 0 1 1 0 0 0-.33.21l-4 4a1 1 0 1 0 1.42 1.42M21 14a1 1 0 0 0-1 1v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-4a1 1 0 0 0-2 0v4a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-4a1 1 0 0 0-1-1"/></svg>',
       info: '<svg viewBox="0 0 20 20"><path d="M10 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16Zm0 14a6 6 0 1 1 0-12 6 6 0 0 1 0 12ZM9 5h2v2H9V5Zm0 4h2v6H9V9Z"/></svg>',
       shop: '<svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.0" d="m21.05 11.5.28-1.66c.18-1.09.27-1.63-.02-1.98s-.82-.36-1.9-.36H4.6c-1.07 0-1.61 0-1.9.36-.3.35-.2.9-.02 1.98l1.2 7.18c.4 2.38.6 3.57 1.42 4.28.81.7 1.98.7 4.33.7H12m2-4h8m-4 4v-8m-.5-6.5a5.5 5.5 0 1 0-11 0" color="currentColor"/></svg>',
-      cart: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>',
       drag: '<svg viewBox="0 0 512 512"><path fill="currentColor" d="M278.6 9.4a32 32 0 0 0-45.3 0l-64 64A32 32 0 0 0 192 128h32v96h-96v-32a32.1 32.1 0 0 0-54.7-22.7l-64 64a32 32 0 0 0 0 45.3l64 64A32 32 0 0 0 128 320v-32h96v96h-32a32.1 32.1 0 0 0-22.7 54.7l64 64a32 32 0 0 0 45.3 0l64-64A32 32 0 0 0 320 384h-32v-96h96v32a32.1 32.1 0 0 0 54.7 22.7l64-64a32 32 0 0 0 0-45.3l-64-64A32 32 0 0 0 384 192v32h-96v-96h32a32.1 32.1 0 0 0 22.7-54.7l-64-64z"/></svg>',
       pin: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path></svg>',
       save: '<svg viewBox="0 0 32 32"><path fill="currentColor" d="M11.5 12A2.5 2.5 0 0 1 9 9.5V3H7.5A4.5 4.5 0 0 0 3 7.5v17a4.5 4.5 0 0 0 4 4.47V18.5A2.5 2.5 0 0 1 9.5 16h13a2.5 2.5 0 0 1 2.5 2.5v10.47a4.5 4.5 0 0 0 4-4.47V10.45a4.5 4.5 0 0 0-1.32-3.18l-2.95-2.95A4.5 4.5 0 0 0 22 3.02V9.5a2.5 2.5 0 0 1-2.5 2.5zM20 3h-9v6.5a.5.5 0 0 0 .5.5h8a.5.5 0 0 0 .5-.5zm3 26H9V18.5a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 .5.5z"/></svg>',
@@ -1629,10 +1666,11 @@
       paste:
         '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12.75 2c1.16 0 2.11.88 2.24 2h1.76A2.25 2.25 0 0 1 19 6.1v.15a.75.75 0 0 1-.65.74l-.1.01a.75.75 0 0 1-.74-.65l-.01-.1a.75.75 0 0 0-.65-.74l-.1-.01h-2.13a2.2 2.2 0 0 1-1.87 1h-3.5a2.2 2.2 0 0 1-1.87-1H5.25a.75.75 0 0 0-.74.65l-.01.1v13.5c0 .39.28.7.65.75h3.1a.75.75 0 0 1 .74.65l.01.1a.75.75 0 0 1-.75.75h-3a2.25 2.25 0 0 1-2.24-2.1L3 19.77V6.24A2.25 2.25 0 0 1 5.1 4h1.91a2.25 2.25 0 0 1 2.24-2zm6 6A2.25 2.25 0 0 1 21 10.1v9.65A2.25 2.25 0 0 1 18.9 22h-6.65a2.25 2.25 0 0 1-2.24-2.1l-.01-.15v-9.5a2.25 2.25 0 0 1 2.1-2.24l.15-.01zm-6-4.5h-3.5a.75.75 0 0 0 0 1.5h3.5a.75.75 0 1 0 0-1.5"/></svg>',
       gist: '<svg viewBox="0 0 24 24"><g fill="none"><g clip-path="url(#a)"><path fill="currentColor" fill-rule="evenodd" d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12" clip-rule="evenodd"/></g><defs><clipPath id="a"><path fill="#fff" d="M0 0h24v24H0z"/></clipPath></defs></g></svg>',
-      patreon:
-        '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M7.46 3.1a12.8 12.8 0 0 1 9.07-.5C19.08 3.45 21 5.77 21 8.4a6.3 6.3 0 0 1-4.9 6.25c-1.69.43-2.33.75-2.94 1.58-.24.33-.45.75-.8 1.53l-.21.5C11 20.87 9.99 22.04 7.9 22c-2.23-.03-3.6-1.74-4.31-4.48-.46-1.77-.62-3.8-.6-5.88.05-3.99 1.42-7.07 4.46-8.54z"/></svg>',
       olho: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 9a3 3 0 0 1 3 3 3 3 0 0 1-3 3 3 3 0 0 1-3-3 3 3 0 0 1 3-3m0-4.5c5 0 9.3 3.1 11 7.5a11.8 11.8 0 0 1-22 0c1.7-4.4 6-7.5 11-7.5M3.2 12a9.8 9.8 0 0 0 17.6 0 9.8 9.8 0 0 0-17.6 0"/></svg>',
-      kofi: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M11.4 2.7q-4 0-6.9.3C2.1 3.3 0 5.2 0 8.6c0 3.5.2 6.1 1.6 8.5a8 8 0 0 0 7.6 4.2h.9c4.2 0 6.5-2.2 7.6-4l1.1-2.4c3-.2 5.2-2.7 5.2-5.7v-.4q-.1-5.1-5.8-5.9zm0 2 6.5.1q4 .5 4.2 4v.4a4 4 0 0 1-4 3.9h-.9l-.1.6q-.4 1.4-1 2.6c-1 1.4-2.6 3-6 3h-.8c-2.5 0-4.8-.8-6-3.2-1.1-2-1.4-4.1-1.4-7.5Q2 5.4 5 5q2.3-.2 6.5-.2M18 7q-.6 0-.7.6v3q0 .4.7.5 2-.1 2-2c0-2-.7-2-2-2M7.5 7c-1.8 0-3 1.5-3 3.2q.2 2.3 2 3.9L9 16a2 2 0 0 0 1.5 0c.8-.5 2-1.2 2.6-2q1.8-1.5 2-3.8a3 3 0 0 0-3-3.2q-1.6.1-2.4 1.3A3 3 0 0 0 7.4 7"/></svg>',
+      // v27.0.8: 'patreon' and 'kofi' icons removed together with every
+      // storefront / donation touchpoint (theme-shop cart, prompt-shop and
+      // AI-info link actions, ko-fi page helper, ko-fi platform detection).
+      // 'cart' was removed above for the same reason. No remaining references.
       flip: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 22q-3.57 0-6.32-2.25T2.2 14h2.05q.7 2.65 2.85 4.33T12 20q2.15 0 4-1.06T18.9 16H16v-2h6v6h-2v-2q-1.42 1.9-3.52 2.95T12 22m0-7q-1.25 0-2.12-.87T9 12t.88-2.12T12 9t2.13.88T15 12t-.87 2.13T12 15M2 10V4h2v2q1.43-1.9 3.53-2.95T12 2q3.58 0 6.33 2.25T21.8 10h-2.05q-.7-2.65-2.85-4.32T12 4Q9.85 4 8 5.06T5.1 8H8v2z"/></svg>',
       reset:
         '<svg viewBox="0 0 512 512"><path fill="currentColor" fill-rule="evenodd" d="M256 448A192 192 0 0 1 65.5 279.8l42.3-5.3a149.4 149.4 0 1 0 25.6-103.8h80v42.6H64V64h42.7v71.3A192 192 0 1 1 256 448" clip-rule="evenodd"/></svg>',
@@ -1654,6 +1692,14 @@
       link: '<svg viewBox="0 0 20 20"><path fill="currentColor" d="M4.83 15h2.91a5 5 0 0 1-1.55-2H5a3 3 0 1 1 0-6h3a3 3 0 0 1 2.82 4h2.1a5 5 0 0 0 .08-.83v-.34A4.83 4.83 0 0 0 8.17 5H4.83A4.83 4.83 0 0 0 0 9.83v.34A4.83 4.83 0 0 0 4.83 15"/><path fill="currentColor" d="M15.17 5h-2.91a5 5 0 0 1 1.55 2H15a3 3 0 1 1 0 6h-3a3 3 0 0 1-2.82-4h-2.1a5 5 0 0 0-.08.83v.34A4.83 4.83 0 0 0 11.83 15h3.34A4.83 4.83 0 0 0 20 10.17v-.34A4.83 4.83 0 0 0 15.17 5"/></svg>',
       color:
         '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M20 20H4c-1.1 0-2 .9-2 2s.9 2 2 2h16c1.1 0 2-.9 2-2s-.9-2-2-2M7.11 17c.48 0 .91-.3 1.06-.75l1.01-2.83h5.65l.99 2.82c.16.46.59.76 1.07.76.79 0 1.33-.79 1.05-1.52L13.69 4.17a1.8 1.8 0 0 0-3.38 0L6.06 15.48c-.28.73.27 1.52 1.05 1.52m4.83-11.4h.12l2.03 5.79H9.91z"/></svg>',
+      // v27.0.9: gear glyph for the Flow dock pill's new Settings button
+      // (the slot's old Prompts icon is retired there — see
+      // createDockSettingsButton). Material-style 24x24 gear with
+      // fill="currentColor", matching the neighboring set so it inherits
+      // the pill button color/hover rules untouched. Registered before
+      // DEFAULT_ICONS is cloned, so it resets/overrides cleanly with themes.
+      settings:
+        '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>',
     },
     DEFAULT_ICONS = { ...ICONS };
   function createPromptButton(e = "top") {
@@ -1662,14 +1708,23 @@
     const n = document.createElement("div");
     n.className = `mp-sliding-pill-container mp-dir-${e}`;
     const a = "left" === e || "right" === e ? "top" : "left",
+      // v27.0.8: the pill's first button is now Copy (editor -> clipboard),
+      // a symmetric companion to the Paste button below (clipboard ->
+      // editor). It replaces the old AI-Enhance shortcut button. The AI
+      // enhancement workflow itself is unchanged and remains reachable via
+      // the prompt modal's magic button, the editor toolbar enhance
+      // buttons and the 'enhancePrompt' keyboard shortcut. The mp-btn-copy
+      // class mirrors the external stylesheet's .mp-btn-ai/.mp-btn-paste
+      // collapse/expand mechanics via rules injected in
+      // injectGlobalStyles() (the external CSS cannot grow new classes).
       o = document.createElement("button");
     ((o.type = "button"),
-      (o.className = "mp-btn-part mp-btn-ai"),
-      o.setAttribute("data-testid", "composer-button-ai-enhance"),
-      setSafeInnerHTML(o, ICONS.magic),
-      createCustomTooltip(o, getTranslation("enhanceTooltip"), a),
+      (o.className = "mp-btn-part mp-btn-copy"),
+      o.setAttribute("data-testid", "composer-button-copy"),
+      setSafeInnerHTML(o, ICONS.copy),
+      createCustomTooltip(o, getTranslation("copy"), a),
       o.addEventListener("click", (e) => {
-        (e.stopPropagation(), handleInstantPageEnhancement());
+        (e.stopPropagation(), handleInstantPageCopy());
       }));
     const r = document.createElement("button");
     ((r.type = "button"),
@@ -1720,6 +1775,238 @@
       t
     );
   }
+  // v27.0.9: Settings button for the Flow dock's pill. The pill's third
+  // (always-visible, main-slot) action used to be the Prompts button, but on
+  // the dock that button and the dock trigger were the same action — both
+  // funnel into the one dock-level menu-toggle listener initUI registers —
+  // so the slot was pure duplication. It now opens the settings modal with
+  // the exact canonical sequence the extension-menu command uses (create if
+  // needed -> resetToCurrent -> showModal), so the two entry points can
+  // never drift apart. Dock-scoped by construction: createPromptButton keeps
+  // shipping the Prompts button for every other platform, where it is the
+  // only inline way to open the prompt menu. The button rides the shared
+  // .mp-btn-part base (34px slot, 20px glyph, hover color) plus the
+  // dock-scoped height/color rules in FLOW_DOCK_CSS. v27.0.10: the gear is
+  // no longer the pill's static parked face — the dock-scoped
+  // .mp-btn-settings rules in FLOW_DOCK_CSS give it the exact collapse/
+  // expand choreography the external stylesheet gives .mp-btn-ai and
+  // .mp-btn-paste, so all three pill buttons park collapsed (0 width,
+  // hidden, translated 10px) and slide out together on pill hover.
+  function createDockSettingsButton() {
+    const e = document.createElement("button");
+    return (
+      (e.type = "button"),
+      (e.className = "mp-btn-part mp-btn-settings"),
+      e.setAttribute("data-testid", "composer-button-settings"),
+      setSafeInnerHTML(e, ICONS.settings),
+      // The dock pill mounts horizontally (mp-dir-left), so the tooltip
+      // renders on top — the same direction argument the Copy/Paste
+      // buttons of this pill receive.
+      createCustomTooltip(e, getTranslation("settings"), "top"),
+      e.addEventListener("click", (t) => {
+        // stopPropagation keeps this click out of the dock-level
+        // menu-toggle listener (clicking Settings must never also toggle
+        // the prompt menu) — the same guard Copy/Paste use. preventDefault
+        // matches the menu-toggle listener's own contract.
+        (t.stopPropagation(), t.preventDefault());
+        // If the prompt menu happens to be open, close it first so exactly
+        // one panel is on screen (the same pattern openBackupManager and
+        // the keyboard-shortcut openers follow).
+        closeMenu();
+        if (!settingsModal) {
+          settingsModal = createSettingsModal();
+          document.body.appendChild(settingsModal);
+        }
+        if (settingsModal.resetToCurrent) settingsModal.resetToCurrent();
+        showModal(settingsModal);
+      }),
+      e
+    );
+  }
+  // v27.0.5: dock glyph ported from LinkMaster's getPsiGlyphSVG (Psi in a
+  // dashed double ring and hex frame). &#936; keeps the source file ASCII.
+  // v27.0.8: the glyph keeps its plain-serif Psi, while the dock's "Prompt
+  // Master" label next to it now renders in the real 'Cinzel Decorative'
+  // webfont (loaded by ensureCinzelDecorativeFont below) — closing the
+  // typography gap this comment used to disclaim.
+  const FLOW_DOCK_GLYPH =
+    '<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" class="mp-dock-glyph" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M 64,12 A 52,52 0 1 1 63.9,12 Z" stroke-dasharray="21.78 21.78" stroke-width="2"/>' +
+    '<path d="M 64,20 A 44,44 0 1 1 63.9,20 Z" stroke-dasharray="10 10" stroke-width="1.5" opacity="0.7"/>' +
+    '<path d="M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z"/>' +
+    '<text x="64" y="67" text-anchor="middle" dominant-baseline="middle" fill="currentColor" stroke="none" font-size="56" font-weight="700" font-family="serif">&#936;</text>' +
+    "</svg>";
+  // v27.0.5: sliding-dock mechanics ported verbatim from LinkMaster's
+  // #linkmaster-dock (bottom-right, translateX(calc(100% - 22px)) parked
+  // off-screen, :hover -> translateX(0)). The reveal is still pure CSS
+  // :hover, exactly as in the source implementation; v27.0.10 adds one
+  // piece of JS state on top of it — the delayed-retract dwell timer
+  // (see FLOW_DOCK_HIDE_DELAY_MS below and the wiring in initUI's flow
+  // branch) — without touching the reveal path itself.
+  // v27.0.7 FIX (overlap): the shared stylesheet draws .mp-sliding-pill-container
+  // as position:absolute anchored right:0, and .mp-dir-left:hover widens it
+  // 36px -> 112px LEFTWARD. That geometry was built for inline composer
+  // mounts, where the expansion overlays page chrome harmlessly. Embedded as
+  // a flex child of the dock it painted the expanded pill straight over the
+  // dock trigger (measured 72px collision: pill 1164->1276 vs trigger
+  // 1071.6->1236). The two dock-scoped rules below put the pill back into
+  // the flex flow: the wrapper auto-sizes to the pill's live (animated)
+  // width and the pill container becomes position:relative, so the row
+  // reserves real space for the expansion. Because the dock is anchored
+  // right:0, the extra 76px grows the dock leftward — the trigger slides
+  // left out of the way instead of being covered. All shared mp-* rules
+  // (hover widths, separators, slide-in transforms) keep applying; these
+  // overrides only neutralize position/size participation, and only inside
+  // #pm-flow-dock, so every other platform's inline pill is untouched.
+  // v27.0.8 (dock face lift): (1) The pill no longer paints its own 36px
+  // rounded, hard-bordered chip inside the dock — it is now a borderless,
+  // square-cornered, full-height glass panel (translucent tint + backdrop
+  // blur that deepens dynamically 2px -> 14px on hover), so the slide-out
+  // reads as one continuous rectangle with the dock instead of a bordered
+  // circle glued onto it. (2) The dock row switched align-items:center ->
+  // stretch so the trigger and the pill panel share one exact height; the
+  // trigger centers its own content via its inline-flex alignment, so its
+  // look is unchanged. (3) "Prompt Master" renders in the loaded 'Cinzel
+  // Decorative' webfont. All v27.0.7 geometry (flex participation,
+  // leftward growth) and interaction fixes (single-toggle click forwarding,
+  // outside-click exemption) are preserved verbatim.
+  // v27.0.10 (true glass + dwell + glow + sliding gear): (1) The dock
+  // chrome is now true glass morphism — a translucent 160deg gradient fill
+  // (replacing the near-opaque .92 slab, which is why the old blur(10px)
+  // could never read as glass) over an 18px backdrop blur with 1.5x
+  // saturate, a fine cyan hairline border, and specular inset highlights
+  // along the top/left edges, deepening to 22px/1.65x while revealed.
+  // (2) The reveal selector is now the union :hover,.mp-dock-open —
+  // :hover keeps the v27.0.5 instant CSS slide-out (and the no-JS
+  // fallback), while .mp-dock-open is toggled by the initUI dwell wiring
+  // to hold the dock out for FLOW_DOCK_HIDE_DELAY_MS after the pointer
+  // leaves. (3) The "Prompt Master" title glows the dock's established
+  // cyan (#7fd8ff, layered 6/16/30px text-shadow) on trigger hover.
+  // (4) The pill's Settings button joins the satellite collapse
+  // choreography (see the .mp-btn-settings rules at the end of this
+  // sheet), so the parked pill is plain glass and all three buttons
+  // slide out together.
+  // v27.0.12: two-stage hover reveal for the dock pill. The parked face
+  // carries a shimmering chevron (title-styled — see the wrapper ::before
+  // rules at the tail of this sheet). On dwell the glass responds first
+  // (tint + blur deepen after --mp-pill-reveal-ms), then the full icon
+  // slide-out runs after the --mp-pill-intent-ms hover-intent window:
+  // container width, all three buttons, and the chevron's fade ALL share
+  // that one delay so the overflow:hidden reveal window and the buttons
+  // it uncovers stay in lockstep — splitting them (as the beta did) makes
+  // the buttons animate clipped behind the parked face and stack the copy
+  // glyph under the chevron. Collapse stays instant (delays live only in
+  // :hover rules), and swipes shorter than the intent window never reveal
+  // the icons. The shimmer loop is disabled under prefers-reduced-motion.
+  const FLOW_DOCK_HIDE_DELAY_MS = 2750;
+  const FLOW_DOCK_CSS =
+    "#pm-flow-dock{position:fixed;right:0;bottom:24px;z-index:2147483646;display:flex;align-items:stretch;border-radius:6px 0 0 6px;overflow:hidden;background:linear-gradient(160deg,rgba(30,42,60,.58) 0%,rgba(16,23,34,.52) 55%,rgba(11,16,24,.60) 100%);backdrop-filter:blur(18px) saturate(1.5);-webkit-backdrop-filter:blur(18px) saturate(1.5);border:1px solid rgba(148,196,255,.30);border-right:none;box-shadow:inset 0 1px 0 rgba(200,230,255,.18),inset 0 -1px 0 rgba(0,0,0,.28),inset 1px 0 0 rgba(200,230,255,.10),-6px 10px 36px rgba(0,0,0,.50);transition:transform 400ms cubic-bezier(0.16,1,0.3,1),backdrop-filter 280ms ease,-webkit-backdrop-filter 280ms ease;transform:translateX(calc(100% - 22px));}" +
+    "#pm-flow-dock:hover,#pm-flow-dock.mp-dock-open{transform:translateX(0);backdrop-filter:blur(22px) saturate(1.65);-webkit-backdrop-filter:blur(22px) saturate(1.65);}" +
+    "#pm-flow-dock .mp-dock-trigger{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:none;background:transparent;color:#e8eaf0;font:600 12.5px/1 ui-sans-serif,system-ui,Roboto,sans-serif;letter-spacing:.02em;cursor:pointer;transition:background .2s;}" +
+    "#pm-flow-dock .mp-dock-trigger:hover{background:rgba(140,220,255,.08);}" +
+    "#pm-flow-dock .mp-dock-trigger:active{background:rgba(140,220,255,.2);}" +
+    "#pm-flow-dock .mp-dock-glyph{width:20px;height:20px;display:block;color:#7fd8ff;flex-shrink:0;}" +
+    "#pm-flow-dock .mp-dock-text{white-space:nowrap;font-family:'Cinzel Decorative',Georgia,'Times New Roman',serif;font-weight:700;font-size:13px;line-height:1;letter-spacing:.07em;color:#e8eaf0;transition:color 250ms ease,text-shadow 250ms ease;}" +
+    "#pm-flow-dock .mp-dock-trigger:hover .mp-dock-text{color:#7fd8ff;text-shadow:0 0 6px rgba(127,216,255,.55),0 0 16px rgba(127,216,255,.35),0 0 30px rgba(127,216,255,.18);}" +
+    "#pm-flow-dock .mp-prompt-wrapper{position:static;width:auto;height:auto;flex:0 0 auto;margin:0;}" +
+    "#pm-flow-dock .mp-sliding-pill-container{position:relative;top:auto;right:auto;}" +
+    "#pm-flow-dock .mp-sliding-pill-container{height:100%;border-radius:0;border:none;box-shadow:none;background:rgba(148,190,235,.10);backdrop-filter:blur(2px) saturate(1.15);-webkit-backdrop-filter:blur(2px) saturate(1.15);transition:width var(--mp-transition-fast),height var(--mp-transition-fast),background-color var(--mp-transition-fast),border-color var(--mp-transition-fast),backdrop-filter 280ms ease,-webkit-backdrop-filter 280ms ease;}" +
+    "#pm-flow-dock .mp-sliding-pill-container:hover{background:rgba(148,190,235,.17);border:none;box-shadow:none;backdrop-filter:blur(14px) saturate(1.4);-webkit-backdrop-filter:blur(14px) saturate(1.4);}" +
+    "#pm-flow-dock .mp-sliding-pill-container:active{background:rgba(148,190,235,.24);}" +
+    "#pm-flow-dock .mp-btn-part{height:100%;color:#aeb9c8;}" +
+    "#pm-flow-dock .mp-btn-part:hover{color:#7fd8ff;}" +
+    "#pm-flow-dock .mp-sliding-pill-container:after,#pm-flow-dock .mp-sliding-pill-container:before{background-color:rgba(150,175,205,.28);}" +
+    "#pm-flow-dock .mp-btn-settings{flex:0 0 0;width:0;opacity:0;overflow:hidden;transition:flex-basis var(--mp-transition-fast),width var(--mp-transition-fast),height var(--mp-transition-fast),opacity var(--mp-transition-fast),transform var(--mp-transition-fast);}" +
+    "#pm-flow-dock .mp-sliding-pill-container:hover .mp-btn-settings{flex:0 0 34px;width:34px;opacity:1;transform:translate(0);}" +
+    "#pm-flow-dock .mp-dir-left .mp-btn-settings{transform:translateX(10px);}" +
+    "#pm-flow-dock{--mp-pill-intent-ms:950ms;--mp-pill-reveal-ms:250ms;}" +
+    // v27.0.12 (option B) — per-property two-stage :hover transition.
+    // Stage 1 (--mp-pill-reveal-ms): the glass wakes (background-color
+    // tint + backdrop-filter blur deepen) — early feedback that cannot
+    // break the reveal window. Stage 2 (--mp-pill-intent-ms): width (the
+    // overflow:hidden window) opens. height/border-color never change on
+    // hover but stay listed so nothing the base rule transitions loses
+    // its timing; the base collapsed rule keeps its delay-free shorthand,
+    // so collapse and all non-hover paths remain instant.
+    "#pm-flow-dock .mp-sliding-pill-container:hover{transition:width var(--mp-transition-fast) var(--mp-pill-intent-ms,950ms),height var(--mp-transition-fast),background-color var(--mp-transition-fast) var(--mp-pill-reveal-ms,250ms),border-color var(--mp-transition-fast),backdrop-filter 280ms ease var(--mp-pill-reveal-ms,250ms),-webkit-backdrop-filter 280ms ease var(--mp-pill-reveal-ms,250ms);}" +
+    "#pm-flow-dock .mp-sliding-pill-container:hover .mp-btn-copy," +
+    "#pm-flow-dock .mp-sliding-pill-container:hover .mp-btn-paste," +
+    // The buttons MUST share the width's intent delay: they animate
+    // through the overflow:hidden window, so any earlier delay animates
+    // them clipped — and the left-anchored copy would stack under the
+    // parked chevron (the beta's interim glyph ambiguity).
+    "#pm-flow-dock .mp-sliding-pill-container:hover .mp-btn-settings{transition-delay:var(--mp-pill-intent-ms,950ms);}" +
+    "#pm-flow-dock .mp-prompt-wrapper::before{content:'';position:absolute;z-index:1002;pointer-events:none;right:10px;top:50%;width:16px;height:16px;transform:translateY(-50%);background-color:#e8eaf0;background-image:linear-gradient(90deg,transparent 0%,transparent 42%,rgba(127,216,255,.95) 50%,transparent 58%,transparent 100%);background-size:280% 100%;animation:mp-chevron-flash 2.6s linear infinite;opacity:.9;transition:opacity var(--mp-transition-fast),background-color var(--mp-transition-fast),filter var(--mp-transition-fast);-webkit-mask-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M14.5 5.5 8 12 14.5 18.5' fill='none' stroke='white' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\");-webkit-mask-position:center;-webkit-mask-repeat:no-repeat;-webkit-mask-size:16px 16px;mask-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M14.5 5.5 8 12 14.5 18.5' fill='none' stroke='white' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\");mask-position:center;mask-repeat:no-repeat;mask-size:16px 16px;}" +
+    "#pm-flow-dock .mp-prompt-wrapper:has(.mp-sliding-pill-container:hover)::before{opacity:0;background-color:#7fd8ff;filter:drop-shadow(0 0 6px rgba(127,216,255,.85)) drop-shadow(0 0 14px rgba(127,216,255,.45));animation-play-state:paused;transition:opacity var(--mp-transition-fast) var(--mp-pill-intent-ms,950ms),background-color var(--mp-transition-fast),filter var(--mp-transition-fast);}" +
+    "@keyframes mp-chevron-flash{0%{background-position:180% 0;}100%{background-position:-80% 0;}}" +
+    // v27.0.12: accessibility — the decorative infinite shimmer switches
+    // off for reduced-motion users (the glow and state fades remain).
+    "@media (prefers-reduced-motion:reduce){#pm-flow-dock .mp-prompt-wrapper::before{animation:none;}}";
+  // v27.0.8: loads the 'Cinzel Decorative' display face used by the dock's
+  // "Prompt Master" label. The css2 request and the woff2 payload are
+  // fetched through GM_xmlhttpRequest — i.e. in the userscript-manager
+  // context, outside the page's CSP for style/font origins — and the font
+  // is re-injected as a base64 data: URL @font-face, so it renders even on
+  // hosts that block fonts.googleapis.com <style> @imports. The css2 call
+  // uses text= to receive a single tiny subset covering exactly
+  // "Prompt Master" (those subset URLs are extension-less gstatic /l/font?kit=
+  // links, so the url is matched via the trailing format('woff2') declaration
+  // rather than a .woff2 file suffix). Every failure mode (offline, CDN
+  // hiccup, blocked font) degrades silently to the serif fallback stack
+  // declared in .mp-dock-text — no console noise, no UI breakage. Idempotent:
+  // guarded by the style element id, safe across re-inits.
+  function ensureCinzelDecorativeFont() {
+    if (document.getElementById("pm-cinzel-font-style")) return;
+    const e =
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+    const t = (t) => {
+      if (document.getElementById("pm-cinzel-font-style")) return;
+      const n = document.createElement("style");
+      ((n.id = "pm-cinzel-font-style"),
+        (n.textContent =
+          "@font-face{font-family:'Cinzel Decorative';font-style:normal;font-weight:700;font-display:swap;src:url(data:font/woff2;base64," +
+          t +
+          ") format('woff2');}"),
+        document.head.appendChild(n));
+    };
+    GM_xmlhttpRequest({
+      method: "GET",
+      url:
+        "https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&text=" +
+        encodeURIComponent("Prompt Master"),
+      headers: { "User-Agent": e },
+      timeout: 10000,
+      onload: (n) => {
+        if (n.status < 200 || n.status >= 300) return;
+        const a =
+          /url\((https:\/\/fonts\.gstatic\.com\/[^)]+)\)\s*format\('woff2'\)/i.exec(
+            n.responseText || "",
+          );
+        if (!a) return;
+        GM_xmlhttpRequest({
+          method: "GET",
+          url: a[1],
+          headers: { "User-Agent": e },
+          responseType: "arraybuffer",
+          timeout: 15000,
+          onload: (n) => {
+            if (n.status < 200 || n.status >= 300) return;
+            try {
+              const a = new Uint8Array(n.response);
+              let o = "";
+              for (let r = 0; r < a.length; r += 0x8000)
+                o += String.fromCharCode.apply(null, a.subarray(r, r + 0x8000));
+              t(btoa(o));
+            } catch (e) {}
+          },
+          onerror: () => {},
+          ontimeout: () => {},
+        });
+      },
+      onerror: () => {},
+      ontimeout: () => {},
+    });
+  }
   function createSettingsModal() {
     let e = { ...currentThemeConfig };
     const t = document.createElement("div");
@@ -1755,42 +2042,14 @@
       setSafeInnerHTML(o, "");
       const t = document.createElement("div");
       t.className = "mp-theme-action-row";
-      const n = document.createElement("div");
-      ((n.className = "mp-theme-split-btn"),
-        setSafeInnerHTML(n, ICONS.cart),
-        createCustomTooltip(
-          n,
-          {
-            text: getTranslation("getMoreThemes"),
-            layout: "column",
-            actions: [
-              {
-                label: "Patreon",
-                icon: ICONS.patreon,
-                action: () => {
-                  window.open(
-                    "https://www.patreon.com/collection/2092789",
-                    "_blank",
-                  );
-                },
-              },
-              {
-                label: "Ko-fi",
-                icon: ICONS.kofi,
-                action: () => {
-                  window.open("https://ko-fi.com/ohas/shop/theme", "_blank");
-                },
-              },
-            ],
-          },
-          "bottom",
-        ));
+      // v27.0.8: the theme-shop split-button (cart icon with the "Get more
+      // Themes" tooltip linking to the Patreon/Ko-fi storefronts) was
+      // removed; only the local "+ add theme" button remains in the row.
       const a = document.createElement("div");
       ((a.className = "mp-theme-split-btn"),
         setSafeInnerHTML(a, ICONS.plus),
         (a.onclick = () => r.click()),
         createCustomTooltip(a, getTranslation("addTheme"), "bottom"),
-        t.appendChild(n),
         t.appendChild(a),
         o.appendChild(t));
       const i = (t, n, a) => {
@@ -2014,18 +2273,15 @@
     const y = n.querySelector("#mp-nav-lbl");
     y && createCustomTooltip(y, getTranslation("navConfigDesc"), "left");
     const b = n.querySelector("#mp-AI-info-icon");
+    // v27.0.8: the "Interactive Tutorial" action (a ko-fi.com redirect)
+    // was removed from this tooltip; the GitHub "Basic Guide" link remains
+    // as its single action.
     b &&
       createCustomTooltip(
         b,
         {
           layout: "column",
           actions: [
-            {
-              label: getTranslation("ti"),
-              action: () => {
-                window.open("https://ko-fi.com/s/edf0540604", "_blank");
-              },
-            },
             {
               label: getTranslation("gb"),
               action: () => {
@@ -2732,6 +2988,9 @@
         } catch (e) {}
       }));
     const _ = t.querySelector("#__ap_shop_btn");
+    // v27.0.8: the Patreon and Ko-fi storefront actions were removed from
+    // this tooltip; the Gist community search (a script feature, not a
+    // storefront) remains as its single action.
     _ &&
       createCustomTooltip(
         _,
@@ -2739,23 +2998,6 @@
           text: getTranslation("getMorePrompts"),
           layout: "column",
           actions: [
-            {
-              label: "Patreon",
-              icon: ICONS.patreon,
-              action: () => {
-                window.open(
-                  "https://www.patreon.com/collection/2092536",
-                  "_blank",
-                );
-              },
-            },
-            {
-              label: "Ko-fi",
-              icon: ICONS.kofi,
-              action: () => {
-                window.open("https://ko-fi.com/ohas/shop/prompt", "_blank");
-              },
-            },
             {
               label: "Gist",
               icon: ICONS.gist,
@@ -6243,9 +6485,9 @@
     return "";
   }
   async function completeInlinePrompt(e, t) {
-    const n = getEditableRoot(
-      document.querySelector(platformSelectors[currentPlatform]),
-    );
+    const n =
+      getEditableRoot(findPlatformEditor()) ||
+      getEditableRoot(document.querySelector(platformSelectors[currentPlatform]));
     if (!n) return;
     n.focus();
     const a = getTextBeforeCaret(n).match(/(?:^|\s)(#[^\s]*)$/);
@@ -7121,6 +7363,222 @@
     selection.addRange(range);
     return true;
   }
+
+  // ─── Flow hardening: resilient editor discovery + verified insertion ───────
+  function isElementVisibleEl(el) {
+    if (!el || !el.isConnected) return false;
+    if (el.hidden || el.getAttribute("aria-hidden") === "true") return false;
+    const rect = el.getBoundingClientRect();
+    return !!(rect.width > 0 && rect.height > 0);
+  }
+
+  // Mirrors the initUI anchor logic (Add-media / arrow_forward buttons) that is
+  // proven to still work on flow.google.com; used to locate the composer when
+  // every static selector fails. Self-heals against future editor rewrites.
+  // v27.0.3: Flow's inspected composer DOM renders icon ligatures as plain
+  // text inside buttons (send button textContent is literally
+  // "arrow_forwardCreate"; add-media is <i class="... google-symbols ...">add</i>).
+  // The anchor matcher therefore keys off the button's own normalized
+  // textContent first, then child icon elements, then aria-labels, and treats
+  // the PINHOLE prompt textarea as the most stable last-resort hook.
+  function flowBtnText(el) {
+    return ((el && el.textContent) || "").replace(/\s+/g, "").toLowerCase();
+  }
+  function findFlowAnchorButton() {
+    // Only consider live, visible buttons: display:none containers still
+    // surface in querySelectorAll and would anchor the search on a stale
+    // (e.g. cached view) composer instead of the active one.
+    const buttons = Array.from(document.querySelectorAll("button")).filter(
+      isElementVisibleEl,
+    );
+    const send =
+      buttons.find((b) => flowBtnText(b).includes("arrow_forward")) ||
+      buttons.find((b) => {
+        const icon = b.querySelector("i, span, mat-icon");
+        return icon && "arrow_forward" === flowBtnText(icon);
+      });
+    if (send) return { element: send, type: "send-fingerprint" };
+    const add = buttons.find((b) => {
+      const icon = b.querySelector(
+        'i[class*="google-symbols"], span[class*="google-symbols"], i.material-icons, span.material-icons, mat-icon',
+      );
+      return icon && "add" === flowBtnText(icon);
+    });
+    if (add) return { element: add, type: "add-media-fingerprint" };
+    const addAria = document.querySelector(
+      'button[aria-label="Add media menu"], button[aria-label*="Add media" i]',
+    );
+    if (addAria && isElementVisibleEl(addAria))
+      return { element: addAria, type: "add-media-aria-fallback" };
+    const pinhole = document.querySelector("#PINHOLE_TEXT_AREA_ELEMENT_ID");
+    if (pinhole && isElementVisibleEl(pinhole))
+      return { element: pinhole, type: "pinhole-textarea" };
+    return null;
+  }
+  function findFlowComposerContainer() {
+    const anchor = findFlowAnchorButton();
+    if (!anchor) return null;
+    if ("pinhole-textarea" === anchor.type)
+      return anchor.element.closest(
+        'form, [class*="prompt"], [class*="composer"], [class*="input"]',
+      );
+    return (
+      anchor.element.closest(
+        'form, [class*="prompt"], [class*="composer"], [class*="input"], [class*="chat"], [class*="toolbar"], [role="textbox"], textarea',
+      ) || anchor.element.closest("div")
+    );
+  }
+
+  function pickVisibleEditable(list, requireVisible = false) {
+    if (!list || !list.length) return null;
+    for (const el of list) {
+      const root = getEditableRoot(el);
+      if (root && isElementVisibleEl(root)) return root;
+    }
+    // Legacy querySelector semantics (first match, even pre-layout) for
+    // non-flow platforms; Flow must have a live, visible editor so the
+    // anchor-based fallback below still gets a chance to run.
+    return requireVisible ? null : getEditableRoot(list[0]);
+  }
+
+  // Resolves the active prompt editor for the current platform with cascading
+  // fallbacks. Falls back to the legacy single selector for other platforms.
+  function findPlatformEditor(platform = currentPlatform) {
+    const selector = platformSelectors[platform];
+    if (!selector) return null;
+    const requireVisible = platform === "flow";
+    let el = pickVisibleEditable(
+      document.querySelectorAll(selector),
+      requireVisible,
+    );
+    if (el) return el;
+    if (platform === "flow") {
+      // Anchor-based discovery: the composer lives around the Add-media/send
+      // controls whose detection is already working (UI button mounts).
+      const composer = findFlowComposerContainer();
+      if (composer) {
+        el = pickVisibleEditable(
+          composer.querySelectorAll(
+            'div[contenteditable="true"], textarea:not([hidden]):not([disabled])',
+          ),
+          true,
+        );
+        if (el) return el;
+        // Last resort: any visible editable that sits near the bottom of the
+        // viewport (Flow's prompt bar) instead of a stale hidden one.
+        const editables = Array.from(
+          document.querySelectorAll(
+            'div[contenteditable="true"][role="textbox"], div[role="textbox"], textarea:not([hidden]):not([disabled])',
+          ),
+        ).filter(isElementVisibleEl);
+        if (editables.length) {
+          editables.sort(
+            (a, b) =>
+              b.getBoundingClientRect().bottom - a.getBoundingClientRect().bottom,
+          );
+          return getEditableRoot(editables[0]);
+        }
+      }
+    }
+    return null;
+  }
+
+  function editorContainsText(el, text) {
+    if (!el) return false;
+    const probe = (text || "").trim().split("\n").filter(Boolean)[0] || "";
+    if (!probe) return true;
+    if ("TEXTAREA" === el.tagName || "INPUT" === el.tagName)
+      return (el.value || "").includes(probe);
+    return ((el.innerText || el.textContent || "")).includes(probe);
+  }
+
+  // Verified, multi-strategy text insertion for Flow's rebuilt editor.
+  // Order: trusted execCommand insertText -> synthetic beforeinput/paste (old
+  // Slate path) -> direct DOM nodes + input event. Each step is verified.
+  function insertTextIntoEditor(el, text) {
+    const editor = getEditableRoot(el);
+    if (!editor) return false;
+    try {
+      editor.focus();
+    } catch (err) {}
+
+    // TEXTAREA / INPUT: native value setter keeps Angular's control in sync.
+    if ("TEXTAREA" === editor.tagName || "INPUT" === editor.tagName) {
+      const before = editor.value || "";
+      const proto =
+        "TEXTAREA" === editor.tagName
+          ? window.HTMLTextAreaElement.prototype
+          : window.HTMLInputElement.prototype;
+      const setter = Object.getOwnPropertyDescriptor(proto, "value")?.set;
+      const next = before ? before + (before.endsWith("\n") ? "" : "\n") + text : text;
+      setter ? setter.call(editor, next) : (editor.value = next);
+      editor.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
+      editor.dispatchEvent(new Event("change", { bubbles: true }));
+      if (editor.setSelectionRange)
+        editor.setSelectionRange(next.length, next.length);
+      return editorContainsText(editor, text);
+    }
+
+    // Strategy 1: execCommand('insertText') - emits TRUSTED beforeinput/input
+    // events; the most reliable path for Angular/React controlled editors.
+    try {
+      const sel = window.getSelection();
+      if (sel) {
+        const range = document.createRange();
+        range.selectNodeContents(editor);
+        range.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+      document.execCommand("insertText", false, text);
+    } catch (err) {}
+    if (editorContainsText(editor, text)) return true;
+
+    // Strategy 2: synthetic beforeinput + paste (legacy Slate-compatible path).
+    try {
+      editor.dispatchEvent(
+        new InputEvent("beforeinput", {
+          bubbles: true,
+          cancelable: true,
+          inputType: "insertText",
+          data: text,
+        }),
+      );
+      const dt = new DataTransfer();
+      dt.setData("text/plain", text);
+      editor.dispatchEvent(
+        new ClipboardEvent("paste", {
+          clipboardData: dt,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      editor.dispatchEvent(new Event("input", { bubbles: true }));
+    } catch (err) {}
+    if (editorContainsText(editor, text)) return true;
+
+    // Strategy 3: direct DOM insertion + input event (last resort).
+    try {
+      text.split("\n").forEach((line) => {
+        const p = document.createElement("p");
+        if ("" === line.trim()) p.appendChild(document.createElement("br"));
+        else p.textContent = line;
+        editor.appendChild(p);
+      });
+      const sel = window.getSelection();
+      if (sel) {
+        const range = document.createRange();
+        range.selectNodeContents(editor);
+        range.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+      editor.dispatchEvent(
+        new Event("input", { bubbles: true, composed: true }),
+      );
+    } catch (err) {}
+    return editorContainsText(editor, text);
+  }
   function hasApiKeyForProvider(e) {
     let t;
     return (
@@ -7229,9 +7687,9 @@
   }
   async function handleInstantPageEnhancement() {
     if (!currentPlatform || !platformSelectors[currentPlatform]) return;
-    const e = getEditableRoot(
-      document.querySelector(platformSelectors[currentPlatform]),
-    );
+    const e =
+      getEditableRoot(findPlatformEditor()) ||
+      getEditableRoot(document.querySelector(platformSelectors[currentPlatform]));
     if (!e) return;
     let t = "";
     t =
@@ -7255,6 +7713,40 @@
       },
       null,
     );
+  }
+  // v27.0.8: Copy counterpart to the pill's Paste button (and to
+  // handleInstantPageEnhancement's editor discovery above): reads the
+  // current platform editor through the exact same cascade (dedicated
+  // findPlatformEditor() -> platform selector fallback), then writes its
+  // trimmed text to the system clipboard. Trims so transient whitespace
+  // artifacts of contenteditable editors do not end up on the clipboard;
+  // empty text and clipboard rejections surface as notifications instead
+  // of failing silently.
+  async function handleInstantPageCopy() {
+    const e =
+      currentPlatform && platformSelectors[currentPlatform]
+        ? getEditableRoot(findPlatformEditor()) ||
+          getEditableRoot(
+            document.querySelector(platformSelectors[currentPlatform]),
+          )
+        : null;
+    const t = e
+        ? "TEXTAREA" === e.tagName || "INPUT" === e.tagName
+          ? e.value
+          : e.innerText || e.textContent || ""
+        : "",
+      n = (t || "").trim();
+    if (!n)
+      return void ("function" == typeof showNotification &&
+        showNotification(getTranslation("noTextToCopy"), "error"));
+    try {
+      await navigator.clipboard.writeText(n);
+      "function" == typeof showNotification &&
+        showNotification(getTranslation("copySuccess"), "success");
+    } catch (e) {
+      "function" == typeof showNotification &&
+        showNotification(getTranslation("copyFailed"), "error");
+    }
   }
   async function handleTextareaEnhancement(e, t) {
     triggerAIEnhancement(
@@ -7304,7 +7796,6 @@
       "hunyuan",
       "bing",
       "gist",
-      "kofi",
     ];
   let currentNavConfig = JSON.parse(JSON.stringify(DEFAULT_NAV_CONFIG)),
     navContainer = null,
@@ -8801,14 +9292,35 @@
     "UserScriptLang",
     "DontShowAgain",
   ];
+  // v27.0.12: single source of truth for the running version, read from
+  // the userscript manager (GM_info) so the Gist backup payload and the
+  // boot console marker can never drift from the @version header again
+  // (the beta shipped a hardcoded marker quoting an older version). The
+  // string fallback only engages in a sandbox without GM_info — keep it
+  // in sync with the @version header above.
+  const SCRIPT_VERSION =
+    typeof GM_info !== "undefined" &&
+    GM_info &&
+    GM_info.script &&
+    GM_info.script.version
+      ? GM_info.script.version
+      : "27.0.12";
+  // v27.0.12: canonical backup snapshot helper. The beta's Gist push
+  // called snapshotKeys() before it existed anywhere, so every "Sync Now"
+  // threw a ReferenceError; takeAutoBackup() now shares this one helper
+  // instead of its private inline copy of the same loop.
+  async function snapshotKeys(keys) {
+    const snapshot = {};
+    for (const k of keys) {
+      const v = await GM_getValue(k);
+      if (v != null) snapshot[k] = v;
+    }
+    return snapshot;
+  }
   let _autoBackupTimer = null;
   async function takeAutoBackup() {
     try {
-      const snapshot = {};
-      for (const k of AUTO_BACKUP_KEYS) {
-        const v = await GM_getValue(k);
-        if (v != null) snapshot[k] = v;
-      }
+      const snapshot = await snapshotKeys(AUTO_BACKUP_KEYS);
       if (Object.keys(snapshot).length > 0) {
         await GM_setValue(AUTO_BACKUP_KEY, JSON.stringify(snapshot));
       }
@@ -8860,22 +9372,74 @@
     currentGistConfig = { ...currentGistConfig, ...e };
     await GM_setValue(GIST_CONFIG_KEY, JSON.stringify(currentGistConfig));
   }
+  async function findExistingBackupGist(pat) {
+    const filename = "MyPrompt_Backup.mp.backup.json";
+    // v27.0.12: paginated discovery. The list endpoint caps at 100 gists
+    // per page, so a token owning more than 100 gists would have its
+    // backup living on page 2+ — a single-page scan would miss it and
+    // then fork a duplicate backup gist. Walk pages newest-first until
+    // the backup is found or a short page marks the end; the page cap
+    // (40 = 4000 gists) sits above GitHub's own listing ceiling and is
+    // purely a runaway guard.
+    const MAX_GIST_PAGES = 40;
+    const fetchPage = (page) =>
+      new Promise((resolve, reject) => {
+        GM_xmlhttpRequest({
+          method: "GET",
+          url: `https://api.github.com/gists?per_page=100&page=${page}`,
+          headers: {
+            Authorization: `Bearer ${pat}`,
+            Accept: "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+          },
+          onload: (e) => {
+            if (e.status !== 200) {
+              let msg = `GitHub API error ${e.status}`;
+              try {
+                const r = JSON.parse(e.responseText);
+                if (r.message) msg += `: ${r.message}`;
+              } catch (_) {}
+              return void reject(new Error(msg));
+            }
+            try {
+              resolve(JSON.parse(e.responseText));
+            } catch (err) {
+              reject(new Error("Failed to parse GitHub gist list"));
+            }
+          },
+          onerror: () =>
+            reject(new Error("Network error contacting GitHub API")),
+        });
+      });
+    for (let page = 1; page <= MAX_GIST_PAGES; page++) {
+      const list = await fetchPage(page);
+      if (!Array.isArray(list)) return null;
+      const match = list.find((g) => g.files && g.files[filename]);
+      if (match) return match.id;
+      if (list.length < 100) return null;
+    }
+    return null;
+  }
   async function pushBackupToGist() {
     const pat = currentGistConfig.pat.trim();
     if (!pat)
       throw new Error(
         "No GitHub PAT configured. Add it in Settings → Advanced.",
       );
-    const snapshot = {};
-    for (const k of AUTO_BACKUP_KEYS) {
-      const v = await GM_getValue(k);
-      if (v != null) snapshot[k] = v;
+    let gistId = currentGistConfig.gistId.trim();
+    if (!gistId) {
+      // Don't blindly create a new gist: this token may already have a
+      // backup from another device that just never got its ID carried
+      // over locally. Find and reuse it instead of forking a duplicate.
+      gistId = await findExistingBackupGist(pat);
+      if (gistId) await saveGistConfig({ gistId });
     }
+    const snapshot = await snapshotKeys(AUTO_BACKUP_KEYS);
     const content = JSON.stringify(
       {
         meta: {
           scriptName: "My Prompt",
-          version: "26.1.1",
+          version: SCRIPT_VERSION,
           exportDate: new Date().toISOString(),
         },
         data: snapshot,
@@ -8884,9 +9448,9 @@
       2,
     );
     const filename = "MyPrompt_Backup.mp.backup.json";
-    const isUpdate = !!currentGistConfig.gistId;
+    const isUpdate = !!gistId;
     const url = isUpdate
-      ? `https://api.github.com/gists/${currentGistConfig.gistId}`
+      ? `https://api.github.com/gists/${gistId}`
       : "https://api.github.com/gists";
     const method = isUpdate ? "PATCH" : "POST";
     const body = isUpdate
@@ -8911,7 +9475,7 @@
           if (e.status === 200 || e.status === 201) {
             try {
               const r = JSON.parse(e.responseText);
-              if (r.id && r.id !== currentGistConfig.gistId) {
+              if (r.id && r.id !== gistId) {
                 await saveGistConfig({ gistId: r.id });
               }
               resolve({ created: !isUpdate, url: r.html_url });
@@ -8933,15 +9497,19 @@
   }
   async function pullBackupFromGist() {
     const pat = currentGistConfig.pat.trim();
-    const gistId = currentGistConfig.gistId.trim();
     if (!pat)
       throw new Error(
         "No GitHub PAT configured. Add it in Settings → Advanced.",
       );
-    if (!gistId)
-      throw new Error(
-        "No Gist ID configured. Sync once first, or paste an existing Gist ID.",
-      );
+    let gistId = currentGistConfig.gistId.trim();
+    if (!gistId) {
+      gistId = await findExistingBackupGist(pat);
+      if (!gistId)
+        throw new Error(
+          "No backup found on GitHub for this token. Sync from another device first, or paste a Gist ID manually in Settings → Advanced.",
+        );
+      await saveGistConfig({ gistId });
+    }
     const filename = "MyPrompt_Backup.mp.backup.json";
     return new Promise((resolve, reject) => {
       GM_xmlhttpRequest({
@@ -9300,36 +9868,11 @@
       },
     };
   })();
-  function initKofiPatreonFeature() {
-    if (!window.location.hostname.includes("ko-fi.com")) return;
-    const e = () => {
-      const e = getTranslation("buyPatreon"),
-        t = document.querySelector(".mp-patreon-button");
-      if (t) return void (t.innerText !== e && (t.innerText = e));
-      const n = document.getElementById("addToCartButton"),
-        a = document.querySelector(".kfds-c-word-wrap");
-      if (!n || !a) return;
-      const o = a.innerHTML.match(
-        /Patreon:\s*<a[^>]*href="(https?:\/\/(?:www\.)?patreon\.com\/[^"]+)"/i,
-      );
-      if (o && o[1]) {
-        const t = o[1],
-          a = n.parentElement,
-          r = document.createElement("a");
-        ((r.href = t),
-          (r.target = "_blank"),
-          (r.rel = "nofollow noreferrer"),
-          (r.innerText = e),
-          (r.className =
-            "kfds-lyt-width-100 kfds-c-btn-primary kfds-font-bold kfds-srf-rounded kfds-font-size-20 kfds-btm-mrgn-16 mp-patreon-button"),
-          a.appendChild(r));
-      }
-    };
-    (new MutationObserver(() => {
-      e();
-    }).observe(document.body, { childList: !0, subtree: !0 }),
-      e());
-  }
+  // v27.0.8: initKofiPatreonFeature() (a ko-fi.com page helper that
+  // appended a "Buy on Patreon" button to ko-fi shop items) was removed
+  // together with the ko-fi platform detection and every storefront /
+  // donation link in the UI. The script never @matched ko-fi.com, so the
+  // removal changes nothing on any supported page.
   function detectPlatform() {
     const e = window.location.hostname;
     return e.includes("chatgpt.com")
@@ -9407,42 +9950,38 @@
                                                                   )
                                                                 ? "gist"
                                                                 : e.includes(
-                                                                      "ko-fi.com",
+                                                                      "meta.ai",
                                                                     )
-                                                                  ? "kofi"
+                                                                  ? "meta"
                                                                   : e.includes(
-                                                                        "meta.ai",
+                                                                        "manus.im",
                                                                       )
-                                                                    ? "meta"
+                                                                    ? "manus"
                                                                     : e.includes(
-                                                                          "manus.im",
+                                                                          "aistudio.xiaomimimo.com",
                                                                         )
-                                                                      ? "manus"
-                                                                      : e.includes(
-                                                                            "aistudio.xiaomimimo.com",
+                                                                      ? "xiaomi"
+                                                                      : (e.includes(
+                                                                            "labs.google",
+                                                                          ) &&
+                                                                          window.location.pathname.includes(
+                                                                            "/tools/flow",
+                                                                          )) ||
+                                                                          e.includes(
+                                                                            "flow.google",
                                                                           )
-                                                                        ? "xiaomi"
-                                                                        : (e.includes(
-                                                                              "labs.google",
+                                                                        ? "flow"
+                                                                        : e.includes(
+                                                                              "google.com",
                                                                             ) &&
                                                                             window.location.pathname.includes(
-                                                                              "/tools/flow",
-                                                                            )) ||
-                                                                            e.includes(
-                                                                              "flow.google",
+                                                                              "/search",
+                                                                            ) &&
+                                                                            window.location.search.includes(
+                                                                              "udm=50",
                                                                             )
-                                                                          ? "flow"
-                                                                          : e.includes(
-                                                                                "google.com",
-                                                                              ) &&
-                                                                              window.location.pathname.includes(
-                                                                                "/search",
-                                                                              ) &&
-                                                                              window.location.search.includes(
-                                                                                "udm=50",
-                                                                              )
-                                                                            ? "googleModoIA"
-                                                                            : null;
+                                                                          ? "googleModoIA"
+                                                                          : null;
   }
   function getSendButton() {
     switch (currentPlatform) {
@@ -9672,15 +10211,21 @@
         return (
           Array.from(document.querySelectorAll("button")).find((b) => {
             const i = b.querySelector(
-              "i.google-symbols, mat-icon.google-symbols, mat-icon",
+              "i.google-symbols, mat-icon.google-symbols, mat-icon, span.google-symbols",
             );
-            return i && (i.textContent || "").trim() === "arrow_forward";
+            return (
+              i &&
+              ["arrow_forward", "send"].includes((i.textContent || "").trim())
+            );
           }) ||
           document
             .querySelector(
               "button i.google-symbols, button mat-icon.google-symbols",
             )
             ?.parentElement ||
+          document.querySelector(
+            'button[type="submit"]:not([disabled]), button[aria-label*="Generate" i]:not([disabled]), button[aria-label*="Create" i]:not([disabled])',
+          ) ||
           document.querySelector('button:has(span[style*="clip"])')
         );
       case "meta":
@@ -9779,10 +10324,17 @@
       }, 800);
   }
   async function insertPrompt(e, t = !1, n = !1) {
-    let a = getEditableRoot(
-      document.querySelector(platformSelectors[currentPlatform]),
-    );
-    if (!a) return;
+    let a =
+      getEditableRoot(findPlatformEditor()) ||
+      getEditableRoot(document.querySelector(platformSelectors[currentPlatform]));
+    if (!a) {
+      "flow" === currentPlatform &&
+        showNotification(
+          "Flow prompt box not found. Click into the prompt input once, then retry.",
+          "error",
+        );
+      return;
+    }
     a.focus();
     const o = navigator.userAgent.toLowerCase().includes("firefox");
     let r = !1,
@@ -10104,11 +10656,30 @@
               "qianwen" === currentPlatform ||
               "ernie" === currentPlatform
             ) {
-              s(
-                ("qianwen" === currentPlatform ||
-                  "ernie" === currentPlatform) &&
-                  !o,
-              );
+              if ("flow" === currentPlatform) {
+                // Google rebuilt Flow's prompt bar: try the verified
+                // multi-strategy insertion first (textarea setter /
+                // execCommand / synthetic events / DOM fallback), then keep
+                // the legacy Slate-oriented path as a safety net.
+                const ok = insertTextIntoEditor(a, e.text);
+                if (!ok) {
+                  s(
+                    ("qianwen" === currentPlatform ||
+                      "ernie" === currentPlatform) &&
+                      !o,
+                  );
+                  editorContainsText(a, e.text) ||
+                    showNotification(
+                      "Could not write into Flow's prompt box. Please report the DOM structure so the selector can be updated.",
+                      "error",
+                    );
+                }
+              } else
+                s(
+                  ("qianwen" === currentPlatform ||
+                    "ernie" === currentPlatform) &&
+                    !o,
+                );
             } else {
               const t = new DataTransfer();
               if (
@@ -10870,18 +11441,22 @@
         (currentPlaceholderModal.remove(), (currentPlaceholderModal = null)),
       (isInitialized = !1));
   }
-  (initKofiPatreonFeature(), initGistIntegration());
+  // v27.0.8: this line used to also call initKofiPatreonFeature() (removed);
+  // initGistIntegration() alone remains and is unchanged.
+  initGistIntegration();
   async function initUI() {
     if (pageObserver) pageObserver.disconnect();
     cleanup();
     currentPlatform = detectPlatform();
     if (!currentPlatform) return;
     createNavInterface();
+    // v27.0.2: hoisted so the catch block can inspect whether the button had
+    // already mounted before the error (previously scoped to the try block).
+    let btn,
+      elementToInsert,
+      insertionPoint,
+      insertionMethod = "before";
     try {
-      let btn,
-        elementToInsert,
-        insertionPoint,
-        insertionMethod = "before";
       if (currentPlatform === "chatgpt") {
         const findAnchor = () => {
           const anchor =
@@ -11830,41 +12405,145 @@
         insertionPoint = container;
         insertionMethod = "handled_manually";
       } else if (currentPlatform === "flow") {
-        const findAnchor = () => {
-          const candidates = Array.from(document.querySelectorAll("button"));
-          const target = candidates.find((btn) => {
-            const icon = btn.querySelector(
-              "i.google-symbols, mat-icon.google-symbols, mat-icon",
-            );
-            return icon && (icon.textContent || "").trim() === "arrow_forward";
-          });
-          if (target) return { element: target, type: "symbol-fingerprint" };
-          const addMediaBtn = document.querySelector(
-            'button[aria-label="Add media menu"], button[aria-label*="Add media" i]',
-          );
-          if (addMediaBtn)
-            return { element: addMediaBtn, type: "add-media-aria-fallback" };
-          return null;
-        };
-        let anchorData = findAnchor();
-        if (!anchorData) {
-          await new Promise((r) => setTimeout(r, 1500));
-          anchorData = findAnchor();
-        }
-        if (!anchorData) return;
-        let container = anchorData.element.parentElement;
-        if (!container) return;
-        let existingBtn = container.querySelector(
+        // v27.0.6: the dock is the sole, unconditional mount method on Flow
+        // — no anchor hunt, no PINHOLE bar-walk, no promotion watcher. The
+        // whole point of a body-level dock is that it does not depend on
+        // finding a place in the composer's DOM, so hunting for one first
+        // (and only falling back to the dock on failure) defeated that
+        // purpose: whenever the hunt succeeded, the code took the inline
+        // branch instead and the dock never mounted at all. Prompt
+        // insertion is unaffected — findPlatformEditor() locates the
+        // editor independently via findFlowComposerContainer() (anchor
+        // cascade + PINHOLE + bottom-most visible editable), which this
+        // branch no longer touches.
+        // v27.0.7: dock layout repaired — the pill now expands within the
+        // flex row (see FLOW_DOCK_CSS) instead of overlaying the trigger,
+        // the trigger forwards its click with stopPropagation (single menu
+        // toggle), and #pm-flow-dock is exempted from the global
+        // outside-click closer (see setupGlobalEventListeners).
+        // v27.0.8: pill capabilities are now copy / paste / prompts menu
+        // (see createPromptButton); the pill renders as a rectangular
+        // glass panel aligned with the dock (see FLOW_DOCK_CSS); and the
+        // "Prompt Master" label uses the Cinzel Decorative webfont loaded
+        // by ensureCinzelDecorativeFont(), invoked below at mount time.
+        // v27.0.9: the pill's Prompts button is swapped for a Settings
+        // button (see createDockSettingsButton) — the prompts pane is the
+        // dock trigger's own click target, so the pill's copy of it was
+        // redundant, while settings had no on-page entry point at all.
+        // v27.0.10: (a) all three pill buttons (copy / paste / settings)
+        // now park collapsed and slide out together on pill hover — the
+        // dock-scoped .mp-btn-settings rules in FLOW_DOCK_CSS give the
+        // gear the same satellite choreography as its neighbors, so the
+        // pill's parked face is plain glass instead of a static icon;
+        // (b) the dock lingers fully revealed for FLOW_DOCK_HIDE_DELAY_MS
+        // after the pointer leaves before retracting (see the
+        // mouseenter/mouseleave wiring below); (c) the dock chrome is
+        // true glass (translucent gradient + 18px backdrop blur +
+        // 1.5x saturate + specular insets); (d) the "Prompt Master"
+        // title glows cyan on trigger hover.
+        const existingDock = document.getElementById("pm-flow-dock");
+        if (existingDock) existingDock.remove();
+        const pill = createPromptButton("left");
+        // v27.0.9: swap the freshly built pill's Prompts (main-slot) button
+        // for the Settings button. This happens before the pill is appended
+        // to the dock, so the mount below is the only code that ever sees
+        // the swapped pill; createPromptButton itself is untouched and every
+        // other platform still gets its Prompts button, which there is the
+        // sole inline entry point to the prompt menu. The replacement keeps
+        // the third slot of .mp-sliding-pill-container; v27.0.10 docks that
+        // slot into the same collapse/expand choreography as Copy/Paste
+        // (see the .mp-btn-settings rules in FLOW_DOCK_CSS), so the parked
+        // pill shows no static face and hover slides all three buttons out
+        // together.
+        const mainSlotBtn = pill.querySelector(
           '[data-testid="composer-button-prompts"]',
         );
-        if (existingBtn) {
-          btn = existingBtn;
-        } else {
-          btn = createPromptButton("left");
-          container.insertBefore(btn, anchorData.element);
+        mainSlotBtn && mainSlotBtn.replaceWith(createDockSettingsButton());
+        const dock = document.createElement("div");
+        ((dock.id = "pm-flow-dock"),
+          dock.setAttribute("data-testid", "pm-flow-dock"));
+        const trigger = document.createElement("button");
+        ((trigger.type = "button"),
+          (trigger.className = "mp-dock-trigger"),
+          trigger.setAttribute("data-testid", "pm-flow-dock-trigger"),
+          (trigger.title = "Prompt Master"),
+          setSafeInnerHTML(
+            trigger,
+            FLOW_DOCK_GLYPH + '<span class="mp-dock-text">Prompt Master</span>',
+          ),
+          // v27.0.7 FIX (double dispatch): initUI registers the menu-toggle
+          // click listener on the dock itself (clickable === btn === dock).
+          // Forwarding via .click() on an inner element delivers exactly ONE
+          // synthetic event to that listener per physical click, because
+          // stopPropagation() kills the original click here at the trigger —
+          // otherwise both the synthetic and the original click would bubble
+          // up and the toggle ran twice per click, opening/closing the menu
+          // nondeterministically (verified by dispatch trace in v27.0.7).
+          // v27.0.9: the forward used to target the pill's Prompts button;
+          // that slot is now the Settings button, which stops its own
+          // propagation and must never toggle the menu. The forward instead
+          // rides the pill's glass panel: the panel carries no click
+          // handlers of its own, so the synthetic click bubbles cleanly
+          // through the wrapper into the dock-level menu toggle — one
+          // physical click, one synthetic event, one toggle, exactly as
+          // before.
+          (trigger.onclick = (e) => {
+            e.stopPropagation();
+            const panel = pill.querySelector(".mp-sliding-pill-container");
+            panel && panel.click();
+          }));
+        dock.appendChild(trigger);
+        dock.appendChild(pill);
+        if (!document.getElementById("pm-flow-dock-style")) {
+          const dockStyle = document.createElement("style");
+          ((dockStyle.id = "pm-flow-dock-style"),
+            (dockStyle.textContent = FLOW_DOCK_CSS),
+            document.head.appendChild(dockStyle));
         }
-        elementToInsert = btn;
-        insertionPoint = container;
+        // v27.0.8: fetch + inject the Cinzel Decorative face for the dock
+        // label (async, idempotent, silent fallback — see the function).
+        ensureCinzelDecorativeFont();
+        document.body.appendChild(dock);
+        // v27.0.10 FIX (dwell before hide): the reveal stays pure CSS
+        // (:hover keeps the instant slide-out and remains the graceful
+        // no-JS fallback), while the retract is now delayed — this wiring
+        // adds .mp-dock-open on enter, which holds the dock fully revealed
+        // via the FLOW_DOCK_CSS :hover/.mp-dock-open union selector after
+        // the pointer leaves. A pending hide fires only after
+        // FLOW_DOCK_HIDE_DELAY_MS (2.5-3s window) off-dock; any re-enter
+        // cancels it. While either of the dock's own panels (the prompt
+        // menu or the settings modal) is visible, the timer re-arms
+        // instead of retracting, so the dock never slides out from under
+        // a pane the user is working in; and if a re-init unmounted this
+        // dock instance (existingDock.remove() above), the timer's
+        // body-contains guard retires the loop silently.
+        let dockHideTimer = null;
+        const scheduleDockHide = () => {
+          if (dockHideTimer) clearTimeout(dockHideTimer);
+          dockHideTimer = setTimeout(() => {
+            dockHideTimer = null;
+            if (!document.body.contains(dock)) return;
+            if (
+              (currentMenu && currentMenu.classList.contains("visible")) ||
+              (settingsModal && settingsModal.classList.contains("visible"))
+            ) {
+              scheduleDockHide();
+              return;
+            }
+            dock.classList.remove("mp-dock-open");
+          }, FLOW_DOCK_HIDE_DELAY_MS);
+        };
+        dock.addEventListener("mouseenter", () => {
+          dock.classList.add("mp-dock-open");
+          if (dockHideTimer) {
+            clearTimeout(dockHideTimer);
+            dockHideTimer = null;
+          }
+        });
+        dock.addEventListener("mouseleave", scheduleDockHide);
+        btn = dock;
+        elementToInsert = dock;
+        insertionPoint = document.body;
         insertionMethod = "handled_manually";
       } else if (currentPlatform === "ernie") {
         const findAnchor = () => {
@@ -12296,18 +12975,36 @@
         insertionMethod = "handled_manually";
       }
       if (!btn || !insertionPoint) return;
-      const editorEl = getEditableRoot(
-        document.querySelector(platformSelectors[currentPlatform]),
-      );
-      if (editorEl) {
-        setupInlineSuggestion(editorEl);
-      } else {
-        setTimeout(() => {
-          const retryEditor = getEditableRoot(
+      // v27.0.2: inline suggestions are an enhancement — a failure here must
+      // never abort the rest of initUI (menu, modals, click handlers), which
+      // previously let any throw fall into the outer catch and wipe the UI.
+      try {
+        const editorEl =
+          getEditableRoot(findPlatformEditor()) ||
+          getEditableRoot(
             document.querySelector(platformSelectors[currentPlatform]),
           );
-          if (retryEditor) setupInlineSuggestion(retryEditor);
-        }, 1000);
+        if (editorEl) {
+          setupInlineSuggestion(editorEl);
+        } else {
+          setTimeout(() => {
+            try {
+              const retryEditor =
+                getEditableRoot(findPlatformEditor()) ||
+                getEditableRoot(
+                  document.querySelector(platformSelectors[currentPlatform]),
+                );
+              if (retryEditor) setupInlineSuggestion(retryEditor);
+            } catch (retryErr) {
+              console.warn(
+                "[Prompt Master] inline-suggestion retry failed:",
+                retryErr,
+              );
+            }
+          }, 1000);
+        }
+      } catch (inlineErr) {
+        console.warn("[Prompt Master] inline-suggestion setup failed:", inlineErr);
       }
       currentButton = elementToInsert;
       const clickable = btn;
@@ -12661,9 +13358,9 @@
           }
           if (isFromInline && currentPlaceholderModal._savedCursor) {
             const saved = currentPlaceholderModal._savedCursor;
-            const editor = getEditableRoot(
-              document.querySelector(platformSelectors[currentPlatform]),
-            );
+            const editor =
+              getEditableRoot(findPlatformEditor()) ||
+              getEditableRoot(document.querySelector(platformSelectors[currentPlatform]));
             if (editor) {
               editor.focus();
               try {
@@ -12707,7 +13404,18 @@
       };
       isInitialized = true;
     } catch (error) {
-      cleanup();
+      // v27.0.2: never fail silently. If the prompt button already mounted,
+      // keep it visible and clickable (self-healing re-init on click) so a
+      // late-stage error can no longer make the whole UI disappear.
+      console.warn("[Prompt Master] initUI error:", error);
+      if (btn && btn.isConnected) {
+        currentButton = btn;
+        btn.onclick = (ev) => {
+          (ev.stopPropagation(), (isInitialized = !1), tryInit());
+        };
+      } else {
+        cleanup();
+      }
     } finally {
       setupPageObserver();
     }
@@ -12727,7 +13435,13 @@
       if (!currentMenu || !currentButton) return;
       if (
         ev.target.closest(
-          '#prompt-menu-container, [data-testid="composer-button-prompts"]',
+          // v27.0.7: #pm-flow-dock added for the Flow dock mount — clicks on
+          // dock chrome (trigger, pill wrapper margins) toggle the menu via
+          // the dock-level listener; without this exemption the same click
+          // also landed here and insta-closed the menu it had just opened.
+          // The dock element only ever exists on Flow, so every other
+          // platform's outside-click behavior is byte-for-byte unchanged.
+          '#prompt-menu-container, [data-testid="composer-button-prompts"], #pm-flow-dock',
         )
       )
         return;
@@ -12863,12 +13577,22 @@
       if (settingsModal.resetToCurrent) settingsModal.resetToCurrent();
       showModal(settingsModal);
     });
+    // v27.0.8: the "🔧 Force mount Prompt Master UI" extension-menu command
+    // was removed on request; tryInit() below (plus the page observer)
+    // still cover every automatic re-mount path.
     await loadAIConfig();
     await loadGistConfig();
     await loadImportedThemes();
     await loadThemeConfig();
     injectGlobalStyles();
     setupGlobalEventListeners();
+    // v27.0.3: unmissable console marker — instantly tells you whether the
+    // script is running on this page (open DevTools → Console on flow.google.com).
+    // v27.0.12: the version now reads SCRIPT_VERSION (GM_info), so the
+    // marker can never lag the @version header again.
+    console.log(
+      `[Prompt Master] v${SCRIPT_VERSION} active — platform: ${detectPlatform() || "none (page not matched)"}`,
+    );
     tryInit();
   }
   start();
