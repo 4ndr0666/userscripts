@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name                4ndr0tools - Prompt Master
 // @namespace           https://github.com/4ndr0666/userscripts
-// @version             27.1.0
+// @version             27.2.1
 // @author              4ndr0666
 // @icon                https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @license             UNLICENSED - RED TEAM USE ONLY
@@ -18,19 +18,12 @@
 // @match               *://labs.google/fx/*
 // @match               *://flow.google.com/*
 // @match               *://*.google.com/search?*udm=50*
-// @resource            CSS https://cdn.jsdelivr.net/gh/0H4S/My-Prompt@26.1.0/Files/style.min.css
-// @resource            IDIOMAS https://cdn.jsdelivr.net/gh/0H4S/My-Prompt@26.1.0/Files/languages.min.json
 // @connect             generativelanguage.googleapis.com
 // @connect             gist.githubusercontent.com
 // @connect             raw.githubusercontent.com
 // @connect             router.huggingface.co
 // @connect             api.longcat.chat
 // @connect             cdn.jsdelivr.net
-// v27.0.8: hosts for the Flow dock's 'Cinzel Decorative' webfont loader
-// (see ensureCinzelDecorativeFont — GM_xmlhttpRequest fetch + base64
-// @font-face, immune to page style/font CSP). The old ko-fi.com @exclude
-// was removed along with the ko-fi feature; no @match rule ever targeted
-// ko-fi, so page matching is unchanged.
 // @connect             fonts.googleapis.com
 // @connect             fonts.gstatic.com
 // @connect             gist.github.com
@@ -43,7 +36,6 @@
 // @grant               GM_listValues
 // @grant               GM_deleteValue
 // @grant               GM_xmlhttpRequest
-// @grant               GM_getResourceText
 // @grant               GM_registerMenuCommand
 // @run-at              document-end
 // @noframes
@@ -126,193 +118,7 @@
       meta: 'div[contenteditable="true"][data-testid="composer-input"]',
       manus: 'div[contenteditable="true"].tiptap.ProseMirror',
       xiaomi: "textarea, textarea.resize-none",
-    },
-    LANG_STORAGE_KEY = "UserScriptLang";
-  let currentLang = "en",
-    languageModal = null,
-    translations = {};
-  try {
-    const e = GM_getResourceText("IDIOMAS");
-    e && (translations = JSON.parse(e));
-  } catch (e) {}
-  if (!translations.en) translations.en = {};
-  const _gistStubs = {
-    gistSyncSettings: "Gist Sync",
-    gistPatPlaceholder: "GitHub Personal Access Token (PAT)",
-    gistIdPlaceholder: "Gist ID (auto-filled after first sync)",
-    gistSyncDesc:
-      "Sync your full backup to a private GitHub Gist. Create a PAT at github.com/settings/tokens with the 'gist' scope.",
-    syncToGist: "Sync to Gist",
-    restoreFromGist: "Restore from Gist",
-    firstRunBanner: "No local data found. Restore from a previous backup?",
-    firstRunRestoreBtn: "Restore",
-    firstRunDismissBtn: "Start Fresh",
-    gistPatMissingTitle: "GitHub PAT Required",
-    gistPatMissingDesc:
-      "To restore from Gist, you need a GitHub Personal Access Token with 'gist' scope. Create one at github.com/settings/tokens, then paste it below.",
-    gistIdMissingTitle: "Gist ID Required",
-    gistIdMissingDesc:
-      "No Gist ID is configured yet. Enter the ID of the Gist you want to restore from, or sync once first to create one.",
-    openSettings: "Open Settings",
-  };
-  Object.assign(translations.en, _gistStubs);
-  // v27.0.8: English fallbacks for the pill's new Copy action (companion
-  // to Paste). 'copy' and 'copySuccess' already exist in the external
-  // IDIOMAS pack (all 18 languages); these two keys are new, so non-English
-  // locales resolve through translations.en — the same mechanism the
-  // _gistStubs merge above uses.
-  const _pillCopyStubs = {
-    noTextToCopy: "Nothing to copy - the prompt box is empty",
-    copyFailed: "Could not copy to the clipboard",
-  };
-  Object.assign(translations.en, _pillCopyStubs);
-  // v27.1.0: stubs for this version's new UI strings:
-  //  - attachmentsLabel / attachmentsTooltip — the prompt modal's files
-  //    accordion was renamed "Files" -> "Attachments" and now carries a
-  //    utility tooltip (attached files are auto-attached to the AI input
-  //    when the prompt is inserted — see insertPrompt's DataTransfer path).
-  //    The old filesLabel key stays in the external IDIOMAS pack, simply
-  //    unreferenced from now on.
-  //  - moveTagUp / moveTagDown — tooltips for the filter list's new
-  //    per-tag reorder controls (PromptTags.tagOrder, see moveTagOrder).
-  // English is the built-in fallback; every other language only receives
-  //    its stub when its IDIOMAS pack actually loaded (translations[lang]
-  //    exists), mirroring the _gistStubs / _pillCopyStubs mechanism.
-  const _v27_1_0Stubs = {
-    "en": {
-      attachmentsLabel: "Attachments",
-      attachmentsTooltip: "Files attached here are automatically uploaded into the AI input box when this prompt is inserted.",
-      moveTagUp: "Move up",
-      moveTagDown: "Move down",
-    },
-    "pt-BR": {
-      attachmentsLabel: "Anexos",
-      attachmentsTooltip: "Os arquivos anexados aqui são enviados automaticamente para a caixa de entrada da IA quando este prompt é inserido.",
-      moveTagUp: "Mover para cima",
-      moveTagDown: "Mover para baixo",
-    },
-    "zh-CN": {
-      attachmentsLabel: "附件",
-      attachmentsTooltip: "此处附加的文件会在插入此提示词时自动上传到 AI 输入框。",
-      moveTagUp: "上移",
-      moveTagDown: "下移",
-    },
-    "zh-TW": {
-      attachmentsLabel: "附件",
-      attachmentsTooltip: "此處附加的檔案會在插入此提示詞時自動上傳到 AI 輸入框。",
-      moveTagUp: "上移",
-      moveTagDown: "下移",
-    },
-    "es": {
-      attachmentsLabel: "Adjuntos",
-      attachmentsTooltip: "Los archivos adjuntados aquí se suben automáticamente al cuadro de entrada de la IA cuando se inserta este prompt.",
-      moveTagUp: "Mover arriba",
-      moveTagDown: "Mover abajo",
-    },
-    "fr": {
-      attachmentsLabel: "Pièces jointes",
-      attachmentsTooltip: "Les fichiers joints ici sont automatiquement téléversés dans la zone de saisie de l'IA lorsque ce prompt est inséré.",
-      moveTagUp: "Monter",
-      moveTagDown: "Descendre",
-    },
-    "ru": {
-      attachmentsLabel: "Вложения",
-      attachmentsTooltip: "Прикреплённые здесь файлы автоматически загружаются в поле ввода ИИ при вставке этого промпта.",
-      moveTagUp: "Переместить вверх",
-      moveTagDown: "Переместить вниз",
-    },
-    "uk": {
-      attachmentsLabel: "Вкладення",
-      attachmentsTooltip: "Прикріплені тут файли автоматично завантажуються в поле введення ШІ під час вставлення цього промпта.",
-      moveTagUp: "Перемістити вгору",
-      moveTagDown: "Перемістити вниз",
-    },
-    "ja": {
-      attachmentsLabel: "添付ファイル",
-      attachmentsTooltip: "ここに添付したファイルは、このプロンプトを挿入するとAIの入力欄に自動的にアップロードされます。",
-      moveTagUp: "上へ移動",
-      moveTagDown: "下へ移動",
-    },
-    "ko": {
-      attachmentsLabel: "첨부 파일",
-      attachmentsTooltip: "여기에 첨부한 파일은 이 프롬프트를 삽입할 때 AI 입력창에 자동으로 업로드됩니다.",
-      moveTagUp: "위로 이동",
-      moveTagDown: "아래로 이동",
-    },
-    "de": {
-      attachmentsLabel: "Anhänge",
-      attachmentsTooltip: "Hier angehängte Dateien werden beim Einfügen dieses Prompts automatisch in das Eingabefeld der KI hochgeladen.",
-      moveTagUp: "Nach oben",
-      moveTagDown: "Nach unten",
-    },
-    "it": {
-      attachmentsLabel: "Allegati",
-      attachmentsTooltip: "I file allegati qui vengono caricati automaticamente nella casella di input dell'IA quando questo prompt viene inserito.",
-      moveTagUp: "Sposta su",
-      moveTagDown: "Sposta giù",
-    },
-    "id": {
-      attachmentsLabel: "Lampiran",
-      attachmentsTooltip: "Berkas yang dilampirkan di sini otomatis diunggah ke kotak masukan AI saat prompt ini disisipkan.",
-      moveTagUp: "Pindah ke atas",
-      moveTagDown: "Pindah ke bawah",
-    },
-    "tr": {
-      attachmentsLabel: "Ekler",
-      attachmentsTooltip: "Buraya eklenen dosyalar, bu prompt eklendiğinde yapay zekâ giriş kutusuna otomatik olarak yüklenir.",
-      moveTagUp: "Yukarı taşı",
-      moveTagDown: "Aşağı taşı",
-    },
-    "pl": {
-      attachmentsLabel: "Załączniki",
-      attachmentsTooltip: "Pliki załączone tutaj są automatycznie przesyłane do pola wprowadzania AI po wstawieniu tego promptu.",
-      moveTagUp: "Przenieś w górę",
-      moveTagDown: "Przenieś w dół",
-    },
-    "vi": {
-      attachmentsLabel: "Tệp đính kèm",
-      attachmentsTooltip: "Tệp đính kèm tại đây sẽ tự động được tải lên ô nhập của AI khi chèn prompt này.",
-      moveTagUp: "Di chuyển lên",
-      moveTagDown: "Di chuyển xuống",
-    },
-    "hi": {
-      attachmentsLabel: "संलग्नक",
-      attachmentsTooltip: "यहाँ संलग्न की गई फ़ाइलें, इस प्रॉम्प्ट को डालने पर AI इनपुट बॉक्स में स्वतः अपलोड हो जाती हैं।",
-      moveTagUp: "ऊपर ले जाएँ",
-      moveTagDown: "नीचे ले जाएँ",
-    },
-    "tl": {
-      attachmentsLabel: "Mga Attachment",
-      attachmentsTooltip: "Ang mga file na nakalakip dito ay awtomatikong ina-upload sa input box ng AI kapag ini-insert ang prompt na ito.",
-      moveTagUp: "Ilipat pataas",
-      moveTagDown: "Ilipat pababa",
-    },
-  };
-  Object.keys(_v27_1_0Stubs).forEach((e) => {
-    translations[e] && Object.assign(translations[e], _v27_1_0Stubs[e]);
-  });
-  function getTranslation(e, t = {}) {
-    let n = translations[currentLang]?.[e] || translations.en[e];
-    // Hardening (v27.0.2): if the IDIOMAS @resource failed to load (fresh
-    // install, CDN hiccup), translations is empty and n is undefined — which
-    // used to crash createCustomTooltip("reading 'actions'") and wipe the
-    // whole UI via initUI's catch. Fall back to the key itself instead.
-    "string" != typeof n && (n = e);
-    return (
-      Object.entries(t).forEach(([e, t]) => (n = n.replace(`{${e}}`, t))),
-      n
-    );
-  }
-  async function determineLanguage() {
-    const e = await GM_getValue("UserScriptLang");
-    if (e && translations[e]) return void (currentLang = e);
-    const t = (navigator.language || navigator.userLanguage).toLowerCase(),
-      n = t.split("-")[0];
-    if (translations[t]) return void (currentLang = t);
-    if (translations[n]) return void (currentLang = n);
-    const a = Object.keys(translations).find((e) => e.startsWith(n));
-    currentLang = a || "en";
-  }
+    };
   const GLOBAL_FILES_KEY = "GlobalFiles";
   let currentActiveFileIds = new Set();
   async function getGlobalFiles() {
@@ -401,11 +207,6 @@
     return currentTagsConfig.tags[t] || null;
   }
   function getAllTags() {
-    // v27.1.0: honors the persisted PromptTags.tagOrder array (maintained by
-    // the filter list's up/down controls — see moveTagOrder). Tags missing
-    // from tagOrder keep their object insertion order AFTER the ordered ones
-    // (stable sort); without a tagOrder the behavior is byte-identical to
-    // the previous release (plain insertion order).
     const e = Object.values(currentTagsConfig.tags),
       t = currentTagsConfig.tagOrder;
     if (Array.isArray(t) && t.length > 0) {
@@ -436,12 +237,6 @@
     return currentTagsConfig.activeFilters.includes(t);
   }
   async function moveTagOrder(e, t) {
-    // v27.1.0: moves a tag one slot up (t = -1) or down (t = 1) in the global
-    // tag order used by the filter dropdown (both windows), the tags manager
-    // and the prompt modal's tag selector. Persists PromptTags.tagOrder AND
-    // rewrites currentTagsConfig.tags key order (belt-and-suspenders for any
-    // raw Object.values consumers and for readable JSON backups). Returns
-    // false (no-op) for unknown tags or moves past either end.
     const n = e.toLowerCase().trim(),
       a = getAllTags().map((e) => e.name.toLowerCase().trim());
     if (!a.includes(n)) return !1;
@@ -465,12 +260,6 @@
     );
   }
   function promptMatchesFilter(e) {
-    // v27.1.0: multi-tag filtering is now intersection (AND) semantics — a
-    // prompt is shown only when it carries EVERY selected filter tag. The
-    // previous any-overlap (OR) logic let prompts tagged with just one of
-    // the selected tags slip through (e.g. "ss" + "c" selected still showed
-    // prompts tagged only "c"). Tag comparison stays case/trim-insensitive,
-    // matching the normalization toggleTagFilter() applies to the filters.
     if (0 === currentTagsConfig.activeFilters.length) return !0;
     if (!e.tags || 0 === e.tags.length) return !1;
     return currentTagsConfig.activeFilters.every((t) =>
@@ -1370,7 +1159,7 @@
     try {
       importedThemes = JSON.parse(e);
     } catch (e) {
-      (console.error(`${getTranslation("errorLoadingThemes")} `, e),
+      (console.error(`${"Error loading imported themes:"} `, e),
         (importedThemes = {}));
     }
   }
@@ -1393,12 +1182,12 @@
         a > 0
           ? (await saveImportedThemesData(),
             showNotification(
-              getTranslation("successThemeImport", { count: a }),
+              `Success! ${a} theme(s) imported.`,
             ),
             t && t())
-          : showNotification(getTranslation("noValidThemesFound"), "error");
+          : showNotification("No valid themes found in file.", "error");
       } catch (e) {
-        showNotification(getTranslation("errorReadingJSON"), "error");
+        showNotification("Error reading JSON file. Check formatting.", "error");
       }
     }),
       n.readAsText(e));
@@ -1407,7 +1196,7 @@
     const n = importedThemes[e]?.name || e;
     if (
       await createDialogo({
-        message: getTranslation("confirmDeleteTheme", { name: n }),
+        message: `Delete theme "${n}"?`,
         type: "confirm",
       })
     ) {
@@ -1441,10 +1230,13 @@
         t && t());
     }
   }
+  const MP_EMBEDDED_CSS =
+    ":root{--mp-font-stack-i18n:\"Roboto Slab\",-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,\"Helvetica Neue\",Arial,\"Microsoft YaHei\",\"PingFang SC\",\"Hiragino Sans GB\",\"Heiti SC\",\"Apple SD Gothic Neo\",\"Noto Sans CJK SC\",sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\",\"Segoe UI Symbol\";--mp-font-family-base:var(--mp-font-stack-i18n);--mp-font-family-heading:var(--mp-font-stack-i18n);--mp-font-family-editor:\"JetBrains Mono\",var(--mp-font-stack-i18n);--mp-font-family-button:var(--mp-font-stack-i18n);--mp-bg-primary:#fff;--mp-bg-secondary:#f8f9fa;--mp-bg-tertiary:#e2e4e6;--mp-bg-overlay:rgba(10,10,10,0.5);--mp-text-primary:#212529;--mp-text-secondary:#495057;--mp-text-tertiary:#868e96;--mp-text-buttons:#fff;--mp-border-primary:#dee2e6;--mp-border-secondary:#ced4da;--mp-accent-primary:#7071fc;--mp-accent-primary-hover:#595ac9;--mp-accent-edit:#fab005;--mp-accent-edit-hover:#f08c00;--mp-accent-close:#f03e3e;--mp-accent-close-hover:#c92a2a;--mp-btn-export-bg:rgba(34,129,207,0.1);--mp-btn-export-color:#2281cf;--mp-btn-add-bg:rgba(32,201,97,0.1);--mp-btn-add-color:#20c961;--mp-btn-import-bg:rgba(253,126,20,0.1);--mp-btn-import-color:#fd7e14;--mp-switch-knob:#fff;--mp-shadow-sm:0 1px 2px rgba(0,0,0,0.04);--mp-shadow-md:0 4px 12px rgba(0,0,0,0.1);--mp-shadow-lg:0 10px 30px rgba(0,0,0,0.1);--mp-border-radius-sm:4px;--mp-border-radius-md:8px;--mp-border-radius-lg:16px;--mp-transition-fast:0.2s cubic-bezier(0.25,1,0.5,1);--mp-syntax-escape:#ff6b6b;--mp-syntax-ignore-fence:#868e96;--mp-syntax-ignore-content:#adb5bd;--mp-syntax-quote-fence:#2b8a3e;--mp-syntax-quote-content:#40c057;--mp-syntax-var-keyword:#15aabf;--mp-syntax-var-flag:#0c8599;--mp-syntax-file-keyword:#e64980;--mp-syntax-sel-fence:#4c6ef5;--mp-syntax-sel-header:#3b5bdb;--mp-syntax-sel-multi:#339af0;--mp-syntax-sel-single:#ff8787;--mp-syntax-sel-id:#da77f2;--mp-syntax-sel-other:#fa7b05;--mp-syntax-sel-sep:#adb5bd;--mp-syntax-free-bracket:#fab005;--mp-syntax-free-label:#e67700;--mp-syntax-in-bracket:#d6336c;--mp-syntax-in-label:#a61e4d;--mp-syntax-in-eq:#f06595;--mp-syntax-sil-bracket:#845ef7;--mp-syntax-sil-label:#6741d9;--mp-syntax-sil-eq:#b197fc;--mp-syntax-var:#099268;--mp-syntax-context:#868e96;--mp-syntax-def-sep:#f03e3e;--mp-syntax-def-val:#ff8787;--mp-syntax-sel-checked:#20c997;--mp-syntax-caret:var(--mp-text-primary,#000);--mp-syntax-selection:color-mix(in srgb,var(--mp-accent-primary,#4c6ef5) 30%,transparent)}@media (prefers-color-scheme:dark){:root{--mp-bg-primary:#212529;--mp-bg-secondary:#2c2c30;--mp-bg-tertiary:#343a40;--mp-bg-overlay:rgba(0,0,0,0.7);--mp-text-primary:#f8f9fa;--mp-text-secondary:#e9ecef;--mp-text-tertiary:#adb5bd;--mp-text-buttons:#fff;--mp-border-primary:#495057;--mp-border-secondary:#868e96;--mp-accent-primary:#8586ff;--mp-accent-primary-hover:#9fa0ff;--mp-accent-edit:#fcc419;--mp-accent-edit-hover:#ffe066;--mp-accent-close:#ff6b6b;--mp-accent-close-hover:#ff8787;--mp-btn-export-bg:rgba(116,192,252,0.15);--mp-btn-export-color:#74c0fc;--mp-btn-add-bg:rgba(105,219,124,0.15);--mp-btn-add-color:#69db7c;--mp-btn-import-bg:rgba(255,169,77,0.15);--mp-btn-import-color:#ffa94d;--mp-switch-knob:#fff;--mp-shadow-sm:0 1px 2px rgba(0,0,0,0.3);--mp-shadow-md:0 4px 12px rgba(0,0,0,0.4);--mp-shadow-lg:0 10px 30px rgba(0,0,0,0.5);--mp-syntax-escape:#ff8787;--mp-syntax-ignore-fence:#adb5bd;--mp-syntax-ignore-content:#868e96;--mp-syntax-quote-fence:#69db7c;--mp-syntax-quote-content:#b2f2bb;--mp-syntax-var-keyword:#3bc9db;--mp-syntax-var-flag:#99e9f2;--mp-syntax-file-keyword:#f783ac;--mp-syntax-sel-fence:#91a7ff;--mp-syntax-sel-header:#bac8ff;--mp-syntax-sel-multi:#74c0fc;--mp-syntax-sel-single:#ffc9c9;--mp-syntax-sel-id:#e599f7;--mp-syntax-sel-other:#fa7b05;--mp-syntax-sel-sep:#868e96;--mp-syntax-free-bracket:#ffd43b;--mp-syntax-free-label:#fab005;--mp-syntax-in-bracket:#f06595;--mp-syntax-in-label:#fcc2d7;--mp-syntax-in-eq:#faa2c1;--mp-syntax-sil-bracket:#b197fc;--mp-syntax-sil-label:#d0bfff;--mp-syntax-sil-eq:#9775fa;--mp-syntax-var:#38d9a9;--mp-syntax-context:#ced4da;--mp-syntax-def-sep:#ff6b6b;--mp-syntax-def-val:#ffc9c9;--mp-syntax-sel-checked:#63e6be}}.mp-prompt-wrapper{position:relative;width:36px;height:36px;margin:0 4px;display:inline-flex;vertical-align:middle;z-index:1000}.mp-sliding-pill-container{position:absolute;width:36px;height:36px;box-sizing:border-box;justify-content:space-between;background-color:var(--mp-bg-primary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-lg);box-shadow:var(--mp-shadow-sm);overflow:hidden;z-index:1000;transition:width var(--mp-transition-fast),height var(--mp-transition-fast),background-color var(--mp-transition-fast),border-color var(--mp-transition-fast)}.mp-btn-part,.mp-sliding-pill-container{display:flex;align-items:center;padding:0}.mp-btn-part{justify-content:center;flex:0 0 34px;width:34px;height:34px;background:transparent;border:none;margin:0;cursor:pointer;color:var(--mp-text-secondary);transition:color var(--mp-transition-fast)}.mp-btn-part svg{display:block;width:20px;height:20px;margin:0 auto;pointer-events:none;flex-shrink:0}.mp-btn-main{opacity:1}.mp-btn-ai,.mp-btn-paste{flex:0 0 0;width:0;height:0;opacity:0;overflow:hidden;transition:flex-basis var(--mp-transition-fast),width var(--mp-transition-fast),height var(--mp-transition-fast),opacity var(--mp-transition-fast),transform var(--mp-transition-fast)}.mp-sliding-pill-container:hover .mp-btn-ai,.mp-sliding-pill-container:hover .mp-btn-paste{flex:0 0 34px;width:34px;height:34px;opacity:1;transform:translate(0)}.mp-sliding-pill-container:hover{background-color:var(--mp-bg-tertiary);border-color:var(--mp-accent-primary);box-shadow:var(--mp-shadow-md)}.mp-btn-part:hover{color:var(--mp-accent-primary)}.mp-sliding-pill-container:active{background-color:var(--mp-bg-secondary)}.mp-dir-top{bottom:0;left:0;flex-direction:column}.mp-dir-top:hover{height:112px}.mp-dir-top .mp-btn-ai,.mp-dir-top .mp-btn-paste{transform:translateY(10px)}.mp-dir-bottom{top:0;left:0;flex-direction:column-reverse}.mp-dir-bottom:hover{height:112px}.mp-dir-bottom .mp-btn-ai,.mp-dir-bottom .mp-btn-paste{transform:translateY(-10px)}.mp-dir-left{top:0;right:0;flex-direction:row}.mp-dir-left:hover{width:112px}.mp-dir-left .mp-btn-ai,.mp-dir-left .mp-btn-paste{transform:translateX(10px)}.mp-dir-right{top:0;left:0;flex-direction:row-reverse}.mp-dir-right:hover{width:112px}.mp-dir-right .mp-btn-ai,.mp-dir-right .mp-btn-paste{transform:translateX(-10px)}.mp-sliding-pill-container:after,.mp-sliding-pill-container:before{content:\"\";position:absolute;background-color:var(--mp-border-primary);opacity:0;transition:opacity var(--mp-transition-fast);pointer-events:none;z-index:1001}.mp-sliding-pill-container:hover:after,.mp-sliding-pill-container:hover:before{opacity:1}.mp-dir-bottom:before,.mp-dir-top:before{width:26px;height:1px;left:50%;transform:translateX(-50%);top:37px}.mp-dir-bottom:after,.mp-dir-top:after{width:26px;height:1px;left:50%;transform:translateX(-50%);top:75px}.mp-dir-left:before,.mp-dir-right:before{width:1px;height:26px;top:50%;transform:translateY(-50%);left:37px}.mp-dir-left:after,.mp-dir-right:after{width:1px;height:26px;top:50%;transform:translateY(-50%);left:75px}.mp-hidden{display:none!important}.mp-scroll-invisible{overflow-y:auto!important;scrollbar-width:none!important;-ms-overflow-style:none!important;scroll-behavior:smooth}.mp-scroll-invisible::-webkit-scrollbar{display:none;width:0;height:0}.mp-scroll-wrapper{position:relative;display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;max-width:100%;box-sizing:border-box}.mp-scroll-arrow{position:absolute;left:0;right:0;height:28px;display:flex;align-items:center;justify-content:center;color:var(--mp-text-tertiary);cursor:pointer;opacity:0;pointer-events:none;transition:opacity .2s ease,color .2s ease;z-index:10}.mp-scroll-arrow.up{top:0;background:linear-gradient(180deg,color-mix(in srgb,var(--mp-scroll-bg,var(--mp-bg-primary)),transparent 40%) 30%,transparent)}.mp-scroll-arrow.down{bottom:0;background:linear-gradient(0deg,color-mix(in srgb,var(--mp-scroll-bg,var(--mp-bg-primary)),transparent 40%) 30%,transparent)}.mp-scroll-arrow:hover{color:var(--mp-accent-primary)}.mp-scroll-arrow.visible{opacity:1;pointer-events:auto}.mp-scroll-arrow svg{width:20px;height:20px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.1))}#AB_modal_box_el #__ap_text,#prompt-menu-container #__ap_text,.mp-modal-box .form-group:has(#__ap_text) .form-textarea{border:none!important;box-shadow:none!important;background-color:transparent!important;padding:16px;width:100%;height:100%;font-family:var(--mp-font-family-editor)!important}.mp-modal-box .form-group:has(#__ap_text) .mp-scroll-wrapper{border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);background-color:var(--mp-bg-secondary);transition:border-color .2s,box-shadow .2s;overflow:hidden!important;display:flex;flex-direction:column;height:300px}.mp-modal-box .form-group:has(#__ap_text) .mp-scroll-wrapper:focus-within{border-color:var(--mp-accent-primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--mp-accent-primary) 25%,transparent)}.mp-modal-box.mp-expanded .form-group:has(#__ap_text) .mp-scroll-wrapper{height:100%!important}.mp-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background-color:var(--mp-bg-overlay);z-index:99990;display:flex;justify-content:center;align-items:center;backdrop-filter:blur(4px);opacity:0;visibility:hidden;transition:opacity var(--mp-transition-fast),visibility var(--mp-transition-fast)}.mp-overlay.visible{opacity:1;visibility:visible}.mp-modal-box{font-family:var(--mp-font-family-base)!important;background-color:var(--mp-bg-primary);border-radius:var(--mp-border-radius-lg);padding:24px!important;box-shadow:var(--mp-shadow-lg);width:min(93vw,800px)!important;border:1px solid var(--mp-border-primary)!important;transform:scale(.95) translateY(10px);opacity:0;transition:transform var(--mp-transition-fast),opacity var(--mp-transition-fast),width .3s cubic-bezier(.4,0,.2,1),height .3s cubic-bezier(.4,0,.2,1)!important;position:relative!important;display:flex!important;flex-direction:column!important;max-height:95vh!important}.modal-title,.mp-modal-box{color:var(--mp-text-primary)}.modal-title{font-family:var(--mp-font-family-heading)!important;font-size:18px;font-weight:600;margin:0 0 20px;text-align:center;flex-shrink:0}.modal-footer{display:flex;justify-content:center;margin-top:16px;flex-shrink:0}.mp-modal-box.mp-expanded{width:95vw!important;max-width:95vw!important;height:93vh!important;max-height:93vh!important;display:flex!important;flex-direction:column!important}.mp-modal-box.mp-expanded .form-group:has(#__ap_text){flex:1;display:flex;flex-direction:column;min-height:0;margin-bottom:15px}.mp-modal-box.mp-expanded .modal-title{display:block!important;visibility:visible!important;text-align:center;margin-bottom:20px;flex-shrink:0}.mp-modal-box.mp-expanded .form-group:has(.form-textarea){flex:1;display:flex;flex-direction:column;min-height:0;margin-bottom:24px}.mp-modal-box.mp-expanded .mp-scroll-wrapper{flex:1;height:100%!important}.mp-modal-box.mp-expanded .form-textarea{height:100%!important}.mp-modal-box.mp-expanded .mp-switch-container{padding-top:8px}.mp-overlay.visible .mp-modal-box{transform:scale(1) translateY(0);opacity:1}.mp-modal-close-btn,.mp-modal-info-btn,.mp-modal-shop-btn{position:absolute;top:12px;background:none;border:none;color:var(--mp-text-tertiary);cursor:pointer;width:32px;height:32px;border-radius:50%;transition:transform .3s ease,color .3s ease,background-color .3s ease;display:flex;justify-content:center;align-items:center;padding:0;z-index:20}.mp-modal-close-btn{right:12px}.mp-modal-info-btn{right:88px}.mp-modal-shop-btn{right:126px;cursor:default!important}.mp-modal-close-btn:hover{transform:rotate(90deg);color:var(--mp-accent-close);background-color:color-mix(in srgb,var(--mp-accent-close) 15%,transparent)}.mp-modal-info-btn:hover,.mp-modal-shop-btn:hover{transform:scale(1.1);color:var(--mp-accent-primary);background-color:color-mix(in srgb,var(--mp-accent-primary) 15%,transparent)}.mp-modal-close-btn svg,.mp-modal-info-btn svg,.mp-modal-shop-btn svg{width:20px;height:20px;stroke:currentColor;stroke-width:2.5;fill:none}.mp-modal-info-btn svg{stroke-width:0;fill:currentColor}.mp-modal-expand-btn{position:absolute;top:12px;right:50px;background:none;border:none;color:var(--mp-text-tertiary);cursor:pointer;width:32px;height:32px;border-radius:50%;transition:transform .3s ease,color .3s ease,background-color .3s ease;display:flex;justify-content:center;align-items:center;padding:0;z-index:20}.mp-modal-expand-btn:hover{transform:scale(1.1);color:var(--mp-accent-primary);background-color:color-mix(in srgb,var(--mp-accent-primary) 15%,transparent)}.mp-modal-expand-btn svg,.mp-modal-shop-btn svg{width:20px;height:20px;stroke:currentColor;stroke-width:2;fill:none}.mp-diff-modal-overlay .mp-modal-box{width:95vw!important;height:93vh!important;max-width:none!important;display:flex!important;flex-direction:column!important}.mp-diff-container{display:flex;flex-direction:column;gap:16px;flex:1;min-height:0;margin-bottom:0}@media (min-width:768px){.mp-diff-container{flex-direction:row}}.mp-diff-column{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0;min-height:0}.mp-diff-label{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mp-accent-primary);display:flex;align-items:center;gap:8px;flex-shrink:0;justify-content:space-around}.mp-diff-textarea{width:100%!important;flex:1!important;padding:16px!important;border-radius:var(--mp-border-radius-md)!important;border:1px solid var(--mp-border-primary)!important;background-color:var(--mp-bg-secondary)!important;color:var(--mp-text-primary)!important;font-family:var(--mp-font-family-editor)!important;font-size:15px!important;resize:none!important;line-height:1.6!important;box-sizing:border-box!important}.mp-diff-actions{display:flex;gap:12px;justify-content:space-around;margin-top:20px;flex-shrink:0}.mp-diff-actions button{padding:10px 20px;border-radius:var(--mp-border-radius-md);cursor:pointer;font-weight:500;display:inline-flex;align-items:center;justify-content:center}.mp-diff-actions .save-button{background:var(--mp-accent-primary);color:var(--mp-text-buttons);border:none}#__ap_enhance_loading{z-index:100000}.mp-loading-content{display:flex;flex-direction:column;align-items:center;gap:15px;color:var(--mp-accent-primary);font-family:var(--mp-font-family-editor)}.mp-loading-icon{width:50px;height:50px}.mp-loading-text{font-size:16px;font-weight:500}.mp-label-wrapper{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px}.mp-label-left{display:flex;align-items:center;flex:1;min-width:0}.mp-label-right,.mp-modal-right-controls{display:flex;align-items:center;gap:4px;flex-shrink:0}.mp-label-wrapper .form-label{margin-bottom:0!important;white-space:normal;overflow:hidden;text-overflow:ellipsis}.mp-enhance-ai-btn,.mp-help-icon,.mp-link-btn,.mp-paste-btn{background:transparent;border:none;cursor:pointer;color:var(--mp-accent-primary);display:flex;align-items:center;justify-content:center;padding:4px;border-radius:var(--mp-border-radius-sm);transition:transform .2s ease,opacity .2s ease,background-color .2s ease;opacity:.8;outline:none;flex-shrink:0}.mp-enhance-ai-btn:hover,.mp-help-icon:hover,.mp-link-btn:hover,.mp-paste-btn:hover{transform:scale(1.1);opacity:1}.mp-enhance-ai-btn svg,.mp-help-icon svg,.mp-link-btn svg,.mp-paste-btn svg{width:16px;height:16px;fill:currentColor;display:block}.mp-enhance-ai-btn.loading{width:22px;height:22px;pointer-events:none}.mp-context-bubble{display:none;background-color:var(--mp-bg-tertiary);border-left:3px solid var(--mp-accent-primary);padding:8px 12px;margin-bottom:12px;font-size:13px;color:var(--mp-text-secondary);line-height:1.4;animation:mp-fade-in-down .2s ease-out forwards;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;word-break:break-word}.mp-context-bubble.visible{display:block}.mp-context-bubble strong{color:var(--mp-text-primary);font-weight:600}@keyframes mp-fade-in-down{0%{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}@keyframes mp-spin{to{transform:rotate(1turn)}}.prompt-menu{position:fixed;min-width:350px;max-width:450px;background-color:var(--mp-bg-primary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-lg);box-shadow:var(--mp-shadow-lg);z-index:99990;display:flex;flex-direction:column;user-select:none;color:var(--mp-text-primary)!important;font-family:var(--mp-font-family-base)!important;overflow:hidden;opacity:0;visibility:hidden;transform:scale(.95);transform-origin:top left;transition:opacity .2s ease,transform .2s ease,visibility 0s linear .2s}.prompt-menu.visible{opacity:1;visibility:visible;transform:scale(1);transition-delay:0s}.prompt-menu-list{max-height:350px;padding:4px;overflow-y:auto;overflow-x:hidden;position:relative}.prompt-item-row{position:relative;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:var(--mp-border-radius-md);cursor:pointer;transition:background-color .15s ease-in-out;overflow:hidden}.prompt-item-row.drag-mode,.prompt-item-row:hover{background-color:var(--mp-bg-tertiary)}.prompt-item-row.drag-mode{border:1px dashed var(--mp-accent-primary);cursor:move}.prompt-item-row.drag-mode:active{cursor:grabbing}.prompt-title{font-family:var(--mp-font-family-heading)!important;font-size:14px;font-weight:500;flex:1;padding-right:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--mp-text-secondary);transition:opacity .2s}.prompt-item-row:hover .prompt-title{color:var(--mp-accent-primary);mask-image:linear-gradient(90deg,#000 60%,transparent);-webkit-mask-image:linear-gradient(90deg,#000 60%,transparent)}.prompt-item-row.nav-selected{background-color:var(--mp-bg-tertiary)!important;border:1px solid var(--mp-accent-primary)!important}.prompt-item-row.nav-selected .prompt-title{color:var(--mp-accent-primary)!important}.prompt-actions{position:absolute;right:0;top:0;bottom:0;padding-left:20px;padding-right:8px;display:flex;align-items:center;gap:4px;background:linear-gradient(90deg,transparent 0,var(--mp-bg-tertiary) 20%,var(--mp-bg-tertiary));transform:translateX(110%);transition:transform .25s cubic-bezier(.25,1,.5,1);z-index:2}.prompt-item-row.drag-mode .prompt-actions,.prompt-item-row:hover .prompt-actions{transform:translateX(0)}.action-btn{background:transparent;border:none;cursor:pointer;width:28px;height:28px;border-radius:var(--mp-border-radius-sm);transition:all .15s ease;display:flex;align-items:center;justify-content:center;line-height:0;color:var(--mp-text-secondary);font-family:var(--mp-font-family-button)!important}.action-btn svg{width:16px;height:16px;display:block}.action-btn:hover{transform:scale(1.1)}.action-btn.edit:hover{color:var(--mp-accent-edit)}.action-btn.copy:hover{color:var(--mp-accent-primary)}.action-btn.delete:hover{color:var(--mp-accent-close)}.action-btn.pin:hover{color:var(--mp-accent-edit)}.action-btn.restore:hover{color:var(--mp-btn-add-color)}.action-btn.unpin{color:var(--mp-accent-primary)}.action-btn.drag:hover{color:var(--mp-btn-export-color)}.menu-footer-grid{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid var(--mp-border-primary);background-color:var(--mp-bg-secondary);flex-shrink:0}.menu-footer-btn{display:flex;align-items:center;justify-content:center;background:transparent;border:none;cursor:pointer;padding:12px 0;color:var(--mp-text-secondary);transition:all .2s ease;height:auto;font-family:var(--mp-font-family-button)!important}.menu-footer-btn:not(:last-child){border-right:1px solid var(--mp-border-primary)}.menu-footer-btn svg{width:20px;height:20px;transition:transform .2s cubic-bezier(.34,1.56,.64,1)}.menu-footer-btn:hover svg{transform:scale(1.2)}.menu-footer-btn.btn-export:hover{background-color:var(--mp-btn-export-bg);color:var(--mp-btn-export-color)}.menu-footer-btn.btn-add:hover{background-color:var(--mp-btn-add-bg);color:var(--mp-btn-add-color);transform:none}.menu-footer-btn.btn-add:hover svg{transform:scale(1.4)}.menu-footer-btn.btn-import:hover{background-color:var(--mp-btn-import-bg);color:var(--mp-btn-import-color)}.menu-header-grid{display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--mp-border-primary);background-color:var(--mp-bg-secondary);flex-shrink:0;position:relative;overflow:hidden}.menu-search-overlay{position:absolute;inset:0;background:var(--mp-bg-secondary);display:flex;align-items:center;padding:0 8px;gap:8px;transform:translateX(110%);transition:transform .25s cubic-bezier(.25,1,.5,1);z-index:5}.menu-search-input{flex:1;width:100%;padding:6px 12px;border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);font-family:var(--mp-font-family-base)!important;background:var(--mp-bg-primary);color:var(--mp-text-primary);outline:none;transition:border-color .2s}.menu-search-input:focus{border-color:var(--mp-accent-primary)}.menu-header-btn{display:flex;align-items:center;justify-content:center;background:transparent;border:none;cursor:pointer;padding:12px 0;color:var(--mp-text-secondary);transition:all .2s ease;font-family:var(--mp-font-family-button)!important}.menu-header-btn:not(:last-child):not(.btn-close-search){border-right:1px solid var(--mp-border-primary)}.menu-header-btn svg{width:20px;height:20px;transition:transform .2s cubic-bezier(.34,1.56,.64,1)}.menu-header-btn:hover{color:var(--mp-accent-primary)}.menu-header-btn:hover svg{transform:scale(1.2)}.menu-header-btn.active{color:var(--mp-accent-primary)}.mp-expanded-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;background:var(--mp-bg-overlay);backdrop-filter:blur(4px);z-index:100000;display:flex;align-items:center;justify-content:center;animation:mpFadeIn .2s ease}.mp-expanded-modal{width:93vw;height:93vh;background:var(--mp-bg-primary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-lg);box-shadow:var(--mp-shadow-lg);display:flex;flex-direction:column;overflow:hidden;position:relative;font-family:var(--mp-font-family-base)!important}.mp-expanded-header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--mp-border-primary);background:var(--mp-bg-secondary);gap:16px;flex-shrink:0}.mp-expanded-search-container{flex:1;display:flex}.mp-expanded-search{width:100%;padding:8px 12px;border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);font-family:var(--mp-font-family-base)!important;background:var(--mp-bg-primary);color:var(--mp-text-primary);outline:none;transition:border-color .2s}.mp-expanded-search:focus{border-color:var(--mp-accent-primary)}.mp-expanded-actions-left{display:flex;align-items:center;gap:8px}.mp-pinned-action-btn.has-selection{background:rgba(240,62,62,.1);color:var(--mp-accent-close);border-color:var(--mp-accent-close)}.mp-expanded-list{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px;display:grid;gap:12px;align-content:start;position:relative}.prompt-item-row.expanded-mode{border:1px solid var(--mp-border-primary);background:var(--mp-bg-secondary);align-items:center;padding:12px 16px;min-width:0;min-height:70px;height:auto}.prompt-item-row.expanded-mode:hover{border-color:var(--mp-accent-primary)}.prompt-item-row.expanded-mode .prompt-actions{position:relative;transform:none;background:transparent;padding-left:8px;opacity:1;flex-shrink:0}.prompt-item-row.expanded-mode .prompt-title{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4;word-break:break-word}.mp-expanded-filter-dropdown{position:fixed;z-index:100001}@keyframes mpFadeIn{0%{opacity:0}to{opacity:1}}.mp-pinned-action-btn.btn-close:hover,.mp-pinned-action-btn.btn-delete.active,.mp-pinned-action-btn.btn-delete:hover{background:var(--mp-accent-close)!important;border-color:var(--mp-accent-close-hover)!important;color:var(--mp-text-buttons)!important}.mp-pinned-action-btn.btn-cols:hover{background:var(--mp-accent-edit)!important;border-color:var(--mp-accent-edit-hover)!important;color:var(--mp-text-buttons)!important}.mp-pinned-action-btn.btn-add:hover{background:var(--mp-btn-add-color)!important;border-color:var(--mp-btn-add-color)!important;color:var(--mp-text-buttons)!important}.mp-pinned-action-btn.btn-export:hover{background:var(--mp-btn-export-color)!important;border-color:var(--mp-btn-export-color)!important;color:var(--mp-text-buttons)!important}.mp-pinned-action-btn.btn-import:hover{background:var(--mp-btn-import-color)!important;border-color:var(--mp-btn-import-color)!important;color:var(--mp-text-buttons)!important}.mp-pinned-action-btn.btn-save:hover,.mp-pinned-action-btn.btn-select-all.active{background:var(--mp-accent-primary)!important;border-color:var(--mp-accent-primary-hover,var(--mp-accent-primary))!important;color:var(--mp-text-buttons)!important}.form-group{display:flex;flex-direction:column;margin-bottom:15px;flex-shrink:0}.form-label{margin-bottom:8px;font-size:14px!important;font-weight:700!important;color:var(--mp-text-secondary);display:block;width:100%;white-space:normal;overflow-wrap:break-word;word-break:break-word}.form-input,.form-textarea{background-color:var(--mp-bg-secondary)!important;color:var(--mp-text-primary)!important;border:1px solid var(--mp-border-primary)!important;border-radius:var(--mp-border-radius-md);padding:10px;width:100%;box-sizing:border-box;transition:border-color .2s,box-shadow .2s;outline:0!important;font-family:var(--mp-font-family-editor)!important;font-size:14px!important}.form-textarea{height:300px!important;resize:none!important;display:block}.form-input:focus,.form-textarea:focus{border-color:var(--mp-accent-primary)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--mp-accent-primary) 25%,transparent)!important}.form-input::placeholder,.form-textarea::placeholder,.lang-search-input::placeholder,.menu-search-input::placeholder,.mp-search-input::placeholder{color:var(--mp-text-tertiary)!important;opacity:.7}.mp-switch-container{display:flex;justify-content:space-between;align-items:center;padding:8px 12px!important;margin:0 0 15px;flex-shrink:0;background-color:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);gap:10px}.mp-switch{display:flex;align-items:center;gap:8px}.mp-switch input[type=checkbox]{height:0;width:0;visibility:hidden;position:absolute}.mp-switch label{cursor:pointer;text-indent:-9999px;width:40px;height:22px;background:var(--mp-bg-tertiary);display:block;border-radius:100px;position:relative;transition:background-color var(--mp-transition-fast)}.mp-switch label:after{content:\"\";position:absolute;top:3px;left:3px;width:16px;height:16px;background:var(--mp-switch-knob);border-radius:90px;transition:.3s cubic-bezier(.25,1,.5,1);box-shadow:var(--mp-shadow-sm)}.mp-switch input:checked+label{background:var(--mp-accent-primary)}.mp-switch input:checked+label:after{left:calc(100% - 3px);transform:translateX(-100%)}.mp-switch .switch-text{font-size:13px;font-weight:500;color:var(--mp-text-secondary);cursor:pointer;user-select:none}.mp-prompt-shortcut{flex:1;max-width:140px;font-family:var(--mp-font-family-base);padding:4px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mp-prompt-shortcut[data-shortcut]:not([data-shortcut=\"\"]){color:var(--mp-accent-primary)}.mp-checkbox,.mp-filter-checkbox,.mp-option-item input[type=checkbox]{-webkit-appearance:none!important;appearance:none!important;width:18px!important;height:18px!important;border:1px solid var(--mp-border-primary)!important;border-radius:var(--mp-border-radius-sm)!important;background-color:var(--mp-bg-secondary)!important;cursor:pointer!important;margin:0!important;display:grid!important;place-content:center!important;transition:all .2s ease}.mp-checkbox:checked,.mp-filter-item.selected .mp-filter-checkbox,.mp-option-item input[type=checkbox]:checked{background-color:var(--mp-accent-primary)!important;border-color:var(--mp-accent-primary)!important}.mp-checkbox:before,.mp-filter-checkbox:before,.mp-option-item input[type=checkbox]:before{content:\"\";width:10px;height:10px;clip-path:polygon(14% 44%,0 65%,50% 100%,100% 16%,80% 0,43% 62%);background-color:var(--mp-text-buttons);transform:scale(0);transition:transform .15s ease-in-out}.mp-checkbox:checked:before,.mp-filter-item.selected .mp-filter-checkbox:before,.mp-option-item input[type=checkbox]:checked:before{transform:scale(1)}#__ap_placeholders_container{padding:4px;margin-top:15px;box-sizing:border-box;transition:padding-top .2s ease}.mp-option-group{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;padding:8px;border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);background-color:var(--mp-bg-tertiary);max-height:none!important;overflow:visible!important}.mp-option-item{display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;padding:8px 8px 8px 12px!important;border-radius:var(--mp-border-radius-sm);background-color:var(--mp-bg-primary);transition:background-color .2s;user-select:none;border-left:5px solid transparent;position:relative}.mp-option-item:hover{background-color:var(--mp-bg-secondary)}.mp-modal-box.mp-expanded #__ap_placeholders_container{max-height:none!important;height:100%!important;flex:1;display:flex;flex-direction:column;min-height:0}.mp-modal-box.mp-expanded #__ap_placeholders_container .mp-scroll-wrapper{height:100%!important;flex:1}.dynamic-input{min-height:45px!important;line-height:1.5;font-family:var(--mp-font-family-editor)!important}.mp-dynamic-dropzone{position:relative;min-height:90px;border:2px dashed var(--mp-border-primary);border-radius:var(--mp-border-radius-md);margin-bottom:12px;align-items:center;transition:border-color .2s ease;box-shadow:none!important;background-color:transparent}.mp-dynamic-dropzone.drag-over{border-color:var(--mp-accent-primary)}.mp-dynamic-grid-w100{width:100%}.mp-hidden-file-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;z-index:-1}.mp-empty-state-container{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px}.menu-search-container,.mp-search-container{position:sticky;top:0;z-index:10;display:flex;flex-direction:column;flex-shrink:0}.menu-search-container{padding:10px 12px;background-color:var(--mp-bg-secondary);border-bottom:1px solid var(--mp-border-primary)}.lang-search-input,.menu-search-input,.mp-search-input,.mp-system-prompt-search-input{width:100%;padding:10px 12px;border-radius:var(--mp-border-radius-md);border:1px solid var(--mp-border-primary);background-color:var(--mp-bg-secondary);color:var(--mp-text-primary);font-family:var(--mp-font-family-editor)!important;font-size:13px;box-sizing:border-box;outline:none;transition:border-color .2s}.menu-search-input{background-color:var(--mp-bg-primary)!important}.lang-search-input,.mp-system-prompt-search-input{margin-bottom:12px}.lang-search-input:focus,.menu-search-input:focus,.mp-search-input:focus,.mp-system-prompt-search-input:focus{border-color:var(--mp-accent-primary);outline:none!important}.mp-export-actions{display:flex;justify-content:space-between;align-items:center;margin-top:20px;margin-bottom:20px;font-size:13px;color:var(--mp-text-secondary);border-bottom:1px solid var(--mp-border-primary);padding-bottom:16px}.mp-checkbox-wrapper{display:flex;align-items:center;cursor:pointer;user-select:none}.mp-export-list{display:flex;flex-direction:column;gap:4px;margin:0 -8px;padding:0 8px}.mp-export-item{display:flex;align-items:center;padding:8px;border-radius:var(--mp-border-radius-md);transition:background .15s;cursor:pointer;border:1px solid transparent}.mp-export-item:hover{background-color:var(--mp-bg-tertiary);border-color:var(--mp-border-primary)}.mp-item-content{display:flex;flex-direction:column;overflow:hidden;margin-left:12px}.mp-item-title{font-size:14px;font-weight:500;color:var(--mp-text-primary)}.mp-item-preview,.mp-item-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mp-item-preview{font-size:12px;color:var(--mp-text-tertiary);margin-top:2px}.mp-export-buttons{display:flex;gap:10px;margin-top:20px;justify-content:flex-end;border-top:1px solid var(--mp-border-primary);padding-top:16px;flex-shrink:0;font-family:var(--mp-font-family-button)!important}.lang-box,.mp-system-prompt-select-box{width:min(90vw,500px)!important}.mp-system-prompt-select-box{padding:20px!important}.lang-button,.mp-system-prompt-button{all:unset;box-sizing:border-box;display:block;width:100%;padding:12px 20px;border-radius:var(--mp-border-radius-md);background-color:var(--mp-bg-secondary);color:var(--mp-text-primary);border:1px solid var(--mp-border-primary);font-weight:500;cursor:pointer;text-align:center;transition:all .2s ease;font-family:var(--mp-font-family-button)!important;flex-shrink:0}.mp-system-prompt-button{display:flex!important;flex-direction:column;align-items:center;gap:4px}.mp-system-prompt-list-container{display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto}.mp-system-prompt-button-title{font-weight:600;font-size:14px}.mp-system-prompt-button-comment{font-weight:400;font-size:12px;color:var(--mp-text-secondary);display:block;width:100%;white-space:normal;overflow-wrap:break-word;word-break:break-word}.lang-button:hover,.mp-system-prompt-button:hover{transform:translateY(-2px);box-shadow:var(--mp-shadow-sm);background-color:var(--mp-bg-tertiary)}.lang-button.selected,.mp-system-prompt-button.is-focused{border-color:var(--mp-accent-primary);color:var(--mp-accent-primary);background-color:color-mix(in srgb,var(--mp-accent-primary) 5%,transparent);font-weight:600}.save-button{padding:10px 28px;border-radius:var(--mp-border-radius-md);background-color:var(--mp-accent-primary);color:var(--mp-text-buttons);border:none;font-weight:600;cursor:pointer;transition:all .2s ease-in-out;font-family:var(--mp-font-family-button)!important;margin-bottom:5px}.save-button:hover{background-color:var(--mp-accent-primary-hover)}.mp-btn-secondary{background:transparent;border:1px solid var(--mp-border-secondary);color:var(--mp-text-secondary)}.mp-btn-secondary:hover{background-color:var(--mp-bg-tertiary);color:var(--mp-text-primary)}.mp-info-table{display:flex;flex-direction:column;border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);overflow:hidden;margin-top:8px}.mp-info-row{display:flex}.mp-info-row:not(:last-child){border-bottom:1px solid var(--mp-border-primary)}.mp-info-col{padding:16px;display:flex;flex-direction:column;justify-content:center}.mp-info-col:not(:last-child){border-right:1px solid var(--mp-border-primary)}.mp-info-title-col{flex:0 0 35%}.mp-info-desc-col,.mp-info-title-col{background-color:var(--mp-bg-secondary);text-align:left}.mp-info-desc-col{flex:1}.mp-info-col h3{font-size:14px;font-weight:600;color:var(--mp-text-primary);margin:0;font-family:var(--mp-font-family-heading)!important}.mp-info-col p{font-size:13px;color:var(--mp-text-secondary);line-height:1.5;margin:0}.mp-inline-menu{position:fixed;width:500px;max-height:300px;background-color:var(--mp-bg-primary)!important;border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);box-shadow:var(--mp-shadow-lg);z-index:2147483647!important;display:flex;flex-direction:column;opacity:0;visibility:hidden;transform:translateY(10px);transition:opacity .1s,transform .1s,visibility 0s linear .1s;overflow:hidden;font-family:var(--mp-font-family-base)!important}.mp-inline-menu.visible{opacity:1;visibility:visible;transform:translateY(0);transition-delay:0s}.mp-inline-list{padding:4px;pointer-events:auto}.mp-inline-item,.mp-inline-list{display:flex;flex-direction:column}.mp-inline-item{padding:8px 12px;cursor:pointer;border-radius:var(--mp-border-radius-sm);font-size:13px;color:var(--mp-text-primary);align-items:flex-start;justify-content:center;gap:3px;transition:background-color .1s}.mp-inline-item:hover{background-color:var(--mp-bg-tertiary)}.mp-inline-item.selected{background-color:var(--mp-accent-primary);color:var(--mp-text-buttons)!important}.mp-inline-title{font-weight:500;line-height:1.3}.mp-inline-preview,.mp-inline-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;font-family:var(--mp-font-family-heading)!important}.mp-inline-preview{font-weight:400;font-size:12px;color:var(--mp-text-tertiary);line-height:1.2}.mp-inline-item.selected .mp-inline-preview{color:var(--mp-text-buttons)!important;opacity:.8}.mp-tooltip{position:fixed;z-index:2147483647;pointer-events:none;display:flex;flex-direction:column;align-items:center;opacity:0;transform:scale(.95) translateY(4px);transition:opacity .15s cubic-bezier(.4,0,.2,1),transform .15s cubic-bezier(.4,0,.2,1)}.mp-tooltip-interactive{pointer-events:auto}.mp-tooltip.visible{opacity:1;transform:scale(1) translateY(0)}.mp-tooltip-left,.mp-tooltip-right{flex-direction:row;align-items:center}.mp-tooltip-content{font-family:var(--mp-font-family-button)!important;background-color:var(--mp-text-primary);color:var(--mp-bg-primary);padding:0;border-radius:var(--mp-border-radius-sm);max-width:450px;width:max-content;white-space:normal;word-wrap:break-word;overflow-wrap:break-word;text-align:center;font-size:13px;font-weight:500;box-shadow:var(--mp-shadow-md);line-height:1.4;display:flex;flex-direction:column;overflow:hidden}.mp-tooltip-text{display:block;padding:10px 14px}.mp-tooltip-text+.mp-tooltip-actions{border-top:1px solid color-mix(in srgb,var(--mp-border-primary),transparent 70%)}.mp-tooltip-actions{display:flex;width:100%}.mp-tooltip-actions-row{flex-direction:row}.mp-tooltip-actions-column{flex-direction:column}.mp-tooltip-btn{font-family:var(--mp-font-family-button)!important;flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;border:none;border-radius:0;background-color:transparent;color:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:var(--mp-transition-fast);white-space:nowrap}.mp-tooltip-actions-row .mp-tooltip-btn:not(:last-child){border-right:1px solid color-mix(in srgb,var(--mp-border-primary),transparent 70%)}.mp-tooltip-actions-column .mp-tooltip-btn:not(:last-child){border-bottom:1px solid color-mix(in srgb,var(--mp-border-primary),transparent 70%)}.mp-tooltip-btn:focus,.mp-tooltip-btn:hover{background-color:var(--mp-accent-primary);color:var(--mp-text-buttons)}.mp-tooltip-btn:focus{outline:none}.mp-tooltip-btn-icon{width:14px;height:14px;display:flex;align-items:center;justify-content:center}.mp-tooltip-btn-icon svg{width:100%;height:100%;fill:currentColor}.mp-tooltip-arrow{width:0;height:0;margin:0;flex-shrink:0;z-index:1}.mp-tooltip-top .mp-tooltip-arrow{border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid var(--mp-text-primary)}.mp-tooltip-bottom .mp-tooltip-arrow{border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:6px solid var(--mp-text-primary);order:-1}.mp-tooltip-left .mp-tooltip-arrow{border-top:6px solid transparent;border-bottom:6px solid transparent;border-left:6px solid var(--mp-text-primary)}.mp-tooltip-right .mp-tooltip-arrow{border-top:6px solid transparent;border-bottom:6px solid transparent;border-right:6px solid var(--mp-text-primary);order:-1}.mp-tooltip-preview-container{padding:12px;width:320px;max-width:90vw;display:flex;flex-direction:column}.mp-tooltip-preview-text{max-height:200px;overflow-y:auto;background-color:color-mix(in srgb,var(--mp-bg-primary),transparent 85%);border:1px solid color-mix(in srgb,var(--mp-bg-primary),transparent 70%);border-radius:var(--mp-border-radius-sm);padding:13px;font-family:var(--mp-font-family-editor);font-size:12px;font-weight:300;color:var(--mp-bg-primary);line-height:1.5;white-space:pre-wrap;text-align:left;-webkit-hyphens:manual;hyphens:manual;overflow-wrap:break-word}.mp-tooltip-preview-container .mp-scroll-arrow.up{top:0;background:linear-gradient(180deg,color-mix(in srgb,var(--mp-text-primary),transparent 30%) 30%,transparent);color:var(--mp-bg-primary)}.mp-tooltip-preview-container .mp-scroll-arrow.down{bottom:0;background:linear-gradient(0deg,color-mix(in srgb,var(--mp-text-primary),transparent 30%) 30%,transparent);color:var(--mp-bg-primary)}@keyframes mp-fade-in-up{0%{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}.mp-settings-container{display:flex;flex-direction:column;height:100%;overflow:hidden;font-family:var(--mp-font-family-base)!important}.mp-tabs-header{display:flex;justify-content:center;align-items:center;border-bottom:1px solid var(--mp-border-primary);padding:0 16px;margin-bottom:16px;flex-shrink:0;gap:8px}.mp-tab-btn{font-family:var(--mp-font-family-button)!important;flex:1;background:none;padding:12px 4px;font-size:14px;font-weight:600;color:var(--mp-text-secondary);cursor:pointer;border:none;border-bottom:2px solid transparent;transition:all .2s;text-align:center;border-radius:4px 4px 0 0}.mp-tab-btn:hover{color:var(--mp-text-primary);background-color:var(--mp-bg-tertiary)}.mp-tab-btn.active{color:var(--mp-accent-primary);border-bottom-color:var(--mp-accent-primary)}.mp-tab-content{display:none!important;flex-direction:column;gap:4px;animation:mp-fade-in-up .2s ease}.mp-tab-content.active{display:flex!important}.mp-form-group,.mp-label{margin-bottom:10px}.mp-label{font-size:14px;font-weight:600;color:var(--mp-text-primary);display:block}.mp-label-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}.mp-settings-switch-container{display:flex;justify-content:space-between;align-items:center;background:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);padding:12px;border-radius:var(--mp-border-radius-md);margin:0}#mp-nav-lbl,#mp-preview-prompt-lbl,#mp-smart-predict-lbl,#mp-syntax-lbl{font-size:13px;font-weight:400;color:var(--mp-text-primary);cursor:help;text-decoration:underline dotted;text-decoration-color:color-mix(in srgb,var(--mp-text-secondary) 60%,transparent);text-underline-offset:3px;text-decoration-thickness:1px}.mp-action-btn-full{width:100%;padding:12px 16px;background-color:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);color:var(--mp-text-tertiary);font-weight:500;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:all .2s;font-family:var(--mp-font-family-button)!important}.mp-action-btn-full:hover{background-color:var(--mp-bg-tertiary);border-color:var(--mp-accent-primary);color:var(--mp-accent-primary)}.mp-btn-icon{display:flex;align-items:center;justify-content:center}.mp-segmented-control{display:flex;background-color:var(--mp-bg-tertiary);border-radius:var(--mp-border-radius-md);padding:4px;gap:4px;width:100%;box-sizing:border-box}.mp-segment-opt{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 4px;font-size:13px;font-weight:500;color:var(--mp-text-secondary);cursor:pointer;border-radius:var(--mp-border-radius-sm);transition:all .2s cubic-bezier(.25,1,.5,1);user-select:none;border:1px solid transparent}.mp-segment-opt:hover{color:var(--mp-accent-primary);background-color:rgba(0,0,0,.02)}.mp-segment-opt.selected{background-color:var(--mp-bg-primary);border-color:var(--mp-border-primary);box-shadow:0 1px 3px rgba(0,0,0,.08);font-weight:600}.mp-segment-opt.selected,.mp-segment-opt.selected svg{color:var(--mp-accent-primary)}.mp-shortcut-scroll-container,.mp-theme-scroll-container{padding:4px!important;border:none!important;margin:0!important;background:transparent!important;box-sizing:border-box!important;width:100%!important}.mp-shortcut-wrapper-fixed,.mp-theme-wrapper-fixed{flex:none!important;height:auto!important;max-height:165px!important;width:100%!important;box-sizing:border-box!important;margin-top:12px!important;overflow:hidden;position:relative}.mp-shortcut-option,.mp-shortcut-wrapper-fixed,.mp-theme-option,.mp-theme-wrapper-fixed{border:1px solid var(--mp-border-primary);background-color:var(--mp-bg-secondary);border-radius:var(--mp-border-radius-md)}.mp-shortcut-option,.mp-theme-option{flex-shrink:0;padding:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;font-weight:500;color:var(--mp-text-secondary);transition:all .2s ease;box-sizing:border-box}@keyframes mp-pulse-recording{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--mp-accent-edit) 40%,transparent)}to{box-shadow:0 0 0 6px transparent}}.mp-shortcut-option.recording{border-color:var(--mp-accent-edit)!important;color:var(--mp-accent-edit)!important;background-color:color-mix(in srgb,var(--mp-accent-edit) 10%,var(--mp-bg-primary))!important;font-weight:700!important;animation:mp-pulse-recording 1.5s infinite}.mp-shortcut-option:last-child,.mp-theme-option:last-child{margin-bottom:0}.mp-shortcut-option:hover,.mp-theme-option:hover{background-color:var(--mp-bg-tertiary);color:var(--mp-text-primary);box-shadow:var(--mp-shadow-sm);border:1px solid var(--mp-accent-primary)}.mp-shortcut-option.selected,.mp-theme-option.selected{background-color:color-mix(in srgb,var(--mp-accent-primary) 10%,var(--mp-bg-primary));color:var(--mp-accent-primary);border-color:var(--mp-accent-primary);font-weight:700;box-shadow:var(--mp-shadow-md)}.mp-theme-option{margin:5px;width:auto}.mp-shortcut-option{margin:0 0 5px;width:100%;background-color:color-mix(in srgb,var(--mp-bg-primary) 45%,transparent)}.mp-shortcut-option:last-child{margin-bottom:0}.mp-settings-footer{display:flex;justify-content:center;align-items:center;padding-top:16px;margin-top:10px;border-top:1px solid var(--mp-border-primary);flex-shrink:0}.mp-settings-footer .save-button{min-width:160px}.mp-theme-action-row{display:flex;gap:8px;padding:0 5px;margin:5px 0 8px;flex-shrink:0;width:100%;box-sizing:border-box}.mp-theme-split-btn{flex:1;display:flex;align-items:center;justify-content:center;padding:10px;border-radius:var(--mp-border-radius-md);border:1px dashed var(--mp-border-primary);color:var(--mp-text-secondary);background-color:var(--mp-bg-secondary);cursor:pointer;transition:all .2s ease;font-size:13px;font-weight:500}.mp-theme-split-btn:hover{background-color:var(--mp-bg-tertiary);border-color:var(--mp-accent-primary);color:var(--mp-accent-primary);box-shadow:var(--mp-shadow-sm)}.hide-api-key{-webkit-text-security:disc}#mp_ai_api_key_input{margin-bottom:8px}#mp_ai_sys_prompt_input{margin-top:8px;min-height:60px;resize:vertical;width:100%;box-sizing:border-box}.mp-form-hint{color:var(--mp-text-tertiary);font-size:11px;margin-top:4px;display:block}.mp-nav-switch{position:fixed;top:50%;right:20px;transform:translateY(-50%);display:flex;flex-direction:column;background-color:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);box-shadow:var(--mp-shadow-md);z-index:10000;padding:4px;gap:6px;transition:opacity .3s ease}.mp-nav-switch[style*=\"display: none\"]{pointer-events:none}.mp-nav-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--mp-text-secondary);border-radius:var(--mp-border-radius-sm);cursor:pointer;transition:all .2s ease;position:relative}.mp-nav-btn svg{width:20px;height:20px}.mp-nav-btn:hover{background-color:var(--mp-bg-tertiary);color:var(--mp-accent-primary);transform:scale(1.05)}.mp-nav-btn:active{transform:scale(.95)}.mp-nav-list-popup{position:absolute;right:45px;top:50%;transform:translateY(-50%) scale(.95);width:300px;max-height:500px;background-color:var(--mp-bg-primary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);box-shadow:var(--mp-shadow-lg);opacity:0;visibility:hidden;transition:all .2s cubic-bezier(.165,.84,.44,1);display:flex;flex-direction:column;z-index:10001;overflow:hidden}.mp-nav-list-popup.active{opacity:1;visibility:visible;transform:translateY(-50%) scale(1)}.mp-nav-header{display:flex;justify-content:space-between;background-color:var(--mp-bg-secondary);border-bottom:1px solid var(--mp-border-primary);padding:6px;gap:4px;flex-shrink:0}.mp-nav-tab{flex:1;display:flex;align-items:center;justify-content:center;padding:6px;border-radius:6px;cursor:pointer;color:var(--mp-text-secondary);transition:background .2s,color .2s}.mp-nav-tab:hover{background-color:var(--mp-bg-tertiary)}.mp-nav-tab.active{background-color:var(--mp-accent-primary);color:var(--mp-text-buttons)}.mp-nav-tab svg{width:18px;height:18px;pointer-events:none}.mp-nav-scroll-area{overflow-y:auto;flex:1;scrollbar-width:none;-ms-overflow-style:none}.mp-nav-scroll-area::-webkit-scrollbar{display:none}.mp-nav-item-wrapper{display:flex;flex-direction:column;border-bottom:1px solid var(--mp-bg-tertiary)}.mp-nav-item-wrapper:last-child{border-bottom:none}.mp-nav-list-item{padding:10px 12px;font-family:var(--mp-font-family-base);font-size:13px;color:var(--mp-text-secondary);cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .1s;position:relative;overflow:hidden}.mp-nav-list-item.main-msg-item{border-bottom:none!important}.mp-nav-list-item.current-item,.mp-nav-list-item:hover{background-color:var(--mp-bg-tertiary)}.mp-nav-list-item.current-item{color:var(--mp-accent-primary);border-left:3px solid var(--mp-accent-primary);font-weight:500}.mp-nav-idx-badge{font-size:10px;background:var(--mp-bg-secondary);padding:0;border-radius:4px;min-width:24px;height:20px;display:flex;align-items:center;justify-content:center;color:var(--mp-text-primary);flex-shrink:0;position:relative;overflow:hidden}.mp-nav-idx-badge.has-topics{cursor:pointer;transition:background-color .2s,color .2s}.mp-nav-idx-badge.has-topics:hover,.mp-nav-item-wrapper.expanded .mp-nav-idx-badge.has-topics{background-color:var(--mp-accent-primary);color:var(--mp-text-buttons)}.mp-nav-idx-number{transition:opacity .2s,transform .2s}.mp-nav-expand-icon{position:absolute;display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(.5) rotate(0deg);transition:opacity .2s,transform .2s cubic-bezier(.165,.84,.44,1)}.mp-nav-expand-icon svg{width:16px;height:16px}.mp-nav-idx-badge.has-topics:hover .mp-nav-idx-number,.mp-nav-item-wrapper.expanded .mp-nav-idx-badge.has-topics .mp-nav-idx-number{opacity:0;transform:scale(.5)}.mp-nav-idx-badge.has-topics:hover .mp-nav-expand-icon{opacity:1;transform:scale(1) rotate(0deg)}.mp-nav-item-wrapper.expanded .mp-nav-idx-badge.has-topics .mp-nav-expand-icon{opacity:1;transform:scale(1) rotate(90deg)}.mp-nav-preview-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}.mp-nav-type-icon{width:13px!important;height:13px!important;flex-shrink:0!important;color:var(--mp-accent-primary)!important;margin-left:auto!important;opacity:1!important;display:flex!important;align-items:center!important}.mp-nav-submenu{font-family:var(--mp-font-family-base);display:none;flex-direction:column;background-color:var(--mp-bg-primary);border-left:2px solid var(--mp-bg-tertiary);margin-left:24px;margin-right:12px;margin-bottom:6px;border-bottom-left-radius:4px;overflow:hidden}.mp-nav-item-wrapper.expanded .mp-nav-submenu{display:flex;animation:mpFadeInDrop .2s ease forwards}.mp-nav-sub-item{padding:6px 8px;font-size:11.5px;color:var(--mp-text-secondary);cursor:pointer;display:flex;align-items:center;transition:background .1s,color .1s;position:relative;overflow:hidden}.mp-nav-sub-item:hover{background-color:var(--mp-bg-tertiary);color:var(--mp-text-primary)}.mp-nav-sub-item:before{content:\"\";position:absolute;left:-2px;top:50%;width:6px;height:2px;background-color:var(--mp-bg-tertiary)}.mp-nav-sub-item:hover:before{background-color:var(--mp-accent-primary)}.mp-nav-sub-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%}.mp-nav-sub-item.level-1{padding-left:8px;font-weight:500}.mp-nav-sub-item.level-2{padding-left:16px}.mp-nav-sub-item.level-3{padding-left:24px;font-size:11px;opacity:.9}.mp-nav-sub-item.level-4{padding-left:32px;font-size:10.5px;opacity:.8}.mp-nav-sub-item.level-5{padding-left:40px;font-size:10px;opacity:.7}.mp-nav-sub-item.level-6{padding-left:48px;font-size:10px;opacity:.6}.mp-nav-sub-item.current-item{background-color:var(--mp-bg-tertiary);color:var(--mp-accent-primary);font-weight:500}.mp-nav-sub-item.current-item:before{background-color:var(--mp-accent-primary)}.mp-nav-msg-actions{position:absolute;right:0;top:0;bottom:0;padding-left:24px;padding-right:12px;display:flex;align-items:center;gap:4px;background:linear-gradient(90deg,transparent 0,var(--mp-bg-tertiary) 30%,var(--mp-bg-tertiary));transform:translateX(110%);transition:transform .25s cubic-bezier(.25,1,.5,1);z-index:2}.mp-nav-list-item:hover .mp-nav-msg-actions,.mp-nav-sub-item:hover .mp-nav-msg-actions{transform:translateX(0)}.mp-pin-btn{width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:4px;color:var(--mp-text-secondary);cursor:pointer;transition:all .2s}.mp-pin-btn:hover{color:var(--mp-accent-edit)}.mp-pin-btn.is-pinned{color:var(--mp-accent-primary)}.mp-pin-btn svg{width:14px;height:14px}.mp-pinned-carousel-wrapper{position:fixed;top:15px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;align-items:center;gap:8px;pointer-events:none;transition:opacity .3s}.mp-pinned-carousel-wrapper.mp-orient-h{flex-direction:column;padding-bottom:20px}.mp-pinned-carousel-wrapper.mp-orient-v{flex-direction:row;padding-right:20px;gap:15px!important}.mp-pinned-main-wrapper{display:flex;align-items:center;gap:10px;pointer-events:none;transition:opacity .3s ease}.mp-orient-v .mp-pinned-main-wrapper{flex-direction:column}.mp-pinned-carousel-wrapper.is-hidden .mp-pinned-main-wrapper{opacity:0;pointer-events:none}.mp-pinned-carousel-wrapper.is-hidden .mp-pinned-main-wrapper,.mp-pinned-carousel-wrapper.is-hidden .mp-pinned-main-wrapper *{pointer-events:none!important}.mp-orient-h .mp-pinned-viewport{max-width:80vw;overflow:hidden;display:flex;justify-content:center;padding:40px 10px;margin:-40px -10px;mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);min-height:fit-content}.mp-orient-v .mp-pinned-viewport{height:50vh;max-height:350px;width:fit-content;max-width:80vw;overflow:hidden;display:flex;align-items:center;padding:40px 28px;margin:-40px -28px;mask-image:linear-gradient(180deg,transparent,#000 10%,#000 90%,transparent);-webkit-mask-image:linear-gradient(180deg,transparent,#000 10%,#000 90%,transparent)}.mp-orient-h .mp-pinned-track{padding:10px 0}.mp-orient-h .mp-pinned-track,.mp-orient-v .mp-pinned-track{display:flex;align-items:center;gap:12px;transition:transform .4s cubic-bezier(.25,1,.5,1);pointer-events:auto}.mp-orient-v .mp-pinned-track{flex-direction:column;padding:0 10px}.mp-pinned-viewport.is-single-item{mask-image:none!important;-webkit-mask-image:none!important;overflow:visible}.mp-pinned-viewport.is-single-item .mp-pinned-card{opacity:1;transform:scale(1.1);background-color:color-mix(in srgb,var(--mp-accent-primary) 10%,var(--mp-bg-primary));border-color:var(--mp-accent-primary-hover);color:var(--mp-accent-primary);pointer-events:auto}.mp-pinned-card{background:var(--mp-accent-primary);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--mp-border-secondary);border-radius:var(--mp-border-radius-lg);padding:6px 16px;color:var(--mp-text-buttons);font-family:var(--mp-font-family-base);font-size:12px;white-space:nowrap;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all .4s cubic-bezier(.25,1,.5,1);transform:scale(.85);box-shadow:0 4px 12px rgba(0,0,0,.15);min-width:140px;max-width:200px;box-sizing:border-box;flex-shrink:0}.mp-pinned-card:hover{background-color:var(--mp-accent-primary-hover)}.mp-pinned-card.active-center{opacity:1;transform:scale(1.2);background-color:color-mix(in srgb,var(--mp-accent-primary) 10%,var(--mp-bg-primary));border-color:var(--mp-accent-primary-hover);box-shadow:var(--mp-shadow-md);color:var(--mp-accent-primary)}.mp-drag-mode .mp-pinned-card{cursor:default;pointer-events:none}.mp-pinned-card-text{flex:1;overflow:hidden;text-overflow:ellipsis;text-align:center;user-select:none}.mp-pinned-card-unpin{display:flex;align-items:center;justify-content:center;opacity:.6;transition:all .2s}.mp-pinned-card-unpin:hover{opacity:1;color:var(--mp-accent-primary);transform:scale(1.1)}.mp-pinned-card-unpin svg{width:12px;height:12px;pointer-events:none}.mp-carousel-nav{pointer-events:auto;background:var(--mp-bg-secondary);backdrop-filter:blur(8px);color:var(--mp-text-secondary);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;opacity:.6;z-index:2;border:1px solid var(--mp-text-secondary);flex-shrink:0}.mp-carousel-nav:hover{opacity:1;transform:scale(1.1);background:var(--mp-accent-primary);color:var(--mp-text-buttons)}.mp-carousel-nav.left svg{transform:rotate(180deg)}.mp-carousel-nav.up svg{transform:rotate(-90deg)}.mp-carousel-nav.down svg{transform:rotate(90deg)}.mp-carousel-nav.right svg{transform:rotate(0deg)}.mp-carousel-nav svg{width:14px;height:14px;pointer-events:none}.mp-pinned-actions-panel{display:flex;align-items:center;justify-content:center;gap:8px;opacity:0;transform:scale(.8);transition:all .3s cubic-bezier(.25,1,.5,1);pointer-events:auto;flex-shrink:0}.mp-orient-v .mp-pinned-actions-panel{flex-direction:column}.mp-pinned-carousel-wrapper.is-list-mode .mp-pinned-actions-panel,.mp-pinned-carousel-wrapper.mp-drag-mode .mp-pinned-actions-panel,.mp-pinned-carousel-wrapper:hover .mp-pinned-actions-panel{opacity:1;transform:scale(1)}.mp-pinned-action-btn{background:var(--mp-bg-secondary);backdrop-filter:blur(8px);color:var(--mp-text-secondary);border-radius:var(--mp-border-radius-lg);border:1px solid hsla(0,0%,100%,.1);border-color:var(--mp-text-secondary);width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0}.mp-pinned-action-btn.active,.mp-pinned-action-btn:hover{background:var(--mp-accent-primary);color:var(--mp-text-buttons);transform:scale(1.1)}.mp-pinned-action-btn.delete-btn:hover,.mp-pinned-action-btn.mp-reset-btn:hover{background:var(--mp-accent-close);border-color:var(--mp-accent-close-hover)}.mp-pinned-action-btn.mp-save-btn:hover{background:#22c55e;border-color:#006826;color:#fff}.mp-pinned-action-btn svg{width:16px;height:16px;display:block;margin:auto;pointer-events:none}.mp-pinned-carousel-wrapper.mp-drag-mode{cursor:grab}.mp-pinned-carousel-wrapper.mp-drag-mode.mp-is-being-dragged{cursor:grabbing}body.mp-dragging-active,body.mp-dragging-active *{cursor:grabbing!important;user-select:none!important}.mp-drag-crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:10;width:0;height:0}.mp-drag-ch-line{position:absolute;background:var(--mp-accent-primary);opacity:.5}.mp-drag-ch-h{width:48px;height:1px;top:0;left:50%;transform:translateX(-50%)}.mp-drag-ch-v{width:1px;height:48px;left:0;top:50%;transform:translateY(-50%)}.mp-drag-ch-dot{position:absolute;width:6px;height:6px;background:var(--mp-accent-primary);border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);box-shadow:0 0 10px var(--mp-accent-primary),0 0 20px rgba(0,0,0,.3)}.mp-rulers-container{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9998;pointer-events:none}.mp-ruler-screen-v{width:0;height:100vh;top:0;left:50vw;border-left:1px dashed color-mix(in sRGB,var(--mp-text-primary),transparent 50%);border-right:1px dashed color-mix(in sRGB,var(--mp-text-primary),transparent 50%)}.mp-ruler-screen-h,.mp-ruler-screen-v{position:absolute;background:var(--mp-bg-overlay)}.mp-ruler-screen-h{height:0;width:100vw;left:0;top:50vh;border-top:1px dashed color-mix(in sRGB,var(--mp-text-primary),transparent 50%);border-bottom:1px dashed color-mix(in sRGB,var(--mp-text-primary),transparent 50%)}.mp-ruler-carousel-v{width:1px;height:100vh;top:0;transition:left .04s linear,opacity .2s,box-shadow .2s}.mp-ruler-carousel-h,.mp-ruler-carousel-v{position:absolute;background:var(--mp-accent-primary);opacity:.3}.mp-ruler-carousel-h{height:1px;width:100vw;left:0;transition:top .04s linear,opacity .2s,box-shadow .2s}.mp-rulers-container.mp-snapped-x .mp-ruler-carousel-v,.mp-rulers-container.mp-snapped-y .mp-ruler-carousel-h{opacity:.85;box-shadow:0 0 14px var(--mp-accent-primary),0 0 4px var(--mp-accent-primary)}.mp-ruler-label{position:absolute;font-size:9px;font-weight:700;letter-spacing:.5px;color:hsla(0,0%,100%,.2);pointer-events:none;font-family:var(--mp-font-family-base),monospace}.mp-ruler-label-v{top:10px;transform:translateX(-50%)}.mp-ruler-label-h{left:10px;transform:translateY(-50%)}.mp-pinned-carousel-wrapper.is-list-mode .mp-pinned-viewport{mask-image:none!important;-webkit-mask-image:none!important;max-height:400px;min-height:auto;display:block;overflow-y:auto;overflow-x:hidden;width:300px;padding:10px 0;margin:0;scroll-behavior:smooth;-ms-overflow-style:none;scrollbar-width:none}.mp-pinned-carousel-wrapper.is-list-mode .mp-pinned-viewport::-webkit-scrollbar{display:none}.mp-pinned-carousel-wrapper.is-list-mode .mp-pinned-track{flex-direction:column!important;align-items:center;gap:8px;width:100%;padding:0}@keyframes mpHighlightPulse{0%{transform:scale(1);outline:2px solid transparent;box-shadow:none}20%{transform:scale(1.02);outline:2px solid var(--mp-accent-primary);box-shadow:0 0 15px var(--mp-accent-primary)}80%{transform:scale(1.02);outline:2px solid var(--mp-accent-primary);box-shadow:0 0 15px var(--mp-accent-primary)}to{transform:scale(1);outline:2px solid transparent;box-shadow:none}}.mp-highlight-anim{animation:mpHighlightPulse 2s ease-in-out forwards}@keyframes mpFadeInDrop{0%{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}.mp-backup-section{display:flex;flex-direction:column;gap:12px}.mp-backup-subtitle{font-size:14px;font-weight:600;color:var(--mp-text-primary);margin:0;display:flex;align-items:center;gap:8px}.mp-backup-subtitle svg{width:16px;height:16px;fill:var(--mp-text-secondary)}.mp-backup-divider{height:1px;background-color:var(--mp-border-primary);margin:20px 0}.mp-backup-list{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;padding-right:4px}.mp-backup-item{display:flex;align-items:center;padding:10px 12px;background-color:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);cursor:pointer;transition:background-color .15s,border-color .15s}.mp-backup-item:hover{background-color:var(--mp-bg-tertiary);border-color:var(--mp-accent-primary)}.mp-backup-item-content{margin-left:12px;display:flex;flex-direction:column}.mp-backup-item-title{font-size:13px;font-weight:500;color:var(--mp-text-primary)}.mp-backup-item-desc{font-size:11px;color:var(--mp-text-tertiary);margin-top:2px}.mp-backup-warning{font-size:11px;color:var(--mp-accent-close);background-color:rgba(240,62,62,.1);padding:8px 12px;border-radius:var(--mp-border-radius-sm);line-height:1.4;text-align:center;font-weight:600}.mp-backup-actions{display:flex;gap:10px;margin-top:12px;justify-content:flex-end}.mp-backup-actions .save-button{flex:1}.mp-form-row{display:flex;gap:12px!important;width:100%!important;margin-bottom:16px!important;font-size:13px!important}.mp-form-row>.mp-form-group{flex:1;margin-bottom:0}@media (max-width:400px){.mp-form-row{flex-direction:column;gap:16px}.mp-form-row>.mp-form-group{margin-bottom:0}}.mp-tag-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:var(--mp-border-radius-sm);font-family:var(--mp-font-family-base);font-size:11px;font-weight:500;line-height:1;white-space:nowrap;cursor:default;user-select:none;transition:transform .2s ease;color:var(--mp-text-buttons)}.prompt-tags-container{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.mp-tags-modal-content{display:flex;flex-direction:column;gap:16px;max-height:60vh;overflow:hidden;padding-right:4px;scrollbar-width:none}.mp-tags-modal-content::-webkit-scrollbar{display:none}.mp-tag-form{display:flex;flex-direction:column;gap:12px;padding:16px;background-color:var(--mp-bg-secondary);border-radius:var(--mp-border-radius-md);border:1px solid var(--mp-border-primary)}.mp-tag-form-row{display:flex;gap:12px;align-items:flex-end;justify-content:space-around;width:100%;box-sizing:border-box}.mp-tag-color-group{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;max-width:160px;min-width:80px}.mp-tag-color-label{font-family:var(--mp-font-family-base);font-size:11px;color:var(--mp-text-secondary)}.mp-tag-color-input{width:100%;height:32px;padding:0;margin:0;border:2px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-sm);cursor:pointer;background:none;overflow:hidden;box-sizing:border-box;display:block}.mp-tag-color-input::-webkit-color-swatch-wrapper{padding:0}.mp-tag-color-input::-webkit-color-swatch{border:none;border-radius:2px}.mp-tag-color-input::-moz-color-swatch{border:none;border-radius:2px}.mp-tags-list{display:flex;flex-direction:column;gap:6px}.mp-tag-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background-color:var(--mp-bg-secondary);border-radius:var(--mp-border-radius-md);border:1px solid var(--mp-border-primary);transition:background-color .2s ease,border-color .2s ease}.mp-tag-item:hover{background-color:var(--mp-bg-tertiary);border-color:var(--mp-border-secondary)}.mp-tag-item-info{gap:12px;flex:1;min-width:0}.mp-tag-item-info,.mp-tag-item-preview{display:flex;align-items:center}.mp-tag-item-details{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.mp-tag-item-comment{font-family:var(--mp-font-family-base);font-size:12px;color:var(--mp-text-tertiary);display:block;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mp-tag-item-actions{display:flex;gap:2px;flex-shrink:0}.mp-tag-action-btn{background:none;border:none;cursor:pointer;width:28px;height:28px;border-radius:var(--mp-border-radius-sm);transition:all .15s ease;display:flex;align-items:center;justify-content:center;color:var(--mp-text-secondary);font-family:var(--mp-font-family-button)}.mp-tag-action-btn:hover{background-color:rgba(0,0,0,.05);transform:scale(1.1)}.mp-tag-action-btn.edit:hover{color:var(--mp-accent-edit)}.mp-tag-action-btn.delete:hover{color:var(--mp-accent-close)}.mp-tag-action-btn svg{width:16px;height:16px}.mp-tags-empty{text-align:center;padding:32px;color:var(--mp-text-tertiary);font-family:var(--mp-font-family-base)}.mp-filter-btn{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;width:28px;height:28px;border-radius:var(--mp-border-radius-sm);display:flex;align-items:center;justify-content:center;color:var(--mp-text-secondary);transition:all .2s ease;z-index:5;margin-right:5px}.mp-filter-btn:hover{background-color:rgba(0,0,0,.05);transform:translateY(-50%) scale(1.1)}.mp-filter-btn.active,.mp-filter-btn:hover{color:var(--mp-accent-primary)}.mp-filter-btn svg{width:16px;height:16px}.mp-filter-dropdown{position:fixed;min-width:100px;max-width:200px;background-color:var(--mp-bg-primary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);box-shadow:var(--mp-shadow-lg);display:none;flex-direction:column;max-height:280px;overflow:hidden}.mp-filter-dropdown.visible{display:flex;flex-direction:column}.mp-filter-header{display:flex;justify-content:space-around;flex-direction:row-reverse;align-items:center;padding:4px 6px;border-bottom:1px solid var(--mp-border-primary);background-color:var(--mp-bg-secondary);gap:2px}.mp-filter-manage-btn{background:none;border:none;cursor:pointer;width:28px;height:28px;border-radius:var(--mp-border-radius-sm);display:flex;align-items:center;justify-content:center;color:var(--mp-text-secondary);transition:all .2s ease}.mp-filter-manage-btn:hover{background-color:rgba(0,0,0,.05);transform:scale(1.1);color:var(--mp-accent-edit)}.mp-filter-manage-btn svg{width:16px;height:16px}.mp-filter-clear-btn{background:none;border:none;cursor:pointer;width:28px;height:28px;border-radius:var(--mp-border-radius-sm);display:flex;align-items:center;justify-content:center;color:var(--mp-text-secondary);transition:all .2s ease}.mp-filter-clear-btn:hover{background-color:rgba(0,0,0,.05);transform:scale(1.1);color:var(--mp-accent-close)}.mp-filter-clear-btn svg{width:16px;height:16px}.mp-filter-list{overflow-y:auto;padding:4px;flex:1;scrollbar-width:none}.mp-filter-list::-webkit-scrollbar{display:none}.mp-filter-item{display:flex;align-items:center;gap:10px;padding:7px 10px;cursor:pointer;border-radius:var(--mp-border-radius-sm);transition:background-color .15s ease,box-shadow .15s ease}.mp-filter-item+.mp-filter-item{margin-top:1px}.mp-filter-item.selected,.mp-filter-item:hover{background-color:var(--mp-bg-tertiary)}.mp-filter-tag-preview{flex:1;min-width:0}.mp-filter-empty{padding:24px 16px;text-align:center;color:var(--mp-text-tertiary);font-family:var(--mp-font-family-base);font-size:13px}.mp-accordions-row{display:flex;gap:10px;margin-bottom:15px;flex-shrink:0;align-items:flex-start}.mp-accordions-row>.mp-files-accordion,.mp-accordions-row>.mp-tags-accordion{flex:1;margin:0}.mp-files-accordion,.mp-tags-accordion{border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);background-color:var(--mp-bg-secondary);overflow:hidden;margin-top:10px;margin-bottom:20px;flex-shrink:0;transition:border-color .2s;display:flex;flex-direction:column}.mp-files-accordion:hover,.mp-tags-accordion:hover{border-color:var(--mp-accent-primary)}.mp-accordion-header{padding:8px 12px;background-color:var(--mp-bg-secondary);cursor:pointer;font-size:13px;font-weight:600;color:var(--mp-text-secondary);display:flex;justify-content:space-between;align-items:center;user-select:none;transition:background .2s;border-bottom:1px solid transparent;flex-shrink:0}.mp-accordion-header:hover{color:var(--mp-text-primary);background-color:var(--mp-bg-tertiary)}.mp-accordion-header svg{width:16px;height:16px;transition:transform .2s ease;opacity:.6}.mp-files-accordion.open .mp-accordion-header,.mp-tags-accordion.open .mp-accordion-header{border-bottom:1px solid var(--mp-border-primary);background-color:var(--mp-bg-tertiary)}.mp-files-accordion.open .mp-accordion-header svg:last-child,.mp-tags-accordion.open .mp-accordion-header svg:last-child{transform:rotate(180deg);opacity:1;color:var(--mp-accent-primary)}.mp-accordion-content{display:none;background-color:var(--mp-bg-primary);position:relative;flex-direction:column}.mp-files-accordion.open .mp-accordion-content,.mp-tags-accordion.open .mp-accordion-content{display:flex;flex-direction:column;height:190px}.mp-accordion-content .mp-scroll-wrapper{flex:1;display:flex;flex-direction:column;min-height:0}.mp-file-scroll-wrapper,.mp-tags-scroll-wrapper{flex:1;height:100%;overflow-y:auto;padding:12px 10px;scrollbar-width:none;-ms-overflow-style:none;box-sizing:border-box}.mp-dynamic-dropzone.empty-state,.mp-file-scroll-wrapper.empty-state,.mp-tags-scroll-wrapper.empty-state{height:100%;display:flex;justify-content:center;cursor:pointer;background:linear-gradient(135deg,color-mix(in srgb,var(--mp-accent-primary) 8%,transparent),color-mix(in srgb,var(--mp-accent-primary) 3%,transparent));box-shadow:0 8px 32px 0 rgba(0,0,0,.08),inset 0 1px 1px 0 hsla(0,0%,100%,.2)}.mp-file-scroll-wrapper.empty-state:hover,.mp-tags-scroll-wrapper.empty-state:hover{background:linear-gradient(135deg,color-mix(in srgb,var(--mp-accent-primary) 12%,transparent),color-mix(in srgb,var(--mp-accent-primary) 5%,transparent));border-color:var(--mp-accent-primary);box-shadow:0 12px 40px 0 rgba(0,0,0,.12),inset 0 1px 1px 0 hsla(0,0%,100%,.3)}.mp-file-grid.empty-state,.mp-tags-grid.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;width:100%;pointer-events:none}.mp-file-empty-icon,.mp-tags-empty-icon{width:48px;height:48px;color:var(--mp-accent-primary);opacity:.8;display:flex;align-items:center;justify-content:center}.mp-file-empty-text,.mp-tags-empty-text{color:var(--mp-text-primary);font-size:14px;font-weight:600;text-align:center}.mp-file-empty-subtext,.mp-tags-empty-subtext{color:var(--mp-text-secondary);font-size:12px;text-align:center}.mp-file-scroll-wrapper::-webkit-scrollbar,.mp-tags-scroll-wrapper::-webkit-scrollbar{display:none}.mp-file-grid{display:grid;grid-template-columns:repeat(auto-fill,70px);gap:10px}.mp-file-grid,.mp-tags-grid{justify-content:center;width:100%}.mp-tags-grid{display:flex;flex-wrap:wrap;gap:8px}.mp-add-file-card,.mp-file-card{position:relative;width:100%;height:70px;border-radius:6px;flex-shrink:0;cursor:pointer;transition:all .2s ease;box-sizing:border-box}.mp-file-card{background:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);overflow:hidden}.mp-add-file-card,.mp-file-card{display:flex;align-items:center;justify-content:center}.mp-add-file-card{border:2px dashed var(--mp-border-primary);color:var(--mp-text-tertiary);background:transparent}.mp-add-file-card:hover,.mp-dynamic-dropzone:hover{border-color:var(--mp-accent-primary);color:var(--mp-accent-primary);background-color:color-mix(in srgb,var(--mp-accent-primary) 5%,transparent)}.mp-add-icon{width:24px;height:24px;stroke:currentColor;stroke-width:2}.mp-file-card.inactive{opacity:.5;filter:grayscale(100%)}.mp-file-card.inactive:hover{opacity:.9;filter:grayscale(0);border-color:var(--mp-text-tertiary)}.mp-file-card.active{opacity:1;border-color:var(--mp-accent-primary);box-shadow:0 0 0 2px color-mix(in srgb,var(--mp-accent-primary) 20%,transparent)}.mp-file-thumb{width:100%;height:100%;object-fit:cover}.mp-file-icon-gen{width:28px;height:28px;color:var(--mp-text-secondary)}.mp-file-delete-perm{position:absolute;top:2px;right:2px;width:16px;height:16px;background:rgba(0,0,0,.6);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;opacity:0;transition:opacity .2s;z-index:10}.mp-file-delete-perm:hover{background-color:var(--mp-accent-close)}.mp-file-card:hover .mp-file-delete-perm{opacity:1}.mp-tag-select-item{display:inline-flex;align-items:center;padding:6px 12px;border-radius:var(--mp-border-radius-sm);font-family:var(--mp-font-family-base);font-size:12px;font-weight:500;cursor:pointer;transition:all .2s ease;background-color:var(--mp-bg-tertiary);color:var(--mp-text-tertiary);border:1px solid transparent}.mp-tag-select-item:hover{transform:scale(1.05);opacity:.9}.mp-tag-select-item.active{border-color:hsla(0,0%,100%,.3);box-shadow:0 2px 8px rgba(0,0,0,.15)}.mp-tags-accordion-footer{display:flex;justify-content:center;padding:8px;border-top:1px solid var(--mp-border-primary);background-color:var(--mp-bg-secondary);flex-shrink:0;position:relative;z-index:10}.mp-tags-manage-btn{display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;color:var(--mp-accent-primary);font-family:var(--mp-font-family-button);font-size:12px;font-weight:500;padding:6px 12px;border-radius:var(--mp-border-radius-sm);transition:background-color .2s ease}.mp-tags-manage-btn:hover{background-color:color-mix(in srgb,var(--mp-accent-primary) 15%,transparent)}.mp-tags-manage-btn svg{width:14px;height:14px}.mp-icon-container{display:flex;align-items:center;justify-content:center;cursor:help;width:16px;height:16px;color:var(--mp-accent-primary)}.mp-syntax-container{position:relative!important;width:100%;height:100%}.mp-syntax-backdrop{position:absolute!important;top:0;left:0;right:0;bottom:0;overflow:hidden;pointer-events:none;z-index:0;font-family:var(--mp-font-family-editor)!important;font-size:inherit;font-weight:400!important;font-style:normal!important;line-height:inherit;letter-spacing:normal;word-spacing:normal;text-transform:none;text-indent:0;text-shadow:none!important;text-decoration:none!important;white-space:pre-wrap;overflow-wrap:break-word;word-wrap:break-word;word-break:normal;padding:16px;margin:0;border:none;box-sizing:border-box;color:var(--mp-text-primary);background:transparent;user-select:none;-webkit-user-select:none}textarea.mp-syntax-enabled{position:relative!important;z-index:1;background:transparent!important;color:transparent!important;-webkit-text-fill-color:transparent!important;white-space:pre-wrap!important;overflow-wrap:break-word!important;word-wrap:break-word!important;word-break:normal!important;caret-color:var(--mp-syntax-caret)!important}textarea.mp-syntax-enabled::-moz-selection,textarea.mp-syntax-enabled::selection{background:var(--mp-syntax-selection)!important}.mp-syn-esc{color:var(--mp-syntax-escape)}.mp-syn-ign-f{color:var(--mp-syntax-ignore-fence);opacity:.8}.mp-syn-ign-c{color:var(--mp-syntax-ignore-content);opacity:.6}.mp-syn-qt-f{color:var(--mp-syntax-quote-fence)}.mp-syn-qt-c{color:var(--mp-syntax-quote-content)}.mp-syn-dt-f,.mp-syn-dt-k{color:var(--mp-syntax-var-keyword)}.mp-syn-fl-k,.mp-syn-fl-p,.mp-syn-fl-t{color:var(--mp-syntax-file-keyword)}.mp-syn-sl-f{color:var(--mp-syntax-sel-fence)}.mp-syn-sl-h,.mp-syn-sl-hh{color:var(--mp-syntax-sel-header)}.mp-syn-sl-sep{color:var(--mp-syntax-sel-sep);opacity:.7}.mp-syn-sl-p-multi{color:var(--mp-syntax-sel-multi)}.mp-syn-sl-p-single{color:var(--mp-syntax-sel-single)}.mp-syn-sl-p-id{color:var(--mp-syntax-sel-id)}.mp-syn-sl-p-other{color:var(--mp-syntax-sel-other)}.mp-syn-def-s{color:var(--mp-syntax-def-sep)}.mp-syn-def-v{color:var(--mp-syntax-def-val)}.mp-syn-sel-chk{color:var(--mp-syntax-sel-checked)}.mp-syn-free-b,.mp-syn-free-l{color:var(--mp-syntax-free-label);background-color:color-mix(in srgb,var(--mp-syntax-free-bracket) 25%,transparent)}.mp-syn-in-b{color:var(--mp-syntax-in-bracket)}.mp-syn-in-l{color:var(--mp-syntax-in-label)}.mp-syn-in-e{color:var(--mp-syntax-in-eq)}.mp-syn-sil-b{color:var(--mp-syntax-sil-bracket)}.mp-syn-sil-l{color:var(--mp-syntax-sil-label)}.mp-syn-sil-e{color:var(--mp-syntax-sil-eq)}.mp-syn-in-c{color:var(--mp-syntax-context);opacity:.7}.mp-syn-in-v,.mp-syn-sil-v,.mp-syn-var{color:var(--mp-syntax-var)}.mp-syn-var{border-bottom:1px dotted var(--mp-syntax-var)}.mp-syntax-backdrop,textarea.mp-syntax-enabled{tab-size:4;-moz-tab-size:4}.mp-syntax-backdrop span{font-weight:inherit;font-style:inherit}.mp-syntax-backdrop span[class*=mp-syn-]{text-decoration:none!important;text-shadow:none!important}.mp-gist-import-btn{display:inline-flex;align-items:center;justify-content:center;gap:.25rem;padding:.5rem;height:1.75rem;font-size:.75rem;font-weight:500;font-family:var(--mp-font-family-button);line-height:1.625;border-radius:6px;border:1px solid var(--mp-border-secondary);cursor:pointer;background-color:var(--mp-accent-primary);color:var(--mp-text-buttons);box-shadow:var(--mp-shadow-sm);transition:all var(--mp-transition-fast);margin-right:8px;vertical-align:middle;text-decoration:none}.mp-gist-import-btn:hover{background-color:color-mix(in srgb,var(--mp-accent-primary) 10%,var(--mp-bg-primary));color:var(--mp-accent-primary);border-color:var(--mp-accent-primary);box-shadow:var(--mp-shadow-md)}.mp-gist-import-btn:active{transform:scale(.98)}.file-actions{display:flex}.mp-gist-import-btn[data-state=imported],.mp-gist-import-btn[data-state=imported]:active,.mp-gist-import-btn[data-state=imported]:hover{background-color:var(--mp-bg-tertiary);color:var(--mp-text-secondary);box-shadow:none;transform:none;border-color:var(--mp-text-secondary);opacity:.7;cursor:not-allowed!important;pointer-events:auto!important}#mp-notification-container{position:fixed;top:24px;left:50%;transform:translateX(-50%);z-index:999999;display:flex;flex-direction:column;gap:12px;pointer-events:none;align-items:center}.mp-notification{background-color:color-mix(in srgb,var(--mp-accent-primary) 10%,var(--mp-bg-primary));color:var(--mp-accent-primary);border:1px solid var(--mp-accent-primary);padding:10px 20px;border-radius:var(--mp-border-radius-md);box-shadow:var(--mp-shadow-md);font-family:var(--mp-font-family-button);font-size:14px;font-weight:500;opacity:0;transform:translateY(-20px);transition:all var(--mp-transition-fast);display:flex;align-items:center;pointer-events:auto}.mp-notification.mp-show{opacity:1;transform:translateY(0)}.mp-notification.mp-error{background-color:color-mix(in srgb,var(--mp-accent-close) 10%,var(--mp-bg-primary));color:var(--mp-accent-close);border-color:var(--mp-accent-close);box-shadow:0 4px 12px color-mix(in srgb,var(--mp-accent-close) 25%,transparent)}.mp-prompt-meta-highlight{border:2px solid var(--mp-accent-primary)!important;border-radius:6px!important;padding:8px!important;background-color:color-mix(in srgb,var(--mp-accent-primary) 10%,var(--mp-bg-primary))!important;box-shadow:0 0 12px color-mix(in srgb,var(--mp-accent-primary) 40%,transparent)!important;transition:all var(--mp-transition-fast) ease-in-out;cursor:pointer}.mp-prompt-meta-highlight:hover{background-color:color-mix(in srgb,var(--mp-accent-primary) 15%,var(--mp-bg-primary))!important;box-shadow:0 0 16px color-mix(in srgb,var(--mp-accent-primary) 60%,transparent)!important}.mp-prompt-meta-highlight,.mp-prompt-meta-highlight a,.mp-prompt-meta-highlight li,.mp-prompt-meta-highlight span,.mp-prompt-meta-highlight strong,.mp-prompt-meta-highlight svg{color:var(--mp-accent-primary)!important}.mp-prompt-meta-highlight svg{fill:var(--mp-accent-primary)!important}.mp-patreon-button{background-color:#f96854!important;color:#fff!important;display:flex!important;justify-content:center;align-items:center;text-decoration:none;margin-top:8px;transition:filter .2s ease-in-out,transform .1s ease;border:none;cursor:pointer}.mp-patreon-button:hover{filter:brightness(1.1);text-decoration:none;color:#fff!important}.mp-patreon-button:active{filter:brightness(.9);transform:scale(.99)}.kfds-lyt-width-100.mp-patreon-button{box-sizing:border-box}.mp-expanded-filter-dropdown,.mp-filter-dropdown{z-index:100005!important}#__ap_settings_overlay{z-index:99990!important;position:fixed!important}#__ap_lang_modal_overlay{z-index:99999!important;position:fixed!important}#__ap_lang_modal_overlay .lang-box{z-index:100000!important;position:relative!important}.empty-state{padding:10px;text-align:center;color:var(--mp-text-tertiary);font-size:14px}.mp-dialogo-overlay{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:var(--mp-bg-overlay);opacity:0;transition:opacity var(--mp-transition-fast);pointer-events:none;padding:16px}.mp-dialogo-overlay.mp-dialogo-visible{opacity:1;pointer-events:auto}.mp-dialogo{background:var(--mp-bg-secondary);border-radius:var(--mp-border-radius-lg);box-shadow:var(--mp-shadow-lg);border:1px solid var(--mp-border-primary);width:100%;max-width:420px;display:flex;flex-direction:column;max-height:calc(100vh - 64px);transform:scale(.95) translateY(10px);opacity:0;transition:transform var(--mp-transition-fast),opacity var(--mp-transition-fast);font-family:var(--mp-font-family-base);outline:none}.mp-dialogo-overlay.mp-dialogo-visible .mp-dialogo{transform:scale(1) translateY(0);opacity:1}.mp-dialogo-header{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 0}.mp-dialogo-title{font-family:var(--mp-font-family-heading);font-size:16px;font-weight:600;color:var(--mp-text-primary);margin:0;line-height:1.3}.mp-dialogo-body{padding:16px 20px;flex:1;overflow-y:auto;min-height:0}.mp-dialogo-message{font-size:14px;line-height:1.6;color:var(--mp-text-secondary);margin:0;overflow-wrap:break-word;word-break:break-word}.mp-dialogo-header:empty+.mp-dialogo-body{padding-top:20px}.mp-dialogo-body::-webkit-scrollbar{width:6px}.mp-dialogo-body::-webkit-scrollbar-track{background:transparent}.mp-dialogo-body::-webkit-scrollbar-thumb{background:var(--mp-border-primary);border-radius:10px}.mp-dialogo-body::-webkit-scrollbar-thumb:hover{background:var(--mp-text-tertiary)}.mp-dialogo-body{scrollbar-width:thin;scrollbar-color:var(--mp-border-primary) transparent}.mp-dialogo-footer{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:4px 20px 20px}.mp-dialogo-footer:empty{display:none}.mp-dialogo-footer-checkbox{display:flex;align-items:center;margin-right:auto;font-size:12px;color:var(--mp-text-tertiary);user-select:none;cursor:pointer;line-height:1}.mp-dialogo-footer-checkbox .mp-checkbox{margin:0;width:14px;height:14px;flex-shrink:0}.mp-dialogo-footer-checkbox span{margin-left:6px}.mp-dialogo-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;border:1px solid transparent;border-radius:var(--mp-border-radius-sm);font-family:var(--mp-font-family-button);font-size:13px;font-weight:500;cursor:pointer;transition:all var(--mp-transition-fast);white-space:nowrap;line-height:1.4}.mp-dialogo-btn:hover,.save-button:hover{box-shadow:4px 4px 0 0 var(--mp-text-primary);transform:translate(-2px,-2px)}.mp-dialogo-btn:active,.save-button:active{box-shadow:0 0 0 0 var(--mp-text-primary);transform:translate(0)}.mp-dialogo-btn:focus-visible{outline:2px solid var(--mp-accent-primary);outline-offset:2px}.mp-dialogo-btn-icon{display:flex;align-items:center;justify-content:center;width:16px;height:16px;flex-shrink:0}.mp-dialogo-btn-icon svg{width:100%;height:100%}.mp-dialogo-btn-primary{background:var(--mp-accent-primary);color:var(--mp-text-buttons);border-color:var(--mp-accent-primary)}.mp-dialogo-btn-primary:hover{background:var(--mp-accent-primary-hover);border-color:var(--mp-accent-primary-hover)}.mp-dialogo-btn-secondary{background:transparent;color:var(--mp-text-secondary);border-color:var(--mp-text-primary)}.mp-dialogo-btn-secondary:hover{background:var(--mp-bg-tertiary);color:var(--mp-text-primary);border-color:var(--mp-text-primary)}.mp-dialogo-btn-danger{background:var(--mp-accent-close);color:var(--mp-text-buttons);border-color:var(--mp-accent-close)}.mp-dialogo-btn-danger:hover{background:var(--mp-accent-close-hover);border-color:var(--mp-accent-close-hover)}.mp-dialogo-btn-edit{background:var(--mp-accent-edit);color:var(--mp-text-buttons);border-color:var(--mp-accent-edit)}.mp-dialogo-btn-edit:hover{background:var(--mp-accent-edit-hover);border-color:var(--mp-accent-edit-hover)}.mp-shared-changelog-btn{display:inline-block;font-size:13px;color:var(--mp-accent-primary);cursor:pointer;margin-bottom:10px;text-decoration:underline}.mp-shared-changelog-content{background:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);padding:10px;font-size:13px;color:var(--mp-text-secondary);max-height:250px;overflow-y:auto;margin-bottom:15px;white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word}.mp-shared-changelog-content h1,.mp-shared-changelog-content h2,.mp-shared-changelog-content h3,.mp-shared-changelog-content h4,.mp-shared-changelog-content h5,.mp-shared-changelog-content h6{margin-top:0;margin-bottom:8px;color:var(--mp-text-primary)}.mp-shared-changelog-content p{margin:0 0 8px}.mp-shared-inline-code{background:var(--mp-bg-tertiary);padding:2px 4px;border-radius:3px;font-family:var(--mp-font-family-editor);color:var(--mp-accent-close)}.mp-shared-block-code{background:var(--mp-bg-tertiary);padding:10px;border-radius:var(--mp-border-radius-sm);overflow-x:auto;max-height:200px;white-space:pre-wrap;word-wrap:break-word;margin-bottom:8px;display:block}.mp-shared-block-code,.mp-shared-changelog-content code{font-family:var(--mp-font-family-editor)!important}.mp-shared-version-highlight{color:var(--mp-btn-add-color)}.mp-shared-info{margin-bottom:15px;padding:12px;background:var(--mp-bg-secondary);border-radius:var(--mp-border-radius-md);border:1px solid var(--mp-border-primary)}.mp-shared-info-manager{margin-top:15px;margin-bottom:0;padding:10px}.mp-shared-info-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.mp-shared-info-header.align-center{align-items:center}.mp-shared-info-list{font-size:13px;color:var(--mp-text-secondary);display:flex;flex-direction:column;gap:6px}.mp-shared-info-label{color:var(--mp-accent-primary)}.mp-shared-btn-secondary{background-color:var(--mp-bg-tertiary)!important;color:var(--mp-text-primary)!important;border:1px solid var(--mp-border-primary)!important}.mp-shared-btn-secondary:hover{background-color:var(--mp-bg-secondary)!important;opacity:.9}.mp-shared-btn-cancel{background:var(--mp-bg-secondary)!important;color:var(--mp-text-primary)!important;border:1px solid var(--mp-border-primary)!important}.mp-diff-column-full{width:100%!important}.mp-shared-cl-overlay{z-index:99995!important}.mp-shared-cl-box{max-width:600px!important;max-height:80vh!important;display:flex!important;flex-direction:column!important;cursor:default}.mp-shared-cl-title{flex-shrink:0;margin-bottom:15px}.mp-shared-cl-body{flex-grow:1;overflow-y:auto;max-height:none!important;margin-bottom:0!important;text-align:left}.mp-shared-intervals{display:flex;gap:10px;flex-wrap:wrap;padding:8px 12px;justify-content:space-between;align-items:center;background-color:var(--mp-bg-secondary);border-radius:var(--mp-border-radius-md);border:1px solid var(--mp-border-primary)}.mp-shared-interval-label{display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;color:var(--mp-text-secondary)}.mp-shared-version-badge{color:var(--mp-btn-add-color);font-weight:600;font-size:14px}.mp-shared-info-subtext{font-size:12px;color:var(--mp-text-secondary);margin-top:5px}.mp-shared-info-actions{margin-top:10px;display:flex;gap:8px}.mp-shared-info-actions .flex-1{flex:1}.mp-shared-form-group{margin-top:15px}.mp-shared-modal-footer{margin-top:20px}.mp-diff-view{width:100%!important;flex:1!important;padding:16px!important;border-radius:var(--mp-border-radius-md)!important;border:1px solid var(--mp-border-primary)!important;background-color:var(--mp-bg-secondary)!important;color:var(--mp-text-primary)!important;font-family:var(--mp-font-family-editor)!important;font-size:15px!important;line-height:1.6!important;box-sizing:border-box!important;overflow-y:auto!important;white-space:pre-wrap!important;word-break:break-all!important}.mp-diff-line-unchanged{color:var(--mp-text-primary)}.mp-diff-line-removed{background-color:rgba(239,68,68,.15)!important;color:#ef4444!important;display:block;width:100%}.mp-diff-line-added{background-color:rgba(16,185,129,.15)!important;color:#10b981!important;display:block;width:100%}.mp-diff-line-empty{background-color:transparent;opacity:.3;user-select:none}.mp-diff-column{position:relative!important}.mp-diff-enhanced-edit-btn{position:absolute!important;bottom:12px;right:12px;z-index:10;opacity:.35;transition:opacity .2s ease,transform .2s ease}.mp-diff-enhanced-edit-btn.active,.mp-diff-enhanced-edit-btn:hover{opacity:1!important}.save-button:has(svg){display:inline-flex!important;align-items:center!important;justify-content:center!important}.save-button svg{width:18px!important;height:18px!important;display:block!important;margin:0!important;pointer-events:none}input#__ap_shared_url{color:var(--mp-accent-primary)!important;font-weight:300!important}\n";
+
   function injectGlobalStyles() {
     const e = "my-prompt-styles";
     if (document.getElementById(e)) return;
-    const t = GM_getResourceText("CSS"),
+    const t = MP_EMBEDDED_CSS,
       n = document.createElement("style");
     ((n.id = e), setSafeInnerHTML(n, t), document.head.appendChild(n));
     if (!document.getElementById("mp-font-override")) {
@@ -1462,12 +1254,6 @@
     if (!document.getElementById("mp-pill-copy-btn-style")) {
       const h = document.createElement("style");
       h.id = "mp-pill-copy-btn-style";
-      // v27.0.8: collapse/expand mechanics for the pill's Copy button — a
-      // faithful mirror of the external stylesheet's .mp-btn-ai/.mp-btn-paste
-      // rules (the Copy button replaced the Enhance button as the pill's
-      // first action; the external CSS resource cannot grow new classes, so
-      // the equivalent rules are injected here, keeping the slide animation
-      // identical on every platform and in every mp-dir-* direction).
       h.textContent =
         ".mp-btn-copy{flex:0 0 0;width:0;height:0;opacity:0;overflow:hidden;transition:flex-basis var(--mp-transition-fast),width var(--mp-transition-fast),height var(--mp-transition-fast),opacity var(--mp-transition-fast),transform var(--mp-transition-fast);}.mp-sliding-pill-container:hover .mp-btn-copy{flex:0 0 34px;width:34px;height:34px;opacity:1;transform:translate(0);}.mp-dir-top .mp-btn-copy{transform:translateY(10px);}.mp-dir-bottom .mp-btn-copy{transform:translateY(-10px);}.mp-dir-left .mp-btn-copy{transform:translateX(10px);}.mp-dir-right .mp-btn-copy{transform:translateX(-10px);}";
       document.head.appendChild(h);
@@ -1641,7 +1427,7 @@
   }
   async function createDialogo(e) {
     const t = "string" == typeof e ? { type: "alert", message: e } : { ...e };
-    t.title || (t.title = getTranslation("aviso"));
+    t.title || (t.title = "Warning");
     const n = t.dontShowAgainId;
     return n && (await getDontShowAgain(n))
       ? Promise.resolve("dont_show_again")
@@ -1693,7 +1479,7 @@
               (d.type = "checkbox"),
               (d.className = "mp-checkbox"));
             const t = document.createElement("span");
-            ((t.textContent = getTranslation("dontShowAgain")),
+            ((t.textContent = "Don't show again"),
               e.appendChild(d),
               e.appendChild(t),
               c.appendChild(e));
@@ -1704,12 +1490,12 @@
               "confirm" === t.type
                 ? [
                     {
-                      label: getTranslation("cancel"),
+                      label: "Cancel",
                       style: "danger",
                       value: !1,
                     },
                     {
-                      label: getTranslation("confirm"),
+                      label: "Confirm",
                       style: "primary",
                       value: !0,
                     },
@@ -1786,8 +1572,6 @@
         '<svg viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M6.913 7.029C7.751 5.772 9.626 4 12.5 4c2.13 0 3.65 1.08 4.607 2.33a7.1 7.1 0 0 1 1.285 2.745c.785.127 1.695.43 2.505 1.014C22.092 10.948 23 12.373 23 14.5s-.908 3.551-2.103 4.412C19.753 19.735 18.41 20 17.5 20H13v-6.586l1.293 1.293a1 1 0 0 0 1.414-1.414l-3-3a1 1 0 0 0-1.414 0l-3 3a1 1 0 1 0 1.414 1.414L11 13.414V20H7.5c-1.077 0-2.67-.315-4.022-1.288C2.075 17.701 1 16.026 1 13.5s1.075-4.201 2.478-5.212c1.124-.809 2.413-1.163 3.435-1.26z" fill="currentColor"/></svg>',
       monitor:
         '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>',
-      globo:
-        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>',
       plus: '<svg class="mp-add-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>',
       sol: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>',
       lua: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>',
@@ -1872,12 +1656,6 @@
       link: '<svg viewBox="0 0 20 20"><path fill="currentColor" d="M4.83 15h2.91a5 5 0 0 1-1.55-2H5a3 3 0 1 1 0-6h3a3 3 0 0 1 2.82 4h2.1a5 5 0 0 0 .08-.83v-.34A4.83 4.83 0 0 0 8.17 5H4.83A4.83 4.83 0 0 0 0 9.83v.34A4.83 4.83 0 0 0 4.83 15"/><path fill="currentColor" d="M15.17 5h-2.91a5 5 0 0 1 1.55 2H15a3 3 0 1 1 0 6h-3a3 3 0 0 1-2.82-4h-2.1a5 5 0 0 0-.08.83v.34A4.83 4.83 0 0 0 11.83 15h3.34A4.83 4.83 0 0 0 20 10.17v-.34A4.83 4.83 0 0 0 15.17 5"/></svg>',
       color:
         '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M20 20H4c-1.1 0-2 .9-2 2s.9 2 2 2h16c1.1 0 2-.9 2-2s-.9-2-2-2M7.11 17c.48 0 .91-.3 1.06-.75l1.01-2.83h5.65l.99 2.82c.16.46.59.76 1.07.76.79 0 1.33-.79 1.05-1.52L13.69 4.17a1.8 1.8 0 0 0-3.38 0L6.06 15.48c-.28.73.27 1.52 1.05 1.52m4.83-11.4h.12l2.03 5.79H9.91z"/></svg>',
-      // v27.0.9: gear glyph for the Flow dock pill's new Settings button
-      // (the slot's old Prompts icon is retired there — see
-      // createDockSettingsButton). Material-style 24x24 gear with
-      // fill="currentColor", matching the neighboring set so it inherits
-      // the pill button color/hover rules untouched. Registered before
-      // DEFAULT_ICONS is cloned, so it resets/overrides cleanly with themes.
       settings:
         '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>',
     },
@@ -1888,21 +1666,12 @@
     const n = document.createElement("div");
     n.className = `mp-sliding-pill-container mp-dir-${e}`;
     const a = "left" === e || "right" === e ? "top" : "left",
-      // v27.0.8: the pill's first button is now Copy (editor -> clipboard),
-      // a symmetric companion to the Paste button below (clipboard ->
-      // editor). It replaces the old AI-Enhance shortcut button. The AI
-      // enhancement workflow itself is unchanged and remains reachable via
-      // the prompt modal's magic button, the editor toolbar enhance
-      // buttons and the 'enhancePrompt' keyboard shortcut. The mp-btn-copy
-      // class mirrors the external stylesheet's .mp-btn-ai/.mp-btn-paste
-      // collapse/expand mechanics via rules injected in
-      // injectGlobalStyles() (the external CSS cannot grow new classes).
       o = document.createElement("button");
     ((o.type = "button"),
       (o.className = "mp-btn-part mp-btn-copy"),
       o.setAttribute("data-testid", "composer-button-copy"),
       setSafeInnerHTML(o, ICONS.copy),
-      createCustomTooltip(o, getTranslation("copy"), a),
+      createCustomTooltip(o, "Copy", a),
       o.addEventListener("click", (e) => {
         (e.stopPropagation(), handleInstantPageCopy());
       }));
@@ -1911,7 +1680,7 @@
       (r.className = "mp-btn-part mp-btn-paste"),
       r.setAttribute("data-testid", "composer-button-paste"),
       setSafeInnerHTML(r, ICONS.paste),
-      createCustomTooltip(r, getTranslation("paste"), a),
+      createCustomTooltip(r, "Paste", a),
       r.addEventListener("click", async (e) => {
         e.stopPropagation();
         try {
@@ -1947,7 +1716,7 @@
       (s.className = "mp-btn-part mp-btn-main"),
       s.setAttribute("data-testid", "composer-button-prompts"),
       setSafeInnerHTML(s, ICONS.prompts),
-      createCustomTooltip(s, getTranslation("prompts"), a),
+      createCustomTooltip(s, "Prompts", a),
       n.appendChild(o),
       n.appendChild(r),
       n.appendChild(s),
@@ -1955,23 +1724,6 @@
       t
     );
   }
-  // v27.0.9: Settings button for the Flow dock's pill. The pill's third
-  // (always-visible, main-slot) action used to be the Prompts button, but on
-  // the dock that button and the dock trigger were the same action — both
-  // funnel into the one dock-level menu-toggle listener initUI registers —
-  // so the slot was pure duplication. It now opens the settings modal with
-  // the exact canonical sequence the extension-menu command uses (create if
-  // needed -> resetToCurrent -> showModal), so the two entry points can
-  // never drift apart. Dock-scoped by construction: createPromptButton keeps
-  // shipping the Prompts button for every other platform, where it is the
-  // only inline way to open the prompt menu. The button rides the shared
-  // .mp-btn-part base (34px slot, 20px glyph, hover color) plus the
-  // dock-scoped height/color rules in FLOW_DOCK_CSS. v27.0.10: the gear is
-  // no longer the pill's static parked face — the dock-scoped
-  // .mp-btn-settings rules in FLOW_DOCK_CSS give it the exact collapse/
-  // expand choreography the external stylesheet gives .mp-btn-ai and
-  // .mp-btn-paste, so all three pill buttons park collapsed (0 width,
-  // hidden, translated 10px) and slide out together on pill hover.
   function createDockSettingsButton() {
     const e = document.createElement("button");
     return (
@@ -1979,19 +1731,9 @@
       (e.className = "mp-btn-part mp-btn-settings"),
       e.setAttribute("data-testid", "composer-button-settings"),
       setSafeInnerHTML(e, ICONS.settings),
-      // The dock pill mounts horizontally (mp-dir-left), so the tooltip
-      // renders on top — the same direction argument the Copy/Paste
-      // buttons of this pill receive.
-      createCustomTooltip(e, getTranslation("settings"), "top"),
+      createCustomTooltip(e, "Settings", "top"),
       e.addEventListener("click", (t) => {
-        // stopPropagation keeps this click out of the dock-level
-        // menu-toggle listener (clicking Settings must never also toggle
-        // the prompt menu) — the same guard Copy/Paste use. preventDefault
-        // matches the menu-toggle listener's own contract.
         (t.stopPropagation(), t.preventDefault());
-        // If the prompt menu happens to be open, close it first so exactly
-        // one panel is on screen (the same pattern openBackupManager and
-        // the keyboard-shortcut openers follow).
         closeMenu();
         if (!settingsModal) {
           settingsModal = createSettingsModal();
@@ -2003,12 +1745,6 @@
       e
     );
   }
-  // v27.0.5: dock glyph ported from LinkMaster's getPsiGlyphSVG (Psi in a
-  // dashed double ring and hex frame). &#936; keeps the source file ASCII.
-  // v27.0.8: the glyph keeps its plain-serif Psi, while the dock's "Prompt
-  // Master" label next to it now renders in the real 'Cinzel Decorative'
-  // webfont (loaded by ensureCinzelDecorativeFont below) — closing the
-  // typography gap this comment used to disclaim.
   const FLOW_DOCK_GLYPH =
     '<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" class="mp-dock-glyph" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
     '<path d="M 64,12 A 52,52 0 1 1 63.9,12 Z" stroke-dasharray="21.78 21.78" stroke-width="2"/>' +
@@ -2016,68 +1752,6 @@
     '<path d="M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z"/>' +
     '<text x="64" y="67" text-anchor="middle" dominant-baseline="middle" fill="currentColor" stroke="none" font-size="56" font-weight="700" font-family="serif">&#936;</text>' +
     "</svg>";
-  // v27.0.5: sliding-dock mechanics ported verbatim from LinkMaster's
-  // #linkmaster-dock (bottom-right, translateX(calc(100% - 22px)) parked
-  // off-screen, :hover -> translateX(0)). The reveal is still pure CSS
-  // :hover, exactly as in the source implementation; v27.0.10 adds one
-  // piece of JS state on top of it — the delayed-retract dwell timer
-  // (see FLOW_DOCK_HIDE_DELAY_MS below and the wiring in initUI's flow
-  // branch) — without touching the reveal path itself.
-  // v27.0.7 FIX (overlap): the shared stylesheet draws .mp-sliding-pill-container
-  // as position:absolute anchored right:0, and .mp-dir-left:hover widens it
-  // 36px -> 112px LEFTWARD. That geometry was built for inline composer
-  // mounts, where the expansion overlays page chrome harmlessly. Embedded as
-  // a flex child of the dock it painted the expanded pill straight over the
-  // dock trigger (measured 72px collision: pill 1164->1276 vs trigger
-  // 1071.6->1236). The two dock-scoped rules below put the pill back into
-  // the flex flow: the wrapper auto-sizes to the pill's live (animated)
-  // width and the pill container becomes position:relative, so the row
-  // reserves real space for the expansion. Because the dock is anchored
-  // right:0, the extra 76px grows the dock leftward — the trigger slides
-  // left out of the way instead of being covered. All shared mp-* rules
-  // (hover widths, separators, slide-in transforms) keep applying; these
-  // overrides only neutralize position/size participation, and only inside
-  // #pm-flow-dock, so every other platform's inline pill is untouched.
-  // v27.0.8 (dock face lift): (1) The pill no longer paints its own 36px
-  // rounded, hard-bordered chip inside the dock — it is now a borderless,
-  // square-cornered, full-height glass panel (translucent tint + backdrop
-  // blur that deepens dynamically 2px -> 14px on hover), so the slide-out
-  // reads as one continuous rectangle with the dock instead of a bordered
-  // circle glued onto it. (2) The dock row switched align-items:center ->
-  // stretch so the trigger and the pill panel share one exact height; the
-  // trigger centers its own content via its inline-flex alignment, so its
-  // look is unchanged. (3) "Prompt Master" renders in the loaded 'Cinzel
-  // Decorative' webfont. All v27.0.7 geometry (flex participation,
-  // leftward growth) and interaction fixes (single-toggle click forwarding,
-  // outside-click exemption) are preserved verbatim.
-  // v27.0.10 (true glass + dwell + glow + sliding gear): (1) The dock
-  // chrome is now true glass morphism — a translucent 160deg gradient fill
-  // (replacing the near-opaque .92 slab, which is why the old blur(10px)
-  // could never read as glass) over an 18px backdrop blur with 1.5x
-  // saturate, a fine cyan hairline border, and specular inset highlights
-  // along the top/left edges, deepening to 22px/1.65x while revealed.
-  // (2) The reveal selector is now the union :hover,.mp-dock-open —
-  // :hover keeps the v27.0.5 instant CSS slide-out (and the no-JS
-  // fallback), while .mp-dock-open is toggled by the initUI dwell wiring
-  // to hold the dock out for FLOW_DOCK_HIDE_DELAY_MS after the pointer
-  // leaves. (3) The "Prompt Master" title glows the dock's established
-  // cyan (#7fd8ff, layered 6/16/30px text-shadow) on trigger hover.
-  // (4) The pill's Settings button joins the satellite collapse
-  // choreography (see the .mp-btn-settings rules at the end of this
-  // sheet), so the parked pill is plain glass and all three buttons
-  // slide out together.
-  // v27.0.12: two-stage hover reveal for the dock pill. The parked face
-  // carries a shimmering chevron (title-styled — see the wrapper ::before
-  // rules at the tail of this sheet). On dwell the glass responds first
-  // (tint + blur deepen after --mp-pill-reveal-ms), then the full icon
-  // slide-out runs after the --mp-pill-intent-ms hover-intent window:
-  // container width, all three buttons, and the chevron's fade ALL share
-  // that one delay so the overflow:hidden reveal window and the buttons
-  // it uncovers stay in lockstep — splitting them (as the beta did) makes
-  // the buttons animate clipped behind the parked face and stack the copy
-  // glyph under the chevron. Collapse stays instant (delays live only in
-  // :hover rules), and swipes shorter than the intent window never reveal
-  // the icons. The shimmer loop is disabled under prefers-reduced-motion.
   const FLOW_DOCK_HIDE_DELAY_MS = 2750;
   const FLOW_DOCK_CSS =
     "#pm-flow-dock{position:fixed;right:0;bottom:24px;z-index:2147483646;display:flex;align-items:stretch;border-radius:6px 0 0 6px;overflow:hidden;background:linear-gradient(160deg,rgba(30,42,60,.58) 0%,rgba(16,23,34,.52) 55%,rgba(11,16,24,.60) 100%);backdrop-filter:blur(18px) saturate(1.5);-webkit-backdrop-filter:blur(18px) saturate(1.5);border:1px solid rgba(148,196,255,.30);border-right:none;box-shadow:inset 0 1px 0 rgba(200,230,255,.18),inset 0 -1px 0 rgba(0,0,0,.28),inset 1px 0 0 rgba(200,230,255,.10),-6px 10px 36px rgba(0,0,0,.50);transition:transform 400ms cubic-bezier(0.16,1,0.3,1),backdrop-filter 280ms ease,-webkit-backdrop-filter 280ms ease;transform:translateX(calc(100% - 22px));}" +
@@ -2100,41 +1774,14 @@
     "#pm-flow-dock .mp-sliding-pill-container:hover .mp-btn-settings{flex:0 0 34px;width:34px;opacity:1;transform:translate(0);}" +
     "#pm-flow-dock .mp-dir-left .mp-btn-settings{transform:translateX(10px);}" +
     "#pm-flow-dock{--mp-pill-intent-ms:950ms;--mp-pill-reveal-ms:250ms;}" +
-    // v27.0.12 (option B) — per-property two-stage :hover transition.
-    // Stage 1 (--mp-pill-reveal-ms): the glass wakes (background-color
-    // tint + backdrop-filter blur deepen) — early feedback that cannot
-    // break the reveal window. Stage 2 (--mp-pill-intent-ms): width (the
-    // overflow:hidden window) opens. height/border-color never change on
-    // hover but stay listed so nothing the base rule transitions loses
-    // its timing; the base collapsed rule keeps its delay-free shorthand,
-    // so collapse and all non-hover paths remain instant.
     "#pm-flow-dock .mp-sliding-pill-container:hover{transition:width var(--mp-transition-fast) var(--mp-pill-intent-ms,950ms),height var(--mp-transition-fast),background-color var(--mp-transition-fast) var(--mp-pill-reveal-ms,250ms),border-color var(--mp-transition-fast),backdrop-filter 280ms ease var(--mp-pill-reveal-ms,250ms),-webkit-backdrop-filter 280ms ease var(--mp-pill-reveal-ms,250ms);}" +
     "#pm-flow-dock .mp-sliding-pill-container:hover .mp-btn-copy," +
     "#pm-flow-dock .mp-sliding-pill-container:hover .mp-btn-paste," +
-    // The buttons MUST share the width's intent delay: they animate
-    // through the overflow:hidden window, so any earlier delay animates
-    // them clipped — and the left-anchored copy would stack under the
-    // parked chevron (the beta's interim glyph ambiguity).
     "#pm-flow-dock .mp-sliding-pill-container:hover .mp-btn-settings{transition-delay:var(--mp-pill-intent-ms,950ms);}" +
     "#pm-flow-dock .mp-prompt-wrapper::before{content:'';position:absolute;z-index:1002;pointer-events:none;right:10px;top:50%;width:16px;height:16px;transform:translateY(-50%);background-color:#e8eaf0;background-image:linear-gradient(90deg,transparent 0%,transparent 42%,rgba(127,216,255,.95) 50%,transparent 58%,transparent 100%);background-size:280% 100%;animation:mp-chevron-flash 2.6s linear infinite;opacity:.9;transition:opacity var(--mp-transition-fast),background-color var(--mp-transition-fast),filter var(--mp-transition-fast);-webkit-mask-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M14.5 5.5 8 12 14.5 18.5' fill='none' stroke='white' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\");-webkit-mask-position:center;-webkit-mask-repeat:no-repeat;-webkit-mask-size:16px 16px;mask-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M14.5 5.5 8 12 14.5 18.5' fill='none' stroke='white' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\");mask-position:center;mask-repeat:no-repeat;mask-size:16px 16px;}" +
     "#pm-flow-dock .mp-prompt-wrapper:has(.mp-sliding-pill-container:hover)::before{opacity:0;background-color:#7fd8ff;filter:drop-shadow(0 0 6px rgba(127,216,255,.85)) drop-shadow(0 0 14px rgba(127,216,255,.45));animation-play-state:paused;transition:opacity var(--mp-transition-fast) var(--mp-pill-intent-ms,950ms),background-color var(--mp-transition-fast),filter var(--mp-transition-fast);}" +
     "@keyframes mp-chevron-flash{0%{background-position:180% 0;}100%{background-position:-80% 0;}}" +
-    // v27.0.12: accessibility — the decorative infinite shimmer switches
-    // off for reduced-motion users (the glow and state fades remain).
     "@media (prefers-reduced-motion:reduce){#pm-flow-dock .mp-prompt-wrapper::before{animation:none;}}";
-  // v27.0.8: loads the 'Cinzel Decorative' display face used by the dock's
-  // "Prompt Master" label. The css2 request and the woff2 payload are
-  // fetched through GM_xmlhttpRequest — i.e. in the userscript-manager
-  // context, outside the page's CSP for style/font origins — and the font
-  // is re-injected as a base64 data: URL @font-face, so it renders even on
-  // hosts that block fonts.googleapis.com <style> @imports. The css2 call
-  // uses text= to receive a single tiny subset covering exactly
-  // "Prompt Master" (those subset URLs are extension-less gstatic /l/font?kit=
-  // links, so the url is matched via the trailing format('woff2') declaration
-  // rather than a .woff2 file suffix). Every failure mode (offline, CDN
-  // hiccup, blocked font) degrades silently to the serif fallback stack
-  // declared in .mp-dock-text — no console noise, no UI breakage. Idempotent:
-  // guarded by the style element id, safe across re-inits.
   function ensureCinzelDecorativeFont() {
     if (document.getElementById("pm-cinzel-font-style")) return;
     const e =
@@ -2199,7 +1846,7 @@
       (n.style.width = "420px !important"),
       (n.style.maxHeight = "85vh !important"),
       (n.onclick = (e) => e.stopPropagation()));
-    const a = ` <div class="mp-settings-container"><div class="mp-tabs-header"><button class="mp-tab-btn active" data-tab="basic">${getTranslation("basic")}</button><button class="mp-tab-btn" data-tab="advanced">${getTranslation("advanced")}</button></div><div class="mp-scroll-wrapper" style="flex:1; overflow:hidden;"><div id="mp-settings-scroll-area" style="padding: 0 4px 12px 4px; overflow-y: auto;"><div class="mp-tab-content active" id="tab-basic" style="margin-bottom: 16px; margin-top: 16px;"><div class="mp-form-row"><div class="mp-form-group"><label class="mp-label">${getTranslation("languageSettings")}</label><button id="mp-btn-open-lang" class="mp-action-btn-full"><span id="mp-current-lang-display" style="font-weight:600;">${translations[currentLang]?.langName || currentLang}</span><span class="mp-btn-icon">${ICONS.globo}</span></button></div><div class="mp-form-group"><label class="mp-label">${getTranslation("backupRestore")}</label><button id="mp-btn-open-backup" class="mp-action-btn-full"><span style="font-weight:600;">${getTranslation("exportImport")}</span><span class="mp-btn-icon">${ICONS.expImp}</span></button></div></div><div class="mp-form-group"><label class="mp-label">${getTranslation("colorMode")}</label><div class="mp-segmented-control"><div class="mp-segment-opt" data-val="auto">${ICONS.monitor} <span>${getTranslation("auto")}</span></div><div class="mp-segment-opt" data-val="light">${ICONS.sol} <span>${getTranslation("light")}</span></div><div class="mp-segment-opt" data-val="dark">${ICONS.lua} <span>${getTranslation("dark")}</span></div></div></div><div class="mp-form-group style=" style="margin-bottom: 0px;"><label class="mp-label">${getTranslation("theme")}</label><div class="mp-theme-scroll-container" id="mp-theme-list-container"></div></div></div><div class="mp-tab-content" id="tab-advanced" style="margin-bottom: 16px; margin-top: 16px;"><div class="mp-form-group"><label class="mp-label">${getTranslation("featureSettings")}</label><div class="mp-settings-switch-container" style="margin-bottom: 8px;"><span id="mp-preview-prompt-lbl">${getTranslation("pp")}</span><div style="display: flex; gap: 12px; align-items: center;"><div style="display: flex; align-items: center; gap: 6px;"><span style="font-size: 11px; color: var(--mp-text-secondary); font-family: var(--mp-font-family-base);">${getTranslation("ln")}</span><div class="mp-switch"><input type="checkbox" id="mp_setting_preview_normal" /><label for="mp_setting_preview_normal">Toggle</label></div></div><div style="display: flex; align-items: center; gap: 6px;"><span style="font-size: 11px; color: var(--mp-text-secondary); font-family: var(--mp-font-family-base);">${getTranslation("le")}</span><div class="mp-switch"><input type="checkbox" id="mp_setting_preview_expand" /><label for="mp_setting_preview_expand">Toggle</label></div></div></div></div><div class="mp-settings-switch-container" style="margin-bottom: 8px;"><span id="mp-smart-predict-lbl"> ${getTranslation("smartPredict")} </span><div class="mp-switch"><input type="checkbox" id="mp_setting_prediction" /><label for="mp_setting_prediction">Toggle</label></div></div><div class="mp-settings-switch-container" style="margin-bottom: 8px;"><span id="mp-nav-lbl"> ${getTranslation("navConfig")} </span><div class="mp-switch"><input type="checkbox" id="mp_setting_nav" ${currentNavConfig.enabled ? "checked" : ""} /><label for="mp_setting_nav">Toggle</label></div></div><div class="mp-settings-switch-container"><span id="mp-syntax-lbl"> ${getTranslation("syntaxHighlight")} </span><div style="display: flex; align-items: center; gap: 8px;"><div class="mp-switch"><span id="mp-syntax-info-icon" style="cursor: help !important;" class="mp-help-icon">${ICONS.info}</span><input type="checkbox" id="mp_setting_syntax" /><label for="mp_setting_syntax">Toggle</label></div></div></div></div><div class="mp-form-group"><label class="mp-label mp-label-row" style="display: flex; justify-content: space-between; align-items: center;"> ${getTranslation("aiEnhanceSettings")} <span id="mp-AI-info-icon" class="mp-help-icon">${ICONS.info}</span></label><input type="text" id="mp_ai_api_key_input" class="form-input hide-api-key" placeholder="${getTranslation("aiKeyPlaceholder")}"><select id="mp_ai_model_select" class="form-input"><optgroup label="Google Gemini"><option value="gemini-3.5-flash" ${"gemini-3.5-flash" === currentAIConfig.model ? "selected" : ""}>Gemini 3.5 Flash</option><option value="gemini-3.1-pro-preview" ${"gemini-3.1-pro-preview" === currentAIConfig.model ? "selected" : ""}>Gemini 3.1 Pro Preview</option><option value="gemini-3.1-flash-lite" ${"gemini-3.1-flash-lite" === currentAIConfig.model ? "selected" : ""}>Gemini 3.1 Flash Lite</option><option value="gemini-3-flash-preview" ${"gemini-3-flash-preview" === currentAIConfig.model ? "selected" : ""}>Gemini 3 Flash Preview</option><option value="gemini-2.5-pro" ${"gemini-2.5-pro" === currentAIConfig.model ? "selected" : ""}>Gemini 2.5 Pro</option><option value="gemini-2.5-flash-lite" ${"gemini-2.5-flash-lite" === currentAIConfig.model ? "selected" : ""}>Gemini 2.5 Flash Lite</option><option value="gemini-pro-latest" ${"gemini-pro-latest" === currentAIConfig.model ? "selected" : ""}>Gemini Pro Latest</option><option value="gemini-flash-latest" ${"gemini-flash-latest" === currentAIConfig.model ? "selected" : ""}>Gemini Flash Latest</option><option value="gemini-flash-lite-latest" ${"gemini-flash-lite-latest" === currentAIConfig.model ? "selected" : ""}>Gemini Flash-Lite Latest</option><option value="gemma-4-26b-a4b-it" ${"gemma-4-26b-a4b-it" === currentAIConfig.model ? "selected" : ""}>Gemma 4 26B A4B IT</option><option value="gemma-4-31b-it" ${"gemma-4-31b-it" === currentAIConfig.model ? "selected" : ""}>Gemma 4 31B IT</option></optgroup><optgroup label="LongCat"><option value="LongCat-2.0-Preview" ${"LongCat-2.0-Preview" === currentAIConfig.model ? "selected" : ""}>LongCat 2.0 Preview</option><option value="LongCat-Flash-Thinking-2601" ${"LongCat-Flash-Thinking-2601" === currentAIConfig.model ? "selected" : ""}>LongCat Flash Thinking 2601</option><option value="LongCat-Flash-Chat" ${"LongCat-Flash-Chat" === currentAIConfig.model ? "selected" : ""}>LongCat Flash Chat</option><option value="LongCat-Flash-Lite" ${"LongCat-Flash-Lite" === currentAIConfig.model ? "selected" : ""}>LongCat Flash Lite</option></optgroup><optgroup label="Groq"><option value="openai/gpt-oss-120b" ${"openai/gpt-oss-120b" === currentAIConfig.model ? "selected" : ""}>GPT-OSS 120B</option><option value="openai/gpt-oss-20b" ${"openai/gpt-oss-20b" === currentAIConfig.model ? "selected" : ""}>GPT-OSS 20B</option><option value="openai/gpt-oss-safeguard-20b" ${"openai/gpt-oss-safeguard-20b" === currentAIConfig.model ? "selected" : ""}>GPT-OSS Safeguard 20B</option><option value="groq/compound" ${"groq/compound" === currentAIConfig.model ? "selected" : ""}>Groq Compound</option><option value="groq/compound-mini" ${"groq/compound-mini" === currentAIConfig.model ? "selected" : ""}>Groq Compound Mini</option><option value="qwen/qwen3-32b" ${"qwen/qwen3-32b" === currentAIConfig.model ? "selected" : ""}>Qwen3 32B</option><option value="llama-3.3-70b-versatile" ${"llama-3.3-70b-versatile" === currentAIConfig.model ? "selected" : ""}>Llama 3.3 70B</option><option value="llama-3.1-8b-instant" ${"llama-3.1-8b-instant" === currentAIConfig.model ? "selected" : ""}>Llama 3.1 8B</option><option value="meta-llama/llama-4-scout-17b-16e-instruct" ${"meta-llama/llama-4-scout-17b-16e-instruct" === currentAIConfig.model ? "selected" : ""}>Llama 4 Scout 17b-16e Instruct</option><option value="meta-llama/llama-prompt-guard-2-22m" ${"meta-llama/llama-prompt-guard-2-22m" === currentAIConfig.model ? "selected" : ""}>Llama Prompt Guard 2 22m</option><option value="meta-llama/llama-prompt-guard-2-86m" ${"meta-llama/llama-prompt-guard-2-86m" === currentAIConfig.model ? "selected" : ""}>Llama Prompt Guard 2 86m</option></optgroup><optgroup label="Hugging Face"><option value="hf|zai-org/GLM-5.1:zai-org" ${"hf|zai-org/GLM-5.1:zai-org" === currentAIConfig.model ? "selected" : ""}>HF: GLM 5.1</option><option value="hf|zai-org/GLM-5:zai-org" ${"hf|zai-org/GLM-5:zai-org" === currentAIConfig.model ? "selected" : ""}>HF: GLM 5</option><option value="hf|zai-org/zai-org/GLM-4.7:zai-org" ${"hf|zai-org/zai-org/GLM-4.7:zai-org" === currentAIConfig.model ? "selected" : ""}>HF: GLM 4.7</option><option value="hf|zai-org/GLM-4.7-Flash:zai-org" ${"hf|zai-org/GLM-4.7-Flash:zai-org" === currentAIConfig.model ? "selected" : ""}>HF: GLM 4.7 Fast</option><option value="hf|google/gemma-4-31B-it" ${"hf|google/gemma-4-31B-it" === currentAIConfig.model ? "selected" : ""}>HF: Gemma 4 31B IT</option><option value="hf|google/gemma-4-26B-A4B-it" ${"hf|google/gemma-4-26B-A4B-it" === currentAIConfig.model ? "selected" : ""}>HF: Gemma 4 26B A4B IT</option><option value="hf|Qwen/Qwen3.5-397B-A17B" ${"hf|Qwen/Qwen3.5-397B-A17B" === currentAIConfig.model ? "selected" : ""}>HF: Qwen3.5 397B A17B</option><option value="hf|Qwen/Qwen3.5-122B-A10B" ${"hf|Qwen/Qwen3.5-122B-A10B" === currentAIConfig.model ? "selected" : ""}>HF: Qwen3.5 122B A10B</option><option value="hf|Qwen/Qwen3.5-35B-A3B" ${"hf|Qwen/Qwen3.5-35B-A3B" === currentAIConfig.model ? "selected" : ""}>HF: Qwen3.5 35B A3B</option><option value="hf|deepseek-ai/DeepSeek-V4-Flash" ${"hf|deepseek-ai/DeepSeek-V4-Flash" === currentAIConfig.model ? "selected" : ""}>HF: DeepSeek V4 Flash</option><option value="hf|deepseek-ai/DeepSeek-R1" ${"hf|deepseek-ai/DeepSeek-R1" === currentAIConfig.model ? "selected" : ""}>HF: DeepSeek R1 </option><option value="hf|deepseek-ai/DeepSeek-V3" ${"hf|deepseek-ai/DeepSeek-V3" === currentAIConfig.model ? "selected" : ""}>HF: DeepSeek V3</option><option value="hf|deepseek-ai/DeepSeek-V3-0324" ${"hf|deepseek-ai/DeepSeek-V3-0324" === currentAIConfig.model ? "selected" : ""}>HF: DeepSeek V3 0324</option><option value="hf|openai/gpt-oss-120b" ${"hf|openai/gpt-oss-120b" === currentAIConfig.model ? "selected" : ""}>HF: GPT OSS 120B</option><option value="hf|openai/gpt-oss-20b" ${"hf|openai/gpt-oss-20b" === currentAIConfig.model ? "selected" : ""}>HF: GPT OSS 20B</option><option value="hf|MiniMaxAI/MiniMax-M2.7" ${"hf|MiniMaxAI/MiniMax-M2.7" === currentAIConfig.model ? "selected" : ""}>HF: MiniMax M2.7</option><option value="hf|meta-llama/Llama-3.1-8B-Instruct" ${"hf|meta-llama/Llama-3.1-8B-Instruct" === currentAIConfig.model ? "selected" : ""}>HF: Llama 3.1 8B Instruct</option></optgroup><optgroup label="OpenRouter"><option value="openrouter|openrouter/free" ${"openrouter|openrouter/free" === currentAIConfig.model ? "selected" : ""}>Free Models Router</option><option value="openrouter|nvidia/nemotron-3-super-120b-a12b:free" ${"openrouter|nvidia/nemotron-3-super-120b-a12b:free" === currentAIConfig.model ? "selected" : ""}>NVIDIA: Nemotron 3 Super (free)</option><option value="openrouter|nvidia/nvidia/nemotron-3-nano-30b-a3b:free" ${"openrouter|nvidia/nvidia/nemotron-3-nano-30b-a3b:free" === currentAIConfig.model ? "selected" : ""}>NVIDIA: Nemotron 3 Nano 30B A3B (free)</option><option value="openrouter|nvidia/nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free" ${"openrouter|nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free" === currentAIConfig.model ? "selected" : ""}>NVIDIA: Nemotron 3 Nano Omni (free)</option><option value="openrouter|nvidia/nvidia/nemotron-nano-9b-v2:free" ${"openrouter|nvidia/nemotron-nano-9b-v2:free" === currentAIConfig.model ? "selected" : ""}>NVIDIA: Nemotron Nano 9B V2 (free)</option><option value="openrouter|nvidia/nvidia/nemotron-nano-12b-v2-vl:free" ${"openrouter|nvidia/nemotron-nano-12b-v2-vl:free" === currentAIConfig.model ? "selected" : ""}>NVIDIA: Nemotron Nano 12B 2 VL (free)</option><option value="openrouter|poolside/laguna-m.1:free" ${"openrouter|poolside/laguna-m.1:free" === currentAIConfig.model ? "selected" : ""}>Poolside: Laguna M.1 (free)</option><option value="openrouter|poolside/laguna-xs.2:free" ${"openrouter|poolside/laguna-xs.2:free" === currentAIConfig.model ? "selected" : ""}>Poolside: Laguna XS.2 (free)</option><option value="openrouter|openai/gpt-oss-120b:free" ${"openrouter|openai/gpt-oss-120b:free" === currentAIConfig.model ? "selected" : ""}>OpenAI: gpt-oss-120b (free)</option><option value="openrouter|openai/gpt-oss-20b:free" ${"openrouter|openai/gpt-oss-20b:free" === currentAIConfig.model ? "selected" : ""}>OpenAI: gpt-oss-20b (free)</option><option value="openrouter|z-ai/glm-4.5-air:free" ${"openrouter|z-ai/glm-4.5-air:free" === currentAIConfig.model ? "selected" : ""}>Z.ai: GLM 4.5 Air (free)</option><option value="openrouter|google/gemma-4-31b-it:free" ${"openrouter|google/gemma-4-31b-it:free" === currentAIConfig.model ? "selected" : ""}>Google: Gemma 4 31B (free)</option><option value="openrouter|google/gemma-4-26b-a4b-it:free" ${"openrouter|google/gemma-4-26b-a4b-it:free" === currentAIConfig.model ? "selected" : ""}>Google: Gemma 4 26B A4B (free)</option><option value="openrouter|moonshotai/kimi-k2.6:free" ${"openrouter|moonshotai/kimi-k2.6:free" === currentAIConfig.model ? "selected" : ""}>MoonshotAI: Kimi K2.6 (free)</option><option value="openrouter|liquid/lfm-2.5-1.2b-thinking:free" ${"openrouter|liquid/lfm-2.5-1.2b-thinking:free" === currentAIConfig.model ? "selected" : ""}>LiquidAI: LFM2.5-1.2B-Thinking (free)</option><option value="openrouter|liquid/lfm-2.5-1.2b-instruct:free" ${"openrouter|liquid/lfm-2.5-1.2b-instruct:free" === currentAIConfig.model ? "selected" : ""}>LiquidAI: LFM2.5-1.2B-Instruct (free)</option><option value="openrouter|qwen/qwen3-next-80b-a3b-instruct:free" ${"openrouter|qwen/qwen3-next-80b-a3b-instruct:free" === currentAIConfig.model ? "selected" : ""}>Qwen: Qwen3 Next 80B A3B Instruct (free)</option><option value="openrouter|qwen/qwen3-coder:free" ${"openrouter|qwen/qwen3-coder:free" === currentAIConfig.model ? "selected" : ""}>Qwen: Qwen3 Coder 480B A35B (free)</option><option value="openrouter|meta-llama/llama-3.3-70b-instruct:free" ${"openrouter|meta-llama/llama-3.3-70b-instruct:free" === currentAIConfig.model ? "selected" : ""}>Meta: Llama 3.3 70B Instruct (free)</option><option value="openrouter|meta-llama/llama-3.2-3b-instruct:free" ${"openrouter|meta-llama/llama-3.2-3b-instruct:free" === currentAIConfig.model ? "selected" : ""}>Meta: Llama 3.2 3B Instruct (free)</option><option value="openrouter|cognitivecomputations/dolphin-mistral-24b-venice-edition:free" ${"openrouter|cognitivecomputations/dolphin-mistral-24b-venice-edition:free" === currentAIConfig.model ? "selected" : ""}>Venice: Uncensored (free)</option><option value="openrouter|nousresearch/hermes-3-llama-3.1-405b:free" ${"openrouter|nousresearch/hermes-3-llama-3.1-405b:free" === currentAIConfig.model ? "selected" : ""}>Nous: Hermes 3 405B Instruct (free)</option><option value="openrouter|google/gemini-3.5-flash" ${"openrouter|google/gemini-3.5-flash" === currentAIConfig.model ? "selected" : ""}>Google: Gemini 3.5 Flash</option><option value="openrouter|google/gemini-3.1-flash-lite" ${"openrouter|google/gemini-3.1-flash-lite" === currentAIConfig.model ? "selected" : ""}>Google: Gemini 3.1 Flash Lite</option><option value="openrouter|google/gemini-3.1-pro-preview" ${"openrouter|google/gemini-3.1-pro-preview" === currentAIConfig.model ? "selected" : ""}>Google: Gemini 3.1 Pro Preview</option><option value="openrouter|openai/gpt-chat-latest" ${"openrouter|openai/gpt-chat-latest" === currentAIConfig.model ? "selected" : ""}>OpenAI: GPT Chat Latest</option><option value="openrouter|openai/gpt-5.5-pro" ${"openrouter|openai/gpt-5.5-pro" === currentAIConfig.model ? "selected" : ""}>OpenAI: GPT-5.5 Pro</option><option value="openrouter|openai/gpt-5.5" ${"openrouter|openai/gpt-5.5" === currentAIConfig.model ? "selected" : ""}>OpenAI: GPT-5.5</option><option value="openrouter|anthropic/claude-opus-4.8-fast" ${"openrouter|anthropic/claude-opus-4.8-fast" === currentAIConfig.model ? "selected" : ""}>Anthropic: Claude Opus 4.8 (Fast)</option><option value="openrouter|anthropic/claude-opus-4.8" ${"openrouter|anthropic/claude-opus-4.8" === currentAIConfig.model ? "selected" : ""}>Anthropic: Claude Opus 4.8</option><option value="openrouter|anthropic/claude-opus-4.7" ${"openrouter|anthropic/claude-opus-4.7" === currentAIConfig.model ? "selected" : ""}>Anthropic: Claude Opus 4.7</option><option value="openrouter|x-ai/grok-4.3" ${"openrouter|x-ai/grok-4.3" === currentAIConfig.model ? "selected" : ""}>xAI: Grok 4.3</option><option value="openrouter|deepseek/deepseek-v4-flash" ${"openrouter|deepseek/deepseek-v4-flash" === currentAIConfig.model ? "selected" : ""}>DeepSeek: DeepSeek V4 Flash</option><option value="openrouter|deepseek/deepseek-v4-pro" ${"openrouter|deepseek/deepseek-v4-pro" === currentAIConfig.model ? "selected" : ""}>DeepSeek: DeepSeek V4 Pro</option><option value="openrouter|qwen/qwen3.7-max" ${"openrouter|qwen/qwen3.7-max" === currentAIConfig.model ? "selected" : ""}>Qwen: Qwen3.7 Max</option></optgroup></select><textarea id="mp_ai_sys_prompt_input" class="form-input" placeholder="${getTranslation("aiSysPromptInput")}"></textarea></div><div class="mp-form-group" style="margin-bottom: 0px;"><label class="mp-label">${getTranslation("shortcutsSettings")}</label><div class="mp-shortcut-scroll-container" id="mp-shortcuts-list-container"></div></div><div class="mp-form-group" style="margin-bottom: 0px;"><label class="mp-label mp-label-row" style="display:flex;justify-content:space-between;align-items:center;">${getTranslation("gistSyncSettings")}<span id="mp-gist-info-icon" class="mp-help-icon">${ICONS.gist}</span></label><input type="text" id="mp_gist_pat_input" class="form-input hide-api-key" placeholder="${getTranslation("gistPatPlaceholder")}"><input type="text" id="mp_gist_id_input" class="form-input" placeholder="${getTranslation("gistIdPlaceholder")}"></div></div></div></div></div><div class="mp-settings-footer"><button class="save-button" id="mp-settings-save">${getTranslation("save")}</button></div></div> `;
+    const a = ` <div class="mp-settings-container"><div class="mp-tabs-header"><button class="mp-tab-btn active" data-tab="basic">${"Basic"}</button><button class="mp-tab-btn" data-tab="advanced">${"Advanced"}</button></div><div class="mp-scroll-wrapper" style="flex:1; overflow:hidden;"><div id="mp-settings-scroll-area" style="padding: 0 4px 12px 4px; overflow-y: auto;"><div class="mp-tab-content active" id="tab-basic" style="margin-bottom: 16px; margin-top: 16px;"><div class="mp-form-row"><div class="mp-form-group"><label class="mp-label">${"Backup"}</label><button id="mp-btn-open-backup" class="mp-action-btn-full"><span style="font-weight:600;">${"Export/Import"}</span><span class="mp-btn-icon">${ICONS.expImp}</span></button></div></div><div class="mp-form-group"><label class="mp-label">${"Color Mode"}</label><div class="mp-segmented-control"><div class="mp-segment-opt" data-val="auto">${ICONS.monitor} <span>${"Auto"}</span></div><div class="mp-segment-opt" data-val="light">${ICONS.sol} <span>${"Light"}</span></div><div class="mp-segment-opt" data-val="dark">${ICONS.lua} <span>${"Dark"}</span></div></div></div><div class="mp-form-group style=" style="margin-bottom: 0px;"><label class="mp-label">${"Theme"}</label><div class="mp-theme-scroll-container" id="mp-theme-list-container"></div></div></div><div class="mp-tab-content" id="tab-advanced" style="margin-bottom: 16px; margin-top: 16px;"><div class="mp-form-group"><label class="mp-label">${"Advanced Options"}</label><div class="mp-settings-switch-container" style="margin-bottom: 8px;"><span id="mp-preview-prompt-lbl">${"Prompt Preview"}</span><div style="display: flex; gap: 12px; align-items: center;"><div style="display: flex; align-items: center; gap: 6px;"><span style="font-size: 11px; color: var(--mp-text-secondary); font-family: var(--mp-font-family-base);">${"Normal List"}</span><div class="mp-switch"><input type="checkbox" id="mp_setting_preview_normal" /><label for="mp_setting_preview_normal">Toggle</label></div></div><div style="display: flex; align-items: center; gap: 6px;"><span style="font-size: 11px; color: var(--mp-text-secondary); font-family: var(--mp-font-family-base);">${"Expanded List"}</span><div class="mp-switch"><input type="checkbox" id="mp_setting_preview_expand" /><label for="mp_setting_preview_expand">Toggle</label></div></div></div></div><div class="mp-settings-switch-container" style="margin-bottom: 8px;"><span id="mp-smart-predict-lbl"> ${"Smart Predict"} </span><div class="mp-switch"><input type="checkbox" id="mp_setting_prediction" /><label for="mp_setting_prediction">Toggle</label></div></div><div class="mp-settings-switch-container" style="margin-bottom: 8px;"><span id="mp-nav-lbl"> ${"Quick Navigation"} </span><div class="mp-switch"><input type="checkbox" id="mp_setting_nav" ${currentNavConfig.enabled ? "checked" : ""} /><label for="mp_setting_nav">Toggle</label></div></div><div class="mp-settings-switch-container"><span id="mp-syntax-lbl"> ${"Syntax Highlighting"} </span><div style="display: flex; align-items: center; gap: 8px;"><div class="mp-switch"><span id="mp-syntax-info-icon" style="cursor: help !important;" class="mp-help-icon">${ICONS.info}</span><input type="checkbox" id="mp_setting_syntax" /><label for="mp_setting_syntax">Toggle</label></div></div></div></div><div class="mp-form-group"><label class="mp-label mp-label-row" style="display: flex; justify-content: space-between; align-items: center;"> ${"\"Enhance Prompt\" Settings"} <span id="mp-AI-info-icon" class="mp-help-icon">${ICONS.info}</span></label><input type="text" id="mp_ai_api_key_input" class="form-input hide-api-key" placeholder="${"Paste your API Key"}"><select id="mp_ai_model_select" class="form-input"><optgroup label="Google Gemini"><option value="gemini-3.5-flash" ${"gemini-3.5-flash" === currentAIConfig.model ? "selected" : ""}>Gemini 3.5 Flash</option><option value="gemini-3.1-pro-preview" ${"gemini-3.1-pro-preview" === currentAIConfig.model ? "selected" : ""}>Gemini 3.1 Pro Preview</option><option value="gemini-3.1-flash-lite" ${"gemini-3.1-flash-lite" === currentAIConfig.model ? "selected" : ""}>Gemini 3.1 Flash Lite</option><option value="gemini-3-flash-preview" ${"gemini-3-flash-preview" === currentAIConfig.model ? "selected" : ""}>Gemini 3 Flash Preview</option><option value="gemini-2.5-pro" ${"gemini-2.5-pro" === currentAIConfig.model ? "selected" : ""}>Gemini 2.5 Pro</option><option value="gemini-2.5-flash-lite" ${"gemini-2.5-flash-lite" === currentAIConfig.model ? "selected" : ""}>Gemini 2.5 Flash Lite</option><option value="gemini-pro-latest" ${"gemini-pro-latest" === currentAIConfig.model ? "selected" : ""}>Gemini Pro Latest</option><option value="gemini-flash-latest" ${"gemini-flash-latest" === currentAIConfig.model ? "selected" : ""}>Gemini Flash Latest</option><option value="gemini-flash-lite-latest" ${"gemini-flash-lite-latest" === currentAIConfig.model ? "selected" : ""}>Gemini Flash-Lite Latest</option><option value="gemma-4-26b-a4b-it" ${"gemma-4-26b-a4b-it" === currentAIConfig.model ? "selected" : ""}>Gemma 4 26B A4B IT</option><option value="gemma-4-31b-it" ${"gemma-4-31b-it" === currentAIConfig.model ? "selected" : ""}>Gemma 4 31B IT</option></optgroup><optgroup label="LongCat"><option value="LongCat-2.0-Preview" ${"LongCat-2.0-Preview" === currentAIConfig.model ? "selected" : ""}>LongCat 2.0 Preview</option><option value="LongCat-Flash-Thinking-2601" ${"LongCat-Flash-Thinking-2601" === currentAIConfig.model ? "selected" : ""}>LongCat Flash Thinking 2601</option><option value="LongCat-Flash-Chat" ${"LongCat-Flash-Chat" === currentAIConfig.model ? "selected" : ""}>LongCat Flash Chat</option><option value="LongCat-Flash-Lite" ${"LongCat-Flash-Lite" === currentAIConfig.model ? "selected" : ""}>LongCat Flash Lite</option></optgroup><optgroup label="Groq"><option value="openai/gpt-oss-120b" ${"openai/gpt-oss-120b" === currentAIConfig.model ? "selected" : ""}>GPT-OSS 120B</option><option value="openai/gpt-oss-20b" ${"openai/gpt-oss-20b" === currentAIConfig.model ? "selected" : ""}>GPT-OSS 20B</option><option value="openai/gpt-oss-safeguard-20b" ${"openai/gpt-oss-safeguard-20b" === currentAIConfig.model ? "selected" : ""}>GPT-OSS Safeguard 20B</option><option value="groq/compound" ${"groq/compound" === currentAIConfig.model ? "selected" : ""}>Groq Compound</option><option value="groq/compound-mini" ${"groq/compound-mini" === currentAIConfig.model ? "selected" : ""}>Groq Compound Mini</option><option value="qwen/qwen3-32b" ${"qwen/qwen3-32b" === currentAIConfig.model ? "selected" : ""}>Qwen3 32B</option><option value="llama-3.3-70b-versatile" ${"llama-3.3-70b-versatile" === currentAIConfig.model ? "selected" : ""}>Llama 3.3 70B</option><option value="llama-3.1-8b-instant" ${"llama-3.1-8b-instant" === currentAIConfig.model ? "selected" : ""}>Llama 3.1 8B</option><option value="meta-llama/llama-4-scout-17b-16e-instruct" ${"meta-llama/llama-4-scout-17b-16e-instruct" === currentAIConfig.model ? "selected" : ""}>Llama 4 Scout 17b-16e Instruct</option><option value="meta-llama/llama-prompt-guard-2-22m" ${"meta-llama/llama-prompt-guard-2-22m" === currentAIConfig.model ? "selected" : ""}>Llama Prompt Guard 2 22m</option><option value="meta-llama/llama-prompt-guard-2-86m" ${"meta-llama/llama-prompt-guard-2-86m" === currentAIConfig.model ? "selected" : ""}>Llama Prompt Guard 2 86m</option></optgroup><optgroup label="Hugging Face"><option value="hf|zai-org/GLM-5.1:zai-org" ${"hf|zai-org/GLM-5.1:zai-org" === currentAIConfig.model ? "selected" : ""}>HF: GLM 5.1</option><option value="hf|zai-org/GLM-5:zai-org" ${"hf|zai-org/GLM-5:zai-org" === currentAIConfig.model ? "selected" : ""}>HF: GLM 5</option><option value="hf|zai-org/zai-org/GLM-4.7:zai-org" ${"hf|zai-org/zai-org/GLM-4.7:zai-org" === currentAIConfig.model ? "selected" : ""}>HF: GLM 4.7</option><option value="hf|zai-org/GLM-4.7-Flash:zai-org" ${"hf|zai-org/GLM-4.7-Flash:zai-org" === currentAIConfig.model ? "selected" : ""}>HF: GLM 4.7 Fast</option><option value="hf|google/gemma-4-31B-it" ${"hf|google/gemma-4-31B-it" === currentAIConfig.model ? "selected" : ""}>HF: Gemma 4 31B IT</option><option value="hf|google/gemma-4-26B-A4B-it" ${"hf|google/gemma-4-26B-A4B-it" === currentAIConfig.model ? "selected" : ""}>HF: Gemma 4 26B A4B IT</option><option value="hf|Qwen/Qwen3.5-397B-A17B" ${"hf|Qwen/Qwen3.5-397B-A17B" === currentAIConfig.model ? "selected" : ""}>HF: Qwen3.5 397B A17B</option><option value="hf|Qwen/Qwen3.5-122B-A10B" ${"hf|Qwen/Qwen3.5-122B-A10B" === currentAIConfig.model ? "selected" : ""}>HF: Qwen3.5 122B A10B</option><option value="hf|Qwen/Qwen3.5-35B-A3B" ${"hf|Qwen/Qwen3.5-35B-A3B" === currentAIConfig.model ? "selected" : ""}>HF: Qwen3.5 35B A3B</option><option value="hf|deepseek-ai/DeepSeek-V4-Flash" ${"hf|deepseek-ai/DeepSeek-V4-Flash" === currentAIConfig.model ? "selected" : ""}>HF: DeepSeek V4 Flash</option><option value="hf|deepseek-ai/DeepSeek-R1" ${"hf|deepseek-ai/DeepSeek-R1" === currentAIConfig.model ? "selected" : ""}>HF: DeepSeek R1 </option><option value="hf|deepseek-ai/DeepSeek-V3" ${"hf|deepseek-ai/DeepSeek-V3" === currentAIConfig.model ? "selected" : ""}>HF: DeepSeek V3</option><option value="hf|deepseek-ai/DeepSeek-V3-0324" ${"hf|deepseek-ai/DeepSeek-V3-0324" === currentAIConfig.model ? "selected" : ""}>HF: DeepSeek V3 0324</option><option value="hf|openai/gpt-oss-120b" ${"hf|openai/gpt-oss-120b" === currentAIConfig.model ? "selected" : ""}>HF: GPT OSS 120B</option><option value="hf|openai/gpt-oss-20b" ${"hf|openai/gpt-oss-20b" === currentAIConfig.model ? "selected" : ""}>HF: GPT OSS 20B</option><option value="hf|MiniMaxAI/MiniMax-M2.7" ${"hf|MiniMaxAI/MiniMax-M2.7" === currentAIConfig.model ? "selected" : ""}>HF: MiniMax M2.7</option><option value="hf|meta-llama/Llama-3.1-8B-Instruct" ${"hf|meta-llama/Llama-3.1-8B-Instruct" === currentAIConfig.model ? "selected" : ""}>HF: Llama 3.1 8B Instruct</option></optgroup><optgroup label="OpenRouter"><option value="openrouter|openrouter/free" ${"openrouter|openrouter/free" === currentAIConfig.model ? "selected" : ""}>Free Models Router</option><option value="openrouter|nvidia/nemotron-3-super-120b-a12b:free" ${"openrouter|nvidia/nemotron-3-super-120b-a12b:free" === currentAIConfig.model ? "selected" : ""}>NVIDIA: Nemotron 3 Super (free)</option><option value="openrouter|nvidia/nvidia/nemotron-3-nano-30b-a3b:free" ${"openrouter|nvidia/nvidia/nemotron-3-nano-30b-a3b:free" === currentAIConfig.model ? "selected" : ""}>NVIDIA: Nemotron 3 Nano 30B A3B (free)</option><option value="openrouter|nvidia/nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free" ${"openrouter|nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free" === currentAIConfig.model ? "selected" : ""}>NVIDIA: Nemotron 3 Nano Omni (free)</option><option value="openrouter|nvidia/nvidia/nemotron-nano-9b-v2:free" ${"openrouter|nvidia/nemotron-nano-9b-v2:free" === currentAIConfig.model ? "selected" : ""}>NVIDIA: Nemotron Nano 9B V2 (free)</option><option value="openrouter|nvidia/nvidia/nemotron-nano-12b-v2-vl:free" ${"openrouter|nvidia/nemotron-nano-12b-v2-vl:free" === currentAIConfig.model ? "selected" : ""}>NVIDIA: Nemotron Nano 12B 2 VL (free)</option><option value="openrouter|poolside/laguna-m.1:free" ${"openrouter|poolside/laguna-m.1:free" === currentAIConfig.model ? "selected" : ""}>Poolside: Laguna M.1 (free)</option><option value="openrouter|poolside/laguna-xs.2:free" ${"openrouter|poolside/laguna-xs.2:free" === currentAIConfig.model ? "selected" : ""}>Poolside: Laguna XS.2 (free)</option><option value="openrouter|openai/gpt-oss-120b:free" ${"openrouter|openai/gpt-oss-120b:free" === currentAIConfig.model ? "selected" : ""}>OpenAI: gpt-oss-120b (free)</option><option value="openrouter|openai/gpt-oss-20b:free" ${"openrouter|openai/gpt-oss-20b:free" === currentAIConfig.model ? "selected" : ""}>OpenAI: gpt-oss-20b (free)</option><option value="openrouter|z-ai/glm-4.5-air:free" ${"openrouter|z-ai/glm-4.5-air:free" === currentAIConfig.model ? "selected" : ""}>Z.ai: GLM 4.5 Air (free)</option><option value="openrouter|google/gemma-4-31b-it:free" ${"openrouter|google/gemma-4-31b-it:free" === currentAIConfig.model ? "selected" : ""}>Google: Gemma 4 31B (free)</option><option value="openrouter|google/gemma-4-26b-a4b-it:free" ${"openrouter|google/gemma-4-26b-a4b-it:free" === currentAIConfig.model ? "selected" : ""}>Google: Gemma 4 26B A4B (free)</option><option value="openrouter|moonshotai/kimi-k2.6:free" ${"openrouter|moonshotai/kimi-k2.6:free" === currentAIConfig.model ? "selected" : ""}>MoonshotAI: Kimi K2.6 (free)</option><option value="openrouter|liquid/lfm-2.5-1.2b-thinking:free" ${"openrouter|liquid/lfm-2.5-1.2b-thinking:free" === currentAIConfig.model ? "selected" : ""}>LiquidAI: LFM2.5-1.2B-Thinking (free)</option><option value="openrouter|liquid/lfm-2.5-1.2b-instruct:free" ${"openrouter|liquid/lfm-2.5-1.2b-instruct:free" === currentAIConfig.model ? "selected" : ""}>LiquidAI: LFM2.5-1.2B-Instruct (free)</option><option value="openrouter|qwen/qwen3-next-80b-a3b-instruct:free" ${"openrouter|qwen/qwen3-next-80b-a3b-instruct:free" === currentAIConfig.model ? "selected" : ""}>Qwen: Qwen3 Next 80B A3B Instruct (free)</option><option value="openrouter|qwen/qwen3-coder:free" ${"openrouter|qwen/qwen3-coder:free" === currentAIConfig.model ? "selected" : ""}>Qwen: Qwen3 Coder 480B A35B (free)</option><option value="openrouter|meta-llama/llama-3.3-70b-instruct:free" ${"openrouter|meta-llama/llama-3.3-70b-instruct:free" === currentAIConfig.model ? "selected" : ""}>Meta: Llama 3.3 70B Instruct (free)</option><option value="openrouter|meta-llama/llama-3.2-3b-instruct:free" ${"openrouter|meta-llama/llama-3.2-3b-instruct:free" === currentAIConfig.model ? "selected" : ""}>Meta: Llama 3.2 3B Instruct (free)</option><option value="openrouter|cognitivecomputations/dolphin-mistral-24b-venice-edition:free" ${"openrouter|cognitivecomputations/dolphin-mistral-24b-venice-edition:free" === currentAIConfig.model ? "selected" : ""}>Venice: Uncensored (free)</option><option value="openrouter|nousresearch/hermes-3-llama-3.1-405b:free" ${"openrouter|nousresearch/hermes-3-llama-3.1-405b:free" === currentAIConfig.model ? "selected" : ""}>Nous: Hermes 3 405B Instruct (free)</option><option value="openrouter|google/gemini-3.5-flash" ${"openrouter|google/gemini-3.5-flash" === currentAIConfig.model ? "selected" : ""}>Google: Gemini 3.5 Flash</option><option value="openrouter|google/gemini-3.1-flash-lite" ${"openrouter|google/gemini-3.1-flash-lite" === currentAIConfig.model ? "selected" : ""}>Google: Gemini 3.1 Flash Lite</option><option value="openrouter|google/gemini-3.1-pro-preview" ${"openrouter|google/gemini-3.1-pro-preview" === currentAIConfig.model ? "selected" : ""}>Google: Gemini 3.1 Pro Preview</option><option value="openrouter|openai/gpt-chat-latest" ${"openrouter|openai/gpt-chat-latest" === currentAIConfig.model ? "selected" : ""}>OpenAI: GPT Chat Latest</option><option value="openrouter|openai/gpt-5.5-pro" ${"openrouter|openai/gpt-5.5-pro" === currentAIConfig.model ? "selected" : ""}>OpenAI: GPT-5.5 Pro</option><option value="openrouter|openai/gpt-5.5" ${"openrouter|openai/gpt-5.5" === currentAIConfig.model ? "selected" : ""}>OpenAI: GPT-5.5</option><option value="openrouter|anthropic/claude-opus-4.8-fast" ${"openrouter|anthropic/claude-opus-4.8-fast" === currentAIConfig.model ? "selected" : ""}>Anthropic: Claude Opus 4.8 (Fast)</option><option value="openrouter|anthropic/claude-opus-4.8" ${"openrouter|anthropic/claude-opus-4.8" === currentAIConfig.model ? "selected" : ""}>Anthropic: Claude Opus 4.8</option><option value="openrouter|anthropic/claude-opus-4.7" ${"openrouter|anthropic/claude-opus-4.7" === currentAIConfig.model ? "selected" : ""}>Anthropic: Claude Opus 4.7</option><option value="openrouter|x-ai/grok-4.3" ${"openrouter|x-ai/grok-4.3" === currentAIConfig.model ? "selected" : ""}>xAI: Grok 4.3</option><option value="openrouter|deepseek/deepseek-v4-flash" ${"openrouter|deepseek/deepseek-v4-flash" === currentAIConfig.model ? "selected" : ""}>DeepSeek: DeepSeek V4 Flash</option><option value="openrouter|deepseek/deepseek-v4-pro" ${"openrouter|deepseek/deepseek-v4-pro" === currentAIConfig.model ? "selected" : ""}>DeepSeek: DeepSeek V4 Pro</option><option value="openrouter|qwen/qwen3.7-max" ${"openrouter|qwen/qwen3.7-max" === currentAIConfig.model ? "selected" : ""}>Qwen: Qwen3.7 Max</option></optgroup></select><textarea id="mp_ai_sys_prompt_input" class="form-input" placeholder="${"Custom System Prompt (Optional)"}"></textarea></div><div class="mp-form-group" style="margin-bottom: 0px;"><label class="mp-label">${"Keyboard Shortcuts"}</label><div class="mp-shortcut-scroll-container" id="mp-shortcuts-list-container"></div></div><div class="mp-form-group" style="margin-bottom: 0px;"><label class="mp-label mp-label-row" style="display:flex;justify-content:space-between;align-items:center;">${"Gist Sync"}<span id="mp-gist-info-icon" class="mp-help-icon">${ICONS.gist}</span></label><input type="text" id="mp_gist_pat_input" class="form-input hide-api-key" placeholder="${"GitHub Personal Access Token (PAT)"}"><input type="text" id="mp_gist_id_input" class="form-input" placeholder="${"Gist ID (auto-filled after first sync)"}"></div></div></div></div></div><div class="mp-settings-footer"><button class="save-button" id="mp-settings-save">${"Save"}</button></div></div> `;
     (setSafeInnerHTML(n, a), t.appendChild(n));
     const o = n.querySelector("#mp-theme-list-container"),
       r = document.createElement("input");
@@ -2222,14 +1869,11 @@
       setSafeInnerHTML(o, "");
       const t = document.createElement("div");
       t.className = "mp-theme-action-row";
-      // v27.0.8: the theme-shop split-button (cart icon with the "Get more
-      // Themes" tooltip linking to the Patreon/Ko-fi storefronts) was
-      // removed; only the local "+ add theme" button remains in the row.
       const a = document.createElement("div");
       ((a.className = "mp-theme-split-btn"),
         setSafeInnerHTML(a, ICONS.plus),
         (a.onclick = () => r.click()),
-        createCustomTooltip(a, getTranslation("addTheme"), "bottom"),
+        createCustomTooltip(a, "Add Theme", "bottom"),
         t.appendChild(a),
         o.appendChild(t));
       const i = (t, n, a) => {
@@ -2239,7 +1883,7 @@
         const i = a
           ? `${n.name}`
           : "default" === n.name
-            ? getTranslation("default")
+            ? "Default"
             : n.name;
         ((r.textContent = i),
           (r.onclick = () => {
@@ -2252,7 +1896,7 @@
                 layout: "column",
                 actions: [
                   {
-                    label: getTranslation("delete"),
+                    label: "Delete",
                     action: () => {
                       deleteImportedTheme(t, () => {
                         (e.themeId === t && (e.themeId = "default"), s());
@@ -2260,7 +1904,7 @@
                     },
                   },
                   {
-                    label: getTranslation("backupRestore"),
+                    label: "Backup",
                     action: () =>
                       ((e, t) => {
                         const n = { [e]: t },
@@ -2299,7 +1943,7 @@
     i && i.classList.add("mp-theme-wrapper-fixed");
     const l = n.querySelector("#mp-shortcuts-list-container"),
       c = l.parentElement.querySelector(".mp-label");
-    c && (c.textContent = getTranslation("shortcutsSettings"));
+    c && (c.textContent = "Keyboard Shortcuts");
     const d = () => {
       setSafeInnerHTML(l, "");
       const e = document.createElement("div");
@@ -2319,7 +1963,7 @@
           (e.style.borderColor = "var(--mp-border-primary)")),
         (e.onclick = async () => {
           const e = await createDialogo({
-            message: getTranslation("restore") + "?",
+            message: "Restore Default" + "?",
             type: "confirm",
             dontShowAgainId: "restore-shortcuts",
           });
@@ -2327,9 +1971,9 @@
             ((currentShortcuts = JSON.parse(JSON.stringify(DEFAULT_SHORTCUTS))),
             d(),
             "function" == typeof showNotification &&
-              showNotification(getTranslation("restoreSuccess")));
+              showNotification("Restored Successfully!"));
         }),
-        createCustomTooltip(e, getTranslation("restore"), "right"),
+        createCustomTooltip(e, "Restore Default", "right"),
         l.appendChild(e),
         Object.keys(currentShortcuts).forEach((e) => {
           const t = currentShortcuts[e],
@@ -2339,10 +1983,10 @@
             createCustomTooltip(
               n,
               {
-                text: getTranslation(t.descKey),
+                text: t.desc,
                 actions: [
                   {
-                    label: getTranslation("restore"),
+                    label: "Restore Default",
                     icon: ICONS.restore,
                     action: () => {
                       ((currentShortcuts[e].keys = DEFAULT_SHORTCUTS[e].keys),
@@ -2356,7 +2000,7 @@
             (n.onclick = (t) => {
               t.stopPropagation();
               const a = n.textContent;
-              ((n.textContent = getTranslation("pressKeyToRecord")),
+              ((n.textContent = "Press a key..."),
                 n.classList.add("recording"),
                 l.querySelectorAll(".recording").forEach((e) => {
                   e !== n && e.classList.remove("recording");
@@ -2434,28 +2078,19 @@
           ((e.mode = t.getAttribute("data-val")), u(), applyTheme(e));
         };
       }),
-      (n.querySelector("#mp-btn-open-lang").onclick = () => {
-        (languageModal ||
-          ((languageModal = createLanguageModal()),
-          document.body.appendChild(languageModal)),
-          showModal(languageModal));
-      }),
       (n.querySelector("#mp-btn-open-backup").onclick = openBackupManager));
     const g = n.querySelector("#mp-smart-predict-lbl");
-    g && createCustomTooltip(g, getTranslation("smartPredictDesc"), "left");
+    g && createCustomTooltip(g, "Facilitates writing in Dynamic Prompt mode by completing syntax, closing symbols, and suggesting variables.", "left");
     const f = n.querySelector("#mp-preview-prompt-lbl");
-    f && createCustomTooltip(f, getTranslation("ppDesc"), "left");
+    f && createCustomTooltip(f, "Displays the prompt preview when hovering over it in the Normal and Expanded prompt list.", "left");
     const h = n.querySelector("#mp-syntax-lbl");
-    h && createCustomTooltip(h, getTranslation("syntaxHighlightDesc"), "left");
+    h && createCustomTooltip(h, "Enables or disables syntax highlighting in the prompt editor.", "left");
     const v = n.querySelector("#mp-syntax-info-icon");
     v &&
-      createCustomTooltip(v, getTranslation("syntaxHighlightWarning"), "right");
+      createCustomTooltip(v, "Requires page reload to apply changes.", "right");
     const y = n.querySelector("#mp-nav-lbl");
-    y && createCustomTooltip(y, getTranslation("navConfigDesc"), "left");
+    y && createCustomTooltip(y, "Locates and jumps to specific points in the conversation via message anchors.", "left");
     const b = n.querySelector("#mp-AI-info-icon");
-    // v27.0.8: the "Interactive Tutorial" action (a ko-fi.com redirect)
-    // was removed from this tooltip; the GitHub "Basic Guide" link remains
-    // as its single action.
     b &&
       createCustomTooltip(
         b,
@@ -2463,7 +2098,7 @@
           layout: "column",
           actions: [
             {
-              label: getTranslation("gb"),
+              label: "Basic Guide",
               action: () => {
                 window.open(
                   "https://github.com/0H4S/My-Prompt/blob/main/Guides/Enhance%20with%20AI.md",
@@ -2522,7 +2157,7 @@
     Q && (Q.value = currentGistConfig.gistId || "");
     const gistInfoIcon = n.querySelector("#mp-gist-info-icon");
     gistInfoIcon &&
-      createCustomTooltip(gistInfoIcon, getTranslation("gistSyncDesc"), "left");
+      createCustomTooltip(gistInfoIcon, "Sync your full backup to a private GitHub Gist. Create a PAT at github.com/settings/tokens with the 'gist' scope.", "left");
     return (
       S.addEventListener("change", M),
       w && S && ((E.value = currentAIConfig.systemPrompt || ""), M()),
@@ -2599,10 +2234,7 @@
       setupEnhancedScroll(n.querySelector("#mp-settings-scroll-area")),
       (t.resetToCurrent = () => {
         ((e = { ...currentThemeConfig }), s(), d(), u());
-        const t = n.querySelector("#mp-current-lang-display");
-        (t &&
-          (t.textContent = translations[currentLang]?.langName || currentLang),
-          p[0].click());
+        p[0].click();
       }),
       t
     );
@@ -2687,7 +2319,7 @@
         },
       )),
       (t = t.replace(/#file(?:\(([^)]+)\))?/gi, (e, t) => {
-        const n = t ? t.trim() : getTranslation("addCardTitle");
+        const n = t ? t.trim() : "Add Files";
         let a = null;
         for (const [e, t] of r.entries())
           if (t.title === n) {
@@ -2735,7 +2367,7 @@
             } else if (g[6]) {
               let e = g[7] ? p(g[7]) : null;
               ((c = {
-                label: getTranslation("otherOption"),
+                label: "Other",
                 value: "",
                 type: "other",
                 id: null,
@@ -2773,7 +2405,7 @@
             }
           return (
             a.set(s, {
-              title: getTranslation("select"),
+              title: "Select an option:",
               options: l,
               isInline: m,
               indent: t,
@@ -2847,17 +2479,17 @@
       (e.id = "__ap_placeholder_modal_overlay"));
     const t = document.createElement("div");
     ((t.className = "mp-modal-box"), (t.onclick = (e) => e.stopPropagation()));
-    const n = ` <button id="__ap_ph_expand_btn" class="mp-modal-expand-btn">${ICONS.expand}</button><button id="__ap_close_placeholder" class="mp-modal-close-btn" aria-label="${getTranslation("close")}">${ICONS.close}</button><h2 class="modal-title" id="__ap_placeholder_modal_title">${getTranslation("fillPlaceholders")}</h2><div id="__ap_placeholders_container"></div><div class="modal-footer"><button id="__ap_insert_prompt" class="save-button">${getTranslation("insert")}</button></div> `;
+    const n = ` <button id="__ap_ph_expand_btn" class="mp-modal-expand-btn">${ICONS.expand}</button><button id="__ap_close_placeholder" class="mp-modal-close-btn" aria-label="${"Close"}">${ICONS.close}</button><h2 class="modal-title" id="__ap_placeholder_modal_title">${"Fill in Information"}</h2><div id="__ap_placeholders_container"></div><div class="modal-footer"><button id="__ap_insert_prompt" class="save-button">${"Insert"}</button></div> `;
     (setSafeInnerHTML(t, n), e.appendChild(t));
     const a = t.querySelector("#__ap_placeholders_container");
     ((a.style.maxHeight = "450px"), setupEnhancedScroll(a));
     const o = t.querySelector("#__ap_ph_expand_btn");
     (createCustomTooltip(
       t.querySelector("#__ap_close_placeholder"),
-      getTranslation("close"),
+      "Close",
       "bottom",
     ),
-      createCustomTooltip(o, getTranslation("expand"), "bottom"));
+      createCustomTooltip(o, "Expand", "bottom"));
     let r = !1;
     return (
       (o.onclick = (e) => {
@@ -2865,7 +2497,7 @@
           (r = !r),
           t.classList.toggle("mp-expanded", r),
           setSafeInnerHTML(o, r ? ICONS.collapse : ICONS.expand));
-        const n = getTranslation(r ? "collapse" : "expand");
+        const n = r ? "Collapse" : "Expand";
         (createCustomTooltip(o, n, "bottom"),
           setTimeout(() => {
             a.updateScrollArrows && a.updateScrollArrows();
@@ -2897,7 +2529,7 @@
         "height: 100%; width: 100%; display: flex; flex-direction: column;"),
       setSafeInnerHTML(
         n,
-        ` <h2 class="modal-title" style="flex-shrink:0; margin-top: 10px;">${getTranslation("newPrompt")}</h2><div class="form-group" style="flex-shrink:0;"><div class="mp-label-wrapper"><label for="__ap_title" class="form-label" style="margin-bottom:0;">${getTranslation("title")}</label><div class="mp-modal-right-controls"><button id="__ap_color_btn_modal" class="mp-link-btn"><span class="icon">${ICONS.color}</span></button></div></div><input id="__ap_title" class="form-input" /></div><div class="form-group" style="height: 400px;"><div class="mp-label-wrapper"><label for="__ap_text" class="form-label" style="margin-bottom:0;">${getTranslation("prompt")}</label><div class="mp-modal-right-controls"><button id="__ap_link_btn_modal" class="mp-link-btn"><span class="icon">${ICONS.link}</span></button><button id="__ap_enhance_btn" class="mp-enhance-ai-btn"><span class="icon">${ICONS.magic}</span></button><button id="__ap_paste_btn_modal" class="mp-paste-btn">${ICONS.paste}</button></div></div><textarea id="__ap_text" class="form-textarea" spellcheck="false" style="height:100% !important; resize:none;"></textarea></div><div class="mp-accordions-row"><div class="mp-files-accordion" id="__ap_files_accordion"><div class="mp-accordion-header" id="__ap_files_header"><div style="display:flex;align-items:center;gap:8px;">${ICONS.folder}<span id="__ap_files_label">${getTranslation("attachmentsLabel")}</span></div> ${ICONS.chevron} </div><div class="mp-accordion-content" id="__ap_files_content"><div id="__ap_file_scroll_wrapper" class="mp-file-scroll-wrapper"><div id="__ap_file_grid" class="mp-file-grid"></div></div><input type="file" id="__ap_file_input" multiple style="display:none"></div></div><div class="mp-tags-accordion" id="__ap_tags_accordion"><div class="mp-accordion-header" id="__ap_tags_header"><div style="display:flex;align-items:center;gap:8px;">${ICONS.tag}<span id="__ap_tags_label">${getTranslation("tags")}</span></div> ${ICONS.chevron} </div><div class="mp-accordion-content" id="__ap_tags_content"><div id="__ap_tags_scroll_wrapper" class="mp-tags-scroll-wrapper"><div id="__ap_tags_grid" class="mp-tags-grid"></div></div><div class="mp-tags-accordion-footer"><button id="__ap_tags_manage" class="mp-tags-manage-btn">${ICONS.edit}<span>${getTranslation("manageTags")}</span></button></div></div></div></div><div class="mp-switch-container"><div class="mp-switch" style="flex:1;"><input type="checkbox" id="__ap_use_placeholders" /><label for="__ap_use_placeholders">Toggle</label><span class="switch-text" onclick="document.getElementById('__ap_use_placeholders').click()">${getTranslation("enablePlaceholders")}</span></div><div class="mp-switch" style="flex:1;"><input type="checkbox" id="__ap_auto_execute" /><label for="__ap_auto_execute">Toggle</label><span class="switch-text" onclick="document.getElementById('__ap_auto_execute').click()">${getTranslation("autoExecute")}</span></div><span id="shortcutInfo" style="cursor: help !important;" class="mp-help-icon">${ICONS.info}</span><div id="__ap_custom_shortcut_btn" class="mp-shortcut-option mp-prompt-shortcut" data-shortcut="">${getTranslation("shortcut")}</div></div><div class="modal-footer" style="flex-shrink:0; margin-top: auto;"><button id="__ap_save" class="save-button">${getTranslation("save")}</button></div> `,
+        ` <h2 class="modal-title" style="flex-shrink:0; margin-top: 10px;">${"New Prompt"}</h2><div class="form-group" style="flex-shrink:0;"><div class="mp-label-wrapper"><label for="__ap_title" class="form-label" style="margin-bottom:0;">${"Title"}</label><div class="mp-modal-right-controls"><button id="__ap_color_btn_modal" class="mp-link-btn"><span class="icon">${ICONS.color}</span></button></div></div><input id="__ap_title" class="form-input" /></div><div class="form-group" style="height: 400px;"><div class="mp-label-wrapper"><label for="__ap_text" class="form-label" style="margin-bottom:0;">${"Prompt"}</label><div class="mp-modal-right-controls"><button id="__ap_link_btn_modal" class="mp-link-btn"><span class="icon">${ICONS.link}</span></button><button id="__ap_enhance_btn" class="mp-enhance-ai-btn"><span class="icon">${ICONS.magic}</span></button><button id="__ap_paste_btn_modal" class="mp-paste-btn">${ICONS.paste}</button></div></div><textarea id="__ap_text" class="form-textarea" spellcheck="false" style="height:100% !important; resize:none;"></textarea></div><div class="mp-accordions-row"><div class="mp-files-accordion" id="__ap_files_accordion"><div class="mp-accordion-header" id="__ap_files_header"><div style="display:flex;align-items:center;gap:8px;">${ICONS.folder}<span id="__ap_files_label">${"Attachments"}</span></div> ${ICONS.chevron} </div><div class="mp-accordion-content" id="__ap_files_content"><div id="__ap_file_scroll_wrapper" class="mp-file-scroll-wrapper"><div id="__ap_file_grid" class="mp-file-grid"></div></div><input type="file" id="__ap_file_input" multiple style="display:none"></div></div><div class="mp-tags-accordion" id="__ap_tags_accordion"><div class="mp-accordion-header" id="__ap_tags_header"><div style="display:flex;align-items:center;gap:8px;">${ICONS.tag}<span id="__ap_tags_label">${"Tags"}</span></div> ${ICONS.chevron} </div><div class="mp-accordion-content" id="__ap_tags_content"><div id="__ap_tags_scroll_wrapper" class="mp-tags-scroll-wrapper"><div id="__ap_tags_grid" class="mp-tags-grid"></div></div><div class="mp-tags-accordion-footer"><button id="__ap_tags_manage" class="mp-tags-manage-btn">${ICONS.edit}<span>${"Manage Tags"}</span></button></div></div></div></div><div class="mp-switch-container"><div class="mp-switch" style="flex:1;"><input type="checkbox" id="__ap_use_placeholders" /><label for="__ap_use_placeholders">Toggle</label><span class="switch-text" onclick="document.getElementById('__ap_use_placeholders').click()">${"Dynamic Prompt"}</span></div><div class="mp-switch" style="flex:1;"><input type="checkbox" id="__ap_auto_execute" /><label for="__ap_auto_execute">Toggle</label><span class="switch-text" onclick="document.getElementById('__ap_auto_execute').click()">${"Auto Send"}</span></div><span id="shortcutInfo" style="cursor: help !important;" class="mp-help-icon">${ICONS.info}</span><div id="__ap_custom_shortcut_btn" class="mp-shortcut-option mp-prompt-shortcut" data-shortcut="">${"Shortcut"}</div></div><div class="modal-footer" style="flex-shrink:0; margin-top: auto;"><button id="__ap_save" class="save-button">${"Save"}</button></div> `,
       ),
       t.appendChild(n),
       e.appendChild(t));
@@ -2933,36 +2565,36 @@
               ? ((C.dataset.shortcut = e.shortcut),
                 (C.textContent = e.shortcut))
               : ((C.dataset.shortcut = ""),
-                (C.textContent = getTranslation("shortcut"))));
+                (C.textContent = "Shortcut")));
         } else
           (x.style.removeProperty("color"),
             (x.dataset.promptColor = ""),
             (C.dataset.shortcut = ""),
-            (C.textContent = getTranslation("shortcut")));
+            (C.textContent = "Shortcut"));
       }
     }).observe(e, {
       attributes: !0,
       attributeFilter: ["data-prompt-id", "class"],
     }),
-      createCustomTooltip(b, getTranslation("colorTitle"), "top"),
+      createCustomTooltip(b, "Customize Color", "top"),
       b.addEventListener("click", async (e) => {
         (e.preventDefault(), e.stopPropagation());
         const t = await createDialogo({
-          title: getTranslation("colorDialogTitle"),
-          message: getTranslation("colorDialogMessage"),
+          title: "Title Color",
+          message: "Choose what you want to do with the title color of this prompt.",
           actions: [
             {
-              label: getTranslation("changeColor"),
+              label: "Change Color",
               value: "change",
               style: "primary",
             },
             {
-              label: getTranslation("removeColor"),
+              label: "Remove Color",
               value: "remove",
               style: "danger",
             },
             {
-              label: getTranslation("cancel"),
+              label: "Cancel",
               value: "cancel",
               style: "secondary",
             },
@@ -2996,7 +2628,7 @@
         C.addEventListener("click", (e) => {
           e.stopPropagation();
           C.textContent;
-          ((C.textContent = getTranslation("pressKeyToRecord")),
+          ((C.textContent = "Press a key..."),
             C.classList.add("recording"));
           const t = (e) => {
               if (
@@ -3006,7 +2638,7 @@
               )
                 return (
                   (C.dataset.shortcut = ""),
-                  (C.textContent = getTranslation("shortcut")),
+                  (C.textContent = "Shortcut"),
                   void n()
                 );
               if (["Control", "Alt", "Shift", "Meta"].includes(e.key)) return;
@@ -3030,14 +2662,14 @@
               e.target !== C &&
                 (n(),
                 (C.textContent =
-                  C.dataset.shortcut || getTranslation("shortcut")));
+                  C.dataset.shortcut || "Shortcut"));
             };
           (document.addEventListener("keydown", t, !0),
             document.addEventListener("mousedown", a, !0));
         }));
     const T = t.querySelector("#shortcutInfo");
-    (T && createCustomTooltip(T, getTranslation("shortcutInfo"), "left"),
-      createCustomTooltip(y, getTranslation("sharedPromptConfig"), "top"),
+    (T && createCustomTooltip(T, "Backspace/Delete to clear the Shortcut", "left"),
+      createCustomTooltip(y, "External Prompt", "top"),
       y.addEventListener("click", (e) => {
         (e.preventDefault(),
           e.stopPropagation(),
@@ -3050,11 +2682,7 @@
             r.updateScrollArrows &&
             setTimeout(() => r.updateScrollArrows(), 50));
       }),
-      // v27.1.0: the accordion (renamed "Files" -> "Attachments") carries a
-      // utility tooltip so the feature's real behavior is discoverable:
-      // attached files are auto-attached to the AI input when the prompt is
-      // inserted (insertPrompt's DataTransfer path), not just previewed.
-      createCustomTooltip(o, getTranslation("attachmentsTooltip"), "bottom"),
+      createCustomTooltip(o, "Files attached here are automatically uploaded into the AI input box when this prompt is inserted.", "bottom"),
       d.addEventListener("click", (e) => {
         (e.stopPropagation(),
           c.classList.toggle("open"),
@@ -3072,8 +2700,8 @@
         if (
           ((u.textContent =
             0 === a
-              ? getTranslation("tags")
-              : getTranslation("tagsLabel")
+              ? "Tags"
+              : "Tags ({active}/{total})"
                   .replace("{active}", n)
                   .replace("{total}", a)),
           setSafeInnerHTML(m, ""),
@@ -3086,7 +2714,7 @@
           const t = document.createElement("div");
           return (
             (t.className = "mp-tags-empty-text"),
-            (t.textContent = getTranslation("noTags")),
+            (t.textContent = "Create new Tags"),
             m.appendChild(e),
             m.appendChild(t),
             void (p.onclick = (e) => {
@@ -3124,12 +2752,12 @@
         isShortcutPressed(e, "enhancePrompt") &&
           (e.preventDefault(), e.stopPropagation(), f.click());
       }),
-      createCustomTooltip(f, getTranslation("enhanceTooltip"), "top"),
+      createCustomTooltip(f, "Enhance Prompt", "top"),
       (f.onclick = () => {
         const e = h.value.trim();
         if (!e)
           return void showNotification(
-            getTranslation("noTextToEnhance"),
+            "Enter your prompt before trying to enhance it",
             "error",
           );
         triggerAIEnhancement(
@@ -3156,7 +2784,7 @@
           f,
         );
       }),
-      createCustomTooltip(v, getTranslation("paste"), "top"),
+      createCustomTooltip(v, "Paste", "top"),
       v.addEventListener("click", async (e) => {
         (e.preventDefault(), e.stopPropagation());
         try {
@@ -3172,12 +2800,6 @@
           }
         } catch (e) {}
       }));
-    // v27.1.0: the "shopping bag" header button (#__ap_shop_btn — tooltip
-    // "Get More Prompts", whose only action opened the Gist community prompt
-    // search) and the "circled i" help button (#__ap_info_btn) were removed
-    // on request, together with this wiring. The modal header now carries
-    // expand + close only; the "more prompts" up-sell funnel has no
-    // remaining touchpoint in this script.
     const w = t.querySelector("#__ap_close_prompt");
     async function S(e) {
       for (const n of e) {
@@ -3186,7 +2808,7 @@
           if (
             !1 ===
             (await createDialogo({
-              message: getTranslation("confirmLargeFile").replace(
+              message: "Large file ({fileSizeMB}MB). Continue anyway?".replace(
                 "{fileSizeMB}",
                 e,
               ),
@@ -3214,7 +2836,7 @@
           e.readAsDataURL(n));
       }
     }
-    (createCustomTooltip(w, getTranslation("close"), "bottom"),
+    (createCustomTooltip(w, "Close", "bottom"),
       (w.onclick = () => {
         (SyntaxHighlighter.detach(),
           e.classList.add("mp-hidden"),
@@ -3250,7 +2872,7 @@
           (e.forEach((e) => {
             currentActiveFileIds.has(e.id) && n++;
           }),
-          (l.textContent = getTranslation("filesCounter")
+          (l.textContent = "Files ({active}/{total})"
             .replace("{active}", n)
             .replace("{total}", e.length)),
           0 === e.length)
@@ -3261,11 +2883,11 @@
             setSafeInnerHTML(e, `${ICONS.cloudFile}`));
           const t = document.createElement("div");
           ((t.className = "mp-file-empty-text"),
-            (t.textContent = getTranslation("addCardTitle")));
+            (t.textContent = "Add Files"));
           const n = document.createElement("div");
           return (
             (n.className = "mp-file-empty-subtext"),
-            (n.textContent = getTranslation("addCards")),
+            (n.textContent = "click to select or drag to add"),
             i.appendChild(e),
             i.appendChild(t),
             i.appendChild(n),
@@ -3279,7 +2901,7 @@
           (r.onclick = null));
         const a = document.createElement("div");
         ((a.className = "mp-add-file-card"),
-          createCustomTooltip(a, getTranslation("addCardTitle"), "bottom"),
+          createCustomTooltip(a, "Add Files", "bottom"),
           setSafeInnerHTML(a, `${ICONS.plus}`),
           a.addEventListener("click", (e) => {
             (e.stopPropagation(), s.click());
@@ -3303,14 +2925,14 @@
               o.addEventListener("click", async (n) => {
                 n.stopPropagation();
                 (await createDialogo({
-                  message: getTranslation("confirmDeleteFile"),
+                  message: "Delete file from memory?",
                   type: "confirm",
                 })) &&
                   (await deleteGlobalFile(e.id),
                   currentActiveFileIds.delete(e.id),
                   t.renderGlobalFiles(),
                   "function" == typeof showNotification &&
-                    showNotification(getTranslation("deleteSuccess")));
+                    showNotification("Deleted Successfully!"));
               }));
             let r = "";
             ((r = e.type.startsWith("image/")
@@ -3334,17 +2956,17 @@
     const E = t.querySelector("#__ap_expand_btn");
     let M = !1;
     return (
-      createCustomTooltip(E, getTranslation("expand"), "bottom"),
+      createCustomTooltip(E, "Expand", "bottom"),
       (E.onclick = (e) => {
         (e.stopPropagation(),
           (M = !M),
           M
             ? (t.classList.add("mp-expanded"),
               setSafeInnerHTML(E, `${ICONS.collapse}`),
-              createCustomTooltip(E, getTranslation("collapse"), "bottom"))
+              createCustomTooltip(E, "Collapse", "bottom"))
             : (t.classList.remove("mp-expanded"),
               setSafeInnerHTML(E, `${ICONS.expand}`),
-              createCustomTooltip(E, getTranslation("expand"), "bottom")),
+              createCustomTooltip(E, "Expand", "bottom")),
           setTimeout(() => {
             h.updateScrollArrows && h.updateScrollArrows();
           }, 350));
@@ -3536,14 +3158,14 @@
           e = e
             .split(t.full)
             .join(
-              `<div style="display: flex; justify-content: center; width: 100%; margin: 8px 0;"><span style="color: var(--mp-text-secondary);">[${getTranslation("IMGnull")}${escapeHtmlText(t.alt)}]</span></div>`,
+              `<div style="display: flex; justify-content: center; width: 100%; margin: 8px 0;"><span style="color: var(--mp-text-secondary);">[${"Image Unavailable: "}${escapeHtmlText(t.alt)}]</span></div>`,
             );
         }
       else
         e = e
           .split(t.full)
           .join(
-            `<div style="display: flex; justify-content: center; width: 100%; margin: 8px 0;"><span style="color: red;">[${getTranslation("IMGblock")}${escapeHtmlText(n)}]</span></div>`,
+            `<div style="display: flex; justify-content: center; width: 100%; margin: 8px 0;"><span style="color: red;">[${"Image Blocked: "}${escapeHtmlText(n)}]</span></div>`,
           );
     }
     const s = e.split(/\r?\n/);
@@ -3614,10 +3236,10 @@
         onload: (e) => {
           e.status >= 200 && e.status < 300
             ? t(e.responseText)
-            : n(new Error(`${getTranslation("fetchError")}${e.status}`));
+            : n(new Error(`${"Failed to fetch metadata: "}${e.status}`));
         },
         onerror: () => {
-          n(new Error(getTranslation("fetchError")));
+          n(new Error("Failed to fetch metadata: "));
         },
       });
     });
@@ -3639,10 +3261,10 @@
         t = JSON.parse(n);
       }
     } catch (e) {
-      throw new Error(getTranslation("invalidMetadata"));
+      throw new Error("Invalid JSON. title, version, and prompt are required.");
     }
     if (!t.title || !t.version || !t.prompt)
-      throw new Error(getTranslation("invalidMetadata"));
+      throw new Error("Invalid JSON. title, version, and prompt are required.");
     t.title = escapeHtmlText(t.title.replace(/\n/g, "").substring(0, 50));
     const n = escapeHtmlText(
         (t.summary || "").replace(/\n/g, "").substring(0, 200),
@@ -3652,9 +3274,9 @@
       !isValidWhiteListUrl(t.prompt, ".txt") &&
       !isValidWhiteListUrl(t.prompt, ".md")
     )
-      throw new Error(getTranslation("invalidPromptUrl"));
+      throw new Error("Prompt URL must be .txt or .md from approved sources.");
     const o = await fetchWithGM(t.prompt).catch((e) => {
-      throw new Error(`${getTranslation("fetchPromptError")}${e.message}`);
+      throw new Error(`${"Failed to fetch prompt: "}${e.message}`);
     });
     let r = "";
     if (
@@ -3684,21 +3306,21 @@
       const s = document.createElement("div");
       s.className = "mp-modal-box";
       const i = !e || "0.0.0" === e.version,
-        l = a || getTranslation("updateAvailable");
+        l = a || "Update Available";
       let c = "";
       c = i
         ? `<span class="mp-shared-version-highlight">${t.version}</span>`
         : `${e.version} &rarr; <span class="mp-shared-version-highlight">${t.version}</span>`;
       let d = "";
       if (i)
-        d = ` <div class="mp-diff-column mp-diff-column-full"><div class="mp-diff-label">${getTranslation("prompt")}</div><div class="mp-diff-view">${t.promptText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div></div> `;
+        d = ` <div class="mp-diff-column mp-diff-column-full"><div class="mp-diff-label">${"Prompt"}</div><div class="mp-diff-view">${t.promptText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div></div> `;
       else {
         const n = getSideBySideDiff(e.text, t.promptText);
-        d = ` <div class="mp-diff-column"><div class="mp-diff-label">${getTranslation("currentVersion")}</div><div id="__ap_shared_diff_original" class="mp-diff-view">${n.left}</div></div><div class="mp-diff-column"><div class="mp-diff-label">${getTranslation("newVersion")}</div><div id="__ap_shared_diff_new" class="mp-diff-view">${n.right}</div></div> `;
+        d = ` <div class="mp-diff-column"><div class="mp-diff-label">${"Current Version"}</div><div id="__ap_shared_diff_original" class="mp-diff-view">${n.left}</div></div><div class="mp-diff-column"><div class="mp-diff-label">${"New Version"}</div><div id="__ap_shared_diff_new" class="mp-diff-view">${n.right}</div></div> `;
       }
       (setSafeInnerHTML(
         s,
-        ` <button id="__ap_diff_close" class="mp-modal-close-btn">${ICONS.close}</button><h2 class="modal-title">${l}</h2><div class="mp-shared-info"><div class="mp-shared-info-header"><div class="mp-shared-info-list"><div><strong class="mp-shared-info-label">${getTranslation("title")}:</strong> ${t.title}</div><div><strong class="mp-shared-info-label">${getTranslation("version")}:</strong> ${c}</div><div><strong class="mp-shared-info-label">${getTranslation("author")}:</strong> ${t.author || "N/A"}</div> ${t.summary ? `<div><strong class="mp-shared-info-label">${getTranslation("summary")}:</strong> ${t.summary}</div>` : ""} </div> ${n ? `<button id="__ap_toggle_changelog" class="save-button mp-shared-btn-secondary">${getTranslation("readme")}</button>` : ""} </div></div><div class="mp-diff-container"> ${d} </div><div class="mp-diff-actions"><button id="__ap_diff_cancel" class="save-button mp-shared-btn-cancel">${getTranslation("cancel")}</button><button id="__ap_diff_accept" class="save-button">${getTranslation(i ? "import" : "updateNow")}</button></div> `,
+        ` <button id="__ap_diff_close" class="mp-modal-close-btn">${ICONS.close}</button><h2 class="modal-title">${l}</h2><div class="mp-shared-info"><div class="mp-shared-info-header"><div class="mp-shared-info-list"><div><strong class="mp-shared-info-label">${"Title"}:</strong> ${t.title}</div><div><strong class="mp-shared-info-label">${"Version"}:</strong> ${c}</div><div><strong class="mp-shared-info-label">${"Author"}:</strong> ${t.author || "N/A"}</div> ${t.summary ? `<div><strong class="mp-shared-info-label">${"Summary"}:</strong> ${t.summary}</div>` : ""} </div> ${n ? `<button id="__ap_toggle_changelog" class="save-button mp-shared-btn-secondary">${"README"}</button>` : ""} </div></div><div class="mp-diff-container"> ${d} </div><div class="mp-diff-actions"><button id="__ap_diff_cancel" class="save-button mp-shared-btn-cancel">${"Cancel"}</button><button id="__ap_diff_accept" class="save-button">${i ? "Import Prompt" : "Update Now"}</button></div> `,
       ),
         r.appendChild(s),
         document.body.appendChild(r),
@@ -3744,17 +3366,17 @@
     let t = (await getAll()).find((t) => t.id === e),
       n = t?.sharedUrl || "",
       a = void 0 !== t?.updateInterval ? t.updateInterval : 7;
-    const o = ` <div class="mp-shared-intervals"><label class="mp-shared-interval-label"><input type="checkbox" class="mp-checkbox mp-interval-cb" value="1"> 1 ${getTranslation("day")} </label><label class="mp-shared-interval-label"><input type="checkbox" class="mp-checkbox mp-interval-cb" value="3"> 3 ${getTranslation("days")} </label><label class="mp-shared-interval-label"><input type="checkbox" class="mp-checkbox mp-interval-cb" value="7"> 7 ${getTranslation("days")} </label><label class="mp-shared-interval-label"><input type="checkbox" class="mp-checkbox mp-interval-cb" value="30"> 30 ${getTranslation("days")} </label><label class="mp-shared-interval-label"><input type="checkbox" class="mp-checkbox mp-interval-cb" value="0"> ${getTranslation("neverUpdate")} </label></div> `;
+    const o = ` <div class="mp-shared-intervals"><label class="mp-shared-interval-label"><input type="checkbox" class="mp-checkbox mp-interval-cb" value="1"> 1 ${"day"} </label><label class="mp-shared-interval-label"><input type="checkbox" class="mp-checkbox mp-interval-cb" value="3"> 3 ${"days"} </label><label class="mp-shared-interval-label"><input type="checkbox" class="mp-checkbox mp-interval-cb" value="7"> 7 ${"days"} </label><label class="mp-shared-interval-label"><input type="checkbox" class="mp-checkbox mp-interval-cb" value="30"> 30 ${"days"} </label><label class="mp-shared-interval-label"><input type="checkbox" class="mp-checkbox mp-interval-cb" value="0"> ${"Never Update"} </label></div> `;
     let r = "";
     t?.isShared &&
-      (r = ` <div class="mp-shared-info mp-shared-info-manager"><div class="mp-shared-info-header align-center"><strong class="mp-shared-info-label">${t.title}</strong><span class="mp-shared-version-badge">v${t.version}</span></div><div class="mp-shared-info-subtext"><strong class="mp-shared-info-label">${getTranslation("author")}:</strong> ${t.author || "N/A"}<br><strong class="mp-shared-info-label">${getTranslation("summary")}:</strong> ${t.summary || "N/A"} </div><div class="mp-shared-info-actions"><button id="__ap_shared_update_now" class="save-button flex-1">${getTranslation("checkUpdate")}</button> ${t.changelogText ? `<button id="__ap_shared_view_changelog" class="save-button mp-shared-btn-secondary flex-1">${getTranslation("readme")}</button>` : ""} </div></div> `);
+      (r = ` <div class="mp-shared-info mp-shared-info-manager"><div class="mp-shared-info-header align-center"><strong class="mp-shared-info-label">${t.title}</strong><span class="mp-shared-version-badge">v${t.version}</span></div><div class="mp-shared-info-subtext"><strong class="mp-shared-info-label">${"Author"}:</strong> ${t.author || "N/A"}<br><strong class="mp-shared-info-label">${"Summary"}:</strong> ${t.summary || "N/A"} </div><div class="mp-shared-info-actions"><button id="__ap_shared_update_now" class="save-button flex-1">${"Update Now"}</button> ${t.changelogText ? `<button id="__ap_shared_view_changelog" class="save-button mp-shared-btn-secondary flex-1">${"README"}</button>` : ""} </div></div> `);
     const s = document.createElement("div");
     ((s.className = "mp-overlay mp-hidden"), (s.id = "__ap_shared_overlay"));
     const i = document.createElement("div");
     ((i.className = "mp-modal-box"),
       setSafeInnerHTML(
         i,
-        ` <button id="__ap_shared_close" class="mp-modal-close-btn">${ICONS.close}</button><h2 class="modal-title">${getTranslation("sharedPromptConfig")}</h2><div class="form-group mp-shared-form-group"><label class="form-label" style="display: flex; justify-content: space-between; align-items: center;"> ${getTranslation("metadataUrl")} <span id="mp-pe" class="mp-help-icon">${ICONS.info}</span></label><input id="__ap_shared_url" class="form-input" type="text" value="${n}" placeholder="https://raw.githubusercontent.com/&#42;/&#42;/main/&#42;/meta.json"></div><div class="form-group"><label class="form-label">${getTranslation("autoUpdateFreq")}</label> ${o} </div> ${r} <div class="modal-footer mp-shared-modal-footer"><button id="__ap_shared_apply" class="save-button">${getTranslation("apply")}</button></div> `,
+        ` <button id="__ap_shared_close" class="mp-modal-close-btn">${ICONS.close}</button><h2 class="modal-title">${"External Prompt"}</h2><div class="form-group mp-shared-form-group"><label class="form-label" style="display: flex; justify-content: space-between; align-items: center;"> ${"JSON Metadata URL"} <span id="mp-pe" class="mp-help-icon">${ICONS.info}</span></label><input id="__ap_shared_url" class="form-input" type="text" value="${n}" placeholder="https://raw.githubusercontent.com/&#42;/&#42;/main/&#42;/meta.json"></div><div class="form-group"><label class="form-label">${"Update Frequency"}</label> ${o} </div> ${r} <div class="modal-footer mp-shared-modal-footer"><button id="__ap_shared_apply" class="save-button">${"Apply"}</button></div> `,
       ),
       s.appendChild(i),
       document.body.appendChild(s));
@@ -3781,7 +3403,7 @@
           layout: "column",
           actions: [
             {
-              label: getTranslation("gb"),
+              label: "Basic Guide",
               action: () => {
                 window.open(
                   "https://github.com/0H4S/My-Prompt/blob/main/Guides/Shared%20External%20Prompt.md",
@@ -3813,12 +3435,12 @@
                 s,
                 n,
                 o,
-                r ? null : getTranslation("importConfirm"),
+                r ? null : "Confirm Import",
               ))
             )
               return (
                 (p.disabled = !1),
-                void (p.textContent = getTranslation("apply"))
+                void (p.textContent = "Apply")
               );
             if (t && t.isShared)
               (await updateById(t.id, {
@@ -3834,7 +3456,7 @@
                 changelogText: n.changelogText,
                 lastUpdateCheck: Date.now(),
               }),
-                showNotification(getTranslation("promptUpdated"), "success"));
+                showNotification("Prompt updated successfully!", "success"));
             else {
               if (t)
                 await updateById(t.id, {
@@ -3869,7 +3491,7 @@
                 ((t = o),
                   currentModal && (currentModal.dataset.promptId = o.id));
               }
-              showNotification(getTranslation("promptImported"), "success");
+              showNotification("Prompt imported and linked!", "success");
             }
             if ((l(), currentModal && currentModal.dataset.promptId)) {
               const e = (await getAll()).find(
@@ -3881,16 +3503,16 @@
             (createDialogo({
               message: e.message,
               type: "alert",
-              title: getTranslation("error"),
+              title: "Error",
             }),
               (p.disabled = !1),
-              (p.textContent = getTranslation("apply")));
+              (p.textContent = "Apply"));
           }
         else
           createDialogo({
-            message: getTranslation("invalidUrl"),
+            message: "Invalid URL. Only Gist, GitHub, GitLab, or JSDelivr in .json format are accepted.",
             type: "alert",
-            title: getTranslation("error"),
+            title: "Error",
           });
       else
         t?.isShared
@@ -3899,7 +3521,7 @@
               sharedUrl: "",
               updateInterval: 7,
             }),
-            showNotification(getTranslation("sharedRemoved"), "success"),
+            showNotification("Share link removed.", "success"),
             l(),
             currentModal &&
               currentModal.dataset.promptId === t.id &&
@@ -3930,22 +3552,22 @@
                 changelogText: e.changelogText,
                 lastUpdateCheck: Date.now(),
               }),
-                showNotification(getTranslation("promptUpdated"), "success"),
+                showNotification("Prompt updated successfully!", "success"),
                 l());
               openPromptModal((await getAll()).find((e) => e.id === t.id));
             }
           } else
             (await updateById(t.id, { lastUpdateCheck: Date.now() }),
-              showNotification(getTranslation("alreadyUpToDate"), "info"));
+              showNotification("The prompt is already up to date.", "info"));
         } catch (e) {
           createDialogo({
             message: e.message,
             type: "alert",
-            title: getTranslation("error"),
+            title: "Error",
           });
         }
         m &&
-          ((m.disabled = !1), (m.textContent = getTranslation("checkUpdate")));
+          ((m.disabled = !1), (m.textContent = "Update Now"));
       });
     const u = i.querySelector("#__ap_shared_view_changelog");
     (u &&
@@ -4004,7 +3626,7 @@
                   }),
                   "function" == typeof showNotification &&
                     showNotification(
-                      getTranslation("promptUpdated"),
+                      "Prompt updated successfully!",
                       "success",
                     ))
                 : await updateById(n.id, { lastUpdateCheck: t });
@@ -4023,14 +3645,14 @@
     const i = () => {
         (setSafeInnerHTML(
           o,
-          ` <button id="__ap_diff_close" class="mp-modal-close-btn">${ICONS.close}</button><h2 class="modal-title">${getTranslation("compareTitle")}</h2><div class="mp-diff-container"> ${(() => {
+          ` <button id="__ap_diff_close" class="mp-modal-close-btn">${ICONS.close}</button><h2 class="modal-title">${"Compare Prompts"}</h2><div class="mp-diff-container"> ${(() => {
             if (r)
-              return ` <div class="mp-diff-column"><div class="mp-diff-label">${getTranslation("originalLabel")}</div><textarea id="__ap_diff_original" class="mp-diff-textarea" readonly>${e}</textarea></div><div class="mp-diff-column"><div class="mp-diff-label">${getTranslation("enhancedLabel")}</div><button id="__ap_diff_toggle_mode" class="mp-pinned-action-btn mp-diff-enhanced-edit-btn active" type="button"> ${ICONS.edit} </button><textarea id="__ap_diff_enhanced" class="mp-diff-textarea">${s}</textarea></div> `;
+              return ` <div class="mp-diff-column"><div class="mp-diff-label">${"Original"}</div><textarea id="__ap_diff_original" class="mp-diff-textarea" readonly>${e}</textarea></div><div class="mp-diff-column"><div class="mp-diff-label">${"Enhanced Version"}</div><button id="__ap_diff_toggle_mode" class="mp-pinned-action-btn mp-diff-enhanced-edit-btn active" type="button"> ${ICONS.edit} </button><textarea id="__ap_diff_enhanced" class="mp-diff-textarea">${s}</textarea></div> `;
             {
               const t = getSideBySideDiff(e, s);
-              return ` <div class="mp-diff-column"><div class="mp-diff-label">${getTranslation("originalLabel")}</div><div id="__ap_diff_original_view" class="mp-diff-view">${t.left}</div></div><div class="mp-diff-column"><div class="mp-diff-label">${getTranslation("enhancedLabel")}</div><button id="__ap_diff_toggle_mode" class="mp-pinned-action-btn mp-diff-enhanced-edit-btn" type="button"> ${ICONS.edit} </button><div id="__ap_diff_enhanced_view" class="mp-diff-view">${t.right}</div></div> `;
+              return ` <div class="mp-diff-column"><div class="mp-diff-label">${"Original"}</div><div id="__ap_diff_original_view" class="mp-diff-view">${t.left}</div></div><div class="mp-diff-column"><div class="mp-diff-label">${"Enhanced Version"}</div><button id="__ap_diff_toggle_mode" class="mp-pinned-action-btn mp-diff-enhanced-edit-btn" type="button"> ${ICONS.edit} </button><div id="__ap_diff_enhanced_view" class="mp-diff-view">${t.right}</div></div> `;
             }
-          })()} </div><div class="mp-diff-actions"><button id="__ap_diff_cancel" class="save-button mp-shared-btn-cancel">${getTranslation("keepOriginal")}</button><button id="__ap_diff_accept" class="save-button">${getTranslation("useEnhanced")}</button></div> `,
+          })()} </div><div class="mp-diff-actions"><button id="__ap_diff_cancel" class="save-button mp-shared-btn-cancel">${"Keep Original"}</button><button id="__ap_diff_accept" class="save-button">${"Use Enhanced"}</button></div> `,
         ),
           (o.querySelector("#__ap_diff_close").onclick = l),
           (o.querySelector("#__ap_diff_cancel").onclick = l),
@@ -4045,7 +3667,7 @@
         if (t) {
           (createCustomTooltip(
             t,
-            getTranslation(r ? "diff" : "editText"),
+            r ? "View Differences" : "Edit Text",
             "left",
           ),
             (t.onclick = () => {
@@ -4073,12 +3695,6 @@
       document.body.appendChild(a),
       requestAnimationFrame(() => a.classList.add("visible")));
   }
-  // v27.1.0: createInfoModal() — the "circled i" help modal (the
-  // auto-execute / placeholders / enhance / share-gist / shared-prompt
-  // docs table) — was removed together with its #__ap_info_btn trigger
-  // and all wiring. The infoTitle / info*Desc / spcDesc translation keys
-  // are no longer referenced by this script; every feature it described
-  // still exists and keeps its own per-control tooltip.
   function openPromptModal(e = null) {
     if (!currentModal) return;
     const t = !!e,
@@ -4086,9 +3702,7 @@
     ((currentModal.dataset.promptId = e?.id || ""),
       (currentModal.dataset.originalTitle = e?.title || ""),
       (currentModal.dataset.originalText = e?.text || ""),
-      (currentModal.querySelector(".modal-title").textContent = getTranslation(
-        t ? "edit" : "newPrompt",
-      )));
+      (currentModal.querySelector(".modal-title").textContent = t ? "Edit" : "New Prompt"));
     const a = document.getElementById("__ap_title");
     ((a.value = e?.title || ""), (a.disabled = n));
     const o = document.getElementById("__ap_text");
@@ -4122,59 +3736,6 @@
       showModal(currentModal),
       n || setTimeout(() => a.focus(), 100));
   }
-  function createLanguageModal() {
-    const e = document.createElement("div");
-    ((e.className = "mp-overlay mp-hidden lang-overlay"),
-      (e.id = "__ap_lang_modal_overlay"),
-      (e.onclick = () => hideModal(e)));
-    const t = document.createElement("div");
-    ((t.className = "mp-modal-box lang-box"),
-      (t.onclick = (e) => e.stopPropagation()));
-    const n = document.createElement("input");
-    ((n.className = "lang-search-input"),
-      (n.placeholder =
-        "function" == typeof getTranslation && translations[currentLang]?.search
-          ? getTranslation("search")
-          : "Search language..."),
-      (n.type = "prompt"),
-      (n.autocomplete = "off"));
-    const a = document.createElement("div");
-    function o(e = "") {
-      setSafeInnerHTML(a, "");
-      const t = e.toLowerCase();
-      Object.keys(translations).forEach((e, n) => {
-        const o = translations[e].langName;
-        if (t && !o.toLowerCase().includes(t)) return;
-        const r = document.createElement("button");
-        ((r.className = "lang-button"),
-          (r.textContent = o),
-          e === currentLang && r.classList.add("selected"),
-          (r.style.animation = "mp-fade-in-up .3s ease forwards"),
-          (r.style.animationDelay = `${Math.min(30 * n, 200)}ms`),
-          (r.style.opacity = "0"),
-          (r.onclick = async () => {
-            (await GM_setValue("UserScriptLang", e), window.location.reload());
-          }),
-          a.appendChild(r));
-      });
-    }
-    ((a.style.display = "flex"),
-      (a.style.flexDirection = "column"),
-      (a.style.gap = "8px"),
-      (a.style.maxHeight = "400px"),
-      o(),
-      (n.oninput = (e) => o(e.target.value)),
-      t.appendChild(n),
-      t.appendChild(a),
-      setupEnhancedScroll(a),
-      e.appendChild(t));
-    return (
-      new MutationObserver(() => {
-        e.classList.contains("visible") && setTimeout(() => n.focus(), 50);
-      }).observe(e, { attributes: !0, attributeFilter: ["class"] }),
-      e
-    );
-  }
   function showModal(e) {
     e &&
       (e.classList.remove("mp-hidden"),
@@ -4196,92 +3757,85 @@
     const n = [
       {
         key: "aiSettings",
-        label: getTranslation("aiSettings"),
-        desc: getTranslation("aiSettingsDesc"),
+        label: "AI Settings",
+        desc: "API Keys, Selected Model, System Prompt",
         storageKey: AI_SETTINGS_KEY,
         defaultVal: DEFAULT_AI_CONFIG,
       },
       {
         key: "prompts",
-        label: getTranslation("prompts"),
-        desc: getTranslation("promptBdesc"),
+        label: "Prompts",
+        desc: "All saved prompts",
         storageKey: "Prompts",
         defaultVal: [],
       },
       {
         key: "globalFiles",
-        label: getTranslation("globalFiles"),
-        desc: getTranslation("globalFilesDesc"),
+        label: "Global Files",
+        desc: "Files or attachments saved globally",
         storageKey: "GlobalFiles",
         defaultVal: {},
       },
       {
         key: "tags",
-        label: getTranslation("tagsManager"),
-        desc: getTranslation("tagsInUse"),
+        label: "Manage Tags",
+        desc: "Tags in Use",
         storageKey: "PromptTags",
         defaultVal: DEFAULT_TAGS_CONFIG,
       },
       {
         key: "theme",
-        label: getTranslation("theme"),
-        desc: getTranslation("themeBackupDesc"),
+        label: "Theme",
+        desc: "Current theme settings (Light/Dark mode)",
         storageKey: "Theme",
         defaultVal: DEFAULT_THEME_CONFIG,
       },
       {
         key: "importedThemes",
-        label: getTranslation("customThemes"),
-        desc: getTranslation("customThemesDesc"),
+        label: "Custom Themes",
+        desc: "Themes created or imported by the user",
         storageKey: "ImportedThemes",
         defaultVal: {},
       },
       {
         key: "shortcuts",
-        label: getTranslation("shortcuts"),
-        desc: getTranslation("shortcutsDesc"),
+        label: "Shortcuts",
+        desc: "Keyboard shortcut settings",
         storageKey: SHORTCUTS_STORAGE_KEY,
         defaultVal: DEFAULT_SHORTCUTS,
       },
       {
         key: "navConfig",
-        label: getTranslation("navConfig"),
-        desc: getTranslation("navConfigDesc"),
+        label: "Quick Navigation",
+        desc: "Locates and jumps to specific points in the conversation via message anchors.",
         storageKey: NAV_STORAGE_KEY,
         defaultVal: DEFAULT_NAV_CONFIG,
       },
       {
         key: "prediction",
-        label: getTranslation("prediction"),
-        desc: getTranslation("predictionDesc"),
+        label: "Prediction",
+        desc: "Text prediction settings",
         storageKey: PREDICTION_STORAGE_KEY,
         defaultVal: DEFAULT_PREDICTION_CONFIG,
       },
       {
         key: "syntaxHighlight",
-        label: getTranslation("syntaxHighlight"),
-        desc: getTranslation("syntaxBackupDesc"),
+        label: "Syntax Highlighting",
+        desc: "Syntax highlighting settings.",
         storageKey: SYNTAX_STORAGE_KEY,
         defaultVal: DEFAULT_SYNTAX_CONFIG,
       },
       {
-        key: "lang",
-        label: getTranslation("language"),
-        desc: getTranslation("languageDesc"),
-        storageKey: "UserScriptLang",
-        defaultVal: "en",
-      },
-      {
         key: "gistConfig",
-        label: getTranslation("gistSyncSettings"),
-        desc: getTranslation("gistSyncDesc"),
+        label: "Gist Sync",
+        desc: "Sync your full backup to a private GitHub Gist. Create a PAT at github.com/settings/tokens with the 'gist' scope.",
         storageKey: GIST_CONFIG_KEY,
         defaultVal: DEFAULT_GIST_CONFIG,
       },
     ];
     (setSafeInnerHTML(
       t,
-      ` <button id="__ap_close_backup" class="mp-modal-close-btn">${ICONS.close}</button><h2 class="modal-title">${getTranslation("backupRestoreT")}</h2><div class="mp-backup-section"><div class="mp-backup-subtitle"> ${ICONS.export} <span>${getTranslation("exportData")}</span></div><div class="mp-export-actions" style="border:none; margin-top:0; padding-bottom:0; margin-bottom: 8px;"><label class="mp-checkbox-wrapper" style="cursor:pointer; user-select:none;"><input type="checkbox" id="__ap_backup_select_all" class="mp-checkbox" checked><span style="margin-left:8px;">${getTranslation("selectAll")}</span></label></div><div class="mp-backup-list mp-scroll-wrapper" id="__ap_backup_list"></div><div class="mp-backup-actions"><button id="__ap_do_export_backup" class="save-button">${getTranslation("exportFile")}</button><button id="__ap_do_gist_sync" class="save-button mp-btn-secondary">${ICONS.gist} ${getTranslation("syncToGist")}</button></div></div><div class="mp-backup-divider"></div><div class="mp-backup-section"><div class="mp-backup-subtitle"> ${ICONS.import} <span>${getTranslation("importData")}</span></div><div class="mp-backup-warning">${getTranslation("importWarning")}</div><div class="mp-backup-actions" style="justify-content: center;"><button id="__ap_do_import_backup" class="save-button mp-btn-secondary">${getTranslation("selectFile")}</button><button id="__ap_do_gist_restore" class="save-button mp-btn-secondary">${ICONS.gist} ${getTranslation("restoreFromGist")}</button></div></div> `,
+      ` <button id="__ap_close_backup" class="mp-modal-close-btn">${ICONS.close}</button><h2 class="modal-title">${"Backup and Restore"}</h2><div class="mp-backup-section"><div class="mp-backup-subtitle"> ${ICONS.export} <span>${"Export Data"}</span></div><div class="mp-export-actions" style="border:none; margin-top:0; padding-bottom:0; margin-bottom: 8px;"><label class="mp-checkbox-wrapper" style="cursor:pointer; user-select:none;"><input type="checkbox" id="__ap_backup_select_all" class="mp-checkbox" checked><span style="margin-left:8px;">${"Select All"}</span></label></div><div class="mp-backup-list mp-scroll-wrapper" id="__ap_backup_list"></div><div class="mp-backup-actions"><button id="__ap_do_export_backup" class="save-button">${"Export File"}</button><button id="__ap_do_gist_sync" class="save-button mp-btn-secondary">${ICONS.gist} ${"Sync to Gist"}</button></div></div><div class="mp-backup-divider"></div><div class="mp-backup-section"><div class="mp-backup-subtitle"> ${ICONS.import} <span>${"Import Data"}</span></div><div class="mp-backup-warning">${"Warning: Importing settings will overwrite current data. It is recommended to make a backup first."}</div><div class="mp-backup-actions" style="justify-content: center;"><button id="__ap_do_import_backup" class="save-button mp-btn-secondary">${"Select File"}</button><button id="__ap_do_gist_restore" class="save-button mp-btn-secondary">${ICONS.gist} ${"Restore from Gist"}</button></div></div> `,
     ),
       e.appendChild(t),
       document.body.appendChild(e));
@@ -4333,7 +3887,7 @@
         const t = Array.from(a.querySelectorAll(".backup-selector:checked"));
         if (0 === t.length)
           return void showNotification(
-            getTranslation("nothingSelected"),
+            "No category selected.",
             "error",
           );
         const n = {
@@ -4384,23 +3938,19 @@
                 if (0 === a.length) throw new Error("Empty file");
                 if (
                   !(await createDialogo({
-                    message: getTranslation("confirmImportB", {
-                      count: a.length,
-                    }),
+                    message: `This will replace your current settings with those from the file. Do you want to continue? (${a.length} items)`,
                     type: "confirm",
                   }))
                 )
                   return;
                 for (const e of a) await GM_setValue(e, n.data[e]);
-                (showNotification(getTranslation("importSuccess")),
+                (showNotification("Backup imported successfully! The page will reload."),
                   closeModal(e),
                   location.reload());
               } catch (e) {
                 await createDialogo({
-                  title: getTranslation("error"),
-                  message: getTranslation("errorImporting", {
-                    error: e.message,
-                  }),
+                  title: "Error",
+                  message: `Error importing file: ${e.message}`,
                   type: "alert",
                 });
               }
@@ -4422,7 +3972,7 @@
           );
         } catch (err) {
           await createDialogo({
-            title: getTranslation("error"),
+            title: "Error",
             message: err.message,
             type: "alert",
           });
@@ -4458,11 +4008,11 @@
           if (
             "go_to_settings" ===
             (await createDialogo({
-              title: getTranslation("gistPatMissingTitle"),
-              message: getTranslation("gistPatMissingDesc"),
+              title: "GitHub PAT Required",
+              message: "To restore from Gist, you need a GitHub Personal Access Token with 'gist' scope. Create one at github.com/settings/tokens, then paste it below.",
               actions: [
                 {
-                  label: getTranslation("openSettings"),
+                  label: "Open Settings",
                   style: "edit",
                   value: "go_to_settings",
                 },
@@ -4478,11 +4028,11 @@
           if (
             "go_to_settings" ===
             (await createDialogo({
-              title: getTranslation("gistIdMissingTitle"),
-              message: getTranslation("gistIdMissingDesc"),
+              title: "Gist ID Required",
+              message: "No Gist ID is configured yet. Enter the ID of the Gist you want to restore from, or sync once first to create one.",
               actions: [
                 {
-                  label: getTranslation("openSettings"),
+                  label: "Open Settings",
                   style: "edit",
                   value: "go_to_settings",
                 },
@@ -4501,7 +4051,7 @@
           if (0 === keys.length) throw new Error("Backup contains no data");
           if (
             !(await createDialogo({
-              message: getTranslation("confirmImportB", { count: keys.length }),
+              message: `This will replace your current settings with those from the file. Do you want to continue? (${keys.length} items)`,
               type: "confirm",
             }))
           ) {
@@ -4510,12 +4060,12 @@
             return;
           }
           for (const k of keys) await GM_setValue(k, pulled.data[k]);
-          showNotification(getTranslation("importSuccess"));
+          showNotification("Backup imported successfully! The page will reload.");
           closeModal(e);
           location.reload();
         } catch (err) {
           await createDialogo({
-            title: getTranslation("error"),
+            title: "Error",
             message: err.message,
             type: "alert",
           });
@@ -4546,7 +4096,7 @@
           s = r ? getTag(n) : null;
         setSafeInnerHTML(
           t,
-          ` <button id="__mp_tags_close" class="mp-modal-close-btn">${ICONS.close}</button><h2 class="modal-title">${getTranslation("tagsManager")}</h2><div class="mp-tags-modal-content" id="__mp_tags_content_scroll"><div class="mp-tag-form"><div class="form-group"><label for="__mp_tag_name" class="form-label">${getTranslation("tagName")}</label><input id="__mp_tag_name" class="form-input" placeholder="${getTranslation("exTag")}" value="${r ? s.name : ""}" ${r ? 'readonly style="opacity:0.6;cursor:not-allowed;"' : ""} /></div><div class="form-group" style="margin-bottom: 0px !important;"><label for="__mp_tag_comment" class="form-label">${getTranslation("tagComment")}</label><input id="__mp_tag_comment" class="form-input" placeholder="${getTranslation("exCommTag")}" value="${(r && s.comment) || ""}" /></div><div class="mp-tag-form-row"><div class="mp-tag-color-group"><label class="mp-tag-color-label">${getTranslation("tagBgColor")}</label><input id="__mp_tag_bg_color" type="color" class="mp-tag-color-input" value="${(r && s.bgColor) || "#7071fc"}" /></div><div class="mp-tag-color-group"><label class="mp-tag-color-label">${getTranslation("tagTextColor")}</label><input id="__mp_tag_text_color" type="color" class="mp-tag-color-input" value="${(r && s.textColor) || "#ffffff"}" /></div></div><button id="__mp_create_tag" class="save-button">${getTranslation(r ? "saveTag" : "createTag")}</button></div><div id="__mp_tags_list" class="mp-tags-list"></div></div> `,
+          ` <button id="__mp_tags_close" class="mp-modal-close-btn">${ICONS.close}</button><h2 class="modal-title">${"Manage Tags"}</h2><div class="mp-tags-modal-content" id="__mp_tags_content_scroll"><div class="mp-tag-form"><div class="form-group"><label for="__mp_tag_name" class="form-label">${"Tag Name"}</label><input id="__mp_tag_name" class="form-input" placeholder="${"Ex: img, video, txt..."}" value="${r ? s.name : ""}" ${r ? 'readonly style="opacity:0.6;cursor:not-allowed;"' : ""} /></div><div class="form-group" style="margin-bottom: 0px !important;"><label for="__mp_tag_comment" class="form-label">${"Comment (optional)"}</label><input id="__mp_tag_comment" class="form-input" placeholder="${"Ex: Image Generators"}" value="${(r && s.comment) || ""}" /></div><div class="mp-tag-form-row"><div class="mp-tag-color-group"><label class="mp-tag-color-label">${"Background Color"}</label><input id="__mp_tag_bg_color" type="color" class="mp-tag-color-input" value="${(r && s.bgColor) || "#7071fc"}" /></div><div class="mp-tag-color-group"><label class="mp-tag-color-label">${"Text Color"}</label><input id="__mp_tag_text_color" type="color" class="mp-tag-color-input" value="${(r && s.textColor) || "#ffffff"}" /></div></div><button id="__mp_create_tag" class="save-button">${r ? "Save" : "Create Tag"}</button></div><div id="__mp_tags_list" class="mp-tags-list"></div></div> `,
         );
         t.querySelector("#__mp_tags_close").onclick = () => {
           ((n = null), hideModal(e));
@@ -4558,10 +4108,13 @@
             s = t.querySelector("#__mp_tag_comment"),
             i = e.value.trim();
           if (!i)
-            return void showNotification(getTranslation("tagError"), "error");
+            return void showNotification("Tag Name is required.", "error");
           const l = i.toLowerCase();
           if (!n && currentTagsConfig.tags[l])
-            return void showNotification(getTranslation("tagExists", "error"));
+            return void showNotification(
+              "A tag with this name already exists",
+              "error",
+            );
           if (
             (await createOrUpdateTag({
               name: i,
@@ -4613,7 +4166,7 @@
               const p = document.createElement("button");
               ((p.className = "mp-tag-action-btn edit"),
                 setSafeInnerHTML(p, ICONS.edit),
-                createCustomTooltip(p, getTranslation("edit"), "top"),
+                createCustomTooltip(p, "Edit", "top"),
                 (p.onclick = () => {
                   ((n = t.name.toLowerCase()), a());
                 }),
@@ -4621,10 +4174,10 @@
               const m = document.createElement("button");
               ((m.className = "mp-tag-action-btn delete"),
                 setSafeInnerHTML(m, ICONS.delete),
-                createCustomTooltip(m, getTranslation("delete"), "top"),
+                createCustomTooltip(m, "Delete", "top"),
                 (m.onclick = async () => {
                   const e = await createDialogo({
-                    message: getTranslation("confirmDeleteTag").replace(
+                    message: "Delete the tag \"{name}\"? It will be removed from all prompts.".replace(
                       "{name}",
                       t.name,
                     ),
@@ -4634,7 +4187,7 @@
                   if (
                     (!0 === e || "dont_show_again" === e) &&
                     (await deleteTag(t.name),
-                    showNotification(getTranslation("deleteSuccess")),
+                    showNotification("Deleted Successfully!"),
                     o(),
                     currentMenu &&
                       currentMenu.classList.contains("visible") &&
@@ -4652,7 +4205,7 @@
             }))
           : setSafeInnerHTML(
               e,
-              `<div class="mp-tags-empty">${getTranslation("noTags")}</div>`,
+              `<div class="mp-tags-empty">${"Create new Tags"}</div>`,
             );
       };
     return ((t.renderContent = a), e.appendChild(t), e);
@@ -4823,7 +4376,7 @@
     ((s.className = "mp-filter-manage-btn"),
       setSafeInnerHTML(s, ICONS.edit),
       "function" == typeof createCustomTooltip &&
-        createCustomTooltip(s, getTranslation("tagsManager"), "top"),
+        createCustomTooltip(s, "Manage Tags", "top"),
       (s.onclick = (e) => {
         (e.stopPropagation(), o.classList.remove("visible"), a());
       }));
@@ -4831,7 +4384,7 @@
     ((i.className = "mp-filter-clear-btn"),
       setSafeInnerHTML(i, ICONS.delete),
       "function" == typeof createCustomTooltip &&
-        createCustomTooltip(i, getTranslation("clearFilters"), "top"),
+        createCustomTooltip(i, "Clear Filters", "top"),
       (i.onclick = async (e) => {
         (e.stopPropagation(),
           await clearTagFilters(),
@@ -4845,7 +4398,7 @@
     const l = document.createElement("div");
     setSafeInnerHTML(
       l,
-      ` <div style="padding: 8px 12px; border-bottom: 1px solid var(--mp-border-primary);"><select id="${t}" style="width: 100%; padding: 6px; border-radius: var(--mp-border-radius-sm); background: var(--mp-bg-secondary); color: var(--mp-text-primary); border: 1px solid var( --mp-border-primary); cursor: pointer; outline: none;"><option value="manual">${getTranslation("sortManual")}</option><option value="az">${getTranslation("sortAZ")}</option><option value="za">${getTranslation("sortZA")}</option><option value="most_used">${getTranslation("sortMostUsed")}</option><option value="least_used">${getTranslation("sortLeastUsed")}</option><option value="newest">${getTranslation("sortNewest")}</option><option value="oldest">${getTranslation("sortOldest")}</option><option value="tags">${getTranslation("sortTags")}</option></select></div> `,
+      ` <div style="padding: 8px 12px; border-bottom: 1px solid var(--mp-border-primary);"><select id="${t}" style="width: 100%; padding: 6px; border-radius: var(--mp-border-radius-sm); background: var(--mp-bg-secondary); color: var(--mp-text-primary); border: 1px solid var( --mp-border-primary); cursor: pointer; outline: none;"><option value="manual">${"Manual Order"}</option><option value="az">${"Alphabetical Order (A-Z)"}</option><option value="za">${"Alphabetical Order (Z-A)"}</option><option value="most_used">${"Most Used"}</option><option value="least_used">${"Least Used"}</option><option value="newest">${"Newest"}</option><option value="oldest">${"Oldest"}</option><option value="tags">${"Group by Tags"}</option></select></div> `,
     );
     const c = l.querySelector(`#${t}`);
     o.appendChild(l);
@@ -4857,7 +4410,7 @@
       (o.rebuild = () => {
         const tagDropdown = o,
           scrollPos = d.scrollTop,
-          makeMoveBtn = (tagKey, dir, icon, tipKey, atEdge) => {
+          makeMoveBtn = (tagKey, dir, icon, tipText, atEdge) => {
             // v27.1.0: per-tag up/down reorder control for the filter list
             // (both the dock window and the expanded full-view window share
             // this builder). The order is global (PromptTags.tagOrder) and
@@ -4877,9 +4430,9 @@
                 ((btn.firstElementChild.style.width = "12px"),
                 (btn.firstElementChild.style.height = "12px"),
                 (btn.firstElementChild.style.display = "block")),
-              btn.setAttribute("aria-label", getTranslation(tipKey)),
+              btn.setAttribute("aria-label", tipText),
               "function" == typeof createCustomTooltip &&
-                createCustomTooltip(btn, getTranslation(tipKey), "left"),
+                createCustomTooltip(btn, tipText, "left"),
               (btn.onmousedown = (e) => e.stopPropagation()),
               (btn.onclick = atEdge
                 ? (e) => (e.stopPropagation(), e.preventDefault())
@@ -4901,7 +4454,7 @@
         if (0 === e.length) {
           const e = document.createElement("div");
           ((e.className = "mp-filter-empty"),
-            (e.textContent = getTranslation("noTags")),
+            (e.textContent = "Create new Tags"),
             d.appendChild(e));
         } else
           e.forEach((e, tagIndex, tagList) => {
@@ -4921,14 +4474,14 @@
               (u.style.cssText =
                 "display:flex;flex-direction:column;align-items:center;flex-shrink:0;"),
               u.appendChild(
-                makeMoveBtn(t, -1, ICONS.navUp, "moveTagUp", 0 === tagIndex),
+                makeMoveBtn(t, -1, ICONS.navUp, "Move up", 0 === tagIndex),
               ),
               u.appendChild(
                 makeMoveBtn(
                   t,
                   1,
                   ICONS.navDown,
-                  "moveTagDown",
+                  "Move down",
                   tagIndex === tagList.length - 1,
                 ),
               ),
@@ -4980,7 +4533,7 @@
     l.className = "menu-search-overlay";
     const c = document.createElement("input");
     ((c.className = "menu-search-input"),
-      (c.placeholder = getTranslation("search")),
+      (c.placeholder = "Search"),
       (c.type = "text"),
       (c.autocomplete = "off"),
       (c.onclick = (e) => e.stopPropagation()),
@@ -5001,7 +4554,7 @@
     const p = i(
         "btn-search",
         ICONS.search,
-        getTranslation("search"),
+        "Search",
         async (e) => {
           e.stopPropagation();
           const hadFilter =
@@ -5019,10 +4572,10 @@
               setTimeout(() => c.focus(), 50));
         },
       ),
-      m = i("btn-expand", ICONS.expand2, getTranslation("expand"), (e) => {
+      m = i("btn-expand", ICONS.expand2, "Expand", (e) => {
         (e.stopPropagation(), closeMenu(), openExpandedPromptMenu());
       }),
-      u = i("btn-filter", ICONS.filter, getTranslation("filter"), (e) => {
+      u = i("btn-filter", ICONS.filter, "Filter", (e) => {
         (e.stopPropagation(),
           (v = !v),
           v
@@ -5119,7 +4672,7 @@
           o)
         ) {
           (n.classList.add("drag-mode"), (n.draggable = !0));
-          const e = a.isFixed ? getTranslation("unpin") : getTranslation("pin"),
+          const e = a.isFixed ? "Unpin" : "Pin",
             t = a.isFixed ? "unpin" : "pin";
           (r.appendChild(
             T(t, ICONS.pin, e, async () => {
@@ -5129,7 +4682,7 @@
             }),
           ),
             r.appendChild(
-              T("restore", ICONS.save, getTranslation("save"), () => {
+              T("restore", ICONS.save, "Save", () => {
                 _(n, a, !1);
               }),
             ));
@@ -5137,12 +4690,12 @@
           (n.classList.remove("drag-mode"),
             (n.draggable = !1),
             r.appendChild(
-              T("edit", ICONS.edit, getTranslation("edit"), () =>
+              T("edit", ICONS.edit, "Edit", () =>
                 openPromptModal(a),
               ),
             ),
             r.appendChild(
-              T("copy", ICONS.copy, getTranslation("copy"), async () => {
+              T("copy", ICONS.copy, "Copy", async () => {
                 const n = await getRawPrompts(),
                   o = generatePromptId(),
                   {
@@ -5159,43 +4712,41 @@
                   } = a;
                 ((n[o] = {
                   ...g,
-                  title: a.title + getTranslation("copyT"),
+                  title: a.title + " (Copy)",
                   usageCount: 0,
                   isFixed: !1,
                   isShared: !1,
                 }),
                   await saveRawPrompts(n),
                   "function" == typeof showNotification &&
-                    showNotification(getTranslation("copySuccess"), "success"),
+                    showNotification("Copied Successfully!", "success"),
                   await refreshMenu(e, t));
               }),
             ),
             r.appendChild(
-              T("delete", ICONS.delete, getTranslation("delete"), async () => {
+              T("delete", ICONS.delete, "Delete", async () => {
                 if (
                   await createDialogo({
-                    message: getTranslation("confirmDelete", {
-                      title: a.title,
-                    }),
+                    message: `Delete prompt "${a.title}"?`,
                     type: "confirm",
                   })
                 ) {
                   (await removeById(a.id),
                     "function" == typeof showNotification &&
-                      showNotification(getTranslation("deleteSuccess")),
+                      showNotification("Deleted Successfully!"),
                     n.remove());
                   0 === b.querySelectorAll(".prompt-item-row").length &&
-                    ((x.textContent = getTranslation("noSavedPrompts")),
+                    ((x.textContent = "No saved prompts."),
                     (x.style.display = "block"));
                 }
               }),
             ),
             r.appendChild(
-              T("drag", ICONS.drag, getTranslation("move"), () => _(n, a, !0)),
+              T("drag", ICONS.drag, "Move", () => _(n, a, !0)),
             ),
             a.isFixed &&
               r.appendChild(
-                T("unpin", ICONS.pin, getTranslation("unpin"), async () => {
+                T("unpin", ICONS.pin, "Unpin", async () => {
                   ((a.isFixed = !1),
                     await updateById(a.id, { isFixed: !1 }),
                     _(n, a, !1));
@@ -5231,14 +4782,12 @@
             currentTagsConfig.activeFilters &&
             currentTagsConfig.activeFilters.length > 0;
           return (
-            (x.textContent = getTranslation(
-              e ? "noSearchResults" : "noSavedPrompts",
-            )),
+            (x.textContent = e ? "No prompts match search." : "No saved prompts."),
             void (x.style.display = "block")
           );
         }
         ((x.style.display = "none"),
-          (x.textContent = getTranslation("noSearchResults")));
+          (x.textContent = "No prompts match search."));
         let a = 0;
         (t.forEach((t) => {
           const r = document.createElement("div");
@@ -5385,17 +4934,17 @@
       );
     };
     (E.appendChild(
-      M("btn-export", ICONS.export, getTranslation("export"), (e) => {
+      M("btn-export", ICONS.export, "Export Prompt", (e) => {
         (e.stopPropagation(), exportPrompts());
       }),
     ),
       E.appendChild(
-        M("btn-add", ICONS.add, getTranslation("newPrompt"), (e) => {
+        M("btn-add", ICONS.add, "New Prompt", (e) => {
           (e.stopPropagation(), openPromptModal());
         }),
       ),
       E.appendChild(
-        M("btn-import", ICONS.import, getTranslation("import"), (e) => {
+        M("btn-import", ICONS.import, "Import Prompt", (e) => {
           (e.stopPropagation(), importPrompts());
         }),
       ),
@@ -5434,7 +4983,7 @@
     g.className = "mp-expanded-search-container";
     const f = document.createElement("input");
     ((f.className = "mp-expanded-search"),
-      (f.placeholder = getTranslation("search")),
+      (f.placeholder = "Search"),
       (f.type = "text"),
       g.appendChild(f));
     const h = document.createElement("div");
@@ -5478,17 +5027,17 @@
             w.classList.toggle("has-selection", r.size > 0));
         }
       },
-      b = v("btn-add", ICONS.add, getTranslation("newPrompt"), () => {
+      b = v("btn-add", ICONS.add, "New Prompt", () => {
         (z(), openPromptModal());
       }),
-      x = v("btn-export", ICONS.export, getTranslation("export"), () => {
+      x = v("btn-export", ICONS.export, "Export Prompt", () => {
         (z(), exportPrompts());
       }),
-      C = v("btn-import", ICONS.import, getTranslation("import"), () => {
+      C = v("btn-import", ICONS.import, "Import Prompt", () => {
         (z(), importPrompts());
       }),
-      T = v("btn-close", ICONS.close, getTranslation("close"), () => z()),
-      _ = v("btn-select-all", ICONS.check, getTranslation("selectAll"), () => {
+      T = v("btn-close", ICONS.close, "Close", () => z()),
+      _ = v("btn-select-all", ICONS.check, "Select All", () => {
         const e = Array.from(h.querySelectorAll(".prompt-item-row")).filter(
           (e) => "none" !== e.style.display,
         );
@@ -5498,19 +5047,19 @@
           y(),
           K());
       }),
-      w = v("btn-delete", ICONS.delete, getTranslation("delete"), async () => {
+      w = v("btn-delete", ICONS.delete, "Delete", async () => {
         r.size > 0 && (await L());
       }),
-      S = v("btn-close", ICONS.close, getTranslation("close"), () => {
+      S = v("btn-close", ICONS.close, "Close", () => {
         ((o = !1), r.clear(), y(), K());
       }),
-      E = v("btn-save", ICONS.save, getTranslation("save"), async () => {
+      E = v("btn-save", ICONS.save, "Save", async () => {
         (await H(), (t = await getAll()), (a = !1), y(), K());
       }),
-      M = v("btn-close", ICONS.close, getTranslation("close"), async () => {
+      M = v("btn-close", ICONS.close, "Close", async () => {
         ((a = !1), (t = await getAll()), y(), K());
       }),
-      I = v("btn-move", ICONS.drag, getTranslation("move"), () => {
+      I = v("btn-move", ICONS.drag, "Move", () => {
         ((a = !0),
           document.querySelector(".mp-expanded-filter-dropdown") &&
             document
@@ -5519,7 +5068,7 @@
           y(),
           K());
       }),
-      k = v("btn-delete", ICONS.delete, getTranslation("delete"), () => {
+      k = v("btn-delete", ICONS.delete, "Delete", () => {
         ((o = !0),
           document.querySelector(".mp-expanded-filter-dropdown") &&
             document
@@ -5531,13 +5080,13 @@
       L = async () => {
         if (
           await createDialogo({
-            message: getTranslation("deletePrompts", { title: r.size }),
+            message: `Delete ${r.size} prompts?`,
             type: "confirm",
           })
         ) {
           for (let e of r) await removeById(e);
           ("function" == typeof showNotification &&
-            showNotification(getTranslation("deleteSuccess")),
+            showNotification("Deleted Successfully!"),
             (t = await getAll()),
             (o = !1),
             r.clear(),
@@ -5548,13 +5097,13 @@
       },
       P = (e) =>
         1 === e ? ICONS.navMenu : 2 === e ? ICONS.grid2 : ICONS.grid3,
-      N = v("btn-cols", P(n), getTranslation("colunas"), async () => {
+      N = v("btn-cols", P(n), "Columns", async () => {
         ((n = n >= 3 ? 1 : n + 1),
           setSafeInnerHTML(N, P(n)),
           await Promise.resolve(GM_setValue(e, n)),
           (h.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`));
       }),
-      A = v("btn-filter", ICONS.filter, getTranslation("filter"), (e) => {
+      A = v("btn-filter", ICONS.filter, "Filter", (e) => {
         (e.stopPropagation(), O(A));
       }),
       q = () => {
@@ -5682,14 +5231,12 @@
             currentTagsConfig.activeFilters &&
             currentTagsConfig.activeFilters.length > 0;
           return (
-            (F.textContent = getTranslation(
-              e ? "noSearchResults" : "noSavedPrompts",
-            )),
+            (F.textContent = e ? "No prompts match search." : "No saved prompts."),
             void (F.style.display = "block")
           );
         }
         ((F.style.display = "none"),
-          (F.textContent = getTranslation("noSearchResults")));
+          (F.textContent = "No prompts match search."));
         let l = 0,
           c = 0;
         (e.forEach((e) => {
@@ -5750,8 +5297,8 @@
               (d.draggable = !0),
               (d.style.border = "1px dashed var(--mp-accent-primary)"));
             const n = e.isFixed
-                ? getTranslation("unpin")
-                : getTranslation("pin"),
+                ? "Unpin"
+                : "Pin",
               a = e.isFixed ? "unpin" : "pin",
               o = async (n) => {
                 const a = n.currentTarget;
@@ -5760,8 +5307,8 @@
                 const r = t.find((t) => t.id === e.id);
                 r && (r.isFixed = e.isFixed);
                 const s = e.isFixed
-                    ? getTranslation("unpin")
-                    : getTranslation("pin"),
+                    ? "Unpin"
+                    : "Pin",
                   i = e.isFixed ? "unpin" : "pin",
                   l = U(i, ICONS.pin, s, o);
                 a.replaceWith(l);
@@ -5815,12 +5362,12 @@
           } else
             o ||
               (u.appendChild(
-                U("edit", ICONS.edit, getTranslation("edit"), () => {
+                U("edit", ICONS.edit, "Edit", () => {
                   (z(), openPromptModal(e));
                 }),
               ),
               u.appendChild(
-                U("copy", ICONS.copy, getTranslation("copy"), async () => {
+                U("copy", ICONS.copy, "Copy", async () => {
                   const n = await getRawPrompts(),
                     a = generatePromptId(),
                     {
@@ -5837,7 +5384,7 @@
                     } = e;
                   ((n[a] = {
                     ...u,
-                    title: e.title + getTranslation("copyT"),
+                    title: e.title + " (Copy)",
                     usageCount: 0,
                     isFixed: !1,
                     isShared: !1,
@@ -5845,7 +5392,7 @@
                     await saveRawPrompts(n),
                     "function" == typeof showNotification &&
                       showNotification(
-                        getTranslation("copySuccess"),
+                        "Copied Successfully!",
                         "success",
                       ),
                     (t = await getAll()),
@@ -5856,17 +5403,15 @@
                 U(
                   "delete",
                   ICONS.delete,
-                  getTranslation("delete"),
+                  "Delete",
                   async () => {
                     (await createDialogo({
-                      message: getTranslation("confirmDelete", {
-                        title: e.title,
-                      }),
+                      message: `Delete prompt "${e.title}"?`,
                       type: "confirm",
                     })) &&
                       (await removeById(e.id),
                       "function" == typeof showNotification &&
-                        showNotification(getTranslation("deleteSuccess")),
+                        showNotification("Deleted Successfully!"),
                       (t = await getAll()),
                       K());
                   },
@@ -5874,7 +5419,7 @@
               ),
               e.isFixed &&
                 u.appendChild(
-                  U("unpin", ICONS.pin, getTranslation("unpin"), async () => {
+                  U("unpin", ICONS.pin, "Unpin", async () => {
                     ((e.isFixed = !1),
                       await updateById(e.id, { isFixed: !1 }),
                       (t = await getAll()),
@@ -6006,7 +5551,7 @@
     if (!currentPlaceholderModal) return;
     const s = document.getElementById("__ap_placeholder_modal_title");
     s &&
-      ((s.textContent = e.title || getTranslation("fillPlaceholders")),
+      ((s.textContent = e.title || "Fill in Information"),
       e.color
         ? s.style.setProperty("color", e.color, "important")
         : s.style.removeProperty("color"));
@@ -6058,7 +5603,7 @@
                 setSafeInnerHTML(t, ICONS.cloudFile));
               const n = document.createElement("div");
               ((n.className = "mp-file-empty-subtext"),
-                (n.textContent = getTranslation("addCards")),
+                (n.textContent = "click to select or drag to add"),
                 e.appendChild(t),
                 e.appendChild(n),
                 s.appendChild(e));
@@ -6171,7 +5716,7 @@
             ((e.className = "mp-help-icon"),
               (e.type = "button"),
               setSafeInnerHTML(e, `${ICONS.info}`),
-              createCustomTooltip(e, getTranslation("description"), "top"),
+              createCustomTooltip(e, "Description", "top"),
               (e.onclick = (e) => {
                 (e.stopPropagation(),
                   l
@@ -6184,7 +5729,7 @@
           ((g.className = "mp-enhance-ai-btn"),
             (g.type = "button"),
             setSafeInnerHTML(g, `${ICONS.magic}`),
-            createCustomTooltip(g, getTranslation("enhanceTooltip"), "top"),
+            createCustomTooltip(g, "Enhance Prompt", "top"),
             g.addEventListener("click", (e) => {
               (e.preventDefault(),
                 e.stopPropagation(),
@@ -6196,7 +5741,7 @@
             ((f.className = "mp-paste-btn"),
             (f.type = "button"),
             setSafeInnerHTML(f, `${ICONS.paste}`),
-            createCustomTooltip(f, getTranslation("paste"), "top"),
+            createCustomTooltip(f, "Paste", "top"),
             f.addEventListener("click", async (e) => {
               (e.preventDefault(), e.stopPropagation());
               try {
@@ -6301,7 +5846,7 @@
                 ((n.className = "mp-help-icon"),
                   (n.type = "button"),
                   setSafeInnerHTML(n, `${ICONS.info}`),
-                  createCustomTooltip(n, getTranslation("description"), "top"),
+                  createCustomTooltip(n, "Description", "top"),
                   (n.onclick = (e) => {
                     (e.stopPropagation(), e.preventDefault());
                     const n = t.querySelector(".mp-context-bubble");
@@ -6408,7 +5953,7 @@
                 ((e.className = "mp-help-icon"),
                   (e.type = "button"),
                   setSafeInnerHTML(e, `${ICONS.info}`),
-                  createCustomTooltip(e, getTranslation("description"), "top"),
+                  createCustomTooltip(e, "Description", "top"),
                   (e.onclick = (e) => {
                     (e.preventDefault(), e.stopPropagation());
                     const n = t.querySelector(".mp-context-bubble");
@@ -6445,14 +5990,14 @@
                     setSafeInnerHTML(s, `${ICONS.magic}`),
                     createCustomTooltip(
                       s,
-                      getTranslation("enhanceTooltip"),
+                      "Enhance Prompt",
                       "top",
                     ));
                   const i = document.createElement("button");
                   ((i.className = "mp-paste-btn"),
                     (i.type = "button"),
                     setSafeInnerHTML(i, `${ICONS.paste}`),
-                    createCustomTooltip(i, getTranslation("paste"), "top"),
+                    createCustomTooltip(i, "Paste", "top"),
                     r.appendChild(s),
                     r.appendChild(i));
                   const l = document.createElement("textarea");
@@ -6539,7 +6084,7 @@
                   );
                 };
                 if ("other" === e.type) {
-                  const e = a(getTranslation("typeHere"), "", null, !0);
+                  const e = a("Type here...", "", null, !0);
                   n.appendChild(e);
                 }
                 (e.inputs &&
@@ -7168,13 +6713,22 @@
   }
   const SHORTCUTS_STORAGE_KEY = "ShortcutsConfig",
     DEFAULT_SHORTCUTS = {
-      newPrompt: { keys: "Alt+N", descKey: "altN" },
-      listPrompts: { keys: "Alt+P", descKey: "altP" },
-      saveSend: { keys: "Ctrl+Enter", descKey: "ctrlEnter" },
-      saveEditor: { keys: "Ctrl+S", descKey: "saveEditor" },
-      lineBreak: { keys: "Shift+Enter", descKey: "shiftEnter" },
-      enhancePrompt: { keys: "Alt+E", descKey: "altE" },
-      expandedMode: { keys: "Ctrl+Alt+P", descKey: "ctrlAltP" },
+      newPrompt: { keys: "Alt+N", desc: "Opens New Prompt creation window" },
+      listPrompts: { keys: "Alt+P", desc: "Opens Prompt List" },
+      saveSend: { keys: "Ctrl+Enter", desc: "Save and Send current prompt" },
+      saveEditor: {
+        keys: "Ctrl+S",
+        desc: "Save current prompt without closing the editor",
+      },
+      lineBreak: {
+        keys: "Shift+Enter",
+        desc: "Adds Line Break in Dynamic Prompt modal",
+      },
+      enhancePrompt: { keys: "Alt+E", desc: "Enhance Prompt with AI" },
+      expandedMode: {
+        keys: "Ctrl+Alt+P",
+        desc: "Opens the Prompt List in Expanded Mode",
+      },
     };
   let currentShortcuts = JSON.parse(JSON.stringify(DEFAULT_SHORTCUTS));
   async function loadShortcuts() {
@@ -7185,7 +6739,7 @@
         ((currentShortcuts = { ...DEFAULT_SHORTCUTS, ...t }),
           Object.keys(DEFAULT_SHORTCUTS).forEach((e) => {
             currentShortcuts[e] &&
-              (currentShortcuts[e].descKey = DEFAULT_SHORTCUTS[e].descKey);
+              (currentShortcuts[e].desc = DEFAULT_SHORTCUTS[e].desc);
           }));
       } catch (e) {
         console.error(e);
@@ -7306,7 +6860,7 @@
             : DEFAULT_AI_CONFIG.systemPrompt),
       !o)
     )
-      throw new Error(getTranslation("missingKeyError"));
+      throw new Error("API Key missing.");
     return new Promise(
       "gemini" === a
         ? (t, a) => {
@@ -7325,14 +6879,14 @@
                     ? t(n.candidates[0].content.parts[0].text.trim())
                     : a(
                         new Error(
-                          n.error?.message || getTranslation("invalidResponse"),
+                          n.error?.message || "Invalid response.",
                         ),
                       );
                 } catch (e) {
-                  a(new Error(getTranslation("processError")));
+                  a(new Error("Error processing response."));
                 }
               },
-              onerror: () => a(new Error(getTranslation("connectionError"))),
+              onerror: () => a(new Error("Connection error with API.")),
             });
           }
         : (t, s) => {
@@ -7364,10 +6918,10 @@
                       const n = JSON.parse(e.responseText);
                       n.choices && n.choices.length > 0 && n.choices[0].message
                         ? t(n.choices[0].message.content.trim())
-                        : s(new Error(getTranslation("invalidResponse")));
+                        : s(new Error("Invalid response."));
                     } catch (e) {
                       (console.error(e),
-                        s(new Error(getTranslation("processError"))));
+                        s(new Error("Error processing response.")));
                     }
                   else
                     try {
@@ -7383,7 +6937,7 @@
                 },
                 onerror: (e) => {
                   (console.error(e),
-                    s(new Error(getTranslation("connectionError"))));
+                    s(new Error("Connection error with API.")));
                 },
               }));
           },
@@ -7399,7 +6953,7 @@
     ((n.className = "mp-loading-icon"), setSafeInnerHTML(n, ICONS.loading));
     const a = document.createElement("div");
     ((a.className = "mp-loading-text"),
-      (a.textContent = getTranslation("enhancingPrompt")),
+      (a.textContent = "Enhancing Prompt"),
       t.append(n, a),
       e.appendChild(t),
       document.body.appendChild(e),
@@ -7422,11 +6976,11 @@
     const o = document.createElement("h3");
     ((o.style.cssText =
       "font-family: var(--mp-font-family-heading); font-size: 16px; font-weight: 600; text-align: center; margin: 0 0 12px 0; color: var(--mp-text-primary);"),
-      (o.textContent = getTranslation("promptSelectTitle")),
+      (o.textContent = "Choose the Instruction"),
       a.appendChild(o));
     const r = document.createElement("input");
     ((r.className = "mp-system-prompt-search-input"),
-      (r.placeholder = getTranslation("search")),
+      (r.placeholder = "Search"),
       (r.type = "text"),
       (r.autocomplete = "off"));
     const s = document.createElement("div");
@@ -7826,11 +7380,11 @@
       ) {
         "go_to_settings" ===
           (await createDialogo({
-            title: getTranslation("apiKeyTitle"),
-            message: getTranslation("apiKeyDesc"),
+            title: "API Key Required",
+            message: "To configure your API Key and select the Model, go to advanced settings.",
             actions: [
               {
-                label: getTranslation("openConfig"),
+                label: "Open Settings",
                 style: "edit",
                 value: "go_to_settings",
               },
@@ -7849,7 +7403,7 @@
           }, 50));
       } else
         await createDialogo({
-          title: getTranslation("error"),
+          title: "Error",
           message: e.message,
           type: "alert",
         });
@@ -7857,16 +7411,16 @@
   }
   async function triggerAIEnhancement(e, t, n = null) {
     if (!e || 0 === e.trim().length)
-      return void showNotification(getTranslation("noTextToEnhance"), "error");
+      return void showNotification("Enter your prompt before trying to enhance it", "error");
     if (!hasApiKeyForProvider(getProvider(currentAIConfig.model))) {
       return void (
         "go_to_settings" ===
           (await createDialogo({
-            title: getTranslation("apiKeyTitle"),
-            message: getTranslation("apiKeyDesc"),
+            title: "API Key Required",
+            message: "To configure your API Key and select the Model, go to advanced settings.",
             actions: [
               {
-                label: getTranslation("openConfig"),
+                label: "Open Settings",
                 style: "edit",
                 value: "go_to_settings",
               },
@@ -7946,14 +7500,14 @@
       n = (t || "").trim();
     if (!n)
       return void ("function" == typeof showNotification &&
-        showNotification(getTranslation("noTextToCopy"), "error"));
+        showNotification("Nothing to copy - the prompt box is empty", "error"));
     try {
       await navigator.clipboard.writeText(n);
       "function" == typeof showNotification &&
-        showNotification(getTranslation("copySuccess"), "success");
+        showNotification("Copied Successfully!", "success");
     } catch (e) {
       "function" == typeof showNotification &&
-        showNotification(getTranslation("copyFailed"), "error");
+        showNotification("Could not copy to the clipboard", "error");
     }
   }
   async function handleTextareaEnhancement(e, t) {
@@ -8669,10 +8223,10 @@
     const t = createNavBtn(
         ICONS.navUp,
         () => navigateToMessage("prev"),
-        "prev",
+        "Previous",
       ),
-      n = createNavBtn(ICONS.navMenu, () => toggleNavList(), "list"),
-      a = createNavBtn(ICONS.navDown, () => navigateToMessage("next"), "next");
+      n = createNavBtn(ICONS.navMenu, () => toggleNavList(), "List"),
+      a = createNavBtn(ICONS.navDown, () => navigateToMessage("next"), "Next");
     (navContainer.appendChild(t),
       navContainer.appendChild(n),
       navContainer.appendChild(a),
@@ -8680,9 +8234,9 @@
       (navListPopup.className = "mp-nav-list-popup"));
     const o = document.createElement("div");
     ((o.className = "mp-nav-header"),
-      o.appendChild(createTab("all", ICONS.all, getTranslation("all"))),
-      o.appendChild(createTab("user", ICONS.user, getTranslation("user"))),
-      o.appendChild(createTab("ai", ICONS.bot, getTranslation("ai"))),
+      o.appendChild(createTab("all", ICONS.all, "All")),
+      o.appendChild(createTab("user", ICONS.user, "User Prompts")),
+      o.appendChild(createTab("ai", ICONS.bot, "AI Responses")),
       navListPopup.appendChild(o));
     const r = document.createElement("div");
     ((r.className = "mp-nav-scroll-area"),
@@ -8707,7 +8261,7 @@
       (a.onclick = (e) => {
         (e.stopPropagation(), t(e));
       }),
-      createCustomTooltip(a, getTranslation(n), "left"),
+      createCustomTooltip(a, n, "left"),
       a
     );
   }
@@ -8795,9 +8349,7 @@
     ((o.className = "mp-pin-btn " + (a ? "is-pinned" : "")),
       setSafeInnerHTML(o, ICONS.pin));
     const r = (e = !1) => {
-      const t = getTranslation(
-        o.classList.contains("is-pinned") ? "unpin" : "pin",
-      );
+      const t = o.classList.contains("is-pinned") ? "Unpin" : "Pin";
       (createCustomTooltip(o, t, "left"),
         e && o.dispatchEvent(new Event("mouseenter")));
     };
@@ -8822,7 +8374,7 @@
       const t = document.createElement("div");
       return (
         (t.className = "mp-nav-list-item"),
-        (t.textContent = getTranslation("noConversations")),
+        (t.textContent = "No conversations"),
         (t.style.justifyContent = "center"),
         (t.style.opacity = "0.5"),
         void e.appendChild(t)
@@ -8857,7 +8409,7 @@
         c)
       ) {
         const e = r.querySelector(".mp-nav-idx-badge.has-topics");
-        e && createCustomTooltip(e, getTranslation("topicos"), "left");
+        e && createCustomTooltip(e, "Topics", "left");
       }
       if (
         ((r.onclick = (e) => {
@@ -9255,14 +8807,14 @@
       const e = document.createElement("div");
       ((e.className = "mp-pinned-action-btn mp-reset-btn"),
         setSafeInnerHTML(e, ICONS.reset),
-        createCustomTooltip(e, getTranslation("restore"), t),
+        createCustomTooltip(e, "Restore Default", t),
         (e.onclick = (e) => {
           (e.stopPropagation(), resetCarouselPosition());
         }));
       const a = document.createElement("div");
       ((a.className = "mp-pinned-action-btn mp-save-btn"),
         setSafeInnerHTML(a, ICONS.save),
-        createCustomTooltip(a, getTranslation("save"), t),
+        createCustomTooltip(a, "Save", t),
         (a.onclick = (e) => {
           (e.stopPropagation(), saveCarouselPosition());
         }));
@@ -9271,7 +8823,7 @@
         setSafeInnerHTML(o, ICONS.flip),
         createCustomTooltip(
           o,
-          getTranslation(n ? "horizontal" : "vertical"),
+          n ? "Horizontal" : "Vertical",
           t,
         ),
         (o.onclick = (e) => {
@@ -9282,15 +8834,13 @@
         setSafeInnerHTML(s, n ? ICONS.switchH : ICONS.switchV));
       (createCustomTooltip(
         s,
-        getTranslation(
-          n
+        n
             ? "right" === t
-              ? "esquerda"
-              : "direita"
+              ? "Left"
+              : "Right"
             : "bottom" === t
-              ? "cima"
-              : "baixo",
-        ),
+              ? "Up"
+              : "Down",
         t,
       ),
         (s.onclick = (e) => {
@@ -9304,7 +8854,7 @@
       const e = document.createElement("div");
       ((e.className = "mp-pinned-action-btn"),
         setSafeInnerHTML(e, ICONS.drag),
-        createCustomTooltip(e, getTranslation("move"), t),
+        createCustomTooltip(e, "Move", t),
         (e.onclick = (e) => {
           (e.stopPropagation(), enterDragMode());
         }));
@@ -9312,7 +8862,7 @@
       if (
         ((o.className = "mp-pinned-action-btn"),
         setSafeInnerHTML(o, ICONS.olho),
-        createCustomTooltip(o, getTranslation(a ? "hide" : "show"), t),
+        createCustomTooltip(o, a ? "Hide" : "Show", t),
         (o.onclick = (e) => {
           (e.stopPropagation(),
             (currentNavConfig.settings.showCarousel = !a),
@@ -9327,7 +8877,7 @@
         ((e.className =
           "mp-pinned-action-btn" + (isPinnedListMode ? " active" : "")),
           setSafeInnerHTML(e, ICONS.navMenu),
-          createCustomTooltip(e, getTranslation("list"), t),
+          createCustomTooltip(e, "List", t),
           (e.onclick = (e) => {
             (e.stopPropagation(),
               (isPinnedListMode = !isPinnedListMode),
@@ -9342,11 +8892,11 @@
       const s = document.createElement("div");
       ((s.className = "mp-pinned-action-btn delete-btn"),
         setSafeInnerHTML(s, ICONS.delete),
-        createCustomTooltip(s, getTranslation("unpinAll"), t),
+        createCustomTooltip(s, "Unpin All", t),
         (s.onclick = async (e) => {
           e.stopPropagation();
           const t = await createDialogo({
-            message: getTranslation("unpinAllConfirm"),
+            message: "Unpin all pins from this conversation?",
             type: "confirm",
             dontShowAgainId: "confirm-unpin-all",
           });
@@ -9497,26 +9047,15 @@
     "Prediction",
     "SyntaxHighlight",
     "PreviewPrompt",
-    "UserScriptLang",
     "DontShowAgain",
   ];
-  // v27.0.12: single source of truth for the running version, read from
-  // the userscript manager (GM_info) so the Gist backup payload and the
-  // boot console marker can never drift from the @version header again
-  // (the beta shipped a hardcoded marker quoting an older version). The
-  // string fallback only engages in a sandbox without GM_info — keep it
-  // in sync with the @version header above.
   const SCRIPT_VERSION =
     typeof GM_info !== "undefined" &&
     GM_info &&
     GM_info.script &&
     GM_info.script.version
       ? GM_info.script.version
-      : "27.1.0";
-  // v27.0.12: canonical backup snapshot helper. The beta's Gist push
-  // called snapshotKeys() before it existed anywhere, so every "Sync Now"
-  // threw a ReferenceError; takeAutoBackup() now shares this one helper
-  // instead of its private inline copy of the same loop.
+      : "27.2.1";
   async function snapshotKeys(keys) {
     const snapshot = {};
     for (const k of keys) {
@@ -9582,13 +9121,6 @@
   }
   async function findExistingBackupGist(pat) {
     const filename = "MyPrompt_Backup.mp.backup.json";
-    // v27.0.12: paginated discovery. The list endpoint caps at 100 gists
-    // per page, so a token owning more than 100 gists would have its
-    // backup living on page 2+ — a single-page scan would miss it and
-    // then fork a duplicate backup gist. Walk pages newest-first until
-    // the backup is found or a short page marks the end; the page cap
-    // (40 = 4000 gists) sits above GitHub's own listing ceiling and is
-    // purely a runaway guard.
     const MAX_GIST_PAGES = 40;
     const fetchPage = (page) =>
       new Promise((resolve, reject) => {
@@ -9763,9 +9295,9 @@
     bar.style.cssText =
       "position:fixed;top:0;left:0;right:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;gap:12px;padding:10px 16px;background:var(--mp-accent-primary,#7071fc);color:#fff;font-family:var(--mp-font-family-base,sans-serif);font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,0.2);";
     const msg = document.createElement("span");
-    msg.textContent = getTranslation("firstRunBanner");
+    msg.textContent = "No local data found. Restore from a previous backup?";
     const restoreBtn = document.createElement("button");
-    restoreBtn.textContent = getTranslation("firstRunRestoreBtn");
+    restoreBtn.textContent = "Restore";
     restoreBtn.style.cssText =
       "padding:4px 12px;border:none;border-radius:4px;background:#fff;color:var(--mp-accent-primary,#7071fc);cursor:pointer;font-weight:600;";
     restoreBtn.onclick = () => {
@@ -9773,7 +9305,7 @@
       openBackupManager();
     };
     const dismissBtn = document.createElement("button");
-    dismissBtn.textContent = getTranslation("firstRunDismissBtn");
+    dismissBtn.textContent = "Start Fresh";
     dismissBtn.style.cssText =
       "padding:4px 12px;border:1px solid #fff;border-radius:4px;background:transparent;color:#fff;cursor:pointer;";
     dismissBtn.onclick = async () => {
@@ -10076,11 +9608,6 @@
       },
     };
   })();
-  // v27.0.8: initKofiPatreonFeature() (a ko-fi.com page helper that
-  // appended a "Buy on Patreon" button to ko-fi shop items) was removed
-  // together with the ko-fi platform detection and every storefront /
-  // donation link in the UI. The script never @matched ko-fi.com, so the
-  // removal changes nothing on any supported page.
   function detectPlatform() {
     const e = window.location.hostname;
     return e.includes("chatgpt.com")
@@ -11049,8 +10576,8 @@
     if (e.length > 1) {
       if (
         !(await createDialogo({
-          title: getTranslation("confirmDownload"),
-          message: getTranslation("confirmDownloads", { count: e.length }),
+          title: "Confirm Download",
+          message: `You are about to download ${e.length} individual files. Continue?`,
           dontShowAgainId: "confirm-export-download",
           type: "confirm",
         }))
@@ -11087,11 +10614,11 @@
       o = new Set(a.map((e) => e.id));
     let r = -1;
     const s = e
-      ? `<button id="__ap_do_gist_insert" class="save-button" style="width:100%">${getTranslation("inserirGist")}</button>`
-      : `<button id="__ap_share_gist" class="save-button mp-btn-secondary" style="margin-right:auto">${getTranslation("shareGist")}</button><button id="__ap_do_export_txt" class="save-button">TXT</button><button id="__ap_do_export_json" class="save-button">JSON</button>`;
+      ? `<button id="__ap_do_gist_insert" class="save-button" style="width:100%">${"Insert into Gist"}</button>`
+      : `<button id="__ap_share_gist" class="save-button mp-btn-secondary" style="margin-right:auto">${"Share on GitHub Gist"}</button><button id="__ap_do_export_txt" class="save-button">TXT</button><button id="__ap_do_export_json" class="save-button">JSON</button>`;
     (setSafeInnerHTML(
       n,
-      ` <button id="__ap_close_export" class="mp-modal-close-btn">${ICONS.close}</button><h2 class="modal-title">${getTranslation(e ? "exportGist" : "export")}</h2><div class="mp-search-container"><input type="text" id="__ap_export_search" class="mp-search-input" placeholder="${getTranslation("search")}" autocomplete="off"><div class="mp-export-actions"><label class="mp-checkbox-wrapper" style="cursor:pointer; user-select:none;"><input type="checkbox" id="__ap_select_all" class="mp-checkbox" checked><span style="margin-left:8px;">${getTranslation("selectAll")}</span></label><span id="__ap_count_label"></span></div></div><div class="mp-export-list" id="__ap_export_list"></div><div class="mp-export-buttons"> ${s} </div> `,
+      ` <button id="__ap_close_export" class="mp-modal-close-btn">${ICONS.close}</button><h2 class="modal-title">${e ? "Export to Gist" : "Export Prompt"}</h2><div class="mp-search-container"><input type="text" id="__ap_export_search" class="mp-search-input" placeholder="${"Search"}" autocomplete="off"><div class="mp-export-actions"><label class="mp-checkbox-wrapper" style="cursor:pointer; user-select:none;"><input type="checkbox" id="__ap_select_all" class="mp-checkbox" checked><span style="margin-left:8px;">${"Select All"}</span></label><span id="__ap_count_label"></span></div></div><div class="mp-export-list" id="__ap_export_list"></div><div class="mp-export-buttons"> ${s} </div> `,
     ),
       t.appendChild(n),
       document.body.appendChild(t),
@@ -11118,7 +10645,7 @@
         a = document.getElementById("__ap_count_label");
       a.textContent =
         0 === n
-          ? getTranslation("countPrompts", { count: t })
+          ? `${t} prompts`
           : n === t
             ? `${t}/${t} ✓`
             : `${n}/${t}`;
@@ -11131,7 +10658,7 @@
         const e = document.createElement("div");
         return (
           (e.className = "empty-state"),
-          (e.textContent = getTranslation("noSavedPrompts")),
+          (e.textContent = "No saved prompts."),
           i.appendChild(e),
           void c()
         );
@@ -11228,7 +10755,7 @@
             const t = g();
             if (0 === t.length)
               return void showNotification(
-                getTranslation("noPromptsToExport"),
+                "No prompts to export.",
                 "error",
               );
             const n = t.map((e) => ({
@@ -11252,23 +10779,21 @@
               const e = g();
               if (0 === e.length)
                 return void showNotification(
-                  getTranslation("noPromptsToExport"),
+                  "No prompts to export.",
                   "error",
                 );
               if (1 === e.length) return void exportJsonAsSingleFile(e);
               const t = await createDialogo({
-                title: getTranslation("exportJsonTitle"),
-                message: getTranslation("exportJsonChoice", {
-                  count: e.length,
-                }),
+                title: "Export as JSON",
+                message: `You have selected ${e.length} prompts. Do you want to export as a single file or as separate files?`,
                 actions: [
                   {
-                    label: getTranslation("exportSeparateFiles"),
+                    label: "Separate Files",
                     style: "danger",
                     value: "multiple",
                   },
                   {
-                    label: getTranslation("exportSingleFile"),
+                    label: "Single File",
                     style: "primary",
                     value: "single",
                   },
@@ -11284,10 +10809,8 @@
               if (e.length > 1) {
                 if (
                   !(await createDialogo({
-                    title: getTranslation("confirmDownload"),
-                    message: getTranslation("confirmDownloads", {
-                      count: e.length,
-                    }),
+                    title: "Confirm Download",
+                    message: `You are about to download ${e.length} individual files. Continue?`,
                     dontShowAgainId: "confirm-export-download",
                     type: "confirm",
                   }))
@@ -11310,7 +10833,7 @@
                   await new Promise((e) => setTimeout(e, 200)));
               }
             } else
-              showNotification(getTranslation("noPromptsToExport"), "error");
+              showNotification("No prompts to export.", "error");
           }),
           (document.getElementById("__ap_share_gist").onclick = () => {
             window.open("https://gist.github.com/", "_blank");
@@ -11321,7 +10844,7 @@
     openExportMenu(null);
   }
   async function processAndSavePrompts(e) {
-    if (!Array.isArray(e)) throw new Error(getTranslation("errorReadingJSON"));
+    if (!Array.isArray(e)) throw new Error("Error reading JSON file. Check formatting.");
     const t = await getAll(),
       n = e.map((e, t) => ({
         id: generatePromptId() + String(t).padStart(3, "0"),
@@ -11396,11 +10919,11 @@
     if (
       "local" ===
       (await createDialogo({
-        title: getTranslation("import"),
-        message: getTranslation("localImport"),
+        title: "Import Prompt",
+        message: "Select how you want to import your prompts.",
         actions: [
           {
-            label: getTranslation("localFile"),
+            label: "Local File",
             style: "primary",
             value: "local",
           },
@@ -11422,14 +10945,12 @@
                 ? JSON.parse(n)
                 : parseTextPrompt(n, t.name);
               showNotification(
-                getTranslation("promptsImported", {
-                  count: await processAndSavePrompts(a),
-                }),
+                `${await processAndSavePrompts(a)} prompts imported successfully!`,
                 "success",
               );
             } catch (e) {
               showNotification(
-                getTranslation("errorImporting", { error: e.message }),
+                `Error importing file: ${e.message}`,
                 "error",
               );
             }
@@ -11442,7 +10963,7 @@
   }
   function injectGistExportEditorButtons() {
     document.querySelectorAll(".gist-file-actions").forEach((e) => {
-      const t = `<span>${getTranslation("export")}</span>`,
+      const t = `<span>${"Export Prompt"}</span>`,
         n = e.querySelector(".mp-gist-export-editor-btn");
       if (n) return void (n.innerHTML !== t && setSafeInnerHTML(n, t));
       const a = document.createElement("button");
@@ -11562,14 +11083,14 @@
         await processAndSavePrompts(o));
       const r = Array.isArray(o) ? o.length : 1;
       (showNotification(
-        getTranslation("promptsImported", { count: r }),
+        `${r} prompts imported successfully!`,
         "success",
       ),
         (a.dataset.state = "imported"),
-        setSafeInnerHTML(a, `<span>${getTranslation("imported")}</span>`));
+        setSafeInnerHTML(a, `<span>${"Imported"}</span>`));
     } catch (e) {
       (showNotification(
-        getTranslation("errorImporting", { error: e.message }),
+        `Error importing file: ${e.message}`,
         "error",
       ),
         (a.disabled = !1),
@@ -11583,7 +11104,7 @@
       const n = e.querySelector(".gist-blob-name"),
         a = n ? n.innerText.trim() : "";
       if (!a.match(/\.mp\.prompt\.(json|txt|md)$/i)) return;
-      const o = `<span>${getTranslation("import")}</span>`,
+      const o = `<span>${"Import Prompt"}</span>`,
         r = e.querySelector(".mp-gist-import-btn");
       if (r) {
         if ("imported" === r.dataset.state) return;
@@ -11643,8 +11164,6 @@
         (currentPlaceholderModal.remove(), (currentPlaceholderModal = null)),
       (isInitialized = !1));
   }
-  // v27.0.8: this line used to also call initKofiPatreonFeature() (removed);
-  // initGistIntegration() alone remains and is unchanged.
   initGistIntegration();
   async function initUI() {
     if (pageObserver) pageObserver.disconnect();
@@ -12618,45 +12137,9 @@
         // editor independently via findFlowComposerContainer() (anchor
         // cascade + PINHOLE + bottom-most visible editable), which this
         // branch no longer touches.
-        // v27.0.7: dock layout repaired — the pill now expands within the
-        // flex row (see FLOW_DOCK_CSS) instead of overlaying the trigger,
-        // the trigger forwards its click with stopPropagation (single menu
-        // toggle), and #pm-flow-dock is exempted from the global
-        // outside-click closer (see setupGlobalEventListeners).
-        // v27.0.8: pill capabilities are now copy / paste / prompts menu
-        // (see createPromptButton); the pill renders as a rectangular
-        // glass panel aligned with the dock (see FLOW_DOCK_CSS); and the
-        // "Prompt Master" label uses the Cinzel Decorative webfont loaded
-        // by ensureCinzelDecorativeFont(), invoked below at mount time.
-        // v27.0.9: the pill's Prompts button is swapped for a Settings
-        // button (see createDockSettingsButton) — the prompts pane is the
-        // dock trigger's own click target, so the pill's copy of it was
-        // redundant, while settings had no on-page entry point at all.
-        // v27.0.10: (a) all three pill buttons (copy / paste / settings)
-        // now park collapsed and slide out together on pill hover — the
-        // dock-scoped .mp-btn-settings rules in FLOW_DOCK_CSS give the
-        // gear the same satellite choreography as its neighbors, so the
-        // pill's parked face is plain glass instead of a static icon;
-        // (b) the dock lingers fully revealed for FLOW_DOCK_HIDE_DELAY_MS
-        // after the pointer leaves before retracting (see the
-        // mouseenter/mouseleave wiring below); (c) the dock chrome is
-        // true glass (translucent gradient + 18px backdrop blur +
-        // 1.5x saturate + specular insets); (d) the "Prompt Master"
-        // title glows cyan on trigger hover.
         const existingDock = document.getElementById("pm-flow-dock");
         if (existingDock) existingDock.remove();
         const pill = createPromptButton("left");
-        // v27.0.9: swap the freshly built pill's Prompts (main-slot) button
-        // for the Settings button. This happens before the pill is appended
-        // to the dock, so the mount below is the only code that ever sees
-        // the swapped pill; createPromptButton itself is untouched and every
-        // other platform still gets its Prompts button, which there is the
-        // sole inline entry point to the prompt menu. The replacement keeps
-        // the third slot of .mp-sliding-pill-container; v27.0.10 docks that
-        // slot into the same collapse/expand choreography as Copy/Paste
-        // (see the .mp-btn-settings rules in FLOW_DOCK_CSS), so the parked
-        // pill shows no static face and hover slides all three buttons out
-        // together.
         const mainSlotBtn = pill.querySelector(
           '[data-testid="composer-button-prompts"]',
         );
@@ -12673,22 +12156,6 @@
             trigger,
             FLOW_DOCK_GLYPH + '<span class="mp-dock-text">Prompt Master</span>',
           ),
-          // v27.0.7 FIX (double dispatch): initUI registers the menu-toggle
-          // click listener on the dock itself (clickable === btn === dock).
-          // Forwarding via .click() on an inner element delivers exactly ONE
-          // synthetic event to that listener per physical click, because
-          // stopPropagation() kills the original click here at the trigger —
-          // otherwise both the synthetic and the original click would bubble
-          // up and the toggle ran twice per click, opening/closing the menu
-          // nondeterministically (verified by dispatch trace in v27.0.7).
-          // v27.0.9: the forward used to target the pill's Prompts button;
-          // that slot is now the Settings button, which stops its own
-          // propagation and must never toggle the menu. The forward instead
-          // rides the pill's glass panel: the panel carries no click
-          // handlers of its own, so the synthetic click bubbles cleanly
-          // through the wrapper into the dock-level menu toggle — one
-          // physical click, one synthetic event, one toggle, exactly as
-          // before.
           (trigger.onclick = (e) => {
             e.stopPropagation();
             const panel = pill.querySelector(".mp-sliding-pill-container");
@@ -12702,23 +12169,8 @@
             (dockStyle.textContent = FLOW_DOCK_CSS),
             document.head.appendChild(dockStyle));
         }
-        // v27.0.8: fetch + inject the Cinzel Decorative face for the dock
-        // label (async, idempotent, silent fallback — see the function).
         ensureCinzelDecorativeFont();
         document.body.appendChild(dock);
-        // v27.0.10 FIX (dwell before hide): the reveal stays pure CSS
-        // (:hover keeps the instant slide-out and remains the graceful
-        // no-JS fallback), while the retract is now delayed — this wiring
-        // adds .mp-dock-open on enter, which holds the dock fully revealed
-        // via the FLOW_DOCK_CSS :hover/.mp-dock-open union selector after
-        // the pointer leaves. A pending hide fires only after
-        // FLOW_DOCK_HIDE_DELAY_MS (2.5-3s window) off-dock; any re-enter
-        // cancels it. While either of the dock's own panels (the prompt
-        // menu or the settings modal) is visible, the timer re-arms
-        // instead of retracting, so the dock never slides out from under
-        // a pane the user is working in; and if a re-init unmounted this
-        // dock instance (existingDock.remove() above), the timer's
-        // body-contains guard retires the loop silently.
         let dockHideTimer = null;
         const scheduleDockHide = () => {
           if (dockHideTimer) clearTimeout(dockHideTimer);
@@ -13177,9 +12629,6 @@
         insertionMethod = "handled_manually";
       }
       if (!btn || !insertionPoint) return;
-      // v27.0.2: inline suggestions are an enhancement — a failure here must
-      // never abort the rest of initUI (menu, modals, click handlers), which
-      // previously let any throw fall into the outer catch and wipe the UI.
       try {
         const editorEl =
           getEditableRoot(findPlatformEditor()) ||
@@ -13226,11 +12675,9 @@
       }
       currentMenu = createPromptMenu();
       currentModal = createPromptModal();
-      languageModal = createLanguageModal();
       currentPlaceholderModal = createPlaceholderModal();
       document.body.appendChild(currentMenu);
       document.body.appendChild(currentModal);
-      document.body.appendChild(languageModal);
       document.body.appendChild(currentPlaceholderModal);
       clickable.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -13262,7 +12709,7 @@
         const autoExecute =
           document.getElementById("__ap_auto_execute").checked;
         if (!title || !text) {
-          showNotification(getTranslation("requiredFields"), "error");
+          showNotification("Title and Prompt are required.", "error");
           return;
         }
         const box = currentModal.querySelector(".mp-modal-box");
@@ -13299,7 +12746,7 @@
         const autoExecute =
           document.getElementById("__ap_auto_execute").checked;
         if (!title || !text) {
-          showNotification(getTranslation("requiredFields"), "error");
+          showNotification("Title and Prompt are required.", "error");
           return;
         }
         const box = currentModal.querySelector(".mp-modal-box");
@@ -13345,7 +12792,7 @@
         const title = document.getElementById("__ap_title").value.trim();
         const text = document.getElementById("__ap_text").value.trim();
         if (!title || !text) {
-          showNotification(getTranslation("requiredFields"), "error");
+          showNotification("Title and Prompt are required.", "error");
           return false;
         }
         const promptId = currentModal.dataset.promptId;
@@ -13376,7 +12823,7 @@
         }
         currentModal.dataset.originalTitle = title;
         currentModal.dataset.originalText = text;
-        showNotification(getTranslation("saveSuccess"));
+        showNotification("Saved Successfully!");
         await refreshMenu();
         return true;
       };
@@ -13400,20 +12847,20 @@
         const origText = currentModal.dataset.originalText || "";
         if (currentTitle !== origTitle || currentText !== origText) {
           const actionResult = await createDialogo({
-            message: getTranslation("confirmUnsaved"),
+            message: "You have unsaved changes. Exit without saving?",
             actions: [
               {
-                label: getTranslation("cancel"),
+                label: "Cancel",
                 style: "secondary",
                 value: "cancel",
               },
               {
-                label: getTranslation("confirm"),
+                label: "Confirm",
                 style: "danger",
                 value: "exit",
               },
               {
-                label: getTranslation("saveAndExit"),
+                label: "Save and Exit",
                 style: "primary",
                 value: "save",
               },
@@ -13596,9 +13043,6 @@
         };
       isInitialized = true;
     } catch (error) {
-      // v27.0.2: never fail silently. If the prompt button already mounted,
-      // keep it visible and clickable (self-healing re-init on click) so a
-      // late-stage error can no longer make the whole UI disappear.
       console.warn("[Prompt Master] initUI error:", error);
       if (btn && btn.isConnected) {
         currentButton = btn;
@@ -13627,12 +13071,6 @@
       if (!currentMenu || !currentButton) return;
       if (
         ev.target.closest(
-          // v27.0.7: #pm-flow-dock added for the Flow dock mount — clicks on
-          // dock chrome (trigger, pill wrapper margins) toggle the menu via
-          // the dock-level listener; without this exemption the same click
-          // also landed here and insta-closed the menu it had just opened.
-          // The dock element only ever exists on Flow, so every other
-          // platform's outside-click behavior is byte-for-byte unchanged.
           '#prompt-menu-container, [data-testid="composer-button-prompts"], #pm-flow-dock',
         )
       )
@@ -13647,8 +13085,6 @@
         if (currentModal && currentModal.classList.contains("visible")) {
           currentModal.querySelector("#__ap_close_prompt").click();
         }
-        if (languageModal && languageModal.classList.contains("visible"))
-          hideModal(languageModal);
         if (
           currentPlaceholderModal &&
           currentPlaceholderModal.classList.contains("visible")
@@ -13754,14 +13190,13 @@
     installAutoBackupProxy();
     const wasRestored = await restoreFromAutoBackup();
     checkFirstRun();
-    await determineLanguage();
     await loadSyntaxConfig();
     await loadShortcuts();
     await loadPredictionConfig();
     await loadNavConfig();
     await loadPreviewPromptConfig();
     await loadTagsConfig();
-    GM_registerMenuCommand(`⚙️ ${getTranslation("settings")}`, () => {
+    GM_registerMenuCommand(`⚙️ ${"Settings"}`, () => {
       if (!settingsModal) {
         settingsModal = createSettingsModal();
         document.body.appendChild(settingsModal);
@@ -13769,19 +13204,12 @@
       if (settingsModal.resetToCurrent) settingsModal.resetToCurrent();
       showModal(settingsModal);
     });
-    // v27.0.8: the "🔧 Force mount Prompt Master UI" extension-menu command
-    // was removed on request; tryInit() below (plus the page observer)
-    // still cover every automatic re-mount path.
     await loadAIConfig();
     await loadGistConfig();
     await loadImportedThemes();
     await loadThemeConfig();
     injectGlobalStyles();
     setupGlobalEventListeners();
-    // v27.0.3: unmissable console marker — instantly tells you whether the
-    // script is running on this page (open DevTools → Console on flow.google.com).
-    // v27.0.12: the version now reads SCRIPT_VERSION (GM_info), so the
-    // marker can never lag the @version header again.
     console.log(
       `[Prompt Master] v${SCRIPT_VERSION} active — platform: ${detectPlatform() || "none (page not matched)"}`,
     );
