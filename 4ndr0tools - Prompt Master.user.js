@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name                4ndr0tools - Prompt Master
 // @namespace           https://github.com/4ndr0666/userscripts
-// @version             27.0.12
+// @version             27.1.0
 // @author              4ndr0666
 // @icon                https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @license             UNLICENSED - RED TEAM USE ONLY
@@ -28,7 +28,9 @@
 // @connect             cdn.jsdelivr.net
 // v27.0.8: hosts for the Flow dock's 'Cinzel Decorative' webfont loader
 // (see ensureCinzelDecorativeFont — GM_xmlhttpRequest fetch + base64
-// @font-face, immune to page style/font CSP)
+// @font-face, immune to page style/font CSP). The old ko-fi.com @exclude
+// was removed along with the ko-fi feature; no @match rule ever targeted
+// ko-fi, so page matching is unchanged.
 // @connect             fonts.googleapis.com
 // @connect             fonts.gstatic.com
 // @connect             gist.github.com
@@ -61,7 +63,6 @@
     currentPlatform = null,
     settingsModal = null,
     currentPlaceholderModal = null,
-    infoModal = null,
     currentModal = null,
     currentMenu = null,
     currentButton = null,
@@ -165,6 +166,131 @@
     copyFailed: "Could not copy to the clipboard",
   };
   Object.assign(translations.en, _pillCopyStubs);
+  // v27.1.0: stubs for this version's new UI strings:
+  //  - attachmentsLabel / attachmentsTooltip — the prompt modal's files
+  //    accordion was renamed "Files" -> "Attachments" and now carries a
+  //    utility tooltip (attached files are auto-attached to the AI input
+  //    when the prompt is inserted — see insertPrompt's DataTransfer path).
+  //    The old filesLabel key stays in the external IDIOMAS pack, simply
+  //    unreferenced from now on.
+  //  - moveTagUp / moveTagDown — tooltips for the filter list's new
+  //    per-tag reorder controls (PromptTags.tagOrder, see moveTagOrder).
+  // English is the built-in fallback; every other language only receives
+  //    its stub when its IDIOMAS pack actually loaded (translations[lang]
+  //    exists), mirroring the _gistStubs / _pillCopyStubs mechanism.
+  const _v27_1_0Stubs = {
+    "en": {
+      attachmentsLabel: "Attachments",
+      attachmentsTooltip: "Files attached here are automatically uploaded into the AI input box when this prompt is inserted.",
+      moveTagUp: "Move up",
+      moveTagDown: "Move down",
+    },
+    "pt-BR": {
+      attachmentsLabel: "Anexos",
+      attachmentsTooltip: "Os arquivos anexados aqui são enviados automaticamente para a caixa de entrada da IA quando este prompt é inserido.",
+      moveTagUp: "Mover para cima",
+      moveTagDown: "Mover para baixo",
+    },
+    "zh-CN": {
+      attachmentsLabel: "附件",
+      attachmentsTooltip: "此处附加的文件会在插入此提示词时自动上传到 AI 输入框。",
+      moveTagUp: "上移",
+      moveTagDown: "下移",
+    },
+    "zh-TW": {
+      attachmentsLabel: "附件",
+      attachmentsTooltip: "此處附加的檔案會在插入此提示詞時自動上傳到 AI 輸入框。",
+      moveTagUp: "上移",
+      moveTagDown: "下移",
+    },
+    "es": {
+      attachmentsLabel: "Adjuntos",
+      attachmentsTooltip: "Los archivos adjuntados aquí se suben automáticamente al cuadro de entrada de la IA cuando se inserta este prompt.",
+      moveTagUp: "Mover arriba",
+      moveTagDown: "Mover abajo",
+    },
+    "fr": {
+      attachmentsLabel: "Pièces jointes",
+      attachmentsTooltip: "Les fichiers joints ici sont automatiquement téléversés dans la zone de saisie de l'IA lorsque ce prompt est inséré.",
+      moveTagUp: "Monter",
+      moveTagDown: "Descendre",
+    },
+    "ru": {
+      attachmentsLabel: "Вложения",
+      attachmentsTooltip: "Прикреплённые здесь файлы автоматически загружаются в поле ввода ИИ при вставке этого промпта.",
+      moveTagUp: "Переместить вверх",
+      moveTagDown: "Переместить вниз",
+    },
+    "uk": {
+      attachmentsLabel: "Вкладення",
+      attachmentsTooltip: "Прикріплені тут файли автоматично завантажуються в поле введення ШІ під час вставлення цього промпта.",
+      moveTagUp: "Перемістити вгору",
+      moveTagDown: "Перемістити вниз",
+    },
+    "ja": {
+      attachmentsLabel: "添付ファイル",
+      attachmentsTooltip: "ここに添付したファイルは、このプロンプトを挿入するとAIの入力欄に自動的にアップロードされます。",
+      moveTagUp: "上へ移動",
+      moveTagDown: "下へ移動",
+    },
+    "ko": {
+      attachmentsLabel: "첨부 파일",
+      attachmentsTooltip: "여기에 첨부한 파일은 이 프롬프트를 삽입할 때 AI 입력창에 자동으로 업로드됩니다.",
+      moveTagUp: "위로 이동",
+      moveTagDown: "아래로 이동",
+    },
+    "de": {
+      attachmentsLabel: "Anhänge",
+      attachmentsTooltip: "Hier angehängte Dateien werden beim Einfügen dieses Prompts automatisch in das Eingabefeld der KI hochgeladen.",
+      moveTagUp: "Nach oben",
+      moveTagDown: "Nach unten",
+    },
+    "it": {
+      attachmentsLabel: "Allegati",
+      attachmentsTooltip: "I file allegati qui vengono caricati automaticamente nella casella di input dell'IA quando questo prompt viene inserito.",
+      moveTagUp: "Sposta su",
+      moveTagDown: "Sposta giù",
+    },
+    "id": {
+      attachmentsLabel: "Lampiran",
+      attachmentsTooltip: "Berkas yang dilampirkan di sini otomatis diunggah ke kotak masukan AI saat prompt ini disisipkan.",
+      moveTagUp: "Pindah ke atas",
+      moveTagDown: "Pindah ke bawah",
+    },
+    "tr": {
+      attachmentsLabel: "Ekler",
+      attachmentsTooltip: "Buraya eklenen dosyalar, bu prompt eklendiğinde yapay zekâ giriş kutusuna otomatik olarak yüklenir.",
+      moveTagUp: "Yukarı taşı",
+      moveTagDown: "Aşağı taşı",
+    },
+    "pl": {
+      attachmentsLabel: "Załączniki",
+      attachmentsTooltip: "Pliki załączone tutaj są automatycznie przesyłane do pola wprowadzania AI po wstawieniu tego promptu.",
+      moveTagUp: "Przenieś w górę",
+      moveTagDown: "Przenieś w dół",
+    },
+    "vi": {
+      attachmentsLabel: "Tệp đính kèm",
+      attachmentsTooltip: "Tệp đính kèm tại đây sẽ tự động được tải lên ô nhập của AI khi chèn prompt này.",
+      moveTagUp: "Di chuyển lên",
+      moveTagDown: "Di chuyển xuống",
+    },
+    "hi": {
+      attachmentsLabel: "संलग्नक",
+      attachmentsTooltip: "यहाँ संलग्न की गई फ़ाइलें, इस प्रॉम्प्ट को डालने पर AI इनपुट बॉक्स में स्वतः अपलोड हो जाती हैं।",
+      moveTagUp: "ऊपर ले जाएँ",
+      moveTagDown: "नीचे ले जाएँ",
+    },
+    "tl": {
+      attachmentsLabel: "Mga Attachment",
+      attachmentsTooltip: "Ang mga file na nakalakip dito ay awtomatikong ina-upload sa input box ng AI kapag ini-insert ang prompt na ito.",
+      moveTagUp: "Ilipat pataas",
+      moveTagDown: "Ilipat pababa",
+    },
+  };
+  Object.keys(_v27_1_0Stubs).forEach((e) => {
+    translations[e] && Object.assign(translations[e], _v27_1_0Stubs[e]);
+  });
   function getTranslation(e, t = {}) {
     let n = translations[currentLang]?.[e] || translations.en[e];
     // Hardening (v27.0.2): if the IDIOMAS @resource failed to load (fresh
@@ -217,7 +343,7 @@
     return new File([s], t, { type: a });
   }
   const TAGS_STORAGE_KEY = "PromptTags",
-    DEFAULT_TAGS_CONFIG = { tags: {}, activeFilters: [], sortMode: "manual" };
+    DEFAULT_TAGS_CONFIG = { tags: {}, activeFilters: [], sortMode: "manual", tagOrder: [] };
   let currentTagsConfig = JSON.parse(JSON.stringify(DEFAULT_TAGS_CONFIG)),
     tagsModal = null,
     currentPromptTags = new Set();
@@ -263,6 +389,11 @@
     ((currentTagsConfig.activeFilters = currentTagsConfig.activeFilters.filter(
       (e) => e !== t,
     )),
+      // v27.1.0: also drop the deleted tag from the persisted order array.
+      Array.isArray(currentTagsConfig.tagOrder) &&
+        (currentTagsConfig.tagOrder = currentTagsConfig.tagOrder.filter(
+          (e) => e !== t,
+        )),
       await saveTagsConfig());
   }
   function getTag(e) {
@@ -270,7 +401,22 @@
     return currentTagsConfig.tags[t] || null;
   }
   function getAllTags() {
-    return Object.values(currentTagsConfig.tags);
+    // v27.1.0: honors the persisted PromptTags.tagOrder array (maintained by
+    // the filter list's up/down controls — see moveTagOrder). Tags missing
+    // from tagOrder keep their object insertion order AFTER the ordered ones
+    // (stable sort); without a tagOrder the behavior is byte-identical to
+    // the previous release (plain insertion order).
+    const e = Object.values(currentTagsConfig.tags),
+      t = currentTagsConfig.tagOrder;
+    if (Array.isArray(t) && t.length > 0) {
+      const n = new Map(t.map((e, t) => [e, t]));
+      e.sort((a, o) => {
+        const r = a.name.toLowerCase().trim(),
+          s = o.name.toLowerCase().trim();
+        return (n.has(r) ? n.get(r) : t.length) - (n.has(s) ? n.get(s) : t.length);
+      });
+    }
+    return e;
   }
   async function toggleTagFilter(e) {
     const t = e.toLowerCase().trim(),
@@ -289,13 +435,46 @@
     const t = e.toLowerCase().trim();
     return currentTagsConfig.activeFilters.includes(t);
   }
-  function promptMatchesFilter(e) {
+  async function moveTagOrder(e, t) {
+    // v27.1.0: moves a tag one slot up (t = -1) or down (t = 1) in the global
+    // tag order used by the filter dropdown (both windows), the tags manager
+    // and the prompt modal's tag selector. Persists PromptTags.tagOrder AND
+    // rewrites currentTagsConfig.tags key order (belt-and-suspenders for any
+    // raw Object.values consumers and for readable JSON backups). Returns
+    // false (no-op) for unknown tags or moves past either end.
+    const n = e.toLowerCase().trim(),
+      a = getAllTags().map((e) => e.name.toLowerCase().trim());
+    if (!a.includes(n)) return !1;
+    const o = a.indexOf(n),
+      r = o + (t > 0 ? 1 : -1);
+    if (r < 0 || r >= a.length) return !1;
+    const s = a[o];
+    (a[o] = a[r]), (a[r] = s);
+    const i = {};
     return (
-      0 === currentTagsConfig.activeFilters.length ||
-      (!(!e.tags || 0 === e.tags.length) &&
-        e.tags.some((e) =>
-          currentTagsConfig.activeFilters.includes(e.toLowerCase()),
-        ))
+      a.forEach((e) => {
+        currentTagsConfig.tags[e] && (i[e] = currentTagsConfig.tags[e]);
+      }),
+      Object.keys(currentTagsConfig.tags).forEach((e) => {
+        i[e] || (i[e] = currentTagsConfig.tags[e]);
+      }),
+      (currentTagsConfig.tags = i),
+      (currentTagsConfig.tagOrder = a),
+      await saveTagsConfig(),
+      !0
+    );
+  }
+  function promptMatchesFilter(e) {
+    // v27.1.0: multi-tag filtering is now intersection (AND) semantics — a
+    // prompt is shown only when it carries EVERY selected filter tag. The
+    // previous any-overlap (OR) logic let prompts tagged with just one of
+    // the selected tags slip through (e.g. "ss" + "c" selected still showed
+    // prompts tagged only "c"). Tag comparison stays case/trim-insensitive,
+    // matching the normalization toggleTagFilter() applies to the filters.
+    if (0 === currentTagsConfig.activeFilters.length) return !0;
+    if (!e.tags || 0 === e.tags.length) return !1;
+    return currentTagsConfig.activeFilters.every((t) =>
+      e.tags.some((e) => e.toLowerCase().trim() === t),
     );
   }
   const PROMPT_STORAGE_KEY = "Prompts";
@@ -1634,7 +1813,6 @@
       import:
         '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M8.71 7.71 11 5.41V15a1 1 0 0 0 2 0V5.41l2.29 2.3a1 1 0 0 0 1.42 0 1 1 0 0 0 0-1.42l-4-4a1 1 0 0 0-.33-.21 1 1 0 0 0-.76 0 1 1 0 0 0-.33.21l-4 4a1 1 0 1 0 1.42 1.42M21 14a1 1 0 0 0-1 1v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-4a1 1 0 0 0-2 0v4a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-4a1 1 0 0 0-1-1"/></svg>',
       info: '<svg viewBox="0 0 20 20"><path d="M10 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16Zm0 14a6 6 0 1 1 0-12 6 6 0 0 1 0 12ZM9 5h2v2H9V5Zm0 4h2v6H9V9Z"/></svg>',
-      shop: '<svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.0" d="m21.05 11.5.28-1.66c.18-1.09.27-1.63-.02-1.98s-.82-.36-1.9-.36H4.6c-1.07 0-1.61 0-1.9.36-.3.35-.2.9-.02 1.98l1.2 7.18c.4 2.38.6 3.57 1.42 4.28.81.7 1.98.7 4.33.7H12m2-4h8m-4 4v-8m-.5-6.5a5.5 5.5 0 1 0-11 0" color="currentColor"/></svg>',
       drag: '<svg viewBox="0 0 512 512"><path fill="currentColor" d="M278.6 9.4a32 32 0 0 0-45.3 0l-64 64A32 32 0 0 0 192 128h32v96h-96v-32a32.1 32.1 0 0 0-54.7-22.7l-64 64a32 32 0 0 0 0 45.3l64 64A32 32 0 0 0 128 320v-32h96v96h-32a32.1 32.1 0 0 0-22.7 54.7l64 64a32 32 0 0 0 45.3 0l64-64A32 32 0 0 0 320 384h-32v-96h96v32a32.1 32.1 0 0 0 54.7 22.7l64-64a32 32 0 0 0 0-45.3l-64-64A32 32 0 0 0 384 192v32h-96v-96h32a32.1 32.1 0 0 0 22.7-54.7l-64-64z"/></svg>',
       pin: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path></svg>',
       save: '<svg viewBox="0 0 32 32"><path fill="currentColor" d="M11.5 12A2.5 2.5 0 0 1 9 9.5V3H7.5A4.5 4.5 0 0 0 3 7.5v17a4.5 4.5 0 0 0 4 4.47V18.5A2.5 2.5 0 0 1 9.5 16h13a2.5 2.5 0 0 1 2.5 2.5v10.47a4.5 4.5 0 0 0 4-4.47V10.45a4.5 4.5 0 0 0-1.32-3.18l-2.95-2.95A4.5 4.5 0 0 0 22 3.02V9.5a2.5 2.5 0 0 1-2.5 2.5zM20 3h-9v6.5a.5.5 0 0 0 .5.5h8a.5.5 0 0 0 .5-.5zm3 26H9V18.5a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 .5.5z"/></svg>',
@@ -1671,6 +1849,8 @@
       // storefront / donation touchpoint (theme-shop cart, prompt-shop and
       // AI-info link actions, ko-fi page helper, ko-fi platform detection).
       // 'cart' was removed above for the same reason. No remaining references.
+      // v27.1.0: 'shop' was removed with the prompt-modal shop button (the
+      // "Get More Prompts" gist-search funnel); no remaining references.
       flip: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 22q-3.57 0-6.32-2.25T2.2 14h2.05q.7 2.65 2.85 4.33T12 20q2.15 0 4-1.06T18.9 16H16v-2h6v6h-2v-2q-1.42 1.9-3.52 2.95T12 22m0-7q-1.25 0-2.12-.87T9 12t.88-2.12T12 9t2.13.88T15 12t-.87 2.13T12 15M2 10V4h2v2q1.43-1.9 3.53-2.95T12 2q3.58 0 6.33 2.25T21.8 10h-2.05q-.7-2.65-2.85-4.32T12 4Q9.85 4 8 5.06T5.1 8H8v2z"/></svg>',
       reset:
         '<svg viewBox="0 0 512 512"><path fill="currentColor" fill-rule="evenodd" d="M256 448A192 192 0 0 1 65.5 279.8l42.3-5.3a149.4 149.4 0 1 0 25.6-103.8h80v42.6H64V64h42.7v71.3A192 192 0 1 1 256 448" clip-rule="evenodd"/></svg>',
@@ -2709,7 +2889,7 @@
       (t.onclick = (e) => e.stopPropagation()),
       setSafeInnerHTML(
         t,
-        ` <button id="__ap_expand_btn" class="mp-modal-expand-btn">${ICONS.expand}</button><button id="__ap_shop_btn" class="mp-modal-shop-btn">${ICONS.shop}</button><button id="__ap_info_btn" class="mp-modal-info-btn">${ICONS.info}</button><button id="__ap_close_prompt" class="mp-modal-close-btn">${ICONS.close}</button> `,
+        ` <button id="__ap_expand_btn" class="mp-modal-expand-btn">${ICONS.expand}</button><button id="__ap_close_prompt" class="mp-modal-close-btn">${ICONS.close}</button> `,
       ));
     const n = document.createElement("div");
     ((n.id = "__ap_inner_content_scroll"),
@@ -2717,7 +2897,7 @@
         "height: 100%; width: 100%; display: flex; flex-direction: column;"),
       setSafeInnerHTML(
         n,
-        ` <h2 class="modal-title" style="flex-shrink:0; margin-top: 10px;">${getTranslation("newPrompt")}</h2><div class="form-group" style="flex-shrink:0;"><div class="mp-label-wrapper"><label for="__ap_title" class="form-label" style="margin-bottom:0;">${getTranslation("title")}</label><div class="mp-modal-right-controls"><button id="__ap_color_btn_modal" class="mp-link-btn"><span class="icon">${ICONS.color}</span></button></div></div><input id="__ap_title" class="form-input" /></div><div class="form-group" style="height: 400px;"><div class="mp-label-wrapper"><label for="__ap_text" class="form-label" style="margin-bottom:0;">${getTranslation("prompt")}</label><div class="mp-modal-right-controls"><button id="__ap_link_btn_modal" class="mp-link-btn"><span class="icon">${ICONS.link}</span></button><button id="__ap_enhance_btn" class="mp-enhance-ai-btn"><span class="icon">${ICONS.magic}</span></button><button id="__ap_paste_btn_modal" class="mp-paste-btn">${ICONS.paste}</button></div></div><textarea id="__ap_text" class="form-textarea" spellcheck="false" style="height:100% !important; resize:none;"></textarea></div><div class="mp-accordions-row"><div class="mp-files-accordion" id="__ap_files_accordion"><div class="mp-accordion-header" id="__ap_files_header"><div style="display:flex;align-items:center;gap:8px;">${ICONS.folder}<span id="__ap_files_label">${getTranslation("filesLabel")}</span></div> ${ICONS.chevron} </div><div class="mp-accordion-content" id="__ap_files_content"><div id="__ap_file_scroll_wrapper" class="mp-file-scroll-wrapper"><div id="__ap_file_grid" class="mp-file-grid"></div></div><input type="file" id="__ap_file_input" multiple style="display:none"></div></div><div class="mp-tags-accordion" id="__ap_tags_accordion"><div class="mp-accordion-header" id="__ap_tags_header"><div style="display:flex;align-items:center;gap:8px;">${ICONS.tag}<span id="__ap_tags_label">${getTranslation("tags")}</span></div> ${ICONS.chevron} </div><div class="mp-accordion-content" id="__ap_tags_content"><div id="__ap_tags_scroll_wrapper" class="mp-tags-scroll-wrapper"><div id="__ap_tags_grid" class="mp-tags-grid"></div></div><div class="mp-tags-accordion-footer"><button id="__ap_tags_manage" class="mp-tags-manage-btn">${ICONS.edit}<span>${getTranslation("manageTags")}</span></button></div></div></div></div><div class="mp-switch-container"><div class="mp-switch" style="flex:1;"><input type="checkbox" id="__ap_use_placeholders" /><label for="__ap_use_placeholders">Toggle</label><span class="switch-text" onclick="document.getElementById('__ap_use_placeholders').click()">${getTranslation("enablePlaceholders")}</span></div><div class="mp-switch" style="flex:1;"><input type="checkbox" id="__ap_auto_execute" /><label for="__ap_auto_execute">Toggle</label><span class="switch-text" onclick="document.getElementById('__ap_auto_execute').click()">${getTranslation("autoExecute")}</span></div><span id="shortcutInfo" style="cursor: help !important;" class="mp-help-icon">${ICONS.info}</span><div id="__ap_custom_shortcut_btn" class="mp-shortcut-option mp-prompt-shortcut" data-shortcut="">${getTranslation("shortcut")}</div></div><div class="modal-footer" style="flex-shrink:0; margin-top: auto;"><button id="__ap_save" class="save-button">${getTranslation("save")}</button></div> `,
+        ` <h2 class="modal-title" style="flex-shrink:0; margin-top: 10px;">${getTranslation("newPrompt")}</h2><div class="form-group" style="flex-shrink:0;"><div class="mp-label-wrapper"><label for="__ap_title" class="form-label" style="margin-bottom:0;">${getTranslation("title")}</label><div class="mp-modal-right-controls"><button id="__ap_color_btn_modal" class="mp-link-btn"><span class="icon">${ICONS.color}</span></button></div></div><input id="__ap_title" class="form-input" /></div><div class="form-group" style="height: 400px;"><div class="mp-label-wrapper"><label for="__ap_text" class="form-label" style="margin-bottom:0;">${getTranslation("prompt")}</label><div class="mp-modal-right-controls"><button id="__ap_link_btn_modal" class="mp-link-btn"><span class="icon">${ICONS.link}</span></button><button id="__ap_enhance_btn" class="mp-enhance-ai-btn"><span class="icon">${ICONS.magic}</span></button><button id="__ap_paste_btn_modal" class="mp-paste-btn">${ICONS.paste}</button></div></div><textarea id="__ap_text" class="form-textarea" spellcheck="false" style="height:100% !important; resize:none;"></textarea></div><div class="mp-accordions-row"><div class="mp-files-accordion" id="__ap_files_accordion"><div class="mp-accordion-header" id="__ap_files_header"><div style="display:flex;align-items:center;gap:8px;">${ICONS.folder}<span id="__ap_files_label">${getTranslation("attachmentsLabel")}</span></div> ${ICONS.chevron} </div><div class="mp-accordion-content" id="__ap_files_content"><div id="__ap_file_scroll_wrapper" class="mp-file-scroll-wrapper"><div id="__ap_file_grid" class="mp-file-grid"></div></div><input type="file" id="__ap_file_input" multiple style="display:none"></div></div><div class="mp-tags-accordion" id="__ap_tags_accordion"><div class="mp-accordion-header" id="__ap_tags_header"><div style="display:flex;align-items:center;gap:8px;">${ICONS.tag}<span id="__ap_tags_label">${getTranslation("tags")}</span></div> ${ICONS.chevron} </div><div class="mp-accordion-content" id="__ap_tags_content"><div id="__ap_tags_scroll_wrapper" class="mp-tags-scroll-wrapper"><div id="__ap_tags_grid" class="mp-tags-grid"></div></div><div class="mp-tags-accordion-footer"><button id="__ap_tags_manage" class="mp-tags-manage-btn">${ICONS.edit}<span>${getTranslation("manageTags")}</span></button></div></div></div></div><div class="mp-switch-container"><div class="mp-switch" style="flex:1;"><input type="checkbox" id="__ap_use_placeholders" /><label for="__ap_use_placeholders">Toggle</label><span class="switch-text" onclick="document.getElementById('__ap_use_placeholders').click()">${getTranslation("enablePlaceholders")}</span></div><div class="mp-switch" style="flex:1;"><input type="checkbox" id="__ap_auto_execute" /><label for="__ap_auto_execute">Toggle</label><span class="switch-text" onclick="document.getElementById('__ap_auto_execute').click()">${getTranslation("autoExecute")}</span></div><span id="shortcutInfo" style="cursor: help !important;" class="mp-help-icon">${ICONS.info}</span><div id="__ap_custom_shortcut_btn" class="mp-shortcut-option mp-prompt-shortcut" data-shortcut="">${getTranslation("shortcut")}</div></div><div class="modal-footer" style="flex-shrink:0; margin-top: auto;"><button id="__ap_save" class="save-button">${getTranslation("save")}</button></div> `,
       ),
       t.appendChild(n),
       e.appendChild(t));
@@ -2870,6 +3050,11 @@
             r.updateScrollArrows &&
             setTimeout(() => r.updateScrollArrows(), 50));
       }),
+      // v27.1.0: the accordion (renamed "Files" -> "Attachments") carries a
+      // utility tooltip so the feature's real behavior is discoverable:
+      // attached files are auto-attached to the AI input when the prompt is
+      // inserted (insertPrompt's DataTransfer path), not just previewed.
+      createCustomTooltip(o, getTranslation("attachmentsTooltip"), "bottom"),
       d.addEventListener("click", (e) => {
         (e.stopPropagation(),
           c.classList.toggle("open"),
@@ -2987,36 +3172,12 @@
           }
         } catch (e) {}
       }));
-    const _ = t.querySelector("#__ap_shop_btn");
-    // v27.0.8: the Patreon and Ko-fi storefront actions were removed from
-    // this tooltip; the Gist community search (a script feature, not a
-    // storefront) remains as its single action.
-    _ &&
-      createCustomTooltip(
-        _,
-        {
-          text: getTranslation("getMorePrompts"),
-          layout: "column",
-          actions: [
-            {
-              label: "Gist",
-              icon: ICONS.gist,
-              action: () => {
-                window.open(
-                  'https://gist.github.com/search?o=desc&q=".mp.prompt."&s=updated',
-                  "_blank",
-                );
-              },
-            },
-          ],
-        },
-        "bottom",
-      );
-    createCustomTooltip(
-      t.querySelector("#__ap_info_btn"),
-      getTranslation("infoTitle"),
-      "bottom",
-    );
+    // v27.1.0: the "shopping bag" header button (#__ap_shop_btn — tooltip
+    // "Get More Prompts", whose only action opened the Gist community prompt
+    // search) and the "circled i" help button (#__ap_info_btn) were removed
+    // on request, together with this wiring. The modal header now carries
+    // expand + close only; the "more prompts" up-sell funnel has no
+    // remaining touchpoint in this script.
     const w = t.querySelector("#__ap_close_prompt");
     async function S(e) {
       for (const n of e) {
@@ -3912,21 +4073,12 @@
       document.body.appendChild(a),
       requestAnimationFrame(() => a.classList.add("visible")));
   }
-  function createInfoModal() {
-    const e = document.createElement("div");
-    ((e.className = "mp-overlay mp-hidden"),
-      (e.id = "__ap_info_modal_overlay"));
-    const t = document.createElement("div");
-    ((t.className = "mp-modal-box"), (t.onclick = (e) => e.stopPropagation()));
-    return (
-      setSafeInnerHTML(
-        t,
-        ` <button id="__ap_close_info" class="mp-modal-close-btn" aria-label="${getTranslation("close")}">${ICONS.close}</button><h2 class="modal-title">${getTranslation("infoTitle")}</h2><div class="mp-info-table"><div class="mp-info-row"><div class="mp-info-col mp-info-title-col"><h3>${getTranslation("autoExecute")}</h3></div><div class="mp-info-col mp-info-desc-col"><p>${getTranslation("infoASDesc")}</p></div></div><div class="mp-info-row"><div class="mp-info-col mp-info-title-col"><h3>${getTranslation("enablePlaceholders")}</h3></div><div class="mp-info-col mp-info-desc-col"><p>${getTranslation("infoDPDesc")}</p></div></div><div class="mp-info-row"><div class="mp-info-col mp-info-title-col"><h3>${getTranslation("enhanceTooltip")}</h3></div><div class="mp-info-col mp-info-desc-col"><p>${getTranslation("infoAIDesc")}</p></div></div><div class="mp-info-row"><div class="mp-info-col mp-info-title-col"><h3>${getTranslation("shareGist")}</h3></div><div class="mp-info-col mp-info-desc-col"><p>${getTranslation("infoGistDesc")}</p></div></div><div class="mp-info-row"><div class="mp-info-col mp-info-title-col"><h3>${getTranslation("sharedPromptConfig")}</h3></div><div class="mp-info-col mp-info-desc-col"><p>${getTranslation("spcDesc")}</p></div></div></div> `,
-      ),
-      e.appendChild(t),
-      e
-    );
-  }
+  // v27.1.0: createInfoModal() — the "circled i" help modal (the
+  // auto-execute / placeholders / enhance / share-gist / shared-prompt
+  // docs table) — was removed together with its #__ap_info_btn trigger
+  // and all wiring. The infoTitle / info*Desc / spcDesc translation keys
+  // are no longer referenced by this script; every feature it described
+  // still exists and keeps its own per-control tooltip.
   function openPromptModal(e = null) {
     if (!currentModal) return;
     const t = !!e,
@@ -4703,6 +4855,44 @@
       o.appendChild(d),
       "function" == typeof setupEnhancedScroll && setupEnhancedScroll(d),
       (o.rebuild = () => {
+        const tagDropdown = o,
+          scrollPos = d.scrollTop,
+          makeMoveBtn = (tagKey, dir, icon, tipKey, atEdge) => {
+            // v27.1.0: per-tag up/down reorder control for the filter list
+            // (both the dock window and the expanded full-view window share
+            // this builder). The order is global (PromptTags.tagOrder) and
+            // persists; end-of-list buttons render disabled. Clicks are
+            // isolated (stopPropagation) so they never toggle the filter.
+            const btn = document.createElement("button");
+            return (
+              (btn.type = "button"),
+              (btn.className = "mp-filter-move-btn"),
+              (btn.style.cssText =
+                "display:flex;align-items:center;justify-content:center;width:18px;height:14px;padding:0;background:transparent;border:none;color:var(--mp-text-secondary);line-height:1;" +
+                (atEdge
+                  ? "opacity:.25;cursor:default;"
+                  : "opacity:.8;cursor:pointer;")),
+              setSafeInnerHTML(btn, icon),
+              btn.firstElementChild &&
+                ((btn.firstElementChild.style.width = "12px"),
+                (btn.firstElementChild.style.height = "12px"),
+                (btn.firstElementChild.style.display = "block")),
+              btn.setAttribute("aria-label", getTranslation(tipKey)),
+              "function" == typeof createCustomTooltip &&
+                createCustomTooltip(btn, getTranslation(tipKey), "left"),
+              (btn.onmousedown = (e) => e.stopPropagation()),
+              (btn.onclick = atEdge
+                ? (e) => (e.stopPropagation(), e.preventDefault())
+                : async (e) => {
+                    (e.stopPropagation(), e.preventDefault()),
+                      (await moveTagOrder(tagKey, dir)) &&
+                        tagDropdown.rebuild();
+                  }),
+              atEdge || (btn.onmouseenter = () => (btn.style.opacity = "1")),
+              atEdge || (btn.onmouseleave = () => (btn.style.opacity = "0.8")),
+              btn
+            );
+          };
         (window.__mpSortMode ||
           (window.__mpSortMode = currentTagsConfig.sortMode || "manual"),
           (c.value = window.__mpSortMode),
@@ -4714,7 +4904,7 @@
             (e.textContent = getTranslation("noTags")),
             d.appendChild(e));
         } else
-          e.forEach((e) => {
+          e.forEach((e, tagIndex, tagList) => {
             const t = e.name.toLowerCase(),
               a = isTagFilterActive(t),
               o = document.createElement("div");
@@ -4725,7 +4915,24 @@
             const s = document.createElement("div");
             ((s.className = "mp-filter-tag-preview"),
               s.appendChild(createTagBadge(e)),
-              o.appendChild(s),
+              o.appendChild(s));
+            const u = document.createElement("div");
+            ((u.className = "mp-filter-move-btns"),
+              (u.style.cssText =
+                "display:flex;flex-direction:column;align-items:center;flex-shrink:0;"),
+              u.appendChild(
+                makeMoveBtn(t, -1, ICONS.navUp, "moveTagUp", 0 === tagIndex),
+              ),
+              u.appendChild(
+                makeMoveBtn(
+                  t,
+                  1,
+                  ICONS.navDown,
+                  "moveTagDown",
+                  tagIndex === tagList.length - 1,
+                ),
+              ),
+              o.appendChild(u),
               o.appendChild(r),
               o.addEventListener("click", async (e) => {
                 (e.stopPropagation(),
@@ -4735,6 +4942,7 @@
               }),
               d.appendChild(o));
           });
+        d.scrollTop = scrollPos;
       }),
       (c.onchange = (e) => {
         ((window.__mpSortMode = e.target.value),
@@ -9304,7 +9512,7 @@
     GM_info.script &&
     GM_info.script.version
       ? GM_info.script.version
-      : "27.0.12";
+      : "27.1.0";
   // v27.0.12: canonical backup snapshot helper. The beta's Gist push
   // called snapshotKeys() before it existed anywhere, so every "Sync Now"
   // threw a ReferenceError; takeAutoBackup() now shares this one helper
@@ -11181,22 +11389,16 @@
     return (o && ((o.text = r.join("\n").trim()), a.push(o)), a);
   }
   async function importPrompts() {
+    // v27.1.0: the "GitHub Gist" browse action was removed — it opened the
+    // gist.github.com `.mp.prompt.` community search, i.e. the same "more
+    // prompts" funnel as the removed shop button. Local-file import is the
+    // dialog's sole action now; dismissing the dialog still skips import.
     if (
       "local" ===
       (await createDialogo({
         title: getTranslation("import"),
         message: getTranslation("localImport"),
         actions: [
-          {
-            label: "GitHub Gist",
-            style: "secondary",
-            action: () => {
-              window.open(
-                'https://gist.github.com/search?o=desc&q=".mp.prompt."&s=updated',
-                "_blank",
-              );
-            },
-          },
           {
             label: getTranslation("localFile"),
             style: "primary",
@@ -13026,12 +13228,10 @@
       currentModal = createPromptModal();
       languageModal = createLanguageModal();
       currentPlaceholderModal = createPlaceholderModal();
-      infoModal = createInfoModal();
       document.body.appendChild(currentMenu);
       document.body.appendChild(currentModal);
       document.body.appendChild(languageModal);
       document.body.appendChild(currentPlaceholderModal);
-      document.body.appendChild(infoModal);
       clickable.addEventListener("click", (e) => {
         e.stopPropagation();
         e.preventDefault();
@@ -13394,14 +13594,6 @@
           e.stopPropagation();
           hideModal(currentPlaceholderModal);
         };
-      currentModal.querySelector("#__ap_info_btn").onclick = (e) => {
-        e.stopPropagation();
-        showModal(infoModal);
-      };
-      infoModal.querySelector("#__ap_close_info").onclick = (e) => {
-        e.stopPropagation();
-        hideModal(infoModal);
-      };
       isInitialized = true;
     } catch (error) {
       // v27.0.2: never fail silently. If the prompt button already mounted,
