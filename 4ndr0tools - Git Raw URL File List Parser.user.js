@@ -15,7 +15,7 @@
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Git%20Raw%20URL%20File%20List%20Parser.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Git%20Raw%20URL%20File%20List%20Parser.user.js
 // @license      UNLICENSED - RED TEAM USE ONLY
-// ==/UserScript==
+// ==UserScript==
 
 (() => {
   'use strict';
