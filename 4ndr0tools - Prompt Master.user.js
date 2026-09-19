@@ -1,29 +1,318 @@
 // ==UserScript==
-// @name                4ndr0tools - Prompt Master
+// @name                PromptMasterBeta
 // @namespace           https://github.com/4ndr0666/userscripts
-// @version             27.2.1
+// @version             27.3.17
 // @author              4ndr0666
 // @icon                https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @license             UNLICENSED - RED TEAM USE ONLY
 // @description         Universal Prompt Manager.
-// @match               *://grok.com/*
-// @match               *://claude.ai/*
-// @match               *://chatgpt.com/*
 // @match               *://geminigen.ai/*
-// @match               *://*.perplexity.ai/*
 // @match               *://gist.github.com/*
 // @match               *://gemini.google.com/*
-// @match               *://aistudio.google.com/*
-// @match               *://notebooklm.google.com/*
 // @match               *://labs.google/fx/*
 // @match               *://flow.google.com/*
 // @match               *://*.google.com/search?*udm=50*
+// v27.3.17: the self-verification round — the end of manual test
+// procedures. (1) SELF-TEST: a new "🧪 Flow Credits: Self-Test"
+// menu command (and window.__flowCreditDebugSelfTest from the
+// console) runs ~20 assertions over the tracker's whole state
+// machine — hook key/value validation, the cap branch and its
+// provenance, Flow-print precedence, read-path day rolling,
+// anchor-aware period keys, the reset-time parser, and reset
+// preservation/honesty — prints a PASS/FAIL table, then restores
+// every piece of state it touched. One command, machine verdict;
+// no more 4-step console dances. (2) SELF-AUDITING REPORTS: every
+// Copy Report ends with a machine-checked self-check block
+// (phantom model keys, print-snapshot corruption, session click
+// sums, malformed caps and armed windows) — a pasted report can
+// no longer silently mislead. (3) THE LEARNED RESET ANCHOR: the
+// daily-limit notice's reset moment is now PARSED ("until 11/9/26,
+// 3:00 AM", "resets in 7 hours", "midnight", time-only forms) and
+// stored per model as capResetAt; day boundaries are anchor-aware
+// (periods flip at Flow's actual reset, not assumed local
+// midnight), with byte-identical v27.3.16 behavior until an anchor
+// is learned. (4) RESET KEEPS CANONICAL KNOWLEDGE: same-period
+// Flow-printed usage (used/max/usageAt/turnsDayAtUsage) survives
+// reset alongside the cap and today's turns — Flow's own numbers
+// are knowledge, not client state, and resets must not destroy
+// them.
+// v27.3.16: the debug-hook and reset-honesty round. (1) DEBUG
+// HOOK VALIDATION: __flowCreditDebugSetCap accepted any model key,
+// and flowCreditEntry auto-creates whatever key it is given, so a
+// typo ("NB2", "nb2Lite") silently planted a PHANTOM model row
+// into the persisted store — one that even survived Reset, because
+// preservedCaps restores anything with capTurns > 0. The hook now
+// validates the key against FLOW_CREDIT_MODELS and the cap as a
+// positive integer, warns and no-ops otherwise, returns a JSON
+// clone instead of the live entry (the page realm must never hold a
+// mutable reference to tracker state — mutations would ride the
+// debounced persist into GM storage), installs only on
+// flow.google.com, and the unsafeWindow assignment is try/caught:
+// an unguarded cross-realm write is a single point of failure for
+// every statement after it in this IIFE, start() included. (2)
+// RESET HONESTY: v27.3.13 preserved the learned cap but zeroed
+// turnsDay, so a same-day reset rendered cap − 0 = a full tank the
+// server had already drawn down (wall-hit day: "16/16 turns left"
+// while still walled), and the re-learn guard (cap !== capTurns)
+// blocked self-correction until local midnight. A reset now keeps
+// the TODAY click count (and its day key) for any model already
+// used today — the server counted those turns whether or not the
+// client resets; unused-today models still reset to a true fresh
+// zero. (3) PROVENANCE: a debug-injected cap now reports its source
+// as "debug-injected" instead of "learned at the limit notice",
+// and the report's model lines carry the cap's recorded timestamp
+// and verbatim text, so post-reset evidence shows where the number
+// came from. (4) The SCRIPT_VERSION sandbox fallback had drifted
+// again (27.3.12 vs a 27.3.15 header) — re-synced.
+// v27.3.12: the turns-left hardening round — same-day and
+// day-boundary fixes to the v27.3.10 math. (1) MIDNIGHT SNAPSHOT
+// POISONING: the usage print's turnsDayAtUsage snapshot read
+// e.turnsDay without rolling the day counters first (they only
+// rolled on the next click), so a print landing between the daily
+// reset and the day's first click snapshotted YESTERDAY's count;
+// every click after the reset then subtracted as max(0, today
+// − yesterday) = 0 and turns-left froze at the printed number for
+// the rest of the day. Day counters now roll at snapshot time, at
+// cap-learn time, and inside flowCreditTurnsLeft itself
+// (flowCreditRollEntryDay). (2) THE PERSISTED CAP NEVER ANSWERED THE
+// NEXT DAY: the cap branch demanded capAt be from TODAY while the
+// design (and the report tip) promised "every day after starts from
+// a known limit" — the learned cap now answers on every following
+// day; Flow's own print still wins whenever it prints. (3) CAP
+// INFLATION: a persistent limit notice re-captured every 30s
+// re-learned cap = max(turnsDay, used) each time, so futile clicks
+// at the wall (Flow can keep the button enabled) ratcheted the
+// learned cap upward all day; the cap is learned once per model per
+// day, and only Flow's own print can raise it after that. (4)
+// MIDNIGHT DISPLAY: between midnight and the day's first click the
+// chip labeled yesterday's turnsDay as "turns today"; day values now
+// render through the same roll and the render signature carries the
+// day key so the flip re-renders. Plus: storage-sourced usage
+// readings can seed but never overwrite a today-fresh print
+// (localStorage is the stalest source), oversized dialogs no longer
+// qualify as limit notices, and the SCRIPT_VERSION sandbox fallback
+// is back in sync with the @version header.
+// v27.3.10: the recentering round — "We are counting how many
+// turns of each model is left before they run out." The wallet is
+// the shared video pool and has nothing to do with NB model runout,
+// so it leaves the chip (hover title + report only). The chip now
+// leads with TURNS LEFT, from two sources: (1) FLOW'S OWN PRINTS —
+// model-picker usage rows ("Leaving 6/16") give used/max, and each
+// print stores a snapshot of today's click count so later clicks
+// subtract without ever re-counting the ones before the print;
+// (2) THE LEARNED CAP — Flow's daily-limit notice (the wall: "Daily
+// Limit Reached", community-documented to carry the exact reset
+// time) is watched every tick, captured verbatim, attributed to the
+// model that most recently generated, and the turns count at the
+// wall moment is recorded as that model's daily cap — persisted, so
+// every following day starts from a known limit. turns-left =
+// print − clicks-since-print, or cap − clicks-since-wall; same-day
+// guards keep a stale print or yesterday's cap from answering for
+// today; with neither source the chip says "N turns today · cap ?"
+// rather than inventing a number. Turns stay generation button
+// clicks (exact) and images only count inside the 150s post-click
+// window. The report gains a per-model "N/M turns left (source)"
+// clause plus a verbatim dump of any captured limit notice, and the
+// tip is rewritten around the actual function.
+// v27.3.9: generation-anchored wallet freshness. The first live
+// v27.3.8 report validated the click-anchored counter end to end —
+// one "Start generation" click counted one turn, the model row's
+// "x2" promised two images and exactly two rendered inside the armed
+// window, the store loaded as v2 so a 02:58 wallet reading finally
+// survived a reload — and it exposed the one remaining inaccuracy:
+// the chip said "0 cr" from that 02:58 reading while the 05:58 first
+// generation of the day had just refreshed the daily grant under it,
+// and the 6h time gate still called the reading "fresh". Google's
+// cost doc (support.google.com/flow/answer/16526234) is explicit
+// that the wallet MUTATES at generation time (the daily grant
+// refreshes on the FIRST generation of the day; credit-charging
+// models deduct per generation), so freshness now has an event
+// anchor: every qualifying generation click stamps a persisted
+// lastGenAt, and a wallet reading older than that stamp is stale no
+// matter how young it is. The re-read is proportional — the
+// post-generation auto re-pull (one pending timer per session, a
+// 5-pull session cap, hidden-tab retry, staleness re-checked at fire
+// time, the same profile-menu open/harvest/close cascade and safety
+// rails as the boot pull) arms only when the balance plausibly
+// changed: the day's first generation (grant refresh), a model with
+// a known per-generation cost, or an unattributed click (Veo-class —
+// those charge). Free NB re-clicks after the day's first generation
+// change nothing server-side, so they never trigger a menu open. The
+// Copy Report command re-pulls a stale wallet instead of quoting it;
+// the report's wallet line marks a stale reading with the generation
+// timestamp; the chip title flags it; Reset cancels any pending
+// re-pull. Wallet readings can no longer survive a generation they
+// should not have.
+// v27.3.8: the click-anchored rebuild — the direct answer to "the
+// counter remains arbitrary and not accurate at all." Root cause 1
+// (found in v27.3.7's own load path): the store load gate still
+// demanded v === 1 while the writer has saved v: 2 since v27.3.6 —
+// every reload after the first save silently discarded the ENTIRE
+// store, so counts and wallet re-accumulated from zero each session
+// and the numbers could never converge (v1 and v2 both load now; a
+// one-time cv migration also zeroes the sweep-derived
+// gens/turns/day counters — v27.3.5–v27.3.7 proved those unreliable:
+// history thumbnails, lazy loads and progressively re-rendered old
+// scenes all leaked in — while the wallet, per-model costs, and
+// Flow-printed usage readings survive the migration). Root cause 2
+// (structural): a DOM heuristic can never tell a new generation from
+// history re-rendering, so the counter now counts the one event that
+// cannot lie — the generation CLICK. Flow's own button (captured
+// live in the v27.3.6 report: <button aria> "Start generation",
+// beside the model row "🍌 Nano Banana 2 crop_16_9 x4") is hooked
+// capture-phase on the document: one qualifying click = one TURN for
+// the model selected at click time (exact — the 8s burst-gap
+// guessing is gone), the model row's "x4" is read as the
+// images-per-generation batch hint, and a 150s ARMED WINDOW opens
+// during which flowCreditCountGens attributes new media to that
+// model. Media outside any armed window NEVER counts, wherever it
+// renders and on any route (the v27.3.7 anchor route gate stays as
+// a diagnostics signal; counting no longer depends on it — the
+// click is the gate). Rapid repeat clicks inside 10s (PM's own
+// auto-send retry loop, double-firing overlays) dedupe to one turn.
+// The documentation pull the user asked for also landed, and it
+// changed the tip: per support.google.com/flow/answer/16526234 the
+// daily 50-credit grant refreshes on the FIRST generation of the
+// day (not at midnight), credit costs are per generation ("some
+// product features will create multiple generations per request"),
+// and the prompt-box Settings panel lists the latest costs. Usage
+// patterns gained the remaining-form pairs community reports
+// documented on Flow's model-picker rows ("Leaving 6/16", "N/M
+// left" — parsed as used = max − remaining) plus the split "N turns
+// taken" / "max N tokens" phrasings behind the user's own NB Lite
+// sighting; a bare "N/M" with no direction word still never parses
+// (aspect ratios like 16/9 would poison it) — instead the report
+// dumps model rows verbatim AND the generate button's live
+// label/state, so the next one-paste pins the exact wording. The
+// report also gained store-load provenance, generation-click counts,
+// batch hints, and armed-window state, and per-model lines now carry
+// turns AND images, total AND today. Reset finally wipes the turns
+// session map and the click-anchored state with everything else.
+// v27.3.6: the counting round. The user's v27.3.5 live report
+// proved the counter's numbers wrong for the wrong reasons: NB Pro
+// (7) was right only by coincidence — every Pro generation rendered
+// on the /edit/ route while Pro was selected, the exact scenario the
+// sweep heuristic models — while NB2 Lite's "36 images" was the
+// COLLECTION GRID's thumbnails (every progressively rendered
+// fingerprint, historical or not, was attributed to whatever model
+// was selected while browsing), and NB2's 0 was pre-install usage a
+// client-side counter can never backfill. Three structural fixes:
+// media mutations are now stamped with the model selected AT ADD
+// TIME (a dedicated MutationObserver), counting runs ONLY on /edit/
+// routes with a re-seed on every SPA route change, and committed
+// fingerprints are burst-grouped into TURNS (the unit Flow's hidden
+// daily NB limit actually counts) with daily counters that roll
+// over at local midnight. A bare "0 credits" (the NB cost badge) is
+// now parsed as cost, never as a drained wallet. And the canonical
+// path: Flow DOES sometimes display Nano Banana usage (turns taken /
+// max tokens available) — a new "usage" reading kind captures that
+// phrasing wherever it renders (model picker rows, limit notices,
+// network payloads, the profile menu), is attributed per model, and
+// is shown in the chip as the authoritative number, clearly
+// separated from the client-side count. The report samples
+// token/turn/daily text and model rows verbatim so the exact live
+// wording can be pinned in one paste.
+// v27.3.5: the verdict round. The pull worked mechanically — the
+// menu opened and its text was captured — but two flaws remained,
+// and the captured text settled the feasibility question for good.
+// (1) The menu prints its balance as "280 Google Flow credits" —
+// number and unit separated by the words "Google Flow" — which no
+// v27.3.4 pattern matched, so "no parsable credit text" was a
+// parser gap, not a data gap; a dedicated pattern now reads that
+// exact phrasing (left-only; "N Google Flow credits each month"
+// plan descriptors stay excluded). (2) The close cascade (Escape /
+// toggle / outside-click) lost to this menu and left it open; the
+// menu's own X control ("close" — the first word of the captured
+// menu text) is now clicked FIRST, and the wallet gate accepts a
+// left-only reading so a successful pull stops the boot / 45s /
+// report re-pulls instead of repeating (auto-pulls refresh a stale
+// wallet after 6h). (3) The semantics were wrong, and Google's
+// published cost table (support.google.com/flow/answer/16526234)
+// proves it: only Veo 3.1 variants, Gemini Omni Flash, and
+// upscaling consume Flow credits — Nano Banana generations cost 0
+// credits (Flow's own UI prints "0 credits" per NB generation;
+// the store's cost=0 readings came from there), and NB usage is
+// capped by an undisclosed server-side daily image limit Flow
+// never displays. A per-model "credits left" for Nano Banana
+// therefore does not exist to be read. The chip is rebuilt around
+// what does: the shared wallet (menu pull), the per-model cost
+// (Flow's printed hints), and a client-side per-model IMAGE COUNT
+// (fingerprinted img/background-image nodes, scroll-quiet gate,
+// session + persisted totals) — the number that actually tracks
+// the hidden daily limit. Per-model left/total is gone; unnamed
+// left/total readings now feed the wallet only.
+// v27.3.4: the wallet pull — the direct answer to "is it even
+// possible?". Yes: the credits ARE in the page, but only while
+// Flow's profile menu (the account popover at the top-right) is
+// open, so every passive source read zero because the popover never
+// was. The tracker now opens that menu itself (account-chip hunt ->
+// click -> harvest -> close via Escape / button-toggle /
+// outside-click), once ~9s after load when the store has no wallet
+// total, retried once at 45s for slow SPA boots, and on demand from
+// the Copy Report command — which now pulls BEFORE reporting and
+// embeds the menu's raw text, so one paste still pins Flow's live
+// wording. Safety: a menu the user already opened is harvested but
+// never closed; links are never clicked; one pull at a time.
+// v27.3.3: live-site round 3 — one-paste diagnostics. If the chip
+// still reads "— / —", the settled 8s console line has long since
+// scrolled past; the new "📋 Flow Credits: Copy Report" userscript
+// command (Flow pages only) forces a fresh scan, then prints AND
+// copies a full report — engine/anchor/model, per-source counters
+// (page text / network payloads / storage hits), the persisted
+// wallet + per-model store, what the chip is showing, and every
+// credit-ish text visible at that moment — so a single paste pins
+// Flow's live wording instead of another blind round. Adds the
+// GM_setClipboard grant (falls back to console-only output).
+// v27.3.2: live-site fix #2 — the chip rendered with the right model
+// but no numbers: Flow keeps wallet left/total out of the
+// persistent DOM (they surface in transient popovers and in Flow's
+// own API traffic). The tracker now (a) passively observes Flow's
+// OWN network responses — fetch/XHR wrappers clone-and-scan and
+// never block, never alter, and never issue a request; (b) sweeps
+// localStorage/sessionStorage for credit-shaped JSON; (c) parses
+// more printed formats ("credits left: 40", "40 credits per
+// generation" as a COST, label/number split across aria-label and
+// text nodes); (d) lets a strictly-newer wallet reading outrank a
+// stale per-model value; and (e) logs one settled status line
+// after 8s with cumulative counters (plus a dump of the credit
+// texts it can see when nothing parsed, so one report pinpoints
+// Flow's live wording).
+// v27.3.1: live-site fix — the credit tracker's single anchor (the
+// editor lookup) could miss on the rebuilt Flow UI and leave the
+// chip invisible. The chip now anchors through a cascade (prompt
+// field → composer → model chip) at the pill's old spot inside the
+// field's right edge; split-span credit meters are read via the
+// joined container text; the model chip matches from any tag, not
+// just buttons; and a one-shot console line reports
+// anchor/model/readings.
+// v27.3.0: Flow gains a per-model credit tracker (see
+// startFlowCreditTracker). Flow's three image models — Nano Banana
+// Pro / Nano Banana 2 / Nano Banana 2 Lite — are read from the live
+// page text; visible credit readouts (left/total pairs, remaining
+// counts, per-generation costs) are harvested, attributed per model,
+// persisted across sessions, and shown as "left / total" in a glass
+// chip floating at the rich text field's top-right corner — the spot
+// where the pre-v27.0.6 inline pill used to sit. Read-only and
+// self-contained: Flow's DOM is never restructured and no network
+// request is made.
+// v27.2.1: the external stylesheet dependency is gone. The shared
+// My-Prompt stylesheet (style.min.css at the 0H4S/My-Prompt@26.1.0 repo
+// tag) is now embedded verbatim in this script as MP_EMBEDDED_CSS —
+// byte-identical to the file the manager's resource API used to serve —
+// so the script carries its own styles: no resource download at install,
+// update, or run time. The @connect cdn.jsdelivr.net entry below stays
+// (it whitelists the import-from-URL feature, not stylesheets).
 // @connect             generativelanguage.googleapis.com
 // @connect             gist.githubusercontent.com
 // @connect             raw.githubusercontent.com
 // @connect             router.huggingface.co
 // @connect             api.longcat.chat
 // @connect             cdn.jsdelivr.net
+// v27.0.8: hosts for the Flow dock's 'Cinzel Decorative' webfont loader
+// (see ensureCinzelDecorativeFont — GM_xmlhttpRequest fetch + base64
+// @font-face, immune to page style/font CSP). The old ko-fi.com @exclude
+// was removed along with the ko-fi feature; no @match rule ever targeted
+// ko-fi, so page matching is unchanged.
 // @connect             fonts.googleapis.com
 // @connect             fonts.gstatic.com
 // @connect             gist.github.com
@@ -37,6 +326,15 @@
 // @grant               GM_deleteValue
 // @grant               GM_xmlhttpRequest
 // @grant               GM_registerMenuCommand
+// v27.3.3: clipboard for the on-demand credit report command (see
+// reportFlowCreditTracker); the report falls back to console-only
+// output when the API is unavailable.
+// @grant               GM_setClipboard
+// v27.3.2: read-only page-window access so the credit tracker can
+// passively observe Flow's own fetch/XHR responses (the wrappers
+// only clone-and-scan; nothing is ever requested — see
+// installFlowCreditNetObserver).
+// @grant               unsafeWindow
 // @run-at              document-end
 // @noframes
 // @compatible          chrome
@@ -119,6 +417,14 @@
       manus: 'div[contenteditable="true"].tiptap.ProseMirror',
       xiaomi: "textarea, textarea.resize-none",
     };
+  // v27.2.0: the multi-language subsystem was removed entirely. The
+  // external language-pack resource (18 locales) is no longer fetched,
+  // the English stub merges and the key-lookup/auto-detect helpers are
+  // gone, and the language selector UI (settings row + modal) went with
+  // them. The UI is English-only now: every former message key is
+  // inlined at its call site as a literal string, and the "Language"
+  // entry was dropped from the backup manager and the auto-backup key
+  // list since no language setting remains to store.
   const GLOBAL_FILES_KEY = "GlobalFiles";
   let currentActiveFileIds = new Set();
   async function getGlobalFiles() {
@@ -207,6 +513,11 @@
     return currentTagsConfig.tags[t] || null;
   }
   function getAllTags() {
+    // v27.1.0: honors the persisted PromptTags.tagOrder array (maintained by
+    // the filter list's up/down controls — see moveTagOrder). Tags missing
+    // from tagOrder keep their object insertion order AFTER the ordered ones
+    // (stable sort); without a tagOrder the behavior is byte-identical to
+    // the previous release (plain insertion order).
     const e = Object.values(currentTagsConfig.tags),
       t = currentTagsConfig.tagOrder;
     if (Array.isArray(t) && t.length > 0) {
@@ -237,6 +548,12 @@
     return currentTagsConfig.activeFilters.includes(t);
   }
   async function moveTagOrder(e, t) {
+    // v27.1.0: moves a tag one slot up (t = -1) or down (t = 1) in the global
+    // tag order used by the filter dropdown (both windows), the tags manager
+    // and the prompt modal's tag selector. Persists PromptTags.tagOrder AND
+    // rewrites currentTagsConfig.tags key order (belt-and-suspenders for any
+    // raw Object.values consumers and for readable JSON backups). Returns
+    // false (no-op) for unknown tags or moves past either end.
     const n = e.toLowerCase().trim(),
       a = getAllTags().map((e) => e.name.toLowerCase().trim());
     if (!a.includes(n)) return !1;
@@ -260,6 +577,12 @@
     );
   }
   function promptMatchesFilter(e) {
+    // v27.1.0: multi-tag filtering is now intersection (AND) semantics — a
+    // prompt is shown only when it carries EVERY selected filter tag. The
+    // previous any-overlap (OR) logic let prompts tagged with just one of
+    // the selected tags slip through (e.g. "ss" + "c" selected still showed
+    // prompts tagged only "c"). Tag comparison stays case/trim-insensitive,
+    // matching the normalization toggleTagFilter() applies to the filters.
     if (0 === currentTagsConfig.activeFilters.length) return !0;
     if (!e.tags || 0 === e.tags.length) return !1;
     return currentTagsConfig.activeFilters.every((t) =>
@@ -1230,6 +1553,14 @@
         t && t());
     }
   }
+  // v27.2.1: the shared My-Prompt stylesheet, embedded verbatim. This is
+  // the exact text of the repo's style.min.css (pin 26.1.0) that the
+  // external resource path used to inject — byte-for-byte, so the .mp-*
+  // rule surface and rendering are unchanged. injectGlobalStyles() below
+  // injects it through the same setSafeInnerHTML call as before; only the
+  // string's origin changed (bundled here instead of downloaded). Font
+  // loading stays a separate, on-demand concern (mp-font-override
+  // @import + ensureCinzelDecorativeFont) and is untouched.
   const MP_EMBEDDED_CSS =
     ":root{--mp-font-stack-i18n:\"Roboto Slab\",-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,\"Helvetica Neue\",Arial,\"Microsoft YaHei\",\"PingFang SC\",\"Hiragino Sans GB\",\"Heiti SC\",\"Apple SD Gothic Neo\",\"Noto Sans CJK SC\",sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\",\"Segoe UI Symbol\";--mp-font-family-base:var(--mp-font-stack-i18n);--mp-font-family-heading:var(--mp-font-stack-i18n);--mp-font-family-editor:\"JetBrains Mono\",var(--mp-font-stack-i18n);--mp-font-family-button:var(--mp-font-stack-i18n);--mp-bg-primary:#fff;--mp-bg-secondary:#f8f9fa;--mp-bg-tertiary:#e2e4e6;--mp-bg-overlay:rgba(10,10,10,0.5);--mp-text-primary:#212529;--mp-text-secondary:#495057;--mp-text-tertiary:#868e96;--mp-text-buttons:#fff;--mp-border-primary:#dee2e6;--mp-border-secondary:#ced4da;--mp-accent-primary:#7071fc;--mp-accent-primary-hover:#595ac9;--mp-accent-edit:#fab005;--mp-accent-edit-hover:#f08c00;--mp-accent-close:#f03e3e;--mp-accent-close-hover:#c92a2a;--mp-btn-export-bg:rgba(34,129,207,0.1);--mp-btn-export-color:#2281cf;--mp-btn-add-bg:rgba(32,201,97,0.1);--mp-btn-add-color:#20c961;--mp-btn-import-bg:rgba(253,126,20,0.1);--mp-btn-import-color:#fd7e14;--mp-switch-knob:#fff;--mp-shadow-sm:0 1px 2px rgba(0,0,0,0.04);--mp-shadow-md:0 4px 12px rgba(0,0,0,0.1);--mp-shadow-lg:0 10px 30px rgba(0,0,0,0.1);--mp-border-radius-sm:4px;--mp-border-radius-md:8px;--mp-border-radius-lg:16px;--mp-transition-fast:0.2s cubic-bezier(0.25,1,0.5,1);--mp-syntax-escape:#ff6b6b;--mp-syntax-ignore-fence:#868e96;--mp-syntax-ignore-content:#adb5bd;--mp-syntax-quote-fence:#2b8a3e;--mp-syntax-quote-content:#40c057;--mp-syntax-var-keyword:#15aabf;--mp-syntax-var-flag:#0c8599;--mp-syntax-file-keyword:#e64980;--mp-syntax-sel-fence:#4c6ef5;--mp-syntax-sel-header:#3b5bdb;--mp-syntax-sel-multi:#339af0;--mp-syntax-sel-single:#ff8787;--mp-syntax-sel-id:#da77f2;--mp-syntax-sel-other:#fa7b05;--mp-syntax-sel-sep:#adb5bd;--mp-syntax-free-bracket:#fab005;--mp-syntax-free-label:#e67700;--mp-syntax-in-bracket:#d6336c;--mp-syntax-in-label:#a61e4d;--mp-syntax-in-eq:#f06595;--mp-syntax-sil-bracket:#845ef7;--mp-syntax-sil-label:#6741d9;--mp-syntax-sil-eq:#b197fc;--mp-syntax-var:#099268;--mp-syntax-context:#868e96;--mp-syntax-def-sep:#f03e3e;--mp-syntax-def-val:#ff8787;--mp-syntax-sel-checked:#20c997;--mp-syntax-caret:var(--mp-text-primary,#000);--mp-syntax-selection:color-mix(in srgb,var(--mp-accent-primary,#4c6ef5) 30%,transparent)}@media (prefers-color-scheme:dark){:root{--mp-bg-primary:#212529;--mp-bg-secondary:#2c2c30;--mp-bg-tertiary:#343a40;--mp-bg-overlay:rgba(0,0,0,0.7);--mp-text-primary:#f8f9fa;--mp-text-secondary:#e9ecef;--mp-text-tertiary:#adb5bd;--mp-text-buttons:#fff;--mp-border-primary:#495057;--mp-border-secondary:#868e96;--mp-accent-primary:#8586ff;--mp-accent-primary-hover:#9fa0ff;--mp-accent-edit:#fcc419;--mp-accent-edit-hover:#ffe066;--mp-accent-close:#ff6b6b;--mp-accent-close-hover:#ff8787;--mp-btn-export-bg:rgba(116,192,252,0.15);--mp-btn-export-color:#74c0fc;--mp-btn-add-bg:rgba(105,219,124,0.15);--mp-btn-add-color:#69db7c;--mp-btn-import-bg:rgba(255,169,77,0.15);--mp-btn-import-color:#ffa94d;--mp-switch-knob:#fff;--mp-shadow-sm:0 1px 2px rgba(0,0,0,0.3);--mp-shadow-md:0 4px 12px rgba(0,0,0,0.4);--mp-shadow-lg:0 10px 30px rgba(0,0,0,0.5);--mp-syntax-escape:#ff8787;--mp-syntax-ignore-fence:#adb5bd;--mp-syntax-ignore-content:#868e96;--mp-syntax-quote-fence:#69db7c;--mp-syntax-quote-content:#b2f2bb;--mp-syntax-var-keyword:#3bc9db;--mp-syntax-var-flag:#99e9f2;--mp-syntax-file-keyword:#f783ac;--mp-syntax-sel-fence:#91a7ff;--mp-syntax-sel-header:#bac8ff;--mp-syntax-sel-multi:#74c0fc;--mp-syntax-sel-single:#ffc9c9;--mp-syntax-sel-id:#e599f7;--mp-syntax-sel-other:#fa7b05;--mp-syntax-sel-sep:#868e96;--mp-syntax-free-bracket:#ffd43b;--mp-syntax-free-label:#fab005;--mp-syntax-in-bracket:#f06595;--mp-syntax-in-label:#fcc2d7;--mp-syntax-in-eq:#faa2c1;--mp-syntax-sil-bracket:#b197fc;--mp-syntax-sil-label:#d0bfff;--mp-syntax-sil-eq:#9775fa;--mp-syntax-var:#38d9a9;--mp-syntax-context:#ced4da;--mp-syntax-def-sep:#ff6b6b;--mp-syntax-def-val:#ffc9c9;--mp-syntax-sel-checked:#63e6be}}.mp-prompt-wrapper{position:relative;width:36px;height:36px;margin:0 4px;display:inline-flex;vertical-align:middle;z-index:1000}.mp-sliding-pill-container{position:absolute;width:36px;height:36px;box-sizing:border-box;justify-content:space-between;background-color:var(--mp-bg-primary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-lg);box-shadow:var(--mp-shadow-sm);overflow:hidden;z-index:1000;transition:width var(--mp-transition-fast),height var(--mp-transition-fast),background-color var(--mp-transition-fast),border-color var(--mp-transition-fast)}.mp-btn-part,.mp-sliding-pill-container{display:flex;align-items:center;padding:0}.mp-btn-part{justify-content:center;flex:0 0 34px;width:34px;height:34px;background:transparent;border:none;margin:0;cursor:pointer;color:var(--mp-text-secondary);transition:color var(--mp-transition-fast)}.mp-btn-part svg{display:block;width:20px;height:20px;margin:0 auto;pointer-events:none;flex-shrink:0}.mp-btn-main{opacity:1}.mp-btn-ai,.mp-btn-paste{flex:0 0 0;width:0;height:0;opacity:0;overflow:hidden;transition:flex-basis var(--mp-transition-fast),width var(--mp-transition-fast),height var(--mp-transition-fast),opacity var(--mp-transition-fast),transform var(--mp-transition-fast)}.mp-sliding-pill-container:hover .mp-btn-ai,.mp-sliding-pill-container:hover .mp-btn-paste{flex:0 0 34px;width:34px;height:34px;opacity:1;transform:translate(0)}.mp-sliding-pill-container:hover{background-color:var(--mp-bg-tertiary);border-color:var(--mp-accent-primary);box-shadow:var(--mp-shadow-md)}.mp-btn-part:hover{color:var(--mp-accent-primary)}.mp-sliding-pill-container:active{background-color:var(--mp-bg-secondary)}.mp-dir-top{bottom:0;left:0;flex-direction:column}.mp-dir-top:hover{height:112px}.mp-dir-top .mp-btn-ai,.mp-dir-top .mp-btn-paste{transform:translateY(10px)}.mp-dir-bottom{top:0;left:0;flex-direction:column-reverse}.mp-dir-bottom:hover{height:112px}.mp-dir-bottom .mp-btn-ai,.mp-dir-bottom .mp-btn-paste{transform:translateY(-10px)}.mp-dir-left{top:0;right:0;flex-direction:row}.mp-dir-left:hover{width:112px}.mp-dir-left .mp-btn-ai,.mp-dir-left .mp-btn-paste{transform:translateX(10px)}.mp-dir-right{top:0;left:0;flex-direction:row-reverse}.mp-dir-right:hover{width:112px}.mp-dir-right .mp-btn-ai,.mp-dir-right .mp-btn-paste{transform:translateX(-10px)}.mp-sliding-pill-container:after,.mp-sliding-pill-container:before{content:\"\";position:absolute;background-color:var(--mp-border-primary);opacity:0;transition:opacity var(--mp-transition-fast);pointer-events:none;z-index:1001}.mp-sliding-pill-container:hover:after,.mp-sliding-pill-container:hover:before{opacity:1}.mp-dir-bottom:before,.mp-dir-top:before{width:26px;height:1px;left:50%;transform:translateX(-50%);top:37px}.mp-dir-bottom:after,.mp-dir-top:after{width:26px;height:1px;left:50%;transform:translateX(-50%);top:75px}.mp-dir-left:before,.mp-dir-right:before{width:1px;height:26px;top:50%;transform:translateY(-50%);left:37px}.mp-dir-left:after,.mp-dir-right:after{width:1px;height:26px;top:50%;transform:translateY(-50%);left:75px}.mp-hidden{display:none!important}.mp-scroll-invisible{overflow-y:auto!important;scrollbar-width:none!important;-ms-overflow-style:none!important;scroll-behavior:smooth}.mp-scroll-invisible::-webkit-scrollbar{display:none;width:0;height:0}.mp-scroll-wrapper{position:relative;display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;max-width:100%;box-sizing:border-box}.mp-scroll-arrow{position:absolute;left:0;right:0;height:28px;display:flex;align-items:center;justify-content:center;color:var(--mp-text-tertiary);cursor:pointer;opacity:0;pointer-events:none;transition:opacity .2s ease,color .2s ease;z-index:10}.mp-scroll-arrow.up{top:0;background:linear-gradient(180deg,color-mix(in srgb,var(--mp-scroll-bg,var(--mp-bg-primary)),transparent 40%) 30%,transparent)}.mp-scroll-arrow.down{bottom:0;background:linear-gradient(0deg,color-mix(in srgb,var(--mp-scroll-bg,var(--mp-bg-primary)),transparent 40%) 30%,transparent)}.mp-scroll-arrow:hover{color:var(--mp-accent-primary)}.mp-scroll-arrow.visible{opacity:1;pointer-events:auto}.mp-scroll-arrow svg{width:20px;height:20px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.1))}#AB_modal_box_el #__ap_text,#prompt-menu-container #__ap_text,.mp-modal-box .form-group:has(#__ap_text) .form-textarea{border:none!important;box-shadow:none!important;background-color:transparent!important;padding:16px;width:100%;height:100%;font-family:var(--mp-font-family-editor)!important}.mp-modal-box .form-group:has(#__ap_text) .mp-scroll-wrapper{border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);background-color:var(--mp-bg-secondary);transition:border-color .2s,box-shadow .2s;overflow:hidden!important;display:flex;flex-direction:column;height:300px}.mp-modal-box .form-group:has(#__ap_text) .mp-scroll-wrapper:focus-within{border-color:var(--mp-accent-primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--mp-accent-primary) 25%,transparent)}.mp-modal-box.mp-expanded .form-group:has(#__ap_text) .mp-scroll-wrapper{height:100%!important}.mp-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background-color:var(--mp-bg-overlay);z-index:99990;display:flex;justify-content:center;align-items:center;backdrop-filter:blur(4px);opacity:0;visibility:hidden;transition:opacity var(--mp-transition-fast),visibility var(--mp-transition-fast)}.mp-overlay.visible{opacity:1;visibility:visible}.mp-modal-box{font-family:var(--mp-font-family-base)!important;background-color:var(--mp-bg-primary);border-radius:var(--mp-border-radius-lg);padding:24px!important;box-shadow:var(--mp-shadow-lg);width:min(93vw,800px)!important;border:1px solid var(--mp-border-primary)!important;transform:scale(.95) translateY(10px);opacity:0;transition:transform var(--mp-transition-fast),opacity var(--mp-transition-fast),width .3s cubic-bezier(.4,0,.2,1),height .3s cubic-bezier(.4,0,.2,1)!important;position:relative!important;display:flex!important;flex-direction:column!important;max-height:95vh!important}.modal-title,.mp-modal-box{color:var(--mp-text-primary)}.modal-title{font-family:var(--mp-font-family-heading)!important;font-size:18px;font-weight:600;margin:0 0 20px;text-align:center;flex-shrink:0}.modal-footer{display:flex;justify-content:center;margin-top:16px;flex-shrink:0}.mp-modal-box.mp-expanded{width:95vw!important;max-width:95vw!important;height:93vh!important;max-height:93vh!important;display:flex!important;flex-direction:column!important}.mp-modal-box.mp-expanded .form-group:has(#__ap_text){flex:1;display:flex;flex-direction:column;min-height:0;margin-bottom:15px}.mp-modal-box.mp-expanded .modal-title{display:block!important;visibility:visible!important;text-align:center;margin-bottom:20px;flex-shrink:0}.mp-modal-box.mp-expanded .form-group:has(.form-textarea){flex:1;display:flex;flex-direction:column;min-height:0;margin-bottom:24px}.mp-modal-box.mp-expanded .mp-scroll-wrapper{flex:1;height:100%!important}.mp-modal-box.mp-expanded .form-textarea{height:100%!important}.mp-modal-box.mp-expanded .mp-switch-container{padding-top:8px}.mp-overlay.visible .mp-modal-box{transform:scale(1) translateY(0);opacity:1}.mp-modal-close-btn,.mp-modal-info-btn,.mp-modal-shop-btn{position:absolute;top:12px;background:none;border:none;color:var(--mp-text-tertiary);cursor:pointer;width:32px;height:32px;border-radius:50%;transition:transform .3s ease,color .3s ease,background-color .3s ease;display:flex;justify-content:center;align-items:center;padding:0;z-index:20}.mp-modal-close-btn{right:12px}.mp-modal-info-btn{right:88px}.mp-modal-shop-btn{right:126px;cursor:default!important}.mp-modal-close-btn:hover{transform:rotate(90deg);color:var(--mp-accent-close);background-color:color-mix(in srgb,var(--mp-accent-close) 15%,transparent)}.mp-modal-info-btn:hover,.mp-modal-shop-btn:hover{transform:scale(1.1);color:var(--mp-accent-primary);background-color:color-mix(in srgb,var(--mp-accent-primary) 15%,transparent)}.mp-modal-close-btn svg,.mp-modal-info-btn svg,.mp-modal-shop-btn svg{width:20px;height:20px;stroke:currentColor;stroke-width:2.5;fill:none}.mp-modal-info-btn svg{stroke-width:0;fill:currentColor}.mp-modal-expand-btn{position:absolute;top:12px;right:50px;background:none;border:none;color:var(--mp-text-tertiary);cursor:pointer;width:32px;height:32px;border-radius:50%;transition:transform .3s ease,color .3s ease,background-color .3s ease;display:flex;justify-content:center;align-items:center;padding:0;z-index:20}.mp-modal-expand-btn:hover{transform:scale(1.1);color:var(--mp-accent-primary);background-color:color-mix(in srgb,var(--mp-accent-primary) 15%,transparent)}.mp-modal-expand-btn svg,.mp-modal-shop-btn svg{width:20px;height:20px;stroke:currentColor;stroke-width:2;fill:none}.mp-diff-modal-overlay .mp-modal-box{width:95vw!important;height:93vh!important;max-width:none!important;display:flex!important;flex-direction:column!important}.mp-diff-container{display:flex;flex-direction:column;gap:16px;flex:1;min-height:0;margin-bottom:0}@media (min-width:768px){.mp-diff-container{flex-direction:row}}.mp-diff-column{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0;min-height:0}.mp-diff-label{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mp-accent-primary);display:flex;align-items:center;gap:8px;flex-shrink:0;justify-content:space-around}.mp-diff-textarea{width:100%!important;flex:1!important;padding:16px!important;border-radius:var(--mp-border-radius-md)!important;border:1px solid var(--mp-border-primary)!important;background-color:var(--mp-bg-secondary)!important;color:var(--mp-text-primary)!important;font-family:var(--mp-font-family-editor)!important;font-size:15px!important;resize:none!important;line-height:1.6!important;box-sizing:border-box!important}.mp-diff-actions{display:flex;gap:12px;justify-content:space-around;margin-top:20px;flex-shrink:0}.mp-diff-actions button{padding:10px 20px;border-radius:var(--mp-border-radius-md);cursor:pointer;font-weight:500;display:inline-flex;align-items:center;justify-content:center}.mp-diff-actions .save-button{background:var(--mp-accent-primary);color:var(--mp-text-buttons);border:none}#__ap_enhance_loading{z-index:100000}.mp-loading-content{display:flex;flex-direction:column;align-items:center;gap:15px;color:var(--mp-accent-primary);font-family:var(--mp-font-family-editor)}.mp-loading-icon{width:50px;height:50px}.mp-loading-text{font-size:16px;font-weight:500}.mp-label-wrapper{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px}.mp-label-left{display:flex;align-items:center;flex:1;min-width:0}.mp-label-right,.mp-modal-right-controls{display:flex;align-items:center;gap:4px;flex-shrink:0}.mp-label-wrapper .form-label{margin-bottom:0!important;white-space:normal;overflow:hidden;text-overflow:ellipsis}.mp-enhance-ai-btn,.mp-help-icon,.mp-link-btn,.mp-paste-btn{background:transparent;border:none;cursor:pointer;color:var(--mp-accent-primary);display:flex;align-items:center;justify-content:center;padding:4px;border-radius:var(--mp-border-radius-sm);transition:transform .2s ease,opacity .2s ease,background-color .2s ease;opacity:.8;outline:none;flex-shrink:0}.mp-enhance-ai-btn:hover,.mp-help-icon:hover,.mp-link-btn:hover,.mp-paste-btn:hover{transform:scale(1.1);opacity:1}.mp-enhance-ai-btn svg,.mp-help-icon svg,.mp-link-btn svg,.mp-paste-btn svg{width:16px;height:16px;fill:currentColor;display:block}.mp-enhance-ai-btn.loading{width:22px;height:22px;pointer-events:none}.mp-context-bubble{display:none;background-color:var(--mp-bg-tertiary);border-left:3px solid var(--mp-accent-primary);padding:8px 12px;margin-bottom:12px;font-size:13px;color:var(--mp-text-secondary);line-height:1.4;animation:mp-fade-in-down .2s ease-out forwards;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;word-break:break-word}.mp-context-bubble.visible{display:block}.mp-context-bubble strong{color:var(--mp-text-primary);font-weight:600}@keyframes mp-fade-in-down{0%{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}@keyframes mp-spin{to{transform:rotate(1turn)}}.prompt-menu{position:fixed;min-width:350px;max-width:450px;background-color:var(--mp-bg-primary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-lg);box-shadow:var(--mp-shadow-lg);z-index:99990;display:flex;flex-direction:column;user-select:none;color:var(--mp-text-primary)!important;font-family:var(--mp-font-family-base)!important;overflow:hidden;opacity:0;visibility:hidden;transform:scale(.95);transform-origin:top left;transition:opacity .2s ease,transform .2s ease,visibility 0s linear .2s}.prompt-menu.visible{opacity:1;visibility:visible;transform:scale(1);transition-delay:0s}.prompt-menu-list{max-height:350px;padding:4px;overflow-y:auto;overflow-x:hidden;position:relative}.prompt-item-row{position:relative;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:var(--mp-border-radius-md);cursor:pointer;transition:background-color .15s ease-in-out;overflow:hidden}.prompt-item-row.drag-mode,.prompt-item-row:hover{background-color:var(--mp-bg-tertiary)}.prompt-item-row.drag-mode{border:1px dashed var(--mp-accent-primary);cursor:move}.prompt-item-row.drag-mode:active{cursor:grabbing}.prompt-title{font-family:var(--mp-font-family-heading)!important;font-size:14px;font-weight:500;flex:1;padding-right:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--mp-text-secondary);transition:opacity .2s}.prompt-item-row:hover .prompt-title{color:var(--mp-accent-primary);mask-image:linear-gradient(90deg,#000 60%,transparent);-webkit-mask-image:linear-gradient(90deg,#000 60%,transparent)}.prompt-item-row.nav-selected{background-color:var(--mp-bg-tertiary)!important;border:1px solid var(--mp-accent-primary)!important}.prompt-item-row.nav-selected .prompt-title{color:var(--mp-accent-primary)!important}.prompt-actions{position:absolute;right:0;top:0;bottom:0;padding-left:20px;padding-right:8px;display:flex;align-items:center;gap:4px;background:linear-gradient(90deg,transparent 0,var(--mp-bg-tertiary) 20%,var(--mp-bg-tertiary));transform:translateX(110%);transition:transform .25s cubic-bezier(.25,1,.5,1);z-index:2}.prompt-item-row.drag-mode .prompt-actions,.prompt-item-row:hover .prompt-actions{transform:translateX(0)}.action-btn{background:transparent;border:none;cursor:pointer;width:28px;height:28px;border-radius:var(--mp-border-radius-sm);transition:all .15s ease;display:flex;align-items:center;justify-content:center;line-height:0;color:var(--mp-text-secondary);font-family:var(--mp-font-family-button)!important}.action-btn svg{width:16px;height:16px;display:block}.action-btn:hover{transform:scale(1.1)}.action-btn.edit:hover{color:var(--mp-accent-edit)}.action-btn.copy:hover{color:var(--mp-accent-primary)}.action-btn.delete:hover{color:var(--mp-accent-close)}.action-btn.pin:hover{color:var(--mp-accent-edit)}.action-btn.restore:hover{color:var(--mp-btn-add-color)}.action-btn.unpin{color:var(--mp-accent-primary)}.action-btn.drag:hover{color:var(--mp-btn-export-color)}.menu-footer-grid{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid var(--mp-border-primary);background-color:var(--mp-bg-secondary);flex-shrink:0}.menu-footer-btn{display:flex;align-items:center;justify-content:center;background:transparent;border:none;cursor:pointer;padding:12px 0;color:var(--mp-text-secondary);transition:all .2s ease;height:auto;font-family:var(--mp-font-family-button)!important}.menu-footer-btn:not(:last-child){border-right:1px solid var(--mp-border-primary)}.menu-footer-btn svg{width:20px;height:20px;transition:transform .2s cubic-bezier(.34,1.56,.64,1)}.menu-footer-btn:hover svg{transform:scale(1.2)}.menu-footer-btn.btn-export:hover{background-color:var(--mp-btn-export-bg);color:var(--mp-btn-export-color)}.menu-footer-btn.btn-add:hover{background-color:var(--mp-btn-add-bg);color:var(--mp-btn-add-color);transform:none}.menu-footer-btn.btn-add:hover svg{transform:scale(1.4)}.menu-footer-btn.btn-import:hover{background-color:var(--mp-btn-import-bg);color:var(--mp-btn-import-color)}.menu-header-grid{display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--mp-border-primary);background-color:var(--mp-bg-secondary);flex-shrink:0;position:relative;overflow:hidden}.menu-search-overlay{position:absolute;inset:0;background:var(--mp-bg-secondary);display:flex;align-items:center;padding:0 8px;gap:8px;transform:translateX(110%);transition:transform .25s cubic-bezier(.25,1,.5,1);z-index:5}.menu-search-input{flex:1;width:100%;padding:6px 12px;border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);font-family:var(--mp-font-family-base)!important;background:var(--mp-bg-primary);color:var(--mp-text-primary);outline:none;transition:border-color .2s}.menu-search-input:focus{border-color:var(--mp-accent-primary)}.menu-header-btn{display:flex;align-items:center;justify-content:center;background:transparent;border:none;cursor:pointer;padding:12px 0;color:var(--mp-text-secondary);transition:all .2s ease;font-family:var(--mp-font-family-button)!important}.menu-header-btn:not(:last-child):not(.btn-close-search){border-right:1px solid var(--mp-border-primary)}.menu-header-btn svg{width:20px;height:20px;transition:transform .2s cubic-bezier(.34,1.56,.64,1)}.menu-header-btn:hover{color:var(--mp-accent-primary)}.menu-header-btn:hover svg{transform:scale(1.2)}.menu-header-btn.active{color:var(--mp-accent-primary)}.mp-expanded-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;background:var(--mp-bg-overlay);backdrop-filter:blur(4px);z-index:100000;display:flex;align-items:center;justify-content:center;animation:mpFadeIn .2s ease}.mp-expanded-modal{width:93vw;height:93vh;background:var(--mp-bg-primary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-lg);box-shadow:var(--mp-shadow-lg);display:flex;flex-direction:column;overflow:hidden;position:relative;font-family:var(--mp-font-family-base)!important}.mp-expanded-header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--mp-border-primary);background:var(--mp-bg-secondary);gap:16px;flex-shrink:0}.mp-expanded-search-container{flex:1;display:flex}.mp-expanded-search{width:100%;padding:8px 12px;border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);font-family:var(--mp-font-family-base)!important;background:var(--mp-bg-primary);color:var(--mp-text-primary);outline:none;transition:border-color .2s}.mp-expanded-search:focus{border-color:var(--mp-accent-primary)}.mp-expanded-actions-left{display:flex;align-items:center;gap:8px}.mp-pinned-action-btn.has-selection{background:rgba(240,62,62,.1);color:var(--mp-accent-close);border-color:var(--mp-accent-close)}.mp-expanded-list{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px;display:grid;gap:12px;align-content:start;position:relative}.prompt-item-row.expanded-mode{border:1px solid var(--mp-border-primary);background:var(--mp-bg-secondary);align-items:center;padding:12px 16px;min-width:0;min-height:70px;height:auto}.prompt-item-row.expanded-mode:hover{border-color:var(--mp-accent-primary)}.prompt-item-row.expanded-mode .prompt-actions{position:relative;transform:none;background:transparent;padding-left:8px;opacity:1;flex-shrink:0}.prompt-item-row.expanded-mode .prompt-title{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4;word-break:break-word}.mp-expanded-filter-dropdown{position:fixed;z-index:100001}@keyframes mpFadeIn{0%{opacity:0}to{opacity:1}}.mp-pinned-action-btn.btn-close:hover,.mp-pinned-action-btn.btn-delete.active,.mp-pinned-action-btn.btn-delete:hover{background:var(--mp-accent-close)!important;border-color:var(--mp-accent-close-hover)!important;color:var(--mp-text-buttons)!important}.mp-pinned-action-btn.btn-cols:hover{background:var(--mp-accent-edit)!important;border-color:var(--mp-accent-edit-hover)!important;color:var(--mp-text-buttons)!important}.mp-pinned-action-btn.btn-add:hover{background:var(--mp-btn-add-color)!important;border-color:var(--mp-btn-add-color)!important;color:var(--mp-text-buttons)!important}.mp-pinned-action-btn.btn-export:hover{background:var(--mp-btn-export-color)!important;border-color:var(--mp-btn-export-color)!important;color:var(--mp-text-buttons)!important}.mp-pinned-action-btn.btn-import:hover{background:var(--mp-btn-import-color)!important;border-color:var(--mp-btn-import-color)!important;color:var(--mp-text-buttons)!important}.mp-pinned-action-btn.btn-save:hover,.mp-pinned-action-btn.btn-select-all.active{background:var(--mp-accent-primary)!important;border-color:var(--mp-accent-primary-hover,var(--mp-accent-primary))!important;color:var(--mp-text-buttons)!important}.form-group{display:flex;flex-direction:column;margin-bottom:15px;flex-shrink:0}.form-label{margin-bottom:8px;font-size:14px!important;font-weight:700!important;color:var(--mp-text-secondary);display:block;width:100%;white-space:normal;overflow-wrap:break-word;word-break:break-word}.form-input,.form-textarea{background-color:var(--mp-bg-secondary)!important;color:var(--mp-text-primary)!important;border:1px solid var(--mp-border-primary)!important;border-radius:var(--mp-border-radius-md);padding:10px;width:100%;box-sizing:border-box;transition:border-color .2s,box-shadow .2s;outline:0!important;font-family:var(--mp-font-family-editor)!important;font-size:14px!important}.form-textarea{height:300px!important;resize:none!important;display:block}.form-input:focus,.form-textarea:focus{border-color:var(--mp-accent-primary)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--mp-accent-primary) 25%,transparent)!important}.form-input::placeholder,.form-textarea::placeholder,.lang-search-input::placeholder,.menu-search-input::placeholder,.mp-search-input::placeholder{color:var(--mp-text-tertiary)!important;opacity:.7}.mp-switch-container{display:flex;justify-content:space-between;align-items:center;padding:8px 12px!important;margin:0 0 15px;flex-shrink:0;background-color:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);gap:10px}.mp-switch{display:flex;align-items:center;gap:8px}.mp-switch input[type=checkbox]{height:0;width:0;visibility:hidden;position:absolute}.mp-switch label{cursor:pointer;text-indent:-9999px;width:40px;height:22px;background:var(--mp-bg-tertiary);display:block;border-radius:100px;position:relative;transition:background-color var(--mp-transition-fast)}.mp-switch label:after{content:\"\";position:absolute;top:3px;left:3px;width:16px;height:16px;background:var(--mp-switch-knob);border-radius:90px;transition:.3s cubic-bezier(.25,1,.5,1);box-shadow:var(--mp-shadow-sm)}.mp-switch input:checked+label{background:var(--mp-accent-primary)}.mp-switch input:checked+label:after{left:calc(100% - 3px);transform:translateX(-100%)}.mp-switch .switch-text{font-size:13px;font-weight:500;color:var(--mp-text-secondary);cursor:pointer;user-select:none}.mp-prompt-shortcut{flex:1;max-width:140px;font-family:var(--mp-font-family-base);padding:4px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mp-prompt-shortcut[data-shortcut]:not([data-shortcut=\"\"]){color:var(--mp-accent-primary)}.mp-checkbox,.mp-filter-checkbox,.mp-option-item input[type=checkbox]{-webkit-appearance:none!important;appearance:none!important;width:18px!important;height:18px!important;border:1px solid var(--mp-border-primary)!important;border-radius:var(--mp-border-radius-sm)!important;background-color:var(--mp-bg-secondary)!important;cursor:pointer!important;margin:0!important;display:grid!important;place-content:center!important;transition:all .2s ease}.mp-checkbox:checked,.mp-filter-item.selected .mp-filter-checkbox,.mp-option-item input[type=checkbox]:checked{background-color:var(--mp-accent-primary)!important;border-color:var(--mp-accent-primary)!important}.mp-checkbox:before,.mp-filter-checkbox:before,.mp-option-item input[type=checkbox]:before{content:\"\";width:10px;height:10px;clip-path:polygon(14% 44%,0 65%,50% 100%,100% 16%,80% 0,43% 62%);background-color:var(--mp-text-buttons);transform:scale(0);transition:transform .15s ease-in-out}.mp-checkbox:checked:before,.mp-filter-item.selected .mp-filter-checkbox:before,.mp-option-item input[type=checkbox]:checked:before{transform:scale(1)}#__ap_placeholders_container{padding:4px;margin-top:15px;box-sizing:border-box;transition:padding-top .2s ease}.mp-option-group{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;padding:8px;border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);background-color:var(--mp-bg-tertiary);max-height:none!important;overflow:visible!important}.mp-option-item{display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;padding:8px 8px 8px 12px!important;border-radius:var(--mp-border-radius-sm);background-color:var(--mp-bg-primary);transition:background-color .2s;user-select:none;border-left:5px solid transparent;position:relative}.mp-option-item:hover{background-color:var(--mp-bg-secondary)}.mp-modal-box.mp-expanded #__ap_placeholders_container{max-height:none!important;height:100%!important;flex:1;display:flex;flex-direction:column;min-height:0}.mp-modal-box.mp-expanded #__ap_placeholders_container .mp-scroll-wrapper{height:100%!important;flex:1}.dynamic-input{min-height:45px!important;line-height:1.5;font-family:var(--mp-font-family-editor)!important}.mp-dynamic-dropzone{position:relative;min-height:90px;border:2px dashed var(--mp-border-primary);border-radius:var(--mp-border-radius-md);margin-bottom:12px;align-items:center;transition:border-color .2s ease;box-shadow:none!important;background-color:transparent}.mp-dynamic-dropzone.drag-over{border-color:var(--mp-accent-primary)}.mp-dynamic-grid-w100{width:100%}.mp-hidden-file-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;z-index:-1}.mp-empty-state-container{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px}.menu-search-container,.mp-search-container{position:sticky;top:0;z-index:10;display:flex;flex-direction:column;flex-shrink:0}.menu-search-container{padding:10px 12px;background-color:var(--mp-bg-secondary);border-bottom:1px solid var(--mp-border-primary)}.lang-search-input,.menu-search-input,.mp-search-input,.mp-system-prompt-search-input{width:100%;padding:10px 12px;border-radius:var(--mp-border-radius-md);border:1px solid var(--mp-border-primary);background-color:var(--mp-bg-secondary);color:var(--mp-text-primary);font-family:var(--mp-font-family-editor)!important;font-size:13px;box-sizing:border-box;outline:none;transition:border-color .2s}.menu-search-input{background-color:var(--mp-bg-primary)!important}.lang-search-input,.mp-system-prompt-search-input{margin-bottom:12px}.lang-search-input:focus,.menu-search-input:focus,.mp-search-input:focus,.mp-system-prompt-search-input:focus{border-color:var(--mp-accent-primary);outline:none!important}.mp-export-actions{display:flex;justify-content:space-between;align-items:center;margin-top:20px;margin-bottom:20px;font-size:13px;color:var(--mp-text-secondary);border-bottom:1px solid var(--mp-border-primary);padding-bottom:16px}.mp-checkbox-wrapper{display:flex;align-items:center;cursor:pointer;user-select:none}.mp-export-list{display:flex;flex-direction:column;gap:4px;margin:0 -8px;padding:0 8px}.mp-export-item{display:flex;align-items:center;padding:8px;border-radius:var(--mp-border-radius-md);transition:background .15s;cursor:pointer;border:1px solid transparent}.mp-export-item:hover{background-color:var(--mp-bg-tertiary);border-color:var(--mp-border-primary)}.mp-item-content{display:flex;flex-direction:column;overflow:hidden;margin-left:12px}.mp-item-title{font-size:14px;font-weight:500;color:var(--mp-text-primary)}.mp-item-preview,.mp-item-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mp-item-preview{font-size:12px;color:var(--mp-text-tertiary);margin-top:2px}.mp-export-buttons{display:flex;gap:10px;margin-top:20px;justify-content:flex-end;border-top:1px solid var(--mp-border-primary);padding-top:16px;flex-shrink:0;font-family:var(--mp-font-family-button)!important}.lang-box,.mp-system-prompt-select-box{width:min(90vw,500px)!important}.mp-system-prompt-select-box{padding:20px!important}.lang-button,.mp-system-prompt-button{all:unset;box-sizing:border-box;display:block;width:100%;padding:12px 20px;border-radius:var(--mp-border-radius-md);background-color:var(--mp-bg-secondary);color:var(--mp-text-primary);border:1px solid var(--mp-border-primary);font-weight:500;cursor:pointer;text-align:center;transition:all .2s ease;font-family:var(--mp-font-family-button)!important;flex-shrink:0}.mp-system-prompt-button{display:flex!important;flex-direction:column;align-items:center;gap:4px}.mp-system-prompt-list-container{display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto}.mp-system-prompt-button-title{font-weight:600;font-size:14px}.mp-system-prompt-button-comment{font-weight:400;font-size:12px;color:var(--mp-text-secondary);display:block;width:100%;white-space:normal;overflow-wrap:break-word;word-break:break-word}.lang-button:hover,.mp-system-prompt-button:hover{transform:translateY(-2px);box-shadow:var(--mp-shadow-sm);background-color:var(--mp-bg-tertiary)}.lang-button.selected,.mp-system-prompt-button.is-focused{border-color:var(--mp-accent-primary);color:var(--mp-accent-primary);background-color:color-mix(in srgb,var(--mp-accent-primary) 5%,transparent);font-weight:600}.save-button{padding:10px 28px;border-radius:var(--mp-border-radius-md);background-color:var(--mp-accent-primary);color:var(--mp-text-buttons);border:none;font-weight:600;cursor:pointer;transition:all .2s ease-in-out;font-family:var(--mp-font-family-button)!important;margin-bottom:5px}.save-button:hover{background-color:var(--mp-accent-primary-hover)}.mp-btn-secondary{background:transparent;border:1px solid var(--mp-border-secondary);color:var(--mp-text-secondary)}.mp-btn-secondary:hover{background-color:var(--mp-bg-tertiary);color:var(--mp-text-primary)}.mp-info-table{display:flex;flex-direction:column;border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);overflow:hidden;margin-top:8px}.mp-info-row{display:flex}.mp-info-row:not(:last-child){border-bottom:1px solid var(--mp-border-primary)}.mp-info-col{padding:16px;display:flex;flex-direction:column;justify-content:center}.mp-info-col:not(:last-child){border-right:1px solid var(--mp-border-primary)}.mp-info-title-col{flex:0 0 35%}.mp-info-desc-col,.mp-info-title-col{background-color:var(--mp-bg-secondary);text-align:left}.mp-info-desc-col{flex:1}.mp-info-col h3{font-size:14px;font-weight:600;color:var(--mp-text-primary);margin:0;font-family:var(--mp-font-family-heading)!important}.mp-info-col p{font-size:13px;color:var(--mp-text-secondary);line-height:1.5;margin:0}.mp-inline-menu{position:fixed;width:500px;max-height:300px;background-color:var(--mp-bg-primary)!important;border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);box-shadow:var(--mp-shadow-lg);z-index:2147483647!important;display:flex;flex-direction:column;opacity:0;visibility:hidden;transform:translateY(10px);transition:opacity .1s,transform .1s,visibility 0s linear .1s;overflow:hidden;font-family:var(--mp-font-family-base)!important}.mp-inline-menu.visible{opacity:1;visibility:visible;transform:translateY(0);transition-delay:0s}.mp-inline-list{padding:4px;pointer-events:auto}.mp-inline-item,.mp-inline-list{display:flex;flex-direction:column}.mp-inline-item{padding:8px 12px;cursor:pointer;border-radius:var(--mp-border-radius-sm);font-size:13px;color:var(--mp-text-primary);align-items:flex-start;justify-content:center;gap:3px;transition:background-color .1s}.mp-inline-item:hover{background-color:var(--mp-bg-tertiary)}.mp-inline-item.selected{background-color:var(--mp-accent-primary);color:var(--mp-text-buttons)!important}.mp-inline-title{font-weight:500;line-height:1.3}.mp-inline-preview,.mp-inline-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;font-family:var(--mp-font-family-heading)!important}.mp-inline-preview{font-weight:400;font-size:12px;color:var(--mp-text-tertiary);line-height:1.2}.mp-inline-item.selected .mp-inline-preview{color:var(--mp-text-buttons)!important;opacity:.8}.mp-tooltip{position:fixed;z-index:2147483647;pointer-events:none;display:flex;flex-direction:column;align-items:center;opacity:0;transform:scale(.95) translateY(4px);transition:opacity .15s cubic-bezier(.4,0,.2,1),transform .15s cubic-bezier(.4,0,.2,1)}.mp-tooltip-interactive{pointer-events:auto}.mp-tooltip.visible{opacity:1;transform:scale(1) translateY(0)}.mp-tooltip-left,.mp-tooltip-right{flex-direction:row;align-items:center}.mp-tooltip-content{font-family:var(--mp-font-family-button)!important;background-color:var(--mp-text-primary);color:var(--mp-bg-primary);padding:0;border-radius:var(--mp-border-radius-sm);max-width:450px;width:max-content;white-space:normal;word-wrap:break-word;overflow-wrap:break-word;text-align:center;font-size:13px;font-weight:500;box-shadow:var(--mp-shadow-md);line-height:1.4;display:flex;flex-direction:column;overflow:hidden}.mp-tooltip-text{display:block;padding:10px 14px}.mp-tooltip-text+.mp-tooltip-actions{border-top:1px solid color-mix(in srgb,var(--mp-border-primary),transparent 70%)}.mp-tooltip-actions{display:flex;width:100%}.mp-tooltip-actions-row{flex-direction:row}.mp-tooltip-actions-column{flex-direction:column}.mp-tooltip-btn{font-family:var(--mp-font-family-button)!important;flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;border:none;border-radius:0;background-color:transparent;color:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:var(--mp-transition-fast);white-space:nowrap}.mp-tooltip-actions-row .mp-tooltip-btn:not(:last-child){border-right:1px solid color-mix(in srgb,var(--mp-border-primary),transparent 70%)}.mp-tooltip-actions-column .mp-tooltip-btn:not(:last-child){border-bottom:1px solid color-mix(in srgb,var(--mp-border-primary),transparent 70%)}.mp-tooltip-btn:focus,.mp-tooltip-btn:hover{background-color:var(--mp-accent-primary);color:var(--mp-text-buttons)}.mp-tooltip-btn:focus{outline:none}.mp-tooltip-btn-icon{width:14px;height:14px;display:flex;align-items:center;justify-content:center}.mp-tooltip-btn-icon svg{width:100%;height:100%;fill:currentColor}.mp-tooltip-arrow{width:0;height:0;margin:0;flex-shrink:0;z-index:1}.mp-tooltip-top .mp-tooltip-arrow{border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid var(--mp-text-primary)}.mp-tooltip-bottom .mp-tooltip-arrow{border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:6px solid var(--mp-text-primary);order:-1}.mp-tooltip-left .mp-tooltip-arrow{border-top:6px solid transparent;border-bottom:6px solid transparent;border-left:6px solid var(--mp-text-primary)}.mp-tooltip-right .mp-tooltip-arrow{border-top:6px solid transparent;border-bottom:6px solid transparent;border-right:6px solid var(--mp-text-primary);order:-1}.mp-tooltip-preview-container{padding:12px;width:320px;max-width:90vw;display:flex;flex-direction:column}.mp-tooltip-preview-text{max-height:200px;overflow-y:auto;background-color:color-mix(in srgb,var(--mp-bg-primary),transparent 85%);border:1px solid color-mix(in srgb,var(--mp-bg-primary),transparent 70%);border-radius:var(--mp-border-radius-sm);padding:13px;font-family:var(--mp-font-family-editor);font-size:12px;font-weight:300;color:var(--mp-bg-primary);line-height:1.5;white-space:pre-wrap;text-align:left;-webkit-hyphens:manual;hyphens:manual;overflow-wrap:break-word}.mp-tooltip-preview-container .mp-scroll-arrow.up{top:0;background:linear-gradient(180deg,color-mix(in srgb,var(--mp-text-primary),transparent 30%) 30%,transparent);color:var(--mp-bg-primary)}.mp-tooltip-preview-container .mp-scroll-arrow.down{bottom:0;background:linear-gradient(0deg,color-mix(in srgb,var(--mp-text-primary),transparent 30%) 30%,transparent);color:var(--mp-bg-primary)}@keyframes mp-fade-in-up{0%{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}.mp-settings-container{display:flex;flex-direction:column;height:100%;overflow:hidden;font-family:var(--mp-font-family-base)!important}.mp-tabs-header{display:flex;justify-content:center;align-items:center;border-bottom:1px solid var(--mp-border-primary);padding:0 16px;margin-bottom:16px;flex-shrink:0;gap:8px}.mp-tab-btn{font-family:var(--mp-font-family-button)!important;flex:1;background:none;padding:12px 4px;font-size:14px;font-weight:600;color:var(--mp-text-secondary);cursor:pointer;border:none;border-bottom:2px solid transparent;transition:all .2s;text-align:center;border-radius:4px 4px 0 0}.mp-tab-btn:hover{color:var(--mp-text-primary);background-color:var(--mp-bg-tertiary)}.mp-tab-btn.active{color:var(--mp-accent-primary);border-bottom-color:var(--mp-accent-primary)}.mp-tab-content{display:none!important;flex-direction:column;gap:4px;animation:mp-fade-in-up .2s ease}.mp-tab-content.active{display:flex!important}.mp-form-group,.mp-label{margin-bottom:10px}.mp-label{font-size:14px;font-weight:600;color:var(--mp-text-primary);display:block}.mp-label-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}.mp-settings-switch-container{display:flex;justify-content:space-between;align-items:center;background:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);padding:12px;border-radius:var(--mp-border-radius-md);margin:0}#mp-nav-lbl,#mp-preview-prompt-lbl,#mp-smart-predict-lbl,#mp-syntax-lbl{font-size:13px;font-weight:400;color:var(--mp-text-primary);cursor:help;text-decoration:underline dotted;text-decoration-color:color-mix(in srgb,var(--mp-text-secondary) 60%,transparent);text-underline-offset:3px;text-decoration-thickness:1px}.mp-action-btn-full{width:100%;padding:12px 16px;background-color:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);color:var(--mp-text-tertiary);font-weight:500;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:all .2s;font-family:var(--mp-font-family-button)!important}.mp-action-btn-full:hover{background-color:var(--mp-bg-tertiary);border-color:var(--mp-accent-primary);color:var(--mp-accent-primary)}.mp-btn-icon{display:flex;align-items:center;justify-content:center}.mp-segmented-control{display:flex;background-color:var(--mp-bg-tertiary);border-radius:var(--mp-border-radius-md);padding:4px;gap:4px;width:100%;box-sizing:border-box}.mp-segment-opt{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 4px;font-size:13px;font-weight:500;color:var(--mp-text-secondary);cursor:pointer;border-radius:var(--mp-border-radius-sm);transition:all .2s cubic-bezier(.25,1,.5,1);user-select:none;border:1px solid transparent}.mp-segment-opt:hover{color:var(--mp-accent-primary);background-color:rgba(0,0,0,.02)}.mp-segment-opt.selected{background-color:var(--mp-bg-primary);border-color:var(--mp-border-primary);box-shadow:0 1px 3px rgba(0,0,0,.08);font-weight:600}.mp-segment-opt.selected,.mp-segment-opt.selected svg{color:var(--mp-accent-primary)}.mp-shortcut-scroll-container,.mp-theme-scroll-container{padding:4px!important;border:none!important;margin:0!important;background:transparent!important;box-sizing:border-box!important;width:100%!important}.mp-shortcut-wrapper-fixed,.mp-theme-wrapper-fixed{flex:none!important;height:auto!important;max-height:165px!important;width:100%!important;box-sizing:border-box!important;margin-top:12px!important;overflow:hidden;position:relative}.mp-shortcut-option,.mp-shortcut-wrapper-fixed,.mp-theme-option,.mp-theme-wrapper-fixed{border:1px solid var(--mp-border-primary);background-color:var(--mp-bg-secondary);border-radius:var(--mp-border-radius-md)}.mp-shortcut-option,.mp-theme-option{flex-shrink:0;padding:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;font-weight:500;color:var(--mp-text-secondary);transition:all .2s ease;box-sizing:border-box}@keyframes mp-pulse-recording{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--mp-accent-edit) 40%,transparent)}to{box-shadow:0 0 0 6px transparent}}.mp-shortcut-option.recording{border-color:var(--mp-accent-edit)!important;color:var(--mp-accent-edit)!important;background-color:color-mix(in srgb,var(--mp-accent-edit) 10%,var(--mp-bg-primary))!important;font-weight:700!important;animation:mp-pulse-recording 1.5s infinite}.mp-shortcut-option:last-child,.mp-theme-option:last-child{margin-bottom:0}.mp-shortcut-option:hover,.mp-theme-option:hover{background-color:var(--mp-bg-tertiary);color:var(--mp-text-primary);box-shadow:var(--mp-shadow-sm);border:1px solid var(--mp-accent-primary)}.mp-shortcut-option.selected,.mp-theme-option.selected{background-color:color-mix(in srgb,var(--mp-accent-primary) 10%,var(--mp-bg-primary));color:var(--mp-accent-primary);border-color:var(--mp-accent-primary);font-weight:700;box-shadow:var(--mp-shadow-md)}.mp-theme-option{margin:5px;width:auto}.mp-shortcut-option{margin:0 0 5px;width:100%;background-color:color-mix(in srgb,var(--mp-bg-primary) 45%,transparent)}.mp-shortcut-option:last-child{margin-bottom:0}.mp-settings-footer{display:flex;justify-content:center;align-items:center;padding-top:16px;margin-top:10px;border-top:1px solid var(--mp-border-primary);flex-shrink:0}.mp-settings-footer .save-button{min-width:160px}.mp-theme-action-row{display:flex;gap:8px;padding:0 5px;margin:5px 0 8px;flex-shrink:0;width:100%;box-sizing:border-box}.mp-theme-split-btn{flex:1;display:flex;align-items:center;justify-content:center;padding:10px;border-radius:var(--mp-border-radius-md);border:1px dashed var(--mp-border-primary);color:var(--mp-text-secondary);background-color:var(--mp-bg-secondary);cursor:pointer;transition:all .2s ease;font-size:13px;font-weight:500}.mp-theme-split-btn:hover{background-color:var(--mp-bg-tertiary);border-color:var(--mp-accent-primary);color:var(--mp-accent-primary);box-shadow:var(--mp-shadow-sm)}.hide-api-key{-webkit-text-security:disc}#mp_ai_api_key_input{margin-bottom:8px}#mp_ai_sys_prompt_input{margin-top:8px;min-height:60px;resize:vertical;width:100%;box-sizing:border-box}.mp-form-hint{color:var(--mp-text-tertiary);font-size:11px;margin-top:4px;display:block}.mp-nav-switch{position:fixed;top:50%;right:20px;transform:translateY(-50%);display:flex;flex-direction:column;background-color:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);box-shadow:var(--mp-shadow-md);z-index:10000;padding:4px;gap:6px;transition:opacity .3s ease}.mp-nav-switch[style*=\"display: none\"]{pointer-events:none}.mp-nav-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--mp-text-secondary);border-radius:var(--mp-border-radius-sm);cursor:pointer;transition:all .2s ease;position:relative}.mp-nav-btn svg{width:20px;height:20px}.mp-nav-btn:hover{background-color:var(--mp-bg-tertiary);color:var(--mp-accent-primary);transform:scale(1.05)}.mp-nav-btn:active{transform:scale(.95)}.mp-nav-list-popup{position:absolute;right:45px;top:50%;transform:translateY(-50%) scale(.95);width:300px;max-height:500px;background-color:var(--mp-bg-primary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);box-shadow:var(--mp-shadow-lg);opacity:0;visibility:hidden;transition:all .2s cubic-bezier(.165,.84,.44,1);display:flex;flex-direction:column;z-index:10001;overflow:hidden}.mp-nav-list-popup.active{opacity:1;visibility:visible;transform:translateY(-50%) scale(1)}.mp-nav-header{display:flex;justify-content:space-between;background-color:var(--mp-bg-secondary);border-bottom:1px solid var(--mp-border-primary);padding:6px;gap:4px;flex-shrink:0}.mp-nav-tab{flex:1;display:flex;align-items:center;justify-content:center;padding:6px;border-radius:6px;cursor:pointer;color:var(--mp-text-secondary);transition:background .2s,color .2s}.mp-nav-tab:hover{background-color:var(--mp-bg-tertiary)}.mp-nav-tab.active{background-color:var(--mp-accent-primary);color:var(--mp-text-buttons)}.mp-nav-tab svg{width:18px;height:18px;pointer-events:none}.mp-nav-scroll-area{overflow-y:auto;flex:1;scrollbar-width:none;-ms-overflow-style:none}.mp-nav-scroll-area::-webkit-scrollbar{display:none}.mp-nav-item-wrapper{display:flex;flex-direction:column;border-bottom:1px solid var(--mp-bg-tertiary)}.mp-nav-item-wrapper:last-child{border-bottom:none}.mp-nav-list-item{padding:10px 12px;font-family:var(--mp-font-family-base);font-size:13px;color:var(--mp-text-secondary);cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .1s;position:relative;overflow:hidden}.mp-nav-list-item.main-msg-item{border-bottom:none!important}.mp-nav-list-item.current-item,.mp-nav-list-item:hover{background-color:var(--mp-bg-tertiary)}.mp-nav-list-item.current-item{color:var(--mp-accent-primary);border-left:3px solid var(--mp-accent-primary);font-weight:500}.mp-nav-idx-badge{font-size:10px;background:var(--mp-bg-secondary);padding:0;border-radius:4px;min-width:24px;height:20px;display:flex;align-items:center;justify-content:center;color:var(--mp-text-primary);flex-shrink:0;position:relative;overflow:hidden}.mp-nav-idx-badge.has-topics{cursor:pointer;transition:background-color .2s,color .2s}.mp-nav-idx-badge.has-topics:hover,.mp-nav-item-wrapper.expanded .mp-nav-idx-badge.has-topics{background-color:var(--mp-accent-primary);color:var(--mp-text-buttons)}.mp-nav-idx-number{transition:opacity .2s,transform .2s}.mp-nav-expand-icon{position:absolute;display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(.5) rotate(0deg);transition:opacity .2s,transform .2s cubic-bezier(.165,.84,.44,1)}.mp-nav-expand-icon svg{width:16px;height:16px}.mp-nav-idx-badge.has-topics:hover .mp-nav-idx-number,.mp-nav-item-wrapper.expanded .mp-nav-idx-badge.has-topics .mp-nav-idx-number{opacity:0;transform:scale(.5)}.mp-nav-idx-badge.has-topics:hover .mp-nav-expand-icon{opacity:1;transform:scale(1) rotate(0deg)}.mp-nav-item-wrapper.expanded .mp-nav-idx-badge.has-topics .mp-nav-expand-icon{opacity:1;transform:scale(1) rotate(90deg)}.mp-nav-preview-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}.mp-nav-type-icon{width:13px!important;height:13px!important;flex-shrink:0!important;color:var(--mp-accent-primary)!important;margin-left:auto!important;opacity:1!important;display:flex!important;align-items:center!important}.mp-nav-submenu{font-family:var(--mp-font-family-base);display:none;flex-direction:column;background-color:var(--mp-bg-primary);border-left:2px solid var(--mp-bg-tertiary);margin-left:24px;margin-right:12px;margin-bottom:6px;border-bottom-left-radius:4px;overflow:hidden}.mp-nav-item-wrapper.expanded .mp-nav-submenu{display:flex;animation:mpFadeInDrop .2s ease forwards}.mp-nav-sub-item{padding:6px 8px;font-size:11.5px;color:var(--mp-text-secondary);cursor:pointer;display:flex;align-items:center;transition:background .1s,color .1s;position:relative;overflow:hidden}.mp-nav-sub-item:hover{background-color:var(--mp-bg-tertiary);color:var(--mp-text-primary)}.mp-nav-sub-item:before{content:\"\";position:absolute;left:-2px;top:50%;width:6px;height:2px;background-color:var(--mp-bg-tertiary)}.mp-nav-sub-item:hover:before{background-color:var(--mp-accent-primary)}.mp-nav-sub-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%}.mp-nav-sub-item.level-1{padding-left:8px;font-weight:500}.mp-nav-sub-item.level-2{padding-left:16px}.mp-nav-sub-item.level-3{padding-left:24px;font-size:11px;opacity:.9}.mp-nav-sub-item.level-4{padding-left:32px;font-size:10.5px;opacity:.8}.mp-nav-sub-item.level-5{padding-left:40px;font-size:10px;opacity:.7}.mp-nav-sub-item.level-6{padding-left:48px;font-size:10px;opacity:.6}.mp-nav-sub-item.current-item{background-color:var(--mp-bg-tertiary);color:var(--mp-accent-primary);font-weight:500}.mp-nav-sub-item.current-item:before{background-color:var(--mp-accent-primary)}.mp-nav-msg-actions{position:absolute;right:0;top:0;bottom:0;padding-left:24px;padding-right:12px;display:flex;align-items:center;gap:4px;background:linear-gradient(90deg,transparent 0,var(--mp-bg-tertiary) 30%,var(--mp-bg-tertiary));transform:translateX(110%);transition:transform .25s cubic-bezier(.25,1,.5,1);z-index:2}.mp-nav-list-item:hover .mp-nav-msg-actions,.mp-nav-sub-item:hover .mp-nav-msg-actions{transform:translateX(0)}.mp-pin-btn{width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:4px;color:var(--mp-text-secondary);cursor:pointer;transition:all .2s}.mp-pin-btn:hover{color:var(--mp-accent-edit)}.mp-pin-btn.is-pinned{color:var(--mp-accent-primary)}.mp-pin-btn svg{width:14px;height:14px}.mp-pinned-carousel-wrapper{position:fixed;top:15px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;align-items:center;gap:8px;pointer-events:none;transition:opacity .3s}.mp-pinned-carousel-wrapper.mp-orient-h{flex-direction:column;padding-bottom:20px}.mp-pinned-carousel-wrapper.mp-orient-v{flex-direction:row;padding-right:20px;gap:15px!important}.mp-pinned-main-wrapper{display:flex;align-items:center;gap:10px;pointer-events:none;transition:opacity .3s ease}.mp-orient-v .mp-pinned-main-wrapper{flex-direction:column}.mp-pinned-carousel-wrapper.is-hidden .mp-pinned-main-wrapper{opacity:0;pointer-events:none}.mp-pinned-carousel-wrapper.is-hidden .mp-pinned-main-wrapper,.mp-pinned-carousel-wrapper.is-hidden .mp-pinned-main-wrapper *{pointer-events:none!important}.mp-orient-h .mp-pinned-viewport{max-width:80vw;overflow:hidden;display:flex;justify-content:center;padding:40px 10px;margin:-40px -10px;mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);min-height:fit-content}.mp-orient-v .mp-pinned-viewport{height:50vh;max-height:350px;width:fit-content;max-width:80vw;overflow:hidden;display:flex;align-items:center;padding:40px 28px;margin:-40px -28px;mask-image:linear-gradient(180deg,transparent,#000 10%,#000 90%,transparent);-webkit-mask-image:linear-gradient(180deg,transparent,#000 10%,#000 90%,transparent)}.mp-orient-h .mp-pinned-track{padding:10px 0}.mp-orient-h .mp-pinned-track,.mp-orient-v .mp-pinned-track{display:flex;align-items:center;gap:12px;transition:transform .4s cubic-bezier(.25,1,.5,1);pointer-events:auto}.mp-orient-v .mp-pinned-track{flex-direction:column;padding:0 10px}.mp-pinned-viewport.is-single-item{mask-image:none!important;-webkit-mask-image:none!important;overflow:visible}.mp-pinned-viewport.is-single-item .mp-pinned-card{opacity:1;transform:scale(1.1);background-color:color-mix(in srgb,var(--mp-accent-primary) 10%,var(--mp-bg-primary));border-color:var(--mp-accent-primary-hover);color:var(--mp-accent-primary);pointer-events:auto}.mp-pinned-card{background:var(--mp-accent-primary);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--mp-border-secondary);border-radius:var(--mp-border-radius-lg);padding:6px 16px;color:var(--mp-text-buttons);font-family:var(--mp-font-family-base);font-size:12px;white-space:nowrap;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all .4s cubic-bezier(.25,1,.5,1);transform:scale(.85);box-shadow:0 4px 12px rgba(0,0,0,.15);min-width:140px;max-width:200px;box-sizing:border-box;flex-shrink:0}.mp-pinned-card:hover{background-color:var(--mp-accent-primary-hover)}.mp-pinned-card.active-center{opacity:1;transform:scale(1.2);background-color:color-mix(in srgb,var(--mp-accent-primary) 10%,var(--mp-bg-primary));border-color:var(--mp-accent-primary-hover);box-shadow:var(--mp-shadow-md);color:var(--mp-accent-primary)}.mp-drag-mode .mp-pinned-card{cursor:default;pointer-events:none}.mp-pinned-card-text{flex:1;overflow:hidden;text-overflow:ellipsis;text-align:center;user-select:none}.mp-pinned-card-unpin{display:flex;align-items:center;justify-content:center;opacity:.6;transition:all .2s}.mp-pinned-card-unpin:hover{opacity:1;color:var(--mp-accent-primary);transform:scale(1.1)}.mp-pinned-card-unpin svg{width:12px;height:12px;pointer-events:none}.mp-carousel-nav{pointer-events:auto;background:var(--mp-bg-secondary);backdrop-filter:blur(8px);color:var(--mp-text-secondary);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;opacity:.6;z-index:2;border:1px solid var(--mp-text-secondary);flex-shrink:0}.mp-carousel-nav:hover{opacity:1;transform:scale(1.1);background:var(--mp-accent-primary);color:var(--mp-text-buttons)}.mp-carousel-nav.left svg{transform:rotate(180deg)}.mp-carousel-nav.up svg{transform:rotate(-90deg)}.mp-carousel-nav.down svg{transform:rotate(90deg)}.mp-carousel-nav.right svg{transform:rotate(0deg)}.mp-carousel-nav svg{width:14px;height:14px;pointer-events:none}.mp-pinned-actions-panel{display:flex;align-items:center;justify-content:center;gap:8px;opacity:0;transform:scale(.8);transition:all .3s cubic-bezier(.25,1,.5,1);pointer-events:auto;flex-shrink:0}.mp-orient-v .mp-pinned-actions-panel{flex-direction:column}.mp-pinned-carousel-wrapper.is-list-mode .mp-pinned-actions-panel,.mp-pinned-carousel-wrapper.mp-drag-mode .mp-pinned-actions-panel,.mp-pinned-carousel-wrapper:hover .mp-pinned-actions-panel{opacity:1;transform:scale(1)}.mp-pinned-action-btn{background:var(--mp-bg-secondary);backdrop-filter:blur(8px);color:var(--mp-text-secondary);border-radius:var(--mp-border-radius-lg);border:1px solid hsla(0,0%,100%,.1);border-color:var(--mp-text-secondary);width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0}.mp-pinned-action-btn.active,.mp-pinned-action-btn:hover{background:var(--mp-accent-primary);color:var(--mp-text-buttons);transform:scale(1.1)}.mp-pinned-action-btn.delete-btn:hover,.mp-pinned-action-btn.mp-reset-btn:hover{background:var(--mp-accent-close);border-color:var(--mp-accent-close-hover)}.mp-pinned-action-btn.mp-save-btn:hover{background:#22c55e;border-color:#006826;color:#fff}.mp-pinned-action-btn svg{width:16px;height:16px;display:block;margin:auto;pointer-events:none}.mp-pinned-carousel-wrapper.mp-drag-mode{cursor:grab}.mp-pinned-carousel-wrapper.mp-drag-mode.mp-is-being-dragged{cursor:grabbing}body.mp-dragging-active,body.mp-dragging-active *{cursor:grabbing!important;user-select:none!important}.mp-drag-crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:10;width:0;height:0}.mp-drag-ch-line{position:absolute;background:var(--mp-accent-primary);opacity:.5}.mp-drag-ch-h{width:48px;height:1px;top:0;left:50%;transform:translateX(-50%)}.mp-drag-ch-v{width:1px;height:48px;left:0;top:50%;transform:translateY(-50%)}.mp-drag-ch-dot{position:absolute;width:6px;height:6px;background:var(--mp-accent-primary);border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);box-shadow:0 0 10px var(--mp-accent-primary),0 0 20px rgba(0,0,0,.3)}.mp-rulers-container{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9998;pointer-events:none}.mp-ruler-screen-v{width:0;height:100vh;top:0;left:50vw;border-left:1px dashed color-mix(in sRGB,var(--mp-text-primary),transparent 50%);border-right:1px dashed color-mix(in sRGB,var(--mp-text-primary),transparent 50%)}.mp-ruler-screen-h,.mp-ruler-screen-v{position:absolute;background:var(--mp-bg-overlay)}.mp-ruler-screen-h{height:0;width:100vw;left:0;top:50vh;border-top:1px dashed color-mix(in sRGB,var(--mp-text-primary),transparent 50%);border-bottom:1px dashed color-mix(in sRGB,var(--mp-text-primary),transparent 50%)}.mp-ruler-carousel-v{width:1px;height:100vh;top:0;transition:left .04s linear,opacity .2s,box-shadow .2s}.mp-ruler-carousel-h,.mp-ruler-carousel-v{position:absolute;background:var(--mp-accent-primary);opacity:.3}.mp-ruler-carousel-h{height:1px;width:100vw;left:0;transition:top .04s linear,opacity .2s,box-shadow .2s}.mp-rulers-container.mp-snapped-x .mp-ruler-carousel-v,.mp-rulers-container.mp-snapped-y .mp-ruler-carousel-h{opacity:.85;box-shadow:0 0 14px var(--mp-accent-primary),0 0 4px var(--mp-accent-primary)}.mp-ruler-label{position:absolute;font-size:9px;font-weight:700;letter-spacing:.5px;color:hsla(0,0%,100%,.2);pointer-events:none;font-family:var(--mp-font-family-base),monospace}.mp-ruler-label-v{top:10px;transform:translateX(-50%)}.mp-ruler-label-h{left:10px;transform:translateY(-50%)}.mp-pinned-carousel-wrapper.is-list-mode .mp-pinned-viewport{mask-image:none!important;-webkit-mask-image:none!important;max-height:400px;min-height:auto;display:block;overflow-y:auto;overflow-x:hidden;width:300px;padding:10px 0;margin:0;scroll-behavior:smooth;-ms-overflow-style:none;scrollbar-width:none}.mp-pinned-carousel-wrapper.is-list-mode .mp-pinned-viewport::-webkit-scrollbar{display:none}.mp-pinned-carousel-wrapper.is-list-mode .mp-pinned-track{flex-direction:column!important;align-items:center;gap:8px;width:100%;padding:0}@keyframes mpHighlightPulse{0%{transform:scale(1);outline:2px solid transparent;box-shadow:none}20%{transform:scale(1.02);outline:2px solid var(--mp-accent-primary);box-shadow:0 0 15px var(--mp-accent-primary)}80%{transform:scale(1.02);outline:2px solid var(--mp-accent-primary);box-shadow:0 0 15px var(--mp-accent-primary)}to{transform:scale(1);outline:2px solid transparent;box-shadow:none}}.mp-highlight-anim{animation:mpHighlightPulse 2s ease-in-out forwards}@keyframes mpFadeInDrop{0%{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}.mp-backup-section{display:flex;flex-direction:column;gap:12px}.mp-backup-subtitle{font-size:14px;font-weight:600;color:var(--mp-text-primary);margin:0;display:flex;align-items:center;gap:8px}.mp-backup-subtitle svg{width:16px;height:16px;fill:var(--mp-text-secondary)}.mp-backup-divider{height:1px;background-color:var(--mp-border-primary);margin:20px 0}.mp-backup-list{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;padding-right:4px}.mp-backup-item{display:flex;align-items:center;padding:10px 12px;background-color:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);cursor:pointer;transition:background-color .15s,border-color .15s}.mp-backup-item:hover{background-color:var(--mp-bg-tertiary);border-color:var(--mp-accent-primary)}.mp-backup-item-content{margin-left:12px;display:flex;flex-direction:column}.mp-backup-item-title{font-size:13px;font-weight:500;color:var(--mp-text-primary)}.mp-backup-item-desc{font-size:11px;color:var(--mp-text-tertiary);margin-top:2px}.mp-backup-warning{font-size:11px;color:var(--mp-accent-close);background-color:rgba(240,62,62,.1);padding:8px 12px;border-radius:var(--mp-border-radius-sm);line-height:1.4;text-align:center;font-weight:600}.mp-backup-actions{display:flex;gap:10px;margin-top:12px;justify-content:flex-end}.mp-backup-actions .save-button{flex:1}.mp-form-row{display:flex;gap:12px!important;width:100%!important;margin-bottom:16px!important;font-size:13px!important}.mp-form-row>.mp-form-group{flex:1;margin-bottom:0}@media (max-width:400px){.mp-form-row{flex-direction:column;gap:16px}.mp-form-row>.mp-form-group{margin-bottom:0}}.mp-tag-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:var(--mp-border-radius-sm);font-family:var(--mp-font-family-base);font-size:11px;font-weight:500;line-height:1;white-space:nowrap;cursor:default;user-select:none;transition:transform .2s ease;color:var(--mp-text-buttons)}.prompt-tags-container{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.mp-tags-modal-content{display:flex;flex-direction:column;gap:16px;max-height:60vh;overflow:hidden;padding-right:4px;scrollbar-width:none}.mp-tags-modal-content::-webkit-scrollbar{display:none}.mp-tag-form{display:flex;flex-direction:column;gap:12px;padding:16px;background-color:var(--mp-bg-secondary);border-radius:var(--mp-border-radius-md);border:1px solid var(--mp-border-primary)}.mp-tag-form-row{display:flex;gap:12px;align-items:flex-end;justify-content:space-around;width:100%;box-sizing:border-box}.mp-tag-color-group{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;max-width:160px;min-width:80px}.mp-tag-color-label{font-family:var(--mp-font-family-base);font-size:11px;color:var(--mp-text-secondary)}.mp-tag-color-input{width:100%;height:32px;padding:0;margin:0;border:2px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-sm);cursor:pointer;background:none;overflow:hidden;box-sizing:border-box;display:block}.mp-tag-color-input::-webkit-color-swatch-wrapper{padding:0}.mp-tag-color-input::-webkit-color-swatch{border:none;border-radius:2px}.mp-tag-color-input::-moz-color-swatch{border:none;border-radius:2px}.mp-tags-list{display:flex;flex-direction:column;gap:6px}.mp-tag-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background-color:var(--mp-bg-secondary);border-radius:var(--mp-border-radius-md);border:1px solid var(--mp-border-primary);transition:background-color .2s ease,border-color .2s ease}.mp-tag-item:hover{background-color:var(--mp-bg-tertiary);border-color:var(--mp-border-secondary)}.mp-tag-item-info{gap:12px;flex:1;min-width:0}.mp-tag-item-info,.mp-tag-item-preview{display:flex;align-items:center}.mp-tag-item-details{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.mp-tag-item-comment{font-family:var(--mp-font-family-base);font-size:12px;color:var(--mp-text-tertiary);display:block;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mp-tag-item-actions{display:flex;gap:2px;flex-shrink:0}.mp-tag-action-btn{background:none;border:none;cursor:pointer;width:28px;height:28px;border-radius:var(--mp-border-radius-sm);transition:all .15s ease;display:flex;align-items:center;justify-content:center;color:var(--mp-text-secondary);font-family:var(--mp-font-family-button)}.mp-tag-action-btn:hover{background-color:rgba(0,0,0,.05);transform:scale(1.1)}.mp-tag-action-btn.edit:hover{color:var(--mp-accent-edit)}.mp-tag-action-btn.delete:hover{color:var(--mp-accent-close)}.mp-tag-action-btn svg{width:16px;height:16px}.mp-tags-empty{text-align:center;padding:32px;color:var(--mp-text-tertiary);font-family:var(--mp-font-family-base)}.mp-filter-btn{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;width:28px;height:28px;border-radius:var(--mp-border-radius-sm);display:flex;align-items:center;justify-content:center;color:var(--mp-text-secondary);transition:all .2s ease;z-index:5;margin-right:5px}.mp-filter-btn:hover{background-color:rgba(0,0,0,.05);transform:translateY(-50%) scale(1.1)}.mp-filter-btn.active,.mp-filter-btn:hover{color:var(--mp-accent-primary)}.mp-filter-btn svg{width:16px;height:16px}.mp-filter-dropdown{position:fixed;min-width:100px;max-width:200px;background-color:var(--mp-bg-primary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);box-shadow:var(--mp-shadow-lg);display:none;flex-direction:column;max-height:280px;overflow:hidden}.mp-filter-dropdown.visible{display:flex;flex-direction:column}.mp-filter-header{display:flex;justify-content:space-around;flex-direction:row-reverse;align-items:center;padding:4px 6px;border-bottom:1px solid var(--mp-border-primary);background-color:var(--mp-bg-secondary);gap:2px}.mp-filter-manage-btn{background:none;border:none;cursor:pointer;width:28px;height:28px;border-radius:var(--mp-border-radius-sm);display:flex;align-items:center;justify-content:center;color:var(--mp-text-secondary);transition:all .2s ease}.mp-filter-manage-btn:hover{background-color:rgba(0,0,0,.05);transform:scale(1.1);color:var(--mp-accent-edit)}.mp-filter-manage-btn svg{width:16px;height:16px}.mp-filter-clear-btn{background:none;border:none;cursor:pointer;width:28px;height:28px;border-radius:var(--mp-border-radius-sm);display:flex;align-items:center;justify-content:center;color:var(--mp-text-secondary);transition:all .2s ease}.mp-filter-clear-btn:hover{background-color:rgba(0,0,0,.05);transform:scale(1.1);color:var(--mp-accent-close)}.mp-filter-clear-btn svg{width:16px;height:16px}.mp-filter-list{overflow-y:auto;padding:4px;flex:1;scrollbar-width:none}.mp-filter-list::-webkit-scrollbar{display:none}.mp-filter-item{display:flex;align-items:center;gap:10px;padding:7px 10px;cursor:pointer;border-radius:var(--mp-border-radius-sm);transition:background-color .15s ease,box-shadow .15s ease}.mp-filter-item+.mp-filter-item{margin-top:1px}.mp-filter-item.selected,.mp-filter-item:hover{background-color:var(--mp-bg-tertiary)}.mp-filter-tag-preview{flex:1;min-width:0}.mp-filter-empty{padding:24px 16px;text-align:center;color:var(--mp-text-tertiary);font-family:var(--mp-font-family-base);font-size:13px}.mp-accordions-row{display:flex;gap:10px;margin-bottom:15px;flex-shrink:0;align-items:flex-start}.mp-accordions-row>.mp-files-accordion,.mp-accordions-row>.mp-tags-accordion{flex:1;margin:0}.mp-files-accordion,.mp-tags-accordion{border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);background-color:var(--mp-bg-secondary);overflow:hidden;margin-top:10px;margin-bottom:20px;flex-shrink:0;transition:border-color .2s;display:flex;flex-direction:column}.mp-files-accordion:hover,.mp-tags-accordion:hover{border-color:var(--mp-accent-primary)}.mp-accordion-header{padding:8px 12px;background-color:var(--mp-bg-secondary);cursor:pointer;font-size:13px;font-weight:600;color:var(--mp-text-secondary);display:flex;justify-content:space-between;align-items:center;user-select:none;transition:background .2s;border-bottom:1px solid transparent;flex-shrink:0}.mp-accordion-header:hover{color:var(--mp-text-primary);background-color:var(--mp-bg-tertiary)}.mp-accordion-header svg{width:16px;height:16px;transition:transform .2s ease;opacity:.6}.mp-files-accordion.open .mp-accordion-header,.mp-tags-accordion.open .mp-accordion-header{border-bottom:1px solid var(--mp-border-primary);background-color:var(--mp-bg-tertiary)}.mp-files-accordion.open .mp-accordion-header svg:last-child,.mp-tags-accordion.open .mp-accordion-header svg:last-child{transform:rotate(180deg);opacity:1;color:var(--mp-accent-primary)}.mp-accordion-content{display:none;background-color:var(--mp-bg-primary);position:relative;flex-direction:column}.mp-files-accordion.open .mp-accordion-content,.mp-tags-accordion.open .mp-accordion-content{display:flex;flex-direction:column;height:190px}.mp-accordion-content .mp-scroll-wrapper{flex:1;display:flex;flex-direction:column;min-height:0}.mp-file-scroll-wrapper,.mp-tags-scroll-wrapper{flex:1;height:100%;overflow-y:auto;padding:12px 10px;scrollbar-width:none;-ms-overflow-style:none;box-sizing:border-box}.mp-dynamic-dropzone.empty-state,.mp-file-scroll-wrapper.empty-state,.mp-tags-scroll-wrapper.empty-state{height:100%;display:flex;justify-content:center;cursor:pointer;background:linear-gradient(135deg,color-mix(in srgb,var(--mp-accent-primary) 8%,transparent),color-mix(in srgb,var(--mp-accent-primary) 3%,transparent));box-shadow:0 8px 32px 0 rgba(0,0,0,.08),inset 0 1px 1px 0 hsla(0,0%,100%,.2)}.mp-file-scroll-wrapper.empty-state:hover,.mp-tags-scroll-wrapper.empty-state:hover{background:linear-gradient(135deg,color-mix(in srgb,var(--mp-accent-primary) 12%,transparent),color-mix(in srgb,var(--mp-accent-primary) 5%,transparent));border-color:var(--mp-accent-primary);box-shadow:0 12px 40px 0 rgba(0,0,0,.12),inset 0 1px 1px 0 hsla(0,0%,100%,.3)}.mp-file-grid.empty-state,.mp-tags-grid.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;width:100%;pointer-events:none}.mp-file-empty-icon,.mp-tags-empty-icon{width:48px;height:48px;color:var(--mp-accent-primary);opacity:.8;display:flex;align-items:center;justify-content:center}.mp-file-empty-text,.mp-tags-empty-text{color:var(--mp-text-primary);font-size:14px;font-weight:600;text-align:center}.mp-file-empty-subtext,.mp-tags-empty-subtext{color:var(--mp-text-secondary);font-size:12px;text-align:center}.mp-file-scroll-wrapper::-webkit-scrollbar,.mp-tags-scroll-wrapper::-webkit-scrollbar{display:none}.mp-file-grid{display:grid;grid-template-columns:repeat(auto-fill,70px);gap:10px}.mp-file-grid,.mp-tags-grid{justify-content:center;width:100%}.mp-tags-grid{display:flex;flex-wrap:wrap;gap:8px}.mp-add-file-card,.mp-file-card{position:relative;width:100%;height:70px;border-radius:6px;flex-shrink:0;cursor:pointer;transition:all .2s ease;box-sizing:border-box}.mp-file-card{background:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);overflow:hidden}.mp-add-file-card,.mp-file-card{display:flex;align-items:center;justify-content:center}.mp-add-file-card{border:2px dashed var(--mp-border-primary);color:var(--mp-text-tertiary);background:transparent}.mp-add-file-card:hover,.mp-dynamic-dropzone:hover{border-color:var(--mp-accent-primary);color:var(--mp-accent-primary);background-color:color-mix(in srgb,var(--mp-accent-primary) 5%,transparent)}.mp-add-icon{width:24px;height:24px;stroke:currentColor;stroke-width:2}.mp-file-card.inactive{opacity:.5;filter:grayscale(100%)}.mp-file-card.inactive:hover{opacity:.9;filter:grayscale(0);border-color:var(--mp-text-tertiary)}.mp-file-card.active{opacity:1;border-color:var(--mp-accent-primary);box-shadow:0 0 0 2px color-mix(in srgb,var(--mp-accent-primary) 20%,transparent)}.mp-file-thumb{width:100%;height:100%;object-fit:cover}.mp-file-icon-gen{width:28px;height:28px;color:var(--mp-text-secondary)}.mp-file-delete-perm{position:absolute;top:2px;right:2px;width:16px;height:16px;background:rgba(0,0,0,.6);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;opacity:0;transition:opacity .2s;z-index:10}.mp-file-delete-perm:hover{background-color:var(--mp-accent-close)}.mp-file-card:hover .mp-file-delete-perm{opacity:1}.mp-tag-select-item{display:inline-flex;align-items:center;padding:6px 12px;border-radius:var(--mp-border-radius-sm);font-family:var(--mp-font-family-base);font-size:12px;font-weight:500;cursor:pointer;transition:all .2s ease;background-color:var(--mp-bg-tertiary);color:var(--mp-text-tertiary);border:1px solid transparent}.mp-tag-select-item:hover{transform:scale(1.05);opacity:.9}.mp-tag-select-item.active{border-color:hsla(0,0%,100%,.3);box-shadow:0 2px 8px rgba(0,0,0,.15)}.mp-tags-accordion-footer{display:flex;justify-content:center;padding:8px;border-top:1px solid var(--mp-border-primary);background-color:var(--mp-bg-secondary);flex-shrink:0;position:relative;z-index:10}.mp-tags-manage-btn{display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;color:var(--mp-accent-primary);font-family:var(--mp-font-family-button);font-size:12px;font-weight:500;padding:6px 12px;border-radius:var(--mp-border-radius-sm);transition:background-color .2s ease}.mp-tags-manage-btn:hover{background-color:color-mix(in srgb,var(--mp-accent-primary) 15%,transparent)}.mp-tags-manage-btn svg{width:14px;height:14px}.mp-icon-container{display:flex;align-items:center;justify-content:center;cursor:help;width:16px;height:16px;color:var(--mp-accent-primary)}.mp-syntax-container{position:relative!important;width:100%;height:100%}.mp-syntax-backdrop{position:absolute!important;top:0;left:0;right:0;bottom:0;overflow:hidden;pointer-events:none;z-index:0;font-family:var(--mp-font-family-editor)!important;font-size:inherit;font-weight:400!important;font-style:normal!important;line-height:inherit;letter-spacing:normal;word-spacing:normal;text-transform:none;text-indent:0;text-shadow:none!important;text-decoration:none!important;white-space:pre-wrap;overflow-wrap:break-word;word-wrap:break-word;word-break:normal;padding:16px;margin:0;border:none;box-sizing:border-box;color:var(--mp-text-primary);background:transparent;user-select:none;-webkit-user-select:none}textarea.mp-syntax-enabled{position:relative!important;z-index:1;background:transparent!important;color:transparent!important;-webkit-text-fill-color:transparent!important;white-space:pre-wrap!important;overflow-wrap:break-word!important;word-wrap:break-word!important;word-break:normal!important;caret-color:var(--mp-syntax-caret)!important}textarea.mp-syntax-enabled::-moz-selection,textarea.mp-syntax-enabled::selection{background:var(--mp-syntax-selection)!important}.mp-syn-esc{color:var(--mp-syntax-escape)}.mp-syn-ign-f{color:var(--mp-syntax-ignore-fence);opacity:.8}.mp-syn-ign-c{color:var(--mp-syntax-ignore-content);opacity:.6}.mp-syn-qt-f{color:var(--mp-syntax-quote-fence)}.mp-syn-qt-c{color:var(--mp-syntax-quote-content)}.mp-syn-dt-f,.mp-syn-dt-k{color:var(--mp-syntax-var-keyword)}.mp-syn-fl-k,.mp-syn-fl-p,.mp-syn-fl-t{color:var(--mp-syntax-file-keyword)}.mp-syn-sl-f{color:var(--mp-syntax-sel-fence)}.mp-syn-sl-h,.mp-syn-sl-hh{color:var(--mp-syntax-sel-header)}.mp-syn-sl-sep{color:var(--mp-syntax-sel-sep);opacity:.7}.mp-syn-sl-p-multi{color:var(--mp-syntax-sel-multi)}.mp-syn-sl-p-single{color:var(--mp-syntax-sel-single)}.mp-syn-sl-p-id{color:var(--mp-syntax-sel-id)}.mp-syn-sl-p-other{color:var(--mp-syntax-sel-other)}.mp-syn-def-s{color:var(--mp-syntax-def-sep)}.mp-syn-def-v{color:var(--mp-syntax-def-val)}.mp-syn-sel-chk{color:var(--mp-syntax-sel-checked)}.mp-syn-free-b,.mp-syn-free-l{color:var(--mp-syntax-free-label);background-color:color-mix(in srgb,var(--mp-syntax-free-bracket) 25%,transparent)}.mp-syn-in-b{color:var(--mp-syntax-in-bracket)}.mp-syn-in-l{color:var(--mp-syntax-in-label)}.mp-syn-in-e{color:var(--mp-syntax-in-eq)}.mp-syn-sil-b{color:var(--mp-syntax-sil-bracket)}.mp-syn-sil-l{color:var(--mp-syntax-sil-label)}.mp-syn-sil-e{color:var(--mp-syntax-sil-eq)}.mp-syn-in-c{color:var(--mp-syntax-context);opacity:.7}.mp-syn-in-v,.mp-syn-sil-v,.mp-syn-var{color:var(--mp-syntax-var)}.mp-syn-var{border-bottom:1px dotted var(--mp-syntax-var)}.mp-syntax-backdrop,textarea.mp-syntax-enabled{tab-size:4;-moz-tab-size:4}.mp-syntax-backdrop span{font-weight:inherit;font-style:inherit}.mp-syntax-backdrop span[class*=mp-syn-]{text-decoration:none!important;text-shadow:none!important}.mp-gist-import-btn{display:inline-flex;align-items:center;justify-content:center;gap:.25rem;padding:.5rem;height:1.75rem;font-size:.75rem;font-weight:500;font-family:var(--mp-font-family-button);line-height:1.625;border-radius:6px;border:1px solid var(--mp-border-secondary);cursor:pointer;background-color:var(--mp-accent-primary);color:var(--mp-text-buttons);box-shadow:var(--mp-shadow-sm);transition:all var(--mp-transition-fast);margin-right:8px;vertical-align:middle;text-decoration:none}.mp-gist-import-btn:hover{background-color:color-mix(in srgb,var(--mp-accent-primary) 10%,var(--mp-bg-primary));color:var(--mp-accent-primary);border-color:var(--mp-accent-primary);box-shadow:var(--mp-shadow-md)}.mp-gist-import-btn:active{transform:scale(.98)}.file-actions{display:flex}.mp-gist-import-btn[data-state=imported],.mp-gist-import-btn[data-state=imported]:active,.mp-gist-import-btn[data-state=imported]:hover{background-color:var(--mp-bg-tertiary);color:var(--mp-text-secondary);box-shadow:none;transform:none;border-color:var(--mp-text-secondary);opacity:.7;cursor:not-allowed!important;pointer-events:auto!important}#mp-notification-container{position:fixed;top:24px;left:50%;transform:translateX(-50%);z-index:999999;display:flex;flex-direction:column;gap:12px;pointer-events:none;align-items:center}.mp-notification{background-color:color-mix(in srgb,var(--mp-accent-primary) 10%,var(--mp-bg-primary));color:var(--mp-accent-primary);border:1px solid var(--mp-accent-primary);padding:10px 20px;border-radius:var(--mp-border-radius-md);box-shadow:var(--mp-shadow-md);font-family:var(--mp-font-family-button);font-size:14px;font-weight:500;opacity:0;transform:translateY(-20px);transition:all var(--mp-transition-fast);display:flex;align-items:center;pointer-events:auto}.mp-notification.mp-show{opacity:1;transform:translateY(0)}.mp-notification.mp-error{background-color:color-mix(in srgb,var(--mp-accent-close) 10%,var(--mp-bg-primary));color:var(--mp-accent-close);border-color:var(--mp-accent-close);box-shadow:0 4px 12px color-mix(in srgb,var(--mp-accent-close) 25%,transparent)}.mp-prompt-meta-highlight{border:2px solid var(--mp-accent-primary)!important;border-radius:6px!important;padding:8px!important;background-color:color-mix(in srgb,var(--mp-accent-primary) 10%,var(--mp-bg-primary))!important;box-shadow:0 0 12px color-mix(in srgb,var(--mp-accent-primary) 40%,transparent)!important;transition:all var(--mp-transition-fast) ease-in-out;cursor:pointer}.mp-prompt-meta-highlight:hover{background-color:color-mix(in srgb,var(--mp-accent-primary) 15%,var(--mp-bg-primary))!important;box-shadow:0 0 16px color-mix(in srgb,var(--mp-accent-primary) 60%,transparent)!important}.mp-prompt-meta-highlight,.mp-prompt-meta-highlight a,.mp-prompt-meta-highlight li,.mp-prompt-meta-highlight span,.mp-prompt-meta-highlight strong,.mp-prompt-meta-highlight svg{color:var(--mp-accent-primary)!important}.mp-prompt-meta-highlight svg{fill:var(--mp-accent-primary)!important}.mp-patreon-button{background-color:#f96854!important;color:#fff!important;display:flex!important;justify-content:center;align-items:center;text-decoration:none;margin-top:8px;transition:filter .2s ease-in-out,transform .1s ease;border:none;cursor:pointer}.mp-patreon-button:hover{filter:brightness(1.1);text-decoration:none;color:#fff!important}.mp-patreon-button:active{filter:brightness(.9);transform:scale(.99)}.kfds-lyt-width-100.mp-patreon-button{box-sizing:border-box}.mp-expanded-filter-dropdown,.mp-filter-dropdown{z-index:100005!important}#__ap_settings_overlay{z-index:99990!important;position:fixed!important}#__ap_lang_modal_overlay{z-index:99999!important;position:fixed!important}#__ap_lang_modal_overlay .lang-box{z-index:100000!important;position:relative!important}.empty-state{padding:10px;text-align:center;color:var(--mp-text-tertiary);font-size:14px}.mp-dialogo-overlay{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:var(--mp-bg-overlay);opacity:0;transition:opacity var(--mp-transition-fast);pointer-events:none;padding:16px}.mp-dialogo-overlay.mp-dialogo-visible{opacity:1;pointer-events:auto}.mp-dialogo{background:var(--mp-bg-secondary);border-radius:var(--mp-border-radius-lg);box-shadow:var(--mp-shadow-lg);border:1px solid var(--mp-border-primary);width:100%;max-width:420px;display:flex;flex-direction:column;max-height:calc(100vh - 64px);transform:scale(.95) translateY(10px);opacity:0;transition:transform var(--mp-transition-fast),opacity var(--mp-transition-fast);font-family:var(--mp-font-family-base);outline:none}.mp-dialogo-overlay.mp-dialogo-visible .mp-dialogo{transform:scale(1) translateY(0);opacity:1}.mp-dialogo-header{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 0}.mp-dialogo-title{font-family:var(--mp-font-family-heading);font-size:16px;font-weight:600;color:var(--mp-text-primary);margin:0;line-height:1.3}.mp-dialogo-body{padding:16px 20px;flex:1;overflow-y:auto;min-height:0}.mp-dialogo-message{font-size:14px;line-height:1.6;color:var(--mp-text-secondary);margin:0;overflow-wrap:break-word;word-break:break-word}.mp-dialogo-header:empty+.mp-dialogo-body{padding-top:20px}.mp-dialogo-body::-webkit-scrollbar{width:6px}.mp-dialogo-body::-webkit-scrollbar-track{background:transparent}.mp-dialogo-body::-webkit-scrollbar-thumb{background:var(--mp-border-primary);border-radius:10px}.mp-dialogo-body::-webkit-scrollbar-thumb:hover{background:var(--mp-text-tertiary)}.mp-dialogo-body{scrollbar-width:thin;scrollbar-color:var(--mp-border-primary) transparent}.mp-dialogo-footer{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:4px 20px 20px}.mp-dialogo-footer:empty{display:none}.mp-dialogo-footer-checkbox{display:flex;align-items:center;margin-right:auto;font-size:12px;color:var(--mp-text-tertiary);user-select:none;cursor:pointer;line-height:1}.mp-dialogo-footer-checkbox .mp-checkbox{margin:0;width:14px;height:14px;flex-shrink:0}.mp-dialogo-footer-checkbox span{margin-left:6px}.mp-dialogo-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;border:1px solid transparent;border-radius:var(--mp-border-radius-sm);font-family:var(--mp-font-family-button);font-size:13px;font-weight:500;cursor:pointer;transition:all var(--mp-transition-fast);white-space:nowrap;line-height:1.4}.mp-dialogo-btn:hover,.save-button:hover{box-shadow:4px 4px 0 0 var(--mp-text-primary);transform:translate(-2px,-2px)}.mp-dialogo-btn:active,.save-button:active{box-shadow:0 0 0 0 var(--mp-text-primary);transform:translate(0)}.mp-dialogo-btn:focus-visible{outline:2px solid var(--mp-accent-primary);outline-offset:2px}.mp-dialogo-btn-icon{display:flex;align-items:center;justify-content:center;width:16px;height:16px;flex-shrink:0}.mp-dialogo-btn-icon svg{width:100%;height:100%}.mp-dialogo-btn-primary{background:var(--mp-accent-primary);color:var(--mp-text-buttons);border-color:var(--mp-accent-primary)}.mp-dialogo-btn-primary:hover{background:var(--mp-accent-primary-hover);border-color:var(--mp-accent-primary-hover)}.mp-dialogo-btn-secondary{background:transparent;color:var(--mp-text-secondary);border-color:var(--mp-text-primary)}.mp-dialogo-btn-secondary:hover{background:var(--mp-bg-tertiary);color:var(--mp-text-primary);border-color:var(--mp-text-primary)}.mp-dialogo-btn-danger{background:var(--mp-accent-close);color:var(--mp-text-buttons);border-color:var(--mp-accent-close)}.mp-dialogo-btn-danger:hover{background:var(--mp-accent-close-hover);border-color:var(--mp-accent-close-hover)}.mp-dialogo-btn-edit{background:var(--mp-accent-edit);color:var(--mp-text-buttons);border-color:var(--mp-accent-edit)}.mp-dialogo-btn-edit:hover{background:var(--mp-accent-edit-hover);border-color:var(--mp-accent-edit-hover)}.mp-shared-changelog-btn{display:inline-block;font-size:13px;color:var(--mp-accent-primary);cursor:pointer;margin-bottom:10px;text-decoration:underline}.mp-shared-changelog-content{background:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);padding:10px;font-size:13px;color:var(--mp-text-secondary);max-height:250px;overflow-y:auto;margin-bottom:15px;white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word}.mp-shared-changelog-content h1,.mp-shared-changelog-content h2,.mp-shared-changelog-content h3,.mp-shared-changelog-content h4,.mp-shared-changelog-content h5,.mp-shared-changelog-content h6{margin-top:0;margin-bottom:8px;color:var(--mp-text-primary)}.mp-shared-changelog-content p{margin:0 0 8px}.mp-shared-inline-code{background:var(--mp-bg-tertiary);padding:2px 4px;border-radius:3px;font-family:var(--mp-font-family-editor);color:var(--mp-accent-close)}.mp-shared-block-code{background:var(--mp-bg-tertiary);padding:10px;border-radius:var(--mp-border-radius-sm);overflow-x:auto;max-height:200px;white-space:pre-wrap;word-wrap:break-word;margin-bottom:8px;display:block}.mp-shared-block-code,.mp-shared-changelog-content code{font-family:var(--mp-font-family-editor)!important}.mp-shared-version-highlight{color:var(--mp-btn-add-color)}.mp-shared-info{margin-bottom:15px;padding:12px;background:var(--mp-bg-secondary);border-radius:var(--mp-border-radius-md);border:1px solid var(--mp-border-primary)}.mp-shared-info-manager{margin-top:15px;margin-bottom:0;padding:10px}.mp-shared-info-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.mp-shared-info-header.align-center{align-items:center}.mp-shared-info-list{font-size:13px;color:var(--mp-text-secondary);display:flex;flex-direction:column;gap:6px}.mp-shared-info-label{color:var(--mp-accent-primary)}.mp-shared-btn-secondary{background-color:var(--mp-bg-tertiary)!important;color:var(--mp-text-primary)!important;border:1px solid var(--mp-border-primary)!important}.mp-shared-btn-secondary:hover{background-color:var(--mp-bg-secondary)!important;opacity:.9}.mp-shared-btn-cancel{background:var(--mp-bg-secondary)!important;color:var(--mp-text-primary)!important;border:1px solid var(--mp-border-primary)!important}.mp-diff-column-full{width:100%!important}.mp-shared-cl-overlay{z-index:99995!important}.mp-shared-cl-box{max-width:600px!important;max-height:80vh!important;display:flex!important;flex-direction:column!important;cursor:default}.mp-shared-cl-title{flex-shrink:0;margin-bottom:15px}.mp-shared-cl-body{flex-grow:1;overflow-y:auto;max-height:none!important;margin-bottom:0!important;text-align:left}.mp-shared-intervals{display:flex;gap:10px;flex-wrap:wrap;padding:8px 12px;justify-content:space-between;align-items:center;background-color:var(--mp-bg-secondary);border-radius:var(--mp-border-radius-md);border:1px solid var(--mp-border-primary)}.mp-shared-interval-label{display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;color:var(--mp-text-secondary)}.mp-shared-version-badge{color:var(--mp-btn-add-color);font-weight:600;font-size:14px}.mp-shared-info-subtext{font-size:12px;color:var(--mp-text-secondary);margin-top:5px}.mp-shared-info-actions{margin-top:10px;display:flex;gap:8px}.mp-shared-info-actions .flex-1{flex:1}.mp-shared-form-group{margin-top:15px}.mp-shared-modal-footer{margin-top:20px}.mp-diff-view{width:100%!important;flex:1!important;padding:16px!important;border-radius:var(--mp-border-radius-md)!important;border:1px solid var(--mp-border-primary)!important;background-color:var(--mp-bg-secondary)!important;color:var(--mp-text-primary)!important;font-family:var(--mp-font-family-editor)!important;font-size:15px!important;line-height:1.6!important;box-sizing:border-box!important;overflow-y:auto!important;white-space:pre-wrap!important;word-break:break-all!important}.mp-diff-line-unchanged{color:var(--mp-text-primary)}.mp-diff-line-removed{background-color:rgba(239,68,68,.15)!important;color:#ef4444!important;display:block;width:100%}.mp-diff-line-added{background-color:rgba(16,185,129,.15)!important;color:#10b981!important;display:block;width:100%}.mp-diff-line-empty{background-color:transparent;opacity:.3;user-select:none}.mp-diff-column{position:relative!important}.mp-diff-enhanced-edit-btn{position:absolute!important;bottom:12px;right:12px;z-index:10;opacity:.35;transition:opacity .2s ease,transform .2s ease}.mp-diff-enhanced-edit-btn.active,.mp-diff-enhanced-edit-btn:hover{opacity:1!important}.save-button:has(svg){display:inline-flex!important;align-items:center!important;justify-content:center!important}.save-button svg{width:18px!important;height:18px!important;display:block!important;margin:0!important;pointer-events:none}input#__ap_shared_url{color:var(--mp-accent-primary)!important;font-weight:300!important}\n";
 
@@ -1254,6 +1585,12 @@
     if (!document.getElementById("mp-pill-copy-btn-style")) {
       const h = document.createElement("style");
       h.id = "mp-pill-copy-btn-style";
+      // v27.0.8: collapse/expand mechanics for the pill's Copy button — a
+      // faithful mirror of the external stylesheet's .mp-btn-ai/.mp-btn-paste
+      // rules (the Copy button replaced the Enhance button as the pill's
+      // first action; the external CSS resource cannot grow new classes, so
+      // the equivalent rules are injected here, keeping the slide animation
+      // identical on every platform and in every mp-dir-* direction).
       h.textContent =
         ".mp-btn-copy{flex:0 0 0;width:0;height:0;opacity:0;overflow:hidden;transition:flex-basis var(--mp-transition-fast),width var(--mp-transition-fast),height var(--mp-transition-fast),opacity var(--mp-transition-fast),transform var(--mp-transition-fast);}.mp-sliding-pill-container:hover .mp-btn-copy{flex:0 0 34px;width:34px;height:34px;opacity:1;transform:translate(0);}.mp-dir-top .mp-btn-copy{transform:translateY(10px);}.mp-dir-bottom .mp-btn-copy{transform:translateY(-10px);}.mp-dir-left .mp-btn-copy{transform:translateX(10px);}.mp-dir-right .mp-btn-copy{transform:translateX(-10px);}";
       document.head.appendChild(h);
@@ -1656,6 +1993,12 @@
       link: '<svg viewBox="0 0 20 20"><path fill="currentColor" d="M4.83 15h2.91a5 5 0 0 1-1.55-2H5a3 3 0 1 1 0-6h3a3 3 0 0 1 2.82 4h2.1a5 5 0 0 0 .08-.83v-.34A4.83 4.83 0 0 0 8.17 5H4.83A4.83 4.83 0 0 0 0 9.83v.34A4.83 4.83 0 0 0 4.83 15"/><path fill="currentColor" d="M15.17 5h-2.91a5 5 0 0 1 1.55 2H15a3 3 0 1 1 0 6h-3a3 3 0 0 1-2.82-4h-2.1a5 5 0 0 0-.08.83v.34A4.83 4.83 0 0 0 11.83 15h3.34A4.83 4.83 0 0 0 20 10.17v-.34A4.83 4.83 0 0 0 15.17 5"/></svg>',
       color:
         '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M20 20H4c-1.1 0-2 .9-2 2s.9 2 2 2h16c1.1 0 2-.9 2-2s-.9-2-2-2M7.11 17c.48 0 .91-.3 1.06-.75l1.01-2.83h5.65l.99 2.82c.16.46.59.76 1.07.76.79 0 1.33-.79 1.05-1.52L13.69 4.17a1.8 1.8 0 0 0-3.38 0L6.06 15.48c-.28.73.27 1.52 1.05 1.52m4.83-11.4h.12l2.03 5.79H9.91z"/></svg>',
+      // v27.0.9: gear glyph for the Flow dock pill's new Settings button
+      // (the slot's old Prompts icon is retired there — see
+      // createDockSettingsButton). Material-style 24x24 gear with
+      // fill="currentColor", matching the neighboring set so it inherits
+      // the pill button color/hover rules untouched. Registered before
+      // DEFAULT_ICONS is cloned, so it resets/overrides cleanly with themes.
       settings:
         '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>',
     },
@@ -1666,6 +2009,15 @@
     const n = document.createElement("div");
     n.className = `mp-sliding-pill-container mp-dir-${e}`;
     const a = "left" === e || "right" === e ? "top" : "left",
+      // v27.0.8: the pill's first button is now Copy (editor -> clipboard),
+      // a symmetric companion to the Paste button below (clipboard ->
+      // editor). It replaces the old AI-Enhance shortcut button. The AI
+      // enhancement workflow itself is unchanged and remains reachable via
+      // the prompt modal's magic button, the editor toolbar enhance
+      // buttons and the 'enhancePrompt' keyboard shortcut. The mp-btn-copy
+      // class mirrors the external stylesheet's .mp-btn-ai/.mp-btn-paste
+      // collapse/expand mechanics via rules injected in
+      // injectGlobalStyles() (the external CSS cannot grow new classes).
       o = document.createElement("button");
     ((o.type = "button"),
       (o.className = "mp-btn-part mp-btn-copy"),
@@ -1724,6 +2076,23 @@
       t
     );
   }
+  // v27.0.9: Settings button for the Flow dock's pill. The pill's third
+  // (always-visible, main-slot) action used to be the Prompts button, but on
+  // the dock that button and the dock trigger were the same action — both
+  // funnel into the one dock-level menu-toggle listener initUI registers —
+  // so the slot was pure duplication. It now opens the settings modal with
+  // the exact canonical sequence the extension-menu command uses (create if
+  // needed -> resetToCurrent -> showModal), so the two entry points can
+  // never drift apart. Dock-scoped by construction: createPromptButton keeps
+  // shipping the Prompts button for every other platform, where it is the
+  // only inline way to open the prompt menu. The button rides the shared
+  // .mp-btn-part base (34px slot, 20px glyph, hover color) plus the
+  // dock-scoped height/color rules in FLOW_DOCK_CSS. v27.0.10: the gear is
+  // no longer the pill's static parked face — the dock-scoped
+  // .mp-btn-settings rules in FLOW_DOCK_CSS give it the exact collapse/
+  // expand choreography the external stylesheet gives .mp-btn-ai and
+  // .mp-btn-paste, so all three pill buttons park collapsed (0 width,
+  // hidden, translated 10px) and slide out together on pill hover.
   function createDockSettingsButton() {
     const e = document.createElement("button");
     return (
@@ -1731,9 +2100,19 @@
       (e.className = "mp-btn-part mp-btn-settings"),
       e.setAttribute("data-testid", "composer-button-settings"),
       setSafeInnerHTML(e, ICONS.settings),
+      // The dock pill mounts horizontally (mp-dir-left), so the tooltip
+      // renders on top — the same direction argument the Copy/Paste
+      // buttons of this pill receive.
       createCustomTooltip(e, "Settings", "top"),
       e.addEventListener("click", (t) => {
+        // stopPropagation keeps this click out of the dock-level
+        // menu-toggle listener (clicking Settings must never also toggle
+        // the prompt menu) — the same guard Copy/Paste use. preventDefault
+        // matches the menu-toggle listener's own contract.
         (t.stopPropagation(), t.preventDefault());
+        // If the prompt menu happens to be open, close it first so exactly
+        // one panel is on screen (the same pattern openBackupManager and
+        // the keyboard-shortcut openers follow).
         closeMenu();
         if (!settingsModal) {
           settingsModal = createSettingsModal();
@@ -1745,6 +2124,12 @@
       e
     );
   }
+  // v27.0.5: dock glyph ported from LinkMaster's getPsiGlyphSVG (Psi in a
+  // dashed double ring and hex frame). &#936; keeps the source file ASCII.
+  // v27.0.8: the glyph keeps its plain-serif Psi, while the dock's "Prompt
+  // Master" label next to it now renders in the real 'Cinzel Decorative'
+  // webfont (loaded by ensureCinzelDecorativeFont below) — closing the
+  // typography gap this comment used to disclaim.
   const FLOW_DOCK_GLYPH =
     '<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" class="mp-dock-glyph" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
     '<path d="M 64,12 A 52,52 0 1 1 63.9,12 Z" stroke-dasharray="21.78 21.78" stroke-width="2"/>' +
@@ -1752,6 +2137,68 @@
     '<path d="M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z"/>' +
     '<text x="64" y="67" text-anchor="middle" dominant-baseline="middle" fill="currentColor" stroke="none" font-size="56" font-weight="700" font-family="serif">&#936;</text>' +
     "</svg>";
+  // v27.0.5: sliding-dock mechanics ported verbatim from LinkMaster's
+  // #linkmaster-dock (bottom-right, translateX(calc(100% - 22px)) parked
+  // off-screen, :hover -> translateX(0)). The reveal is still pure CSS
+  // :hover, exactly as in the source implementation; v27.0.10 adds one
+  // piece of JS state on top of it — the delayed-retract dwell timer
+  // (see FLOW_DOCK_HIDE_DELAY_MS below and the wiring in initUI's flow
+  // branch) — without touching the reveal path itself.
+  // v27.0.7 FIX (overlap): the shared stylesheet draws .mp-sliding-pill-container
+  // as position:absolute anchored right:0, and .mp-dir-left:hover widens it
+  // 36px -> 112px LEFTWARD. That geometry was built for inline composer
+  // mounts, where the expansion overlays page chrome harmlessly. Embedded as
+  // a flex child of the dock it painted the expanded pill straight over the
+  // dock trigger (measured 72px collision: pill 1164->1276 vs trigger
+  // 1071.6->1236). The two dock-scoped rules below put the pill back into
+  // the flex flow: the wrapper auto-sizes to the pill's live (animated)
+  // width and the pill container becomes position:relative, so the row
+  // reserves real space for the expansion. Because the dock is anchored
+  // right:0, the extra 76px grows the dock leftward — the trigger slides
+  // left out of the way instead of being covered. All shared mp-* rules
+  // (hover widths, separators, slide-in transforms) keep applying; these
+  // overrides only neutralize position/size participation, and only inside
+  // #pm-flow-dock, so every other platform's inline pill is untouched.
+  // v27.0.8 (dock face lift): (1) The pill no longer paints its own 36px
+  // rounded, hard-bordered chip inside the dock — it is now a borderless,
+  // square-cornered, full-height glass panel (translucent tint + backdrop
+  // blur that deepens dynamically 2px -> 14px on hover), so the slide-out
+  // reads as one continuous rectangle with the dock instead of a bordered
+  // circle glued onto it. (2) The dock row switched align-items:center ->
+  // stretch so the trigger and the pill panel share one exact height; the
+  // trigger centers its own content via its inline-flex alignment, so its
+  // look is unchanged. (3) "Prompt Master" renders in the loaded 'Cinzel
+  // Decorative' webfont. All v27.0.7 geometry (flex participation,
+  // leftward growth) and interaction fixes (single-toggle click forwarding,
+  // outside-click exemption) are preserved verbatim.
+  // v27.0.10 (true glass + dwell + glow + sliding gear): (1) The dock
+  // chrome is now true glass morphism — a translucent 160deg gradient fill
+  // (replacing the near-opaque .92 slab, which is why the old blur(10px)
+  // could never read as glass) over an 18px backdrop blur with 1.5x
+  // saturate, a fine cyan hairline border, and specular inset highlights
+  // along the top/left edges, deepening to 22px/1.65x while revealed.
+  // (2) The reveal selector is now the union :hover,.mp-dock-open —
+  // :hover keeps the v27.0.5 instant CSS slide-out (and the no-JS
+  // fallback), while .mp-dock-open is toggled by the initUI dwell wiring
+  // to hold the dock out for FLOW_DOCK_HIDE_DELAY_MS after the pointer
+  // leaves. (3) The "Prompt Master" title glows the dock's established
+  // cyan (#7fd8ff, layered 6/16/30px text-shadow) on trigger hover.
+  // (4) The pill's Settings button joins the satellite collapse
+  // choreography (see the .mp-btn-settings rules at the end of this
+  // sheet), so the parked pill is plain glass and all three buttons
+  // slide out together.
+  // v27.0.12: two-stage hover reveal for the dock pill. The parked face
+  // carries a shimmering chevron (title-styled — see the wrapper ::before
+  // rules at the tail of this sheet). On dwell the glass responds first
+  // (tint + blur deepen after --mp-pill-reveal-ms), then the full icon
+  // slide-out runs after the --mp-pill-intent-ms hover-intent window:
+  // container width, all three buttons, and the chevron's fade ALL share
+  // that one delay so the overflow:hidden reveal window and the buttons
+  // it uncovers stay in lockstep — splitting them (as the beta did) makes
+  // the buttons animate clipped behind the parked face and stack the copy
+  // glyph under the chevron. Collapse stays instant (delays live only in
+  // :hover rules), and swipes shorter than the intent window never reveal
+  // the icons. The shimmer loop is disabled under prefers-reduced-motion.
   const FLOW_DOCK_HIDE_DELAY_MS = 2750;
   const FLOW_DOCK_CSS =
     "#pm-flow-dock{position:fixed;right:0;bottom:24px;z-index:2147483646;display:flex;align-items:stretch;border-radius:6px 0 0 6px;overflow:hidden;background:linear-gradient(160deg,rgba(30,42,60,.58) 0%,rgba(16,23,34,.52) 55%,rgba(11,16,24,.60) 100%);backdrop-filter:blur(18px) saturate(1.5);-webkit-backdrop-filter:blur(18px) saturate(1.5);border:1px solid rgba(148,196,255,.30);border-right:none;box-shadow:inset 0 1px 0 rgba(200,230,255,.18),inset 0 -1px 0 rgba(0,0,0,.28),inset 1px 0 0 rgba(200,230,255,.10),-6px 10px 36px rgba(0,0,0,.50);transition:transform 400ms cubic-bezier(0.16,1,0.3,1),backdrop-filter 280ms ease,-webkit-backdrop-filter 280ms ease;transform:translateX(calc(100% - 22px));}" +
@@ -1774,14 +2221,41 @@
     "#pm-flow-dock .mp-sliding-pill-container:hover .mp-btn-settings{flex:0 0 34px;width:34px;opacity:1;transform:translate(0);}" +
     "#pm-flow-dock .mp-dir-left .mp-btn-settings{transform:translateX(10px);}" +
     "#pm-flow-dock{--mp-pill-intent-ms:950ms;--mp-pill-reveal-ms:250ms;}" +
+    // v27.0.12 (option B) — per-property two-stage :hover transition.
+    // Stage 1 (--mp-pill-reveal-ms): the glass wakes (background-color
+    // tint + backdrop-filter blur deepen) — early feedback that cannot
+    // break the reveal window. Stage 2 (--mp-pill-intent-ms): width (the
+    // overflow:hidden window) opens. height/border-color never change on
+    // hover but stay listed so nothing the base rule transitions loses
+    // its timing; the base collapsed rule keeps its delay-free shorthand,
+    // so collapse and all non-hover paths remain instant.
     "#pm-flow-dock .mp-sliding-pill-container:hover{transition:width var(--mp-transition-fast) var(--mp-pill-intent-ms,950ms),height var(--mp-transition-fast),background-color var(--mp-transition-fast) var(--mp-pill-reveal-ms,250ms),border-color var(--mp-transition-fast),backdrop-filter 280ms ease var(--mp-pill-reveal-ms,250ms),-webkit-backdrop-filter 280ms ease var(--mp-pill-reveal-ms,250ms);}" +
     "#pm-flow-dock .mp-sliding-pill-container:hover .mp-btn-copy," +
     "#pm-flow-dock .mp-sliding-pill-container:hover .mp-btn-paste," +
+    // The buttons MUST share the width's intent delay: they animate
+    // through the overflow:hidden window, so any earlier delay animates
+    // them clipped — and the left-anchored copy would stack under the
+    // parked chevron (the beta's interim glyph ambiguity).
     "#pm-flow-dock .mp-sliding-pill-container:hover .mp-btn-settings{transition-delay:var(--mp-pill-intent-ms,950ms);}" +
     "#pm-flow-dock .mp-prompt-wrapper::before{content:'';position:absolute;z-index:1002;pointer-events:none;right:10px;top:50%;width:16px;height:16px;transform:translateY(-50%);background-color:#e8eaf0;background-image:linear-gradient(90deg,transparent 0%,transparent 42%,rgba(127,216,255,.95) 50%,transparent 58%,transparent 100%);background-size:280% 100%;animation:mp-chevron-flash 2.6s linear infinite;opacity:.9;transition:opacity var(--mp-transition-fast),background-color var(--mp-transition-fast),filter var(--mp-transition-fast);-webkit-mask-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M14.5 5.5 8 12 14.5 18.5' fill='none' stroke='white' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\");-webkit-mask-position:center;-webkit-mask-repeat:no-repeat;-webkit-mask-size:16px 16px;mask-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M14.5 5.5 8 12 14.5 18.5' fill='none' stroke='white' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\");mask-position:center;mask-repeat:no-repeat;mask-size:16px 16px;}" +
     "#pm-flow-dock .mp-prompt-wrapper:has(.mp-sliding-pill-container:hover)::before{opacity:0;background-color:#7fd8ff;filter:drop-shadow(0 0 6px rgba(127,216,255,.85)) drop-shadow(0 0 14px rgba(127,216,255,.45));animation-play-state:paused;transition:opacity var(--mp-transition-fast) var(--mp-pill-intent-ms,950ms),background-color var(--mp-transition-fast),filter var(--mp-transition-fast);}" +
     "@keyframes mp-chevron-flash{0%{background-position:180% 0;}100%{background-position:-80% 0;}}" +
+    // v27.0.12: accessibility — the decorative infinite shimmer switches
+    // off for reduced-motion users (the glow and state fades remain).
     "@media (prefers-reduced-motion:reduce){#pm-flow-dock .mp-prompt-wrapper::before{animation:none;}}";
+  // v27.0.8: loads the 'Cinzel Decorative' display face used by the dock's
+  // "Prompt Master" label. The css2 request and the woff2 payload are
+  // fetched through GM_xmlhttpRequest — i.e. in the userscript-manager
+  // context, outside the page's CSP for style/font origins — and the font
+  // is re-injected as a base64 data: URL @font-face, so it renders even on
+  // hosts that block fonts.googleapis.com <style> @imports. The css2 call
+  // uses text= to receive a single tiny subset covering exactly
+  // "Prompt Master" (those subset URLs are extension-less gstatic /l/font?kit=
+  // links, so the url is matched via the trailing format('woff2') declaration
+  // rather than a .woff2 file suffix). Every failure mode (offline, CDN
+  // hiccup, blocked font) degrades silently to the serif fallback stack
+  // declared in .mp-dock-text — no console noise, no UI breakage. Idempotent:
+  // guarded by the style element id, safe across re-inits.
   function ensureCinzelDecorativeFont() {
     if (document.getElementById("pm-cinzel-font-style")) return;
     const e =
@@ -1869,6 +2343,9 @@
       setSafeInnerHTML(o, "");
       const t = document.createElement("div");
       t.className = "mp-theme-action-row";
+      // v27.0.8: the theme-shop split-button (cart icon with the "Get more
+      // Themes" tooltip linking to the Patreon/Ko-fi storefronts) was
+      // removed; only the local "+ add theme" button remains in the row.
       const a = document.createElement("div");
       ((a.className = "mp-theme-split-btn"),
         setSafeInnerHTML(a, ICONS.plus),
@@ -2091,6 +2568,9 @@
     const y = n.querySelector("#mp-nav-lbl");
     y && createCustomTooltip(y, "Locates and jumps to specific points in the conversation via message anchors.", "left");
     const b = n.querySelector("#mp-AI-info-icon");
+    // v27.0.8: the "Interactive Tutorial" action (a ko-fi.com redirect)
+    // was removed from this tooltip; the GitHub "Basic Guide" link remains
+    // as its single action.
     b &&
       createCustomTooltip(
         b,
@@ -2682,6 +3162,10 @@
             r.updateScrollArrows &&
             setTimeout(() => r.updateScrollArrows(), 50));
       }),
+      // v27.1.0: the accordion (renamed "Files" -> "Attachments") carries a
+      // utility tooltip so the feature's real behavior is discoverable:
+      // attached files are auto-attached to the AI input when the prompt is
+      // inserted (insertPrompt's DataTransfer path), not just previewed.
       createCustomTooltip(o, "Files attached here are automatically uploaded into the AI input box when this prompt is inserted.", "bottom"),
       d.addEventListener("click", (e) => {
         (e.stopPropagation(),
@@ -2800,6 +3284,12 @@
           }
         } catch (e) {}
       }));
+    // v27.1.0: the "shopping bag" header button (#__ap_shop_btn — tooltip
+    // "Get More Prompts", whose only action opened the Gist community prompt
+    // search) and the "circled i" help button (#__ap_info_btn) were removed
+    // on request, together with this wiring. The modal header now carries
+    // expand + close only; the "more prompts" up-sell funnel has no
+    // remaining touchpoint in this script.
     const w = t.querySelector("#__ap_close_prompt");
     async function S(e) {
       for (const n of e) {
@@ -3695,6 +4185,12 @@
       document.body.appendChild(a),
       requestAnimationFrame(() => a.classList.add("visible")));
   }
+  // v27.1.0: createInfoModal() — the "circled i" help modal (the
+  // auto-execute / placeholders / enhance / share-gist / shared-prompt
+  // docs table) — was removed together with its #__ap_info_btn trigger
+  // and all wiring. The infoTitle / info*Desc / spcDesc translation keys
+  // are no longer referenced by this script; every feature it described
+  // still exists and keeps its own per-control tooltip.
   function openPromptModal(e = null) {
     if (!currentModal) return;
     const t = !!e,
@@ -7191,6 +7687,3663 @@
     );
   }
 
+  // ─── v27.3.0: Flow per-model credit tracker chip ──────────────────────────
+  // Flow surfaces its image models (Nano Banana Pro / Nano Banana 2 /
+  // Nano Banana 2 Lite) and their credit situation as plain page text:
+  // the model selector chip in the prompt bar carries the selected
+  // model's name, and credit readouts ("80 / 100 credits", "1,250
+  // credits left", "will use 200 credits") appear wherever Flow prints
+  // them. This tracker READS those signals without ever restructuring
+  // Flow's DOM: it floats a glass chip at the top-right corner of the
+  // rich text field — the spot where the pre-v27.0.6 inline pill used
+  // to sit — showing "<badge> <left> / <total>" for the currently
+  // selected model, re-rendering the moment the selection or the
+  // numbers change. Readings are attributed to the model they name (a
+  // readout next to "Nano Banana 2 Lite" is Lite's, even while another
+  // model is selected); readouts that name no model are attributed to
+  // the model selected at reading time plus a wallet entry that
+  // backfills models without their own reading yet (shared-pool
+  // semantics). The full state persists across sessions under
+  // FLOW_CREDIT_STORAGE_KEY; the "🔄 Reset Flow Credit Tracker" menu
+  // command wipes it. Geometry is virtual: the chip is position:fixed
+  // and re-anchored to the editor's live rect (1s poll + 250ms mutation
+  // debounce + scroll/resize rAF), so it tracks the composer without
+  // injecting anything into it, and it hides itself whenever the field
+  // scrolls out of the viewport.
+  // v27.3.1: live-site hardening. v27.3.0's chip had a single point
+  // of failure — it only ever showed when findPlatformEditor()
+  // resolved, so on the rebuilt Flow UI (where that lookup can miss
+  // or land on a degenerate off-screen editable) the chip mounted
+  // but stayed opacity-0: "no changes were visible". The anchor is
+  // now a cascade (prompt field, sane + in the bottom half of the
+  // viewport where Flow's prompt bar lives → composer container →
+  // the model-chip element itself), the chip rides at the pill's
+  // old spot (right edge, vertically centered; top-right corner for
+  // tall fields), credit readings split across sibling spans are
+  // recovered by parsing the nearest small ancestor's joined text,
+  // the model chip is recognized from any tag via a text-node scan
+  // (not just button/aria elements), and a one-shot console status
+  // line makes the engine's findings observable (anchor / model /
+  // readings).
+  // v27.3.2: live-site fix #2 — values. v27.3.1 made the chip
+  // un-blankable and model detection worked, but the numbers stayed
+  // "0 / —": Flow prints the cost near the generate button and
+  // keeps wallet left/total inside transient popovers, so the
+  // persistent DOM alone can never carry the pair. Three passive
+  // sources now feed the same merge pipeline: (1) fetch/XHR
+  // wrappers that observe Flow's own responses (clone-and-scan; the
+  // original result always passes through untouched and the
+  // tracker itself never issues a request); (2) a localStorage/
+  // sessionStorage sweep for credit-shaped JSON; (3) wider DOM
+  // parsing (qualifier-flipped word orders, per-generation cost
+  // phrasing so a cost badge can no longer masquerade as a
+  // remaining count, aria-label + text-node joined surfaces). A
+  // settled 8s status line replaces v27.3.1's first-tick line
+  // (which raced Flow's SPA boot and read anchor=none · model=? ·
+  // readings=0 while the chip rendered fine a second later).
+  // v27.3.6: the counting round — see the metadata note. In here:
+  // usage readings (kind "usage", used/max, per-model only), the
+  // zero-cost-badge flip, the mutation-stamped route-gated counter
+  // with turn bursts and daily rollover, store v2, and the widened
+  // harvest/sampler/net gates that let Nano Banana usage text
+  // (tokens/turns/daily limits) through wherever Flow prints it.
+  // v27.3.5: the verdict round. The pull worked mechanically — the
+  // menu opened, its text was captured — but the parser could not
+  // read Flow's phrasing ("280 Google Flow credits": number and
+  // unit split by the words "Google Flow"), the close cascade lost
+  // to that menu, and the captured text settled feasibility for
+  // good: Google's published cost table charges only Veo, Gemini
+  // Omni, and upscaling — Nano Banana generations cost 0 credits,
+  // and NB usage is capped by an undisclosed server-side daily
+  // image limit Flow never displays. Per-model credit numbers
+  // therefore do not exist to be read; the tracker is rebuilt
+  // around what does: the shared wallet (menu pull), the
+  // per-model cost (Flow's printed hints), and a client-side
+  // per-model image count (flowCreditCountGens) — the number that
+  // actually tracks the hidden daily limit.
+  const FLOW_CREDIT_MODELS = [
+    { key: "nb2lite", label: "Nano Banana 2 Lite", badge: "NB2 Lite", re: /nano\s*banana\s*2\s*lite/i },
+    { key: "pro", label: "Nano Banana Pro", badge: "Pro", re: /nano\s*banana\s*pro/i },
+    { key: "nb2", label: "Nano Banana 2", badge: "NB2", re: /nano\s*banana\s*2(?!\s*(?:lite|pro))/i },
+  ];
+  const FLOW_CREDIT_STORAGE_KEY = "pm_flow_credit_state";
+  const FLOW_CREDIT_CSS =
+    "#pm-flow-credit-chip{position:fixed;left:-9999px;top:-9999px;z-index:2147483645;display:inline-flex;align-items:center;gap:7px;height:22px;padding:0 11px;border-radius:999px;font:600 11px/1 ui-sans-serif,system-ui,Roboto,sans-serif;letter-spacing:.02em;color:#e8eaf0;background:linear-gradient(160deg,rgba(30,42,60,.62) 0%,rgba(11,16,24,.66) 100%);backdrop-filter:blur(16px) saturate(1.45);-webkit-backdrop-filter:blur(16px) saturate(1.45);border:1px solid rgba(148,196,255,.28);box-shadow:inset 0 1px 0 rgba(200,230,255,.16),-4px 6px 18px rgba(0,0,0,.42);cursor:default;user-select:none;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.35);transition:opacity var(--mp-transition-fast,.2s),transform var(--mp-transition-fast,.2s);}" +
+    "#pm-flow-credit-chip.mp-credit-pending{opacity:.72;}" +
+    "#pm-flow-credit-chip.mp-credit-hidden{opacity:0;pointer-events:none;transform:translateY(4px);}" +
+    "#pm-flow-credit-chip .mp-credit-model{color:#aeb9c8;max-width:110px;overflow:hidden;text-overflow:ellipsis;}" +
+    "#pm-flow-credit-chip .mp-credit-sep{width:1px;height:10px;background:rgba(150,175,205,.35);flex:0 0 1px;}" +
+    "#pm-flow-credit-chip .mp-credit-values{color:#7fd8ff;font-variant-numeric:tabular-nums;}" +
+    "#pm-flow-credit-chip .mp-credit-values.mp-credit-low{color:#ffc46b;}" +
+    "#pm-flow-credit-chip .mp-credit-values.mp-credit-zero{color:#ff9d9d;}";
+
+  // Engine state — a single instance lives for the page lifetime. Dock
+  // re-inits never spawn a second engine (startFlowCreditTracker is a
+  // guarded no-op after the first call) and a wiped chip is rebuilt on
+  // the next tick, so the tracker survives Flow's SPA redraws.
+  let flowCreditEngineActive = !1,
+    flowCreditState = null,
+    flowCreditChip = null,
+    flowCreditModel = null,
+    flowCreditPollTimer = null,
+    flowCreditObserver = null,
+    flowCreditMutationTimer = null,
+    flowCreditPosPending = !1,
+    flowCreditSaveTimer = null,
+    flowCreditLastSig = "",
+    flowCreditAnchorEl = null,
+    flowCreditAnchorSrc = "",
+    // v27.3.2: passive-observer state — pending network/storage
+    // readings (drained by the tick), cumulative counters for the
+    // settled status line, and the storage sweep timer.
+    flowCreditPendingNet = [],
+    flowCreditNetCount = 0,
+    flowCreditStorageCount = 0,
+    flowCreditReadingsTotal = 0,
+    flowCreditNetInstalled = !1,
+    flowCreditStorageTimer = null,
+    // v27.3.4: active wallet-pull state — one pull at a time, a
+    // debounce window for automatic pulls, a human-readable outcome
+    // plus the captured menu text for the report, and the one-shot
+    // boot flag (see pullFlowCreditWallet).
+    flowCreditPullBusy = !1,
+    flowCreditPullLastAt = 0,
+    flowCreditPullInfo = "not run yet",
+    flowCreditPullRaw = "",
+    flowCreditPullAutoTried = !1,
+    // v27.3.9: post-generation wallet re-pull state — one pending
+    // timer (a burst of clicks never stacks pulls) plus a per-session
+    // cap so a runaway loop can never click Flow's profile chip
+    // forever (see scheduleFlowCreditWalletRepull).
+    flowCreditRepullTimer = null,
+    flowCreditRepullCount = 0,
+    // v27.3.10: daily-limit notice watcher state — the last captured
+    // Flow notice (verbatim text + model key + time) and a 30s
+    // debounce timestamp (see flowCreditScanLimitNotice).
+    flowCreditLimitNotice = null,
+    flowCreditLimitLastAt = 0,
+    // v27.3.5: client-side per-model image counting — the honest
+    // replacement for per-model credit numbers, which do not exist
+    // (Nano Banana generations cost 0 Flow credits; the real NB
+    // constraint is an undisclosed server-side daily image limit).
+    // v27.3.6 rebuilt the pipeline (see the v27.3.6 block below): the
+    // sweep now only reconciles visibility for fingerprints that a
+    // dedicated MutationObserver stamped with the model selected at
+    // ADD time; counting commits only on /edit/ routes and re-seeds
+    // on SPA navigation, and committed fingerprints are grouped into
+    // turns. Day counters roll over at local midnight; session counts
+    // live in memory, lifetime counts in the persisted store; the
+    // Reset menu command wipes both. Counts are approximate by
+    // nature and are always labeled as client-side counts, never as
+    // Flow credit data — and whenever Flow itself prints NB usage
+    // (usage readings), that canonical number wins the chip.
+    flowCreditGensSession = {},
+    flowCreditMediaSeen = null,
+    flowCreditLastScrollAt = 0,
+    // v27.3.6: canonical NB usage capture + the corrected counter.
+    // flowCreditUsageCount tallies usage-kind readings for the report;
+    // the counter's mutation-stamped queue (fp + model selected at ADD
+    // time + timestamp) is drained by flowCreditCountGens, which only
+    // commits on /edit/ routes, re-seeds on SPA route change, and
+    // burst-groups fingerprints into turns (gap > 8s = new turn) with
+    // day counters that roll over at local midnight.
+    flowCreditUsageCount = 0,
+    flowCreditTurnsSession = {},
+    flowCreditGenQueue = [],
+    flowCreditGenObserver = null,
+    flowCreditGenUrl = "",
+    flowCreditGenReseed = !1,
+    flowCreditLastNewAt = {},
+    // v27.3.8: click-anchored generation state. flowCreditGenArm
+    // maps model key -> {from, to} armed windows opened by real
+    // generation clicks (media counts only inside them);
+    // flowCreditClicksSession/Total/Unattributed tally clicks for
+    // the report; flowCreditLastGen remembers the model, batch hint
+    // and time of the most recent generation; the hook installs
+    // once per page lifetime.
+    flowCreditGenArm = {},
+    flowCreditClicksSession = {},
+    flowCreditClicksTotal = 0,
+    flowCreditClicksUnattributed = 0,
+    flowCreditLastGen = null,
+    flowCreditGenHookInstalled = !1,
+    flowCreditStoreInfo = "not loaded yet";
+
+  function freshFlowCreditState() {
+    // v27.3.6: store v2 — per-model entries gain canonical usage
+    // (used/max, from Flow's own display), turn counts, and daily
+    // counters; their left/total are gone (a per-model Nano Banana
+    // credit budget does not exist, so any stored pair was a
+    // misattributed wallet echo from a pre-v27.3.5 merge).
+    // v27.3.9: lastGenAt (epoch ms of the most recent generation
+    // click) and genDay (its local day key) — the event anchors that
+    // keep wallet freshness honest; absent in older stores, which
+    // simply means "no generation has been witnessed since install".
+    return { v: 2, cv: 3, wallet: null, lastGenAt: 0, genDay: "", models: {} };
+  }
+  function flowCreditEntry(state, key) {
+    let e = state.models[key];
+    if (!e)
+      e = state.models[key] = {
+        left: null,
+        total: null,
+        cost: null,
+        gens: 0,
+        at: 0,
+        turns: 0,
+        day: "",
+        gensDay: 0,
+        turnsDay: 0,
+        clicks: 0,
+        clicksDay: 0,
+        used: null,
+        max: null,
+        usageAt: 0,
+        // v27.3.10: turns-left state — the snapshot of today's click
+        // count taken when Flow printed usage (so only clicks AFTER
+        // the print subtract from it), and the LEARNED daily cap
+        // (the turns count at the moment Flow's own limit notice
+        // fired — the one moment the hidden cap speaks) with its
+        // timestamp and verbatim text.
+        turnsDayAtUsage: 0,
+        capTurns: null,
+        capAt: 0,
+        capText: "",
+        // v27.3.17: the learned reset moment (epoch ms), parsed from
+        // the limit notice that taught the cap — the model's daily
+        // boundary anchor. 0 = not learned; behavior is then
+        // byte-identical to the local-midnight assumption of
+        // v27.3.16.
+        capResetAt: 0,
+      };
+    return e;
+  }
+  function flowCreditParseNum(s) {
+    const n = parseInt(String(s).replace(/,/g, ""), 10);
+    return Number.isFinite(n) && n >= 0 ? n : null;
+  }
+
+  // Finds the model Flow currently has selected. The prompt-bar selector
+  // chip names exactly one model; a dropped-down menu names all of them,
+  // so a candidate only counts when its normalized text matches exactly
+  // one model regex (that rule alone makes menu lists self-excluding).
+  // Menu machinery (role=menu/listbox/option, CDK overlays) is excluded
+  // from the chip hunt; a marked menu entry (aria-selected/checked/
+  // current) is the documented fallback for open pickers. Within a
+  // scope, candidates score by distance to the composer so the
+  // prompt-bar chip beats look-alikes elsewhere on the page.
+  function flowCreditModelCandidates(scope, exclusion) {
+    const out = [];
+    if (!scope || !scope.querySelectorAll) return out;
+    const els = scope.querySelectorAll(
+      'button, [role="button"], [aria-haspopup], [aria-label], [title]',
+    );
+    for (const el of els) {
+      if (!isElementVisibleEl(el)) continue;
+      if (el.closest(exclusion)) continue;
+      const raw =
+        (el.getAttribute("aria-label") || "") +
+        " " +
+        (el.textContent || "") +
+        " " +
+        (el.getAttribute("title") || "");
+      const norm = raw.replace(/\s+/g, " ").trim();
+      if (!norm || norm.length > 140) continue;
+      const hits = FLOW_CREDIT_MODELS.filter((m) => m.re.test(norm));
+      if (hits.length === 1) out.push({ el: el, model: hits[0] });
+    }
+    return out;
+  }
+  // v27.3.1: chips are not always <button>/aria elements — a plain
+  // div/span can carry the model name. This scan walks TEXT nodes that
+  // name exactly one model (cheap: model names are rare strings, and no
+  // geometry is read unless one matches), then promotes each hit to the
+  // nearest ancestor whose own text still names exactly that one model
+  // within the candidate-length budget. The button/aria hunt above and
+  // this text hunt feed the same candidate pool.
+  function flowCreditModelTextCandidates(scope, exclusion) {
+    const out = [];
+    if (!scope) return out;
+    const root = scope === document ? document.body : scope;
+    if (!root) return out;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let node;
+    while ((node = walker.nextNode())) {
+      const t = node.nodeValue;
+      if (!t) continue;
+      const norm = t.replace(/\s+/g, " ").trim();
+      if (!norm || norm.length > 60) continue;
+      const hits = FLOW_CREDIT_MODELS.filter((m) => m.re.test(norm));
+      if (hits.length !== 1) continue;
+      const el = node.parentElement;
+      if (!el) continue;
+      let chipEl = el;
+      while (chipEl.parentElement && chipEl.parentElement !== document.body) {
+        const pt = (chipEl.parentElement.textContent || "")
+          .replace(/\s+/g, " ")
+          .trim();
+        if (pt.length > 140) break;
+        const ph = FLOW_CREDIT_MODELS.filter((m) => m.re.test(pt));
+        if (ph.length !== 1) break;
+        chipEl = chipEl.parentElement;
+      }
+      if (chipEl.closest(exclusion)) continue;
+      if (!isElementVisibleEl(chipEl)) continue;
+      out.push({ el: chipEl, model: hits[0] });
+    }
+    return out;
+  }
+  function detectFlowSelectedModel() {
+    const composer = findFlowComposerContainer();
+    const exclusion =
+      '#pm-flow-dock, #pm-flow-credit-chip, .mp-overlay, .mp-modal-box, [role="menu"], [role="listbox"], [role="menuitem"], [role="option"], .cdk-overlay-container, [class*="overlay"]';
+    const scopes = [];
+    if (composer) {
+      scopes.push(composer);
+      if (composer.parentElement) scopes.push(composer.parentElement);
+    }
+    scopes.push(document);
+    const cr = composer ? composer.getBoundingClientRect() : null;
+    for (const scope of scopes) {
+      const cands = flowCreditModelCandidates(scope, exclusion);
+      const textCands = flowCreditModelTextCandidates(scope, exclusion);
+      for (const tc of textCands) {
+        let dup = !1;
+        for (const c of cands)
+          if (c.el === tc.el && c.model.key === tc.model.key) {
+            dup = !0;
+            break;
+          }
+        if (!dup) cands.push(tc);
+      }
+      if (!cands.length) continue;
+      if (cr) {
+        const cx = cr.left + cr.width / 2,
+          cy = cr.top + cr.height / 2;
+        cands.sort(function (a, b) {
+          const ra = a.el.getBoundingClientRect(),
+            rb = b.el.getBoundingClientRect();
+          return (
+            Math.abs(ra.left + ra.width / 2 - cx) +
+            Math.abs(ra.top + ra.height / 2 - cy) -
+            (Math.abs(rb.left + rb.width / 2 - cx) +
+              Math.abs(rb.top + rb.height / 2 - cy))
+          );
+        });
+      } else if (scope === document) {
+        // No composer to distance-sort against (transient SPA state):
+        // Flow's prompt bar lives in the lower half of the viewport, so
+        // a look-alike label near the top of the page must not win.
+        const vh = window.innerHeight;
+        const filtered = cands.filter(function (c) {
+          const r = c.el.getBoundingClientRect();
+          return r.top + r.height / 2 > vh * 0.4;
+        });
+        if (filtered.length) return filtered[0].model;
+        continue;
+      }
+      return cands[0].model;
+    }
+    // Open picker with a marked entry: trust the host app's own flag.
+    const marked = document.querySelectorAll(
+      '[aria-selected="true"], [aria-checked="true"], [aria-current="true"]',
+    );
+    for (const el of marked) {
+      if (!isElementVisibleEl(el)) continue;
+      const norm = ((el.textContent || "") + " " + (el.getAttribute("aria-label") || ""))
+        .replace(/\s+/g, " ")
+        .trim();
+      if (!norm || norm.length > 140) continue;
+      const hits = FLOW_CREDIT_MODELS.filter((m) => m.re.test(norm));
+      if (hits.length === 1) return hits[0];
+    }
+    return null;
+  }
+
+  // Credit text patterns in priority order. Every pattern runs globally
+  // over a given text and each ACCEPTED match claims its character span,
+  // so a text like "40 / 200 credits · will use 200 credits" yields BOTH
+  // a left/total pair and a cost — the pair cannot swallow the cost, and
+  // the weak bare-number pattern cannot double-count either (its
+  // "200 credits" match overlaps the cost's claimed span and is
+  // dropped). Pair readings must satisfy 0 <= left <= total (sanity
+  // filter that also rejects date-shaped text like "9/7 credits").
+  // v27.3.2 widens the set: qualifier-flipped orders ("credits left:
+  // 40", "Remaining credits: 40"), a label-then-number form
+  // ("Credits 1,250" — the top-right counter shape), "of your"
+  // pairs, and per-generation cost phrasing so "40 credits per
+  // generation" is a COST, not a remaining count (the live-site
+  // misparse behind the chip's stuck "0 / —" cost badge).
+  const FLOW_CREDIT_PATTERNS = [
+    { kind: "both", re: /(\d[\d,]*)\s*\/\s*(\d[\d,]*)\s*credits?/i },
+    { kind: "both", re: /credits?[^\n\d]{0,16}(\d[\d,]*)\s*\/\s*(\d[\d,]*)/i },
+    { kind: "both", re: /(\d[\d,]*)\s*of\s*(?:your\s+)?(\d[\d,]*)\s*credits?/i },
+    { kind: "left", re: /(\d[\d,]*)\s*credits?\s*(?:left|remaining|available)/i },
+    { kind: "left", re: /credits?\s*(?:left|remaining|available)[^\n\d]{0,8}[:\-]?\s*(\d[\d,]*)/i },
+    { kind: "left", re: /(?:remaining|available)\s+credits?[^\n\d]{0,8}[:\-]?\s*(\d[\d,]*)/i },
+    // v27.3.5: the profile menu's exact phrasing — "280 Google
+    // Flow credits" — number and unit split by the words "Google
+    // Flow", which every earlier pattern missed (their number must
+    // touch "credits" across whitespace only). Left-only; plan
+    // marketing ("1,000 Google Flow credits each month") stays
+    // excluded via the lookahead.
+    { kind: "left", re: /(\d[\d,]*)\s+google\s+flow\s+credits\b(?!\s*(?:per|each|every)\b)/i },
+    // v27.3.6: the two weak bare-number forms carry zeroToCost — a
+    // BARE "0 credits" (no balance qualifier anywhere in the span) is
+    // the generate button's cost badge printing Nano Banana's zero
+    // cost, not a drained wallet, so it routes to cost. Qualified
+    // zeros ("0 credits left", "0 Google Flow credits" — both claimed
+    // by earlier patterns) are unaffected and stay left readings.
+    { kind: "left", re: /credits?\s*[:,\-]?\s*(\d[\d,]*)(?![\w,])/i, zeroToCost: !0 },
+    { kind: "cost", re: /(?:will\s*use|uses|cost|costs|consume[sd]?)\s*[^\n\d]{0,8}(\d[\d,]*)\s*credits?/i },
+    { kind: "cost", re: /(\d[\d,]*)\s*credits?\s*(?:per\s*(?:generation|image|video|render|clip)|\/\s*gen\b|each)/i },
+    { kind: "cost", re: /(?:per|each)\s+(?:generation|image|video|render|clip)[^\n\d]{0,10}[:\-]?\s*(\d[\d,]*)\s*credits?/i },
+    // v27.3.6: per-model Nano Banana USAGE patterns — kind "usage"
+    // (used/max of a daily allowance, a per-model number that never
+    // touches the wallet). Flow does surface NB usage sometimes
+    // (turns taken / max tokens available); these capture that
+    // phrasing wherever it renders — model picker rows, limit
+    // notices, aria labels, network payloads, the profile menu. Every
+    // pattern requires an explicit unit or day qualifier so credit
+    // texts and bare counters cannot masquerade as usage; the
+    // progressive-verb guard in the parser rejects progress
+    // counters ("Generating 1 of 4 images") that still slip through.
+    {
+      kind: "usage",
+      re: /(\d[\d,]*)\s*(?:\/|of)\s*(?:your\s+|the\s+)?(\d[\d,]*)\s+(?:daily\s+|today'?s?\s+)?(?:images?|generations?|turns?|tokens?|renders?)\b/i,
+    },
+    {
+      kind: "usage",
+      re: /(?:used|generated|consumed)\s+(\d[\d,]*)\s+of\s+(?:your\s+)?(\d[\d,]*)\s+(?:daily\s+)?(?:images?|generations?|turns?|tokens?|renders?)\b/i,
+    },
+    {
+      kind: "usage",
+      re: /(\d[\d,]*)\s+(?:images?|generations?|turns?|tokens?)\s+(?:left|remaining|available)\b/i,
+    },
+    // v27.3.8: the old single-number "N (more|left|remaining) today"
+    // pattern is RETIRED — it stored a REMAINING count as "used"
+    // (semantic inversion), and sitting earlier in this list it also
+    // claimed the spans the corrected remaining-form pair below
+    // ("6/16 remaining today") needs. A lone "N left today" with no
+    // max simply no longer parses — the model-row sampler dumps it
+    // verbatim for the next round instead of guessing.
+    {
+      kind: "usage",
+      re: /(\d[\d,]*)\s+(?:images?|generations?|turns?|tokens?)\s+(?:used|today)\b/i,
+    },
+    { kind: "usage", re: /daily\s+(?:limit|cap|quota)[^\n\d]{0,12}(\d[\d,]*)/i, maxOnly: !0 },
+    // v27.3.8: the remaining-form pair and the split turns/tokens
+    // phrasings behind the user's NB Lite sighting ("the accurate
+    // number of turns I've taken and the max amount of tokens
+    // available" — often two numbers in two elements that merge
+    // onto the same model entry) plus the model-picker row form
+    // documented by community reports ("Leaving 6/16" on Imagen 4's
+    // row). A bare "N/M" with no direction word still never parses
+    // (an aspect ratio like 16/9 would poison it); the report's
+    // model-row lane dumps those verbatim for the next round.
+    {
+      kind: "usage",
+      re: /(\d[\d,]*)\s*\/\s*(\d[\d,]*)\s+(?:left|remaining|available)\b/i,
+      remaining: !0,
+    },
+    { kind: "usage", re: /leaving\s+(\d[\d,]*)\s*\/\s*(\d[\d,]*)/i, remaining: !0 },
+    { kind: "usage", re: /(\d[\d,]*)\s+(?:images?|generations?|turns?|tokens?|renders?)\s+taken\b/i },
+    { kind: "usage", re: /\bmax(?:imum)?\s+(?:tokens?|turns?|images?|generations?|renders?)?[^\n\d]{0,16}(\d[\d,]*)/i, maxOnly: !0 },
+    { kind: "left", re: /(\d[\d,]*)\s*credits?/i, zeroToCost: !0 },
+  ];
+  function parseFlowCreditReadings(text) {
+    const out = [];
+    if (!text) return out;
+    const spans = [];
+    for (const p of FLOW_CREDIT_PATTERNS) {
+      const re = new RegExp(p.re.source, p.re.flags + "g");
+      let m;
+      while ((m = re.exec(text)) !== null) {
+        if (m.index === re.lastIndex) re.lastIndex++;
+        let r = null;
+        if (p.kind === "usage") {
+          // v27.3.6: usage readings carry used/max of a daily
+          // allowance. maxOnly patterns read a bare allowance ("daily
+          // limit: 104"); used-only patterns keep max null. A pair
+          // must satisfy 0 <= used <= max, and a progressive-verb
+          // lead-in ("Generating 1 of 4 images") marks a progress
+          // counter, not usage — reject it without claiming the span.
+          let used = flowCreditParseNum(m[1]);
+          let max = m[2] != null ? flowCreditParseNum(m[2]) : null;
+          // v27.3.8: remaining-form pairs ("6/16 left", "Leaving
+          // 6/16" — the phrasing community reports documented on
+          // Flow's model-picker rows) capture remaining/max, so the
+          // USED number is the difference; a first number exceeding
+          // the second is not a usage pair at all.
+          if (p.remaining) {
+            if (used == null || max == null || max <= 0 || used > max) {
+              used = null;
+              max = null;
+            } else {
+              used = max - used;
+            }
+          }
+          if (p.maxOnly) {
+            max = used;
+            used = null;
+          }
+          if (used != null || max != null) {
+            const pre = text.slice(Math.max(0, m.index - 24), m.index);
+            const progressive =
+              /(?:generating|rendering|creating|processing|downloading|loading|uploading)\s*$/i.test(
+                pre,
+              );
+            const sane =
+              used == null || max == null || (max > 0 && used <= max);
+            if (!progressive && sane)
+              r = {
+                kind: "usage",
+                left: null,
+                total: null,
+                cost: null,
+                used: used,
+                max: max,
+              };
+          }
+        } else if (p.kind === "both") {
+          const left = flowCreditParseNum(m[1]);
+          const total = flowCreditParseNum(m[2]);
+          if (left != null && total != null && total > 0 && left <= total)
+            r = { kind: "both", left: left, total: total, cost: null, used: null, max: null };
+        } else {
+          const n = flowCreditParseNum(m[1]);
+          if (n != null) {
+            // v27.3.6: a bare zero on a weak pattern is the cost
+            // badge (see zeroToCost in the pattern list) — route it
+            // to cost instead of a phantom wallet balance.
+            const asCost = p.zeroToCost && n === 0;
+            r = {
+              kind: asCost ? "cost" : p.kind,
+              left: !asCost && p.kind === "left" ? n : null,
+              total: null,
+              cost: p.kind === "cost" || asCost ? n : null,
+              used: null,
+              max: null,
+            };
+          }
+        }
+        if (r) {
+          const s = m.index,
+            e = m.index + m[0].length;
+          let overlap = !1;
+          for (const sp of spans)
+            if (!(e <= sp[0] || s >= sp[1])) {
+              overlap = !0;
+              break;
+            }
+          if (!overlap) {
+            spans.push([s, e]);
+            out.push(r);
+          }
+        }
+      }
+    }
+    return out;
+  }
+
+  // v27.3.2: passive sources — the wallet totals the DOM never prints
+  // still travel through Flow's own API responses and its client-side
+  // storage. Everything below is strictly observational: the fetch/XHR
+  // wrappers always return the original result to the page untouched (a
+  // clone is scanned offline), the storage sweep only READS, and no
+  // request is ever issued by the tracker itself.
+  function flowCreditQueueReading(r, context) {
+    if (flowCreditPendingNet.length > 300) flowCreditPendingNet.splice(0, 100);
+    flowCreditPendingNet.push({
+      kind: r.kind,
+      left: r.left,
+      total: r.total,
+      cost: r.cost,
+      used: r.used == null ? null : r.used,
+      max: r.max == null ? null : r.max,
+      context: String(context || "").slice(0, 300),
+    });
+    flowCreditScheduleTick();
+  }
+  // Model regexes need spaces; network/storage identifiers arrive as
+  // "nano-banana-2-lite" / "nano_banana_2_lite". Normalizing the whole
+  // context (not just model names) keeps one attribution pipeline.
+  function flowCreditNormCtx(s) {
+    return String(s || "")
+      .replace(/[-_]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+  function flowCreditQualifier(k) {
+    const key = String(k || "").toLowerCase();
+    if (/total|limit|cap|quota|budget|allowance|grant|max/.test(key)) return "total";
+    if (/cost|price|rate|charge|unit|per/.test(key)) return "cost";
+    if (/used|spent|consumed/.test(key)) return "used";
+    if (/remain|left|avail|balance|credit/.test(key)) return "left";
+    return null;
+  }
+  // v27.3.6: the text-pattern gate for credit AND usage wording —
+  // usage surfaces say tokens/turns/daily/limit, never "credit".
+  function flowCreditTextGate(s) {
+    return /credit|\bturn|\btoken|daily|usage|\blimit|remaining|generat|quota/i.test(s);
+  }
+  // Walks one parsed JSON payload. An object's numeric fields count as
+  // credit readings when their own key says "credit" ("creditsTotal"),
+  // or when an ancestor key said it ("credits": {"remaining": 40});
+  // short string values run through the text patterns; every object
+  // that yields a reading names its nearby strings so attribution can
+  // pick the right pool. v27.3.6 adds a parallel usage scope: keys that
+  // say usage/daily/limit/turn/token/quota ("usageMetadata",
+  // "dailyLimit", "tokenQuota") collect used/max into a per-model
+  // USAGE reading instead of a wallet left/total — and when a key says
+  // both ("creditUsage"), the usage reading wins, because a number
+  // under a usage key is a per-model allowance, not account credits.
+  // Bounded: depth 8, 400 array slots per level, 6000 node visits —
+  // big payloads degrade, never hang.
+  function walkFlowCreditJson(node, sourceTag, depth, creditScope, usageScope, budget) {
+    if (node == null || depth > 8 || budget.n <= 0) return 0;
+    if (typeof node === "string") {
+      if (node.length > 300 || !flowCreditTextGate(node)) return 0;
+      const rs = parseFlowCreditReadings(node);
+      for (const r of rs) flowCreditQueueReading(r, node + " [" + sourceTag + "]");
+      return rs.length;
+    }
+    if (typeof node !== "object") return 0;
+    if (Array.isArray(node)) {
+      let found = 0;
+      const cap = Math.min(node.length, 400);
+      for (let i = 0; i < cap && budget.n > 0; i++)
+        found += walkFlowCreditJson(
+          node[i],
+          sourceTag,
+          depth + 1,
+          creditScope,
+          usageScope,
+          budget,
+        );
+      return found;
+    }
+    let found = 0;
+    let left = null,
+      total = null,
+      cost = null,
+      used = null,
+      hit = !1;
+    // v27.3.6: usage collectors for usage-scope objects.
+    let uUsed = null,
+      uMax = null,
+      uLeft = null,
+      usageHit = !1;
+    const strs = [];
+    for (const k of Object.keys(node)) {
+      if (budget.n <= 0) break;
+      const v = node[k];
+      if (typeof v === "number" && Number.isFinite(v) && v >= 0) {
+        const low = String(k).toLowerCase();
+        const usageKey = usageScope || /usage|daily|turn|token/.test(low);
+        if (usageKey) {
+          // Classify by the qualifier; inside a usage scope only
+          // used/total/left make sense (cost stays a credit concept).
+          const ucls = flowCreditQualifier(low);
+          if (ucls === "total") {
+            uMax = v;
+            usageHit = !0;
+          } else if (ucls === "used") {
+            uUsed = v;
+            usageHit = !0;
+          } else if (ucls === "left") {
+            uLeft = v;
+            usageHit = !0;
+          }
+        } else {
+          const cls = creditScope
+            ? flowCreditQualifier(low)
+            : /credit/.test(low)
+              ? flowCreditQualifier(low) || "left"
+              : null;
+          if (cls === "total") {
+            total = v;
+            hit = !0;
+          } else if (cls === "cost") {
+            cost = v;
+            hit = !0;
+          } else if (cls === "used") {
+            used = v;
+            hit = !0;
+          } else if (cls === "left") {
+            left = v;
+            hit = !0;
+          }
+        }
+        budget.n--;
+      } else if (v && typeof v === "object") {
+        const usageChild = /usage|daily|limit|quota|turn|token/i.test(k);
+        found += walkFlowCreditJson(
+          v,
+          sourceTag,
+          depth + 1,
+          (creditScope || /credit/i.test(k)) && !usageChild,
+          usageScope || usageChild,
+          budget,
+        );
+      } else if (typeof v === "string") {
+        if (v.length <= 300 && flowCreditTextGate(v)) {
+          const rs = parseFlowCreditReadings(v);
+          for (const r of rs) flowCreditQueueReading(r, v + " [" + sourceTag + "]");
+          found += rs.length;
+        }
+        if (v.length <= 80 && strs.length < 12) strs.push(k + ": " + v);
+      }
+    }
+    const ctx =
+      flowCreditNormCtx(strs.join(" ; ").slice(0, 240)) + " [" + sourceTag + "]";
+    if (usageHit) {
+      // A usage-scope object: derive used/max (left + max -> used).
+      let uu = uUsed,
+        um = uMax;
+      if (uu == null && um != null && uLeft != null) uu = Math.max(0, um - uLeft);
+      if (uu != null || um != null)
+        flowCreditQueueReading(
+          { kind: "usage", left: null, total: null, cost: null, used: uu, max: um },
+          ctx,
+        );
+      found++;
+    }
+    if (hit) {
+      if (left == null && total != null && used != null)
+        left = Math.max(0, total - used);
+      if (left != null && total != null && left <= total)
+        flowCreditQueueReading(
+          { kind: "both", left: left, total: total, cost: null, used: null, max: null },
+          ctx,
+        );
+      else if (left != null)
+        flowCreditQueueReading(
+          { kind: "left", left: left, total: null, cost: null, used: null, max: null },
+          ctx,
+        );
+      if (cost != null)
+        flowCreditQueueReading(
+          { kind: "cost", left: null, total: null, cost: cost, used: null, max: null },
+          ctx,
+        );
+      found++;
+    }
+    return found;
+  }
+  function scanFlowCreditStructured(text, sourceTag) {
+    if (!text || typeof text !== "string" || text.length > 300000) return 0;
+    const body = text.replace(/^\s*\)\]\}'?\s*/, "");
+    const c0 = body.charAt(0);
+    if (c0 === "{" || c0 === "[") {
+      let data = null;
+      try {
+        data = JSON.parse(body);
+      } catch (e) {}
+      if (data != null)
+        return walkFlowCreditJson(data, sourceTag, 0, !1, !1, { n: 6000 });
+    }
+    // Not JSON (or unparseable): sliding text window so a reading split
+    // at a seam is still caught; duplicate merges are value-deduped.
+    let found = 0;
+    for (let i = 0; i < text.length; i += 500) {
+      const chunk = text.slice(i, i + 600);
+      const rs = parseFlowCreditReadings(chunk);
+      for (const r of rs) flowCreditQueueReading(r, chunk + " [" + sourceTag + "]");
+      found += rs.length;
+    }
+    return found;
+  }
+  function installFlowCreditNetObserver() {
+    if (flowCreditNetInstalled) return;
+    flowCreditNetInstalled = !0;
+    let pageWin = window;
+    try {
+      if (typeof unsafeWindow !== "undefined" && unsafeWindow) pageWin = unsafeWindow;
+    } catch (e) {}
+    try {
+      const of_ = pageWin.fetch;
+      if (typeof of_ === "function") {
+        pageWin.fetch = function () {
+          const p = of_.apply(this, arguments);
+          try {
+            if (p && typeof p.then === "function")
+              p.then(function (res) {
+                if (!res || !res.ok || typeof res.clone !== "function") return;
+                let ct = "";
+                try {
+                  ct =
+                    (res.headers && res.headers.get && res.headers.get("content-type")) ||
+                    "";
+                } catch (e) {}
+                if (ct && !/json|text|javascript|plain/i.test(ct)) return;
+                res
+                  .clone()
+                  .text()
+                  .then(function (t) {
+                    try {
+                      if (t)
+                        flowCreditNetCount += scanFlowCreditStructured(
+                          t,
+                          String(res.url || "fetch").slice(0, 100),
+                        );
+                    } catch (e) {}
+                  })
+                  .catch(function () {});
+              }).catch(function () {});
+          } catch (e) {}
+          return p;
+        };
+      }
+    } catch (e) {}
+    try {
+      const XO = pageWin.XMLHttpRequest;
+      const oo = XO && XO.prototype && XO.prototype.open;
+      const os_ = XO && XO.prototype && XO.prototype.send;
+      if (typeof oo === "function" && typeof os_ === "function") {
+        XO.prototype.open = function (m, u) {
+          try {
+            this.__pmFlowCreditUrl = String(u).slice(0, 100);
+          } catch (e) {}
+          return oo.apply(this, arguments);
+        };
+        XO.prototype.send = function () {
+          try {
+            this.addEventListener("load", function () {
+              try {
+                if (this.responseType !== "" && this.responseType !== "text") return;
+                const t = this.responseText;
+                if (t)
+                  flowCreditNetCount += scanFlowCreditStructured(
+                    t,
+                    this.__pmFlowCreditUrl || "xhr",
+                  );
+              } catch (e) {}
+            });
+          } catch (e) {}
+          return os_.apply(this, arguments);
+        };
+      }
+    } catch (e) {}
+  }
+  function sweepFlowCreditStorage() {
+    let found = 0;
+    const stores = [];
+    try {
+      stores.push(window.localStorage);
+    } catch (e) {}
+    try {
+      stores.push(window.sessionStorage);
+    } catch (e) {}
+    for (const store of stores) {
+      if (!store) continue;
+      let len = 0;
+      try {
+        len = store.length;
+      } catch (e) {
+        continue;
+      }
+      for (let i = 0; i < len && i < 200; i++) {
+        let k = null,
+          v = null;
+        try {
+          k = store.key(i);
+          v = k != null ? store.getItem(k) : null;
+        } catch (e) {
+          continue;
+        }
+        if (!v || typeof v !== "string" || v.length > 300000) continue;
+        if (
+          !/credit|wallet|quota|allowance|balance|usage|daily|\bturn|token|limit/i.test(
+            (k || "") + " " + v.slice(0, 4000),
+          )
+        )
+          continue;
+        found += scanFlowCreditStructured(v, "storage:" + String(k).slice(0, 60));
+      }
+    }
+    if (found) flowCreditStorageCount += found;
+    return found;
+  }
+  // Diagnostics helper: what credit- or usage-ish text is actually
+  // visible right now (tag + trimmed text). Called for the settled
+  // status line when nothing parsed and for every Copy Report, so a
+  // console report carries Flow's live wording instead of a bare
+  // "readings=0". v27.3.6: the gate no longer demands the word
+  // "credit" — Nano Banana usage surfaces say tokens/turns/daily/
+  // limit — and a second lane dumps MODEL ROWS: any visible text
+  // naming exactly one model and sitting beside digits, joined at
+  // the parent element, so the exact phrasing of Flow's own NB
+  // usage display ("turns taken / max tokens available") lands in
+  // the report wherever it renders.
+  function collectFlowCreditTextSamples() {
+    const out = [];
+    const seen = new Set();
+    const exclusion = "#pm-flow-dock, #pm-flow-credit-chip, .mp-overlay, .mp-modal-box";
+    const push = function (label, t) {
+      const norm = String(t || "")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (!norm || norm.length > 160 || seen.has(norm) || out.length >= 10) return;
+      seen.add(norm);
+      out.push(label + ' "' + norm.slice(0, 90) + '"');
+    };
+    if (document.body) {
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      let node;
+      while ((node = walker.nextNode())) {
+        const t = node.nodeValue;
+        if (!t || t.length > 200) continue;
+        const wide = flowCreditTextGate(t);
+        let rowHit = !1;
+        if (!wide) {
+          // Model-row lane: a short text naming exactly one model.
+          if (t.length <= 60) {
+            const hits = FLOW_CREDIT_MODELS.filter(function (m) {
+              return m.re.test(t);
+            });
+            rowHit = hits.length === 1;
+          }
+          if (!rowHit) continue;
+        }
+        const el = node.parentElement;
+        if (!el || !isElementVisibleEl(el) || el.closest(exclusion)) continue;
+        if (rowHit) {
+          // The number usually rides in a sibling node — dump the
+          // joined parent text, capped tight, once per element.
+          const joined = (el.textContent || "").replace(/\s+/g, " ").trim();
+          if (joined && joined.length <= 120 && /\d/.test(joined))
+            push("<model-row>", joined);
+          else push("<" + el.tagName.toLowerCase() + ">", t);
+        } else {
+          push("<" + el.tagName.toLowerCase() + ">", t);
+        }
+        if (out.length >= 10) break;
+      }
+    }
+    const labeled = document.querySelectorAll("[aria-label], [title]");
+    for (const el of labeled) {
+      if (out.length >= 10) break;
+      if (!isElementVisibleEl(el) || el.closest(exclusion)) continue;
+      const t = (el.getAttribute("aria-label") || "") + " " + (el.getAttribute("title") || "");
+      if (!t || !flowCreditTextGate(t)) continue;
+      push("<" + el.tagName.toLowerCase() + " aria>", t);
+    }
+    // v27.3.8: the generate button's live label and state — the one
+    // element the click hook keys on, dumped so a live paste proves
+    // detection the moment it breaks.
+    try {
+      const btns = document.querySelectorAll("button");
+      for (const b of btns) {
+        if (out.length >= 10) break;
+        const nm = flowCreditGenButtonName(b);
+        if (!/(start generation|generate)/i.test(nm)) continue;
+        const r = b.getBoundingClientRect();
+        if (!r.width || !r.height) continue;
+        push(
+          "<gen-button>",
+          nm +
+            (b.disabled || b.getAttribute("aria-disabled") === "true"
+              ? " [disabled]"
+              : " [enabled]"),
+        );
+      }
+    } catch (e) {}
+    return out;
+  }
+
+  // v27.3.4: the ACTIVE wallet pull — the half no passive source could
+  // ever cover. Google's own support note (support.google.com/flow/
+  // answer/16526234) places the wallet readout under the profile
+  // information in Flow's profile menu, and that menu's credit text
+  // only exists in the DOM while the popover is OPEN — page text, the
+  // net observer, and storage all read zero on the live site simply
+  // because the popover never was. The pull opens the menu itself: it
+  // finds the account chip at the top-right (Google's buttons there
+  // carry a "Google Account: …" accessible name; a geometry fallback
+  // covers plain avatar buttons), clicks it, lets the normal harvest
+  // read whatever renders (plus any lazy RPC the menu triggers — the
+  // net observer sees that too), captures the menu's raw text as
+  // report evidence, and closes the menu again through a three-step
+  // cascade (Escape, button toggle, outside click), verifying closure
+  // after each step. Safety rails: a menu that is ALREADY open is
+  // harvested but never closed (it may be the user's own); anchors
+  // (<a>) are never clicked — a stray navigation is the one
+  // unrecoverable side effect; one pull runs at a time; automatic
+  // pulls are debounced to one per 30s (manual/report pulls bypass);
+  // and the script's own chrome (dock, chip, modals) can never be
+  // mistaken for the profile menu.
+  function flowCreditSleep(ms) {
+    return new Promise(function (res) {
+      setTimeout(res, ms);
+    });
+  }
+  // "Wallet known" gate for the pull (v27.3.5): any real wallet
+  // reading — a left OR a total — means the menu pull already did
+  // its job. The v27.3.4 gate demanded a TOTAL, but the profile menu
+  // only ever prints a left ("280 Google Flow credits"), so a
+  // successful pull never registered and the boot, 45s-retry, and
+  // report pulls kept re-running. A left of 0 still counts: "0
+  // Google Flow credits" is a legitimate (and important) balance.
+  function flowCreditWalletKnown() {
+    if (!flowCreditState) return !1;
+    if (flowCreditState.wallet) {
+      const w = flowCreditState.wallet;
+      if (w.left != null || w.total != null) return !0;
+    }
+    const keys = Object.keys(flowCreditState.models);
+    for (let i = 0; i < keys.length; i++) {
+      const e = flowCreditState.models[keys[i]];
+      if (e && e.total != null) return !0;
+    }
+    return !1;
+  }
+  // v27.3.5: freshness companion for the AUTO pulls — a wallet read
+  // within the last 6h is fresh enough to skip the pull; anything
+  // older (or absent) refreshes it. Manual/report pulls decide for
+  // themselves via flowCreditWalletKnown. v27.3.9 adds the second,
+  // generation-anchored half: the wallet MUTATES at generation time
+  // (Google's cost doc refreshes the daily grant on the FIRST
+  // generation of the day; credit-charging models deduct per
+  // generation), so a reading older than the most recent generation
+  // click is stale no matter how young it is. The first live v27.3.8
+  // report proved this exact hole: a wallet read at 02:58 sailed
+  // through the 6h gate as "fresh" at 05:59 while the 05:58 first
+  // generation of the day had just refreshed the grant under it.
+  function flowCreditWalletFresh() {
+    if (!flowCreditWalletKnown()) return !1;
+    const w = flowCreditState && flowCreditState.wallet;
+    if (!(w && w.at && w.at > Date.now() - 6 * 3600 * 1000)) return !1;
+    const genAt = (flowCreditState && flowCreditState.lastGenAt) || 0;
+    return w.at >= genAt;
+  }
+  const FLOW_CREDIT_DIALOG_SEL = '[role="dialog"], [role="menu"], [aria-modal="true"]';
+  function flowCreditDialogSane(n) {
+    if (!n || !n.isConnected) return !1;
+    if (n.closest("#pm-flow-dock, #pm-flow-credit-chip, .mp-overlay, .mp-modal-box"))
+      return !1;
+    const r = n.getBoundingClientRect();
+    if (r.width < 40 || r.height < 16) return !1;
+    if (r.bottom < 0 || r.top > window.innerHeight || r.right < 0 || r.left > window.innerWidth)
+      return !1;
+    return !0;
+  }
+  function flowCreditDialogWithCredits() {
+    const nodes = document.querySelectorAll(FLOW_CREDIT_DIALOG_SEL);
+    for (const n of nodes) {
+      if (!flowCreditDialogSane(n)) continue;
+      const t = n.textContent || "";
+      if (t && t.length <= 4000 && /credit/i.test(t)) return n;
+    }
+    return null;
+  }
+  function flowCreditAnyDialog() {
+    const nodes = document.querySelectorAll(FLOW_CREDIT_DIALOG_SEL);
+    for (const n of nodes) if (flowCreditDialogSane(n)) return n;
+    return null;
+  }
+  // The account-chip hunt, in priority order: the standard Google
+  // accessible name ("Google Account: Name (email)") on a button, the
+  // same phrase on an avatar img's alt text, accountish data-testids,
+  // then geometry — a small control in the top-right corner that
+  // either contains an image or is avatar-square. Links never win.
+  function findFlowProfileMenuButton() {
+    const excl =
+      '#pm-flow-dock, #pm-flow-credit-chip, .mp-overlay, .mp-modal-box, [role="menu"], [role="listbox"], [role="menuitem"], [role="option"]';
+    const ok = function (el) {
+      if (!el || !el.isConnected || !isElementVisibleEl(el)) return !1;
+      if (el.closest(excl)) return !1;
+      if (el.closest("a")) return !1;
+      const r = el.getBoundingClientRect();
+      return r.width >= 20 && r.width <= 160 && r.height >= 20 && r.height <= 160;
+    };
+    const pick = function (list) {
+      for (const el of list) if (ok(el)) return el;
+      return null;
+    };
+    let b = pick(
+      document.querySelectorAll(
+        'button[aria-label^="Google Account" i], [role="button"][aria-label^="Google Account" i]',
+      ),
+    );
+    if (b) return b;
+    b = pick(
+      document.querySelectorAll(
+        'button[aria-label*="Google Account" i], [role="button"][aria-label*="Google Account" i]',
+      ),
+    );
+    if (b) return b;
+    const imgs = document.querySelectorAll('img[alt*="Google Account" i]');
+    for (const img of imgs) {
+      b = img.closest('button, [role="button"]');
+      if (b && ok(b)) return b;
+    }
+    b = pick(
+      document.querySelectorAll(
+        '[data-testid*="account" i], [data-testid*="avatar" i], [data-testid*="profile" i]',
+      ),
+    );
+    if (b) return b;
+    const vw = window.innerWidth,
+      vh = window.innerHeight;
+    const cands = [];
+    const ctrls = document.querySelectorAll('button, [role="button"]');
+    for (const el of ctrls) {
+      if (!ok(el)) continue;
+      const r = el.getBoundingClientRect();
+      const cx = r.left + r.width / 2,
+        cy = r.top + r.height / 2;
+      if (cy > vh * 0.25 || cx < vw * 0.65) continue;
+      const hasImg = !!el.querySelector("img");
+      const square =
+        r.width >= 24 &&
+        r.height >= 24 &&
+        Math.abs(r.width - r.height) <= Math.max(12, r.width * 0.35);
+      if (!hasImg && !square) continue;
+      cands.push({ el: el, right: r.right });
+    }
+    if (cands.length) {
+      cands.sort(function (a, b) {
+        return b.right - a.right;
+      });
+      return cands[0].el;
+    }
+    return null;
+  }
+  function flowCreditDispatchEscape() {
+    const targets = [document.activeElement, document.body, document];
+    for (const t of targets) {
+      if (!t || !t.dispatchEvent) continue;
+      for (const type of ["keydown", "keyup"]) {
+        try {
+          const ev = new KeyboardEvent(type, {
+            key: "Escape",
+            code: "Escape",
+            bubbles: !0,
+            cancelable: !0,
+          });
+          Object.defineProperty(ev, "keyCode", {
+            get: function () {
+              return 27;
+            },
+          });
+          Object.defineProperty(ev, "which", {
+            get: function () {
+              return 27;
+            },
+          });
+          t.dispatchEvent(ev);
+        } catch (e) {}
+      }
+    }
+  }
+  // v27.3.9: the post-generation wallet re-pull. A generation click
+  // makes the stored wallet reading stale (grant refresh and/or
+  // per-generation cost); the balance settles server-side while the
+  // 150s counting window runs, so the re-pull fires once that window
+  // has closed. One pending timer for the whole session — a burst of
+  // clicks never stacks pulls; a hidden tab retries every 60s until
+  // it becomes visible (the pull needs the page laid out); a 5-per-
+  // session cap makes a runaway loop impossible; and the stale
+  // check is re-evaluated at fire time — if a report or the boot
+  // pull already refreshed the reading, the timer exits without
+  // touching Flow's profile menu at all. The pull itself is the same
+  // guarded cascade as the boot pull (in-flight lock, 30s debounce,
+  // links never clicked, menu closed through the v27.3.5 cascade).
+  function scheduleFlowCreditWalletRepull() {
+    if (flowCreditRepullTimer) return;
+    flowCreditRepullTimer = setTimeout(function fire() {
+      flowCreditRepullTimer = null;
+      try {
+        if (!flowCreditEngineActive || currentPlatform !== "flow") return;
+        if (document.hidden) {
+          flowCreditRepullTimer = setTimeout(fire, 60000);
+          return;
+        }
+        if (flowCreditRepullCount >= 5) return;
+        if (!flowCreditWalletKnown() || flowCreditWalletFresh()) return;
+        flowCreditRepullCount++;
+        pullFlowCreditWallet("post-gen").then(function (r) {
+          if (r && r.ran && (r.opened === "clicked" || r.opened === "already open"))
+            try {
+              console.info(
+                "[Prompt Master] credit tracker: post-generation wallet re-pull — " +
+                  flowCreditPullInfo,
+              );
+            } catch (e) {}
+          renderFlowCreditChip();
+        });
+      } catch (e) {}
+    }, 155000);
+  }
+  async function pullFlowCreditWallet(reason) {
+    if (!flowCreditEngineActive) return { ran: !1, why: "engine inactive" };
+    if (flowCreditPullBusy) return { ran: !1, why: "a pull is already running" };
+    if (document.hidden) return { ran: !1, why: "tab hidden" };
+    if (reason !== "manual" && Date.now() - flowCreditPullLastAt < 30000)
+      return { ran: !1, why: "debounced — a pull ran moments ago" };
+    flowCreditPullBusy = !0;
+    try {
+      // A. a wallet-bearing menu already on screen: harvest it, never
+      // close it, never click the avatar — it may be the user's own
+      // popover (and the 1s tick reads it anyway).
+      let dlg = flowCreditDialogWithCredits();
+      if (dlg) {
+        try {
+          flowCreditTick();
+        } catch (e) {}
+        flowCreditPullRaw = (dlg.textContent || "").replace(/\s+/g, " ").trim().slice(0, 300);
+        flowCreditPullInfo = "profile menu already open — harvested it without closing";
+        return { ran: !0, opened: "already open", closed: "left open" };
+      }
+      // B. find the account chip (links are never clicked).
+      const btn = findFlowProfileMenuButton();
+      if (!btn) {
+        flowCreditPullRaw = "";
+        flowCreditPullInfo = "no profile/account button found in the top-right corner";
+        return { ran: !1, opened: "none", closed: "n/a" };
+      }
+      // C. click it, then wait up to 2.8s for the menu (its credit
+      // text can render a beat after the container, so the
+      // credit-bearing check and the any-dialog check are separate).
+      btn.click();
+      const t0 = Date.now();
+      let sawDialog = !1;
+      while (Date.now() - t0 < 2800) {
+        await flowCreditSleep(140);
+        if (flowCreditDialogWithCredits()) break;
+        if (flowCreditAnyDialog()) sawDialog = !0;
+      }
+      dlg = flowCreditDialogWithCredits();
+      // D. harvest while it is open — twice, for late numbers.
+      try {
+        flowCreditTick();
+      } catch (e) {}
+      await flowCreditSleep(450);
+      try {
+        flowCreditTick();
+      } catch (e) {}
+      if (dlg)
+        flowCreditPullRaw = (dlg.textContent || "").replace(/\s+/g, " ").trim().slice(0, 300);
+      // E. close what WE opened — v27.3.5 cascade, strongest first:
+      // the menu's own close control (the captured menu text opens
+      // with "close" — its accessible X), then Escape, then the
+      // button toggle, then an outside click — verifying after each
+      // step with a longer settle (480ms; v27.3.4's 320ms windows
+      // raced this menu's exit animation and reported failure while
+      // it was already closing).
+      if (flowCreditAnyDialog()) {
+        const openDlg = flowCreditAnyDialog();
+        const xBtn =
+          openDlg &&
+          openDlg.querySelector(
+            'button[aria-label*="close" i], [role="button"][aria-label*="close" i], button[title*="close" i], button[aria-label*="dismiss" i]',
+          );
+        if (xBtn) {
+          try {
+            xBtn.click();
+          } catch (e) {}
+          await flowCreditSleep(480);
+        }
+        if (flowCreditAnyDialog()) {
+          flowCreditDispatchEscape();
+          await flowCreditSleep(480);
+          if (flowCreditAnyDialog() && btn.isConnected) {
+            try {
+              btn.click();
+            } catch (e) {}
+            await flowCreditSleep(480);
+          }
+          if (flowCreditAnyDialog()) {
+            try {
+              const outside = document.elementFromPoint(8, window.innerHeight - 8);
+              if (outside)
+                for (const type of ["mousedown", "mouseup", "click"]) {
+                  outside.dispatchEvent(
+                    new MouseEvent(type, { bubbles: !0, cancelable: !0, view: window }),
+                  );
+                }
+            } catch (e) {}
+            await flowCreditSleep(480);
+          }
+        }
+      }
+      const stillOpen = flowCreditAnyDialog();
+      const closed = stillOpen ? "close FAILED — the menu stayed open" : "closed";
+      if (dlg) {
+        flowCreditPullInfo =
+          "opened Flow's profile menu — " +
+          (flowCreditWalletKnown()
+            ? "wallet read"
+            : "no parsable credit text in the menu") +
+          " — " +
+          closed;
+      } else if (sawDialog || stillOpen) {
+        flowCreditPullInfo = "a menu opened but carried no credit text — " + closed;
+      } else {
+        flowCreditPullInfo = "clicked the profile button but no menu appeared within 2.8s";
+      }
+      return { ran: !0, opened: "clicked", closed: closed };
+    } catch (e) {
+      flowCreditPullInfo = "pull error: " + ((e && e.message) || e);
+      return { ran: !1, why: String((e && e.message) || e) };
+    } finally {
+      flowCreditPullBusy = !1;
+      flowCreditPullLastAt = Date.now();
+    }
+  }
+
+  // Gathers every visible credit reading on the page: text nodes plus
+  // the aria-label/title surfaces (Flow often stuffs the accessible
+  // name with the numbers). The script's own chrome (dock, chip,
+  // modals) is excluded so the tracker can never harvest its own
+  // tooltip echo. Each reading carries its surrounding context so
+  // attribution can decide whether it names one specific model.
+  function harvestFlowCreditReadings() {
+    const readings = [];
+    const seenContainers = new Set();
+    const exclusion = "#pm-flow-dock, #pm-flow-credit-chip, .mp-overlay, .mp-modal-box";
+    const pushParsed = function (text, context) {
+      const rs = parseFlowCreditReadings(text);
+      for (const r of rs)
+        readings.push({
+          kind: r.kind,
+          left: r.left,
+          total: r.total,
+          cost: r.cost,
+          used: r.used == null ? null : r.used,
+          max: r.max == null ? null : r.max,
+          context: context,
+        });
+    };
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    let node;
+    while ((node = walker.nextNode())) {
+      const t = node.nodeValue;
+      if (!t || t.length > 300) continue;
+      // v27.3.6: widened from /credit/i — NB usage surfaces say
+      // tokens/turns/daily/limit, never "credit" (see
+      // flowCreditTextGate).
+      if (!flowCreditTextGate(t)) continue;
+      const el = node.parentElement;
+      if (!el || !isElementVisibleEl(el) || el.closest(exclusion)) continue;
+      pushParsed(t, (el.textContent || "").slice(0, 300));
+      // v27.3.1: split-span recovery. Flow's meters often print each
+      // number in its own span ("38" "/" "50" "credits"), so the node
+      // text alone carries no pair. Climb through the nearest small
+      // ancestors and parse their JOINED text — once per container —
+      // which reassembles the reading (and enriches the attribution
+      // context with any model name printed beside the meter).
+      let anc = el;
+      while (anc && anc !== document.body) {
+        const at = anc.textContent || "";
+        if (at.length > 300) break;
+        if (!seenContainers.has(anc)) {
+          seenContainers.add(anc);
+          if (at.replace(/\s+/g, " ").trim() !== t.replace(/\s+/g, " ").trim())
+            pushParsed(at, at.slice(0, 300));
+        }
+        anc = anc.parentElement;
+      }
+    }
+    const labeled = document.querySelectorAll("[aria-label], [title]");
+    for (const el of labeled) {
+      if (!isElementVisibleEl(el) || el.closest(exclusion)) continue;
+      const t = (el.getAttribute("aria-label") || "") + " " + (el.getAttribute("title") || "");
+      if (!t || !flowCreditTextGate(t)) continue;
+      // v27.3.2: the accessible name often carries the LABEL
+      // ("Credits") while the numbers ride in child text nodes
+      // ("1,250") — parse the JOINED surface so a label/number
+      // split across the two still reads (the value gate stays
+      // /credit/i on the label).
+      const joined =
+        t.trim() +
+        " · " +
+        (el.textContent || "").replace(/\s+/g, " ").trim().slice(0, 120);
+      pushParsed(joined, (t + " " + (el.textContent || "")).slice(0, 300));
+    }
+    return readings;
+  }
+
+  // Merges fresh readings into the persistent state. A reading whose
+  // context names exactly one model belongs to that model even when
+  // another one is selected (per-model meters inside the model menu);
+  // otherwise a left/total reading is the SHARED wallet — v27.3.5: it
+  // is never stamped onto the selected model's entry, because
+  // per-model credit budgets do not exist (Flow has one account-wide
+  // pool; Nano Banana generations do not consume it at all). An
+  // unnamed cost hint belongs to the model Flow had selected when it
+  // was printed. Timestamps advance only when a value actually
+  // changed, so the render signature stays stable and GM writes stay
+  // rare.
+  function mergeFlowCreditReadings(model, readings) {
+    if (!flowCreditState || !readings.length) return !1;
+    let changed = !1;
+    const now = Date.now();
+    for (const r of readings) {
+      const ctxModels = FLOW_CREDIT_MODELS.filter((m) => m.re.test(r.context || ""));
+      const named = ctxModels.length === 1 ? ctxModels[0] : null;
+      const targets = [];
+      if (r.kind === "usage") {
+        // v27.3.6: a usage reading (turns/tokens used of a daily
+        // allowance) is per-model — it names one model or belongs to
+        // the one Flow had selected when it printed; it NEVER lands
+        // on the wallet (that pool is Veo's, and per-model credit
+        // budgets do not exist).
+        if (named) targets.push(flowCreditEntry(flowCreditState, named.key));
+        else if (model) targets.push(flowCreditEntry(flowCreditState, model.key));
+      } else if (named) {
+        targets.push(flowCreditEntry(flowCreditState, named.key));
+      } else if (r.kind === "cost") {
+        // v27.3.5: an unnamed cost hint ("will use 20 credits")
+        // belongs to whatever Flow has selected when it prints it —
+        // the model entry only; the wallet never carries a cost.
+        if (model) targets.push(flowCreditEntry(flowCreditState, model.key));
+      } else {
+        // v27.3.5: an unnamed left/total reading IS the shared
+        // wallet (the profile-menu balance names no model) — never a
+        // per-model budget, because none exists.
+        if (!flowCreditState.wallet)
+          flowCreditState.wallet = { left: null, total: null, cost: null, at: 0 };
+        targets.push(flowCreditState.wallet);
+      }
+      for (const e of targets) {
+        let entryChanged = !1;
+        if (r.kind === "usage") {
+          // v27.3.12: storage is the stalest source — localStorage can
+          // hold yesterday's usage JSON, and the 30s sweep re-merging
+          // it would stamp TODAY's usageAt onto yesterday's numbers
+          // (usageAt is merge time, not print time), poisoning
+          // turns-left for the whole day. A storage-sourced usage
+          // reading may SEED an entry that has no fresh print today,
+          // but it never overwrites one.
+          if (
+            /\[\s*storage:/i.test(r.context || "") &&
+            e.usageAt &&
+            flowCreditEntryDayKeyOf(e, e.usageAt) === flowCreditEntryDayKey(e)
+          )
+            continue;
+          if (r.used != null && e.used !== r.used) {
+            e.used = r.used;
+            entryChanged = !0;
+          }
+          if (r.max != null && e.max !== r.max) {
+            e.max = r.max;
+            entryChanged = !0;
+          }
+          if (entryChanged) {
+            e.usageAt = now;
+            // v27.3.10: snapshot today's click count with the print —
+            // turns-left subtracts only the clicks that happened
+            // AFTER Flow spoke, never re-counting the ones before.
+            // v27.3.12: roll the day counters FIRST. Without the roll,
+            // a print landing between the daily reset and the day's
+            // first click snapshotted yesterday's stale turnsDay;
+            // after the reset the subtraction then ran
+            // max(0, today − yesterday) = 0 — turns-left froze at the
+            // printed number for the rest of the day.
+            flowCreditRollEntryDay(e);
+            e.turnsDayAtUsage = e.turnsDay || 0;
+          }
+        } else if (r.kind === "both") {
+          if (e.total !== r.total) {
+            e.total = r.total;
+            entryChanged = !0;
+          }
+          if (e.left !== r.left) {
+            e.left = r.left;
+            entryChanged = !0;
+          }
+        } else if (r.kind === "left") {
+          if (e.left !== r.left) {
+            e.left = r.left;
+            entryChanged = !0;
+          }
+        } else if (r.kind === "cost") {
+          if (e.cost !== r.cost) {
+            e.cost = r.cost;
+            entryChanged = !0;
+          }
+        }
+        if (entryChanged) {
+          e.at = now;
+          changed = !0;
+        }
+      }
+    }
+    return changed;
+  }
+  function persistFlowCreditState() {
+    if (flowCreditSaveTimer) return;
+    flowCreditSaveTimer = setTimeout(function () {
+      flowCreditSaveTimer = null;
+      try {
+        Promise.resolve(
+          GM_setValue(
+            FLOW_CREDIT_STORAGE_KEY,
+            JSON.parse(JSON.stringify(flowCreditState)),
+          ),
+        ).catch(function () {});
+      } catch (e) {}
+    }, 150);
+  }
+
+  // v27.3.5: client-side image counting. Flow never displays Nano
+  // Banana usage, and a per-model credit meter cannot exist (NB
+  // generations cost 0 Flow credits), so the trackable number is the
+  // one Flow's hidden daily limit actually counts: generated images.
+  // v27.3.6 rebuilt the pipeline (the v27.3.5 sweep-attributed version
+  // mis-fired on the live site — see the metadata note): media
+  // mutations are stamped with the model selected AT ADD TIME, the
+  // sweep only reconciles visibility, counting commits only on /edit/
+  // routes and re-seeds on SPA navigation, and committed fingerprints
+  // burst-group into turns. Counts are approximate by nature and are
+  // always labeled as client-side counts, never as Flow credit data —
+  // and whenever Flow itself prints NB usage (usage readings), that
+  // canonical number wins the chip.
+  function flowCreditMediaFingerprints() {
+    const out = [];
+    const seenFp = {};
+    const add = function (fp) {
+      if (!fp || fp.length < 9 || out.length >= 900 || seenFp[fp]) return;
+      seenFp[fp] = 1;
+      out.push(fp);
+    };
+    const exclusion =
+      '#pm-flow-dock, #pm-flow-credit-chip, .mp-overlay, .mp-modal-box, [role="menu"], [role="listbox"], [role="dialog"], .cdk-overlay-container';
+    if (document.body) {
+      const imgs = document.body.querySelectorAll("img");
+      for (const img of imgs) {
+        try {
+          if (img.closest(exclusion)) continue;
+          const r = img.getBoundingClientRect();
+          if (r.width < 100 || r.height < 80) continue;
+          if (r.bottom < 0 || r.top > window.innerHeight) continue;
+          add(img.currentSrc || img.src || "");
+        } catch (e) {}
+      }
+      const bgs = document.body.querySelectorAll('[style*="background-image"]');
+      for (const el of bgs) {
+        try {
+          if (el.closest(exclusion)) continue;
+          const r = el.getBoundingClientRect();
+          if (r.width < 100 || r.height < 80) continue;
+          if (r.bottom < 0 || r.top > window.innerHeight) continue;
+          const m = /url\(["']?([^"')]+)["']?\)/i.exec(el.getAttribute("style") || "");
+          if (m) add(m[1]);
+        } catch (e) {}
+      }
+    }
+    return out;
+  }
+  // v27.3.6: counting runs ONLY on Flow's editor route — the one view
+  // where generations render. The collection grid, project dashboards
+  // and every other route render HISTORY (thumbnails of past work),
+  // and the v27.3.5 counter attributed exactly that history to
+  // whichever model was selected while browsing it.
+  // v27.3.7: the URL-pattern gate assumed Flow's editor route contains
+  // "/edit/" in the path. Flow's real editor URL is
+  // "/project/<uuid>" with no such segment — the gate was permanently
+  // false there, silently disabling counting on the one page
+  // generations actually happen on (confirmed via a live diagnostic
+  // report: url had no "/edit/" while anchor already correctly read
+  // "editor"). Reusing that anchor signal instead of a second,
+  // independent URL guess — resolveFlowCreditAnchor() already proves
+  // out via findPlatformEditor("flow") + a viewport-position sanity
+  // check, so this gate now shares the exact detection that was
+  // already working.
+  function flowCreditCountRouteOK() {
+    return flowCreditAnchorSrc === "editor";
+  }
+  // v27.3.6: local-day key for the daily counters (the hidden NB
+  // limit resets per day, so day counts are the relevant ones).
+  function flowCreditDayKey(nowMs) {
+    const d = nowMs == null ? new Date() : new Date(nowMs);
+    return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+  }
+  // v27.3.10: day key for an arbitrary timestamp (same local-day
+  // calendar as flowCreditDayKey) — a usage print or a learned cap
+  // only buys turns-left while it is from TODAY.
+  function flowCreditDayKeyOf(ts) {
+    const d = new Date(ts);
+    return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+  }
+  // v27.3.17: THE LEARNED RESET ANCHOR — the time-of-day of Flow's
+  // own stated reset moment. Until one is learned, every function
+  // below degrades to the exact v27.3.16 behavior (plain local
+  // day), so the anchor can never make things worse — it can only
+  // replace an assumed midnight boundary with Flow's real one.
+  function flowCreditAnchorOffsetMs(e) {
+    if (!e || !e.capResetAt) return null;
+    const d = new Date(e.capResetAt);
+    if (isNaN(d.getTime())) return null;
+    return (d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds()) * 1000;
+  }
+  // A timestamp's PERIOD key: the local calendar day of
+  // (timestamp − anchor), which buckets time into periods that
+  // flip exactly at the anchor each day. Without an anchor, the
+  // plain local day.
+  function flowCreditEntryDayKey(e, nowMs) {
+    const off = flowCreditAnchorOffsetMs(e);
+    if (off == null) return flowCreditDayKey(nowMs);
+    return flowCreditDayKey((nowMs == null ? Date.now() : nowMs) - off);
+  }
+  function flowCreditEntryDayKeyOf(e, ts) {
+    const off = flowCreditAnchorOffsetMs(e);
+    if (off == null) return flowCreditDayKeyOf(ts);
+    return flowCreditDayKeyOf(ts - off);
+  }
+  // v27.3.17: parses the reset moment out of a captured
+  // limit-notice text. Accepts the documented families —
+  // absolute ("will not reset until 11/9/2026, 3:00 AM", "until
+  // September 12 at 12 AM", ISO dates), relative ("resets in 7
+  // hours" / "in 30 minutes"), bare "midnight"/"tomorrow", and
+  // time-only ("until 3:00 AM" — rolls to the next occurrence).
+  // Dates are constructed as LOCAL wall time (the notice renders
+  // in the user's locale); anything that parses outside
+  // (now, now + 48h] is rejected as an artifact, never an anchor.
+  function flowCreditParseResetAt(text, nowMs) {
+    try {
+      if (!text) return null;
+      const now = nowMs == null ? Date.now() : nowMs;
+      const t = String(text);
+      let m = /\bin\s+(\d+(?:\.\d+)?)\s*(hours?|hrs?|h\b|minutes?|mins?|m\b)/i.exec(
+        t,
+      );
+      if (m) {
+        const unit = /^h/i.test(m[2]) ? 3600000 : 60000;
+        return now + Math.round(parseFloat(m[1]) * unit);
+      }
+      if (/\bmidnight\b/i.test(t)) {
+        const d = new Date(now);
+        d.setHours(24, 0, 0, 0);
+        if (d.getTime() <= now) d.setDate(d.getDate() + 1);
+        return d.getTime();
+      }
+      if (/\btomorrow\b/i.test(t)) {
+        const d = new Date(now);
+        d.setDate(d.getDate() + 1);
+        d.setHours(0, 0, 0, 0);
+        return d.getTime();
+      }
+      const MON = {
+        jan: 0,
+        feb: 1,
+        mar: 2,
+        apr: 3,
+        may: 4,
+        jun: 5,
+        jul: 6,
+        aug: 7,
+        sep: 8,
+        oct: 9,
+        nov: 10,
+        dec: 11,
+      };
+      const mk = function (y, mo, d, hh, mm, ampm) {
+        if (y < 100) y += y > 50 ? 1900 : 2000;
+        let h = hh || 0;
+        if (ampm) {
+          const p = ampm.toLowerCase() === "p";
+          if (h === 12) h = p ? 12 : 0;
+          else if (p) h += 12;
+        }
+        return new Date(y, mo, d, h, mm || 0, 0, 0).getTime();
+      };
+      let ts = NaN;
+      m =
+        /\b(?:until|on|at|by)\s+(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s]+(\d{1,2}):(\d{2}))?/i.exec(
+          t,
+        );
+      if (m)
+        ts = mk(
+          +m[1],
+          +m[2] - 1,
+          +m[3],
+          m[4] != null ? +m[4] : 0,
+          m[5] != null ? +m[5] : 0,
+          null,
+        );
+      if (isNaN(ts)) {
+        m =
+          /\b(?:until|on|at|by)\s+(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?(?:[,\s]+(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*([ap])\.?m\.?)?/i.exec(
+            t,
+          );
+        if (m) {
+          const y = m[3] != null ? +m[3] : new Date(now).getFullYear();
+          ts = mk(
+            y,
+            +m[1] - 1,
+            +m[2],
+            m[4] != null ? +m[4] : 0,
+            m[5] != null ? +m[5] : 0,
+            m[6] || null,
+          );
+        }
+      }
+      if (isNaN(ts)) {
+        m =
+          /\b(?:until|on|at|by)\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})(?:,?\s*(\d{4}))?(?:[,\s]+(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*([ap])\.?m\.?)?/i.exec(
+            t,
+          );
+        if (m) {
+          const y = m[3] != null ? +m[3] : new Date(now).getFullYear();
+          ts = mk(
+            y,
+            MON[m[1].toLowerCase()],
+            +m[2],
+            m[4] != null ? +m[4] : 0,
+            m[5] != null ? +m[5] : 0,
+            m[6] || null,
+          );
+        }
+      }
+      if (isNaN(ts)) {
+        m = /\b(?:until|at|by)\s+(\d{1,2})(?::(\d{2}))?\s*([ap])\.?m\.?\b/i.exec(t);
+        if (m) {
+          const nowD = new Date(now);
+          ts = mk(
+            nowD.getFullYear(),
+            nowD.getMonth(),
+            nowD.getDate(),
+            +m[1],
+            m[2] != null ? +m[2] : 0,
+            m[3],
+          );
+          if (ts <= now) ts += 24 * 3600000;
+        }
+      }
+      if (!isNaN(ts) && ts > now && ts - now <= 48 * 3600000) return ts;
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+  // v27.3.12: shared day-rollover for a model entry's day counters.
+  // v27.3.10 rolled them ONLY inside the click/media-commit paths, so
+  // any code that read or snapshotted them between local midnight and
+  // the day's first click saw YESTERDAY's counts — the snapshot bug
+  // fixed in mergeFlowCreditReadings. Idempotent and safe to call
+  // from read paths; clicks, prints, and cap learns roll the stored
+  // values for real.
+  function flowCreditRollEntryDay(e) {
+    if (!e) return e;
+    // v27.3.17: anchor-aware — an entry with a learned reset time
+    // rolls on its own boundary, not local midnight.
+    const dk = flowCreditEntryDayKey(e);
+    if (e.day !== dk) {
+      e.day = dk;
+      e.gensDay = 0;
+      e.turnsDay = 0;
+    }
+    return e;
+  }
+  // v27.3.10: THE function — how many turns of this model are left
+  // before it runs out, today. Priority: (1) Flow's own print
+  // (used/max from the model picker — left = max − used − the
+  // clicks made since the print); (2) the learned cap (when Flow's
+  // daily-limit notice fired, the click count at that moment WAS
+  // the cap — left = cap − clicks since). All-null when the cap is
+  // unknown: Flow discloses it only at those two moments, and the
+  // caller says so instead of inventing a number.
+  function flowCreditTurnsLeft(e) {
+    if (!e) return { left: null, max: null, src: "" };
+    // v27.3.17: "today" for THIS model — its learned reset anchor
+    // when one exists, local midnight otherwise.
+    const today = flowCreditEntryDayKey(e);
+    // v27.3.12: roll the day counters before any math — they only
+    // roll on the click path otherwise, and both branches below
+    // subtract e.turnsDay (see flowCreditRollEntryDay).
+    flowCreditRollEntryDay(e);
+    if (
+      e.max != null &&
+      e.usageAt &&
+      flowCreditEntryDayKeyOf(e, e.usageAt) === today
+    ) {
+      const clicksSince = Math.max(0, (e.turnsDay || 0) - (e.turnsDayAtUsage || 0));
+      return {
+        left: Math.max(0, e.max - (e.used || 0) - clicksSince),
+        max: e.max,
+        src: "Flow-printed",
+      };
+    }
+    // v27.3.12: the learned cap answers on EVERY following day — that
+    // is the entire point of persisting it ("every day after starts
+    // from a known limit"). v27.3.10 gated capAt to TODAY, so the
+    // stored cap never actually answered the next morning — the chip
+    // fell back to "cap ?" every day until the wall was hit AGAIN. A
+    // fresh Flow print (the branch above) still wins whenever Flow
+    // prints, and the next wall-hit re-learns the cap if the quota
+    // moved. turnsDay here is today's count (rolled above), so the
+    // morning after the wall reads cap − 0 = full again.
+    if (e.capTurns != null && e.capAt && e.capTurns > 0) {
+      return {
+        left: Math.max(0, e.capTurns - (e.turnsDay || 0)),
+        max: e.capTurns,
+        // v27.3.16: provenance honesty — a debug-injected cap must
+        // not masquerade as a wall-learned one in evidence reports.
+        src:
+          (e.capText || "").indexOf("[debug]") === 0
+            ? "debug-injected"
+            : "learned at the limit notice",
+      };
+    }
+    return { left: null, max: null, src: "" };
+  }
+  // v27.3.10: the daily-limit notice watcher — the second source of
+  // turns-left. Flow's limit notice fires when a model runs out
+  // (community-documented wording: "Daily Limit Reached ... will
+  // not reset until ..." — carrying the exact reset time). This
+  // watcher scans the visible dialog/toast surfaces each tick for
+  // that language, attributes the notice to the model that most
+  // recently generated (the last click within 15 min, else the
+  // selected model), and records the cap: the turns count at the
+  // wall moment IS the cap (a Flow-printed used from today wins if
+  // it ever saw more than our clicks — pre-install generations).
+  // The notice text is captured verbatim for the report. Guards:
+  // PM chrome never matches; one capture per 30s; a notice that
+  // attributes to no model is still captured (report evidence) but
+  // teaches no cap; a cap of 0 is never recorded (that would be a
+  // notice with no generations behind it — not a cap signal).
+  function flowCreditScanLimitNotice() {
+    try {
+      if (Date.now() - flowCreditLimitLastAt < 30000) return;
+      const nodes = document.querySelectorAll(
+        '[role="dialog"], [role="alertdialog"], [role="alert"], [role="status"], [aria-live="polite"], [aria-live="assertive"]',
+      );
+      for (const n of nodes) {
+        if (
+          n.closest("#pm-flow-dock, #pm-flow-credit-chip, .mp-overlay, .mp-modal-box")
+        )
+          continue;
+        const r = n.getBoundingClientRect();
+        if (!r.width || !r.height) continue;
+        // v27.3.12: a real limit notice is toast/card-sized. A
+        // page-sized dialog that merely QUOTES limit wording (help
+        // copy, an upgrade sheet) must not be mistaken for the wall
+        // and teach a bogus cap.
+        if (r.width > 640 || r.height > 480) continue;
+        const t = (n.textContent || "").replace(/\s+/g, " ").trim();
+        if (!t || t.length > 600) continue;
+        if (
+          !/daily limit|limit reached|reached your (daily )?limit|hit your (daily )?limit|out of (free )?generations/i.test(
+            t,
+          )
+        )
+          continue;
+        const now = Date.now();
+        flowCreditLimitLastAt = now;
+        // v27.3.17: parse the reset moment at capture — it becomes
+        // the model's day-boundary anchor when the cap is learned.
+        flowCreditLimitNotice = {
+          text: t.slice(0, 300),
+          at: now,
+          model: null,
+          resetAt: flowCreditParseResetAt(t, now),
+        };
+        let key = null;
+        if (
+          flowCreditLastGen &&
+          flowCreditLastGen.model &&
+          now - flowCreditLastGen.at < 15 * 60000
+        )
+          key = flowCreditLastGen.model;
+        else if (flowCreditModel) key = flowCreditModel.key;
+        if (key) {
+          flowCreditLimitNotice.model = key;
+          // v27.3.12: roll the day counters first — a notice seen
+          // before the day's first click must not read yesterday's
+          // turnsDay as today's wall count.
+          const e = flowCreditRollEntryDay(
+            flowCreditEntry(flowCreditState, key),
+          );
+          const usedToday =
+            e.used != null &&
+            e.usageAt &&
+            flowCreditEntryDayKeyOf(e, e.usageAt) === flowCreditEntryDayKey(e)
+              ? e.used
+              : 0;
+          // v27.3.12: learn the cap ONCE per model per day. The
+          // v27.3.10 code re-learned cap = max(turnsDay, used) on
+          // every re-capture (the 30s debounce lets a persistent
+          // notice re-fire), and futile clicks at the wall — Flow can
+          // keep the generate button enabled — ratcheted the learned
+          // cap upward all day. After the first learn, only Flow's
+          // own print (usedToday, the canonical number) can raise it.
+          const capToday =
+            e.capAt &&
+            flowCreditEntryDayKeyOf(e, e.capAt) === flowCreditEntryDayKey(e)
+              ? e.capTurns || 0
+              : 0;
+          const cap = capToday
+            ? Math.max(capToday, usedToday)
+            : Math.max(e.turnsDay || 0, usedToday);
+          if (cap > 0 && cap !== e.capTurns) {
+            e.capTurns = cap;
+            e.capAt = now;
+            e.capText = t.slice(0, 200);
+            // v27.3.17: the anchor — parsed from this same notice.
+            e.capResetAt = flowCreditLimitNotice.resetAt || e.capResetAt || 0;
+            persistFlowCreditState();
+            renderFlowCreditChip();
+            try {
+              console.info(
+                "[Prompt Master] credit tracker: daily-limit notice captured — cap learned: " +
+                  cap +
+                  " turns for this model today — " +
+                  t.slice(0, 120),
+              );
+            } catch (e2) {}
+          }
+        }
+        return;
+      }
+    } catch (e) {}
+  }
+  // v27.3.6: derives a fingerprint from an element exactly the way
+  // flowCreditMediaFingerprints does (currentSrc || src for images,
+  // the style attribute's first url() for backgrounds), so
+  // mutation-queue records and sweep fingerprints are comparable
+  // strings.
+  function flowCreditMediaElFingerprint(el) {
+    try {
+      if (!el || !el.tagName) return "";
+      if (el.tagName === "IMG") return el.currentSrc || el.src || "";
+      const st = el.getAttribute && el.getAttribute("style");
+      if (st) {
+        const m = /url\(["']?([^"')]+)["']?\)/i.exec(st);
+        if (m) return m[1];
+      }
+    } catch (e) {}
+    return "";
+  }
+  // v27.3.8: the generation CLICK hook — the event-anchored counting
+  // method. v27.3.5–v27.3.7 tried to infer generations from the DOM
+  // (sweeps, mutation bursts, 8s gap grouping) and every variant
+  // miscounted: history thumbnails, lazy loads, and progressively
+  // rendered old scenes all look like new generation to a DOM
+  // heuristic. The one signal that cannot lie is the generation
+  // EVENT itself — Flow's own "Start generation" button (captured
+  // live in the v27.3.6 report: <button aria> "Start generation",
+  // beside the model row "🍌 Nano Banana 2 crop_16_9 x4"). This hook
+  // listens capture-phase on the document, recognizes that button,
+  // and (1) counts ONE TURN for the model selected at click time —
+  // turns are now exact, not burst-derived; (2) reads the model
+  // row's batch size ("x4" = images per generation — the multiplier
+  // community reports say Flow's hidden NB quota works in); (3) arms
+  // a 150s counting window during which flowCreditCountGens may
+  // attribute NEW media to that model. Media outside any armed
+  // window is never counted, wherever it renders — history browsing
+  // and lazy loads cannot inflate the counter by construction.
+  // Safety rails: buttons inside the script's own chrome never
+  // match; disabled buttons don't count (a blocked click is not a
+  // generation); rapid repeat clicks within 10s dedupe to one turn
+  // (PM's auto-send retry loop must not double-count); and clicks
+  // with no Nano Banana model selected (a Veo generation, say)
+  // tally in a report-only unattributed bucket.
+  function flowCreditGenButtonName(btn) {
+    let name = btn.getAttribute("aria-label") || "";
+    if (!name) {
+      const lb = btn.getAttribute("aria-labelledby");
+      if (lb) {
+        try {
+          name = lb
+            .split(/\s+/)
+            .map(function (id) {
+              const el = document.getElementById(id);
+              return el ? el.textContent || "" : "";
+            })
+            .join(" ")
+            .trim();
+        } catch (e) {}
+      }
+    }
+    if (!name)
+      name = (btn.innerText || btn.textContent || "").replace(/\s+/g, " ").trim();
+    return (name || "").slice(0, 80);
+  }
+  function flowCreditGenButtonOK(btn) {
+    try {
+      if (!btn || !btn.isConnected) return !1;
+      if (
+        btn.closest(
+          "#pm-flow-dock, #pm-flow-credit-chip, .mp-overlay, .mp-modal-box, [role='menu'], [role='dialog'], .cdk-overlay-container",
+        )
+      )
+        return !1;
+      if (btn.disabled || btn.getAttribute("aria-disabled") === "true") return !1;
+      const r = btn.getBoundingClientRect();
+      if (!r.width || !r.height) return !1;
+      // Flow's generation action lives in the lower prompt-bar area —
+      // a look-alike near the top of the page is not it.
+      if (r.top + r.height / 2 < window.innerHeight * 0.4) return !1;
+      const name = flowCreditGenButtonName(btn);
+      return (
+        /^(start\s+generation|generate(?:\s+now)?|create(?:\s+now)?|run)$/i.test(
+          name,
+        ) || /\b(start\s+generation|generate)\b/i.test(name)
+      );
+    } catch (e) {
+      return !1;
+    }
+  }
+  // Reads the images-per-generation batch hint ("x4") off the model
+  // row — a short visible text that names exactly this model.
+  function flowCreditReadBatchHint(model) {
+    try {
+      const els = document.querySelectorAll(
+        "div, span, li, p, button, h1, h2, h3",
+      );
+      const vh = window.innerHeight;
+      for (const el of els) {
+        const t = (el.textContent || "").replace(/\s+/g, " ").trim();
+        if (!t || t.length > 90) continue;
+        const hits = FLOW_CREDIT_MODELS.filter(function (m) {
+          return m.re.test(t);
+        });
+        if (hits.length !== 1 || hits[0].key !== model.key) continue;
+        const bm = /\bx\s?([1-8])\b/i.exec(t);
+        if (bm) {
+          const r = el.getBoundingClientRect();
+          if (r.width && r.height && r.top + r.height / 2 > vh * 0.25)
+            return parseInt(bm[1], 10);
+        }
+      }
+    } catch (e) {}
+    return null;
+  }
+  function flowCreditArmGeneration(btn) {
+    try {
+      const model = detectFlowSelectedModel() || flowCreditModel;
+      const now = Date.now();
+      flowCreditClicksTotal++;
+      if (!model) {
+        // No Nano Banana model selected — a Veo or agent generation.
+        // Report-only: it cannot be attributed to an NB counter.
+        flowCreditClicksUnattributed++;
+        flowCreditLastGen = { model: null, label: null, batch: null, at: now };
+        // v27.3.9: unattributed generations are exactly the ones that
+        // MUTATE the wallet (Veo and Omni deduct per generation) —
+        // stamp the click, persist it, and re-read the balance once
+        // this generation settles.
+        if (flowCreditState) {
+          flowCreditState.genDay = flowCreditDayKey();
+          flowCreditState.lastGenAt = now;
+          persistFlowCreditState();
+        }
+        if (flowCreditWalletKnown() && !flowCreditWalletFresh())
+          scheduleFlowCreditWalletRepull();
+        return;
+      }
+      // Dedupe: PM's auto-send loop may click again while the last
+      // generation is still in flight — one generation, one turn.
+      const prevArm = flowCreditGenArm[model.key];
+      if (prevArm && now - prevArm.from < 10000) return;
+      const batch = flowCreditReadBatchHint(model);
+      flowCreditGenArm[model.key] = { from: now, to: now + 150000 };
+      flowCreditClicksSession[model.key] =
+        (flowCreditClicksSession[model.key] || 0) + 1;
+      const e = flowCreditEntry(flowCreditState, model.key);
+      // v27.3.17: the model's OWN period key — anchor-aware when a
+      // reset time has been learned; the genDay grant stamp below
+      // deliberately stays on the global local day (Google's grant
+      // refresh semantics), not the model's quota period.
+      const dayKey = flowCreditEntryDayKey(e);
+      if (e.day !== dayKey) {
+        e.day = dayKey;
+        e.gensDay = 0;
+        e.turnsDay = 0;
+      }
+      e.turns = (e.turns || 0) + 1;
+      e.turnsDay = (e.turnsDay || 0) + 1;
+      e.clicks = (e.clicks || 0) + 1;
+      e.clicksDay = (e.clicksDay || 0) + 1;
+      e.at = now;
+      // v27.3.9: wallet invalidation stamp — the reading's freshness
+      // gets an event anchor (lastGenAt) plus the day key of the most
+      // recent witnessed generation (genDay). grantMoment records
+      // whether THIS click is the day's first witnessed generation —
+      // the moment Google's doc says the daily grant refreshes.
+      const gDayKey = flowCreditDayKey();
+      const grantMoment = flowCreditState.genDay !== gDayKey;
+      flowCreditState.genDay = gDayKey;
+      flowCreditState.lastGenAt = now;
+      flowCreditTurnsSession[model.key] =
+        (flowCreditTurnsSession[model.key] || 0) + 1;
+      flowCreditLastGen = {
+        model: model.key,
+        label: model.label,
+        batch: batch,
+        at: now,
+      };
+      persistFlowCreditState();
+      renderFlowCreditChip();
+      // v27.3.9: arm the AUTO re-pull only when the balance plausibly
+      // changed — the day's first generation (grant refresh), a model
+      // with a known per-generation cost, or nothing. A free NB
+      // re-click after the day's first generation mutates nothing
+      // server-side, so it never triggers a profile-menu open; the
+      // report and boot pulls still refresh whenever the reading
+      // predates the last click, so staleness can never persist.
+      if (
+        flowCreditWalletKnown() &&
+        !flowCreditWalletFresh() &&
+        (grantMoment || (e.cost != null && e.cost > 0))
+      )
+        scheduleFlowCreditWalletRepull();
+    } catch (e) {}
+  }
+  function installFlowCreditGenClickHook() {
+    if (flowCreditGenHookInstalled) return;
+    flowCreditGenHookInstalled = !0;
+    document.addEventListener(
+      "click",
+      function (ev) {
+        try {
+          if (!flowCreditEngineActive || currentPlatform !== "flow") return;
+          const target = ev.target;
+          const btn =
+            target && target.closest ? target.closest("button") : null;
+          if (!btn || !flowCreditGenButtonOK(btn)) return;
+          flowCreditArmGeneration(btn);
+        } catch (e) {}
+      },
+      !0,
+    );
+  }
+  // v27.3.6: the media MutationObserver callback — stamps every media
+  // element that ENTERS the DOM (or gains a src / background-image
+  // style) with the model selected at that moment and the time. Those
+  // records are the counter's attribution source: a generation is
+  // attributed to the model Flow had selected when its media was
+  // added, not when the sweep later saw it (the v27.3.5 timing bug:
+  // images that rendered after a model switch landed on the new
+  // model). Records without a selected model are dropped (page-load
+  // media has none).
+  function flowCreditCollectMediaMutations(records) {
+    if (!flowCreditEngineActive || !records || !records.length) return;
+    if (flowCreditGenQueue.length > 400) flowCreditGenQueue.splice(0, 150);
+    const m = flowCreditModel;
+    if (!m) return;
+    const now = Date.now();
+    const consider = function (el) {
+      if (!el || el.nodeType !== 1) return;
+      const fp = flowCreditMediaElFingerprint(el);
+      if (fp && fp.length >= 9) flowCreditGenQueue.push({ fp: fp, model: m.key, t: now });
+    };
+    for (const rec of records) {
+      try {
+        if (rec.type === "attributes") {
+          consider(rec.target);
+          continue;
+        }
+        const added = rec.addedNodes;
+        if (!added || !added.length) continue;
+        for (let i = 0; i < added.length; i++) {
+          const n = added[i];
+          if (!n || n.nodeType !== 1) continue;
+          consider(n);
+          if (n.tagName !== "IMG" && n.querySelectorAll) {
+            const subs = n.querySelectorAll('img, [style*="background-image"]');
+            for (let j = 0; j < subs.length; j++) consider(subs[j]);
+          }
+        }
+      } catch (e) {}
+    }
+  }
+  function flowCreditCountGens() {
+    if (!flowCreditState || !document.body) return;
+    const fps = flowCreditMediaFingerprints();
+    if (location.href !== flowCreditGenUrl) {
+      // SPA navigation: everything that renders on the new route is
+      // history, not a generation — re-seed before any counting (the
+      // belt to the /edit/ route gate's suspenders).
+      flowCreditGenUrl = location.href;
+      flowCreditGenReseed = !0;
+      flowCreditLastNewAt = {};
+    }
+    if (flowCreditMediaSeen === null || flowCreditGenReseed) {
+      // First sweep, or a route change just landed: media on the page
+      // at this moment (grid thumbnails, scene board, whatever the
+      // new route renders) is history, not new generations.
+      flowCreditMediaSeen = {};
+      for (const fp of fps) flowCreditMediaSeen[fp] = 1;
+      for (let i = 0; i < flowCreditGenQueue.length; i++)
+        flowCreditMediaSeen[flowCreditGenQueue[i].fp] = 1;
+      flowCreditGenQueue.length = 0;
+      flowCreditGenReseed = !1;
+      return;
+    }
+    const seen = flowCreditMediaSeen;
+    if (Object.keys(seen).length > 6000) {
+      // Long-session guard: re-seed from the current sweep so the
+      // map cannot grow without bound (counting stays conservative
+      // for one tick).
+      flowCreditMediaSeen = {};
+      for (const fp of fps) flowCreditMediaSeen[fp] = 1;
+      flowCreditGenQueue.length = 0;
+      return;
+    }
+    // v27.3.8: the ARM gate replaces the route gate. v27.3.7 made
+    // counting depend on the anchor resolving "editor" (fixing the
+    // v27.3.6 "/edit/" URL guess that never matched Flow's real
+    // "/project/<uuid>" route); v27.3.8 goes one level tighter —
+    // media counts ONLY inside a window armed by a real generation
+    // click (see installFlowCreditGenClickHook), on ANY route,
+    // because the click is the one signal history browsing, lazy
+    // loads, and progressive re-renders cannot spoof. Every
+    // fingerprint below is still marked seen (so media that rendered
+    // while unarmed is never counted later), the queue still drains,
+    // and the anchor/route stays in the diagnostics line — counting
+    // just no longer depends on it. flowCreditCountRouteOK() stays
+    // defined for that report signal.
+    const now = Date.now();
+    const byFp = {};
+    for (let i = 0; i < flowCreditGenQueue.length; i++) {
+      const q = flowCreditGenQueue[i];
+      if (!byFp[q.fp]) byFp[q.fp] = q;
+    }
+    const adds = {};
+    for (const fp of fps) {
+      if (seen[fp]) continue;
+      const q = byFp[fp];
+      const key = q ? q.model : flowCreditModel ? flowCreditModel.key : null;
+      const t = q ? q.t : now;
+      seen[fp] = 1;
+      if (!key) continue;
+      // v27.3.8: armed-window attribution — the record's OWN
+      // timestamp must fall inside a window opened by a generation
+      // click for that model (2s pre-grace for event ordering, 30s
+      // post-grace for slow renders). Outside every window this is
+      // history or lazy load: seen, never counted.
+      const arm = flowCreditGenArm[key];
+      if (!arm || t < arm.from - 2000 || t > arm.to + 30000) continue;
+      if (t - flowCreditLastScrollAt < 700) continue;
+      (adds[key] || (adds[key] = [])).push(t);
+    }
+    // Drain the queue: records still unmatched and older than 45s
+    // never became visible media (they were dropped/replaced nodes) —
+    // mark them seen so a late appearance is not counted either.
+    if (flowCreditGenQueue.length) {
+      let kept = [];
+      for (let i = 0; i < flowCreditGenQueue.length; i++) {
+        const q = flowCreditGenQueue[i];
+        if (!seen[q.fp] && now - q.t <= 45000) kept.push(q);
+        else seen[q.fp] = 1;
+      }
+      flowCreditGenQueue = kept;
+    }
+    const keys = Object.keys(adds);
+    if (!keys.length) return;
+    // v27.3.8: media commit — IMAGES only. TURNS are no longer
+    // burst-derived (the 8s-gap heuristic was the last arbitrary
+    // number in the pipeline); each generation click increments the
+    // turn counters exactly once at click time, and this path only
+    // adds the IMAGES that landed inside that click's armed window.
+    let changed = !1;
+    for (const k of keys) {
+      const imgs = adds[k].length;
+      const e = flowCreditEntry(flowCreditState, k);
+      // v27.3.17: per-model period key (anchor-aware) — each model
+      // rolls its day counters on its own learned boundary.
+      const dayKey = flowCreditEntryDayKey(e);
+      if (e.day !== dayKey) {
+        e.day = dayKey;
+        e.gensDay = 0;
+        e.turnsDay = 0;
+      }
+      e.gens = (e.gens || 0) + imgs;
+      e.gensDay = (e.gensDay || 0) + imgs;
+      flowCreditGensSession[k] = (flowCreditGensSession[k] || 0) + imgs;
+      e.at = Date.now();
+      changed = !0;
+    }
+    if (changed) persistFlowCreditState();
+  }
+
+  function flowCreditFmt(n) {
+    return n == null ? "—" : n.toLocaleString("en-US");
+  }
+  // Re-renders only when the render signature moved: model switch,
+  // wallet/cost/count/usage change, warn-state flip, or a minute tick
+  // for the tooltip timestamp. Everything else is a no-op DOM pass.
+  // v27.3.5: the values slot is the SHARED wallet (Flow has one
+  // account-wide credit pool; per-model budgets do not exist), the
+  // model slot carries the client-side image count for the selected
+  // model, and the title tells the whole story — cost per
+  // generation, session + lifetime counts, wallet balance, and why
+  // per-model credit numbers are not a thing. v27.3.6: when Flow
+  // itself has printed this model's usage (turns/tokens used of a
+  // daily allowance), that CANONICAL number takes the model slot
+  // ("NB2 Lite · 20 / 50 used") and the client-side count moves to
+  // the tooltip — clearly separated, because the count is a
+  // session-heuristic and the usage reading is Flow's own number.
+  function renderFlowCreditChip() {
+    const chip = flowCreditChip;
+    if (!chip) return;
+    const modelEl = chip.querySelector(".mp-credit-model");
+    const valEl = chip.querySelector(".mp-credit-values");
+    if (!modelEl || !valEl) return;
+    const m = flowCreditModel;
+    let left = null,
+      total = null,
+      cost = null,
+      gensS = 0,
+      gensT = 0,
+      turnsS = 0,
+      turnsT = 0,
+      gensDay = 0,
+      turnsDay = 0,
+      used = null,
+      max = null,
+      usageAt = 0,
+      at = 0,
+      // v27.3.9: the WALLET's own reading time (at is max()'d with
+      // the model's last-click time elsewhere, so it cannot serve
+      // the staleness comparison).
+      wat = 0,
+      // v27.3.17: the selected model's period key (anchor-aware
+      // once a reset time was learned) — stashed at read time for
+      // the render signature below.
+      entryDay = "";
+    if (flowCreditState) {
+      const w = flowCreditState.wallet;
+      if (w) {
+        left = w.left;
+        total = w.total;
+        at = w.at || 0;
+        wat = w.at || 0;
+      }
+    }
+    if (m && flowCreditState) {
+      const e = flowCreditState.models[m.key];
+      cost = e && e.cost != null ? e.cost : null;
+      gensT = (e && e.gens) || 0;
+      turnsT = (e && e.turns) || 0;
+      // v27.3.12: render day values through the day roll — between
+      // midnight and the day's first click the stored counters still
+      // hold yesterday's numbers, and the chip must not label them
+      // "today". Pure read (render never mutates the store); clicks,
+      // prints, and cap learns roll the stored values for real.
+      entryDay = flowCreditEntryDayKey(e);
+      const dayRolled = !!e && e.day !== entryDay;
+      gensDay = dayRolled ? 0 : (e && e.gensDay) || 0;
+      turnsDay = dayRolled ? 0 : (e && e.turnsDay) || 0;
+      used = e && e.used != null ? e.used : null;
+      max = e && e.max != null ? e.max : null;
+      usageAt = (e && e.usageAt) || 0;
+      gensS = flowCreditGensSession[m.key] || 0;
+      turnsS = flowCreditTurnsSession[m.key] || 0;
+      if (e && e.at) at = Math.max(at, e.at);
+    }
+    // v27.3.9: wallet staleness flag — a reading older than the last
+    // generation click (the balance's mutation moment) renders with a
+    // title note until a re-pull lands.
+    const wStale = !!(
+      wat &&
+      flowCreditState &&
+      flowCreditState.lastGenAt &&
+      wat < flowCreditState.lastGenAt
+    );
+    // v27.3.10: TURNS LEFT — the number the function exists for.
+    // Flow-printed usage wins; the learned cap (limit-notice wall)
+    // answers when Flow never printed; unknown otherwise.
+    let tLeft = null,
+      tMax = null,
+      tSrc = "";
+    if (m && flowCreditState) {
+      const tl = flowCreditTurnsLeft(flowCreditState.models[m.key]);
+      tLeft = tl.left;
+      tMax = tl.max;
+      tSrc = tl.src;
+    }
+    // v27.3.10: low/zero now describe turns-left, not the wallet.
+    const low = tLeft != null && tMax > 0 && tLeft > 0 && tLeft / tMax <= 0.2;
+    const zero = tLeft === 0;
+    const sig =
+      (m ? m.key : "?") +
+      "|" +
+      left +
+      "|" +
+      total +
+      "|" +
+      cost +
+      "|" +
+      gensS +
+      "|" +
+      gensT +
+      "|" +
+      turnsS +
+      "|" +
+      turnsT +
+      "|" +
+      gensDay +
+      "|" +
+      turnsDay +
+      "|" +
+      used +
+      "|" +
+      max +
+      "|" +
+      Math.floor(usageAt / 60000) +
+      "|" +
+      (low ? 1 : 0) +
+      "|" +
+      (zero ? 1 : 0) +
+      "|" +
+      Math.floor(at / 60000) +
+      "|" +
+      (wStale ? 1 : 0) +
+      "|" +
+      tLeft +
+      "|" +
+      tMax +
+      // v27.3.12/v27.3.17: the period key — day-scoped values (tLeft
+      // via the usageAt day gate, the rolled day counters above) can
+      // flip at midnight OR at a learned reset anchor with no other
+      // input moving, and the signature must move with them or the
+      // chip keeps yesterday's DOM until something else changes.
+      "|" +
+      (entryDay || flowCreditDayKey());
+    if (sig === flowCreditLastSig) return;
+    flowCreditLastSig = sig;
+    // v27.3.10: the chip leads with the function's number — turns
+    // left before this model runs out today. The wallet (the shared
+    // video pool) leaves the chip: the hover title and the report
+    // carry it instead, per the directive that it has nothing to do
+    // with model runout.
+    modelEl.textContent = !m
+      ? "—"
+      : tLeft != null
+        ? m.badge +
+          " · " +
+          tLeft +
+          "/" +
+          tMax +
+          " turns left" +
+          (tLeft === 0 ? " · at daily limit" : "")
+        : m.badge +
+          " · " +
+          turnsDay +
+          " turn" +
+          (turnsDay === 1 ? "" : "s") +
+          " today · cap ?";
+    valEl.textContent = !m ? "— / —" : gensDay + " img today";
+    modelEl.classList.toggle("mp-credit-low", !!low);
+    modelEl.classList.toggle("mp-credit-zero", !!zero);
+    valEl.classList.toggle("mp-credit-low", !1);
+    valEl.classList.toggle("mp-credit-zero", !1);
+    chip.classList.toggle(
+      "mp-credit-pending",
+      !m ||
+        (left == null &&
+          total == null &&
+          cost == null &&
+          used == null &&
+          max == null &&
+          gensT === 0 &&
+          turnsT === 0),
+    );
+    let title = m
+      ? m.label + " — Nano Banana usage"
+      : "Flow credit tracker — select a model to see its usage";
+    if (m) {
+      // v27.3.10: the headline number first — turns left today.
+      title +=
+        "\nTurns left today: " +
+        (tLeft != null
+          ? tLeft + " of " + tMax + " (" + tSrc + ")"
+          : "unknown — Flow prints it in the model picker when it prints at all, and the daily-limit notice teaches it when a model runs out");
+      title +=
+        "\nFlow-displayed usage: " +
+        (used != null || max != null
+          ? (used != null ? flowCreditFmt(used) : "?") +
+            " used" +
+            (max != null ? " of " + flowCreditFmt(max) : "") +
+            " today" +
+            (usageAt
+              ? " (read from the Flow page at " +
+                new Date(usageAt).toLocaleTimeString("en-US") +
+                ")"
+              : "")
+          : "not shown by Flow right now — the chip falls back to the client-side count below");
+      title +=
+        "\nClick-anchored count: today " +
+        gensDay +
+        " image" +
+        (gensDay === 1 ? "" : "s") +
+        " · " +
+        turnsDay +
+        " turn" +
+        (turnsDay === 1 ? "" : "s") +
+        " — this session " +
+        gensS +
+        " img · " +
+        turnsS +
+        " turn" +
+        (turnsS === 1 ? "" : "s") +
+        " — total " +
+        gensT +
+        " img · " +
+        turnsT +
+        " turn" +
+        (turnsT === 1 ? "" : "s");
+      title +=
+        "\nMethod: turns = generation button clicks (exact) · images = media that rendered within 150s after a click — history browsing and lazy loads never count.";
+      title +=
+        "\nCost: " +
+        (cost != null
+          ? flowCreditFmt(cost) + " credits per generation"
+          : "not read yet — Flow prints it near the prompt box");
+      title +=
+        "\nFlow credits (shared wallet): " +
+        (left != null
+          ? flowCreditFmt(left) +
+            " left" +
+            (total != null ? " of " + flowCreditFmt(total) : "")
+          : "not read yet — the tracker opens Flow's profile menu (top-right avatar) once to read it");
+      // v27.3.9: flag a wallet reading that predates the last
+      // generation — the grant refresh happened after it, so the
+      // number on the chip is outdated until a re-pull lands.
+      if (wStale)
+        title +=
+          "\nWallet reading is STALE — the last generation (" +
+          new Date(flowCreditState.lastGenAt).toLocaleTimeString("en-US") +
+          ") may have refreshed the daily grant; the post-generation re-pull or the next report updates it.";
+      title +=
+        "\nNano Banana image generations cost 0 Flow credits — the pool above is consumed by video models; Nano Banana usage is capped by a server-side daily limit.";
+      if (at) title += "\nUpdated " + new Date(at).toLocaleTimeString("en-US");
+      title += "\nRead live from the Flow page · Reset via the userscript menu";
+    }
+    chip.title = title;
+  }
+
+  // Virtual anchor: the chip is body-level and fixed; every reposition
+  // reads the anchor element's live rect (1s poll + mutation debounce +
+  // scroll/resize rAF coalescing). Hidden while the anchor is off-
+  // viewport or gone — the engine keeps running and re-anchors when it
+  // returns. v27.3.1 resolves the anchor through a cascade so a missed
+  // editor lookup can no longer blank the chip: prompt field (trusted
+  // only when its rect is sane AND it sits in the bottom half of the
+  // viewport, where Flow's prompt bar lives) → composer container →
+  // the model-chip element. The rect math lands the chip at the pill's
+  // old spot — inside the field's right edge, vertically centered; tall
+  // fields (>=160px) keep the top-right corner so running text stays
+  // clear, and a model-chip anchor parks just left of the selector.
+  function flowCreditSaneAnchorRect(el) {
+    if (!el || !el.isConnected) return null;
+    const r = el.getBoundingClientRect();
+    if (r.width < 40 || r.height < 16) return null;
+    if (r.bottom < 0 || r.top > window.innerHeight || r.right < 0 || r.left > window.innerWidth)
+      return null;
+    return r;
+  }
+  function flowCreditModelChipElement() {
+    const exclusion =
+      '#pm-flow-dock, #pm-flow-credit-chip, .mp-overlay, .mp-modal-box, [role="menu"], [role="listbox"], [role="menuitem"], [role="option"], .cdk-overlay-container, [class*="overlay"]';
+    const cands = flowCreditModelCandidates(document, exclusion).concat(
+      flowCreditModelTextCandidates(document, exclusion),
+    );
+    if (!cands.length) return null;
+    // Flow's prompt bar lives in the lower half of the viewport — a
+    // model name near the top of the page is a look-alike, not the
+    // chip, so it must not become the anchor.
+    const vh = window.innerHeight;
+    const nearBar = cands.filter(function (c) {
+      const r = c.el.getBoundingClientRect();
+      return r.top + r.height / 2 > vh * 0.4;
+    });
+    if (!nearBar.length) return null;
+    nearBar.sort(function (a, b) {
+      const rb = b.el.getBoundingClientRect(),
+        ra = a.el.getBoundingClientRect();
+      return rb.bottom - ra.bottom;
+    });
+    return nearBar[0].el;
+  }
+  function resolveFlowCreditAnchor() {
+    flowCreditAnchorEl = null;
+    flowCreditAnchorSrc = "";
+    const ed = findPlatformEditor("flow");
+    if (ed) {
+      const er = flowCreditSaneAnchorRect(ed);
+      if (er && er.top + er.height / 2 > window.innerHeight * 0.5) {
+        flowCreditAnchorEl = ed;
+        flowCreditAnchorSrc = "editor";
+        return;
+      }
+    }
+    const comp = findFlowComposerContainer();
+    if (comp && flowCreditSaneAnchorRect(comp)) {
+      flowCreditAnchorEl = comp;
+      flowCreditAnchorSrc = "composer";
+      return;
+    }
+    const chipEl = flowCreditModelChipElement();
+    if (chipEl && flowCreditSaneAnchorRect(chipEl)) {
+      flowCreditAnchorEl = chipEl;
+      flowCreditAnchorSrc = "model-chip";
+    }
+  }
+  function positionFlowCreditChip() {
+    const chip = flowCreditChip;
+    if (!chip || !chip.isConnected) return;
+    if (!flowCreditAnchorEl || !flowCreditAnchorEl.isConnected)
+      resolveFlowCreditAnchor();
+    const el = flowCreditAnchorEl;
+    const r = el ? flowCreditSaneAnchorRect(el) : null;
+    if (!r) {
+      chip.classList.add("mp-credit-hidden");
+      return;
+    }
+    chip.classList.remove("mp-credit-hidden");
+    const w = chip.offsetWidth,
+      h = chip.offsetHeight;
+    let x = r.right - w - 10,
+      y = null;
+    if (flowCreditAnchorSrc === "model-chip") {
+      // Beside the selector itself: just left of the chip, aligned.
+      x = r.left - w - 10;
+      y = r.top + (r.height - h) / 2;
+    } else if (r.height >= 160) {
+      y = r.top + 7;
+    } else {
+      y = r.top + (r.height - h) / 2;
+    }
+    // Keep clear of the dock trigger strip hugging the right edge.
+    const dock = document.getElementById("pm-flow-dock");
+    if (dock && dock.isConnected) {
+      const dr = dock.getBoundingClientRect();
+      if (
+        dr.width &&
+        dr.height &&
+        x + w > dr.left - 6 &&
+        x < dr.right &&
+        y + h > dr.top &&
+        y < dr.bottom
+      )
+        x = dr.left - w - 10;
+    }
+    if (x < 8) x = 8;
+    if (y < 8) y = 8;
+    if (x + w > window.innerWidth - 8) x = window.innerWidth - 8 - w;
+    if (y + h > window.innerHeight - 8) y = window.innerHeight - 8 - h;
+    chip.style.left = Math.round(x) + "px";
+    chip.style.top = Math.round(y) + "px";
+  }
+  function scheduleFlowCreditPosition() {
+    if (flowCreditPosPending) return;
+    flowCreditPosPending = !0;
+    requestAnimationFrame(function () {
+      flowCreditPosPending = !1;
+      positionFlowCreditChip();
+    });
+  }
+
+  function buildFlowCreditChip() {
+    const chip = document.createElement("div");
+    ((chip.id = "pm-flow-credit-chip"),
+      chip.setAttribute("data-testid", "pm-flow-credit-chip"),
+      chip.setAttribute("role", "status"),
+      chip.setAttribute("aria-live", "polite"),
+      setSafeInnerHTML(
+        chip,
+        '<span class="mp-credit-model">—</span><span class="mp-credit-sep"></span><span class="mp-credit-values">— / —</span>',
+      ));
+    return chip;
+  }
+
+  function flowCreditTick() {
+    if (!flowCreditEngineActive) return;
+    if (document.hidden) return;
+    if (!flowCreditChip || !flowCreditChip.isConnected) {
+      flowCreditChip = buildFlowCreditChip();
+      document.body.appendChild(flowCreditChip);
+      flowCreditLastSig = "";
+    }
+    flowCreditModel = detectFlowSelectedModel();
+    const readings = harvestFlowCreditReadings();
+    flowCreditReadingsTotal += readings.length;
+    // v27.3.2: drain the passive observers' queue (network +
+    // storage — counted separately in net=/storage=) through the
+    // same merge — one attribution pipeline, one persist path, one
+    // render signature.
+    while (flowCreditPendingNet.length) {
+      const batch = flowCreditPendingNet.splice(0, 40);
+      for (const r of batch) readings.push(r);
+    }
+    // v27.3.13: flowCreditUsageCount was declared but never tallied.
+    // Counted here (after net/storage batches are merged into readings,
+    // the same point flowCreditReadingsTotal's own source is measured
+    // at) so it covers all three sources uniformly, matching its
+    // stated purpose of tallying usage-kind readings regardless of
+    // origin.
+    for (const r of readings) if (r && r.kind === "usage") flowCreditUsageCount++;
+    if (mergeFlowCreditReadings(flowCreditModel, readings)) persistFlowCreditState();
+    // v27.3.10: watch for Flow's daily-limit notice — the wall-hit
+    // moment that teaches the per-model cap.
+    flowCreditScanLimitNotice();
+    resolveFlowCreditAnchor();
+    flowCreditCountGens();
+    renderFlowCreditChip();
+    positionFlowCreditChip();
+  }
+  function flowCreditScheduleTick() {
+    if (flowCreditMutationTimer) clearTimeout(flowCreditMutationTimer);
+    flowCreditMutationTimer = setTimeout(function () {
+      flowCreditMutationTimer = null;
+      flowCreditTick();
+    }, 250);
+  }
+  function startFlowCreditTracker() {
+    if (currentPlatform !== "flow" || flowCreditEngineActive) return;
+    flowCreditEngineActive = !0;
+    (async function () {
+      try {
+        const stored = await GM_getValue(FLOW_CREDIT_STORAGE_KEY, null);
+        // v27.3.8: the load gate demanded v === 1, but the writer has
+        // saved v: 2 since v27.3.6 — after the first v27.3.6+ save,
+        // every reload silently discarded the ENTIRE store (counts,
+        // wallet, usage readings) and started fresh, which is exactly
+        // why the live numbers looked arbitrary across sessions. Both
+        // versions load now. A one-time cv migration also zeroes the
+        // sweep-derived counters (gens/turns/day): those were proven
+        // unreliable across v27.3.5–v27.3.7 (history thumbnails, lazy
+        // loads, collection-grid media all leaked in), and v27.3.8
+        // rebuilds them from generation CLICKS and post-click media
+        // windows — the wallet, costs, and canonical usage readings
+        // survive the migration untouched.
+        if (
+          stored &&
+          typeof stored === "object" &&
+          (stored.v === 1 || stored.v === 2) &&
+          stored.models
+        ) {
+          flowCreditState = stored;
+          stored.v = 2;
+          let zeroed = !1;
+          if (stored.cv !== 3) {
+            zeroed = !0;
+            for (const k of Object.keys(flowCreditState.models)) {
+              const e0 = flowCreditState.models[k];
+              if (e0) {
+                e0.gens = 0;
+                e0.gensDay = 0;
+                e0.turns = 0;
+                e0.turnsDay = 0;
+              }
+            }
+            stored.cv = 3;
+          }
+          flowCreditStoreInfo = zeroed
+            ? "loaded v2 (sweep-derived counters zeroed once for the click-anchored rebuild)"
+            : "loaded v2";
+          // v27.3.5: v27.3.4-era entries carry no gens field —
+          // normalize so counting can increment without guards.
+          for (const k of Object.keys(flowCreditState.models)) {
+            const e0 = flowCreditState.models[k];
+            if (e0 && e0.gens == null) e0.gens = 0;
+          }
+        } else {
+          flowCreditStoreInfo = stored
+            ? "unreadable (discarded)"
+            : "fresh (nothing saved yet)";
+        }
+      } catch (e) {
+        flowCreditStoreInfo = "load failed: " + ((e && e.message) || e);
+      }
+      if (!flowCreditState) flowCreditState = freshFlowCreditState();
+      if (!document.getElementById("pm-flow-credit-style")) {
+        const s = document.createElement("style");
+        ((s.id = "pm-flow-credit-style"),
+          (s.textContent = FLOW_CREDIT_CSS),
+          document.head.appendChild(s));
+      }
+      // v27.3.2: passive credit sources — Flow's own responses
+      // (fetch/XHR observed, never blocked, never requested) and
+      // client-side storage sweep — both feed the pending queue for
+      // the tick loop to merge.
+      installFlowCreditNetObserver();
+      installFlowCreditGenClickHook();
+      sweepFlowCreditStorage();
+      flowCreditStorageTimer = setInterval(sweepFlowCreditStorage, 30000);
+      flowCreditTick();
+      flowCreditPollTimer = setInterval(flowCreditTick, 1000);
+      flowCreditObserver = new MutationObserver(flowCreditScheduleTick);
+      flowCreditObserver.observe(document.body, {
+        childList: !0,
+        subtree: !0,
+        characterData: !0,
+      });
+      window.addEventListener("scroll", scheduleFlowCreditPosition, {
+        capture: !0,
+        passive: !0,
+      });
+      window.addEventListener("resize", scheduleFlowCreditPosition, { passive: !0 });
+      // v27.3.5: scroll-quiet gate for image counting — media that
+      // appears while the page is still scrolling is treated as lazy
+      // loading, not generation, and is never counted.
+      window.addEventListener(
+        "scroll",
+        function () {
+          flowCreditLastScrollAt = Date.now();
+        },
+        { capture: !0, passive: !0 },
+      );
+      document.addEventListener("visibilitychange", function () {
+        if (!document.hidden) flowCreditTick();
+      });
+      // v27.3.2: settled status line (replaces v27.3.1's first-tick
+      // line, which raced Flow's SPA boot and always read
+      // "anchor=none · model=? · readings=0" while the chip itself
+      // rendered fine a second later). Reports the settled
+      // anchor/model plus cumulative counters; when nothing parsed,
+      // it also dumps the credit-ish texts it CAN see so one
+      // console report carries Flow's live wording.
+      setTimeout(function () {
+        if (!flowCreditEngineActive) return;
+        try {
+          let line =
+            "[Prompt Master] credit tracker: anchor=" +
+            (flowCreditAnchorSrc || "none") +
+            " · model=" +
+            (flowCreditModel ? flowCreditModel.label : "?") +
+            " · readings=" +
+            flowCreditReadingsTotal +
+            " · net=" +
+            flowCreditNetCount +
+            " · storage=" +
+            flowCreditStorageCount;
+          if (!flowCreditReadingsTotal) {
+            const samples = collectFlowCreditTextSamples();
+            line += samples.length
+              ? " · credit texts on page: " + samples.join(" | ")
+              : " · no credit text visible on the page";
+          }
+          console.info(line);
+        } catch (e) {}
+      }, 8000);
+      // v27.3.1: one-shot late warn — if after 15s no anchor ever
+      // resolved, say so in the console instead of failing silently
+      // (the "tracker never appeared" class of report).
+      setTimeout(function () {
+        if (flowCreditEngineActive && !flowCreditAnchorSrc) {
+          try {
+            console.warn(
+              "[Prompt Master] credit tracker: no prompt field, composer, or model chip found on this page — the chip will appear once Flow renders its prompt bar.",
+            );
+          } catch (e) {}
+        }
+      }, 15000);
+      // v27.3.4: active wallet pull, once per load. If 9s in the
+      // store still holds no wallet reading (the passive sources
+      // found nothing — the live-site reality: the wallet only exists
+      // inside the closed profile menu), open that menu, harvest,
+      // and close it. One retry at 45s covers a slow SPA boot; the
+      // Copy Report command pulls on demand at any time. The outcome
+      // is one console line, never a second click storm. v27.3.5:
+      // the skip gate is a known-or-fresh wallet (left counts — the
+      // menu only prints a left), and a stale-but-known wallet (6h+)
+      // refreshes instead of skipping.
+      setTimeout(function () {
+        if (!flowCreditEngineActive || flowCreditPullAutoTried) return;
+        flowCreditPullAutoTried = !0;
+        if (flowCreditWalletFresh()) {
+          flowCreditPullInfo = "skipped — the store's wallet reading is fresh";
+          return;
+        }
+        pullFlowCreditWallet("boot").then(function (r) {
+          if (r && r.ran && (r.opened === "clicked" || r.opened === "already open"))
+            try {
+              console.info(
+                "[Prompt Master] credit tracker: wallet pull — " + flowCreditPullInfo,
+              );
+            } catch (e) {}
+        });
+      }, 9000);
+      setTimeout(function () {
+        if (!flowCreditEngineActive || !flowCreditPullAutoTried) return;
+        if (flowCreditWalletKnown()) return;
+        pullFlowCreditWallet("boot-retry").then(function () {});
+      }, 45000);
+    })().catch(function () {});
+  }
+  async function resetFlowCreditTracker() {
+    // v27.3.13: snapshot learned caps before the wipe below destroys
+    // them, then restore just those fields onto the fresh state. A cap
+    // is learned once by actually hitting Flow's wall
+    // (flowCreditScanLimitNotice) and is designed to stay valid
+    // indefinitely — "every day after starts from a known limit" per
+    // the tracker's own report tip — so a reset destroying it forced
+    // re-learning by hitting the wall again for every model, every
+    // time.
+    const preservedCaps = {};
+    // v27.3.16/17: models already used in the CURRENT period keep
+    // their period click count across the reset — the server counted
+    // those turns whether or not the client resets, and zeroing them
+    // would make turns-left read cap − 0 = a full tank the server has
+    // already drawn down. Unused-period models are not listed here and
+    // reset to a true fresh zero. v27.3.17 adds: "current" is
+    // ANCHOR-AWARE (the model's learned reset time when one exists),
+    // and same-period Flow-printed usage (used/max/usageAt/
+    // turnsDayAtUsage) survives too — Flow's own print is canonical
+    // knowledge, not client state, and destroying it made turns-left
+    // fall back to the weaker cap branch after a reset.
+    const preservedToday = {};
+    if (flowCreditState && flowCreditState.models) {
+      for (const k in flowCreditState.models) {
+        const m = flowCreditState.models[k];
+        if (m && m.capTurns > 0) {
+          preservedCaps[k] = {
+            capTurns: m.capTurns,
+            capAt: m.capAt,
+            capText: m.capText,
+            capResetAt: m.capResetAt || 0,
+          };
+        }
+        if (m && m.day === flowCreditEntryDayKey(m)) {
+          preservedToday[k] = {
+            turnsDay: m.turnsDay || 0,
+            print:
+              m.usageAt &&
+              flowCreditEntryDayKeyOf(m, m.usageAt) ===
+                flowCreditEntryDayKey(m)
+                ? {
+                    used: m.used,
+                    max: m.max,
+                    usageAt: m.usageAt,
+                    turnsDayAtUsage: m.turnsDayAtUsage || 0,
+                  }
+                : null,
+          };
+        }
+      }
+    }
+    flowCreditState = freshFlowCreditState();
+    for (const k in preservedCaps) {
+      const e = flowCreditEntry(flowCreditState, k);
+      e.capTurns = preservedCaps[k].capTurns;
+      e.capAt = preservedCaps[k].capAt;
+      e.capText = preservedCaps[k].capText;
+      e.capResetAt = preservedCaps[k].capResetAt;
+    }
+    for (const k in preservedToday) {
+      const e = flowCreditEntry(flowCreditState, k);
+      e.day = flowCreditEntryDayKey(e);
+      e.turnsDay = preservedToday[k].turnsDay;
+      if (preservedToday[k].print) {
+        e.used = preservedToday[k].print.used;
+        e.max = preservedToday[k].print.max;
+        e.usageAt = preservedToday[k].print.usageAt;
+        e.turnsDayAtUsage = preservedToday[k].print.turnsDayAtUsage;
+      }
+    }
+    flowCreditLastSig = "";
+    flowCreditPendingNet.length = 0;
+    // v27.3.5: wipe the session image counts and clear the
+    // fingerprint set — the next tick re-seeds it from current page
+    // media so a fresh count never re-counts what is on screen.
+    flowCreditGensSession = {};
+    flowCreditMediaSeen = null;
+    // v27.3.8: wipe the click-anchored state with the rest — armed
+    // windows, click counters, the last-generation record, and the
+    // turns session map (which the v27.3.6 reset never wiped).
+    flowCreditTurnsSession = {};
+    flowCreditGenArm = {};
+    flowCreditClicksSession = {};
+    flowCreditClicksTotal = 0;
+    flowCreditClicksUnattributed = 0;
+    flowCreditLastGen = null;
+    // v27.3.9: cancel any pending post-generation wallet re-pull —
+    // a reset means the user wants a clean slate, not a menu click,
+    // and the fresh store carries no lastGenAt to be stale against.
+    if (flowCreditRepullTimer) {
+      clearTimeout(flowCreditRepullTimer);
+      flowCreditRepullTimer = null;
+    }
+    flowCreditRepullCount = 0;
+    // v27.3.10: the limit-notice dedup window is session state — a
+    // reset clears it so the next real wall-hit notice isn't
+    // suppressed by the 30s dedup guard. The learned cap itself
+    // (capTurns/capAt/capText) survives the reset — see the
+    // preservedCaps restore above.
+    flowCreditLimitNotice = null;
+    flowCreditLimitLastAt = 0;
+    flowCreditStoreInfo = "fresh (reset)";
+    try {
+      await GM_setValue(
+        FLOW_CREDIT_STORAGE_KEY,
+        JSON.parse(JSON.stringify(flowCreditState)),
+      );
+    } catch (e) {}
+    renderFlowCreditChip();
+  }
+  // v27.3.15 FIX: this script runs with explicit @grant entries, so
+  // Tampermonkey/Violentmonkey execute it in a sandboxed JS realm where
+  // plain `window` is a proxy local to that sandbox — writes to it are
+  // invisible from DevTools console, which evaluates against the
+  // page's real global object by default. unsafeWindow (already in
+  // @grant above) is the manager-provided bridge to that real object;
+  // assigning the hook there is what actually makes it reachable from
+  // the console.
+  //   window.__flowCreditDebugSetCap("nb2", 16)   // model keys: nb2, nb2lite, pro
+  // then run the "📋 Flow Credits: Copy Report" menu command to see it
+  // reflected, then "🔄 Reset Flow Credit Tracker", then Copy Report
+  // again — capTurns/capAt/capText should still read the injected
+  // value instead of "cap not learned yet".
+  // v27.3.16 hardening, same hook: (1) the KEY is validated against
+  // FLOW_CREDIT_MODELS — flowCreditEntry auto-creates any key it is
+  // given, so a typo used to plant a phantom, reset-proof model row
+  // (preservedCaps restores anything with capTurns > 0); (2) the CAP
+  // is validated as a positive integer; (3) the assignment itself is
+  // try/caught and Flow-hostname-gated — an unguarded unsafeWindow
+  // write would kill every statement after it in this IIFE
+  // (start() included) on any manager that provides no unsafeWindow,
+  // and a page-reachable state-write primitive has no business on
+  // the other matched platforms; (4) it returns a JSON clone, never
+  // the live entry — the page realm must not hold a mutable
+  // reference into tracker state.
+  try {
+    if (/^flow\.google\.com$/i.test(location.hostname)) {
+      unsafeWindow.__flowCreditDebugSetCap = function (modelKey, capTurns) {
+        if (!flowCreditState || !flowCreditState.models) {
+          console.warn("[Prompt Master] credit tracker not initialized yet.");
+          return null;
+        }
+        const validKeys = FLOW_CREDIT_MODELS.map(function (m) {
+          return m.key;
+        });
+        if (validKeys.indexOf(modelKey) === -1) {
+          console.warn(
+            '[Prompt Master] __flowCreditDebugSetCap: unknown model key "' +
+              modelKey +
+              '" — valid keys: ' +
+              validKeys.join(", "),
+          );
+          return null;
+        }
+        const n = Number(capTurns);
+        if (!Number.isInteger(n) || n <= 0) {
+          console.warn(
+            "[Prompt Master] __flowCreditDebugSetCap: capTurns must be a positive integer (got " +
+              capTurns +
+              ").",
+          );
+          return null;
+        }
+        const e = flowCreditEntry(flowCreditState, modelKey);
+        e.capTurns = n;
+        e.capAt = Date.now();
+        e.capText =
+          "[debug] manually injected via __flowCreditDebugSetCap for testing";
+        persistFlowCreditState();
+        renderFlowCreditChip();
+        console.info(
+          "[Prompt Master] credit tracker: injected capTurns=" +
+            n +
+            " for model \"" +
+            modelKey +
+            "\" (test only).",
+        );
+        return JSON.parse(JSON.stringify(e));
+      };
+      // v27.3.17: the self-test rides the same gate — Flow-only,
+      // console-reachable, but also exposed as the "🧪 Flow Credits:
+      // Self-Test" menu command (which needs no console at all).
+      unsafeWindow.__flowCreditDebugSelfTest = flowCreditDebugSelfTestImpl;
+    }
+  } catch (e) {}
+
+  // v27.3.17: the self-test — the tracker verifies its own state
+  // machine so no human ever has to walk a manual multi-step
+  // procedure again. Covers every path the back-and-forth rounds
+  // were about: hook key/value validation, the cap branch and its
+  // provenance, Flow-print precedence, read-path day rolling,
+  // anchor-aware period keys, the reset-time parser, and reset
+  // preservation/honesty. Runs entirely offline against the in-page
+  // state; snapshots EVERYTHING it touches (store, session maps,
+  // click tallies, notice capture) and restores it in a finally
+  // block, so a run leaves the tracker exactly as it found it.
+  // Reachable three ways: the "🧪 Flow Credits: Self-Test" menu
+  // command, window.__flowCreditDebugSelfTest() from the DevTools
+  // console, or awaited from other debug code. Returns the results
+  // array; prints a PASS/FAIL table either way.
+  async function flowCreditDebugSelfTestImpl() {
+    const results = [];
+    const t = function (name, pass, detail) {
+      results.push({ name: name, pass: !!pass, detail: detail || "" });
+    };
+    const snap = flowCreditState
+      ? {
+          state: JSON.parse(JSON.stringify(flowCreditState)),
+          storeInfo: flowCreditStoreInfo,
+          clicksTotal: flowCreditClicksTotal,
+          clicksUnattributed: flowCreditClicksUnattributed,
+          turnsSession: JSON.parse(JSON.stringify(flowCreditTurnsSession)),
+          gensSession: JSON.parse(JSON.stringify(flowCreditGensSession)),
+          arm: JSON.parse(JSON.stringify(flowCreditGenArm)),
+          lastGen: flowCreditLastGen
+            ? JSON.parse(JSON.stringify(flowCreditLastGen))
+            : null,
+          limitNotice: flowCreditLimitNotice
+            ? JSON.parse(JSON.stringify(flowCreditLimitNotice))
+            : null,
+          limitLastAt: flowCreditLimitLastAt,
+          lastSig: flowCreditLastSig,
+        }
+      : null;
+    try {
+      t(
+        "store loaded",
+        !!(flowCreditState && flowCreditState.models),
+        flowCreditStoreInfo,
+      );
+      const beforeKeys = Object.keys(flowCreditState.models).join(",");
+      t(
+        "typo key rejected, no phantom row",
+        unsafeWindow.__flowCreditDebugSetCap("nb2Typo", 16) === null &&
+          Object.keys(flowCreditState.models).join(",") === beforeKeys,
+        "an unknown key must warn and create nothing",
+      );
+      t(
+        "non-integer cap rejected",
+        unsafeWindow.__flowCreditDebugSetCap("nb2", "abc") === null,
+      );
+      t(
+        "zero cap rejected",
+        unsafeWindow.__flowCreditDebugSetCap("nb2", 0) === null,
+      );
+      t(
+        "injection accepted",
+        !!(
+          unsafeWindow.__flowCreditDebugSetCap("nb2", 16) &&
+          flowCreditState.models.nb2 &&
+          flowCreditState.models.nb2.capTurns === 16
+        ),
+      );
+      // Baseline the entry so a live store's prints/counts cannot
+      // skew the assertions (restored by the finally block).
+      const e = flowCreditEntry(flowCreditState, "nb2");
+      e.used = null;
+      e.max = null;
+      e.usageAt = 0;
+      e.turnsDayAtUsage = 0;
+      e.day = "";
+      e.turnsDay = 0;
+      e.turns = 0;
+      e.gens = 0;
+      e.gensDay = 0;
+      let tl = flowCreditTurnsLeft(e);
+      t(
+        "cap branch: 16/16, src debug-injected",
+        tl.left === 16 && tl.max === 16 && tl.src === "debug-injected",
+        JSON.stringify(tl),
+      );
+      e.day = flowCreditEntryDayKey(e);
+      e.turnsDay = 5;
+      tl = flowCreditTurnsLeft(e);
+      t(
+        "cap branch subtracts current-period turns",
+        tl.left === 11,
+        "16-5 expected, got " + tl.left,
+      );
+      e.used = 3;
+      e.max = 16;
+      e.usageAt = Date.now();
+      e.turnsDayAtUsage = 4;
+      tl = flowCreditTurnsLeft(e);
+      t(
+        "Flow print outranks the cap",
+        tl.left === 12 && tl.src === "Flow-printed",
+        "16-3-(5-4)=12 expected, got " + tl.left + " (" + tl.src + ")",
+      );
+      e.day = "1970-1-1";
+      e.turnsDay = 9;
+      tl = flowCreditTurnsLeft(e);
+      t(
+        "read-path day roll zeroes stale counters",
+        e.day !== "1970-1-1" && e.turnsDay === 0 && tl.left === 13,
+        "rolled day must drop the stale 9; 16-3 expected, got " + tl.left,
+      );
+      // Anchor-aware period keys: a learned reset at 23:58 local
+      // must split timestamps across it into different periods.
+      const anchor = new Date();
+      anchor.setHours(23, 58, 0, 0);
+      e.capResetAt = anchor.getTime();
+      t(
+        "anchor splits periods across the reset moment",
+        flowCreditEntryDayKeyOf(e, anchor.getTime() - 3600000) !==
+          flowCreditEntryDayKeyOf(e, anchor.getTime() + 3600000),
+      );
+      t(
+        "no anchor falls back to the local day",
+        flowCreditEntryDayKeyOf({ capResetAt: 0 }, Date.now()) ===
+          flowCreditDayKey(),
+      );
+      // The reset-time parser, deterministic via a fixed "now".
+      const fixedNow = 1770000000000;
+      const p2 = flowCreditParseResetAt(
+        "You hit your daily limit — resets in 7 hours",
+        fixedNow,
+      );
+      t(
+        "parser: relative hours",
+        p2 != null && Math.abs(p2 - (fixedNow + 7 * 3600000)) < 60000,
+        p2 == null ? "null" : new Date(p2).toISOString(),
+      );
+      const p3 = flowCreditParseResetAt("nothing here parses", fixedNow);
+      t("parser: garbage rejected", p3 == null);
+      const dT = new Date(fixedNow + 8 * 3600000);
+      const h12 = dT.getHours() % 12 || 12;
+      const absText =
+        "Daily limit reached. It will not reset until " +
+        (dT.getMonth() + 1) +
+        "/" +
+        dT.getDate() +
+        "/" +
+        dT.getFullYear() +
+        ", " +
+        h12 +
+        ":00 " +
+        (dT.getHours() < 12 ? "AM" : "PM");
+      const target = new Date(
+        dT.getFullYear(),
+        dT.getMonth(),
+        dT.getDate(),
+        dT.getHours(),
+        0,
+        0,
+        0,
+      ).getTime();
+      const p1 = flowCreditParseResetAt(absText, fixedNow);
+      t(
+        "parser: absolute M/D/Y + clock time",
+        p1 != null && Math.abs(p1 - target) < 90000,
+        p1 == null ? "null" : new Date(p1).toISOString(),
+      );
+      // Reset honesty — the point of v27.3.13/16/17.
+      e.used = null;
+      e.max = null;
+      e.usageAt = 0;
+      e.turnsDayAtUsage = 0;
+      e.day = flowCreditEntryDayKey(e);
+      e.turnsDay = 4;
+      await resetFlowCreditTracker();
+      const e2 = flowCreditState.models.nb2;
+      t(
+        "reset preserves the cap",
+        !!(e2 && e2.capTurns === 16),
+        e2 ? "capTurns=" + e2.capTurns : "entry missing",
+      );
+      t(
+        "reset preserves current-period turns (honest turns-left)",
+        !!(e2 && e2.turnsDay === 4),
+        "turnsDay=" + (e2 ? e2.turnsDay : "?"),
+      );
+      t(
+        "reset wipes session counters",
+        flowCreditClicksTotal === 0 && !Object.keys(flowCreditGensSession).length,
+        "clicks=" + flowCreditClicksTotal,
+      );
+      tl = e2 ? flowCreditTurnsLeft(e2) : { left: null };
+      t("post-reset turns-left = 12 (16-4)", tl.left === 12, "got " + tl.left);
+      flowCreditEntry(flowCreditState, "nb2lite").day = "1970-1-1";
+      flowCreditState.models.nb2lite.turnsDay = 99;
+      await resetFlowCreditTracker();
+      const e3 = flowCreditEntry(flowCreditState, "nb2lite");
+      t(
+        "unused-period model resets to a true zero",
+        e3.turnsDay === 0,
+        "turnsDay=" + e3.turnsDay,
+      );
+    } catch (err) {
+      t("self-test crashed", !1, String((err && err.message) || err));
+    } finally {
+      if (snap) {
+        flowCreditState = snap.state;
+        flowCreditStoreInfo = snap.storeInfo;
+        flowCreditClicksTotal = snap.clicksTotal;
+        flowCreditClicksUnattributed = snap.clicksUnattributed;
+        flowCreditTurnsSession = snap.turnsSession;
+        flowCreditGensSession = snap.gensSession;
+        flowCreditGenArm = snap.arm;
+        flowCreditLastGen = snap.lastGen;
+        flowCreditLimitNotice = snap.limitNotice;
+        flowCreditLimitLastAt = snap.limitLastAt;
+        flowCreditLastSig = "";
+        persistFlowCreditState();
+        renderFlowCreditChip();
+      }
+    }
+    const failed = results.filter(function (r) {
+      return !r.pass;
+    });
+    const body = results
+      .map(function (r) {
+        return (
+          (r.pass ? "PASS " : "FAIL ") +
+          r.name +
+          (r.pass ? "" : " — " + r.detail)
+        );
+      })
+      .join("\n");
+    try {
+      console.info(
+        "[Prompt Master] credit tracker self-test: " +
+          (results.length - failed.length) +
+          "/" +
+          results.length +
+          " passed\n" +
+          body,
+      );
+    } catch (e2) {}
+    return results;
+  }
+
+  // v27.3.3: on-demand report. The settled 8s line answers "what did
+  // the tracker find" once per load, but a live-site miss needs the
+  // same answer AT REPORT TIME — after the user opened a popover,
+  // switched models, or waited out Flow's SPA. "📋 Flow Credits: Copy
+  // Report" (userscript menu, Flow only) forces a fresh tick, then
+  // prints AND copies a one-paste report: engine/anchor/model, the
+  // per-source counters, the persisted wallet + per-model store with
+  // timestamps, what the chip is showing right now, and every
+  // credit-ish text visible at that moment — the exact evidence that
+  // pins Flow's live wording in one round. Read-only: the report
+  // itself requests nothing, mutates nothing, persists nothing.
+  async function reportFlowCreditTracker() {
+    const lines = [];
+    let copied = !1;
+    try {
+      // v27.3.4: pull FIRST. When the store has no wallet reading, the
+      // report opens Flow's profile menu itself, harvests it, and
+      // closes it — the one-paste evidence loop no longer depends on
+      // the user opening anything by hand. v27.3.5: a left-only
+      // reading ("280 Google Flow credits") counts as known. v27.3.9:
+      // a KNOWN reading that predates the last generation click (or
+      // has passed 6h) also pulls — the first live v27.3.8 report
+      // quoted a 02:58 wallet as current at 05:59 while the 05:58
+      // first generation of the day had already refreshed the grant
+      // under it; the report re-reads it now, so the wallet line can
+      // never again quote a number the page has already replaced.
+      if (!flowCreditWalletKnown() || !flowCreditWalletFresh()) {
+        try {
+          await pullFlowCreditWallet("manual");
+        } catch (e2) {}
+      }
+      try {
+        flowCreditTick();
+      } catch (e2) {}
+      const fmtV = function (v) {
+        return v == null ? "—" : String(v);
+      };
+      lines.push(
+        "[Prompt Master] Flow credit tracker report (v" + SCRIPT_VERSION + ")",
+      );
+      lines.push(
+        "url: " +
+          location.href.slice(0, 120) +
+          " · engine: " +
+          (flowCreditEngineActive ? "active" : "not started") +
+          " · anchor: " +
+          (flowCreditAnchorSrc || "none") +
+          " · model: " +
+          (flowCreditModel ? flowCreditModel.label : "?"),
+      );
+      lines.push(
+        "sources this session — page text: " +
+          flowCreditReadingsTotal +
+          " · network payloads: " +
+          flowCreditNetCount +
+          " · storage hits: " +
+          flowCreditStorageCount +
+          " · usage-kind readings: " +
+          flowCreditUsageCount +
+          " · net observer: " +
+          (flowCreditNetInstalled ? "installed" : "missing"),
+      );
+      lines.push("wallet pull: " + flowCreditPullInfo);
+      if (flowCreditPullRaw)
+        lines.push(
+          "profile menu text: " + '"' + flowCreditPullRaw.slice(0, 160) + '"',
+        );
+      lines.push(
+        "store: " +
+          flowCreditStoreInfo +
+          " · count mode: click-anchored — turns = generation clicks (exact), images = media in the 150s post-click window",
+      );
+      {
+        let genLine =
+          "generation clicks: " + flowCreditClicksTotal + " this session";
+        if (flowCreditLastGen)
+          genLine +=
+            " · last: " +
+            (flowCreditLastGen.label || "?") +
+            (flowCreditLastGen.batch
+              ? " · batch x" +
+                flowCreditLastGen.batch +
+                " (images per generation, read from the model row)"
+              : "") +
+            " · at " +
+            new Date(flowCreditLastGen.at).toISOString();
+        if (flowCreditClicksUnattributed)
+          genLine +=
+            " · unattributed (no NB model selected): " +
+            flowCreditClicksUnattributed;
+        const armKeys = flowCreditGenArm
+          ? Object.keys(flowCreditGenArm).filter(function (k) {
+              return Date.now() < flowCreditGenArm[k].to;
+            })
+          : [];
+        if (armKeys.length)
+          genLine +=
+            " · armed now: " +
+            armKeys
+              .map(function (k) {
+                const m = FLOW_CREDIT_MODELS.filter(function (x) {
+                  return x.key === k;
+                })[0];
+                return (
+                  (m ? m.badge : k) +
+                  " (" +
+                  Math.max(
+                    0,
+                    Math.round((flowCreditGenArm[k].to - Date.now()) / 1000),
+                  ) +
+                  "s left)"
+                );
+              })
+              .join(", ");
+        lines.push(genLine);
+      }
+      // v27.3.10: the captured daily-limit notice, if the wall fired
+      // this session — verbatim wording plus the attribution.
+      if (flowCreditLimitNotice)
+        lines.push(
+          "limit notice (captured " +
+            new Date(flowCreditLimitNotice.at).toISOString() +
+            "): " +
+            '"' +
+            flowCreditLimitNotice.text.slice(0, 240) +
+            '"' +
+            (flowCreditLimitNotice.model
+              ? " · attributed to: " + flowCreditLimitNotice.model
+              : " · attributed to no model (evidence only)") +
+            (flowCreditLimitNotice.resetAt
+              ? " · resets at " +
+                new Date(flowCreditLimitNotice.resetAt).toISOString() +
+                " (parsed — the anchor is live)"
+              : " · reset time not parsed from this wording (day boundary falls back to local midnight)"),
+        );
+      if (flowCreditState) {
+        const w = flowCreditState.wallet;
+        if (w && (w.left != null || w.total != null))
+          lines.push(
+            "wallet: " +
+              fmtV(w.left) +
+              " / " +
+              fmtV(w.total) +
+              (w.at ? " · as of " + new Date(w.at).toISOString() : "") +
+              (w.at &&
+              flowCreditState.lastGenAt &&
+              w.at < flowCreditState.lastGenAt
+                ? " · STALE — predates the last generation (" +
+                  new Date(flowCreditState.lastGenAt).toISOString() +
+                  "); the wallet pull above re-read it"
+                : ""),
+          );
+        const keys = Object.keys(flowCreditState.models);
+        if (keys.length)
+          for (const k of keys) {
+            const e = flowCreditState.models[k];
+            const m = FLOW_CREDIT_MODELS.filter(function (x) {
+              return x.key === k;
+            })[0];
+            // v27.3.5: the per-model line now carries the numbers
+            // that actually exist for Nano Banana — cost per
+            // generation and the client-side image counts — instead
+            // of implying a per-model credit budget.
+            // v27.3.10: and now the headline number itself — turns
+            // left before this model runs out today.
+            const tl = flowCreditTurnsLeft(e);
+            lines.push(
+              "model " +
+                (m ? m.label : k) +
+                ": " +
+                fmtV(e && e.left) +
+                " / " +
+                fmtV(e && e.total) +
+                (e && e.cost != null
+                  ? " · " + e.cost + " per generation"
+                  : "") +
+                (tl && tl.left != null
+                  ? " · " + tl.left + "/" + tl.max + " turns left (" + tl.src + ")"
+                  : " · turns left: cap not learned yet") +
+                (e && e.capTurns != null && e.capAt
+                  ? " · cap " +
+                    e.capTurns +
+                    " (recorded " +
+                    new Date(e.capAt).toISOString() +
+                    (e.capText
+                      ? " — " + '"' + String(e.capText).slice(0, 90) + '"'
+                      : "") +
+                    ")" +
+                    (e.capResetAt
+                      ? " · resets " + new Date(e.capResetAt).toISOString()
+                      : "")
+                  : "") +
+                (e && e.used != null
+                  ? " · Flow-printed usage: " + e.used + " used"
+                  : "") +
+                (e && e.max != null ? " of " + e.max : "") +
+                " · " +
+                ((e && e.turns) || 0) +
+                " turns total (" +
+                ((e && e.turnsDay) || 0) +
+                " today) · " +
+                ((e && e.gens) || 0) +
+                " images total (" +
+                ((e && e.gensDay) || 0) +
+                " today) · this session " +
+                (flowCreditTurnsSession[k] || 0) +
+                " turns / " +
+                (flowCreditGensSession[k] || 0) +
+                " img (click-anchored)" +
+                (e && e.at ? " · as of " + new Date(e.at).toISOString() : ""),
+            );
+          }
+        if (!w && !keys.length)
+          lines.push(
+            "store: empty — no reading has ever landed this session",
+          );
+      } else lines.push("store: not loaded yet");
+      let chipLine = "not built";
+      if (flowCreditChip && flowCreditChip.isConnected) {
+        const a = flowCreditChip.querySelector(".mp-credit-model");
+        const b = flowCreditChip.querySelector(".mp-credit-values");
+        chipLine =
+          a && b
+            ? (a.textContent || "—") + " · " + (b.textContent || "—")
+            : String(flowCreditChip.textContent).replace(/\s+/g, " ").trim() ||
+              "—";
+      }
+      lines.push("chip shows: " + chipLine);
+      const samples = collectFlowCreditTextSamples();
+      lines.push(
+        samples.length
+          ? "credit text visible now: " + samples.join(" | ")
+          : "credit text visible now: none",
+      );
+      {
+        // v27.3.17: the report audits itself — machine-checked
+        // invariants appended to every Copy Report, so a pasted
+        // report can never silently mislead either of us.
+        const checks = [];
+        const modelKeys = flowCreditState
+          ? Object.keys(flowCreditState.models)
+          : [];
+        const validKeys = FLOW_CREDIT_MODELS.map(function (x) {
+          return x.key;
+        });
+        const phantoms = modelKeys.filter(function (k) {
+          return validKeys.indexOf(k) === -1;
+        });
+        checks.push([
+          "no phantom model keys",
+          phantoms.length ? phantoms.join(",") : "",
+        ]);
+        let snapBad = "";
+        let clickSum = 0;
+        for (const k of modelKeys) {
+          const ee = flowCreditState.models[k];
+          if (!ee) continue;
+          clickSum += flowCreditTurnsSession[k] || 0;
+          if (
+            ee.usageAt &&
+            flowCreditEntryDayKeyOf(ee, ee.usageAt) ===
+              flowCreditEntryDayKey(ee) &&
+            (ee.turnsDay || 0) < (ee.turnsDayAtUsage || 0)
+          )
+            snapBad += k + " ";
+        }
+        checks.push([
+          "print snapshots consistent with current-period clicks",
+          snapBad,
+        ]);
+        checks.push([
+          "attributed session clicks within total",
+          clickSum + (flowCreditClicksUnattributed || 0) <=
+            (flowCreditClicksTotal || 0)
+            ? ""
+            : "sum " +
+              (clickSum + (flowCreditClicksUnattributed || 0)) +
+              " > total " +
+              flowCreditClicksTotal,
+        ]);
+        let armBad = "";
+        for (const k in flowCreditGenArm)
+          if (!(flowCreditGenArm[k].to > flowCreditGenArm[k].from))
+            armBad += k + " ";
+        checks.push(["armed windows well-formed", armBad]);
+        let capBad = "";
+        for (const k of modelKeys) {
+          const ee = flowCreditState.models[k];
+          if (
+            ee &&
+            ee.capTurns != null &&
+            !(ee.capTurns > 0 && (ee.capAt || 0) > 0)
+          )
+            capBad += k + " ";
+        }
+        checks.push(["learned caps well-formed", capBad]);
+        const fails = checks.filter(function (c) {
+          return c[1];
+        });
+        lines.push(
+          "self-check: " +
+            (checks.length - fails.length) +
+            "/" +
+            checks.length +
+            " PASS" +
+            (fails.length
+              ? " — " +
+                fails
+                    .map(function (c) {
+                      return c[0] + " (" + String(c[1]).trim() + ")";
+                    })
+                    .join("; ")
+              : ""),
+        );
+      }
+      lines.push(
+        "tip: the function is TURNS LEFT per model — the hidden server-side daily limit. Flow discloses it in exactly two moments: model-picker usage rows (\"Leaving 6/16\" — canonical, parsed live into the per-model lines above) and the daily-limit notice when a model runs out (it carries the exact reset time — the tracker captures it verbatim above and learns the cap at that moment, so every day after starts from a known limit). Between prints, turns-left = print minus the clicks since it; turns are generation button clicks (exact) and images count only within 150s of a click. Nano Banana generations cost 0 Flow credits (support.google.com/flow/answer/16526234) — the wallet is the account-wide pool shared with Veo/Omni, reported for completeness; it has nothing to do with model runout.",
+      );
+    } catch (e) {
+      lines.push("report aborted: " + ((e && e.message) || e));
+    }
+    const text = lines.join("\n");
+    try {
+      console.info(text);
+    } catch (e) {}
+    try {
+      if (typeof GM_setClipboard === "function") {
+        GM_setClipboard(text, "text");
+        copied = !0;
+      }
+    } catch (e) {}
+    if (!copied)
+      try {
+        await navigator.clipboard.writeText(text);
+        copied = !0;
+      } catch (e) {}
+    try {
+      console.info(
+        "[Prompt Master] credit report " +
+          (copied ? "copied to your clipboard" : "printed above — copy it manually"),
+      );
+    } catch (e) {}
+  }
+
   function pickVisibleEditable(list, requireVisible = false) {
     if (!list || !list.length) return null;
     for (const el of list) {
@@ -9049,13 +13202,23 @@
     "PreviewPrompt",
     "DontShowAgain",
   ];
+  // v27.0.12: single source of truth for the running version, read from
+  // the userscript manager (GM_info) so the Gist backup payload and the
+  // boot console marker can never drift from the @version header again
+  // (the beta shipped a hardcoded marker quoting an older version). The
+  // string fallback only engages in a sandbox without GM_info — keep it
+  // in sync with the @version header above.
   const SCRIPT_VERSION =
     typeof GM_info !== "undefined" &&
     GM_info &&
     GM_info.script &&
     GM_info.script.version
       ? GM_info.script.version
-      : "27.2.1";
+      : "27.3.17";
+  // v27.0.12: canonical backup snapshot helper. The beta's Gist push
+  // called snapshotKeys() before it existed anywhere, so every "Sync Now"
+  // threw a ReferenceError; takeAutoBackup() now shares this one helper
+  // instead of its private inline copy of the same loop.
   async function snapshotKeys(keys) {
     const snapshot = {};
     for (const k of keys) {
@@ -9121,6 +13284,13 @@
   }
   async function findExistingBackupGist(pat) {
     const filename = "MyPrompt_Backup.mp.backup.json";
+    // v27.0.12: paginated discovery. The list endpoint caps at 100 gists
+    // per page, so a token owning more than 100 gists would have its
+    // backup living on page 2+ — a single-page scan would miss it and
+    // then fork a duplicate backup gist. Walk pages newest-first until
+    // the backup is found or a short page marks the end; the page cap
+    // (40 = 4000 gists) sits above GitHub's own listing ceiling and is
+    // purely a runaway guard.
     const MAX_GIST_PAGES = 40;
     const fetchPage = (page) =>
       new Promise((resolve, reject) => {
@@ -9608,6 +13778,11 @@
       },
     };
   })();
+  // v27.0.8: initKofiPatreonFeature() (a ko-fi.com page helper that
+  // appended a "Buy on Patreon" button to ko-fi shop items) was removed
+  // together with the ko-fi platform detection and every storefront /
+  // donation link in the UI. The script never @matched ko-fi.com, so the
+  // removal changes nothing on any supported page.
   function detectPlatform() {
     const e = window.location.hostname;
     return e.includes("chatgpt.com")
@@ -11164,6 +15339,8 @@
         (currentPlaceholderModal.remove(), (currentPlaceholderModal = null)),
       (isInitialized = !1));
   }
+  // v27.0.8: this line used to also call initKofiPatreonFeature() (removed);
+  // initGistIntegration() alone remains and is unchanged.
   initGistIntegration();
   async function initUI() {
     if (pageObserver) pageObserver.disconnect();
@@ -12137,9 +16314,45 @@
         // editor independently via findFlowComposerContainer() (anchor
         // cascade + PINHOLE + bottom-most visible editable), which this
         // branch no longer touches.
+        // v27.0.7: dock layout repaired — the pill now expands within the
+        // flex row (see FLOW_DOCK_CSS) instead of overlaying the trigger,
+        // the trigger forwards its click with stopPropagation (single menu
+        // toggle), and #pm-flow-dock is exempted from the global
+        // outside-click closer (see setupGlobalEventListeners).
+        // v27.0.8: pill capabilities are now copy / paste / prompts menu
+        // (see createPromptButton); the pill renders as a rectangular
+        // glass panel aligned with the dock (see FLOW_DOCK_CSS); and the
+        // "Prompt Master" label uses the Cinzel Decorative webfont loaded
+        // by ensureCinzelDecorativeFont(), invoked below at mount time.
+        // v27.0.9: the pill's Prompts button is swapped for a Settings
+        // button (see createDockSettingsButton) — the prompts pane is the
+        // dock trigger's own click target, so the pill's copy of it was
+        // redundant, while settings had no on-page entry point at all.
+        // v27.0.10: (a) all three pill buttons (copy / paste / settings)
+        // now park collapsed and slide out together on pill hover — the
+        // dock-scoped .mp-btn-settings rules in FLOW_DOCK_CSS give the
+        // gear the same satellite choreography as its neighbors, so the
+        // pill's parked face is plain glass instead of a static icon;
+        // (b) the dock lingers fully revealed for FLOW_DOCK_HIDE_DELAY_MS
+        // after the pointer leaves before retracting (see the
+        // mouseenter/mouseleave wiring below); (c) the dock chrome is
+        // true glass (translucent gradient + 18px backdrop blur +
+        // 1.5x saturate + specular insets); (d) the "Prompt Master"
+        // title glows cyan on trigger hover.
         const existingDock = document.getElementById("pm-flow-dock");
         if (existingDock) existingDock.remove();
         const pill = createPromptButton("left");
+        // v27.0.9: swap the freshly built pill's Prompts (main-slot) button
+        // for the Settings button. This happens before the pill is appended
+        // to the dock, so the mount below is the only code that ever sees
+        // the swapped pill; createPromptButton itself is untouched and every
+        // other platform still gets its Prompts button, which there is the
+        // sole inline entry point to the prompt menu. The replacement keeps
+        // the third slot of .mp-sliding-pill-container; v27.0.10 docks that
+        // slot into the same collapse/expand choreography as Copy/Paste
+        // (see the .mp-btn-settings rules in FLOW_DOCK_CSS), so the parked
+        // pill shows no static face and hover slides all three buttons out
+        // together.
         const mainSlotBtn = pill.querySelector(
           '[data-testid="composer-button-prompts"]',
         );
@@ -12156,6 +16369,22 @@
             trigger,
             FLOW_DOCK_GLYPH + '<span class="mp-dock-text">Prompt Master</span>',
           ),
+          // v27.0.7 FIX (double dispatch): initUI registers the menu-toggle
+          // click listener on the dock itself (clickable === btn === dock).
+          // Forwarding via .click() on an inner element delivers exactly ONE
+          // synthetic event to that listener per physical click, because
+          // stopPropagation() kills the original click here at the trigger —
+          // otherwise both the synthetic and the original click would bubble
+          // up and the toggle ran twice per click, opening/closing the menu
+          // nondeterministically (verified by dispatch trace in v27.0.7).
+          // v27.0.9: the forward used to target the pill's Prompts button;
+          // that slot is now the Settings button, which stops its own
+          // propagation and must never toggle the menu. The forward instead
+          // rides the pill's glass panel: the panel carries no click
+          // handlers of its own, so the synthetic click bubbles cleanly
+          // through the wrapper into the dock-level menu toggle — one
+          // physical click, one synthetic event, one toggle, exactly as
+          // before.
           (trigger.onclick = (e) => {
             e.stopPropagation();
             const panel = pill.querySelector(".mp-sliding-pill-container");
@@ -12169,8 +16398,23 @@
             (dockStyle.textContent = FLOW_DOCK_CSS),
             document.head.appendChild(dockStyle));
         }
+        // v27.0.8: fetch + inject the Cinzel Decorative face for the dock
+        // label (async, idempotent, silent fallback — see the function).
         ensureCinzelDecorativeFont();
         document.body.appendChild(dock);
+        // v27.0.10 FIX (dwell before hide): the reveal stays pure CSS
+        // (:hover keeps the instant slide-out and remains the graceful
+        // no-JS fallback), while the retract is now delayed — this wiring
+        // adds .mp-dock-open on enter, which holds the dock fully revealed
+        // via the FLOW_DOCK_CSS :hover/.mp-dock-open union selector after
+        // the pointer leaves. A pending hide fires only after
+        // FLOW_DOCK_HIDE_DELAY_MS (2.5-3s window) off-dock; any re-enter
+        // cancels it. While either of the dock's own panels (the prompt
+        // menu or the settings modal) is visible, the timer re-arms
+        // instead of retracting, so the dock never slides out from under
+        // a pane the user is working in; and if a re-init unmounted this
+        // dock instance (existingDock.remove() above), the timer's
+        // body-contains guard retires the loop silently.
         let dockHideTimer = null;
         const scheduleDockHide = () => {
           if (dockHideTimer) clearTimeout(dockHideTimer);
@@ -12195,6 +16439,12 @@
           }
         });
         dock.addEventListener("mouseleave", scheduleDockHide);
+        // v27.3.0/27.3.1: per-model credit tracker — glass chip at the
+        // pill's old spot inside the rich text field (anchor cascade:
+        // field → composer → model chip; see startFlowCreditTracker).
+        // Mounted independently of the dock and idempotent across
+        // re-inits, so a re-mount here never duplicates the engine.
+        startFlowCreditTracker();
         btn = dock;
         elementToInsert = dock;
         insertionPoint = document.body;
@@ -12629,6 +16879,9 @@
         insertionMethod = "handled_manually";
       }
       if (!btn || !insertionPoint) return;
+      // v27.0.2: inline suggestions are an enhancement — a failure here must
+      // never abort the rest of initUI (menu, modals, click handlers), which
+      // previously let any throw fall into the outer catch and wipe the UI.
       try {
         const editorEl =
           getEditableRoot(findPlatformEditor()) ||
@@ -13043,6 +17296,9 @@
         };
       isInitialized = true;
     } catch (error) {
+      // v27.0.2: never fail silently. If the prompt button already mounted,
+      // keep it visible and clickable (self-healing re-init on click) so a
+      // late-stage error can no longer make the whole UI disappear.
       console.warn("[Prompt Master] initUI error:", error);
       if (btn && btn.isConnected) {
         currentButton = btn;
@@ -13071,6 +17327,12 @@
       if (!currentMenu || !currentButton) return;
       if (
         ev.target.closest(
+          // v27.0.7: #pm-flow-dock added for the Flow dock mount — clicks on
+          // dock chrome (trigger, pill wrapper margins) toggle the menu via
+          // the dock-level listener; without this exemption the same click
+          // also landed here and insta-closed the menu it had just opened.
+          // The dock element only ever exists on Flow, so every other
+          // platform's outside-click behavior is byte-for-byte unchanged.
           '#prompt-menu-container, [data-testid="composer-button-prompts"], #pm-flow-dock',
         )
       )
@@ -13204,12 +17466,40 @@
       if (settingsModal.resetToCurrent) settingsModal.resetToCurrent();
       showModal(settingsModal);
     });
+    if (detectPlatform() === "flow") {
+      // v27.3.0: wipes the persisted per-model credit state (see
+      // startFlowCreditTracker); the live harvest re-fills it on the next
+      // tick. Registered only on Flow — the tracker is a Flow feature.
+      GM_registerMenuCommand("🔄 Reset Flow Credit Tracker", () => {
+        resetFlowCreditTracker();
+      });
+      // v27.3.3: on-demand diagnostics — forces a fresh scan, then
+      // prints + copies a one-paste report (engine/anchor/model,
+      // per-source counters, the persisted store, and every credit
+      // text visible right now), so a live-site miss is pinpointed
+      // from a single paste instead of another blind round.
+      GM_registerMenuCommand("📋 Flow Credits: Copy Report", () => {
+        reportFlowCreditTracker();
+      });
+      // v27.3.17: one click, machine verdict — see
+      // flowCreditDebugSelfTestImpl.
+      GM_registerMenuCommand("🧪 Flow Credits: Self-Test", () => {
+        flowCreditDebugSelfTestImpl();
+      });
+    }
+    // v27.0.8: the "🔧 Force mount Prompt Master UI" extension-menu command
+    // was removed on request; tryInit() below (plus the page observer)
+    // still cover every automatic re-mount path.
     await loadAIConfig();
     await loadGistConfig();
     await loadImportedThemes();
     await loadThemeConfig();
     injectGlobalStyles();
     setupGlobalEventListeners();
+    // v27.0.3: unmissable console marker — instantly tells you whether the
+    // script is running on this page (open DevTools → Console on flow.google.com).
+    // v27.0.12: the version now reads SCRIPT_VERSION (GM_info), so the
+    // marker can never lag the @version header again.
     console.log(
       `[Prompt Master] v${SCRIPT_VERSION} active — platform: ${detectPlatform() || "none (page not matched)"}`,
     );
