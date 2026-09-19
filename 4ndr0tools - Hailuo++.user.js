@@ -1,16 +1,22 @@
 // ==UserScript==
 // @name         4ndr0tools - Hailuo++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      5.0.0
+// @version      5.3.0
 // @author       4ndr0666
-// @description  Enterprise-grade, idempotent automation engine for HailuoAI featuring image/video processing, advanced mutation defense, comprehensive telemetry, prompt queuing, Spintax, and bulk operations.
+// @description  Enterprise-grade, idempotent automation engine for HailuoAI featuring automated queue management, asset fetching with tracked-download deduplication, an in-HUD Asset Bay thumbnail gallery (click-to-new-window, hover-playable previews, blob downloads that never navigate the session window), completion notifications, failure-card masking, API hard purge, and interactive asset links — hardened for the 2026-09 MiniMax H3 site generation and the hailuoai.video/agent chat surface.
 // @license      UNLICENSED - RED TEAM USE ONLY
-// @match        https://hailuoai.com/video
+// @match        https://hailuoai.com/video*
 // @match        https://hailuoai.video/*
 // @match        https://hailuoai.video/create*
+// @match        https://hailuoai.video/agent*
 // @icon         https://raw.githubusercontent.com/4ndr0666/4ndr0site/refs/heads/main/static/cyanglassarch.png
 // @grant        GM_getValue
 // @grant        GM_setValue
+// @grant        GM_xmlhttpRequest
+// @connect      cdn.hailuoai.video
+// @connect      hailuoai.video
+// @connect      hailuoai.com
+// @connect      cdn.hailuo.com
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Hailuo++.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Hailuo++.user.js
 // ==/UserScript==
@@ -69,26 +75,71 @@
         }
     }
 
+    class AssetBayStore {
+        constructor() {
+            this.items = [];
+            this.capturedIndex = new Set();
+        }
+        has(src) {
+            return Boolean(src) && this.capturedIndex.has(src);
+        }
+        capture(assetObj) {
+            if (!assetObj || !assetObj.src || !assetObj.src.startsWith('http')) return null;
+            if (this.capturedIndex.has(assetObj.src)) return null;
+            const item = {
+                src: assetObj.src,
+                type: assetObj.type === 'video' ? 'video' : 'image',
+                capturedAt: Date.now()
+            };
+            this.items.push(item);
+            this.capturedIndex.add(assetObj.src);
+            return item;
+        }
+        remove(src) {
+            this.capturedIndex.delete(src);
+            this.items = this.items.filter(item => item.src !== src);
+        }
+        clear() {
+            this.items = [];
+            this.capturedIndex.clear();
+        }
+        get size() {
+            return this.items.length;
+        }
+        latest(count) {
+            return this.items.slice(-count);
+        }
+    }
+
     class EngineConfiguration {
         constructor() {
+            this.scriptVersion = "5.3.0";
             this.selectors = {
-                navBarClass: "origin-right",
                 videoCardQueries: [
+                    "div[class*='group/video-card']",
                     ".grid-video-card",
                     ".media-card-wrapper",
                     "div[data-card-id]",
-                    "div[data-feed-id]"
+                    "div[data-feed-id]",
+                    "div.relative:has(> div[style*='padding-top'])",
+                    "div.mb-2.flex.w-max.max-w-full"
                 ],
-                createButton: "pink-gradient-btn",
+                createButtonQueries: [
+                    ".new-color-btn-bg",
+                    ".pink-gradient-btn"
+                ],
+                queueTextQueries: [
+                    "div[class*='content-center'][class*='text-center'][class*='font-medium']",
+                    ".relative.h-full.w-full.content-center.text-center.text-\\[13px\\].font-medium"
+                ],
+                progressTextQueries: [
+                    ".ant-progress-text",
+                    "[role='progressbar']",
+                    "div.loading-text-animation"
+                ],
                 deleteButton: "absolute right-[10px] top-3 z-[4] cursor-pointer",
                 deleteConfirmButton: "ant-btn-color-primary",
-                modalContent: "ant-modal-content",
-                queueText: "relative h-full w-full content-center text-center text-[13px] font-medium",
-                promptTextarea: '[data-slate-editor="true"], #video-create-textarea, textarea',
-                submitBtn: '.min-w-\\[110px\\] button, button:last-of-type',
-                uploadInput: '.create-bar-main input[type="file"], .ant-upload input[type="file"], input[type="file"]',
-                uploadedImage: 'img[alt="uploaded image"]',
-                progressBars: '[role="progressbar"]'
+                modalContent: "ant-modal-content"
             };
             this.constants = {
                 maxQueueSize: 5,
@@ -102,7 +153,8 @@
                 "It might not meet our community guidelines, please try a different content.",
                 "Text content violated Community Guidelines, please revise and try again.",
                 "Generation failed because video content violated Community Guidelines.",
-                "Generation failed because content violated Community Guidelines."
+                "Generation failed because content violated Community Guidelines.",
+                "Image Generation unknown error"
             ];
             this.censoredStrings = [
                 "Failure to pass the review.",
@@ -129,6 +181,9 @@
             this.host = null;
             this.shadow = null;
             this.hudContainer = null;
+            this.orchestrator = null;
+            this.assetBayStore = new AssetBayStore();
+            this.activeBayHoverPreview = null;
         }
 
         init(orchestratorInstance) {
@@ -136,6 +191,7 @@
                 Logger.warn("UI Root initialization intercepted: component already rendered.");
                 return;
             }
+            this.orchestrator = orchestratorInstance;
             try {
                 this.host = document.createElement('div');
                 this.host.id = 'andr0666-ui-root';
@@ -377,6 +433,223 @@
                   background: var(--accent-cyan);
                   color: var(--bg-dark-base);
                 }
+                #asset-bay-bar {
+                  display: none;
+                  flex-direction: column;
+                  gap: 6px;
+                  margin-bottom: 12px;
+                  border: 1px solid var(--accent-cyan-border-idle);
+                  border-radius: 8px;
+                  padding: 8px;
+                  background: rgba(0, 0, 0, 0.35);
+                }
+                #asset-bay-bar.captured-flash {
+                  animation: bayCaptureFlash 900ms ease;
+                }
+                @keyframes bayCaptureFlash {
+                  0%, 100% { box-shadow: none; border-color: var(--accent-cyan-border-idle); }
+                  30% { box-shadow: 0 0 16px var(--glow-cyan-active); border-color: var(--accent-cyan); }
+                }
+                .bay-bar-head {
+                  display: flex;
+                  align-items: center;
+                  justify-content: space-between;
+                }
+                .bay-bar-title {
+                  font-size: 0.62rem;
+                  text-transform: uppercase;
+                  letter-spacing: 0.12em;
+                  color: var(--accent-cyan);
+                  font-weight: bold;
+                }
+                #bay-toggle-btn {
+                  background: rgba(0, 229, 255, 0.1);
+                  border: 1px solid rgba(0, 229, 255, 0.3);
+                  color: var(--accent-cyan);
+                  font-size: 0.62rem;
+                  font-weight: bold;
+                  border-radius: 5px;
+                  padding: 2px 8px;
+                  cursor: pointer;
+                  font-family: var(--font-body);
+                }
+                #bay-toggle-btn:hover {
+                  background: rgba(0, 229, 255, 0.25);
+                  color: #ffffff;
+                }
+                .bay-strip {
+                  display: flex;
+                  gap: 6px;
+                  overflow-x: auto;
+                  padding-bottom: 2px;
+                }
+                .bay-strip::-webkit-scrollbar { height: 4px; }
+                .bay-strip::-webkit-scrollbar-thumb { background: var(--accent-cyan-border-hover); border-radius: 2px; }
+                .bay-thumb {
+                  position: relative;
+                  flex: 0 0 auto;
+                  width: 56px;
+                  height: 56px;
+                  border-radius: 6px;
+                  overflow: hidden;
+                  cursor: pointer;
+                  border: 1px solid var(--accent-cyan-border-idle);
+                  background: #050A0F;
+                  transition: border-color 200ms ease, box-shadow 200ms ease;
+                }
+                .bay-thumb:hover {
+                  border-color: var(--accent-cyan);
+                  box-shadow: 0 0 10px var(--glow-cyan-active);
+                }
+                .bay-thumb img, .bay-thumb video {
+                  width: 100%;
+                  height: 100%;
+                  object-fit: cover;
+                  display: block;
+                }
+                .bay-type-badge {
+                  position: absolute;
+                  bottom: 2px;
+                  right: 2px;
+                  font-size: 0.5rem;
+                  font-weight: bold;
+                  letter-spacing: 0.05em;
+                  color: var(--text-primary);
+                  background: rgba(5, 10, 15, 0.85);
+                  border: 1px solid var(--accent-cyan-border-idle);
+                  border-radius: 3px;
+                  padding: 1px 3px;
+                  pointer-events: none;
+                }
+                .bay-expired img, .bay-expired video { visibility: hidden; }
+                .bay-expired::after {
+                  content: 'EXPIRED';
+                  position: absolute;
+                  inset: 0;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 0.55rem;
+                  letter-spacing: 0.08em;
+                  color: var(--text-secondary);
+                  background: repeating-linear-gradient(45deg, rgba(158, 158, 158, 0.08) 0 6px, transparent 6px 12px);
+                }
+                #asset-bay-panel {
+                  display: none;
+                  margin-top: 12px;
+                  border: 1px solid var(--accent-cyan-border-idle);
+                  border-radius: 8px;
+                  padding: 10px;
+                  background: rgba(0, 0, 0, 0.4);
+                }
+                #asset-bay-panel.open { display: block; }
+                .bay-panel-header {
+                  display: flex;
+                  align-items: center;
+                  justify-content: space-between;
+                  margin-bottom: 8px;
+                  gap: 8px;
+                }
+                .bay-panel-title {
+                  font-size: 0.62rem;
+                  text-transform: uppercase;
+                  letter-spacing: 0.12em;
+                  color: var(--accent-cyan);
+                  font-weight: bold;
+                }
+                .bay-panel-tools { display: flex; gap: 6px; }
+                .bay-tool-btn {
+                  background: rgba(255, 170, 0, 0.1);
+                  border: 1px solid rgba(255, 170, 0, 0.3);
+                  color: #ffaa00;
+                  font-size: 0.6rem;
+                  font-weight: bold;
+                  text-transform: uppercase;
+                  letter-spacing: 0.06em;
+                  border-radius: 5px;
+                  padding: 3px 8px;
+                  cursor: pointer;
+                  font-family: var(--font-body);
+                }
+                .bay-tool-btn:hover {
+                  background: rgba(255, 170, 0, 0.25);
+                  border-color: #ffaa00;
+                  color: #ffffff;
+                }
+                .bay-grid {
+                  display: grid;
+                  grid-template-columns: repeat(3, 1fr);
+                  gap: 8px;
+                  max-height: 38vh;
+                  overflow-y: auto;
+                }
+                .bay-card {
+                  position: relative;
+                  aspect-ratio: 1 / 1;
+                  border-radius: 8px;
+                  overflow: hidden;
+                  cursor: pointer;
+                  border: 1px solid var(--accent-cyan-border-idle);
+                  background: #050A0F;
+                  transition: border-color 200ms ease, box-shadow 200ms ease;
+                }
+                .bay-card:hover {
+                  border-color: var(--accent-cyan);
+                  box-shadow: 0 0 10px var(--glow-cyan-active);
+                }
+                .bay-card img, .bay-card video {
+                  width: 100%;
+                  height: 100%;
+                  object-fit: cover;
+                  display: block;
+                }
+                .bay-card-actions {
+                  position: absolute;
+                  bottom: 0;
+                  left: 0;
+                  right: 0;
+                  display: flex;
+                  opacity: 0;
+                  transition: opacity 200ms ease;
+                }
+                .bay-card:hover .bay-card-actions, .bay-card-actions:focus-within { opacity: 1; }
+                .bay-action {
+                  flex: 1;
+                  text-align: center;
+                  font-size: 0.58rem;
+                  font-weight: bold;
+                  letter-spacing: 0.05em;
+                  padding: 4px 0;
+                  color: var(--text-primary);
+                  background: rgba(5, 10, 15, 0.88);
+                  border: none;
+                  border-top: 1px solid var(--accent-cyan-border-idle);
+                  cursor: pointer;
+                  font-family: var(--font-body);
+                }
+                .bay-action:hover { color: var(--accent-cyan); background: rgba(0, 229, 255, 0.12); }
+                .bay-empty-note {
+                  font-size: 0.62rem;
+                  line-height: 1.5;
+                  color: var(--text-secondary);
+                  display: none;
+                }
+                .bay-hover-preview {
+                  position: fixed;
+                  z-index: 2147483646;
+                  border: 2px solid var(--accent-cyan);
+                  border-radius: 8px;
+                  overflow: hidden;
+                  background: #050A0F;
+                  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.9);
+                  pointer-events: none;
+                }
+                .bay-hover-preview img, .bay-hover-preview video {
+                  width: 100%;
+                  height: 100%;
+                  object-fit: contain;
+                  display: block;
+                }
             `;
             this.shadow.appendChild(style);
 
@@ -403,21 +676,39 @@
                         </svg>
                         <span>4ndr0tools PRO</span>
                     </div>
-                    <div style="font-size: 0.6rem; color: var(--accent-cyan); font-weight: bold;">v4.4.0-Ψ</div>
+                    <div style="font-size: 0.6rem; color: var(--accent-cyan); font-weight: bold;">v${config.scriptVersion}</div>
                 </div>
                 <div class="telemetry-row">
                     <span>TRACKED ARCHIVE SIZE:</span>
                     <span id="telemetry-tracker">0 ASSETS</span>
                 </div>
+                <div id="asset-bay-bar">
+                    <div class="bay-bar-head">
+                        <span class="bay-bar-title">Asset Bay</span>
+                        <button id="bay-toggle-btn" title="Expand / collapse the captured asset gallery">0</button>
+                    </div>
+                    <div class="bay-strip" id="bay-strip"></div>
+                </div>
                 <div class="action-matrix">
                     <div class="mechanical-switch" id="sw-gen" data-tooltip="Monitors the generation queue slots. Automatically pushes the primary creation click triggers whenever free space opens up."><span>Auto Queue Click</span><div class="switch-indicator"></div></div>
-                    <div class="mechanical-switch" id="sw-dl" data-tooltip="Scans completed video cards and directly hooks site asset downloader download pipelines. Cross-checks track storage states to preserve bandwidth."><span>Auto Fetch Asset</span><div class="switch-indicator"></div></div>
+                    <div class="mechanical-switch" id="sw-dl" data-tooltip="Scans completed media and hooks native site download pipelines where present; assets without a native control (agent chat) are captured into the Asset Bay as clickable thumbnails. The active session window is never navigated away."><span>Auto Fetch Asset</span><div class="switch-indicator"></div></div>
                     <div class="mechanical-switch" id="sw-notif" data-tooltip="Issues system-level alerts when generation tracking markers cross 90% parameters on inactive browser configurations."><span>Notify Completion</span><div class="switch-indicator"></div></div>
                     <div class="mechanical-switch" id="sw-del" data-tooltip="Hard-deletes generation instances that have triggered site guidelines or structural processing anomalies instantly via native API simulation vectors."><span>API Hard Purge</span><div class="switch-indicator"></div></div>
                     <div class="mechanical-switch" id="sw-dom" data-tooltip="Masks failed cards from your layout locally without throwing trace signals, preserving screen estate context."><span>Mask Fail Cards</span><div class="switch-indicator"></div></div>
                     <div class="mechanical-switch" id="sw-notif-hov" data-tooltip="Injects non-destructive asset address anchor triggers onto processing matrix modules. Hovering handles automatic floating video view cache playback."><span>Interactive Links</span><div class="switch-indicator"></div></div>
                     <button class="sys-btn help-btn" id="sys-help">Usage Guide (--help)</button>
                     <button class="sys-btn" id="sys-clear">Purge Database Cache</button>
+                </div>
+                <div id="asset-bay-panel">
+                    <div class="bay-panel-header">
+                        <span class="bay-panel-title">Captured Assets</span>
+                        <div class="bay-panel-tools">
+                            <button id="bay-download-all" class="bay-tool-btn" title="Download every bay asset via the blob pipeline (never navigates this window)">Save All</button>
+                            <button id="bay-clear" class="bay-tool-btn" title="Clear the bay gallery">Clear</button>
+                        </div>
+                    </div>
+                    <div class="bay-grid" id="bay-grid"></div>
+                    <div class="bay-empty-note" id="bay-empty-note">No captures yet. Enable Auto Fetch Asset; completed media will populate here as clickable thumbnails.</div>
                 </div>
             `;
             this.shadow.appendChild(this.hudContainer);
@@ -434,7 +725,11 @@
                         </div>
                         <div class="help-item">
                             <strong>[Auto Fetch Asset]</strong>
-                            Idempotently scans completed video nodes to click downloads, routing raw download anchors if local triggers are blocked.
+                            Idempotently scans completed media. Where the page exposes a native download control it is clicked directly; otherwise the asset is captured into the Asset Bay as a clickable thumbnail that opens in a new window. The active session window is never navigated away.
+                        </div>
+                        <div class="help-item">
+                            <strong>[Asset Bay]</strong>
+                            In-HUD thumbnail gallery of auto-captured assets. Click a thumbnail to open the asset in a new window; hover for a playable preview; expand the bay for SAVE (blob download, zero navigation), COPY URL, and SAVE ALL actions.
                         </div>
                         <div class="help-item">
                             <strong>[Notify Completion]</strong>
@@ -488,16 +783,53 @@
             const overlay = this.shadow.getElementById('help-modal-overlay');
             this.shadow.getElementById('sys-help').addEventListener('click', () => { overlay.style.display = 'flex'; });
             this.shadow.getElementById('close-help').addEventListener('click', () => { overlay.style.display = 'none'; });
+
+            this.shadow.getElementById('bay-toggle-btn').addEventListener('click', () => {
+                this.renderAssetBay(true);
+                this.shadow.getElementById('asset-bay-panel').classList.toggle('open');
+            });
+            this.shadow.getElementById('bay-clear').addEventListener('click', () => {
+                this.assetBayStore.clear();
+                this.renderAssetBay();
+                Logger.info("Asset bay gallery cleared by operator directive.");
+            });
+            this.shadow.getElementById('bay-download-all').addEventListener('click', async () => {
+                const pending = this.assetBayStore.items.filter(item => !stateManager.has(item.src));
+                if (!pending.length) {
+                    Logger.info("Save All directive skipped: every bay asset is already present in the tracked archive.");
+                    return;
+                }
+                Logger.info(`Save All directive accepted for ${pending.length} bay asset(s); dispatching sequential blob downloads.`);
+                for (const item of pending) {
+                    await this.orchestrator.downloadAssetViaBlob(item);
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                }
+            });
         }
 
         bindDragMechanics() {
             const container = this.hudContainer;
             const handle = this.shadow.getElementById('hud-drag-handle');
+            const safeStorageGet = (key) => {
+                try {
+                    return localStorage.getItem(key);
+                } catch (e) {
+                    Logger.warn("HUD persisted geometry unavailable in this storage context.", e);
+                    return null;
+                }
+            };
+            const safeStorageSet = (key, value) => {
+                try {
+                    localStorage.setItem(key, value);
+                } catch (e) {
+                    Logger.warn("HUD geometry persistence rejected by storage quota policy.", e);
+                }
+            };
             let active = false;
             let startX = 0, startY = 0;
             let initialX = 0, initialY = 0;
-            const storedLeft = localStorage.getItem('4ndr0_pro_hud_left');
-            const storedTop = localStorage.getItem('4ndr0_pro_hud_top');
+            const storedLeft = safeStorageGet('4ndr0_pro_hud_left');
+            const storedTop = safeStorageGet('4ndr0_pro_hud_top');
             if (storedLeft && storedTop) {
                 container.style.bottom = 'auto';
                 container.style.right = 'auto';
@@ -537,12 +869,184 @@
                 if (active) {
                     active = false;
                     container.style.transition = 'border-color 200ms ease, box-shadow 200ms ease';
-                    localStorage.setItem('4ndr0_pro_hud_left', container.style.left);
-                    localStorage.setItem('4ndr0_pro_hud_top', container.style.top);
+                    safeStorageSet('4ndr0_pro_hud_left', container.style.left);
+                    safeStorageSet('4ndr0_pro_hud_top', container.style.top);
                     document.removeEventListener('mousemove', dragHUD);
                     document.removeEventListener('mouseup', dropHUD);
                 }
             };
+        }
+
+        captureAssetIntoBay(assetObj) {
+            const item = this.assetBayStore.capture(assetObj);
+            if (!item) return false;
+            this.renderAssetBay();
+            const bar = this.shadow.getElementById('asset-bay-bar');
+            if (bar) {
+                bar.classList.remove('captured-flash');
+                void bar.offsetWidth;
+                bar.classList.add('captured-flash');
+            }
+            Logger.info(`Asset captured into bay (clickable thumbnail ready; opens in a new window): ${item.src}`);
+            return true;
+        }
+
+        renderAssetBay(expandPanel) {
+            const bar = this.shadow.getElementById('asset-bay-bar');
+            const strip = this.shadow.getElementById('bay-strip');
+            const grid = this.shadow.getElementById('bay-grid');
+            const toggle = this.shadow.getElementById('bay-toggle-btn');
+            const emptyNote = this.shadow.getElementById('bay-empty-note');
+            const panel = this.shadow.getElementById('asset-bay-panel');
+            if (!bar || !strip || !grid) return;
+            const store = this.assetBayStore;
+            bar.style.display = store.size ? 'flex' : 'none';
+            if (toggle) toggle.textContent = String(store.size);
+            strip.innerHTML = '';
+            for (const item of store.latest(12)) strip.appendChild(this.createBayThumbNode(item, false));
+            grid.innerHTML = '';
+            for (const item of store.items) grid.appendChild(this.createBayThumbNode(item, true));
+            if (emptyNote) emptyNote.style.display = store.size ? 'none' : 'block';
+            if (!store.size && panel) panel.classList.remove('open');
+            if (expandPanel && store.size && panel) panel.classList.add('open');
+        }
+
+        createBayThumbNode(item, isLargeCard) {
+            const thumb = document.createElement('div');
+            thumb.className = isLargeCard ? 'bay-card' : 'bay-thumb';
+            thumb.title = `${item.type === 'video' ? 'Video' : 'Image'} asset - click opens in a new window${isLargeCard ? '; hover reveals SAVE and COPY' : ''}`;
+            let mediaNode;
+            if (item.type === 'video') {
+                mediaNode = document.createElement('video');
+                mediaNode.src = item.src;
+                mediaNode.muted = true;
+                mediaNode.preload = 'metadata';
+                mediaNode.playsInline = true;
+                mediaNode.setAttribute('disablepictureinpicture', '');
+            } else {
+                mediaNode = document.createElement('img');
+                mediaNode.src = item.src;
+                mediaNode.alt = 'captured asset thumbnail';
+                mediaNode.loading = 'lazy';
+            }
+            mediaNode.addEventListener('error', () => { thumb.classList.add('bay-expired'); });
+            thumb.appendChild(mediaNode);
+            const badge = document.createElement('span');
+            badge.className = 'bay-type-badge';
+            badge.textContent = item.type === 'video' ? 'MP4' : 'IMG';
+            thumb.appendChild(badge);
+            thumb.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.openAssetInNewWindow(item.src);
+            });
+            if (isLargeCard) {
+                const actions = document.createElement('div');
+                actions.className = 'bay-card-actions';
+                const saveBtn = document.createElement('button');
+                saveBtn.type = 'button';
+                saveBtn.className = 'bay-action';
+                saveBtn.textContent = 'SAVE';
+                saveBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    saveBtn.textContent = '····';
+                    const dispatched = await this.orchestrator.downloadAssetViaBlob(item);
+                    saveBtn.textContent = dispatched ? 'SAVED' : 'NEW WIN';
+                    setTimeout(() => { saveBtn.textContent = 'SAVE'; }, 2500);
+                });
+                const copyBtn = document.createElement('button');
+                copyBtn.type = 'button';
+                copyBtn.className = 'bay-action';
+                copyBtn.textContent = 'COPY';
+                copyBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.copyAssetUrl(item.src, copyBtn);
+                });
+                actions.appendChild(saveBtn);
+                actions.appendChild(copyBtn);
+                thumb.appendChild(actions);
+            }
+            thumb.addEventListener('mouseenter', () => { this.showBayHoverPreview(thumb, item); });
+            thumb.addEventListener('mouseleave', () => { this.hideBayHoverPreview(); });
+            return thumb;
+        }
+
+        showBayHoverPreview(thumb, item) {
+            this.hideBayHoverPreview();
+            const preview = document.createElement('div');
+            preview.className = 'bay-hover-preview';
+            const rect = thumb.getBoundingClientRect();
+            const previewWidth = Math.min(320, window.innerWidth - 40);
+            const previewHeight = Math.min(240, window.innerHeight - 40);
+            let left = rect.left - previewWidth - 12;
+            if (left < 10) left = Math.min(rect.right + 12, Math.max(10, window.innerWidth - previewWidth - 10));
+            const top = Math.max(10, Math.min(rect.top, window.innerHeight - previewHeight - 10));
+            preview.style.left = `${left}px`;
+            preview.style.top = `${top}px`;
+            preview.style.width = `${previewWidth}px`;
+            preview.style.height = `${previewHeight}px`;
+            if (item.type === 'video') {
+                const videoEl = document.createElement('video');
+                videoEl.src = item.src;
+                videoEl.autoplay = true;
+                videoEl.muted = true;
+                videoEl.loop = true;
+                videoEl.playsInline = true;
+                preview.appendChild(videoEl);
+            } else {
+                const imgEl = document.createElement('img');
+                imgEl.src = item.src;
+                imgEl.alt = 'captured asset preview';
+                preview.appendChild(imgEl);
+            }
+            this.shadow.appendChild(preview);
+            this.activeBayHoverPreview = preview;
+        }
+
+        hideBayHoverPreview() {
+            if (this.activeBayHoverPreview) {
+                this.activeBayHoverPreview.remove();
+                this.activeBayHoverPreview = null;
+            }
+        }
+
+        openAssetInNewWindow(src) {
+            if (!src || !src.startsWith('http')) {
+                Logger.warn("Bay dispatch rejected: asset source is not an HTTP location context.");
+                return;
+            }
+            const opened = window.open(src, '_blank', 'noopener');
+            if (!opened) Logger.warn("New-window dispatch was blocked by the popup policy; focus the page and click the thumbnail again.");
+        }
+
+        copyAssetUrl(src, sourceButton) {
+            const reflectResult = (label) => {
+                if (sourceButton) {
+                    const originalLabel = sourceButton.textContent;
+                    sourceButton.textContent = label;
+                    setTimeout(() => { sourceButton.textContent = originalLabel; }, 2000);
+                }
+            };
+            const fallbackCopy = () => {
+                try {
+                    const scratch = document.createElement('textarea');
+                    scratch.value = src;
+                    scratch.style.position = 'fixed';
+                    scratch.style.opacity = '0';
+                    document.body.appendChild(scratch);
+                    scratch.select();
+                    const copied = document.execCommand('copy');
+                    document.body.removeChild(scratch);
+                    reflectResult(copied ? 'COPIED' : 'BLOCKED');
+                } catch (e) {
+                    reflectResult('BLOCKED');
+                    Logger.warn("Clipboard fallback transcription rejected by the document context.", e);
+                }
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(src).then(() => reflectResult('COPIED')).catch(fallbackCopy);
+            } else {
+                fallbackCopy();
+            }
         }
 
         updateTelemetryTracker(value) {
@@ -559,7 +1063,7 @@
         }
 
         bootstrap() {
-            Logger.info("Bootstrapping core orchestration parameters.");
+            Logger.info(`Bootstrapping core orchestration parameters. Build ${config.scriptVersion}.`);
             this.uiFactory.init(this);
             this.syncTelemetryDisplay();
             this.initMutationDefense();
@@ -574,6 +1078,10 @@
 
         initMutationDefense() {
             if (this.observer) this.observer.disconnect();
+            if (this.observerDebounceTimer) {
+                clearTimeout(this.observerDebounceTimer);
+                this.observerDebounceTimer = null;
+            }
             this.observer = new MutationObserver((mutations) => {
                 let dynamicTriggerNeeded = false;
                 for (const mutation of mutations) {
@@ -582,9 +1090,12 @@
                         break;
                     }
                 }
-                if (dynamicTriggerNeeded) {
+                if (!dynamicTriggerNeeded) return;
+                if (this.observerDebounceTimer) clearTimeout(this.observerDebounceTimer);
+                this.observerDebounceTimer = setTimeout(() => {
+                    this.observerDebounceTimer = null;
                     this.executeLoopIteration();
-                }
+                }, 250);
             });
             this.observer.observe(document.body, { childList: true, subtree: true });
             Logger.info("MutationObserver tracking matrix activated.");
@@ -616,15 +1127,20 @@
         }
 
         inspectDocumentTitleState() {
-            const progressNodes = Array.from(document.querySelectorAll(".ant-progress-text"));
-            if (!progressNodes.length) {
+            const progressNodes = new Set();
+            for (const selector of config.selectors.progressTextQueries) {
+                document.querySelectorAll(selector).forEach(node => progressNodes.add(node));
+            }
+            if (!progressNodes.size) {
                 document.title = "Ready";
                 return;
             }
-            const activePercentages = progressNodes.map(node => {
-                const check = node.innerText?.match(/(\d+)/);
-                return check ? Number(check[1]) : 0;
-            }).filter(num => !isNaN(num));
+            const activePercentages = Array.from(progressNodes).map(node => {
+                const ariaValue = Number(node.getAttribute('aria-valuenow'));
+                if (!isNaN(ariaValue) && ariaValue > 0) return ariaValue;
+                const check = node.textContent?.match(/(\d+)/);
+                return check ? Number(check[1]) : null;
+            }).filter(num => num !== null && !isNaN(num));
             const maxProgress = activePercentages.sort((a, b) => b - a)[0];
             if (maxProgress !== undefined && !isNaN(maxProgress)) {
                 document.title = `[${maxProgress}%]`;
@@ -639,11 +1155,130 @@
             }
         }
 
+        resolveCreateControl() {
+            for (const selector of config.selectors.createButtonQueries) {
+                const btn = document.querySelector(selector);
+                if (btn) return btn;
+            }
+            const byLabel = Array.from(document.querySelectorAll('button')).find(btn => {
+                const label = (btn.innerText || '').trim().toLowerCase();
+                return label === 'create' || label === 'generate';
+            });
+            return byLabel || null;
+        }
+
+        isCreateControlDisabled(btn) {
+            if (!btn) return true;
+            if (btn.disabled === true) return true;
+            if (btn.getAttribute('aria-disabled') === 'true') return true;
+            if (btn.classList.contains('opacity-60')) return true;
+            if (btn.parentElement && btn.parentElement.classList.contains('opacity-60')) return true;
+            try {
+                if (getComputedStyle(btn).pointerEvents === 'none') return true;
+            } catch (e) {
+                Logger.debug("Computed style probe rejected by rendering context.", e);
+            }
+            return false;
+        }
+
         safelyFetchQueueMetrics() {
-            const el = document.getElementsByClassName(config.selectors.queueText)?.[0];
-            if (!el) return false;
-            const contextText = el.textContent?.trim();
-            return contextText === `${config.constants.maxQueueSize}` || contextText === '6';
+            for (const selector of config.selectors.queueTextQueries) {
+                const el = document.querySelector(selector);
+                if (!el) continue;
+                const contextText = el.textContent?.trim();
+                if (!contextText) continue;
+                const match = contextText.match(/(\d+)\s*(?:\/\s*(\d+))?/);
+                if (!match) continue;
+                const used = Number(match[1]);
+                if (match[2] !== undefined) {
+                    if (used >= Number(match[2])) return true;
+                } else if (used >= config.constants.maxQueueSize) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        composeAssetFilename(assetObj) {
+            const defaultExtension = assetObj.type === 'video' ? '.mp4' : '.png';
+            let stem = assetObj.type ? String(assetObj.type) : 'asset';
+            try {
+                const parsed = new URL(assetObj.src, location.href);
+                const segments = parsed.pathname.split('/').filter(Boolean);
+                if (segments.length) {
+                    const rawStem = segments[segments.length - 1].replace(/\.[^.]+$/, '');
+                    if (rawStem) stem = rawStem;
+                }
+                const extensionMatch = parsed.pathname.match(/\.(jpe?g|png|webp|gif|mp4|webm|mov)$/i);
+                const extension = extensionMatch ? extensionMatch[0].toLowerCase() : defaultExtension;
+                stem = stem.replace(/[^A-Za-z0-9_-]+/g, '-').slice(0, 48) || 'asset';
+                return `hailuo-${stem}-${Date.now()}${extension}`;
+            } catch (e) {
+                Logger.debug("Filename derivation rejected; using timestamped generic stem.", e);
+                return `hailuo-${stem}-${Date.now()}${defaultExtension}`;
+            }
+        }
+
+        async downloadAssetViaBlob(assetObj) {
+            const filename = this.composeAssetFilename(assetObj);
+            try {
+                let blobPayload = null;
+                if (typeof GM_xmlhttpRequest === 'function') {
+                    blobPayload = await new Promise((resolve, reject) => {
+                        GM_xmlhttpRequest({
+                            method: 'GET',
+                            url: assetObj.src,
+                            responseType: 'blob',
+                            timeout: 60000,
+                            onload: (response) => {
+                                if (response.status >= 200 && response.status < 300 && response.response instanceof Blob) {
+                                    resolve(response.response);
+                                } else {
+                                    reject(new Error(`GM transport returned HTTP ${response.status}`));
+                                }
+                            },
+                            onerror: () => reject(new Error('GM transport errored (blocked or offline)')),
+                            ontimeout: () => reject(new Error('GM transport timed out'))
+                        });
+                    });
+                } else {
+                    const response = await fetch(assetObj.src, { mode: 'cors', credentials: 'omit' });
+                    if (!response.ok) throw new Error(`Fetch returned HTTP ${response.status}`);
+                    blobPayload = await response.blob();
+                }
+                const objectUrl = URL.createObjectURL(blobPayload);
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.href = objectUrl;
+                downloadAnchor.download = filename;
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                document.body.removeChild(downloadAnchor);
+                setTimeout(() => { URL.revokeObjectURL(objectUrl); }, 30000);
+                stateManager.add(assetObj.src);
+                this.syncTelemetryDisplay();
+                Logger.info(`Bay asset download dispatched via blob pipeline (zero navigation): ${filename}`);
+                return true;
+            } catch (transportError) {
+                Logger.warn('Blob download pipeline rejected; escalating asset to a new window instead (the active session window is never navigated).', { src: assetObj.src, reason: String((transportError && transportError.message) || transportError) });
+                window.open(assetObj.src, '_blank', 'noopener');
+                return false;
+            }
+        }
+
+        resolveDownloadControl(card) {
+            if (!card) return null;
+            const legacyPathBtn = card.querySelector('button svg path[d*="5.24473"]')?.closest('button');
+            if (legacyPathBtn) return legacyPathBtn;
+            const candidates = Array.from(card.querySelectorAll('button, [role="button"]'));
+            const labeledBtn = candidates.find(el => {
+                const label = `${el.getAttribute('aria-label') || ''} ${el.getAttribute('title') || ''} ${el.dataset.tooltip || ''}`.toLowerCase();
+                return label.includes('download');
+            });
+            if (labeledBtn) return labeledBtn;
+            const textBtn = candidates.find(el => (el.textContent || '').trim().toLowerCase() === 'download');
+            if (textBtn) return textBtn;
+            const classedBtn = candidates.find(el => (el.className || '').toString().toLowerCase().includes('download'));
+            return classedBtn || null;
         }
 
         processAccountTargetPurge(videoCard) {
@@ -665,8 +1300,8 @@
             this.syncTelemetryDisplay();
             this.inspectDocumentTitleState();
             if (runtimeSwitches.autoGen) {
-                const targetBtn = document.querySelector(`.${config.selectors.createButton}`);
-                if (targetBtn && !this.safelyFetchQueueMetrics() && !targetBtn.parentElement?.classList.contains('opacity-60')) {
+                const targetBtn = this.resolveCreateControl();
+                if (targetBtn && !this.safelyFetchQueueMetrics() && !this.isCreateControlDisabled(targetBtn)) {
                     targetBtn.click();
                     Logger.info("Automated queue click transaction triggered successfully.");
                 }
@@ -677,8 +1312,8 @@
             cards.forEach(card => {
                 if (!card || !(card instanceof HTMLElement)) return;
                 const textLines = card.innerText ? card.innerText.split("\n").map(l => l.trim()) : ["", ""];
-                const patternMatchA = config.violationStrings.includes(textLines[0]) || config.violationStrings.includes(textLines[1]);
-                const patternMatchB = config.censoredStrings.includes(textLines[0]) || config.censoredStrings.includes(textLines[1]);
+                const patternMatchA = config.violationStrings.some(v => textLines.includes(v));
+                const patternMatchB = config.censoredStrings.some(c => textLines.includes(c));
                 if (patternMatchA) {
                     if (runtimeSwitches.purgeAccount && !eliminationEventLock && !document.querySelector(`.${config.selectors.modalContent}`)) {
                         this.processAccountTargetPurge(card);
@@ -701,10 +1336,14 @@
                     if (runtimeSwitches.autoGrab) {
                         const assetObj = getAssetIdentifier(card);
                         if (assetObj && assetObj.src && !stateManager.has(assetObj.src)) {
-                            const nativeBtn = card.querySelector('button svg path[d*="5.24473"]')?.closest('button');
+                            const nativeBtn = this.resolveDownloadControl(card);
                             if (nativeBtn) {
                                 nativeBtn.click();
                                 stateManager.add(assetObj.src);
+                            } else if (assetObj.src.startsWith('http')) {
+                                this.uiFactory.captureAssetIntoBay(assetObj);
+                            } else {
+                                Logger.warn("Auto Fetch active but no download control resolved for asset; deferring to next sweep.", assetObj.src);
                             }
                         }
                     }
@@ -728,24 +1367,22 @@
                 if (assetObj.type === 'video') {
                     const videoElement = card.querySelector("video");
                     if (videoElement) {
+                        const previousMutedState = videoElement.muted;
+                        videoElement.muted = true;
                         videoElement.play().then(() => {
-                            setTimeout(() => { try { videoElement.pause(); } catch(e) {} }, 1500);
-                        }).catch(() => {});
+                            setTimeout(() => {
+                                try { videoElement.pause(); videoElement.muted = previousMutedState; } catch(e) {}
+                            }, 1500);
+                        }).catch(() => { videoElement.muted = previousMutedState; });
                     }
                 }
                 if (runtimeSwitches.autoGrab && !stateManager.has(assetObj.src)) {
-                    const directDownloadBtn = card.querySelector('button svg path[d*="5.24473"]')?.closest('button');
+                    const directDownloadBtn = this.resolveDownloadControl(card);
                     if (directDownloadBtn) {
                         directDownloadBtn.click();
                         stateManager.add(assetObj.src);
                     } else if (assetObj.src.startsWith('http')) {
-                        const fallbackAnchor = document.createElement('a');
-                        fallbackAnchor.href = assetObj.src;
-                        fallbackAnchor.download = `${assetObj.type}-${Date.now()}` + (assetObj.type === 'image' ? '.png' : '.mp4');
-                        document.body.appendChild(fallbackAnchor);
-                        fallbackAnchor.click();
-                        document.body.removeChild(fallbackAnchor);
-                        stateManager.add(assetObj.src);
+                        this.uiFactory.captureAssetIntoBay(assetObj);
                     }
                 }
                 const interactiveSpan = document.createElement("span");
