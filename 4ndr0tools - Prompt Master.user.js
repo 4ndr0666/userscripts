@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name                PromptMasterBeta
+// @name                PromptMaster
 // @namespace           https://github.com/4ndr0666/userscripts
 // @version             27.3.17
 // @author              4ndr0666
