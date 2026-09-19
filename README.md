@@ -83,7 +83,7 @@ Each script adheres to a core set of principles:
 | Maximize_Any_Media | [4ndr0tools - Maximize_Any_Media.user.js](./4ndr0tools%20-%20Maximize_Any_Media.user.js) | Adds PIP and Maximize buttons to all media. |
 | Media Player Controller | [4ndr0tools - Media Player Controller.user.js](./4ndr0tools%20-%20Media%20Player%20Controller.user.js) | Speed • Alt+Shift rAF Zoom/Pan • Rotation • Smart Maximize • PiP • Play • DblClick • Pause-on-Acquire • Virtual DOM Nodes • Scrub Bar • IG Story Nav • Story Repeat • Draggable HUD • Space Hotkey |
 | MegaEmbedRedirector | [4ndr0tools - MegaEmbedRedirector.user.js](./4ndr0tools%20-%20MegaEmbedRedirector.user.js) | Bypass to the embedded URL and autoplays. |
-| ModelSearch | [4ndr0tools - ModelSearch.user.js](./4ndr0tools%20-%20ModelSearch.user.js) | Electric-Glass UI — direct SimpCity model search from any page. |
+| ModelSearch | [4ndr0tools - ModelSearch.user.js](./4ndr0tools%20-%20ModelSearch.user.js) | SimpCity model search from any page. |
 | Pixeldrain++ | [4ndr0tools - Pixeldrain++.user.js](./4ndr0tools%20-%20Pixeldrain++.user.js) | Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c. |
 | PlanetsuzyMobileSkinRedirect | [4ndr0tools - PlanetsuzyMobileSkinRedirect.user.js](./4ndr0tools%20-%20PlanetsuzyMobileSkinRedirect.user.js) | Force a faster mobile skin where useful. |
 | Premium Link Revealer | [4ndr0tools - Premium Link Revealer.user.js](./4ndr0tools%20-%20Premium%20Link%20Revealer.user.js) | Reveal true URLs hidden as "premium" link wrappers using the parent bbCodeBlock--unfurl block's data-url attribute. |
