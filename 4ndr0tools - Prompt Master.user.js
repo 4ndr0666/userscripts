@@ -1,406 +1,23 @@
 // ==UserScript==
 // @name                4ndr0tools - Prompt Master
 // @namespace           https://github.com/4ndr0666/userscripts
-// @version             28.0.2
+// @version             28.3.0
 // @author              4ndr0666
 // @icon                data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @license             UNLICENSED - RED TEAM USE ONLY
-// @description         Universal Prompt Manager — v28 adds the Ψ Organization Engine: collections, saved views, favorites, ratings, archive, group-by, and insights for large prompt libraries. v28.0.1 hotfix: repaired the expanded view's open path, the Move-to-Collection dialog, and the filter-dropdown lifecycle. v28.0.2 hotfix: the org facet rail folds behind a persistent ORGANIZE toggle and the filter dropdown is viewport-aware — full tag visibility and selection restored in the dock popout and the expanded view.
+// @description         Google Flow prompt manager toolkit (works on any AI, just add url) - persisted unit ledger meters every generation click, organization engine: collections, saved views, favorites, ratings, archive, group-by, and insights for large prompt libraries, dedupe, ai prompt enhancer, auto gist syncing, hotkeys, much more. 
 // @match               *://geminigen.ai/*
 // @match               *://gist.github.com/*
 // @match               *://gemini.google.com/*
 // @match               *://labs.google/fx/*
 // @match               *://flow.google.com/*
 // @match               *://*.google.com/search?*udm=50*
-// v28.0.2-Ψ: the popout-space hotfix — user-reported regression: the
-// v28.0.0 org facet rail shipped ALWAYS EXPANDED inside the shared
-// filter dropdown, and that dropdown's ceiling was a hard 280px with
-// overflow:hidden and no viewport clamping. Machine-reproduced in the
-// live harness: the facet rail (139px) + header + sort row left the
-// tag list a 56px flex sliver — ONE visible tag row of sixteen, the
-// rest clipped past the dropdown's border and unselectable, in BOTH
-// the dock popout and the expanded view (with the 28px scroll-arrow
-// overlays stacked over the survivor). (1) COLLAPSIBLE FACET RAIL:
-// the rail now folds behind an ORGANIZE toggle row (persistent
-// OrgPrefs.facetsOpen, default collapsed — the de-clutter default);
-// an "N active" chip on the toggle surfaces the engaged facet count
-// at a glance, refreshed on every rebuild and Clear Filters.
-// (2) VIEWPORT-AWARE PLACEMENT: new shared positionFilterDropdown()
-// unit serves both hosts (dock h() / expanded O()) — a 480px ceiling
-// clamped to the space actually below the anchor, flipping above the
-// anchor when that space is under 240px, left-clamped to the viewport
-// edge; the stylesheet ceiling follows (280px → 480px). (3) DUPLICATE
-// DETECTION REVIEW: the detector's normalization now canonicalizes
-// Unicode (NFC) and strips zero-width characters (U+200B-U+200D,
-// U+FEFF) before the existing lowercase/whitespace-collapse/trim
-// chain — strictly additive recall (composed vs combining accents and
-// invisible joiners no longer mask true duplicates; every pair
-// matched before still matches). The review also machine-verified the
-// review desk: "Keep first — archive the rest" preserves grp[0],
-// archives only grp.slice(1), and empty texts are excluded by design.
-// v28.0.1-Ψ: the hotfix round — live-runtime verification (headless
-// browser + GM shim + seeded library) found and repaired three defects
-// the syntax-level validation chain could not see. (1) EXPANDED VIEW
-// OPEN PATH: buildOrgSidebar called setupEnhancedScroll(scroll) BEFORE
-// el.appendChild(scroll); the wrap helper needs the target's parentNode
-// (insertBefore), so every openExpandedPromptMenu() died on a TypeError
-// before the overlay ever reached document.body — the expanded view and
-// its Ctrl+Alt+P hotkey were dead on arrival. Append first, wrap second.
-// (2) MOVE-TO-COLLECTION: openMoveToCollectionDialog had the same
-// parentless-wrap ordering on its destination list — the picker threw
-// the moment it opened. Same fix. (3) FILTER DROPDOWN LIFECYCLE:
-// closeMenu()/refreshMenu() swept ALL .mp-filter-dropdown elements,
-// including the expanded view's own dropdown; since the document-level
-// outside-click handler calls closeMenu() un-gated, ANY click inside the
-// expanded overlay detached the dropdown and killed its Filter button
-// for the session (a latent v27 defect the v28 org surface's far richer
-// click targets expose on every use). The sweeps now exempt
-// .mp-expanded-filter-dropdown — the dock menu's sweep behavior is
-// byte-identical, and the expanded dropdown's lifecycle stays owned by
-// openExpandedPromptMenu/z(). Header hygiene: @downloadURL/@updateURL
-// repointed from the retired userscripts repo to the glm host (matching
-// the sibling deliverables) and SCRIPT_VERSION's sandbox fallback kept
-// in sync. Everything below is the v28.0.0 organization round, intact.
-// v28.0.0-Ψ: the organization round — the direct answer to "the
-// database has grown; filtering by tags can only go so far before the
-// clutter is real in the expanded view." (1) COLLECTIONS: a nested
-// folder tree (PromptCollections) with its own sidebar rail in the
-// expanded view — smart nodes (All / Unfiled / Favorites / Archived /
-// Recent), per-collection prompt counts, expand/collapse persistence,
-// and a searchable Move-to-Collection picker from rows, bulk selection
-// and the prompt modal. (2) SAVED VIEWS: any filter combination
-// (collection + tags + facets + sort) persists as a one-click view
-// (PromptViews) in the sidebar. (3) FACETS: prompt records gain
-// optional favorite / rating (1-5) / archived / collectionId /
-// lastUsedAt fields (old records need no migration — absent fields
-// default to unfavorite, unrated, unarchived, unfiled); the shared
-// filter dropdown gains favorites-only, rating-min and archived
-// visibility toggles alongside the tag list, and two new sorts
-// (Recently Used, Rating) join the existing eight. (4) GROUP-BY: the
-// expanded grid can group rows under collapsible spanning headers by
-// collection, tag, rating or first letter — "Group by Tags" finally
-// means what it says (the old mode was only an alphabetical sort with
-// no visual grouping). (5) BULK OPS: multi-select gains Move to
-// Collection, Archive/Unarchive, Favorite/Unfavorite, Rate and Tag
-// actions next to the existing bulk delete. (6) TAG MANAGER: live
-// usage counts and Merge-into (rewrites every prompt's tags). (7)
-// Ψ INSIGHTS: a stats console (totals, per-collection/tag breakdown,
-// usage leaders, orphaned tags) plus a duplicate detector with review
-// actions. (8) LOSSLESS EXCHANGE: JSON export now carries tags and the
-// org fields (previously silently dropped), the TXT export writes the
-// extended {{title;useplaceholders;autoexecute;tags;collection;
-// favorite;rating;archived}} header (previously raw text only — a
-// round-trip lost the title and every setting), and the import paths
-// parse the new header fields. (9) BACKUP: PromptCollections,
-// PromptViews and OrgPrefs joined AUTO_BACKUP_KEYS (gist sync + auto
-// backup) and the Backup Manager checklist; the manual export's
-// frozen meta.version ("26.1.1") now reads SCRIPT_VERSION. (10) STYLE:
-// the base transition token is normalized to the 3lectric-Glass
-// 150ms ease-in-out mandate. Dock-menu tag filtering, sort modes and
-// every v27.x behavior are preserved; the org layer is purely
-// additive (promptMatchesFilter and applyGlobalSortMode are
-// byte-identical — the new facets ride a wrapper predicate).
-// v27.3.17: the self-verification round — the end of manual test
-// procedures. (1) SELF-TEST: a new "🧪 Flow Credits: Self-Test"
-// menu command (and window.__flowCreditDebugSelfTest from the
-// console) runs ~20 assertions over the tracker's whole state
-// machine — hook key/value validation, the cap branch and its
-// provenance, Flow-print precedence, read-path day rolling,
-// anchor-aware period keys, the reset-time parser, and reset
-// preservation/honesty — prints a PASS/FAIL table, then restores
-// every piece of state it touched. One command, machine verdict;
-// no more 4-step console dances. (2) SELF-AUDITING REPORTS: every
-// Copy Report ends with a machine-checked self-check block
-// (phantom model keys, print-snapshot corruption, session click
-// sums, malformed caps and armed windows) — a pasted report can
-// no longer silently mislead. (3) THE LEARNED RESET ANCHOR: the
-// daily-limit notice's reset moment is now PARSED ("until 11/9/26,
-// 3:00 AM", "resets in 7 hours", "midnight", time-only forms) and
-// stored per model as capResetAt; day boundaries are anchor-aware
-// (periods flip at Flow's actual reset, not assumed local
-// midnight), with byte-identical v27.3.16 behavior until an anchor
-// is learned. (4) RESET KEEPS CANONICAL KNOWLEDGE: same-period
-// Flow-printed usage (used/max/usageAt/turnsDayAtUsage) survives
-// reset alongside the cap and today's turns — Flow's own numbers
-// are knowledge, not client state, and resets must not destroy
-// them.
-// v27.3.16: the debug-hook and reset-honesty round. (1) DEBUG
-// HOOK VALIDATION: __flowCreditDebugSetCap accepted any model key,
-// and flowCreditEntry auto-creates whatever key it is given, so a
-// typo ("NB2", "nb2Lite") silently planted a PHANTOM model row
-// into the persisted store — one that even survived Reset, because
-// preservedCaps restores anything with capTurns > 0. The hook now
-// validates the key against FLOW_CREDIT_MODELS and the cap as a
-// positive integer, warns and no-ops otherwise, returns a JSON
-// clone instead of the live entry (the page realm must never hold a
-// mutable reference to tracker state — mutations would ride the
-// debounced persist into GM storage), installs only on
-// flow.google.com, and the unsafeWindow assignment is try/caught:
-// an unguarded cross-realm write is a single point of failure for
-// every statement after it in this IIFE, start() included. (2)
-// RESET HONESTY: v27.3.13 preserved the learned cap but zeroed
-// turnsDay, so a same-day reset rendered cap − 0 = a full tank the
-// server had already drawn down (wall-hit day: "16/16 turns left"
-// while still walled), and the re-learn guard (cap !== capTurns)
-// blocked self-correction until local midnight. A reset now keeps
-// the TODAY click count (and its day key) for any model already
-// used today — the server counted those turns whether or not the
-// client resets; unused-today models still reset to a true fresh
-// zero. (3) PROVENANCE: a debug-injected cap now reports its source
-// as "debug-injected" instead of "learned at the limit notice",
-// and the report's model lines carry the cap's recorded timestamp
-// and verbatim text, so post-reset evidence shows where the number
-// came from. (4) The SCRIPT_VERSION sandbox fallback had drifted
-// again (27.3.12 vs a 27.3.15 header) — re-synced.
-// v27.3.12: the turns-left hardening round — same-day and
-// day-boundary fixes to the v27.3.10 math. (1) MIDNIGHT SNAPSHOT
-// POISONING: the usage print's turnsDayAtUsage snapshot read
-// e.turnsDay without rolling the day counters first (they only
-// rolled on the next click), so a print landing between the daily
-// reset and the day's first click snapshotted YESTERDAY's count;
-// every click after the reset then subtracted as max(0, today
-// − yesterday) = 0 and turns-left froze at the printed number for
-// the rest of the day. Day counters now roll at snapshot time, at
-// cap-learn time, and inside flowCreditTurnsLeft itself
-// (flowCreditRollEntryDay). (2) THE PERSISTED CAP NEVER ANSWERED THE
-// NEXT DAY: the cap branch demanded capAt be from TODAY while the
-// design (and the report tip) promised "every day after starts from
-// a known limit" — the learned cap now answers on every following
-// day; Flow's own print still wins whenever it prints. (3) CAP
-// INFLATION: a persistent limit notice re-captured every 30s
-// re-learned cap = max(turnsDay, used) each time, so futile clicks
-// at the wall (Flow can keep the button enabled) ratcheted the
-// learned cap upward all day; the cap is learned once per model per
-// day, and only Flow's own print can raise it after that. (4)
-// MIDNIGHT DISPLAY: between midnight and the day's first click the
-// chip labeled yesterday's turnsDay as "turns today"; day values now
-// render through the same roll and the render signature carries the
-// day key so the flip re-renders. Plus: storage-sourced usage
-// readings can seed but never overwrite a today-fresh print
-// (localStorage is the stalest source), oversized dialogs no longer
-// qualify as limit notices, and the SCRIPT_VERSION sandbox fallback
-// is back in sync with the @version header.
-// v27.3.10: the recentering round — "We are counting how many
-// turns of each model is left before they run out." The wallet is
-// the shared video pool and has nothing to do with NB model runout,
-// so it leaves the chip (hover title + report only). The chip now
-// leads with TURNS LEFT, from two sources: (1) FLOW'S OWN PRINTS —
-// model-picker usage rows ("Leaving 6/16") give used/max, and each
-// print stores a snapshot of today's click count so later clicks
-// subtract without ever re-counting the ones before the print;
-// (2) THE LEARNED CAP — Flow's daily-limit notice (the wall: "Daily
-// Limit Reached", community-documented to carry the exact reset
-// time) is watched every tick, captured verbatim, attributed to the
-// model that most recently generated, and the turns count at the
-// wall moment is recorded as that model's daily cap — persisted, so
-// every following day starts from a known limit. turns-left =
-// print − clicks-since-print, or cap − clicks-since-wall; same-day
-// guards keep a stale print or yesterday's cap from answering for
-// today; with neither source the chip says "N turns today · cap ?"
-// rather than inventing a number. Turns stay generation button
-// clicks (exact) and images only count inside the 150s post-click
-// window. The report gains a per-model "N/M turns left (source)"
-// clause plus a verbatim dump of any captured limit notice, and the
-// tip is rewritten around the actual function.
-// v27.3.9: generation-anchored wallet freshness. The first live
-// v27.3.8 report validated the click-anchored counter end to end —
-// one "Start generation" click counted one turn, the model row's
-// "x2" promised two images and exactly two rendered inside the armed
-// window, the store loaded as v2 so a 02:58 wallet reading finally
-// survived a reload — and it exposed the one remaining inaccuracy:
-// the chip said "0 cr" from that 02:58 reading while the 05:58 first
-// generation of the day had just refreshed the daily grant under it,
-// and the 6h time gate still called the reading "fresh". Google's
-// cost doc (support.google.com/flow/answer/16526234) is explicit
-// that the wallet MUTATES at generation time (the daily grant
-// refreshes on the FIRST generation of the day; credit-charging
-// models deduct per generation), so freshness now has an event
-// anchor: every qualifying generation click stamps a persisted
-// lastGenAt, and a wallet reading older than that stamp is stale no
-// matter how young it is. The re-read is proportional — the
-// post-generation auto re-pull (one pending timer per session, a
-// 5-pull session cap, hidden-tab retry, staleness re-checked at fire
-// time, the same profile-menu open/harvest/close cascade and safety
-// rails as the boot pull) arms only when the balance plausibly
-// changed: the day's first generation (grant refresh), a model with
-// a known per-generation cost, or an unattributed click (Veo-class —
-// those charge). Free NB re-clicks after the day's first generation
-// change nothing server-side, so they never trigger a menu open. The
-// Copy Report command re-pulls a stale wallet instead of quoting it;
-// the report's wallet line marks a stale reading with the generation
-// timestamp; the chip title flags it; Reset cancels any pending
-// re-pull. Wallet readings can no longer survive a generation they
-// should not have.
-// v27.3.8: the click-anchored rebuild — the direct answer to "the
-// counter remains arbitrary and not accurate at all." Root cause 1
-// (found in v27.3.7's own load path): the store load gate still
-// demanded v === 1 while the writer has saved v: 2 since v27.3.6 —
-// every reload after the first save silently discarded the ENTIRE
-// store, so counts and wallet re-accumulated from zero each session
-// and the numbers could never converge (v1 and v2 both load now; a
-// one-time cv migration also zeroes the sweep-derived
-// gens/turns/day counters — v27.3.5–v27.3.7 proved those unreliable:
-// history thumbnails, lazy loads and progressively re-rendered old
-// scenes all leaked in — while the wallet, per-model costs, and
-// Flow-printed usage readings survive the migration). Root cause 2
-// (structural): a DOM heuristic can never tell a new generation from
-// history re-rendering, so the counter now counts the one event that
-// cannot lie — the generation CLICK. Flow's own button (captured
-// live in the v27.3.6 report: <button aria> "Start generation",
-// beside the model row "🍌 Nano Banana 2 crop_16_9 x4") is hooked
-// capture-phase on the document: one qualifying click = one TURN for
-// the model selected at click time (exact — the 8s burst-gap
-// guessing is gone), the model row's "x4" is read as the
-// images-per-generation batch hint, and a 150s ARMED WINDOW opens
-// during which flowCreditCountGens attributes new media to that
-// model. Media outside any armed window NEVER counts, wherever it
-// renders and on any route (the v27.3.7 anchor route gate stays as
-// a diagnostics signal; counting no longer depends on it — the
-// click is the gate). Rapid repeat clicks inside 10s (PM's own
-// auto-send retry loop, double-firing overlays) dedupe to one turn.
-// The documentation pull the user asked for also landed, and it
-// changed the tip: per support.google.com/flow/answer/16526234 the
-// daily 50-credit grant refreshes on the FIRST generation of the
-// day (not at midnight), credit costs are per generation ("some
-// product features will create multiple generations per request"),
-// and the prompt-box Settings panel lists the latest costs. Usage
-// patterns gained the remaining-form pairs community reports
-// documented on Flow's model-picker rows ("Leaving 6/16", "N/M
-// left" — parsed as used = max − remaining) plus the split "N turns
-// taken" / "max N tokens" phrasings behind the user's own NB Lite
-// sighting; a bare "N/M" with no direction word still never parses
-// (aspect ratios like 16/9 would poison it) — instead the report
-// dumps model rows verbatim AND the generate button's live
-// label/state, so the next one-paste pins the exact wording. The
-// report also gained store-load provenance, generation-click counts,
-// batch hints, and armed-window state, and per-model lines now carry
-// turns AND images, total AND today. Reset finally wipes the turns
-// session map and the click-anchored state with everything else.
-// v27.3.6: the counting round. The user's v27.3.5 live report
-// proved the counter's numbers wrong for the wrong reasons: NB Pro
-// (7) was right only by coincidence — every Pro generation rendered
-// on the /edit/ route while Pro was selected, the exact scenario the
-// sweep heuristic models — while NB2 Lite's "36 images" was the
-// COLLECTION GRID's thumbnails (every progressively rendered
-// fingerprint, historical or not, was attributed to whatever model
-// was selected while browsing), and NB2's 0 was pre-install usage a
-// client-side counter can never backfill. Three structural fixes:
-// media mutations are now stamped with the model selected AT ADD
-// TIME (a dedicated MutationObserver), counting runs ONLY on /edit/
-// routes with a re-seed on every SPA route change, and committed
-// fingerprints are burst-grouped into TURNS (the unit Flow's hidden
-// daily NB limit actually counts) with daily counters that roll
-// over at local midnight. A bare "0 credits" (the NB cost badge) is
-// now parsed as cost, never as a drained wallet. And the canonical
-// path: Flow DOES sometimes display Nano Banana usage (turns taken /
-// max tokens available) — a new "usage" reading kind captures that
-// phrasing wherever it renders (model picker rows, limit notices,
-// network payloads, the profile menu), is attributed per model, and
-// is shown in the chip as the authoritative number, clearly
-// separated from the client-side count. The report samples
-// token/turn/daily text and model rows verbatim so the exact live
-// wording can be pinned in one paste.
-// v27.3.5: the verdict round. The pull worked mechanically — the
-// menu opened and its text was captured — but two flaws remained,
-// and the captured text settled the feasibility question for good.
-// (1) The menu prints its balance as "280 Google Flow credits" —
-// number and unit separated by the words "Google Flow" — which no
-// v27.3.4 pattern matched, so "no parsable credit text" was a
-// parser gap, not a data gap; a dedicated pattern now reads that
-// exact phrasing (left-only; "N Google Flow credits each month"
-// plan descriptors stay excluded). (2) The close cascade (Escape /
-// toggle / outside-click) lost to this menu and left it open; the
-// menu's own X control ("close" — the first word of the captured
-// menu text) is now clicked FIRST, and the wallet gate accepts a
-// left-only reading so a successful pull stops the boot / 45s /
-// report re-pulls instead of repeating (auto-pulls refresh a stale
-// wallet after 6h). (3) The semantics were wrong, and Google's
-// published cost table (support.google.com/flow/answer/16526234)
-// proves it: only Veo 3.1 variants, Gemini Omni Flash, and
-// upscaling consume Flow credits — Nano Banana generations cost 0
-// credits (Flow's own UI prints "0 credits" per NB generation;
-// the store's cost=0 readings came from there), and NB usage is
-// capped by an undisclosed server-side daily image limit Flow
-// never displays. A per-model "credits left" for Nano Banana
-// therefore does not exist to be read. The chip is rebuilt around
-// what does: the shared wallet (menu pull), the per-model cost
-// (Flow's printed hints), and a client-side per-model IMAGE COUNT
-// (fingerprinted img/background-image nodes, scroll-quiet gate,
-// session + persisted totals) — the number that actually tracks
-// the hidden daily limit. Per-model left/total is gone; unnamed
-// left/total readings now feed the wallet only.
-// v27.3.4: the wallet pull — the direct answer to "is it even
-// possible?". Yes: the credits ARE in the page, but only while
-// Flow's profile menu (the account popover at the top-right) is
-// open, so every passive source read zero because the popover never
-// was. The tracker now opens that menu itself (account-chip hunt ->
-// click -> harvest -> close via Escape / button-toggle /
-// outside-click), once ~9s after load when the store has no wallet
-// total, retried once at 45s for slow SPA boots, and on demand from
-// the Copy Report command — which now pulls BEFORE reporting and
-// embeds the menu's raw text, so one paste still pins Flow's live
-// wording. Safety: a menu the user already opened is harvested but
-// never closed; links are never clicked; one pull at a time.
-// v27.3.3: live-site round 3 — one-paste diagnostics. If the chip
-// still reads "— / —", the settled 8s console line has long since
-// scrolled past; the new "📋 Flow Credits: Copy Report" userscript
-// command (Flow pages only) forces a fresh scan, then prints AND
-// copies a full report — engine/anchor/model, per-source counters
-// (page text / network payloads / storage hits), the persisted
-// wallet + per-model store, what the chip is showing, and every
-// credit-ish text visible at that moment — so a single paste pins
-// Flow's live wording instead of another blind round. Adds the
-// GM_setClipboard grant (falls back to console-only output).
-// v27.3.2: live-site fix #2 — the chip rendered with the right model
-// but no numbers: Flow keeps wallet left/total out of the
-// persistent DOM (they surface in transient popovers and in Flow's
-// own API traffic). The tracker now (a) passively observes Flow's
-// OWN network responses — fetch/XHR wrappers clone-and-scan and
-// never block, never alter, and never issue a request; (b) sweeps
-// localStorage/sessionStorage for credit-shaped JSON; (c) parses
-// more printed formats ("credits left: 40", "40 credits per
-// generation" as a COST, label/number split across aria-label and
-// text nodes); (d) lets a strictly-newer wallet reading outrank a
-// stale per-model value; and (e) logs one settled status line
-// after 8s with cumulative counters (plus a dump of the credit
-// texts it can see when nothing parsed, so one report pinpoints
-// Flow's live wording).
-// v27.3.1: live-site fix — the credit tracker's single anchor (the
-// editor lookup) could miss on the rebuilt Flow UI and leave the
-// chip invisible. The chip now anchors through a cascade (prompt
-// field → composer → model chip) at the pill's old spot inside the
-// field's right edge; split-span credit meters are read via the
-// joined container text; the model chip matches from any tag, not
-// just buttons; and a one-shot console line reports
-// anchor/model/readings.
-// v27.3.0: Flow gains a per-model credit tracker (see
-// startFlowCreditTracker). Flow's three image models — Nano Banana
-// Pro / Nano Banana 2 / Nano Banana 2 Lite — are read from the live
-// page text; visible credit readouts (left/total pairs, remaining
-// counts, per-generation costs) are harvested, attributed per model,
-// persisted across sessions, and shown as "left / total" in a glass
-// chip floating at the rich text field's top-right corner — the spot
-// where the pre-v27.0.6 inline pill used to sit. Read-only and
-// self-contained: Flow's DOM is never restructured and no network
-// request is made.
-// v27.2.1: the external stylesheet dependency is gone. The shared
-// My-Prompt stylesheet (style.min.css at the 0H4S/My-Prompt@26.1.0 repo
-// tag) is now embedded verbatim in this script as MP_EMBEDDED_CSS —
-// byte-identical to the file the manager's resource API used to serve —
-// so the script carries its own styles: no resource download at install,
-// update, or run time. The @connect cdn.jsdelivr.net entry below stays
-// (it whitelists the import-from-URL feature, not stylesheets).
 // @connect             generativelanguage.googleapis.com
 // @connect             gist.githubusercontent.com
 // @connect             raw.githubusercontent.com
 // @connect             router.huggingface.co
 // @connect             api.longcat.chat
 // @connect             cdn.jsdelivr.net
-// v27.0.8: hosts for the Flow dock's 'Cinzel Decorative' webfont loader
-// (see ensureCinzelDecorativeFont — GM_xmlhttpRequest fetch + base64
-// @font-face, immune to page style/font CSP). The old ko-fi.com @exclude
-// was removed along with the ko-fi feature; no @match rule ever targeted
-// ko-fi, so page matching is unchanged.
 // @connect             fonts.googleapis.com
 // @connect             fonts.gstatic.com
 // @connect             gist.github.com
@@ -414,14 +31,7 @@
 // @grant               GM_deleteValue
 // @grant               GM_xmlhttpRequest
 // @grant               GM_registerMenuCommand
-// v27.3.3: clipboard for the on-demand credit report command (see
-// reportFlowCreditTracker); the report falls back to console-only
-// output when the API is unavailable.
 // @grant               GM_setClipboard
-// v27.3.2: read-only page-window access so the credit tracker can
-// passively observe Flow's own fetch/XHR responses (the wrappers
-// only clone-and-scan; nothing is ever requested — see
-// installFlowCreditNetObserver).
 // @grant               unsafeWindow
 // @run-at              document-end
 // @noframes
@@ -505,29 +115,15 @@
       manus: 'div[contenteditable="true"].tiptap.ProseMirror',
       xiaomi: "textarea, textarea.resize-none",
     };
-  // v27.2.0: the multi-language subsystem was removed entirely. The
-  // external language-pack resource (18 locales) is no longer fetched,
-  // the English stub merges and the key-lookup/auto-detect helpers are
-  // gone, and the language selector UI (settings row + modal) went with
-  // them. The UI is English-only now: every former message key is
-  // inlined at its call site as a literal string, and the "Language"
-  // entry was dropped from the backup manager and the auto-backup key
-  // list since no language setting remains to store.
-  // v28.0.0: five unreferenced storage-key consts (GLOBAL_FILES_KEY,
-  // TAGS_STORAGE_KEY, PROMPT_STORAGE_KEY, THEME_STORAGE_KEY,
-  // DSA_STORAGE_KEY) removed under the zero-dead-code directive — every
-  // accessor already used the literal key strings since before v27.
   let currentActiveFileIds = new Set();
   async function getGlobalFiles() {
     return await GM_getValue("GlobalFiles", []);
   }
   async function saveGlobalFile(e) {
     const t = await getGlobalFiles();
-    return (
-      t.find((t) => t.name === e.name && t.size === e.size) ||
-        (t.push(e), await GM_setValue("GlobalFiles", t)),
-      t
-    );
+    const n = t.find((t) => t.name === e.name && t.size === e.size);
+    if (n) return n;
+    return (t.push(e), await GM_setValue("GlobalFiles", t), e);
   }
   async function deleteGlobalFile(e) {
     let t = await getGlobalFiles();
@@ -535,9 +131,16 @@
   }
   function dataURLtoFile(e, t) {
     for (
-      var n = e.split(","),
-        a = n[0].match(/:(.*?);/)[1],
-        o = atob(n[1]),
+      var n = String(e || "").split(","),
+        m0 = n[0] && n[0].match(/:(.*?);/),
+        a = m0 ? m0[1] : "application/octet-stream",
+        o = (() => {
+          try {
+            return atob(n[1] || "");
+          } catch (err) {
+            return "";
+          }
+        })(),
         r = o.length,
         s = new Uint8Array(r);
       r--;
@@ -591,13 +194,10 @@
     ((currentTagsConfig.activeFilters = currentTagsConfig.activeFilters.filter(
       (e) => e !== t,
     )),
-      // v27.1.0: also drop the deleted tag from the persisted order array.
       Array.isArray(currentTagsConfig.tagOrder) &&
         (currentTagsConfig.tagOrder = currentTagsConfig.tagOrder.filter(
           (e) => e !== t,
         )),
-      // v28.0.0: saved views filtering on the deleted tag drop it too —
-      // a stale tag key in a view would silently match nothing forever.
       await detachTagFromViews(t),
       await saveTagsConfig());
   }
@@ -606,11 +206,6 @@
     return currentTagsConfig.tags[t] || null;
   }
   function getAllTags() {
-    // v27.1.0: honors the persisted PromptTags.tagOrder array (maintained by
-    // the filter list's up/down controls — see moveTagOrder). Tags missing
-    // from tagOrder keep their object insertion order AFTER the ordered ones
-    // (stable sort); without a tagOrder the behavior is byte-identical to
-    // the previous release (plain insertion order).
     const e = Object.values(currentTagsConfig.tags),
       t = currentTagsConfig.tagOrder;
     if (Array.isArray(t) && t.length > 0) {
@@ -641,12 +236,6 @@
     return currentTagsConfig.activeFilters.includes(t);
   }
   async function moveTagOrder(e, t) {
-    // v27.1.0: moves a tag one slot up (t = -1) or down (t = 1) in the global
-    // tag order used by the filter dropdown (both windows), the tags manager
-    // and the prompt modal's tag selector. Persists PromptTags.tagOrder AND
-    // rewrites currentTagsConfig.tags key order (belt-and-suspenders for any
-    // raw Object.values consumers and for readable JSON backups). Returns
-    // false (no-op) for unknown tags or moves past either end.
     const n = e.toLowerCase().trim(),
       a = getAllTags().map((e) => e.name.toLowerCase().trim());
     if (!a.includes(n)) return !1;
@@ -670,12 +259,6 @@
     );
   }
   function promptMatchesFilter(e) {
-    // v27.1.0: multi-tag filtering is now intersection (AND) semantics — a
-    // prompt is shown only when it carries EVERY selected filter tag. The
-    // previous any-overlap (OR) logic let prompts tagged with just one of
-    // the selected tags slip through (e.g. "ss" + "c" selected still showed
-    // prompts tagged only "c"). Tag comparison stays case/trim-insensitive,
-    // matching the normalization toggleTagFilter() applies to the filters.
     if (0 === currentTagsConfig.activeFilters.length) return !0;
     if (!e.tags || 0 === e.tags.length) return !1;
     return currentTagsConfig.activeFilters.every((t) =>
@@ -712,10 +295,6 @@
       sidebarWidth: 268,
       collapsedNodes: {},
       density: "comfortable",
-      // v28.0.2: org facet rail folded-state for the shared filter
-      // dropdown (both host windows). Default collapsed — the facet
-      // controls were consuming 139px of a 280px dropdown and starving
-      // the tag list down to one visible row.
       facetsOpen: !1,
     };
   let currentCollectionsConfig = JSON.parse(
@@ -785,10 +364,23 @@
       return c && (c.parentId || "") === (parentId || "");
     });
   }
-  function buildCollectionTree(parentId = "", depth = 0) {
+  function buildCollectionTree(parentId = "", depth = 0, _seen = null) {
+    // v28.1.0: cycle guard — imported/restored PromptCollections payloads
+    // can carry a parentId cycle (the sibling collectionPathOf walk already
+    // guards its own loop); the unguarded recursion used to overflow the
+    // stack and take the org sidebar, the Move dialog and insights down
+    // with it. The guard is purely defensive: in-session mutations can
+    // never create a cycle (moveCollection blocks it).
+    const seen = _seen || new Set();
+    if (seen.has(parentId)) return [];
+    seen.add(parentId);
     return collectionSiblings(parentId).map((id) => {
       const c = currentCollectionsConfig.collections[id];
-      return { ...c, depth, children: buildCollectionTree(id, depth + 1) };
+      return {
+        ...c,
+        depth,
+        children: buildCollectionTree(id, depth + 1, seen),
+      };
     });
   }
   function collectionPathOf(id) {
@@ -802,8 +394,13 @@
     return parts.join(" / ");
   }
   function collectionDescendants(id) {
+    // v28.1.0: same cycle guard as buildCollectionTree — the walk is fed
+    // by external collections data on load/restore paths.
     const out = [],
+      seen = new Set(),
       walk = (pid) => {
+        if (seen.has(pid)) return;
+        seen.add(pid);
         for (const cid of collectionSiblings(pid)) (out.push(cid), walk(cid));
       };
     return (id && walk(id), out);
@@ -846,7 +443,13 @@
     const c = currentCollectionsConfig.collections[id];
     if (!c) return !1;
     const parent = c.parentId || "";
-    for (const cid of collectionDescendants(id)) {
+    // v28.1.0: capture descendants BEFORE the node is removed from the map
+    // (collectionSiblings resolves through it) — and prune the deleted
+    // node plus its descendants from the persisted collapse map, which
+    // each create→delete cycle used to pollute with stale keys forever
+    // (OrgPrefs rides gist sync and auto-backup).
+    const descendants = collectionDescendants(id);
+    for (const cid of descendants) {
       const child = currentCollectionsConfig.collections[cid];
       child.parentId === id && (child.parentId = parent);
     }
@@ -855,6 +458,11 @@
       "function" == typeof currentCollectionsConfig.order.filter
         ? currentCollectionsConfig.order.filter((x) => x !== id)
         : [];
+    let prunedCollapse = !1;
+    for (const stale of [id, ...descendants])
+      stale in currentOrgPrefs.collapsedNodes &&
+        (delete currentOrgPrefs.collapsedNodes[stale],
+        (prunedCollapse = !0));
     const raw = await getRawPrompts();
     let moved = 0;
     for (const rec of Object.values(raw))
@@ -867,7 +475,8 @@
     viewTouched && (await saveViewsConfig());
     if ((currentOrgPrefs.facets.collectionId || "") === id)
       ((currentOrgPrefs.facets.collectionId = ""),
-        await saveOrgPrefs());
+        (prunedCollapse = !0));
+    prunedCollapse && (await saveOrgPrefs());
     return (await saveCollectionsConfig(), !0);
   }
   async function moveCollection(id, newParentId) {
@@ -1151,86 +760,135 @@
       t
     );
   }
-  async function addItem(e) {
-    const t = await getAll(),
-      n = generatePromptId(),
-      a = document.querySelector("#__ap_title"),
-      o = document.querySelector("#__ap_custom_shortcut_btn"),
-      r = document.querySelector("#__ap_modal_overlay");
-    r &&
-      !r.classList.contains("mp-hidden") &&
-      a &&
-      ((e.color = a.dataset.promptColor || ""),
-      o && (e.shortcut = o.dataset.shortcut || ""));
-    const s = {
-      id: n,
-      title: e.title || "",
-      color: e.color || "",
-      text: e.text || "",
-      usePlaceholders: e.usePlaceholders || !1,
-      autoExecute: e.autoExecute || !1,
-      isFixed: e.isFixed || !1,
-      activeFileIds: e.activeFileIds || [],
-      shortcut: e.shortcut || "",
-      tags: e.tags || [],
-      usageCount: e.usageCount || 0,
-      isShared: e.isShared || !1,
-      sharedUrl: e.sharedUrl || "",
-      updateInterval: void 0 !== e.updateInterval ? e.updateInterval : 7,
-      lastUpdateCheck: e.lastUpdateCheck || Date.now(),
-      version: e.version || "1.0.0",
-      author: e.author || "",
-      summary: e.summary || "",
-      changelogText: e.changelogText || "",
-      // v28.0.0: Ψ Organization Engine fields — all optional, all defaulting
-      // to the v27 record shape (unfiled / unfavorite / unrated / active /
-      // never-used), so pre-v28 databases and imports need no migration.
-      collectionId: e.collectionId || "",
-      favorite: e.favorite || !1,
-      rating: e.rating || 0,
-      archived: e.archived || !1,
-      lastUsedAt: e.lastUsedAt || 0,
-      position: 0,
-    };
-    let i = t.findIndex((e) => !e.isFixed);
-    return (
-      -1 === i && (i = t.length),
-      t.splice(i, 0, s),
-      normalizePositions(t),
-      await saveRawPrompts(promptsToStorage(t)),
-      s
+  // v28.1.0: the Prompts store's read-modify-write cycles are serialized.
+  // Two concurrent updateById calls (rapid favorite/rating toggles on two
+  // rows) used to interleave at the getRawPrompts() boundary — both read
+  // the pre-write snapshot and the second whole-store write clobbered the
+  // first, silently losing one update. getAll stays lock-free (pure reads
+  // plus the one-time array→object migration, which is idempotent); the
+  // lock is taken only by writers, so there is no re-entrancy path.
+  let __promptsWriteChain = Promise.resolve();
+  function serializePromptsWrite(job) {
+    const run = __promptsWriteChain.then(job, job);
+    __promptsWriteChain = run.then(
+      () => {},
+      () => {},
     );
+    return run;
+  }
+  async function addItem(e) {
+    return serializePromptsWrite(async () => {
+      const t = await getAll(),
+        n = generatePromptId(),
+        a = document.querySelector("#__ap_title"),
+        o = document.querySelector("#__ap_custom_shortcut_btn"),
+        r = document.querySelector("#__ap_modal_overlay");
+      r &&
+        !r.classList.contains("mp-hidden") &&
+        a &&
+        ((e.color = a.dataset.promptColor || ""),
+        o && (e.shortcut = o.dataset.shortcut || ""));
+      const s = {
+        id: n,
+        title: e.title || "",
+        color: e.color || "",
+        text: e.text || "",
+        usePlaceholders: e.usePlaceholders || !1,
+        autoExecute: e.autoExecute || !1,
+        isFixed: e.isFixed || !1,
+        activeFileIds: e.activeFileIds || [],
+        shortcut: e.shortcut || "",
+        tags: e.tags || [],
+        usageCount: e.usageCount || 0,
+        isShared: e.isShared || !1,
+        sharedUrl: e.sharedUrl || "",
+        updateInterval: void 0 !== e.updateInterval ? e.updateInterval : 7,
+        lastUpdateCheck: e.lastUpdateCheck || Date.now(),
+        version: e.version || "1.0.0",
+        author: e.author || "",
+        summary: e.summary || "",
+        changelogText: e.changelogText || "",
+        // v28.0.0: Ψ Organization Engine fields — all optional, all defaulting
+        // to the v27 record shape (unfiled / unfavorite / unrated / active /
+        // never-used), so pre-v28 databases and imports need no migration.
+        collectionId: e.collectionId || "",
+        favorite: e.favorite || !1,
+        rating: e.rating || 0,
+        archived: e.archived || !1,
+        lastUsedAt: e.lastUsedAt || 0,
+        position: 0,
+      };
+      let i = t.findIndex((e) => !e.isFixed);
+      return (
+        -1 === i && (i = t.length),
+        t.splice(i, 0, s),
+        normalizePositions(t),
+        await saveRawPrompts(promptsToStorage(t)),
+        s
+      );
+    });
   }
   async function updateById(e, t) {
-    const n = await getRawPrompts();
-    if (Array.isArray(n)) return (await getAll(), updateById(e, t));
-    if (!n[e]) return !1;
-    const a = document.querySelector("#__ap_title"),
-      o = document.querySelector("#__ap_custom_shortcut_btn"),
-      r = document.querySelector("#__ap_modal_overlay");
-    r &&
-      !r.classList.contains("mp-hidden") &&
-      r.dataset.promptId === e &&
-      void 0 !== t.title &&
-      ((t.color = a.dataset.promptColor || ""),
-      o && (t.shortcut = o.dataset.shortcut || ""));
-    const s = { ...t };
-    return (
-      delete s.id,
-      delete s.position,
-      (n[e] = { ...n[e], ...s }),
-      await saveRawPrompts(n),
-      !0
-    );
+    return serializePromptsWrite(async () => {
+      let n = await getRawPrompts();
+      if (Array.isArray(n)) {
+        // one-time legacy array → object migration (getAll performs it);
+        // retried inline instead of recursing so the write lock is never
+        // re-entered.
+        await getAll();
+        n = await getRawPrompts();
+      }
+      if (!n || !n[e]) return !1;
+      const a = document.querySelector("#__ap_title"),
+        o = document.querySelector("#__ap_custom_shortcut_btn"),
+        r = document.querySelector("#__ap_modal_overlay");
+      r &&
+        !r.classList.contains("mp-hidden") &&
+        r.dataset.promptId === e &&
+        void 0 !== t.title &&
+        // v28.1.0: a null guard mirrors addItem's — the overlay can be open
+        // while #__ap_title is transiently absent during re-init; the old
+        // code dereferenced a.dataset unguarded and aborted the whole
+        // update on a TypeError.
+        a &&
+        ((t.color = a.dataset.promptColor || ""),
+        o && (t.shortcut = o.dataset.shortcut || ""));
+      const s = { ...t };
+      return (
+        delete s.id,
+        delete s.position,
+        (n[e] = { ...n[e], ...s }),
+        await saveRawPrompts(n),
+        !0
+      );
+    });
   }
   async function removeById(e) {
-    const t = (await getAll()).filter((t) => t.id !== e);
-    (normalizePositions(t), await saveRawPrompts(promptsToStorage(t)));
+    return serializePromptsWrite(async () => {
+      const t = (await getAll()).filter((t) => t.id !== e);
+      (normalizePositions(t), await saveRawPrompts(promptsToStorage(t)));
+    });
   }
   const DEFAULT_THEME_CONFIG = { themeId: "electric-glass", mode: "auto" };
   let mediaQueryList = window.matchMedia("(prefers-color-scheme: dark)"),
     currentThemeConfig = DEFAULT_THEME_CONFIG,
     importedThemes = {};
+  // v28.1.0: auto color mode follows the OS LIVE — "auto" used to resolve
+  // exactly once at boot, so an OS light/dark switch mid-session left the
+  // data-mp-theme attribute, the injected tokens and the base stylesheet's
+  // own prefers-color-scheme block disagreeing until some unrelated action
+  // re-invoked applyTheme. (addListener covers Safari < 14.)
+  (() => {
+    const onSchemeChange = () => {
+      "auto" === currentThemeConfig.mode && applyTheme(currentThemeConfig);
+    };
+    try {
+      mediaQueryList.addEventListener
+        ? mediaQueryList.addEventListener("change", onSchemeChange)
+        : mediaQueryList.addListener &&
+          mediaQueryList.addListener(onSchemeChange);
+    } catch (e) {}
+  })();
   const themeDefinitions = {
     "electric-glass": {
       name: "3lectric-Glass",
@@ -1238,7 +896,9 @@
         "--mp-bg-primary": "rgba(10, 19, 26, 0.72)",
         "--mp-bg-secondary": "rgba(10, 19, 26, 0.65)",
         "--mp-bg-tertiary": "rgba(10, 19, 26, 0.55)",
-        "--mp-bg-overlay": "rgba(10, 19, 26, 0.85)",
+        // v28.1.0: 0.95 — the spec's fourth glass level (Solid Header,
+        // near-opaque anchor); the theme shipped 0.85 for the overlay.
+        "--mp-bg-overlay": "rgba(10, 19, 26, 0.95)",
         "--mp-bg-disabled": "rgba(10, 19, 26, 0.4)",
         "--mp-text-primary": "#00E5FF",
         "--mp-text-secondary": "#67E8F9",
@@ -1250,6 +910,24 @@
         "--mp-focus-ring": "rgba(0, 229, 255, 0.5)",
         "--mp-accent-primary": "#00E5FF",
         "--mp-accent-primary-hover": "#67E8F9",
+        // v28.1.0: the action-accent set, completed in the 3lectric
+        // palette — the theme used to omit these tokens, so the base
+        // stylesheet's foreign accents leaked through the glass surface:
+        // yellow edit (#fcc419-class), blue export, green add, orange
+        // import, black drop-shadows. Edit/enhance actions ride the
+        // secondary cyan; close rides the spec's destructive pink; the
+        // export/add/import triad rides cyan washes; shadow-lg is the
+        // spec's 40px spatial glow.
+        "--mp-accent-edit": "#67E8F9",
+        "--mp-accent-edit-hover": "#00E5FF",
+        "--mp-accent-close": "#ff0055",
+        "--mp-accent-close-hover": "#ffffff",
+        "--mp-btn-export-bg": "rgba(0, 229, 255, 0.12)",
+        "--mp-btn-export-color": "#00E5FF",
+        "--mp-btn-add-bg": "rgba(0, 229, 255, 0.16)",
+        "--mp-btn-add-color": "#67E8F9",
+        "--mp-btn-import-bg": "rgba(103, 232, 249, 0.12)",
+        "--mp-btn-import-color": "#67E8F9",
         "--mp-success": "#00E5FF",
         "--mp-warning": "#67E8F9",
         "--mp-error": "#ff0055",
@@ -1257,6 +935,13 @@
         "--mp-switch-knob": "#00E5FF",
         "--mp-shadow-sm": "0 0 8px rgba(0, 229, 255, 0.15)",
         "--mp-shadow-md": "0 0 20px rgba(0, 229, 255, 0.3)",
+        "--mp-shadow-lg": "0 0 40px rgba(0, 229, 255, 0.15)",
+        // v28.1.0: radii moved INTO the theme (from the unconditional
+        // font override) — spec: buttons 0px strict brutalism, glass
+        // panels 4px. Other themes fall back to the base radii instead
+        // of inheriting the 3lectric brutalism.
+        "--mp-border-radius-sm": "0px",
+        "--mp-border-radius-md": "4px",
         "--mp-syntax-escape": "#ff0055",
         "--mp-syntax-ignore-fence": "rgba(0, 229, 255, 0.5)",
         "--mp-syntax-ignore-content": "rgba(0, 229, 255, 0.35)",
@@ -1292,7 +977,8 @@
         "--mp-bg-primary": "rgba(10, 19, 26, 0.72)",
         "--mp-bg-secondary": "rgba(10, 19, 26, 0.65)",
         "--mp-bg-tertiary": "rgba(10, 19, 26, 0.55)",
-        "--mp-bg-overlay": "rgba(10, 19, 26, 0.85)",
+        // v28.1.0: 0.95 — spec glass level 4 (see the light variant).
+        "--mp-bg-overlay": "rgba(10, 19, 26, 0.95)",
         "--mp-bg-disabled": "rgba(10, 19, 26, 0.4)",
         "--mp-text-primary": "#00E5FF",
         "--mp-text-secondary": "#67E8F9",
@@ -1304,6 +990,17 @@
         "--mp-focus-ring": "rgba(0, 229, 255, 0.5)",
         "--mp-accent-primary": "#00E5FF",
         "--mp-accent-primary-hover": "#67E8F9",
+        // v28.1.0: completed action-accent set (see the light variant).
+        "--mp-accent-edit": "#67E8F9",
+        "--mp-accent-edit-hover": "#00E5FF",
+        "--mp-accent-close": "#ff0055",
+        "--mp-accent-close-hover": "#ffffff",
+        "--mp-btn-export-bg": "rgba(0, 229, 255, 0.12)",
+        "--mp-btn-export-color": "#00E5FF",
+        "--mp-btn-add-bg": "rgba(0, 229, 255, 0.16)",
+        "--mp-btn-add-color": "#67E8F9",
+        "--mp-btn-import-bg": "rgba(103, 232, 249, 0.12)",
+        "--mp-btn-import-color": "#67E8F9",
         "--mp-success": "#00E5FF",
         "--mp-warning": "#67E8F9",
         "--mp-error": "#ff0055",
@@ -1311,6 +1008,9 @@
         "--mp-switch-knob": "#00E5FF",
         "--mp-shadow-sm": "0 0 8px rgba(0, 229, 255, 0.15)",
         "--mp-shadow-md": "0 0 20px rgba(0, 229, 255, 0.3)",
+        "--mp-shadow-lg": "0 0 40px rgba(0, 229, 255, 0.15)",
+        "--mp-border-radius-sm": "0px",
+        "--mp-border-radius-md": "4px",
         "--mp-syntax-escape": "#ff0055",
         "--mp-syntax-ignore-fence": "rgba(0, 229, 255, 0.5)",
         "--mp-syntax-ignore-content": "rgba(0, 229, 255, 0.35)",
@@ -1934,6 +1634,10 @@
     let c = ":root {";
     (Object.entries(t).forEach(([e, t]) => {
       e.startsWith("@import") ||
+        // v28.1.0: the display-name metadata is skipped — every applied
+        // theme used to inject a junk `name: 3lectric-Glass !important;`
+        // declaration into :root that the browser discarded.
+        "name" === e ||
         "object" == typeof t ||
         (c += `${e}: ${t} !important;`);
     }),
@@ -1945,11 +1649,55 @@
       (c += "}"),
       setSafeInnerHTML(l, c),
       document.head.appendChild(l),
-      document.documentElement.setAttribute("data-mp-theme", n));
+      document.documentElement.setAttribute("data-mp-theme", n),
+      // v28.1.0: the collected @import URLs are finally CONSUMED — each
+      // becomes a <link rel="stylesheet" data-mp-theme-import> in the
+      // head, and the previous application's links are removed first
+      // (applyTheme is the single ownership point). The old code
+      // faithfully collected the URLs into an array and then dropped
+      // them, so an imported theme whose fonts load via @import silently
+      // lost them at runtime.
+      (() => {
+        document
+          .querySelectorAll("link[data-mp-theme-import]")
+          .forEach((el) => el.remove());
+        o.forEach((url) => {
+          try {
+            const link = document.createElement("link");
+            ((link.rel = "stylesheet"),
+              (link.href = String(url)),
+              link.setAttribute("data-mp-theme-import", ""),
+              document.head.appendChild(link));
+          } catch (e) {}
+        });
+      })(),
+      // v28.1.0: a theme switch re-highlights any attached editor — the
+      // highlighter's token colors ride the --mp-* variables, so the
+      // previous theme's palette stayed rendered until the next keystroke.
+      "function" == typeof SyntaxHighlighter.refresh &&
+        SyntaxHighlighter.refresh());
   }
   async function loadThemeConfig() {
-    ((currentThemeConfig = { themeId: "electric-glass", mode: "auto" }),
-      applyTheme(currentThemeConfig));
+    // v28.1.0: the loader never read the "Theme" key back — saveThemeConfig
+    // persisted the user's choice on every change, but every boot silently
+    // reset to electric-glass/auto, and a backup/gist restore of "Theme"
+    // never took effect. The saved config is validated before use (a
+    // hand-edited or legacy value falls back to the 3lectric-Glass
+    // default); loadImportedThemes() has already run by the time start()
+    // calls this, so imported theme ids resolve too.
+    try {
+      const e = await GM_getValue("Theme");
+      if (e) {
+        const t = JSON.parse(e);
+        t &&
+          "string" == typeof t.themeId &&
+          ("light" === t.mode || "dark" === t.mode || "auto" === t.mode) &&
+          (currentThemeConfig = { themeId: t.themeId, mode: t.mode });
+      }
+    } catch (e) {
+      console.warn("[Prompt Master] Corrupt Theme config ignored:", e);
+    }
+    applyTheme(currentThemeConfig);
   }
   async function saveThemeConfig(e) {
     ((currentThemeConfig = { ...currentThemeConfig, ...e }),
@@ -1976,10 +1724,16 @@
         const n = JSON.parse(e.target.result);
         let a = 0;
         for (const [e, t] of Object.entries(n))
+          // v28.1.0: single-variant themes are accepted — applyTheme
+          // resolves a missing variant against themeDefinitions.default,
+          // so the importer's both-variants requirement rejected valid
+          // dark-only themes that the applier itself supports (the old
+          // `(t.light || t.dark)` clause was dead: the typeof checks
+          // demanded BOTH). Each PRESENT variant must still be an object.
           t.name &&
-            (t.light || t.dark) &&
-            "object" == typeof t.light &&
-            "object" == typeof t.dark &&
+            (null == t.light || "object" == typeof t.light) &&
+            (null == t.dark || "object" == typeof t.dark) &&
+            ("object" == typeof t.light || "object" == typeof t.dark) &&
             ((importedThemes[e] = t), a++);
         a > 0
           ? (await saveImportedThemesData(),
@@ -2022,6 +1776,19 @@
               Object.entries(n[e]).forEach(([e, n]) => {
                 e.startsWith("@import") && t(n);
               });
+          }),
+          // v28.1.0: the harvested URL set is finally READ — deleting a
+          // theme now retracts the @import links its application injected
+          // (the collector used to be write-only).
+          e.forEach((url) => {
+            try {
+              document
+                .querySelectorAll("link[data-mp-theme-import]")
+                .forEach(
+                  (el) =>
+                    el.getAttribute("href") === String(url) && el.remove(),
+                );
+            } catch (err) {}
           }));
       }
       (delete importedThemes[e],
@@ -2041,7 +1808,7 @@
   // loading stays a separate, on-demand concern (mp-font-override
   // @import + ensureCinzelDecorativeFont) and is untouched.
   const MP_EMBEDDED_CSS =
-    ":root{--mp-font-stack-i18n:\"Roboto Slab\",-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,\"Helvetica Neue\",Arial,\"Microsoft YaHei\",\"PingFang SC\",\"Hiragino Sans GB\",\"Heiti SC\",\"Apple SD Gothic Neo\",\"Noto Sans CJK SC\",sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\",\"Segoe UI Symbol\";--mp-font-family-base:var(--mp-font-stack-i18n);--mp-font-family-heading:var(--mp-font-stack-i18n);--mp-font-family-editor:\"JetBrains Mono\",var(--mp-font-stack-i18n);--mp-font-family-button:var(--mp-font-stack-i18n);--mp-bg-primary:#fff;--mp-bg-secondary:#f8f9fa;--mp-bg-tertiary:#e2e4e6;--mp-bg-overlay:rgba(10,10,10,0.5);--mp-text-primary:#212529;--mp-text-secondary:#495057;--mp-text-tertiary:#868e96;--mp-text-buttons:#fff;--mp-border-primary:#dee2e6;--mp-border-secondary:#ced4da;--mp-accent-primary:#7071fc;--mp-accent-primary-hover:#595ac9;--mp-accent-edit:#fab005;--mp-accent-edit-hover:#f08c00;--mp-accent-close:#f03e3e;--mp-accent-close-hover:#c92a2a;--mp-btn-export-bg:rgba(34,129,207,0.1);--mp-btn-export-color:#2281cf;--mp-btn-add-bg:rgba(32,201,97,0.1);--mp-btn-add-color:#20c961;--mp-btn-import-bg:rgba(253,126,20,0.1);--mp-btn-import-color:#fd7e14;--mp-switch-knob:#fff;--mp-shadow-sm:0 1px 2px rgba(0,0,0,0.04);--mp-shadow-md:0 4px 12px rgba(0,0,0,0.1);--mp-shadow-lg:0 10px 30px rgba(0,0,0,0.1);--mp-border-radius-sm:4px;--mp-border-radius-md:8px;--mp-border-radius-lg:16px;--mp-transition-fast:150ms ease-in-out;--mp-syntax-escape:#ff6b6b;--mp-syntax-ignore-fence:#868e96;--mp-syntax-ignore-content:#adb5bd;--mp-syntax-quote-fence:#2b8a3e;--mp-syntax-quote-content:#40c057;--mp-syntax-var-keyword:#15aabf;--mp-syntax-var-flag:#0c8599;--mp-syntax-file-keyword:#e64980;--mp-syntax-sel-fence:#4c6ef5;--mp-syntax-sel-header:#3b5bdb;--mp-syntax-sel-multi:#339af0;--mp-syntax-sel-single:#ff8787;--mp-syntax-sel-id:#da77f2;--mp-syntax-sel-other:#fa7b05;--mp-syntax-sel-sep:#adb5bd;--mp-syntax-free-bracket:#fab005;--mp-syntax-free-label:#e67700;--mp-syntax-in-bracket:#d6336c;--mp-syntax-in-label:#a61e4d;--mp-syntax-in-eq:#f06595;--mp-syntax-sil-bracket:#845ef7;--mp-syntax-sil-label:#6741d9;--mp-syntax-sil-eq:#b197fc;--mp-syntax-var:#099268;--mp-syntax-context:#868e96;--mp-syntax-def-sep:#f03e3e;--mp-syntax-def-val:#ff8787;--mp-syntax-sel-checked:#20c997;--mp-syntax-caret:var(--mp-text-primary,#000);--mp-syntax-selection:color-mix(in srgb,var(--mp-accent-primary,#4c6ef5) 30%,transparent)}@media (prefers-color-scheme:dark){:root{--mp-bg-primary:#212529;--mp-bg-secondary:#2c2c30;--mp-bg-tertiary:#343a40;--mp-bg-overlay:rgba(0,0,0,0.7);--mp-text-primary:#f8f9fa;--mp-text-secondary:#e9ecef;--mp-text-tertiary:#adb5bd;--mp-text-buttons:#fff;--mp-border-primary:#495057;--mp-border-secondary:#868e96;--mp-accent-primary:#8586ff;--mp-accent-primary-hover:#9fa0ff;--mp-accent-edit:#fcc419;--mp-accent-edit-hover:#ffe066;--mp-accent-close:#ff6b6b;--mp-accent-close-hover:#ff8787;--mp-btn-export-bg:rgba(116,192,252,0.15);--mp-btn-export-color:#74c0fc;--mp-btn-add-bg:rgba(105,219,124,0.15);--mp-btn-add-color:#69db7c;--mp-btn-import-bg:rgba(255,169,77,0.15);--mp-btn-import-color:#ffa94d;--mp-switch-knob:#fff;--mp-shadow-sm:0 1px 2px rgba(0,0,0,0.3);--mp-shadow-md:0 4px 12px rgba(0,0,0,0.4);--mp-shadow-lg:0 10px 30px rgba(0,0,0,0.5);--mp-syntax-escape:#ff8787;--mp-syntax-ignore-fence:#adb5bd;--mp-syntax-ignore-content:#868e96;--mp-syntax-quote-fence:#69db7c;--mp-syntax-quote-content:#b2f2bb;--mp-syntax-var-keyword:#3bc9db;--mp-syntax-var-flag:#99e9f2;--mp-syntax-file-keyword:#f783ac;--mp-syntax-sel-fence:#91a7ff;--mp-syntax-sel-header:#bac8ff;--mp-syntax-sel-multi:#74c0fc;--mp-syntax-sel-single:#ffc9c9;--mp-syntax-sel-id:#e599f7;--mp-syntax-sel-other:#fa7b05;--mp-syntax-sel-sep:#868e96;--mp-syntax-free-bracket:#ffd43b;--mp-syntax-free-label:#fab005;--mp-syntax-in-bracket:#f06595;--mp-syntax-in-label:#fcc2d7;--mp-syntax-in-eq:#faa2c1;--mp-syntax-sil-bracket:#b197fc;--mp-syntax-sil-label:#d0bfff;--mp-syntax-sil-eq:#9775fa;--mp-syntax-var:#38d9a9;--mp-syntax-context:#ced4da;--mp-syntax-def-sep:#ff6b6b;--mp-syntax-def-val:#ffc9c9;--mp-syntax-sel-checked:#63e6be}}.mp-prompt-wrapper{position:relative;width:36px;height:36px;margin:0 4px;display:inline-flex;vertical-align:middle;z-index:1000}.mp-sliding-pill-container{position:absolute;width:36px;height:36px;box-sizing:border-box;justify-content:space-between;background-color:var(--mp-bg-primary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-lg);box-shadow:var(--mp-shadow-sm);overflow:hidden;z-index:1000;transition:width var(--mp-transition-fast),height var(--mp-transition-fast),background-color var(--mp-transition-fast),border-color var(--mp-transition-fast)}.mp-btn-part,.mp-sliding-pill-container{display:flex;align-items:center;padding:0}.mp-btn-part{justify-content:center;flex:0 0 34px;width:34px;height:34px;background:transparent;border:none;margin:0;cursor:pointer;color:var(--mp-text-secondary);transition:color var(--mp-transition-fast)}.mp-btn-part svg{display:block;width:20px;height:20px;margin:0 auto;pointer-events:none;flex-shrink:0}.mp-btn-main{opacity:1}.mp-btn-ai,.mp-btn-paste{flex:0 0 0;width:0;height:0;opacity:0;overflow:hidden;transition:flex-basis var(--mp-transition-fast),width var(--mp-transition-fast),height var(--mp-transition-fast),opacity var(--mp-transition-fast),transform var(--mp-transition-fast)}.mp-sliding-pill-container:hover .mp-btn-ai,.mp-sliding-pill-container:hover .mp-btn-paste{flex:0 0 34px;width:34px;height:34px;opacity:1;transform:translate(0)}.mp-sliding-pill-container:hover{background-color:var(--mp-bg-tertiary);border-color:var(--mp-accent-primary);box-shadow:var(--mp-shadow-md)}.mp-btn-part:hover{color:var(--mp-accent-primary)}.mp-sliding-pill-container:active{background-color:var(--mp-bg-secondary)}.mp-dir-top{bottom:0;left:0;flex-direction:column}.mp-dir-top:hover{height:112px}.mp-dir-top .mp-btn-ai,.mp-dir-top .mp-btn-paste{transform:translateY(10px)}.mp-dir-bottom{top:0;left:0;flex-direction:column-reverse}.mp-dir-bottom:hover{height:112px}.mp-dir-bottom .mp-btn-ai,.mp-dir-bottom .mp-btn-paste{transform:translateY(-10px)}.mp-dir-left{top:0;right:0;flex-direction:row}.mp-dir-left:hover{width:112px}.mp-dir-left .mp-btn-ai,.mp-dir-left .mp-btn-paste{transform:translateX(10px)}.mp-dir-right{top:0;left:0;flex-direction:row-reverse}.mp-dir-right:hover{width:112px}.mp-dir-right .mp-btn-ai,.mp-dir-right .mp-btn-paste{transform:translateX(-10px)}.mp-sliding-pill-container:after,.mp-sliding-pill-container:before{content:\"\";position:absolute;background-color:var(--mp-border-primary);opacity:0;transition:opacity var(--mp-transition-fast);pointer-events:none;z-index:1001}.mp-sliding-pill-container:hover:after,.mp-sliding-pill-container:hover:before{opacity:1}.mp-dir-bottom:before,.mp-dir-top:before{width:26px;height:1px;left:50%;transform:translateX(-50%);top:37px}.mp-dir-bottom:after,.mp-dir-top:after{width:26px;height:1px;left:50%;transform:translateX(-50%);top:75px}.mp-dir-left:before,.mp-dir-right:before{width:1px;height:26px;top:50%;transform:translateY(-50%);left:37px}.mp-dir-left:after,.mp-dir-right:after{width:1px;height:26px;top:50%;transform:translateY(-50%);left:75px}.mp-hidden{display:none!important}.mp-scroll-invisible{overflow-y:auto!important;scrollbar-width:none!important;-ms-overflow-style:none!important;scroll-behavior:smooth}.mp-scroll-invisible::-webkit-scrollbar{display:none;width:0;height:0}.mp-scroll-wrapper{position:relative;display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;max-width:100%;box-sizing:border-box}.mp-scroll-arrow{position:absolute;left:0;right:0;height:28px;display:flex;align-items:center;justify-content:center;color:var(--mp-text-tertiary);cursor:pointer;opacity:0;pointer-events:none;transition:opacity 150ms ease-in-out,color 150ms ease-in-out;z-index:10}.mp-scroll-arrow.up{top:0;background:linear-gradient(180deg,color-mix(in srgb,var(--mp-scroll-bg,var(--mp-bg-primary)),transparent 40%) 30%,transparent)}.mp-scroll-arrow.down{bottom:0;background:linear-gradient(0deg,color-mix(in srgb,var(--mp-scroll-bg,var(--mp-bg-primary)),transparent 40%) 30%,transparent)}.mp-scroll-arrow:hover{color:var(--mp-accent-primary)}.mp-scroll-arrow.visible{opacity:1;pointer-events:auto}.mp-scroll-arrow svg{width:20px;height:20px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.1))}#AB_modal_box_el #__ap_text,#prompt-menu-container #__ap_text,.mp-modal-box .form-group:has(#__ap_text) .form-textarea{border:none!important;box-shadow:none!important;background-color:transparent!important;padding:16px;width:100%;height:100%;font-family:var(--mp-font-family-editor)!important}.mp-modal-box .form-group:has(#__ap_text) .mp-scroll-wrapper{border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);background-color:var(--mp-bg-secondary);transition:border-color 150ms ease-in-out,box-shadow 150ms ease-in-out;overflow:hidden!important;display:flex;flex-direction:column;height:300px}.mp-modal-box .form-group:has(#__ap_text) .mp-scroll-wrapper:focus-within{border-color:var(--mp-accent-primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--mp-accent-primary) 25%,transparent)}.mp-modal-box.mp-expanded .form-group:has(#__ap_text) .mp-scroll-wrapper{height:100%!important}.mp-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background-color:var(--mp-bg-overlay);z-index:99990;display:flex;justify-content:center;align-items:center;backdrop-filter:blur(4px);opacity:0;visibility:hidden;transition:opacity var(--mp-transition-fast),visibility var(--mp-transition-fast)}.mp-overlay.visible{opacity:1;visibility:visible}.mp-modal-box{font-family:var(--mp-font-family-base)!important;background-color:var(--mp-bg-primary);border-radius:var(--mp-border-radius-lg);padding:24px!important;box-shadow:var(--mp-shadow-lg);width:min(93vw,800px)!important;border:1px solid var(--mp-border-primary)!important;transform:scale(.95) translateY(10px);opacity:0;transition:transform var(--mp-transition-fast),opacity var(--mp-transition-fast),width .3s cubic-bezier(.4,0,.2,1),height .3s cubic-bezier(.4,0,.2,1)!important;position:relative!important;display:flex!important;flex-direction:column!important;max-height:95vh!important}.modal-title,.mp-modal-box{color:var(--mp-text-primary)}.modal-title{font-family:var(--mp-font-family-heading)!important;font-size:18px;font-weight:600;margin:0 0 20px;text-align:center;flex-shrink:0}.modal-footer{display:flex;justify-content:center;margin-top:16px;flex-shrink:0}.mp-modal-box.mp-expanded{width:95vw!important;max-width:95vw!important;height:93vh!important;max-height:93vh!important;display:flex!important;flex-direction:column!important}.mp-modal-box.mp-expanded .form-group:has(#__ap_text){flex:1;display:flex;flex-direction:column;min-height:0;margin-bottom:15px}.mp-modal-box.mp-expanded .modal-title{display:block!important;visibility:visible!important;text-align:center;margin-bottom:20px;flex-shrink:0}.mp-modal-box.mp-expanded .form-group:has(.form-textarea){flex:1;display:flex;flex-direction:column;min-height:0;margin-bottom:24px}.mp-modal-box.mp-expanded .mp-scroll-wrapper{flex:1;height:100%!important}.mp-modal-box.mp-expanded .form-textarea{height:100%!important}.mp-modal-box.mp-expanded .mp-switch-container{padding-top:8px}.mp-overlay.visible .mp-modal-box{transform:scale(1) translateY(0);opacity:1}.mp-modal-close-btn,.mp-modal-info-btn,.mp-modal-shop-btn{position:absolute;top:12px;background:none;border:none;color:var(--mp-text-tertiary);cursor:pointer;width:32px;height:32px;border-radius:50%;transition:transform .3s ease,color .3s ease,background-color .3s ease;display:flex;justify-content:center;align-items:center;padding:0;z-index:20}.mp-modal-close-btn{right:12px}.mp-modal-info-btn{right:88px}.mp-modal-shop-btn{right:126px;cursor:default!important}.mp-modal-close-btn:hover{transform:rotate(90deg);color:var(--mp-accent-close);background-color:color-mix(in srgb,var(--mp-accent-close) 15%,transparent)}.mp-modal-info-btn:hover,.mp-modal-shop-btn:hover{transform:scale(1.1);color:var(--mp-accent-primary);background-color:color-mix(in srgb,var(--mp-accent-primary) 15%,transparent)}.mp-modal-close-btn svg,.mp-modal-info-btn svg,.mp-modal-shop-btn svg{width:20px;height:20px;stroke:currentColor;stroke-width:2.5;fill:none}.mp-modal-info-btn svg{stroke-width:0;fill:currentColor}.mp-modal-expand-btn{position:absolute;top:12px;right:50px;background:none;border:none;color:var(--mp-text-tertiary);cursor:pointer;width:32px;height:32px;border-radius:50%;transition:transform .3s ease,color .3s ease,background-color .3s ease;display:flex;justify-content:center;align-items:center;padding:0;z-index:20}.mp-modal-expand-btn:hover{transform:scale(1.1);color:var(--mp-accent-primary);background-color:color-mix(in srgb,var(--mp-accent-primary) 15%,transparent)}.mp-modal-expand-btn svg,.mp-modal-shop-btn svg{width:20px;height:20px;stroke:currentColor;stroke-width:2;fill:none}.mp-diff-modal-overlay .mp-modal-box{width:95vw!important;height:93vh!important;max-width:none!important;display:flex!important;flex-direction:column!important}.mp-diff-container{display:flex;flex-direction:column;gap:16px;flex:1;min-height:0;margin-bottom:0}@media (min-width:768px){.mp-diff-container{flex-direction:row}}.mp-diff-column{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0;min-height:0}.mp-diff-label{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mp-accent-primary);display:flex;align-items:center;gap:8px;flex-shrink:0;justify-content:space-around}.mp-diff-textarea{width:100%!important;flex:1!important;padding:16px!important;border-radius:var(--mp-border-radius-md)!important;border:1px solid var(--mp-border-primary)!important;background-color:var(--mp-bg-secondary)!important;color:var(--mp-text-primary)!important;font-family:var(--mp-font-family-editor)!important;font-size:15px!important;resize:none!important;line-height:1.6!important;box-sizing:border-box!important}.mp-diff-actions{display:flex;gap:12px;justify-content:space-around;margin-top:20px;flex-shrink:0}.mp-diff-actions button{padding:10px 20px;border-radius:var(--mp-border-radius-md);cursor:pointer;font-weight:500;display:inline-flex;align-items:center;justify-content:center}.mp-diff-actions .save-button{background:var(--mp-accent-primary);color:var(--mp-text-buttons);border:none}#__ap_enhance_loading{z-index:100000}.mp-loading-content{display:flex;flex-direction:column;align-items:center;gap:15px;color:var(--mp-accent-primary);font-family:var(--mp-font-family-editor)}.mp-loading-icon{width:50px;height:50px}.mp-loading-text{font-size:16px;font-weight:500}.mp-label-wrapper{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px}.mp-label-left{display:flex;align-items:center;flex:1;min-width:0}.mp-label-right,.mp-modal-right-controls{display:flex;align-items:center;gap:4px;flex-shrink:0}.mp-label-wrapper .form-label{margin-bottom:0!important;white-space:normal;overflow:hidden;text-overflow:ellipsis}.mp-enhance-ai-btn,.mp-help-icon,.mp-link-btn,.mp-paste-btn{background:transparent;border:none;cursor:pointer;color:var(--mp-accent-primary);display:flex;align-items:center;justify-content:center;padding:4px;border-radius:var(--mp-border-radius-sm);transition:transform 150ms ease-in-out,opacity 150ms ease-in-out,background-color 150ms ease-in-out;opacity:.8;outline:none;flex-shrink:0}.mp-enhance-ai-btn:hover,.mp-help-icon:hover,.mp-link-btn:hover,.mp-paste-btn:hover{transform:scale(1.1);opacity:1}.mp-enhance-ai-btn svg,.mp-help-icon svg,.mp-link-btn svg,.mp-paste-btn svg{width:16px;height:16px;fill:currentColor;display:block}.mp-enhance-ai-btn.loading{width:22px;height:22px;pointer-events:none}.mp-context-bubble{display:none;background-color:var(--mp-bg-tertiary);border-left:3px solid var(--mp-accent-primary);padding:8px 12px;margin-bottom:12px;font-size:13px;color:var(--mp-text-secondary);line-height:1.4;animation:mp-fade-in-down .2s ease-out forwards;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;word-break:break-word}.mp-context-bubble.visible{display:block}.mp-context-bubble strong{color:var(--mp-text-primary);font-weight:600}@keyframes mp-fade-in-down{0%{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}@keyframes mp-spin{to{transform:rotate(1turn)}}.prompt-menu{position:fixed;min-width:350px;max-width:450px;background-color:var(--mp-bg-primary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-lg);box-shadow:var(--mp-shadow-lg);z-index:99990;display:flex;flex-direction:column;user-select:none;color:var(--mp-text-primary)!important;font-family:var(--mp-font-family-base)!important;overflow:hidden;opacity:0;visibility:hidden;transform:scale(.95);transform-origin:top left;transition:opacity 150ms ease-in-out,transform 150ms ease-in-out,visibility 0s linear 150ms}.prompt-menu.visible{opacity:1;visibility:visible;transform:scale(1);transition-delay:0s}.prompt-menu-list{max-height:350px;padding:4px;overflow-y:auto;overflow-x:hidden;position:relative}.prompt-item-row{position:relative;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:var(--mp-border-radius-md);cursor:pointer;transition:background-color .15s ease-in-out;overflow:hidden}.prompt-item-row.drag-mode,.prompt-item-row:hover{background-color:var(--mp-bg-tertiary)}.prompt-item-row.drag-mode{border:1px dashed var(--mp-accent-primary);cursor:move}.prompt-item-row.drag-mode:active{cursor:grabbing}.prompt-title{font-family:var(--mp-font-family-heading)!important;font-size:14px;font-weight:500;flex:1;padding-right:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--mp-text-secondary);transition:opacity 150ms ease-in-out}.prompt-item-row:hover .prompt-title{color:var(--mp-accent-primary);mask-image:linear-gradient(90deg,#000 60%,transparent);-webkit-mask-image:linear-gradient(90deg,#000 60%,transparent)}.prompt-item-row.nav-selected{background-color:var(--mp-bg-tertiary)!important;border:1px solid var(--mp-accent-primary)!important}.prompt-item-row.nav-selected .prompt-title{color:var(--mp-accent-primary)!important}.prompt-actions{position:absolute;right:0;top:0;bottom:0;padding-left:20px;padding-right:8px;display:flex;align-items:center;gap:4px;background:linear-gradient(90deg,transparent 0,var(--mp-bg-tertiary) 20%,var(--mp-bg-tertiary));transform:translateX(110%);transition:transform .25s cubic-bezier(.25,1,.5,1);z-index:2}.prompt-item-row.drag-mode .prompt-actions,.prompt-item-row:hover .prompt-actions{transform:translateX(0)}.action-btn{background:transparent;border:none;cursor:pointer;width:28px;height:28px;border-radius:var(--mp-border-radius-sm);transition:all .15s ease;display:flex;align-items:center;justify-content:center;line-height:0;color:var(--mp-text-secondary);font-family:var(--mp-font-family-button)!important}.action-btn svg{width:16px;height:16px;display:block}.action-btn:hover{transform:scale(1.1)}.action-btn.edit:hover{color:var(--mp-accent-edit)}.action-btn.copy:hover{color:var(--mp-accent-primary)}.action-btn.delete:hover{color:var(--mp-accent-close)}.action-btn.pin:hover{color:var(--mp-accent-edit)}.action-btn.restore:hover{color:var(--mp-btn-add-color)}.action-btn.unpin{color:var(--mp-accent-primary)}.action-btn.drag:hover{color:var(--mp-btn-export-color)}.menu-footer-grid{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid var(--mp-border-primary);background-color:var(--mp-bg-secondary);flex-shrink:0}.menu-footer-btn{display:flex;align-items:center;justify-content:center;background:transparent;border:none;cursor:pointer;padding:12px 0;color:var(--mp-text-secondary);transition:all 150ms ease-in-out;height:auto;font-family:var(--mp-font-family-button)!important}.menu-footer-btn:not(:last-child){border-right:1px solid var(--mp-border-primary)}.menu-footer-btn svg{width:20px;height:20px;transition:transform .2s cubic-bezier(.34,1.56,.64,1)}.menu-footer-btn:hover svg{transform:scale(1.2)}.menu-footer-btn.btn-export:hover{background-color:var(--mp-btn-export-bg);color:var(--mp-btn-export-color)}.menu-footer-btn.btn-add:hover{background-color:var(--mp-btn-add-bg);color:var(--mp-btn-add-color);transform:none}.menu-footer-btn.btn-add:hover svg{transform:scale(1.4)}.menu-footer-btn.btn-import:hover{background-color:var(--mp-btn-import-bg);color:var(--mp-btn-import-color)}.menu-header-grid{display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--mp-border-primary);background-color:var(--mp-bg-secondary);flex-shrink:0;position:relative;overflow:hidden}.menu-search-overlay{position:absolute;inset:0;background:var(--mp-bg-secondary);display:flex;align-items:center;padding:0 8px;gap:8px;transform:translateX(110%);transition:transform .25s cubic-bezier(.25,1,.5,1);z-index:5}.menu-search-input{flex:1;width:100%;padding:6px 12px;border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);font-family:var(--mp-font-family-base)!important;background:var(--mp-bg-primary);color:var(--mp-text-primary);outline:none;transition:border-color 150ms ease-in-out}.menu-search-input:focus{border-color:var(--mp-accent-primary)}.menu-header-btn{display:flex;align-items:center;justify-content:center;background:transparent;border:none;cursor:pointer;padding:12px 0;color:var(--mp-text-secondary);transition:all 150ms ease-in-out;font-family:var(--mp-font-family-button)!important}.menu-header-btn:not(:last-child):not(.btn-close-search){border-right:1px solid var(--mp-border-primary)}.menu-header-btn svg{width:20px;height:20px;transition:transform .2s cubic-bezier(.34,1.56,.64,1)}.menu-header-btn:hover{color:var(--mp-accent-primary)}.menu-header-btn:hover svg{transform:scale(1.2)}.menu-header-btn.active{color:var(--mp-accent-primary)}.mp-expanded-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;background:var(--mp-bg-overlay);backdrop-filter:blur(4px);z-index:100000;display:flex;align-items:center;justify-content:center;animation:mpFadeIn .2s ease}.mp-expanded-modal{width:93vw;height:93vh;background:var(--mp-bg-primary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-lg);box-shadow:var(--mp-shadow-lg);display:flex;flex-direction:column;overflow:hidden;position:relative;font-family:var(--mp-font-family-base)!important}.mp-expanded-header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--mp-border-primary);background:var(--mp-bg-secondary);gap:16px;flex-shrink:0}.mp-expanded-search-container{flex:1;display:flex}.mp-expanded-search{width:100%;padding:8px 12px;border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);font-family:var(--mp-font-family-base)!important;background:var(--mp-bg-primary);color:var(--mp-text-primary);outline:none;transition:border-color 150ms ease-in-out}.mp-expanded-search:focus{border-color:var(--mp-accent-primary)}.mp-expanded-actions-left{display:flex;align-items:center;gap:8px}.mp-pinned-action-btn.has-selection{background:rgba(240,62,62,.1);color:var(--mp-accent-close);border-color:var(--mp-accent-close)}.mp-expanded-list{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px;display:grid;gap:12px;align-content:start;position:relative}.prompt-item-row.expanded-mode{border:1px solid var(--mp-border-primary);background:var(--mp-bg-secondary);align-items:center;padding:12px 16px;min-width:0;min-height:70px;height:auto}.prompt-item-row.expanded-mode:hover{border-color:var(--mp-accent-primary)}.prompt-item-row.expanded-mode .prompt-actions{position:relative;transform:none;background:transparent;padding-left:8px;opacity:1;flex-shrink:0}.prompt-item-row.expanded-mode .prompt-title{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4;word-break:break-word}.mp-expanded-filter-dropdown{position:fixed;z-index:100001}@keyframes mpFadeIn{0%{opacity:0}to{opacity:1}}.mp-pinned-action-btn.btn-close:hover,.mp-pinned-action-btn.btn-delete.active,.mp-pinned-action-btn.btn-delete:hover{background:var(--mp-accent-close)!important;border-color:var(--mp-accent-close-hover)!important;color:var(--mp-text-buttons)!important}.mp-pinned-action-btn.btn-cols:hover{background:var(--mp-accent-edit)!important;border-color:var(--mp-accent-edit-hover)!important;color:var(--mp-text-buttons)!important}.mp-pinned-action-btn.btn-add:hover{background:var(--mp-btn-add-color)!important;border-color:var(--mp-btn-add-color)!important;color:var(--mp-text-buttons)!important}.mp-pinned-action-btn.btn-export:hover{background:var(--mp-btn-export-color)!important;border-color:var(--mp-btn-export-color)!important;color:var(--mp-text-buttons)!important}.mp-pinned-action-btn.btn-import:hover{background:var(--mp-btn-import-color)!important;border-color:var(--mp-btn-import-color)!important;color:var(--mp-text-buttons)!important}.mp-pinned-action-btn.btn-save:hover,.mp-pinned-action-btn.btn-select-all.active{background:var(--mp-accent-primary)!important;border-color:var(--mp-accent-primary-hover,var(--mp-accent-primary))!important;color:var(--mp-text-buttons)!important}.form-group{display:flex;flex-direction:column;margin-bottom:15px;flex-shrink:0}.form-label{margin-bottom:8px;font-size:14px!important;font-weight:700!important;color:var(--mp-text-secondary);display:block;width:100%;white-space:normal;overflow-wrap:break-word;word-break:break-word}.form-input,.form-textarea{background-color:var(--mp-bg-secondary)!important;color:var(--mp-text-primary)!important;border:1px solid var(--mp-border-primary)!important;border-radius:var(--mp-border-radius-md);padding:10px;width:100%;box-sizing:border-box;transition:border-color 150ms ease-in-out,box-shadow 150ms ease-in-out;outline:0!important;font-family:var(--mp-font-family-editor)!important;font-size:14px!important}.form-textarea{height:300px!important;resize:none!important;display:block}.form-input:focus,.form-textarea:focus{border-color:var(--mp-accent-primary)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--mp-accent-primary) 25%,transparent)!important}.form-input::placeholder,.form-textarea::placeholder,.lang-search-input::placeholder,.menu-search-input::placeholder,.mp-search-input::placeholder{color:var(--mp-text-tertiary)!important;opacity:.7}.mp-switch-container{display:flex;justify-content:space-between;align-items:center;padding:8px 12px!important;margin:0 0 15px;flex-shrink:0;background-color:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);gap:10px}.mp-switch{display:flex;align-items:center;gap:8px}.mp-switch input[type=checkbox]{height:0;width:0;visibility:hidden;position:absolute}.mp-switch label{cursor:pointer;text-indent:-9999px;width:40px;height:22px;background:var(--mp-bg-tertiary);display:block;border-radius:100px;position:relative;transition:background-color var(--mp-transition-fast)}.mp-switch label:after{content:\"\";position:absolute;top:3px;left:3px;width:16px;height:16px;background:var(--mp-switch-knob);border-radius:90px;transition:.3s cubic-bezier(.25,1,.5,1);box-shadow:var(--mp-shadow-sm)}.mp-switch input:checked+label{background:var(--mp-accent-primary)}.mp-switch input:checked+label:after{left:calc(100% - 3px);transform:translateX(-100%)}.mp-switch .switch-text{font-size:13px;font-weight:500;color:var(--mp-text-secondary);cursor:pointer;user-select:none}.mp-prompt-shortcut{flex:1;max-width:140px;font-family:var(--mp-font-family-base);padding:4px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mp-prompt-shortcut[data-shortcut]:not([data-shortcut=\"\"]){color:var(--mp-accent-primary)}.mp-checkbox,.mp-filter-checkbox,.mp-option-item input[type=checkbox]{-webkit-appearance:none!important;appearance:none!important;width:18px!important;height:18px!important;border:1px solid var(--mp-border-primary)!important;border-radius:var(--mp-border-radius-sm)!important;background-color:var(--mp-bg-secondary)!important;cursor:pointer!important;margin:0!important;display:grid!important;place-content:center!important;transition:all 150ms ease-in-out}.mp-checkbox:checked,.mp-filter-item.selected .mp-filter-checkbox,.mp-option-item input[type=checkbox]:checked{background-color:var(--mp-accent-primary)!important;border-color:var(--mp-accent-primary)!important}.mp-checkbox:before,.mp-filter-checkbox:before,.mp-option-item input[type=checkbox]:before{content:\"\";width:10px;height:10px;clip-path:polygon(14% 44%,0 65%,50% 100%,100% 16%,80% 0,43% 62%);background-color:var(--mp-text-buttons);transform:scale(0);transition:transform .15s ease-in-out}.mp-checkbox:checked:before,.mp-filter-item.selected .mp-filter-checkbox:before,.mp-option-item input[type=checkbox]:checked:before{transform:scale(1)}#__ap_placeholders_container{padding:4px;margin-top:15px;box-sizing:border-box;transition:padding-top 150ms ease-in-out}.mp-option-group{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;padding:8px;border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);background-color:var(--mp-bg-tertiary);max-height:none!important;overflow:visible!important}.mp-option-item{display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;padding:8px 8px 8px 12px!important;border-radius:var(--mp-border-radius-sm);background-color:var(--mp-bg-primary);transition:background-color 150ms ease-in-out;user-select:none;border-left:5px solid transparent;position:relative}.mp-option-item:hover{background-color:var(--mp-bg-secondary)}.mp-modal-box.mp-expanded #__ap_placeholders_container{max-height:none!important;height:100%!important;flex:1;display:flex;flex-direction:column;min-height:0}.mp-modal-box.mp-expanded #__ap_placeholders_container .mp-scroll-wrapper{height:100%!important;flex:1}.dynamic-input{min-height:45px!important;line-height:1.5;font-family:var(--mp-font-family-editor)!important}.mp-dynamic-dropzone{position:relative;min-height:90px;border:2px dashed var(--mp-border-primary);border-radius:var(--mp-border-radius-md);margin-bottom:12px;align-items:center;transition:border-color 150ms ease-in-out;box-shadow:none!important;background-color:transparent}.mp-dynamic-dropzone.drag-over{border-color:var(--mp-accent-primary)}.mp-dynamic-grid-w100{width:100%}.mp-hidden-file-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;z-index:-1}.mp-empty-state-container{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px}.menu-search-container,.mp-search-container{position:sticky;top:0;z-index:10;display:flex;flex-direction:column;flex-shrink:0}.menu-search-container{padding:10px 12px;background-color:var(--mp-bg-secondary);border-bottom:1px solid var(--mp-border-primary)}.lang-search-input,.menu-search-input,.mp-search-input,.mp-system-prompt-search-input{width:100%;padding:10px 12px;border-radius:var(--mp-border-radius-md);border:1px solid var(--mp-border-primary);background-color:var(--mp-bg-secondary);color:var(--mp-text-primary);font-family:var(--mp-font-family-editor)!important;font-size:13px;box-sizing:border-box;outline:none;transition:border-color 150ms ease-in-out}.menu-search-input{background-color:var(--mp-bg-primary)!important}.lang-search-input,.mp-system-prompt-search-input{margin-bottom:12px}.lang-search-input:focus,.menu-search-input:focus,.mp-search-input:focus,.mp-system-prompt-search-input:focus{border-color:var(--mp-accent-primary);outline:none!important}.mp-export-actions{display:flex;justify-content:space-between;align-items:center;margin-top:20px;margin-bottom:20px;font-size:13px;color:var(--mp-text-secondary);border-bottom:1px solid var(--mp-border-primary);padding-bottom:16px}.mp-checkbox-wrapper{display:flex;align-items:center;cursor:pointer;user-select:none}.mp-export-list{display:flex;flex-direction:column;gap:4px;margin:0 -8px;padding:0 8px}.mp-export-item{display:flex;align-items:center;padding:8px;border-radius:var(--mp-border-radius-md);transition:background .15s;cursor:pointer;border:1px solid transparent}.mp-export-item:hover{background-color:var(--mp-bg-tertiary);border-color:var(--mp-border-primary)}.mp-item-content{display:flex;flex-direction:column;overflow:hidden;margin-left:12px}.mp-item-title{font-size:14px;font-weight:500;color:var(--mp-text-primary)}.mp-item-preview,.mp-item-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mp-item-preview{font-size:12px;color:var(--mp-text-tertiary);margin-top:2px}.mp-export-buttons{display:flex;gap:10px;margin-top:20px;justify-content:flex-end;border-top:1px solid var(--mp-border-primary);padding-top:16px;flex-shrink:0;font-family:var(--mp-font-family-button)!important}.lang-box,.mp-system-prompt-select-box{width:min(90vw,500px)!important}.mp-system-prompt-select-box{padding:20px!important}.lang-button,.mp-system-prompt-button{all:unset;box-sizing:border-box;display:block;width:100%;padding:12px 20px;border-radius:var(--mp-border-radius-md);background-color:var(--mp-bg-secondary);color:var(--mp-text-primary);border:1px solid var(--mp-border-primary);font-weight:500;cursor:pointer;text-align:center;transition:all 150ms ease-in-out;font-family:var(--mp-font-family-button)!important;flex-shrink:0}.mp-system-prompt-button{display:flex!important;flex-direction:column;align-items:center;gap:4px}.mp-system-prompt-list-container{display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto}.mp-system-prompt-button-title{font-weight:600;font-size:14px}.mp-system-prompt-button-comment{font-weight:400;font-size:12px;color:var(--mp-text-secondary);display:block;width:100%;white-space:normal;overflow-wrap:break-word;word-break:break-word}.lang-button:hover,.mp-system-prompt-button:hover{transform:translateY(-2px);box-shadow:var(--mp-shadow-sm);background-color:var(--mp-bg-tertiary)}.lang-button.selected,.mp-system-prompt-button.is-focused{border-color:var(--mp-accent-primary);color:var(--mp-accent-primary);background-color:color-mix(in srgb,var(--mp-accent-primary) 5%,transparent);font-weight:600}.save-button{padding:10px 28px;border-radius:var(--mp-border-radius-md);background-color:var(--mp-accent-primary);color:var(--mp-text-buttons);border:none;font-weight:600;cursor:pointer;transition:all 150ms ease-in-out;font-family:var(--mp-font-family-button)!important;margin-bottom:5px}.save-button:hover{background-color:var(--mp-accent-primary-hover)}.mp-btn-secondary{background:transparent;border:1px solid var(--mp-border-secondary);color:var(--mp-text-secondary)}.mp-btn-secondary:hover{background-color:var(--mp-bg-tertiary);color:var(--mp-text-primary)}.mp-info-table{display:flex;flex-direction:column;border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);overflow:hidden;margin-top:8px}.mp-info-row{display:flex}.mp-info-row:not(:last-child){border-bottom:1px solid var(--mp-border-primary)}.mp-info-col{padding:16px;display:flex;flex-direction:column;justify-content:center}.mp-info-col:not(:last-child){border-right:1px solid var(--mp-border-primary)}.mp-info-title-col{flex:0 0 35%}.mp-info-desc-col,.mp-info-title-col{background-color:var(--mp-bg-secondary);text-align:left}.mp-info-desc-col{flex:1}.mp-info-col h3{font-size:14px;font-weight:600;color:var(--mp-text-primary);margin:0;font-family:var(--mp-font-family-heading)!important}.mp-info-col p{font-size:13px;color:var(--mp-text-secondary);line-height:1.5;margin:0}.mp-inline-menu{position:fixed;width:500px;max-height:300px;background-color:var(--mp-bg-primary)!important;border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);box-shadow:var(--mp-shadow-lg);z-index:2147483647!important;display:flex;flex-direction:column;opacity:0;visibility:hidden;transform:translateY(10px);transition:opacity .1s,transform .1s,visibility 0s linear .1s;overflow:hidden;font-family:var(--mp-font-family-base)!important}.mp-inline-menu.visible{opacity:1;visibility:visible;transform:translateY(0);transition-delay:0s}.mp-inline-list{padding:4px;pointer-events:auto}.mp-inline-item,.mp-inline-list{display:flex;flex-direction:column}.mp-inline-item{padding:8px 12px;cursor:pointer;border-radius:var(--mp-border-radius-sm);font-size:13px;color:var(--mp-text-primary);align-items:flex-start;justify-content:center;gap:3px;transition:background-color .1s}.mp-inline-item:hover{background-color:var(--mp-bg-tertiary)}.mp-inline-item.selected{background-color:var(--mp-accent-primary);color:var(--mp-text-buttons)!important}.mp-inline-title{font-weight:500;line-height:1.3}.mp-inline-preview,.mp-inline-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;font-family:var(--mp-font-family-heading)!important}.mp-inline-preview{font-weight:400;font-size:12px;color:var(--mp-text-tertiary);line-height:1.2}.mp-inline-item.selected .mp-inline-preview{color:var(--mp-text-buttons)!important;opacity:.8}.mp-tooltip{position:fixed;z-index:2147483647;pointer-events:none;display:flex;flex-direction:column;align-items:center;opacity:0;transform:scale(.95) translateY(4px);transition:opacity .15s cubic-bezier(.4,0,.2,1),transform .15s cubic-bezier(.4,0,.2,1)}.mp-tooltip-interactive{pointer-events:auto}.mp-tooltip.visible{opacity:1;transform:scale(1) translateY(0)}.mp-tooltip-left,.mp-tooltip-right{flex-direction:row;align-items:center}.mp-tooltip-content{font-family:var(--mp-font-family-button)!important;background-color:var(--mp-text-primary);color:var(--mp-bg-primary);padding:0;border-radius:var(--mp-border-radius-sm);max-width:450px;width:max-content;white-space:normal;word-wrap:break-word;overflow-wrap:break-word;text-align:center;font-size:13px;font-weight:500;box-shadow:var(--mp-shadow-md);line-height:1.4;display:flex;flex-direction:column;overflow:hidden}.mp-tooltip-text{display:block;padding:10px 14px}.mp-tooltip-text+.mp-tooltip-actions{border-top:1px solid color-mix(in srgb,var(--mp-border-primary),transparent 70%)}.mp-tooltip-actions{display:flex;width:100%}.mp-tooltip-actions-row{flex-direction:row}.mp-tooltip-actions-column{flex-direction:column}.mp-tooltip-btn{font-family:var(--mp-font-family-button)!important;flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;border:none;border-radius:0;background-color:transparent;color:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:var(--mp-transition-fast);white-space:nowrap}.mp-tooltip-actions-row .mp-tooltip-btn:not(:last-child){border-right:1px solid color-mix(in srgb,var(--mp-border-primary),transparent 70%)}.mp-tooltip-actions-column .mp-tooltip-btn:not(:last-child){border-bottom:1px solid color-mix(in srgb,var(--mp-border-primary),transparent 70%)}.mp-tooltip-btn:focus,.mp-tooltip-btn:hover{background-color:var(--mp-accent-primary);color:var(--mp-text-buttons)}.mp-tooltip-btn:focus{outline:none}.mp-tooltip-btn-icon{width:14px;height:14px;display:flex;align-items:center;justify-content:center}.mp-tooltip-btn-icon svg{width:100%;height:100%;fill:currentColor}.mp-tooltip-arrow{width:0;height:0;margin:0;flex-shrink:0;z-index:1}.mp-tooltip-top .mp-tooltip-arrow{border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid var(--mp-text-primary)}.mp-tooltip-bottom .mp-tooltip-arrow{border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:6px solid var(--mp-text-primary);order:-1}.mp-tooltip-left .mp-tooltip-arrow{border-top:6px solid transparent;border-bottom:6px solid transparent;border-left:6px solid var(--mp-text-primary)}.mp-tooltip-right .mp-tooltip-arrow{border-top:6px solid transparent;border-bottom:6px solid transparent;border-right:6px solid var(--mp-text-primary);order:-1}.mp-tooltip-preview-container{padding:12px;width:320px;max-width:90vw;display:flex;flex-direction:column}.mp-tooltip-preview-text{max-height:200px;overflow-y:auto;background-color:color-mix(in srgb,var(--mp-bg-primary),transparent 85%);border:1px solid color-mix(in srgb,var(--mp-bg-primary),transparent 70%);border-radius:var(--mp-border-radius-sm);padding:13px;font-family:var(--mp-font-family-editor);font-size:12px;font-weight:300;color:var(--mp-bg-primary);line-height:1.5;white-space:pre-wrap;text-align:left;-webkit-hyphens:manual;hyphens:manual;overflow-wrap:break-word}.mp-tooltip-preview-container .mp-scroll-arrow.up{top:0;background:linear-gradient(180deg,color-mix(in srgb,var(--mp-text-primary),transparent 30%) 30%,transparent);color:var(--mp-bg-primary)}.mp-tooltip-preview-container .mp-scroll-arrow.down{bottom:0;background:linear-gradient(0deg,color-mix(in srgb,var(--mp-text-primary),transparent 30%) 30%,transparent);color:var(--mp-bg-primary)}@keyframes mp-fade-in-up{0%{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}.mp-settings-container{display:flex;flex-direction:column;height:100%;overflow:hidden;font-family:var(--mp-font-family-base)!important}.mp-tabs-header{display:flex;justify-content:center;align-items:center;border-bottom:1px solid var(--mp-border-primary);padding:0 16px;margin-bottom:16px;flex-shrink:0;gap:8px}.mp-tab-btn{font-family:var(--mp-font-family-button)!important;flex:1;background:none;padding:12px 4px;font-size:14px;font-weight:600;color:var(--mp-text-secondary);cursor:pointer;border:none;border-bottom:2px solid transparent;transition:all 150ms ease-in-out;text-align:center;border-radius:4px 4px 0 0}.mp-tab-btn:hover{color:var(--mp-text-primary);background-color:var(--mp-bg-tertiary)}.mp-tab-btn.active{color:var(--mp-accent-primary);border-bottom-color:var(--mp-accent-primary)}.mp-tab-content{display:none!important;flex-direction:column;gap:4px;animation:mp-fade-in-up .2s ease}.mp-tab-content.active{display:flex!important}.mp-form-group,.mp-label{margin-bottom:10px}.mp-label{font-size:14px;font-weight:600;color:var(--mp-text-primary);display:block}.mp-label-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}.mp-settings-switch-container{display:flex;justify-content:space-between;align-items:center;background:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);padding:12px;border-radius:var(--mp-border-radius-md);margin:0}#mp-nav-lbl,#mp-preview-prompt-lbl,#mp-smart-predict-lbl,#mp-syntax-lbl{font-size:13px;font-weight:400;color:var(--mp-text-primary);cursor:help;text-decoration:underline dotted;text-decoration-color:color-mix(in srgb,var(--mp-text-secondary) 60%,transparent);text-underline-offset:3px;text-decoration-thickness:1px}.mp-action-btn-full{width:100%;padding:12px 16px;background-color:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);color:var(--mp-text-tertiary);font-weight:500;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:all 150ms ease-in-out;font-family:var(--mp-font-family-button)!important}.mp-action-btn-full:hover{background-color:var(--mp-bg-tertiary);border-color:var(--mp-accent-primary);color:var(--mp-accent-primary)}.mp-btn-icon{display:flex;align-items:center;justify-content:center}.mp-segmented-control{display:flex;background-color:var(--mp-bg-tertiary);border-radius:var(--mp-border-radius-md);padding:4px;gap:4px;width:100%;box-sizing:border-box}.mp-segment-opt{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 4px;font-size:13px;font-weight:500;color:var(--mp-text-secondary);cursor:pointer;border-radius:var(--mp-border-radius-sm);transition:all 150ms ease-in-out cubic-bezier(.25,1,.5,1);user-select:none;border:1px solid transparent}.mp-segment-opt:hover{color:var(--mp-accent-primary);background-color:rgba(0,0,0,.02)}.mp-segment-opt.selected{background-color:var(--mp-bg-primary);border-color:var(--mp-border-primary);box-shadow:0 1px 3px rgba(0,0,0,.08);font-weight:600}.mp-segment-opt.selected,.mp-segment-opt.selected svg{color:var(--mp-accent-primary)}.mp-shortcut-scroll-container,.mp-theme-scroll-container{padding:4px!important;border:none!important;margin:0!important;background:transparent!important;box-sizing:border-box!important;width:100%!important}.mp-shortcut-wrapper-fixed,.mp-theme-wrapper-fixed{flex:none!important;height:auto!important;max-height:165px!important;width:100%!important;box-sizing:border-box!important;margin-top:12px!important;overflow:hidden;position:relative}.mp-shortcut-option,.mp-shortcut-wrapper-fixed,.mp-theme-option,.mp-theme-wrapper-fixed{border:1px solid var(--mp-border-primary);background-color:var(--mp-bg-secondary);border-radius:var(--mp-border-radius-md)}.mp-shortcut-option,.mp-theme-option{flex-shrink:0;padding:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;font-weight:500;color:var(--mp-text-secondary);transition:all 150ms ease-in-out;box-sizing:border-box}@keyframes mp-pulse-recording{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--mp-accent-edit) 40%,transparent)}to{box-shadow:0 0 0 6px transparent}}.mp-shortcut-option.recording{border-color:var(--mp-accent-edit)!important;color:var(--mp-accent-edit)!important;background-color:color-mix(in srgb,var(--mp-accent-edit) 10%,var(--mp-bg-primary))!important;font-weight:700!important;animation:mp-pulse-recording 1.5s infinite}.mp-shortcut-option:last-child,.mp-theme-option:last-child{margin-bottom:0}.mp-shortcut-option:hover,.mp-theme-option:hover{background-color:var(--mp-bg-tertiary);color:var(--mp-text-primary);box-shadow:var(--mp-shadow-sm);border:1px solid var(--mp-accent-primary)}.mp-shortcut-option.selected,.mp-theme-option.selected{background-color:color-mix(in srgb,var(--mp-accent-primary) 10%,var(--mp-bg-primary));color:var(--mp-accent-primary);border-color:var(--mp-accent-primary);font-weight:700;box-shadow:var(--mp-shadow-md)}.mp-theme-option{margin:5px;width:auto}.mp-shortcut-option{margin:0 0 5px;width:100%;background-color:color-mix(in srgb,var(--mp-bg-primary) 45%,transparent)}.mp-shortcut-option:last-child{margin-bottom:0}.mp-settings-footer{display:flex;justify-content:center;align-items:center;padding-top:16px;margin-top:10px;border-top:1px solid var(--mp-border-primary);flex-shrink:0}.mp-settings-footer .save-button{min-width:160px}.mp-theme-action-row{display:flex;gap:8px;padding:0 5px;margin:5px 0 8px;flex-shrink:0;width:100%;box-sizing:border-box}.mp-theme-split-btn{flex:1;display:flex;align-items:center;justify-content:center;padding:10px;border-radius:var(--mp-border-radius-md);border:1px dashed var(--mp-border-primary);color:var(--mp-text-secondary);background-color:var(--mp-bg-secondary);cursor:pointer;transition:all 150ms ease-in-out;font-size:13px;font-weight:500}.mp-theme-split-btn:hover{background-color:var(--mp-bg-tertiary);border-color:var(--mp-accent-primary);color:var(--mp-accent-primary);box-shadow:var(--mp-shadow-sm)}.hide-api-key{-webkit-text-security:disc}#mp_ai_api_key_input{margin-bottom:8px}#mp_ai_sys_prompt_input{margin-top:8px;min-height:60px;resize:vertical;width:100%;box-sizing:border-box}.mp-form-hint{color:var(--mp-text-tertiary);font-size:11px;margin-top:4px;display:block}.mp-nav-switch{position:fixed;top:50%;right:20px;transform:translateY(-50%);display:flex;flex-direction:column;background-color:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);box-shadow:var(--mp-shadow-md);z-index:10000;padding:4px;gap:6px;transition:opacity .3s ease}.mp-nav-switch[style*=\"display: none\"]{pointer-events:none}.mp-nav-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--mp-text-secondary);border-radius:var(--mp-border-radius-sm);cursor:pointer;transition:all 150ms ease-in-out;position:relative}.mp-nav-btn svg{width:20px;height:20px}.mp-nav-btn:hover{background-color:var(--mp-bg-tertiary);color:var(--mp-accent-primary);transform:scale(1.05)}.mp-nav-btn:active{transform:scale(.95)}.mp-nav-list-popup{position:absolute;right:45px;top:50%;transform:translateY(-50%) scale(.95);width:300px;max-height:500px;background-color:var(--mp-bg-primary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);box-shadow:var(--mp-shadow-lg);opacity:0;visibility:hidden;transition:all 150ms ease-in-out cubic-bezier(.165,.84,.44,1);display:flex;flex-direction:column;z-index:10001;overflow:hidden}.mp-nav-list-popup.active{opacity:1;visibility:visible;transform:translateY(-50%) scale(1)}.mp-nav-header{display:flex;justify-content:space-between;background-color:var(--mp-bg-secondary);border-bottom:1px solid var(--mp-border-primary);padding:6px;gap:4px;flex-shrink:0}.mp-nav-tab{flex:1;display:flex;align-items:center;justify-content:center;padding:6px;border-radius:6px;cursor:pointer;color:var(--mp-text-secondary);transition:background 150ms ease-in-out,color 150ms ease-in-out}.mp-nav-tab:hover{background-color:var(--mp-bg-tertiary)}.mp-nav-tab.active{background-color:var(--mp-accent-primary);color:var(--mp-text-buttons)}.mp-nav-tab svg{width:18px;height:18px;pointer-events:none}.mp-nav-scroll-area{overflow-y:auto;flex:1;scrollbar-width:none;-ms-overflow-style:none}.mp-nav-scroll-area::-webkit-scrollbar{display:none}.mp-nav-item-wrapper{display:flex;flex-direction:column;border-bottom:1px solid var(--mp-bg-tertiary)}.mp-nav-item-wrapper:last-child{border-bottom:none}.mp-nav-list-item{padding:10px 12px;font-family:var(--mp-font-family-base);font-size:13px;color:var(--mp-text-secondary);cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .1s;position:relative;overflow:hidden}.mp-nav-list-item.main-msg-item{border-bottom:none!important}.mp-nav-list-item.current-item,.mp-nav-list-item:hover{background-color:var(--mp-bg-tertiary)}.mp-nav-list-item.current-item{color:var(--mp-accent-primary);border-left:3px solid var(--mp-accent-primary);font-weight:500}.mp-nav-idx-badge{font-size:10px;background:var(--mp-bg-secondary);padding:0;border-radius:4px;min-width:24px;height:20px;display:flex;align-items:center;justify-content:center;color:var(--mp-text-primary);flex-shrink:0;position:relative;overflow:hidden}.mp-nav-idx-badge.has-topics{cursor:pointer;transition:background-color 150ms ease-in-out,color 150ms ease-in-out}.mp-nav-idx-badge.has-topics:hover,.mp-nav-item-wrapper.expanded .mp-nav-idx-badge.has-topics{background-color:var(--mp-accent-primary);color:var(--mp-text-buttons)}.mp-nav-idx-number{transition:opacity 150ms ease-in-out,transform 150ms ease-in-out}.mp-nav-expand-icon{position:absolute;display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(.5) rotate(0deg);transition:opacity 150ms ease-in-out,transform .2s cubic-bezier(.165,.84,.44,1)}.mp-nav-expand-icon svg{width:16px;height:16px}.mp-nav-idx-badge.has-topics:hover .mp-nav-idx-number,.mp-nav-item-wrapper.expanded .mp-nav-idx-badge.has-topics .mp-nav-idx-number{opacity:0;transform:scale(.5)}.mp-nav-idx-badge.has-topics:hover .mp-nav-expand-icon{opacity:1;transform:scale(1) rotate(0deg)}.mp-nav-item-wrapper.expanded .mp-nav-idx-badge.has-topics .mp-nav-expand-icon{opacity:1;transform:scale(1) rotate(90deg)}.mp-nav-preview-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}.mp-nav-type-icon{width:13px!important;height:13px!important;flex-shrink:0!important;color:var(--mp-accent-primary)!important;margin-left:auto!important;opacity:1!important;display:flex!important;align-items:center!important}.mp-nav-submenu{font-family:var(--mp-font-family-base);display:none;flex-direction:column;background-color:var(--mp-bg-primary);border-left:2px solid var(--mp-bg-tertiary);margin-left:24px;margin-right:12px;margin-bottom:6px;border-bottom-left-radius:4px;overflow:hidden}.mp-nav-item-wrapper.expanded .mp-nav-submenu{display:flex;animation:mpFadeInDrop .2s ease forwards}.mp-nav-sub-item{padding:6px 8px;font-size:11.5px;color:var(--mp-text-secondary);cursor:pointer;display:flex;align-items:center;transition:background .1s,color .1s;position:relative;overflow:hidden}.mp-nav-sub-item:hover{background-color:var(--mp-bg-tertiary);color:var(--mp-text-primary)}.mp-nav-sub-item:before{content:\"\";position:absolute;left:-2px;top:50%;width:6px;height:2px;background-color:var(--mp-bg-tertiary)}.mp-nav-sub-item:hover:before{background-color:var(--mp-accent-primary)}.mp-nav-sub-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%}.mp-nav-sub-item.level-1{padding-left:8px;font-weight:500}.mp-nav-sub-item.level-2{padding-left:16px}.mp-nav-sub-item.level-3{padding-left:24px;font-size:11px;opacity:.9}.mp-nav-sub-item.level-4{padding-left:32px;font-size:10.5px;opacity:.8}.mp-nav-sub-item.level-5{padding-left:40px;font-size:10px;opacity:.7}.mp-nav-sub-item.level-6{padding-left:48px;font-size:10px;opacity:.6}.mp-nav-sub-item.current-item{background-color:var(--mp-bg-tertiary);color:var(--mp-accent-primary);font-weight:500}.mp-nav-sub-item.current-item:before{background-color:var(--mp-accent-primary)}.mp-nav-msg-actions{position:absolute;right:0;top:0;bottom:0;padding-left:24px;padding-right:12px;display:flex;align-items:center;gap:4px;background:linear-gradient(90deg,transparent 0,var(--mp-bg-tertiary) 30%,var(--mp-bg-tertiary));transform:translateX(110%);transition:transform .25s cubic-bezier(.25,1,.5,1);z-index:2}.mp-nav-list-item:hover .mp-nav-msg-actions,.mp-nav-sub-item:hover .mp-nav-msg-actions{transform:translateX(0)}.mp-pin-btn{width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:4px;color:var(--mp-text-secondary);cursor:pointer;transition:all 150ms ease-in-out}.mp-pin-btn:hover{color:var(--mp-accent-edit)}.mp-pin-btn.is-pinned{color:var(--mp-accent-primary)}.mp-pin-btn svg{width:14px;height:14px}.mp-pinned-carousel-wrapper{position:fixed;top:15px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;align-items:center;gap:8px;pointer-events:none;transition:opacity .3s}.mp-pinned-carousel-wrapper.mp-orient-h{flex-direction:column;padding-bottom:20px}.mp-pinned-carousel-wrapper.mp-orient-v{flex-direction:row;padding-right:20px;gap:15px!important}.mp-pinned-main-wrapper{display:flex;align-items:center;gap:10px;pointer-events:none;transition:opacity .3s ease}.mp-orient-v .mp-pinned-main-wrapper{flex-direction:column}.mp-pinned-carousel-wrapper.is-hidden .mp-pinned-main-wrapper{opacity:0;pointer-events:none}.mp-pinned-carousel-wrapper.is-hidden .mp-pinned-main-wrapper,.mp-pinned-carousel-wrapper.is-hidden .mp-pinned-main-wrapper *{pointer-events:none!important}.mp-orient-h .mp-pinned-viewport{max-width:80vw;overflow:hidden;display:flex;justify-content:center;padding:40px 10px;margin:-40px -10px;mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);min-height:fit-content}.mp-orient-v .mp-pinned-viewport{height:50vh;max-height:350px;width:fit-content;max-width:80vw;overflow:hidden;display:flex;align-items:center;padding:40px 28px;margin:-40px -28px;mask-image:linear-gradient(180deg,transparent,#000 10%,#000 90%,transparent);-webkit-mask-image:linear-gradient(180deg,transparent,#000 10%,#000 90%,transparent)}.mp-orient-h .mp-pinned-track{padding:10px 0}.mp-orient-h .mp-pinned-track,.mp-orient-v .mp-pinned-track{display:flex;align-items:center;gap:12px;transition:transform .4s cubic-bezier(.25,1,.5,1);pointer-events:auto}.mp-orient-v .mp-pinned-track{flex-direction:column;padding:0 10px}.mp-pinned-viewport.is-single-item{mask-image:none!important;-webkit-mask-image:none!important;overflow:visible}.mp-pinned-viewport.is-single-item .mp-pinned-card{opacity:1;transform:scale(1.1);background-color:color-mix(in srgb,var(--mp-accent-primary) 10%,var(--mp-bg-primary));border-color:var(--mp-accent-primary-hover);color:var(--mp-accent-primary);pointer-events:auto}.mp-pinned-card{background:var(--mp-accent-primary);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--mp-border-secondary);border-radius:var(--mp-border-radius-lg);padding:6px 16px;color:var(--mp-text-buttons);font-family:var(--mp-font-family-base);font-size:12px;white-space:nowrap;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all .4s cubic-bezier(.25,1,.5,1);transform:scale(.85);box-shadow:0 4px 12px rgba(0,0,0,.15);min-width:140px;max-width:200px;box-sizing:border-box;flex-shrink:0}.mp-pinned-card:hover{background-color:var(--mp-accent-primary-hover)}.mp-pinned-card.active-center{opacity:1;transform:scale(1.2);background-color:color-mix(in srgb,var(--mp-accent-primary) 10%,var(--mp-bg-primary));border-color:var(--mp-accent-primary-hover);box-shadow:var(--mp-shadow-md);color:var(--mp-accent-primary)}.mp-drag-mode .mp-pinned-card{cursor:default;pointer-events:none}.mp-pinned-card-text{flex:1;overflow:hidden;text-overflow:ellipsis;text-align:center;user-select:none}.mp-pinned-card-unpin{display:flex;align-items:center;justify-content:center;opacity:.6;transition:all 150ms ease-in-out}.mp-pinned-card-unpin:hover{opacity:1;color:var(--mp-accent-primary);transform:scale(1.1)}.mp-pinned-card-unpin svg{width:12px;height:12px;pointer-events:none}.mp-carousel-nav{pointer-events:auto;background:var(--mp-bg-secondary);backdrop-filter:blur(8px);color:var(--mp-text-secondary);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 150ms ease-in-out;opacity:.6;z-index:2;border:1px solid var(--mp-text-secondary);flex-shrink:0}.mp-carousel-nav:hover{opacity:1;transform:scale(1.1);background:var(--mp-accent-primary);color:var(--mp-text-buttons)}.mp-carousel-nav.left svg{transform:rotate(180deg)}.mp-carousel-nav.up svg{transform:rotate(-90deg)}.mp-carousel-nav.down svg{transform:rotate(90deg)}.mp-carousel-nav.right svg{transform:rotate(0deg)}.mp-carousel-nav svg{width:14px;height:14px;pointer-events:none}.mp-pinned-actions-panel{display:flex;align-items:center;justify-content:center;gap:8px;opacity:0;transform:scale(.8);transition:all .3s cubic-bezier(.25,1,.5,1);pointer-events:auto;flex-shrink:0}.mp-orient-v .mp-pinned-actions-panel{flex-direction:column}.mp-pinned-carousel-wrapper.is-list-mode .mp-pinned-actions-panel,.mp-pinned-carousel-wrapper.mp-drag-mode .mp-pinned-actions-panel,.mp-pinned-carousel-wrapper:hover .mp-pinned-actions-panel{opacity:1;transform:scale(1)}.mp-pinned-action-btn{background:var(--mp-bg-secondary);backdrop-filter:blur(8px);color:var(--mp-text-secondary);border-radius:var(--mp-border-radius-lg);border:1px solid hsla(0,0%,100%,.1);border-color:var(--mp-text-secondary);width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 150ms ease-in-out;flex-shrink:0}.mp-pinned-action-btn.active,.mp-pinned-action-btn:hover{background:var(--mp-accent-primary);color:var(--mp-text-buttons);transform:scale(1.1)}.mp-pinned-action-btn.delete-btn:hover,.mp-pinned-action-btn.mp-reset-btn:hover{background:var(--mp-accent-close);border-color:var(--mp-accent-close-hover)}.mp-pinned-action-btn.mp-save-btn:hover{background:#22c55e;border-color:#006826;color:#fff}.mp-pinned-action-btn svg{width:16px;height:16px;display:block;margin:auto;pointer-events:none}.mp-pinned-carousel-wrapper.mp-drag-mode{cursor:grab}.mp-pinned-carousel-wrapper.mp-drag-mode.mp-is-being-dragged{cursor:grabbing}body.mp-dragging-active,body.mp-dragging-active *{cursor:grabbing!important;user-select:none!important}.mp-drag-crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:10;width:0;height:0}.mp-drag-ch-line{position:absolute;background:var(--mp-accent-primary);opacity:.5}.mp-drag-ch-h{width:48px;height:1px;top:0;left:50%;transform:translateX(-50%)}.mp-drag-ch-v{width:1px;height:48px;left:0;top:50%;transform:translateY(-50%)}.mp-drag-ch-dot{position:absolute;width:6px;height:6px;background:var(--mp-accent-primary);border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);box-shadow:0 0 10px var(--mp-accent-primary),0 0 20px rgba(0,0,0,.3)}.mp-rulers-container{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9998;pointer-events:none}.mp-ruler-screen-v{width:0;height:100vh;top:0;left:50vw;border-left:1px dashed color-mix(in sRGB,var(--mp-text-primary),transparent 50%);border-right:1px dashed color-mix(in sRGB,var(--mp-text-primary),transparent 50%)}.mp-ruler-screen-h,.mp-ruler-screen-v{position:absolute;background:var(--mp-bg-overlay)}.mp-ruler-screen-h{height:0;width:100vw;left:0;top:50vh;border-top:1px dashed color-mix(in sRGB,var(--mp-text-primary),transparent 50%);border-bottom:1px dashed color-mix(in sRGB,var(--mp-text-primary),transparent 50%)}.mp-ruler-carousel-v{width:1px;height:100vh;top:0;transition:left .04s linear,opacity 150ms ease-in-out,box-shadow 150ms ease-in-out}.mp-ruler-carousel-h,.mp-ruler-carousel-v{position:absolute;background:var(--mp-accent-primary);opacity:.3}.mp-ruler-carousel-h{height:1px;width:100vw;left:0;transition:top .04s linear,opacity 150ms ease-in-out,box-shadow 150ms ease-in-out}.mp-rulers-container.mp-snapped-x .mp-ruler-carousel-v,.mp-rulers-container.mp-snapped-y .mp-ruler-carousel-h{opacity:.85;box-shadow:0 0 14px var(--mp-accent-primary),0 0 4px var(--mp-accent-primary)}.mp-ruler-label{position:absolute;font-size:9px;font-weight:700;letter-spacing:.5px;color:hsla(0,0%,100%,.2);pointer-events:none;font-family:var(--mp-font-family-base),monospace}.mp-ruler-label-v{top:10px;transform:translateX(-50%)}.mp-ruler-label-h{left:10px;transform:translateY(-50%)}.mp-pinned-carousel-wrapper.is-list-mode .mp-pinned-viewport{mask-image:none!important;-webkit-mask-image:none!important;max-height:400px;min-height:auto;display:block;overflow-y:auto;overflow-x:hidden;width:300px;padding:10px 0;margin:0;scroll-behavior:smooth;-ms-overflow-style:none;scrollbar-width:none}.mp-pinned-carousel-wrapper.is-list-mode .mp-pinned-viewport::-webkit-scrollbar{display:none}.mp-pinned-carousel-wrapper.is-list-mode .mp-pinned-track{flex-direction:column!important;align-items:center;gap:8px;width:100%;padding:0}@keyframes mpHighlightPulse{0%{transform:scale(1);outline:2px solid transparent;box-shadow:none}20%{transform:scale(1.02);outline:2px solid var(--mp-accent-primary);box-shadow:0 0 15px var(--mp-accent-primary)}80%{transform:scale(1.02);outline:2px solid var(--mp-accent-primary);box-shadow:0 0 15px var(--mp-accent-primary)}to{transform:scale(1);outline:2px solid transparent;box-shadow:none}}.mp-highlight-anim{animation:mpHighlightPulse 2s ease-in-out forwards}@keyframes mpFadeInDrop{0%{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}.mp-backup-section{display:flex;flex-direction:column;gap:12px}.mp-backup-subtitle{font-size:14px;font-weight:600;color:var(--mp-text-primary);margin:0;display:flex;align-items:center;gap:8px}.mp-backup-subtitle svg{width:16px;height:16px;fill:var(--mp-text-secondary)}.mp-backup-divider{height:1px;background-color:var(--mp-border-primary);margin:20px 0}.mp-backup-list{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;padding-right:4px}.mp-backup-item{display:flex;align-items:center;padding:10px 12px;background-color:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);cursor:pointer;transition:background-color .15s,border-color .15s}.mp-backup-item:hover{background-color:var(--mp-bg-tertiary);border-color:var(--mp-accent-primary)}.mp-backup-item-content{margin-left:12px;display:flex;flex-direction:column}.mp-backup-item-title{font-size:13px;font-weight:500;color:var(--mp-text-primary)}.mp-backup-item-desc{font-size:11px;color:var(--mp-text-tertiary);margin-top:2px}.mp-backup-warning{font-size:11px;color:var(--mp-accent-close);background-color:rgba(240,62,62,.1);padding:8px 12px;border-radius:var(--mp-border-radius-sm);line-height:1.4;text-align:center;font-weight:600}.mp-backup-actions{display:flex;gap:10px;margin-top:12px;justify-content:flex-end}.mp-backup-actions .save-button{flex:1}.mp-form-row{display:flex;gap:12px!important;width:100%!important;margin-bottom:16px!important;font-size:13px!important}.mp-form-row>.mp-form-group{flex:1;margin-bottom:0}@media (max-width:400px){.mp-form-row{flex-direction:column;gap:16px}.mp-form-row>.mp-form-group{margin-bottom:0}}.mp-tag-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:var(--mp-border-radius-sm);font-family:var(--mp-font-family-base);font-size:11px;font-weight:500;line-height:1;white-space:nowrap;cursor:default;user-select:none;transition:transform 150ms ease-in-out;color:var(--mp-text-buttons)}.prompt-tags-container{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.mp-tags-modal-content{display:flex;flex-direction:column;gap:16px;max-height:60vh;overflow:hidden;padding-right:4px;scrollbar-width:none}.mp-tags-modal-content::-webkit-scrollbar{display:none}.mp-tag-form{display:flex;flex-direction:column;gap:12px;padding:16px;background-color:var(--mp-bg-secondary);border-radius:var(--mp-border-radius-md);border:1px solid var(--mp-border-primary)}.mp-tag-form-row{display:flex;gap:12px;align-items:flex-end;justify-content:space-around;width:100%;box-sizing:border-box}.mp-tag-color-group{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;max-width:160px;min-width:80px}.mp-tag-color-label{font-family:var(--mp-font-family-base);font-size:11px;color:var(--mp-text-secondary)}.mp-tag-color-input{width:100%;height:32px;padding:0;margin:0;border:2px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-sm);cursor:pointer;background:none;overflow:hidden;box-sizing:border-box;display:block}.mp-tag-color-input::-webkit-color-swatch-wrapper{padding:0}.mp-tag-color-input::-webkit-color-swatch{border:none;border-radius:2px}.mp-tag-color-input::-moz-color-swatch{border:none;border-radius:2px}.mp-tags-list{display:flex;flex-direction:column;gap:6px}.mp-tag-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background-color:var(--mp-bg-secondary);border-radius:var(--mp-border-radius-md);border:1px solid var(--mp-border-primary);transition:background-color 150ms ease-in-out,border-color 150ms ease-in-out}.mp-tag-item:hover{background-color:var(--mp-bg-tertiary);border-color:var(--mp-border-secondary)}.mp-tag-item-info{gap:12px;flex:1;min-width:0}.mp-tag-item-info,.mp-tag-item-preview{display:flex;align-items:center}.mp-tag-item-details{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.mp-tag-item-comment{font-family:var(--mp-font-family-base);font-size:12px;color:var(--mp-text-tertiary);display:block;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mp-tag-item-actions{display:flex;gap:2px;flex-shrink:0}.mp-tag-action-btn{background:none;border:none;cursor:pointer;width:28px;height:28px;border-radius:var(--mp-border-radius-sm);transition:all .15s ease;display:flex;align-items:center;justify-content:center;color:var(--mp-text-secondary);font-family:var(--mp-font-family-button)}.mp-tag-action-btn:hover{background-color:rgba(0,0,0,.05);transform:scale(1.1)}.mp-tag-action-btn.edit:hover{color:var(--mp-accent-edit)}.mp-tag-action-btn.delete:hover{color:var(--mp-accent-close)}.mp-tag-action-btn svg{width:16px;height:16px}.mp-tags-empty{text-align:center;padding:32px;color:var(--mp-text-tertiary);font-family:var(--mp-font-family-base)}.mp-filter-btn{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;width:28px;height:28px;border-radius:var(--mp-border-radius-sm);display:flex;align-items:center;justify-content:center;color:var(--mp-text-secondary);transition:all 150ms ease-in-out;z-index:5;margin-right:5px}.mp-filter-btn:hover{background-color:rgba(0,0,0,.05);transform:translateY(-50%) scale(1.1)}.mp-filter-btn.active,.mp-filter-btn:hover{color:var(--mp-accent-primary)}.mp-filter-btn svg{width:16px;height:16px}.mp-filter-dropdown{position:fixed;min-width:100px;max-width:200px;background-color:var(--mp-bg-primary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);box-shadow:var(--mp-shadow-lg);display:none;flex-direction:column;max-height:480px;overflow:hidden}.mp-filter-dropdown.visible{display:flex;flex-direction:column}.mp-filter-header{display:flex;justify-content:space-around;flex-direction:row-reverse;align-items:center;padding:4px 6px;border-bottom:1px solid var(--mp-border-primary);background-color:var(--mp-bg-secondary);gap:2px}.mp-filter-manage-btn{background:none;border:none;cursor:pointer;width:28px;height:28px;border-radius:var(--mp-border-radius-sm);display:flex;align-items:center;justify-content:center;color:var(--mp-text-secondary);transition:all 150ms ease-in-out}.mp-filter-manage-btn:hover{background-color:rgba(0,0,0,.05);transform:scale(1.1);color:var(--mp-accent-edit)}.mp-filter-manage-btn svg{width:16px;height:16px}.mp-filter-clear-btn{background:none;border:none;cursor:pointer;width:28px;height:28px;border-radius:var(--mp-border-radius-sm);display:flex;align-items:center;justify-content:center;color:var(--mp-text-secondary);transition:all 150ms ease-in-out}.mp-filter-clear-btn:hover{background-color:rgba(0,0,0,.05);transform:scale(1.1);color:var(--mp-accent-close)}.mp-filter-clear-btn svg{width:16px;height:16px}.mp-filter-list{overflow-y:auto;padding:4px;flex:1;scrollbar-width:none}.mp-filter-list::-webkit-scrollbar{display:none}.mp-filter-item{display:flex;align-items:center;gap:10px;padding:7px 10px;cursor:pointer;border-radius:var(--mp-border-radius-sm);transition:background-color .15s ease,box-shadow .15s ease}.mp-filter-item+.mp-filter-item{margin-top:1px}.mp-filter-item.selected,.mp-filter-item:hover{background-color:var(--mp-bg-tertiary)}.mp-filter-tag-preview{flex:1;min-width:0}.mp-filter-empty{padding:24px 16px;text-align:center;color:var(--mp-text-tertiary);font-family:var(--mp-font-family-base);font-size:13px}.mp-accordions-row{display:flex;gap:10px;margin-bottom:15px;flex-shrink:0;align-items:flex-start}.mp-accordions-row>.mp-files-accordion,.mp-accordions-row>.mp-tags-accordion{flex:1;margin:0}.mp-files-accordion,.mp-tags-accordion{border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);background-color:var(--mp-bg-secondary);overflow:hidden;margin-top:10px;margin-bottom:20px;flex-shrink:0;transition:border-color 150ms ease-in-out;display:flex;flex-direction:column}.mp-files-accordion:hover,.mp-tags-accordion:hover{border-color:var(--mp-accent-primary)}.mp-accordion-header{padding:8px 12px;background-color:var(--mp-bg-secondary);cursor:pointer;font-size:13px;font-weight:600;color:var(--mp-text-secondary);display:flex;justify-content:space-between;align-items:center;user-select:none;transition:background 150ms ease-in-out;border-bottom:1px solid transparent;flex-shrink:0}.mp-accordion-header:hover{color:var(--mp-text-primary);background-color:var(--mp-bg-tertiary)}.mp-accordion-header svg{width:16px;height:16px;transition:transform 150ms ease-in-out;opacity:.6}.mp-files-accordion.open .mp-accordion-header,.mp-tags-accordion.open .mp-accordion-header{border-bottom:1px solid var(--mp-border-primary);background-color:var(--mp-bg-tertiary)}.mp-files-accordion.open .mp-accordion-header svg:last-child,.mp-tags-accordion.open .mp-accordion-header svg:last-child{transform:rotate(180deg);opacity:1;color:var(--mp-accent-primary)}.mp-accordion-content{display:none;background-color:var(--mp-bg-primary);position:relative;flex-direction:column}.mp-files-accordion.open .mp-accordion-content,.mp-tags-accordion.open .mp-accordion-content{display:flex;flex-direction:column;height:190px}.mp-accordion-content .mp-scroll-wrapper{flex:1;display:flex;flex-direction:column;min-height:0}.mp-file-scroll-wrapper,.mp-tags-scroll-wrapper{flex:1;height:100%;overflow-y:auto;padding:12px 10px;scrollbar-width:none;-ms-overflow-style:none;box-sizing:border-box}.mp-dynamic-dropzone.empty-state,.mp-file-scroll-wrapper.empty-state,.mp-tags-scroll-wrapper.empty-state{height:100%;display:flex;justify-content:center;cursor:pointer;background:linear-gradient(135deg,color-mix(in srgb,var(--mp-accent-primary) 8%,transparent),color-mix(in srgb,var(--mp-accent-primary) 3%,transparent));box-shadow:0 8px 32px 0 rgba(0,0,0,.08),inset 0 1px 1px 0 hsla(0,0%,100%,.2)}.mp-file-scroll-wrapper.empty-state:hover,.mp-tags-scroll-wrapper.empty-state:hover{background:linear-gradient(135deg,color-mix(in srgb,var(--mp-accent-primary) 12%,transparent),color-mix(in srgb,var(--mp-accent-primary) 5%,transparent));border-color:var(--mp-accent-primary);box-shadow:0 12px 40px 0 rgba(0,0,0,.12),inset 0 1px 1px 0 hsla(0,0%,100%,.3)}.mp-file-grid.empty-state,.mp-tags-grid.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;width:100%;pointer-events:none}.mp-file-empty-icon,.mp-tags-empty-icon{width:48px;height:48px;color:var(--mp-accent-primary);opacity:.8;display:flex;align-items:center;justify-content:center}.mp-file-empty-text,.mp-tags-empty-text{color:var(--mp-text-primary);font-size:14px;font-weight:600;text-align:center}.mp-file-empty-subtext,.mp-tags-empty-subtext{color:var(--mp-text-secondary);font-size:12px;text-align:center}.mp-file-scroll-wrapper::-webkit-scrollbar,.mp-tags-scroll-wrapper::-webkit-scrollbar{display:none}.mp-file-grid{display:grid;grid-template-columns:repeat(auto-fill,70px);gap:10px}.mp-file-grid,.mp-tags-grid{justify-content:center;width:100%}.mp-tags-grid{display:flex;flex-wrap:wrap;gap:8px}.mp-add-file-card,.mp-file-card{position:relative;width:100%;height:70px;border-radius:6px;flex-shrink:0;cursor:pointer;transition:all 150ms ease-in-out;box-sizing:border-box}.mp-file-card{background:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);overflow:hidden}.mp-add-file-card,.mp-file-card{display:flex;align-items:center;justify-content:center}.mp-add-file-card{border:2px dashed var(--mp-border-primary);color:var(--mp-text-tertiary);background:transparent}.mp-add-file-card:hover,.mp-dynamic-dropzone:hover{border-color:var(--mp-accent-primary);color:var(--mp-accent-primary);background-color:color-mix(in srgb,var(--mp-accent-primary) 5%,transparent)}.mp-add-icon{width:24px;height:24px;stroke:currentColor;stroke-width:2}.mp-file-card.inactive{opacity:.5;filter:grayscale(100%)}.mp-file-card.inactive:hover{opacity:.9;filter:grayscale(0);border-color:var(--mp-text-tertiary)}.mp-file-card.active{opacity:1;border-color:var(--mp-accent-primary);box-shadow:0 0 0 2px color-mix(in srgb,var(--mp-accent-primary) 20%,transparent)}.mp-file-thumb{width:100%;height:100%;object-fit:cover}.mp-file-icon-gen{width:28px;height:28px;color:var(--mp-text-secondary)}.mp-file-delete-perm{position:absolute;top:2px;right:2px;width:16px;height:16px;background:rgba(0,0,0,.6);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;opacity:0;transition:opacity 150ms ease-in-out;z-index:10}.mp-file-delete-perm:hover{background-color:var(--mp-accent-close)}.mp-file-card:hover .mp-file-delete-perm{opacity:1}.mp-tag-select-item{display:inline-flex;align-items:center;padding:6px 12px;border-radius:var(--mp-border-radius-sm);font-family:var(--mp-font-family-base);font-size:12px;font-weight:500;cursor:pointer;transition:all 150ms ease-in-out;background-color:var(--mp-bg-tertiary);color:var(--mp-text-tertiary);border:1px solid transparent}.mp-tag-select-item:hover{transform:scale(1.05);opacity:.9}.mp-tag-select-item.active{border-color:hsla(0,0%,100%,.3);box-shadow:0 2px 8px rgba(0,0,0,.15)}.mp-tags-accordion-footer{display:flex;justify-content:center;padding:8px;border-top:1px solid var(--mp-border-primary);background-color:var(--mp-bg-secondary);flex-shrink:0;position:relative;z-index:10}.mp-tags-manage-btn{display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;color:var(--mp-accent-primary);font-family:var(--mp-font-family-button);font-size:12px;font-weight:500;padding:6px 12px;border-radius:var(--mp-border-radius-sm);transition:background-color 150ms ease-in-out}.mp-tags-manage-btn:hover{background-color:color-mix(in srgb,var(--mp-accent-primary) 15%,transparent)}.mp-tags-manage-btn svg{width:14px;height:14px}.mp-icon-container{display:flex;align-items:center;justify-content:center;cursor:help;width:16px;height:16px;color:var(--mp-accent-primary)}.mp-syntax-container{position:relative!important;width:100%;height:100%}.mp-syntax-backdrop{position:absolute!important;top:0;left:0;right:0;bottom:0;overflow:hidden;pointer-events:none;z-index:0;font-family:var(--mp-font-family-editor)!important;font-size:inherit;font-weight:400!important;font-style:normal!important;line-height:inherit;letter-spacing:normal;word-spacing:normal;text-transform:none;text-indent:0;text-shadow:none!important;text-decoration:none!important;white-space:pre-wrap;overflow-wrap:break-word;word-wrap:break-word;word-break:normal;padding:16px;margin:0;border:none;box-sizing:border-box;color:var(--mp-text-primary);background:transparent;user-select:none;-webkit-user-select:none}textarea.mp-syntax-enabled{position:relative!important;z-index:1;background:transparent!important;color:transparent!important;-webkit-text-fill-color:transparent!important;white-space:pre-wrap!important;overflow-wrap:break-word!important;word-wrap:break-word!important;word-break:normal!important;caret-color:var(--mp-syntax-caret)!important}textarea.mp-syntax-enabled::-moz-selection,textarea.mp-syntax-enabled::selection{background:var(--mp-syntax-selection)!important}.mp-syn-esc{color:var(--mp-syntax-escape)}.mp-syn-ign-f{color:var(--mp-syntax-ignore-fence);opacity:.8}.mp-syn-ign-c{color:var(--mp-syntax-ignore-content);opacity:.6}.mp-syn-qt-f{color:var(--mp-syntax-quote-fence)}.mp-syn-qt-c{color:var(--mp-syntax-quote-content)}.mp-syn-dt-f,.mp-syn-dt-k{color:var(--mp-syntax-var-keyword)}.mp-syn-fl-k,.mp-syn-fl-p,.mp-syn-fl-t{color:var(--mp-syntax-file-keyword)}.mp-syn-sl-f{color:var(--mp-syntax-sel-fence)}.mp-syn-sl-h,.mp-syn-sl-hh{color:var(--mp-syntax-sel-header)}.mp-syn-sl-sep{color:var(--mp-syntax-sel-sep);opacity:.7}.mp-syn-sl-p-multi{color:var(--mp-syntax-sel-multi)}.mp-syn-sl-p-single{color:var(--mp-syntax-sel-single)}.mp-syn-sl-p-id{color:var(--mp-syntax-sel-id)}.mp-syn-sl-p-other{color:var(--mp-syntax-sel-other)}.mp-syn-def-s{color:var(--mp-syntax-def-sep)}.mp-syn-def-v{color:var(--mp-syntax-def-val)}.mp-syn-sel-chk{color:var(--mp-syntax-sel-checked)}.mp-syn-free-b,.mp-syn-free-l{color:var(--mp-syntax-free-label);background-color:color-mix(in srgb,var(--mp-syntax-free-bracket) 25%,transparent)}.mp-syn-in-b{color:var(--mp-syntax-in-bracket)}.mp-syn-in-l{color:var(--mp-syntax-in-label)}.mp-syn-in-e{color:var(--mp-syntax-in-eq)}.mp-syn-sil-b{color:var(--mp-syntax-sil-bracket)}.mp-syn-sil-l{color:var(--mp-syntax-sil-label)}.mp-syn-sil-e{color:var(--mp-syntax-sil-eq)}.mp-syn-in-c{color:var(--mp-syntax-context);opacity:.7}.mp-syn-in-v,.mp-syn-sil-v,.mp-syn-var{color:var(--mp-syntax-var)}.mp-syn-var{border-bottom:1px dotted var(--mp-syntax-var)}.mp-syntax-backdrop,textarea.mp-syntax-enabled{tab-size:4;-moz-tab-size:4}.mp-syntax-backdrop span{font-weight:inherit;font-style:inherit}.mp-syntax-backdrop span[class*=mp-syn-]{text-decoration:none!important;text-shadow:none!important}.mp-gist-import-btn{display:inline-flex;align-items:center;justify-content:center;gap:.25rem;padding:.5rem;height:1.75rem;font-size:.75rem;font-weight:500;font-family:var(--mp-font-family-button);line-height:1.625;border-radius:6px;border:1px solid var(--mp-border-secondary);cursor:pointer;background-color:var(--mp-accent-primary);color:var(--mp-text-buttons);box-shadow:var(--mp-shadow-sm);transition:all var(--mp-transition-fast);margin-right:8px;vertical-align:middle;text-decoration:none}.mp-gist-import-btn:hover{background-color:color-mix(in srgb,var(--mp-accent-primary) 10%,var(--mp-bg-primary));color:var(--mp-accent-primary);border-color:var(--mp-accent-primary);box-shadow:var(--mp-shadow-md)}.mp-gist-import-btn:active{transform:scale(.98)}.file-actions{display:flex}.mp-gist-import-btn[data-state=imported],.mp-gist-import-btn[data-state=imported]:active,.mp-gist-import-btn[data-state=imported]:hover{background-color:var(--mp-bg-tertiary);color:var(--mp-text-secondary);box-shadow:none;transform:none;border-color:var(--mp-text-secondary);opacity:.7;cursor:not-allowed!important;pointer-events:auto!important}#mp-notification-container{position:fixed;top:24px;left:50%;transform:translateX(-50%);z-index:999999;display:flex;flex-direction:column;gap:12px;pointer-events:none;align-items:center}.mp-notification{background-color:color-mix(in srgb,var(--mp-accent-primary) 10%,var(--mp-bg-primary));color:var(--mp-accent-primary);border:1px solid var(--mp-accent-primary);padding:10px 20px;border-radius:var(--mp-border-radius-md);box-shadow:var(--mp-shadow-md);font-family:var(--mp-font-family-button);font-size:14px;font-weight:500;opacity:0;transform:translateY(-20px);transition:all var(--mp-transition-fast);display:flex;align-items:center;pointer-events:auto}.mp-notification.mp-show{opacity:1;transform:translateY(0)}.mp-notification.mp-error{background-color:color-mix(in srgb,var(--mp-accent-close) 10%,var(--mp-bg-primary));color:var(--mp-accent-close);border-color:var(--mp-accent-close);box-shadow:0 4px 12px color-mix(in srgb,var(--mp-accent-close) 25%,transparent)}.mp-prompt-meta-highlight{border:2px solid var(--mp-accent-primary)!important;border-radius:6px!important;padding:8px!important;background-color:color-mix(in srgb,var(--mp-accent-primary) 10%,var(--mp-bg-primary))!important;box-shadow:0 0 12px color-mix(in srgb,var(--mp-accent-primary) 40%,transparent)!important;transition:all var(--mp-transition-fast) ease-in-out;cursor:pointer}.mp-prompt-meta-highlight:hover{background-color:color-mix(in srgb,var(--mp-accent-primary) 15%,var(--mp-bg-primary))!important;box-shadow:0 0 16px color-mix(in srgb,var(--mp-accent-primary) 60%,transparent)!important}.mp-prompt-meta-highlight,.mp-prompt-meta-highlight a,.mp-prompt-meta-highlight li,.mp-prompt-meta-highlight span,.mp-prompt-meta-highlight strong,.mp-prompt-meta-highlight svg{color:var(--mp-accent-primary)!important}.mp-prompt-meta-highlight svg{fill:var(--mp-accent-primary)!important}.mp-patreon-button{background-color:#f96854!important;color:#fff!important;display:flex!important;justify-content:center;align-items:center;text-decoration:none;margin-top:8px;transition:filter 150ms ease-in-out,transform .1s ease;border:none;cursor:pointer}.mp-patreon-button:hover{filter:brightness(1.1);text-decoration:none;color:#fff!important}.mp-patreon-button:active{filter:brightness(.9);transform:scale(.99)}.kfds-lyt-width-100.mp-patreon-button{box-sizing:border-box}.mp-expanded-filter-dropdown,.mp-filter-dropdown{z-index:100005!important}#__ap_settings_overlay{z-index:99990!important;position:fixed!important}#__ap_lang_modal_overlay{z-index:99999!important;position:fixed!important}#__ap_lang_modal_overlay .lang-box{z-index:100000!important;position:relative!important}.empty-state{padding:10px;text-align:center;color:var(--mp-text-tertiary);font-size:14px}.mp-dialogo-overlay{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:var(--mp-bg-overlay);opacity:0;transition:opacity var(--mp-transition-fast);pointer-events:none;padding:16px}.mp-dialogo-overlay.mp-dialogo-visible{opacity:1;pointer-events:auto}.mp-dialogo{background:var(--mp-bg-secondary);border-radius:var(--mp-border-radius-lg);box-shadow:var(--mp-shadow-lg);border:1px solid var(--mp-border-primary);width:100%;max-width:420px;display:flex;flex-direction:column;max-height:calc(100vh - 64px);transform:scale(.95) translateY(10px);opacity:0;transition:transform var(--mp-transition-fast),opacity var(--mp-transition-fast);font-family:var(--mp-font-family-base);outline:none}.mp-dialogo-overlay.mp-dialogo-visible .mp-dialogo{transform:scale(1) translateY(0);opacity:1}.mp-dialogo-header{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 0}.mp-dialogo-title{font-family:var(--mp-font-family-heading);font-size:16px;font-weight:600;color:var(--mp-text-primary);margin:0;line-height:1.3}.mp-dialogo-body{padding:16px 20px;flex:1;overflow-y:auto;min-height:0}.mp-dialogo-message{font-size:14px;line-height:1.6;color:var(--mp-text-secondary);margin:0;overflow-wrap:break-word;word-break:break-word}.mp-dialogo-header:empty+.mp-dialogo-body{padding-top:20px}.mp-dialogo-body::-webkit-scrollbar{width:6px}.mp-dialogo-body::-webkit-scrollbar-track{background:transparent}.mp-dialogo-body::-webkit-scrollbar-thumb{background:var(--mp-border-primary);border-radius:10px}.mp-dialogo-body::-webkit-scrollbar-thumb:hover{background:var(--mp-text-tertiary)}.mp-dialogo-body{scrollbar-width:thin;scrollbar-color:var(--mp-border-primary) transparent}.mp-dialogo-footer{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:4px 20px 20px}.mp-dialogo-footer:empty{display:none}.mp-dialogo-footer-checkbox{display:flex;align-items:center;margin-right:auto;font-size:12px;color:var(--mp-text-tertiary);user-select:none;cursor:pointer;line-height:1}.mp-dialogo-footer-checkbox .mp-checkbox{margin:0;width:14px;height:14px;flex-shrink:0}.mp-dialogo-footer-checkbox span{margin-left:6px}.mp-dialogo-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;border:1px solid transparent;border-radius:var(--mp-border-radius-sm);font-family:var(--mp-font-family-button);font-size:13px;font-weight:500;cursor:pointer;transition:all var(--mp-transition-fast);white-space:nowrap;line-height:1.4}.mp-dialogo-btn:hover,.save-button:hover{box-shadow:4px 4px 0 0 var(--mp-text-primary);transform:translate(-2px,-2px)}.mp-dialogo-btn:active,.save-button:active{box-shadow:0 0 0 0 var(--mp-text-primary);transform:translate(0)}.mp-dialogo-btn:focus-visible{outline:2px solid var(--mp-accent-primary);outline-offset:2px}.mp-dialogo-btn-icon{display:flex;align-items:center;justify-content:center;width:16px;height:16px;flex-shrink:0}.mp-dialogo-btn-icon svg{width:100%;height:100%}.mp-dialogo-btn-primary{background:var(--mp-accent-primary);color:var(--mp-text-buttons);border-color:var(--mp-accent-primary)}.mp-dialogo-btn-primary:hover{background:var(--mp-accent-primary-hover);border-color:var(--mp-accent-primary-hover)}.mp-dialogo-btn-secondary{background:transparent;color:var(--mp-text-secondary);border-color:var(--mp-text-primary)}.mp-dialogo-btn-secondary:hover{background:var(--mp-bg-tertiary);color:var(--mp-text-primary);border-color:var(--mp-text-primary)}.mp-dialogo-btn-danger{background:var(--mp-accent-close);color:var(--mp-text-buttons);border-color:var(--mp-accent-close)}.mp-dialogo-btn-danger:hover{background:var(--mp-accent-close-hover);border-color:var(--mp-accent-close-hover)}.mp-dialogo-btn-edit{background:var(--mp-accent-edit);color:var(--mp-text-buttons);border-color:var(--mp-accent-edit)}.mp-dialogo-btn-edit:hover{background:var(--mp-accent-edit-hover);border-color:var(--mp-accent-edit-hover)}.mp-shared-changelog-btn{display:inline-block;font-size:13px;color:var(--mp-accent-primary);cursor:pointer;margin-bottom:10px;text-decoration:underline}.mp-shared-changelog-content{background:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);padding:10px;font-size:13px;color:var(--mp-text-secondary);max-height:250px;overflow-y:auto;margin-bottom:15px;white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word}.mp-shared-changelog-content h1,.mp-shared-changelog-content h2,.mp-shared-changelog-content h3,.mp-shared-changelog-content h4,.mp-shared-changelog-content h5,.mp-shared-changelog-content h6{margin-top:0;margin-bottom:8px;color:var(--mp-text-primary)}.mp-shared-changelog-content p{margin:0 0 8px}.mp-shared-inline-code{background:var(--mp-bg-tertiary);padding:2px 4px;border-radius:3px;font-family:var(--mp-font-family-editor);color:var(--mp-accent-close)}.mp-shared-block-code{background:var(--mp-bg-tertiary);padding:10px;border-radius:var(--mp-border-radius-sm);overflow-x:auto;max-height:200px;white-space:pre-wrap;word-wrap:break-word;margin-bottom:8px;display:block}.mp-shared-block-code,.mp-shared-changelog-content code{font-family:var(--mp-font-family-editor)!important}.mp-shared-version-highlight{color:var(--mp-btn-add-color)}.mp-shared-info{margin-bottom:15px;padding:12px;background:var(--mp-bg-secondary);border-radius:var(--mp-border-radius-md);border:1px solid var(--mp-border-primary)}.mp-shared-info-manager{margin-top:15px;margin-bottom:0;padding:10px}.mp-shared-info-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.mp-shared-info-header.align-center{align-items:center}.mp-shared-info-list{font-size:13px;color:var(--mp-text-secondary);display:flex;flex-direction:column;gap:6px}.mp-shared-info-label{color:var(--mp-accent-primary)}.mp-shared-btn-secondary{background-color:var(--mp-bg-tertiary)!important;color:var(--mp-text-primary)!important;border:1px solid var(--mp-border-primary)!important}.mp-shared-btn-secondary:hover{background-color:var(--mp-bg-secondary)!important;opacity:.9}.mp-shared-btn-cancel{background:var(--mp-bg-secondary)!important;color:var(--mp-text-primary)!important;border:1px solid var(--mp-border-primary)!important}.mp-diff-column-full{width:100%!important}.mp-shared-cl-overlay{z-index:99995!important}.mp-shared-cl-box{max-width:600px!important;max-height:80vh!important;display:flex!important;flex-direction:column!important;cursor:default}.mp-shared-cl-title{flex-shrink:0;margin-bottom:15px}.mp-shared-cl-body{flex-grow:1;overflow-y:auto;max-height:none!important;margin-bottom:0!important;text-align:left}.mp-shared-intervals{display:flex;gap:10px;flex-wrap:wrap;padding:8px 12px;justify-content:space-between;align-items:center;background-color:var(--mp-bg-secondary);border-radius:var(--mp-border-radius-md);border:1px solid var(--mp-border-primary)}.mp-shared-interval-label{display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;color:var(--mp-text-secondary)}.mp-shared-version-badge{color:var(--mp-btn-add-color);font-weight:600;font-size:14px}.mp-shared-info-subtext{font-size:12px;color:var(--mp-text-secondary);margin-top:5px}.mp-shared-info-actions{margin-top:10px;display:flex;gap:8px}.mp-shared-info-actions .flex-1{flex:1}.mp-shared-form-group{margin-top:15px}.mp-shared-modal-footer{margin-top:20px}.mp-diff-view{width:100%!important;flex:1!important;padding:16px!important;border-radius:var(--mp-border-radius-md)!important;border:1px solid var(--mp-border-primary)!important;background-color:var(--mp-bg-secondary)!important;color:var(--mp-text-primary)!important;font-family:var(--mp-font-family-editor)!important;font-size:15px!important;line-height:1.6!important;box-sizing:border-box!important;overflow-y:auto!important;white-space:pre-wrap!important;word-break:break-all!important}.mp-diff-line-unchanged{color:var(--mp-text-primary)}.mp-diff-line-removed{background-color:rgba(239,68,68,.15)!important;color:#ef4444!important;display:block;width:100%}.mp-diff-line-added{background-color:rgba(16,185,129,.15)!important;color:#10b981!important;display:block;width:100%}.mp-diff-line-empty{background-color:transparent;opacity:.3;user-select:none}.mp-diff-column{position:relative!important}.mp-diff-enhanced-edit-btn{position:absolute!important;bottom:12px;right:12px;z-index:10;opacity:.35;transition:opacity 150ms ease-in-out,transform 150ms ease-in-out}.mp-diff-enhanced-edit-btn.active,.mp-diff-enhanced-edit-btn:hover{opacity:1!important}.save-button:has(svg){display:inline-flex!important;align-items:center!important;justify-content:center!important}.save-button svg{width:18px!important;height:18px!important;display:block!important;margin:0!important;pointer-events:none}input#__ap_shared_url{color:var(--mp-accent-primary)!important;font-weight:300!important}\n";
+    ":root{--mp-font-stack-i18n:\"Roboto Slab\",-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,\"Helvetica Neue\",Arial,\"Microsoft YaHei\",\"PingFang SC\",\"Hiragino Sans GB\",\"Heiti SC\",\"Apple SD Gothic Neo\",\"Noto Sans CJK SC\",sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\",\"Segoe UI Symbol\";--mp-font-family-base:var(--mp-font-stack-i18n);--mp-font-family-heading:var(--mp-font-stack-i18n);--mp-font-family-editor:\"JetBrains Mono\",var(--mp-font-stack-i18n);--mp-font-family-button:var(--mp-font-stack-i18n);--mp-bg-primary:rgba(10,19,26,0.72);--mp-bg-secondary:rgba(10,19,26,0.65);--mp-bg-tertiary:rgba(10,19,26,0.55);--mp-bg-overlay:rgba(10,19,26,0.95);--mp-text-primary:#00E5FF;--mp-text-secondary:#67E8F9;--mp-text-tertiary:rgba(0,229,255,0.7);--mp-text-buttons:#fff;--mp-border-primary:rgba(0,229,255,0.4);--mp-border-secondary:rgba(0,229,255,0.2);--mp-accent-primary:#00E5FF;--mp-accent-primary-hover:#67E8F9;--mp-accent-edit:#67E8F9;--mp-accent-edit-hover:#00E5FF;--mp-accent-close:#ff0055;--mp-accent-close-hover:#ffffff;--mp-btn-export-bg:rgba(0,229,255,0.12);--mp-btn-export-color:#00E5FF;--mp-btn-add-bg:rgba(0,229,255,0.16);--mp-btn-add-color:#67E8F9;--mp-btn-import-bg:rgba(103,232,249,0.12);--mp-btn-import-color:#67E8F9;--mp-switch-knob:#00E5FF;--mp-shadow-sm:0 0 8px rgba(0,229,255,0.15);--mp-shadow-md:0 0 20px rgba(0,229,255,0.3);--mp-shadow-lg:0 0 40px rgba(0,229,255,0.15);--mp-border-radius-sm:0px;--mp-border-radius-md:4px;--mp-border-radius-lg:16px;--mp-transition-fast:150ms ease-in-out;--mp-syntax-escape:#ff6b6b;--mp-syntax-ignore-fence:#868e96;--mp-syntax-ignore-content:#adb5bd;--mp-syntax-quote-fence:#2b8a3e;--mp-syntax-quote-content:#40c057;--mp-syntax-var-keyword:#15aabf;--mp-syntax-var-flag:#0c8599;--mp-syntax-file-keyword:#e64980;--mp-syntax-sel-fence:#4c6ef5;--mp-syntax-sel-header:#3b5bdb;--mp-syntax-sel-multi:#339af0;--mp-syntax-sel-single:#ff8787;--mp-syntax-sel-id:#da77f2;--mp-syntax-sel-other:#fa7b05;--mp-syntax-sel-sep:#adb5bd;--mp-syntax-free-bracket:#fab005;--mp-syntax-free-label:#e67700;--mp-syntax-in-bracket:#d6336c;--mp-syntax-in-label:#a61e4d;--mp-syntax-in-eq:#f06595;--mp-syntax-sil-bracket:#845ef7;--mp-syntax-sil-label:#6741d9;--mp-syntax-sil-eq:#b197fc;--mp-syntax-var:#099268;--mp-syntax-context:#868e96;--mp-syntax-def-sep:#f03e3e;--mp-syntax-def-val:#ff8787;--mp-syntax-sel-checked:#20c997;--mp-syntax-caret:var(--mp-text-primary,#000);--mp-syntax-selection:color-mix(in srgb,var(--mp-accent-primary,#4c6ef5) 30%,transparent)}@media (prefers-color-scheme:dark){:root{--mp-bg-primary:rgba(10,19,26,0.72);--mp-bg-secondary:rgba(10,19,26,0.65);--mp-bg-tertiary:rgba(10,19,26,0.55);--mp-bg-overlay:rgba(10,19,26,0.95);--mp-text-primary:#00E5FF;--mp-text-secondary:#67E8F9;--mp-text-tertiary:rgba(0,229,255,0.7);--mp-text-buttons:#fff;--mp-border-primary:rgba(0,229,255,0.4);--mp-border-secondary:rgba(0,229,255,0.2);--mp-accent-primary:#00E5FF;--mp-accent-primary-hover:#67E8F9;--mp-accent-edit:#67E8F9;--mp-accent-edit-hover:#00E5FF;--mp-accent-close:#ff0055;--mp-accent-close-hover:#ffffff;--mp-btn-export-bg:rgba(0,229,255,0.12);--mp-btn-export-color:#00E5FF;--mp-btn-add-bg:rgba(0,229,255,0.16);--mp-btn-add-color:#67E8F9;--mp-btn-import-bg:rgba(103,232,249,0.12);--mp-btn-import-color:#67E8F9;--mp-switch-knob:#00E5FF;--mp-shadow-sm:0 0 8px rgba(0,229,255,0.15);--mp-shadow-md:0 0 20px rgba(0,229,255,0.3);--mp-shadow-lg:0 0 40px rgba(0,229,255,0.15);--mp-syntax-escape:#ff8787;--mp-syntax-ignore-fence:#adb5bd;--mp-syntax-ignore-content:#868e96;--mp-syntax-quote-fence:#69db7c;--mp-syntax-quote-content:#b2f2bb;--mp-syntax-var-keyword:#3bc9db;--mp-syntax-var-flag:#99e9f2;--mp-syntax-file-keyword:#f783ac;--mp-syntax-sel-fence:#91a7ff;--mp-syntax-sel-header:#bac8ff;--mp-syntax-sel-multi:#74c0fc;--mp-syntax-sel-single:#ffc9c9;--mp-syntax-sel-id:#e599f7;--mp-syntax-sel-other:#fa7b05;--mp-syntax-sel-sep:#868e96;--mp-syntax-free-bracket:#ffd43b;--mp-syntax-free-label:#fab005;--mp-syntax-in-bracket:#f06595;--mp-syntax-in-label:#fcc2d7;--mp-syntax-in-eq:#faa2c1;--mp-syntax-sil-bracket:#b197fc;--mp-syntax-sil-label:#d0bfff;--mp-syntax-sil-eq:#9775fa;--mp-syntax-var:#38d9a9;--mp-syntax-context:#ced4da;--mp-syntax-def-sep:#ff6b6b;--mp-syntax-def-val:#ffc9c9;--mp-syntax-sel-checked:#63e6be}}.mp-prompt-wrapper{position:relative;width:36px;height:36px;margin:0 4px;display:inline-flex;vertical-align:middle;z-index:1000}.mp-sliding-pill-container{position:absolute;width:36px;height:36px;box-sizing:border-box;justify-content:space-between;background-color:var(--mp-bg-primary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-lg);box-shadow:var(--mp-shadow-sm);overflow:hidden;z-index:1000;transition:width var(--mp-transition-fast),height var(--mp-transition-fast),background-color var(--mp-transition-fast),border-color var(--mp-transition-fast)}.mp-btn-part,.mp-sliding-pill-container{display:flex;align-items:center;padding:0}.mp-btn-part{justify-content:center;flex:0 0 34px;width:34px;height:34px;background:transparent;border:none;margin:0;cursor:pointer;color:var(--mp-text-secondary);transition:color var(--mp-transition-fast)}.mp-btn-part svg{display:block;width:20px;height:20px;margin:0 auto;pointer-events:none;flex-shrink:0}.mp-btn-main{opacity:1}.mp-btn-ai,.mp-btn-paste{flex:0 0 0;width:0;height:0;opacity:0;overflow:hidden;transition:flex-basis var(--mp-transition-fast),width var(--mp-transition-fast),height var(--mp-transition-fast),opacity var(--mp-transition-fast),transform var(--mp-transition-fast)}.mp-sliding-pill-container:hover .mp-btn-ai,.mp-sliding-pill-container:hover .mp-btn-paste{flex:0 0 34px;width:34px;height:34px;opacity:1;transform:translate(0)}.mp-sliding-pill-container:hover{background-color:var(--mp-bg-tertiary);border-color:var(--mp-accent-primary);box-shadow:var(--mp-shadow-md)}.mp-btn-part:hover{color:var(--mp-accent-primary)}.mp-sliding-pill-container:active{background-color:var(--mp-bg-secondary)}.mp-dir-top{bottom:0;left:0;flex-direction:column}.mp-dir-top:hover{height:112px}.mp-dir-top .mp-btn-ai,.mp-dir-top .mp-btn-paste{transform:translateY(10px)}.mp-dir-bottom{top:0;left:0;flex-direction:column-reverse}.mp-dir-bottom:hover{height:112px}.mp-dir-bottom .mp-btn-ai,.mp-dir-bottom .mp-btn-paste{transform:translateY(-10px)}.mp-dir-left{top:0;right:0;flex-direction:row}.mp-dir-left:hover{width:112px}.mp-dir-left .mp-btn-ai,.mp-dir-left .mp-btn-paste{transform:translateX(10px)}.mp-dir-right{top:0;left:0;flex-direction:row-reverse}.mp-dir-right:hover{width:112px}.mp-dir-right .mp-btn-ai,.mp-dir-right .mp-btn-paste{transform:translateX(-10px)}.mp-sliding-pill-container:after,.mp-sliding-pill-container:before{content:\"\";position:absolute;background-color:var(--mp-border-primary);opacity:0;transition:opacity var(--mp-transition-fast);pointer-events:none;z-index:1001}.mp-sliding-pill-container:hover:after,.mp-sliding-pill-container:hover:before{opacity:1}.mp-dir-bottom:before,.mp-dir-top:before{width:26px;height:1px;left:50%;transform:translateX(-50%);top:37px}.mp-dir-bottom:after,.mp-dir-top:after{width:26px;height:1px;left:50%;transform:translateX(-50%);top:75px}.mp-dir-left:before,.mp-dir-right:before{width:1px;height:26px;top:50%;transform:translateY(-50%);left:37px}.mp-dir-left:after,.mp-dir-right:after{width:1px;height:26px;top:50%;transform:translateY(-50%);left:75px}.mp-hidden{display:none!important}.mp-scroll-invisible{overflow-y:auto!important;scrollbar-width:none!important;-ms-overflow-style:none!important;scroll-behavior:smooth}.mp-scroll-invisible::-webkit-scrollbar{display:none;width:0;height:0}.mp-scroll-wrapper{position:relative;display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;max-width:100%;box-sizing:border-box}.mp-scroll-arrow{position:absolute;left:0;right:0;height:28px;display:flex;align-items:center;justify-content:center;color:var(--mp-text-tertiary);cursor:pointer;opacity:0;pointer-events:none;transition:opacity 150ms ease-in-out,color 150ms ease-in-out;z-index:10}.mp-scroll-arrow.up{top:0;background:linear-gradient(180deg,color-mix(in srgb,var(--mp-scroll-bg,var(--mp-bg-primary)),transparent 40%) 30%,transparent)}.mp-scroll-arrow.down{bottom:0;background:linear-gradient(0deg,color-mix(in srgb,var(--mp-scroll-bg,var(--mp-bg-primary)),transparent 40%) 30%,transparent)}.mp-scroll-arrow:hover{color:var(--mp-accent-primary)}.mp-scroll-arrow.visible{opacity:1;pointer-events:auto}.mp-scroll-arrow svg{width:20px;height:20px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.1))}#AB_modal_box_el #__ap_text,#prompt-menu-container #__ap_text,.mp-modal-box .form-group:has(#__ap_text) .form-textarea{border:none!important;box-shadow:none!important;background-color:transparent!important;padding:16px;width:100%;height:100%;font-family:var(--mp-font-family-editor)!important}.mp-modal-box .form-group:has(#__ap_text) .mp-scroll-wrapper{border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);background-color:var(--mp-bg-secondary);transition:border-color 150ms ease-in-out,box-shadow 150ms ease-in-out;overflow:hidden!important;display:flex;flex-direction:column;height:300px}.mp-modal-box .form-group:has(#__ap_text) .mp-scroll-wrapper:focus-within{border-color:var(--mp-accent-primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--mp-accent-primary) 25%,transparent)}.mp-modal-box.mp-expanded .form-group:has(#__ap_text) .mp-scroll-wrapper{height:100%!important}.mp-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background-color:var(--mp-bg-overlay);z-index:99990;display:flex;justify-content:center;align-items:center;backdrop-filter:blur(4px);opacity:0;visibility:hidden;transition:opacity var(--mp-transition-fast),visibility var(--mp-transition-fast)}.mp-overlay.visible{opacity:1;visibility:visible}.mp-modal-box{font-family:var(--mp-font-family-base)!important;background-color:var(--mp-bg-primary);border-radius:var(--mp-border-radius-lg);padding:24px!important;box-shadow:var(--mp-shadow-lg);width:min(93vw,800px)!important;border:1px solid var(--mp-border-primary)!important;transform:scale(.95) translateY(10px);opacity:0;transition:transform var(--mp-transition-fast),opacity var(--mp-transition-fast),width .3s cubic-bezier(.4,0,.2,1),height .3s cubic-bezier(.4,0,.2,1)!important;position:relative!important;display:flex!important;flex-direction:column!important;max-height:95vh!important}.modal-title,.mp-modal-box{color:var(--mp-text-primary)}.modal-title{font-family:var(--mp-font-family-heading)!important;font-size:18px;font-weight:600;margin:0 0 20px;text-align:center;flex-shrink:0}.modal-footer{display:flex;justify-content:center;margin-top:16px;flex-shrink:0}.mp-modal-box.mp-expanded{width:95vw!important;max-width:95vw!important;height:93vh!important;max-height:93vh!important;display:flex!important;flex-direction:column!important}.mp-modal-box.mp-expanded .form-group:has(#__ap_text){flex:1;display:flex;flex-direction:column;min-height:0;margin-bottom:15px}.mp-modal-box.mp-expanded .modal-title{display:block!important;visibility:visible!important;text-align:center;margin-bottom:20px;flex-shrink:0}.mp-modal-box.mp-expanded .form-group:has(.form-textarea){flex:1;display:flex;flex-direction:column;min-height:0;margin-bottom:24px}.mp-modal-box.mp-expanded .mp-scroll-wrapper{flex:1;height:100%!important}.mp-modal-box.mp-expanded .form-textarea{height:100%!important}.mp-modal-box.mp-expanded .mp-switch-container{padding-top:8px}.mp-overlay.visible .mp-modal-box{transform:scale(1) translateY(0);opacity:1}.mp-modal-close-btn,.mp-modal-info-btn,.mp-modal-shop-btn{position:absolute;top:12px;background:none;border:none;color:var(--mp-text-tertiary);cursor:pointer;width:32px;height:32px;border-radius:50%;transition:transform .3s ease,color .3s ease,background-color .3s ease;display:flex;justify-content:center;align-items:center;padding:0;z-index:20}.mp-modal-close-btn{right:12px}.mp-modal-info-btn{right:88px}.mp-modal-shop-btn{right:126px;cursor:default!important}.mp-modal-close-btn:hover{transform:rotate(90deg);color:var(--mp-accent-close);background-color:color-mix(in srgb,var(--mp-accent-close) 15%,transparent)}.mp-modal-info-btn:hover,.mp-modal-shop-btn:hover{transform:scale(1.1);color:var(--mp-accent-primary);background-color:color-mix(in srgb,var(--mp-accent-primary) 15%,transparent)}.mp-modal-close-btn svg,.mp-modal-info-btn svg,.mp-modal-shop-btn svg{width:20px;height:20px;stroke:currentColor;stroke-width:2.5;fill:none}.mp-modal-info-btn svg{stroke-width:0;fill:currentColor}.mp-modal-expand-btn{position:absolute;top:12px;right:50px;background:none;border:none;color:var(--mp-text-tertiary);cursor:pointer;width:32px;height:32px;border-radius:50%;transition:transform .3s ease,color .3s ease,background-color .3s ease;display:flex;justify-content:center;align-items:center;padding:0;z-index:20}.mp-modal-expand-btn:hover{transform:scale(1.1);color:var(--mp-accent-primary);background-color:color-mix(in srgb,var(--mp-accent-primary) 15%,transparent)}.mp-modal-expand-btn svg,.mp-modal-shop-btn svg{width:20px;height:20px;stroke:currentColor;stroke-width:2;fill:none}.mp-diff-modal-overlay .mp-modal-box{width:95vw!important;height:93vh!important;max-width:none!important;display:flex!important;flex-direction:column!important}.mp-diff-container{display:flex;flex-direction:column;gap:16px;flex:1;min-height:0;margin-bottom:0}@media (min-width:768px){.mp-diff-container{flex-direction:row}}.mp-diff-column{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0;min-height:0}.mp-diff-label{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mp-accent-primary);display:flex;align-items:center;gap:8px;flex-shrink:0;justify-content:space-around}.mp-diff-textarea{width:100%!important;flex:1!important;padding:16px!important;border-radius:var(--mp-border-radius-md)!important;border:1px solid var(--mp-border-primary)!important;background-color:var(--mp-bg-secondary)!important;color:var(--mp-text-primary)!important;font-family:var(--mp-font-family-editor)!important;font-size:15px!important;resize:none!important;line-height:1.6!important;box-sizing:border-box!important}.mp-diff-actions{display:flex;gap:12px;justify-content:space-around;margin-top:20px;flex-shrink:0}.mp-diff-actions button{padding:10px 20px;border-radius:var(--mp-border-radius-md);cursor:pointer;font-weight:500;display:inline-flex;align-items:center;justify-content:center}.mp-diff-actions .save-button{background:var(--mp-accent-primary);color:var(--mp-text-buttons);border:none}#__ap_enhance_loading{z-index:100000}.mp-loading-content{display:flex;flex-direction:column;align-items:center;gap:15px;color:var(--mp-accent-primary);font-family:var(--mp-font-family-editor)}.mp-loading-icon{width:50px;height:50px}.mp-loading-text{font-size:16px;font-weight:500}.mp-label-wrapper{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px}.mp-label-left{display:flex;align-items:center;flex:1;min-width:0}.mp-label-right,.mp-modal-right-controls{display:flex;align-items:center;gap:4px;flex-shrink:0}.mp-label-wrapper .form-label{margin-bottom:0!important;white-space:normal;overflow:hidden;text-overflow:ellipsis}.mp-enhance-ai-btn,.mp-help-icon,.mp-link-btn,.mp-paste-btn{background:transparent;border:none;cursor:pointer;color:var(--mp-accent-primary);display:flex;align-items:center;justify-content:center;padding:4px;border-radius:var(--mp-border-radius-sm);transition:transform 150ms ease-in-out,opacity 150ms ease-in-out,background-color 150ms ease-in-out;opacity:.8;outline:none;flex-shrink:0}.mp-enhance-ai-btn:hover,.mp-help-icon:hover,.mp-link-btn:hover,.mp-paste-btn:hover{transform:scale(1.1);opacity:1}.mp-enhance-ai-btn svg,.mp-help-icon svg,.mp-link-btn svg,.mp-paste-btn svg{width:16px;height:16px;fill:currentColor;display:block}.mp-enhance-ai-btn.loading{width:22px;height:22px;pointer-events:none}.mp-context-bubble{display:none;background-color:var(--mp-bg-tertiary);border-left:3px solid var(--mp-accent-primary);padding:8px 12px;margin-bottom:12px;font-size:13px;color:var(--mp-text-secondary);line-height:1.4;animation:mp-fade-in-down .2s ease-out forwards;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;word-break:break-word}.mp-context-bubble.visible{display:block}.mp-context-bubble strong{color:var(--mp-text-primary);font-weight:600}@keyframes mp-fade-in-down{0%{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}@keyframes mp-spin{to{transform:rotate(1turn)}}.prompt-menu{position:fixed;min-width:350px;max-width:450px;background-color:var(--mp-bg-primary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-lg);box-shadow:var(--mp-shadow-lg);z-index:99990;display:flex;flex-direction:column;user-select:none;color:var(--mp-text-primary)!important;font-family:var(--mp-font-family-base)!important;overflow:hidden;opacity:0;visibility:hidden;transform:scale(.95);transform-origin:top left;transition:opacity 150ms ease-in-out,transform 150ms ease-in-out,visibility 0s linear 150ms}.prompt-menu.visible{opacity:1;visibility:visible;transform:scale(1);transition-delay:0s}.prompt-menu-list{max-height:350px;padding:4px;overflow-y:auto;overflow-x:hidden;position:relative}.prompt-item-row{position:relative;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:var(--mp-border-radius-md);cursor:pointer;transition:background-color .15s ease-in-out;overflow:hidden}.prompt-item-row.drag-mode,.prompt-item-row:hover{background-color:var(--mp-bg-tertiary)}.prompt-item-row.drag-mode{border:1px dashed var(--mp-accent-primary);cursor:move}.prompt-item-row.drag-mode:active{cursor:grabbing}.prompt-title{font-family:var(--mp-font-family-heading)!important;font-size:14px;font-weight:500;flex:1;padding-right:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--mp-text-secondary);transition:opacity 150ms ease-in-out}.prompt-item-row:hover .prompt-title{color:var(--mp-accent-primary);mask-image:linear-gradient(90deg,#000 60%,transparent);-webkit-mask-image:linear-gradient(90deg,#000 60%,transparent)}.prompt-item-row.nav-selected{background-color:var(--mp-bg-tertiary)!important;border:1px solid var(--mp-accent-primary)!important}.prompt-item-row.nav-selected .prompt-title{color:var(--mp-accent-primary)!important}.prompt-actions{position:absolute;right:0;top:0;bottom:0;padding-left:20px;padding-right:8px;display:flex;align-items:center;gap:4px;background:linear-gradient(90deg,transparent 0,var(--mp-bg-tertiary) 20%,var(--mp-bg-tertiary));transform:translateX(110%);transition:transform .25s cubic-bezier(.25,1,.5,1);z-index:2}.prompt-item-row.drag-mode .prompt-actions,.prompt-item-row:hover .prompt-actions{transform:translateX(0)}.action-btn{background:transparent;border:none;cursor:pointer;width:28px;height:28px;border-radius:var(--mp-border-radius-sm);transition:all .15s ease;display:flex;align-items:center;justify-content:center;line-height:0;color:var(--mp-text-secondary);font-family:var(--mp-font-family-button)!important}.action-btn svg{width:16px;height:16px;display:block}.action-btn:hover{transform:scale(1.1)}.action-btn.edit:hover{color:var(--mp-accent-edit)}.action-btn.copy:hover{color:var(--mp-accent-primary)}.action-btn.delete:hover{color:var(--mp-accent-close)}.action-btn.pin:hover{color:var(--mp-accent-edit)}.action-btn.restore:hover{color:var(--mp-btn-add-color)}.action-btn.unpin{color:var(--mp-accent-primary)}.action-btn.drag:hover{color:var(--mp-btn-export-color)}.menu-footer-grid{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid var(--mp-border-primary);background-color:var(--mp-bg-secondary);flex-shrink:0}.menu-footer-btn{display:flex;align-items:center;justify-content:center;background:transparent;border:none;cursor:pointer;padding:12px 0;color:var(--mp-text-secondary);transition:all 150ms ease-in-out;height:auto;font-family:var(--mp-font-family-button)!important}.menu-footer-btn:not(:last-child){border-right:1px solid var(--mp-border-primary)}.menu-footer-btn svg{width:20px;height:20px;transition:transform .2s cubic-bezier(.34,1.56,.64,1)}.menu-footer-btn:hover svg{transform:scale(1.2)}.menu-footer-btn.btn-export:hover{background-color:var(--mp-btn-export-bg);color:var(--mp-btn-export-color)}.menu-footer-btn.btn-add:hover{background-color:var(--mp-btn-add-bg);color:var(--mp-btn-add-color);transform:none}.menu-footer-btn.btn-add:hover svg{transform:scale(1.4)}.menu-footer-btn.btn-import:hover{background-color:var(--mp-btn-import-bg);color:var(--mp-btn-import-color)}.menu-header-grid{display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--mp-border-primary);background-color:var(--mp-bg-secondary);flex-shrink:0;position:relative;overflow:hidden}.menu-search-overlay{position:absolute;inset:0;background:var(--mp-bg-secondary);display:flex;align-items:center;padding:0 8px;gap:8px;transform:translateX(110%);transition:transform .25s cubic-bezier(.25,1,.5,1);z-index:5}.menu-search-input{flex:1;width:100%;padding:6px 12px;border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);font-family:var(--mp-font-family-base)!important;background:var(--mp-bg-primary);color:var(--mp-text-primary);outline:none;transition:border-color 150ms ease-in-out}.menu-search-input:focus{border-color:var(--mp-accent-primary)}.menu-header-btn{display:flex;align-items:center;justify-content:center;background:transparent;border:none;cursor:pointer;padding:12px 0;color:var(--mp-text-secondary);transition:all 150ms ease-in-out;font-family:var(--mp-font-family-button)!important}.menu-header-btn:not(:last-child):not(.btn-close-search){border-right:1px solid var(--mp-border-primary)}.menu-header-btn svg{width:20px;height:20px;transition:transform .2s cubic-bezier(.34,1.56,.64,1)}.menu-header-btn:hover{color:var(--mp-accent-primary)}.menu-header-btn:hover svg{transform:scale(1.2)}.menu-header-btn.active{color:var(--mp-accent-primary)}.mp-expanded-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;background:var(--mp-bg-overlay);backdrop-filter:blur(4px);z-index:100000;display:flex;align-items:center;justify-content:center;animation:mpFadeIn .2s ease}.mp-expanded-modal{width:93vw;height:93vh;background:var(--mp-bg-primary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-lg);box-shadow:var(--mp-shadow-lg);display:flex;flex-direction:column;overflow:hidden;position:relative;font-family:var(--mp-font-family-base)!important}.mp-expanded-header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--mp-border-primary);background:var(--mp-bg-secondary);gap:16px;flex-shrink:0}.mp-expanded-search-container{flex:1;display:flex}.mp-expanded-search{width:100%;padding:8px 12px;border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);font-family:var(--mp-font-family-base)!important;background:var(--mp-bg-primary);color:var(--mp-text-primary);outline:none;transition:border-color 150ms ease-in-out}.mp-expanded-search:focus{border-color:var(--mp-accent-primary)}.mp-expanded-actions-left{display:flex;align-items:center;gap:8px}.mp-pinned-action-btn.has-selection{background:rgba(240,62,62,.1);color:var(--mp-accent-close);border-color:var(--mp-accent-close)}.mp-expanded-list{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px;display:grid;gap:12px;align-content:start;position:relative}.prompt-item-row.expanded-mode{border:1px solid var(--mp-border-primary);background:var(--mp-bg-secondary);align-items:center;padding:12px 16px;min-width:0;min-height:70px;height:auto}.prompt-item-row.expanded-mode:hover{border-color:var(--mp-accent-primary)}.prompt-item-row.expanded-mode .prompt-actions{position:relative;transform:none;background:transparent;padding-left:8px;opacity:1;flex-shrink:0}.prompt-item-row.expanded-mode .prompt-title{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4;word-break:break-word}.mp-expanded-filter-dropdown{position:fixed;z-index:100001}@keyframes mpFadeIn{0%{opacity:0}to{opacity:1}}.mp-pinned-action-btn.btn-close:hover,.mp-pinned-action-btn.btn-delete.active,.mp-pinned-action-btn.btn-delete:hover{background:var(--mp-accent-close)!important;border-color:var(--mp-accent-close-hover)!important;color:var(--mp-text-buttons)!important}.mp-pinned-action-btn.btn-cols:hover{background:var(--mp-accent-edit)!important;border-color:var(--mp-accent-edit-hover)!important;color:var(--mp-text-buttons)!important}.mp-pinned-action-btn.btn-add:hover{background:var(--mp-btn-add-color)!important;border-color:var(--mp-btn-add-color)!important;color:var(--mp-text-buttons)!important}.mp-pinned-action-btn.btn-export:hover{background:var(--mp-btn-export-color)!important;border-color:var(--mp-btn-export-color)!important;color:var(--mp-text-buttons)!important}.mp-pinned-action-btn.btn-import:hover{background:var(--mp-btn-import-color)!important;border-color:var(--mp-btn-import-color)!important;color:var(--mp-text-buttons)!important}.mp-pinned-action-btn.btn-save:hover,.mp-pinned-action-btn.btn-select-all.active{background:var(--mp-accent-primary)!important;border-color:var(--mp-accent-primary-hover,var(--mp-accent-primary))!important;color:var(--mp-text-buttons)!important}.form-group{display:flex;flex-direction:column;margin-bottom:15px;flex-shrink:0}.form-label{margin-bottom:8px;font-size:14px!important;font-weight:700!important;color:var(--mp-text-secondary);display:block;width:100%;white-space:normal;overflow-wrap:break-word;word-break:break-word}.form-input,.form-textarea{background-color:var(--mp-bg-secondary)!important;color:var(--mp-text-primary)!important;border:1px solid var(--mp-border-primary)!important;border-radius:var(--mp-border-radius-md);padding:10px;width:100%;box-sizing:border-box;transition:border-color 150ms ease-in-out,box-shadow 150ms ease-in-out;outline:0!important;font-family:var(--mp-font-family-editor)!important;font-size:14px!important}.form-textarea{height:300px!important;resize:none!important;display:block}.form-input:focus,.form-textarea:focus{border-color:var(--mp-accent-primary)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--mp-accent-primary) 25%,transparent)!important}.form-input::placeholder,.form-textarea::placeholder,.lang-search-input::placeholder,.menu-search-input::placeholder,.mp-search-input::placeholder{color:var(--mp-text-tertiary)!important;opacity:.7}.mp-switch-container{display:flex;justify-content:space-between;align-items:center;padding:8px 12px!important;margin:0 0 15px;flex-shrink:0;background-color:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);gap:10px}.mp-switch{display:flex;align-items:center;gap:8px}.mp-switch input[type=checkbox]{height:0;width:0;visibility:hidden;position:absolute}.mp-switch label{cursor:pointer;text-indent:-9999px;width:40px;height:22px;background:var(--mp-bg-tertiary);display:block;border-radius:100px;position:relative;transition:background-color var(--mp-transition-fast)}.mp-switch label:after{content:\"\";position:absolute;top:3px;left:3px;width:16px;height:16px;background:var(--mp-switch-knob);border-radius:90px;transition:.3s cubic-bezier(.25,1,.5,1);box-shadow:var(--mp-shadow-sm)}.mp-switch input:checked+label{background:var(--mp-accent-primary)}.mp-switch input:checked+label:after{left:calc(100% - 3px);transform:translateX(-100%)}.mp-switch .switch-text{font-size:13px;font-weight:500;color:var(--mp-text-secondary);cursor:pointer;user-select:none}.mp-prompt-shortcut{flex:1;max-width:140px;font-family:var(--mp-font-family-base);padding:4px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mp-prompt-shortcut[data-shortcut]:not([data-shortcut=\"\"]){color:var(--mp-accent-primary)}.mp-checkbox,.mp-filter-checkbox,.mp-option-item input[type=checkbox]{-webkit-appearance:none!important;appearance:none!important;width:18px!important;height:18px!important;border:1px solid var(--mp-border-primary)!important;border-radius:var(--mp-border-radius-sm)!important;background-color:var(--mp-bg-secondary)!important;cursor:pointer!important;margin:0!important;display:grid!important;place-content:center!important;transition:all 150ms ease-in-out}.mp-checkbox:checked,.mp-filter-item.selected .mp-filter-checkbox,.mp-option-item input[type=checkbox]:checked{background-color:var(--mp-accent-primary)!important;border-color:var(--mp-accent-primary)!important}.mp-checkbox:before,.mp-filter-checkbox:before,.mp-option-item input[type=checkbox]:before{content:\"\";width:10px;height:10px;clip-path:polygon(14% 44%,0 65%,50% 100%,100% 16%,80% 0,43% 62%);background-color:var(--mp-text-buttons);transform:scale(0);transition:transform .15s ease-in-out}.mp-checkbox:checked:before,.mp-filter-item.selected .mp-filter-checkbox:before,.mp-option-item input[type=checkbox]:checked:before{transform:scale(1)}#__ap_placeholders_container{padding:4px;margin-top:15px;box-sizing:border-box;transition:padding-top 150ms ease-in-out}.mp-option-group{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;padding:8px;border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);background-color:var(--mp-bg-tertiary);max-height:none!important;overflow:visible!important}.mp-option-item{display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;padding:8px 8px 8px 12px!important;border-radius:var(--mp-border-radius-sm);background-color:var(--mp-bg-primary);transition:background-color 150ms ease-in-out;user-select:none;border-left:5px solid transparent;position:relative}.mp-option-item:hover{background-color:var(--mp-bg-secondary)}.mp-modal-box.mp-expanded #__ap_placeholders_container{max-height:none!important;height:100%!important;flex:1;display:flex;flex-direction:column;min-height:0}.mp-modal-box.mp-expanded #__ap_placeholders_container .mp-scroll-wrapper{height:100%!important;flex:1}.dynamic-input{min-height:45px!important;line-height:1.5;font-family:var(--mp-font-family-editor)!important}.mp-dynamic-dropzone{position:relative;min-height:90px;border:2px dashed var(--mp-border-primary);border-radius:var(--mp-border-radius-md);margin-bottom:12px;align-items:center;transition:border-color 150ms ease-in-out;box-shadow:none!important;background-color:transparent}.mp-dynamic-dropzone.drag-over{border-color:var(--mp-accent-primary)}.mp-dynamic-grid-w100{width:100%}.mp-hidden-file-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;z-index:-1}.mp-empty-state-container{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px}.menu-search-container,.mp-search-container{position:sticky;top:0;z-index:10;display:flex;flex-direction:column;flex-shrink:0}.menu-search-container{padding:10px 12px;background-color:var(--mp-bg-secondary);border-bottom:1px solid var(--mp-border-primary)}.lang-search-input,.menu-search-input,.mp-search-input,.mp-system-prompt-search-input{width:100%;padding:10px 12px;border-radius:var(--mp-border-radius-md);border:1px solid var(--mp-border-primary);background-color:var(--mp-bg-secondary);color:var(--mp-text-primary);font-family:var(--mp-font-family-editor)!important;font-size:13px;box-sizing:border-box;outline:none;transition:border-color 150ms ease-in-out}.menu-search-input{background-color:var(--mp-bg-primary)!important}.lang-search-input,.mp-system-prompt-search-input{margin-bottom:12px}.lang-search-input:focus,.menu-search-input:focus,.mp-search-input:focus,.mp-system-prompt-search-input:focus{border-color:var(--mp-accent-primary);outline:none!important}.mp-export-actions{display:flex;justify-content:space-between;align-items:center;margin-top:20px;margin-bottom:20px;font-size:13px;color:var(--mp-text-secondary);border-bottom:1px solid var(--mp-border-primary);padding-bottom:16px}.mp-checkbox-wrapper{display:flex;align-items:center;cursor:pointer;user-select:none}.mp-export-list{display:flex;flex-direction:column;gap:4px;margin:0 -8px;padding:0 8px}.mp-export-item{display:flex;align-items:center;padding:8px;border-radius:var(--mp-border-radius-md);transition:background .15s;cursor:pointer;border:1px solid transparent}.mp-export-item:hover{background-color:var(--mp-bg-tertiary);border-color:var(--mp-border-primary)}.mp-item-content{display:flex;flex-direction:column;overflow:hidden;margin-left:12px}.mp-item-title{font-size:14px;font-weight:500;color:var(--mp-text-primary)}.mp-item-preview,.mp-item-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mp-item-preview{font-size:12px;color:var(--mp-text-tertiary);margin-top:2px}.mp-export-buttons{display:flex;gap:10px;margin-top:20px;justify-content:flex-end;border-top:1px solid var(--mp-border-primary);padding-top:16px;flex-shrink:0;font-family:var(--mp-font-family-button)!important}.lang-box,.mp-system-prompt-select-box{width:min(90vw,500px)!important}.mp-system-prompt-select-box{padding:20px!important}.lang-button,.mp-system-prompt-button{all:unset;box-sizing:border-box;display:block;width:100%;padding:12px 20px;border-radius:var(--mp-border-radius-md);background-color:var(--mp-bg-secondary);color:var(--mp-text-primary);border:1px solid var(--mp-border-primary);font-weight:500;cursor:pointer;text-align:center;transition:all 150ms ease-in-out;font-family:var(--mp-font-family-button)!important;flex-shrink:0}.mp-system-prompt-button{display:flex!important;flex-direction:column;align-items:center;gap:4px}.mp-system-prompt-list-container{display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto}.mp-system-prompt-button-title{font-weight:600;font-size:14px}.mp-system-prompt-button-comment{font-weight:400;font-size:12px;color:var(--mp-text-secondary);display:block;width:100%;white-space:normal;overflow-wrap:break-word;word-break:break-word}.lang-button:hover,.mp-system-prompt-button:hover{transform:translateY(-2px);box-shadow:var(--mp-shadow-sm);background-color:var(--mp-bg-tertiary)}.lang-button.selected,.mp-system-prompt-button.is-focused{border-color:var(--mp-accent-primary);color:var(--mp-accent-primary);background-color:color-mix(in srgb,var(--mp-accent-primary) 5%,transparent);font-weight:600}.save-button{padding:10px 28px;border-radius:var(--mp-border-radius-md);background-color:var(--mp-accent-primary);color:var(--mp-text-buttons);border:none;font-weight:600;cursor:pointer;transition:all 150ms ease-in-out;font-family:var(--mp-font-family-button)!important;margin-bottom:5px}.save-button:hover{background-color:var(--mp-accent-primary-hover)}.mp-btn-secondary{background:transparent;border:1px solid var(--mp-border-secondary);color:var(--mp-text-secondary)}.mp-btn-secondary:hover{background-color:var(--mp-bg-tertiary);color:var(--mp-text-primary)}.mp-info-table{display:flex;flex-direction:column;border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);overflow:hidden;margin-top:8px}.mp-info-row{display:flex}.mp-info-row:not(:last-child){border-bottom:1px solid var(--mp-border-primary)}.mp-info-col{padding:16px;display:flex;flex-direction:column;justify-content:center}.mp-info-col:not(:last-child){border-right:1px solid var(--mp-border-primary)}.mp-info-title-col{flex:0 0 35%}.mp-info-desc-col,.mp-info-title-col{background-color:var(--mp-bg-secondary);text-align:left}.mp-info-desc-col{flex:1}.mp-info-col h3{font-size:14px;font-weight:600;color:var(--mp-text-primary);margin:0;font-family:var(--mp-font-family-heading)!important}.mp-info-col p{font-size:13px;color:var(--mp-text-secondary);line-height:1.5;margin:0}.mp-inline-menu{position:fixed;width:500px;max-height:300px;background-color:var(--mp-bg-primary)!important;border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);box-shadow:var(--mp-shadow-lg);z-index:2147483647!important;display:flex;flex-direction:column;opacity:0;visibility:hidden;transform:translateY(10px);transition:opacity .1s,transform .1s,visibility 0s linear .1s;overflow:hidden;font-family:var(--mp-font-family-base)!important}.mp-inline-menu.visible{opacity:1;visibility:visible;transform:translateY(0);transition-delay:0s}.mp-inline-list{padding:4px;pointer-events:auto}.mp-inline-item,.mp-inline-list{display:flex;flex-direction:column}.mp-inline-item{padding:8px 12px;cursor:pointer;border-radius:var(--mp-border-radius-sm);font-size:13px;color:var(--mp-text-primary);align-items:flex-start;justify-content:center;gap:3px;transition:background-color .1s}.mp-inline-item:hover{background-color:var(--mp-bg-tertiary)}.mp-inline-item.selected{background-color:var(--mp-accent-primary);color:var(--mp-text-buttons)!important}.mp-inline-title{font-weight:500;line-height:1.3}.mp-inline-preview,.mp-inline-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;font-family:var(--mp-font-family-heading)!important}.mp-inline-preview{font-weight:400;font-size:12px;color:var(--mp-text-tertiary);line-height:1.2}.mp-inline-item.selected .mp-inline-preview{color:var(--mp-text-buttons)!important;opacity:.8}.mp-tooltip{position:fixed;z-index:2147483647;pointer-events:none;display:flex;flex-direction:column;align-items:center;opacity:0;transform:scale(.95) translateY(4px);transition:opacity .15s cubic-bezier(.4,0,.2,1),transform .15s cubic-bezier(.4,0,.2,1)}.mp-tooltip-interactive{pointer-events:auto}.mp-tooltip.visible{opacity:1;transform:scale(1) translateY(0)}.mp-tooltip-left,.mp-tooltip-right{flex-direction:row;align-items:center}.mp-tooltip-content{font-family:var(--mp-font-family-button)!important;background-color:var(--mp-text-primary);color:var(--mp-bg-primary);padding:0;border-radius:var(--mp-border-radius-sm);max-width:450px;width:max-content;white-space:normal;word-wrap:break-word;overflow-wrap:break-word;text-align:center;font-size:13px;font-weight:500;box-shadow:var(--mp-shadow-md);line-height:1.4;display:flex;flex-direction:column;overflow:hidden}.mp-tooltip-text{display:block;padding:10px 14px}.mp-tooltip-text+.mp-tooltip-actions{border-top:1px solid color-mix(in srgb,var(--mp-border-primary),transparent 70%)}.mp-tooltip-actions{display:flex;width:100%}.mp-tooltip-actions-row{flex-direction:row}.mp-tooltip-actions-column{flex-direction:column}.mp-tooltip-btn{font-family:var(--mp-font-family-button)!important;flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;border:none;border-radius:0;background-color:transparent;color:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:var(--mp-transition-fast);white-space:nowrap}.mp-tooltip-actions-row .mp-tooltip-btn:not(:last-child){border-right:1px solid color-mix(in srgb,var(--mp-border-primary),transparent 70%)}.mp-tooltip-actions-column .mp-tooltip-btn:not(:last-child){border-bottom:1px solid color-mix(in srgb,var(--mp-border-primary),transparent 70%)}.mp-tooltip-btn:focus,.mp-tooltip-btn:hover{background-color:var(--mp-accent-primary);color:var(--mp-text-buttons)}.mp-tooltip-btn:focus{outline:none}.mp-tooltip-btn-icon{width:14px;height:14px;display:flex;align-items:center;justify-content:center}.mp-tooltip-btn-icon svg{width:100%;height:100%;fill:currentColor}.mp-tooltip-arrow{width:0;height:0;margin:0;flex-shrink:0;z-index:1}.mp-tooltip-top .mp-tooltip-arrow{border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid var(--mp-text-primary)}.mp-tooltip-bottom .mp-tooltip-arrow{border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:6px solid var(--mp-text-primary);order:-1}.mp-tooltip-left .mp-tooltip-arrow{border-top:6px solid transparent;border-bottom:6px solid transparent;border-left:6px solid var(--mp-text-primary)}.mp-tooltip-right .mp-tooltip-arrow{border-top:6px solid transparent;border-bottom:6px solid transparent;border-right:6px solid var(--mp-text-primary);order:-1}.mp-tooltip-preview-container{padding:12px;width:320px;max-width:90vw;display:flex;flex-direction:column}.mp-tooltip-preview-text{max-height:200px;overflow-y:auto;background-color:color-mix(in srgb,var(--mp-bg-primary),transparent 85%);border:1px solid color-mix(in srgb,var(--mp-bg-primary),transparent 70%);border-radius:var(--mp-border-radius-sm);padding:13px;font-family:var(--mp-font-family-editor);font-size:12px;font-weight:300;color:var(--mp-bg-primary);line-height:1.5;white-space:pre-wrap;text-align:left;-webkit-hyphens:manual;hyphens:manual;overflow-wrap:break-word}.mp-tooltip-preview-container .mp-scroll-arrow.up{top:0;background:linear-gradient(180deg,color-mix(in srgb,var(--mp-text-primary),transparent 30%) 30%,transparent);color:var(--mp-bg-primary)}.mp-tooltip-preview-container .mp-scroll-arrow.down{bottom:0;background:linear-gradient(0deg,color-mix(in srgb,var(--mp-text-primary),transparent 30%) 30%,transparent);color:var(--mp-bg-primary)}@keyframes mp-fade-in-up{0%{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}.mp-settings-container{display:flex;flex-direction:column;height:100%;overflow:hidden;font-family:var(--mp-font-family-base)!important}.mp-tabs-header{display:flex;justify-content:center;align-items:center;border-bottom:1px solid var(--mp-border-primary);padding:0 16px;margin-bottom:16px;flex-shrink:0;gap:8px}.mp-tab-btn{font-family:var(--mp-font-family-button)!important;flex:1;background:none;padding:12px 4px;font-size:14px;font-weight:600;color:var(--mp-text-secondary);cursor:pointer;border:none;border-bottom:2px solid transparent;transition:all 150ms ease-in-out;text-align:center;border-radius:4px 4px 0 0}.mp-tab-btn:hover{color:var(--mp-text-primary);background-color:var(--mp-bg-tertiary)}.mp-tab-btn.active{color:var(--mp-accent-primary);border-bottom-color:var(--mp-accent-primary)}.mp-tab-content{display:none!important;flex-direction:column;gap:4px;animation:mp-fade-in-up .2s ease}.mp-tab-content.active{display:flex!important}.mp-form-group,.mp-label{margin-bottom:10px}.mp-label{font-size:14px;font-weight:600;color:var(--mp-text-primary);display:block}.mp-label-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}.mp-settings-switch-container{display:flex;justify-content:space-between;align-items:center;background:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);padding:12px;border-radius:var(--mp-border-radius-md);margin:0}#mp-nav-lbl,#mp-preview-prompt-lbl,#mp-smart-predict-lbl,#mp-syntax-lbl{font-size:13px;font-weight:400;color:var(--mp-text-primary);cursor:help;text-decoration:underline dotted;text-decoration-color:color-mix(in srgb,var(--mp-text-secondary) 60%,transparent);text-underline-offset:3px;text-decoration-thickness:1px}.mp-action-btn-full{width:100%;padding:12px 16px;background-color:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);color:var(--mp-text-tertiary);font-weight:500;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:all 150ms ease-in-out;font-family:var(--mp-font-family-button)!important}.mp-action-btn-full:hover{background-color:var(--mp-bg-tertiary);border-color:var(--mp-accent-primary);color:var(--mp-accent-primary)}.mp-btn-icon{display:flex;align-items:center;justify-content:center}.mp-segmented-control{display:flex;background-color:var(--mp-bg-tertiary);border-radius:var(--mp-border-radius-md);padding:4px;gap:4px;width:100%;box-sizing:border-box}.mp-segment-opt{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 4px;font-size:13px;font-weight:500;color:var(--mp-text-secondary);cursor:pointer;border-radius:var(--mp-border-radius-sm);transition:all 150ms ease-in-out cubic-bezier(.25,1,.5,1);user-select:none;border:1px solid transparent}.mp-segment-opt:hover{color:var(--mp-accent-primary);background-color:rgba(0,0,0,.02)}.mp-segment-opt.selected{background-color:var(--mp-bg-primary);border-color:var(--mp-border-primary);box-shadow:0 1px 3px rgba(0,0,0,.08);font-weight:600}.mp-segment-opt.selected,.mp-segment-opt.selected svg{color:var(--mp-accent-primary)}.mp-shortcut-scroll-container,.mp-theme-scroll-container{padding:4px!important;border:none!important;margin:0!important;background:transparent!important;box-sizing:border-box!important;width:100%!important}.mp-shortcut-wrapper-fixed,.mp-theme-wrapper-fixed{flex:none!important;height:auto!important;max-height:165px!important;width:100%!important;box-sizing:border-box!important;margin-top:12px!important;overflow:hidden;position:relative}.mp-shortcut-option,.mp-shortcut-wrapper-fixed,.mp-theme-option,.mp-theme-wrapper-fixed{border:1px solid var(--mp-border-primary);background-color:var(--mp-bg-secondary);border-radius:var(--mp-border-radius-md)}.mp-shortcut-option,.mp-theme-option{flex-shrink:0;padding:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;font-weight:500;color:var(--mp-text-secondary);transition:all 150ms ease-in-out;box-sizing:border-box}@keyframes mp-pulse-recording{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--mp-accent-edit) 40%,transparent)}to{box-shadow:0 0 0 6px transparent}}.mp-shortcut-option.recording{border-color:var(--mp-accent-edit)!important;color:var(--mp-accent-edit)!important;background-color:color-mix(in srgb,var(--mp-accent-edit) 10%,var(--mp-bg-primary))!important;font-weight:700!important;animation:mp-pulse-recording 1.5s infinite}.mp-shortcut-option:last-child,.mp-theme-option:last-child{margin-bottom:0}.mp-shortcut-option:hover,.mp-theme-option:hover{background-color:var(--mp-bg-tertiary);color:var(--mp-text-primary);box-shadow:var(--mp-shadow-sm);border:1px solid var(--mp-accent-primary)}.mp-shortcut-option.selected,.mp-theme-option.selected{background-color:color-mix(in srgb,var(--mp-accent-primary) 10%,var(--mp-bg-primary));color:var(--mp-accent-primary);border-color:var(--mp-accent-primary);font-weight:700;box-shadow:var(--mp-shadow-md)}.mp-theme-option{margin:5px;width:auto}.mp-shortcut-option{margin:0 0 5px;width:100%;background-color:color-mix(in srgb,var(--mp-bg-primary) 45%,transparent)}.mp-shortcut-option:last-child{margin-bottom:0}.mp-settings-footer{display:flex;justify-content:center;align-items:center;padding-top:16px;margin-top:10px;border-top:1px solid var(--mp-border-primary);flex-shrink:0}.mp-settings-footer .save-button{min-width:160px}.mp-theme-action-row{display:flex;gap:8px;padding:0 5px;margin:5px 0 8px;flex-shrink:0;width:100%;box-sizing:border-box}.mp-theme-split-btn{flex:1;display:flex;align-items:center;justify-content:center;padding:10px;border-radius:var(--mp-border-radius-md);border:1px dashed var(--mp-border-primary);color:var(--mp-text-secondary);background-color:var(--mp-bg-secondary);cursor:pointer;transition:all 150ms ease-in-out;font-size:13px;font-weight:500}.mp-theme-split-btn:hover{background-color:var(--mp-bg-tertiary);border-color:var(--mp-accent-primary);color:var(--mp-accent-primary);box-shadow:var(--mp-shadow-sm)}.hide-api-key{-webkit-text-security:disc}#mp_ai_api_key_input{margin-bottom:8px}#mp_ai_sys_prompt_input{margin-top:8px;min-height:60px;resize:vertical;width:100%;box-sizing:border-box}.mp-form-hint{color:var(--mp-text-tertiary);font-size:11px;margin-top:4px;display:block}.mp-nav-switch{position:fixed;top:50%;right:20px;transform:translateY(-50%);display:flex;flex-direction:column;background-color:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);box-shadow:var(--mp-shadow-md);z-index:10000;padding:4px;gap:6px;transition:opacity .3s ease}.mp-nav-switch[style*=\"display: none\"]{pointer-events:none}.mp-nav-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--mp-text-secondary);border-radius:var(--mp-border-radius-sm);cursor:pointer;transition:all 150ms ease-in-out;position:relative}.mp-nav-btn svg{width:20px;height:20px}.mp-nav-btn:hover{background-color:var(--mp-bg-tertiary);color:var(--mp-accent-primary);transform:scale(1.05)}.mp-nav-btn:active{transform:scale(.95)}.mp-nav-list-popup{position:absolute;right:45px;top:50%;transform:translateY(-50%) scale(.95);width:300px;max-height:500px;background-color:var(--mp-bg-primary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);box-shadow:var(--mp-shadow-lg);opacity:0;visibility:hidden;transition:all 150ms ease-in-out cubic-bezier(.165,.84,.44,1);display:flex;flex-direction:column;z-index:10001;overflow:hidden}.mp-nav-list-popup.active{opacity:1;visibility:visible;transform:translateY(-50%) scale(1)}.mp-nav-header{display:flex;justify-content:space-between;background-color:var(--mp-bg-secondary);border-bottom:1px solid var(--mp-border-primary);padding:6px;gap:4px;flex-shrink:0}.mp-nav-tab{flex:1;display:flex;align-items:center;justify-content:center;padding:6px;border-radius:6px;cursor:pointer;color:var(--mp-text-secondary);transition:background 150ms ease-in-out,color 150ms ease-in-out}.mp-nav-tab:hover{background-color:var(--mp-bg-tertiary)}.mp-nav-tab.active{background-color:var(--mp-accent-primary);color:var(--mp-text-buttons)}.mp-nav-tab svg{width:18px;height:18px;pointer-events:none}.mp-nav-scroll-area{overflow-y:auto;flex:1;scrollbar-width:none;-ms-overflow-style:none}.mp-nav-scroll-area::-webkit-scrollbar{display:none}.mp-nav-item-wrapper{display:flex;flex-direction:column;border-bottom:1px solid var(--mp-bg-tertiary)}.mp-nav-item-wrapper:last-child{border-bottom:none}.mp-nav-list-item{padding:10px 12px;font-family:var(--mp-font-family-base);font-size:13px;color:var(--mp-text-secondary);cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .1s;position:relative;overflow:hidden}.mp-nav-list-item.main-msg-item{border-bottom:none!important}.mp-nav-list-item.current-item,.mp-nav-list-item:hover{background-color:var(--mp-bg-tertiary)}.mp-nav-list-item.current-item{color:var(--mp-accent-primary);border-left:3px solid var(--mp-accent-primary);font-weight:500}.mp-nav-idx-badge{font-size:10px;background:var(--mp-bg-secondary);padding:0;border-radius:4px;min-width:24px;height:20px;display:flex;align-items:center;justify-content:center;color:var(--mp-text-primary);flex-shrink:0;position:relative;overflow:hidden}.mp-nav-idx-badge.has-topics{cursor:pointer;transition:background-color 150ms ease-in-out,color 150ms ease-in-out}.mp-nav-idx-badge.has-topics:hover,.mp-nav-item-wrapper.expanded .mp-nav-idx-badge.has-topics{background-color:var(--mp-accent-primary);color:var(--mp-text-buttons)}.mp-nav-idx-number{transition:opacity 150ms ease-in-out,transform 150ms ease-in-out}.mp-nav-expand-icon{position:absolute;display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(.5) rotate(0deg);transition:opacity 150ms ease-in-out,transform .2s cubic-bezier(.165,.84,.44,1)}.mp-nav-expand-icon svg{width:16px;height:16px}.mp-nav-idx-badge.has-topics:hover .mp-nav-idx-number,.mp-nav-item-wrapper.expanded .mp-nav-idx-badge.has-topics .mp-nav-idx-number{opacity:0;transform:scale(.5)}.mp-nav-idx-badge.has-topics:hover .mp-nav-expand-icon{opacity:1;transform:scale(1) rotate(0deg)}.mp-nav-item-wrapper.expanded .mp-nav-idx-badge.has-topics .mp-nav-expand-icon{opacity:1;transform:scale(1) rotate(90deg)}.mp-nav-preview-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}.mp-nav-type-icon{width:13px!important;height:13px!important;flex-shrink:0!important;color:var(--mp-accent-primary)!important;margin-left:auto!important;opacity:1!important;display:flex!important;align-items:center!important}.mp-nav-submenu{font-family:var(--mp-font-family-base);display:none;flex-direction:column;background-color:var(--mp-bg-primary);border-left:2px solid var(--mp-bg-tertiary);margin-left:24px;margin-right:12px;margin-bottom:6px;border-bottom-left-radius:4px;overflow:hidden}.mp-nav-item-wrapper.expanded .mp-nav-submenu{display:flex;animation:mpFadeInDrop .2s ease forwards}.mp-nav-sub-item{padding:6px 8px;font-size:11.5px;color:var(--mp-text-secondary);cursor:pointer;display:flex;align-items:center;transition:background .1s,color .1s;position:relative;overflow:hidden}.mp-nav-sub-item:hover{background-color:var(--mp-bg-tertiary);color:var(--mp-text-primary)}.mp-nav-sub-item:before{content:\"\";position:absolute;left:-2px;top:50%;width:6px;height:2px;background-color:var(--mp-bg-tertiary)}.mp-nav-sub-item:hover:before{background-color:var(--mp-accent-primary)}.mp-nav-sub-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%}.mp-nav-sub-item.level-1{padding-left:8px;font-weight:500}.mp-nav-sub-item.level-2{padding-left:16px}.mp-nav-sub-item.level-3{padding-left:24px;font-size:11px;opacity:.9}.mp-nav-sub-item.level-4{padding-left:32px;font-size:10.5px;opacity:.8}.mp-nav-sub-item.level-5{padding-left:40px;font-size:10px;opacity:.7}.mp-nav-sub-item.level-6{padding-left:48px;font-size:10px;opacity:.6}.mp-nav-sub-item.current-item{background-color:var(--mp-bg-tertiary);color:var(--mp-accent-primary);font-weight:500}.mp-nav-sub-item.current-item:before{background-color:var(--mp-accent-primary)}.mp-nav-msg-actions{position:absolute;right:0;top:0;bottom:0;padding-left:24px;padding-right:12px;display:flex;align-items:center;gap:4px;background:linear-gradient(90deg,transparent 0,var(--mp-bg-tertiary) 30%,var(--mp-bg-tertiary));transform:translateX(110%);transition:transform .25s cubic-bezier(.25,1,.5,1);z-index:2}.mp-nav-list-item:hover .mp-nav-msg-actions,.mp-nav-sub-item:hover .mp-nav-msg-actions{transform:translateX(0)}.mp-pin-btn{width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:4px;color:var(--mp-text-secondary);cursor:pointer;transition:all 150ms ease-in-out}.mp-pin-btn:hover{color:var(--mp-accent-edit)}.mp-pin-btn.is-pinned{color:var(--mp-accent-primary)}.mp-pin-btn svg{width:14px;height:14px}.mp-pinned-carousel-wrapper{position:fixed;top:15px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;align-items:center;gap:8px;pointer-events:none;transition:opacity .3s}.mp-pinned-carousel-wrapper.mp-orient-h{flex-direction:column;padding-bottom:20px}.mp-pinned-carousel-wrapper.mp-orient-v{flex-direction:row;padding-right:20px;gap:15px!important}.mp-pinned-main-wrapper{display:flex;align-items:center;gap:10px;pointer-events:none;transition:opacity .3s ease}.mp-orient-v .mp-pinned-main-wrapper{flex-direction:column}.mp-pinned-carousel-wrapper.is-hidden .mp-pinned-main-wrapper{opacity:0;pointer-events:none}.mp-pinned-carousel-wrapper.is-hidden .mp-pinned-main-wrapper,.mp-pinned-carousel-wrapper.is-hidden .mp-pinned-main-wrapper *{pointer-events:none!important}.mp-orient-h .mp-pinned-viewport{max-width:80vw;overflow:hidden;display:flex;justify-content:center;padding:40px 10px;margin:-40px -10px;mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);min-height:fit-content}.mp-orient-v .mp-pinned-viewport{height:50vh;max-height:350px;width:fit-content;max-width:80vw;overflow:hidden;display:flex;align-items:center;padding:40px 28px;margin:-40px -28px;mask-image:linear-gradient(180deg,transparent,#000 10%,#000 90%,transparent);-webkit-mask-image:linear-gradient(180deg,transparent,#000 10%,#000 90%,transparent)}.mp-orient-h .mp-pinned-track{padding:10px 0}.mp-orient-h .mp-pinned-track,.mp-orient-v .mp-pinned-track{display:flex;align-items:center;gap:12px;transition:transform .4s cubic-bezier(.25,1,.5,1);pointer-events:auto}.mp-orient-v .mp-pinned-track{flex-direction:column;padding:0 10px}.mp-pinned-viewport.is-single-item{mask-image:none!important;-webkit-mask-image:none!important;overflow:visible}.mp-pinned-viewport.is-single-item .mp-pinned-card{opacity:1;transform:scale(1.1);background-color:color-mix(in srgb,var(--mp-accent-primary) 10%,var(--mp-bg-primary));border-color:var(--mp-accent-primary-hover);color:var(--mp-accent-primary);pointer-events:auto}.mp-pinned-card{background:var(--mp-accent-primary);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--mp-border-secondary);border-radius:var(--mp-border-radius-lg);padding:6px 16px;color:var(--mp-text-buttons);font-family:var(--mp-font-family-base);font-size:12px;white-space:nowrap;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all .4s cubic-bezier(.25,1,.5,1);transform:scale(.85);box-shadow:0 4px 12px rgba(0,0,0,.15);min-width:140px;max-width:200px;box-sizing:border-box;flex-shrink:0}.mp-pinned-card:hover{background-color:var(--mp-accent-primary-hover)}.mp-pinned-card.active-center{opacity:1;transform:scale(1.2);background-color:color-mix(in srgb,var(--mp-accent-primary) 10%,var(--mp-bg-primary));border-color:var(--mp-accent-primary-hover);box-shadow:var(--mp-shadow-md);color:var(--mp-accent-primary)}.mp-drag-mode .mp-pinned-card{cursor:default;pointer-events:none}.mp-pinned-card-text{flex:1;overflow:hidden;text-overflow:ellipsis;text-align:center;user-select:none}.mp-pinned-card-unpin{display:flex;align-items:center;justify-content:center;opacity:.6;transition:all 150ms ease-in-out}.mp-pinned-card-unpin:hover{opacity:1;color:var(--mp-accent-primary);transform:scale(1.1)}.mp-pinned-card-unpin svg{width:12px;height:12px;pointer-events:none}.mp-carousel-nav{pointer-events:auto;background:var(--mp-bg-secondary);backdrop-filter:blur(8px);color:var(--mp-text-secondary);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 150ms ease-in-out;opacity:.6;z-index:2;border:1px solid var(--mp-text-secondary);flex-shrink:0}.mp-carousel-nav:hover{opacity:1;transform:scale(1.1);background:var(--mp-accent-primary);color:var(--mp-text-buttons)}.mp-carousel-nav.left svg{transform:rotate(180deg)}.mp-carousel-nav.up svg{transform:rotate(-90deg)}.mp-carousel-nav.down svg{transform:rotate(90deg)}.mp-carousel-nav.right svg{transform:rotate(0deg)}.mp-carousel-nav svg{width:14px;height:14px;pointer-events:none}.mp-pinned-actions-panel{display:flex;align-items:center;justify-content:center;gap:8px;opacity:0;transform:scale(.8);transition:all .3s cubic-bezier(.25,1,.5,1);pointer-events:auto;flex-shrink:0}.mp-orient-v .mp-pinned-actions-panel{flex-direction:column}.mp-pinned-carousel-wrapper.is-list-mode .mp-pinned-actions-panel,.mp-pinned-carousel-wrapper.mp-drag-mode .mp-pinned-actions-panel,.mp-pinned-carousel-wrapper:hover .mp-pinned-actions-panel{opacity:1;transform:scale(1)}.mp-pinned-action-btn{background:var(--mp-bg-secondary);backdrop-filter:blur(8px);color:var(--mp-text-secondary);border-radius:var(--mp-border-radius-lg);border:1px solid hsla(0,0%,100%,.1);border-color:var(--mp-text-secondary);width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 150ms ease-in-out;flex-shrink:0}.mp-pinned-action-btn.active,.mp-pinned-action-btn:hover{background:var(--mp-accent-primary);color:var(--mp-text-buttons);transform:scale(1.1)}.mp-pinned-action-btn.delete-btn:hover,.mp-pinned-action-btn.mp-reset-btn:hover{background:var(--mp-accent-close);border-color:var(--mp-accent-close-hover)}.mp-pinned-action-btn.mp-save-btn:hover{background:#22c55e;border-color:#006826;color:#fff}.mp-pinned-action-btn svg{width:16px;height:16px;display:block;margin:auto;pointer-events:none}.mp-pinned-carousel-wrapper.mp-drag-mode{cursor:grab}.mp-pinned-carousel-wrapper.mp-drag-mode.mp-is-being-dragged{cursor:grabbing}body.mp-dragging-active,body.mp-dragging-active *{cursor:grabbing!important;user-select:none!important}.mp-drag-crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:10;width:0;height:0}.mp-drag-ch-line{position:absolute;background:var(--mp-accent-primary);opacity:.5}.mp-drag-ch-h{width:48px;height:1px;top:0;left:50%;transform:translateX(-50%)}.mp-drag-ch-v{width:1px;height:48px;left:0;top:50%;transform:translateY(-50%)}.mp-drag-ch-dot{position:absolute;width:6px;height:6px;background:var(--mp-accent-primary);border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);box-shadow:0 0 10px var(--mp-accent-primary),0 0 20px rgba(0,0,0,.3)}.mp-rulers-container{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9998;pointer-events:none}.mp-ruler-screen-v{width:0;height:100vh;top:0;left:50vw;border-left:1px dashed color-mix(in sRGB,var(--mp-text-primary),transparent 50%);border-right:1px dashed color-mix(in sRGB,var(--mp-text-primary),transparent 50%)}.mp-ruler-screen-h,.mp-ruler-screen-v{position:absolute;background:var(--mp-bg-overlay)}.mp-ruler-screen-h{height:0;width:100vw;left:0;top:50vh;border-top:1px dashed color-mix(in sRGB,var(--mp-text-primary),transparent 50%);border-bottom:1px dashed color-mix(in sRGB,var(--mp-text-primary),transparent 50%)}.mp-ruler-carousel-v{width:1px;height:100vh;top:0;transition:left .04s linear,opacity 150ms ease-in-out,box-shadow 150ms ease-in-out}.mp-ruler-carousel-h,.mp-ruler-carousel-v{position:absolute;background:var(--mp-accent-primary);opacity:.3}.mp-ruler-carousel-h{height:1px;width:100vw;left:0;transition:top .04s linear,opacity 150ms ease-in-out,box-shadow 150ms ease-in-out}.mp-rulers-container.mp-snapped-x .mp-ruler-carousel-v,.mp-rulers-container.mp-snapped-y .mp-ruler-carousel-h{opacity:.85;box-shadow:0 0 14px var(--mp-accent-primary),0 0 4px var(--mp-accent-primary)}.mp-ruler-label{position:absolute;font-size:9px;font-weight:700;letter-spacing:.5px;color:hsla(0,0%,100%,.2);pointer-events:none;font-family:var(--mp-font-family-base),monospace}.mp-ruler-label-v{top:10px;transform:translateX(-50%)}.mp-ruler-label-h{left:10px;transform:translateY(-50%)}.mp-pinned-carousel-wrapper.is-list-mode .mp-pinned-viewport{mask-image:none!important;-webkit-mask-image:none!important;max-height:400px;min-height:auto;display:block;overflow-y:auto;overflow-x:hidden;width:300px;padding:10px 0;margin:0;scroll-behavior:smooth;-ms-overflow-style:none;scrollbar-width:none}.mp-pinned-carousel-wrapper.is-list-mode .mp-pinned-viewport::-webkit-scrollbar{display:none}.mp-pinned-carousel-wrapper.is-list-mode .mp-pinned-track{flex-direction:column!important;align-items:center;gap:8px;width:100%;padding:0}@keyframes mpHighlightPulse{0%{transform:scale(1);outline:2px solid transparent;box-shadow:none}20%{transform:scale(1.02);outline:2px solid var(--mp-accent-primary);box-shadow:0 0 15px var(--mp-accent-primary)}80%{transform:scale(1.02);outline:2px solid var(--mp-accent-primary);box-shadow:0 0 15px var(--mp-accent-primary)}to{transform:scale(1);outline:2px solid transparent;box-shadow:none}}.mp-highlight-anim{animation:mpHighlightPulse 2s ease-in-out forwards}@keyframes mpFadeInDrop{0%{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}.mp-backup-section{display:flex;flex-direction:column;gap:12px}.mp-backup-subtitle{font-size:14px;font-weight:600;color:var(--mp-text-primary);margin:0;display:flex;align-items:center;gap:8px}.mp-backup-subtitle svg{width:16px;height:16px;fill:var(--mp-text-secondary)}.mp-backup-divider{height:1px;background-color:var(--mp-border-primary);margin:20px 0}.mp-backup-list{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;padding-right:4px}.mp-backup-item{display:flex;align-items:center;padding:10px 12px;background-color:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);cursor:pointer;transition:background-color .15s,border-color .15s}.mp-backup-item:hover{background-color:var(--mp-bg-tertiary);border-color:var(--mp-accent-primary)}.mp-backup-item-content{margin-left:12px;display:flex;flex-direction:column}.mp-backup-item-title{font-size:13px;font-weight:500;color:var(--mp-text-primary)}.mp-backup-item-desc{font-size:11px;color:var(--mp-text-tertiary);margin-top:2px}.mp-backup-warning{font-size:11px;color:var(--mp-accent-close);background-color:rgba(240,62,62,.1);padding:8px 12px;border-radius:var(--mp-border-radius-sm);line-height:1.4;text-align:center;font-weight:600}.mp-backup-actions{display:flex;gap:10px;margin-top:12px;justify-content:flex-end}.mp-backup-actions .save-button{flex:1}.mp-form-row{display:flex;gap:12px!important;width:100%!important;margin-bottom:16px!important;font-size:13px!important}.mp-form-row>.mp-form-group{flex:1;margin-bottom:0}@media (max-width:400px){.mp-form-row{flex-direction:column;gap:16px}.mp-form-row>.mp-form-group{margin-bottom:0}}.mp-tag-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:var(--mp-border-radius-sm);font-family:var(--mp-font-family-base);font-size:11px;font-weight:500;line-height:1;white-space:nowrap;cursor:default;user-select:none;transition:transform 150ms ease-in-out;color:var(--mp-text-buttons)}.prompt-tags-container{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.mp-tags-modal-content{display:flex;flex-direction:column;gap:16px;max-height:60vh;overflow:hidden;padding-right:4px;scrollbar-width:none}.mp-tags-modal-content::-webkit-scrollbar{display:none}.mp-tag-form{display:flex;flex-direction:column;gap:12px;padding:16px;background-color:var(--mp-bg-secondary);border-radius:var(--mp-border-radius-md);border:1px solid var(--mp-border-primary)}.mp-tag-form-row{display:flex;gap:12px;align-items:flex-end;justify-content:space-around;width:100%;box-sizing:border-box}.mp-tag-color-group{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;max-width:160px;min-width:80px}.mp-tag-color-label{font-family:var(--mp-font-family-base);font-size:11px;color:var(--mp-text-secondary)}.mp-tag-color-input{width:100%;height:32px;padding:0;margin:0;border:2px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-sm);cursor:pointer;background:none;overflow:hidden;box-sizing:border-box;display:block}.mp-tag-color-input::-webkit-color-swatch-wrapper{padding:0}.mp-tag-color-input::-webkit-color-swatch{border:none;border-radius:2px}.mp-tag-color-input::-moz-color-swatch{border:none;border-radius:2px}.mp-tags-list{display:flex;flex-direction:column;gap:6px}.mp-tag-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background-color:var(--mp-bg-secondary);border-radius:var(--mp-border-radius-md);border:1px solid var(--mp-border-primary);transition:background-color 150ms ease-in-out,border-color 150ms ease-in-out}.mp-tag-item:hover{background-color:var(--mp-bg-tertiary);border-color:var(--mp-border-secondary)}.mp-tag-item-info{gap:12px;flex:1;min-width:0}.mp-tag-item-info,.mp-tag-item-preview{display:flex;align-items:center}.mp-tag-item-details{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.mp-tag-item-comment{font-family:var(--mp-font-family-base);font-size:12px;color:var(--mp-text-tertiary);display:block;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mp-tag-item-actions{display:flex;gap:2px;flex-shrink:0}.mp-tag-action-btn{background:none;border:none;cursor:pointer;width:28px;height:28px;border-radius:var(--mp-border-radius-sm);transition:all .15s ease;display:flex;align-items:center;justify-content:center;color:var(--mp-text-secondary);font-family:var(--mp-font-family-button)}.mp-tag-action-btn:hover{background-color:rgba(0,0,0,.05);transform:scale(1.1)}.mp-tag-action-btn.edit:hover{color:var(--mp-accent-edit)}.mp-tag-action-btn.delete:hover{color:var(--mp-accent-close)}.mp-tag-action-btn svg{width:16px;height:16px}.mp-tags-empty{text-align:center;padding:32px;color:var(--mp-text-tertiary);font-family:var(--mp-font-family-base)}.mp-filter-btn{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;width:28px;height:28px;border-radius:var(--mp-border-radius-sm);display:flex;align-items:center;justify-content:center;color:var(--mp-text-secondary);transition:all 150ms ease-in-out;z-index:5;margin-right:5px}.mp-filter-btn:hover{background-color:rgba(0,0,0,.05);transform:translateY(-50%) scale(1.1)}.mp-filter-btn.active,.mp-filter-btn:hover{color:var(--mp-accent-primary)}.mp-filter-btn svg{width:16px;height:16px}.mp-filter-dropdown{position:fixed;min-width:100px;max-width:200px;background-color:var(--mp-bg-primary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);box-shadow:var(--mp-shadow-lg);display:none;flex-direction:column;max-height:480px;overflow:hidden}.mp-filter-dropdown.visible{display:flex;flex-direction:column}.mp-filter-header{display:flex;justify-content:space-around;flex-direction:row-reverse;align-items:center;padding:4px 6px;border-bottom:1px solid var(--mp-border-primary);background-color:var(--mp-bg-secondary);gap:2px}.mp-filter-manage-btn{background:none;border:none;cursor:pointer;width:28px;height:28px;border-radius:var(--mp-border-radius-sm);display:flex;align-items:center;justify-content:center;color:var(--mp-text-secondary);transition:all 150ms ease-in-out}.mp-filter-manage-btn:hover{background-color:rgba(0,0,0,.05);transform:scale(1.1);color:var(--mp-accent-edit)}.mp-filter-manage-btn svg{width:16px;height:16px}.mp-filter-clear-btn{background:none;border:none;cursor:pointer;width:28px;height:28px;border-radius:var(--mp-border-radius-sm);display:flex;align-items:center;justify-content:center;color:var(--mp-text-secondary);transition:all 150ms ease-in-out}.mp-filter-clear-btn:hover{background-color:rgba(0,0,0,.05);transform:scale(1.1);color:var(--mp-accent-close)}.mp-filter-clear-btn svg{width:16px;height:16px}.mp-filter-list{overflow-y:auto;padding:4px;flex:1;scrollbar-width:none}.mp-filter-list::-webkit-scrollbar{display:none}.mp-filter-item{display:flex;align-items:center;gap:10px;padding:7px 10px;cursor:pointer;border-radius:var(--mp-border-radius-sm);transition:background-color .15s ease,box-shadow .15s ease}.mp-filter-item+.mp-filter-item{margin-top:1px}.mp-filter-item.selected,.mp-filter-item:hover{background-color:var(--mp-bg-tertiary)}.mp-filter-tag-preview{flex:1;min-width:0}.mp-filter-empty{padding:24px 16px;text-align:center;color:var(--mp-text-tertiary);font-family:var(--mp-font-family-base);font-size:13px}.mp-accordions-row{display:flex;gap:10px;margin-bottom:15px;flex-shrink:0;align-items:flex-start}.mp-accordions-row>.mp-files-accordion,.mp-accordions-row>.mp-tags-accordion{flex:1;margin:0}.mp-files-accordion,.mp-tags-accordion{border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);background-color:var(--mp-bg-secondary);overflow:hidden;margin-top:10px;margin-bottom:20px;flex-shrink:0;transition:border-color 150ms ease-in-out;display:flex;flex-direction:column}.mp-files-accordion:hover,.mp-tags-accordion:hover{border-color:var(--mp-accent-primary)}.mp-accordion-header{padding:8px 12px;background-color:var(--mp-bg-secondary);cursor:pointer;font-size:13px;font-weight:600;color:var(--mp-text-secondary);display:flex;justify-content:space-between;align-items:center;user-select:none;transition:background 150ms ease-in-out;border-bottom:1px solid transparent;flex-shrink:0}.mp-accordion-header:hover{color:var(--mp-text-primary);background-color:var(--mp-bg-tertiary)}.mp-accordion-header svg{width:16px;height:16px;transition:transform 150ms ease-in-out;opacity:.6}.mp-files-accordion.open .mp-accordion-header,.mp-tags-accordion.open .mp-accordion-header{border-bottom:1px solid var(--mp-border-primary);background-color:var(--mp-bg-tertiary)}.mp-files-accordion.open .mp-accordion-header svg:last-child,.mp-tags-accordion.open .mp-accordion-header svg:last-child{transform:rotate(180deg);opacity:1;color:var(--mp-accent-primary)}.mp-accordion-content{display:none;background-color:var(--mp-bg-primary);position:relative;flex-direction:column}.mp-files-accordion.open .mp-accordion-content,.mp-tags-accordion.open .mp-accordion-content{display:flex;flex-direction:column;height:190px}.mp-accordion-content .mp-scroll-wrapper{flex:1;display:flex;flex-direction:column;min-height:0}.mp-file-scroll-wrapper,.mp-tags-scroll-wrapper{flex:1;height:100%;overflow-y:auto;padding:12px 10px;scrollbar-width:none;-ms-overflow-style:none;box-sizing:border-box}.mp-dynamic-dropzone.empty-state,.mp-file-scroll-wrapper.empty-state,.mp-tags-scroll-wrapper.empty-state{height:100%;display:flex;justify-content:center;cursor:pointer;background:linear-gradient(135deg,color-mix(in srgb,var(--mp-accent-primary) 8%,transparent),color-mix(in srgb,var(--mp-accent-primary) 3%,transparent));box-shadow:0 8px 32px 0 rgba(0,0,0,.08),inset 0 1px 1px 0 hsla(0,0%,100%,.2)}.mp-file-scroll-wrapper.empty-state:hover,.mp-tags-scroll-wrapper.empty-state:hover{background:linear-gradient(135deg,color-mix(in srgb,var(--mp-accent-primary) 12%,transparent),color-mix(in srgb,var(--mp-accent-primary) 5%,transparent));border-color:var(--mp-accent-primary);box-shadow:0 12px 40px 0 rgba(0,0,0,.12),inset 0 1px 1px 0 hsla(0,0%,100%,.3)}.mp-file-grid.empty-state,.mp-tags-grid.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;width:100%;pointer-events:none}.mp-file-empty-icon,.mp-tags-empty-icon{width:48px;height:48px;color:var(--mp-accent-primary);opacity:.8;display:flex;align-items:center;justify-content:center}.mp-file-empty-text,.mp-tags-empty-text{color:var(--mp-text-primary);font-size:14px;font-weight:600;text-align:center}.mp-file-empty-subtext,.mp-tags-empty-subtext{color:var(--mp-text-secondary);font-size:12px;text-align:center}.mp-file-scroll-wrapper::-webkit-scrollbar,.mp-tags-scroll-wrapper::-webkit-scrollbar{display:none}.mp-file-grid{display:grid;grid-template-columns:repeat(auto-fill,70px);gap:10px}.mp-file-grid,.mp-tags-grid{justify-content:center;width:100%}.mp-tags-grid{display:flex;flex-wrap:wrap;gap:8px}.mp-add-file-card,.mp-file-card{position:relative;width:100%;height:70px;border-radius:6px;flex-shrink:0;cursor:pointer;transition:all 150ms ease-in-out;box-sizing:border-box}.mp-file-card{background:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);overflow:hidden}.mp-add-file-card,.mp-file-card{display:flex;align-items:center;justify-content:center}.mp-add-file-card{border:2px dashed var(--mp-border-primary);color:var(--mp-text-tertiary);background:transparent}.mp-add-file-card:hover,.mp-dynamic-dropzone:hover{border-color:var(--mp-accent-primary);color:var(--mp-accent-primary);background-color:color-mix(in srgb,var(--mp-accent-primary) 5%,transparent)}.mp-add-icon{width:24px;height:24px;stroke:currentColor;stroke-width:2}.mp-file-card.inactive{opacity:.5;filter:grayscale(100%)}.mp-file-card.inactive:hover{opacity:.9;filter:grayscale(0);border-color:var(--mp-text-tertiary)}.mp-file-card.active{opacity:1;border-color:var(--mp-accent-primary);box-shadow:0 0 0 2px color-mix(in srgb,var(--mp-accent-primary) 20%,transparent)}.mp-file-thumb{width:100%;height:100%;object-fit:cover}.mp-file-icon-gen{width:28px;height:28px;color:var(--mp-text-secondary)}.mp-file-delete-perm{position:absolute;top:2px;right:2px;width:16px;height:16px;background:rgba(0,0,0,.6);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;opacity:0;transition:opacity 150ms ease-in-out;z-index:10}.mp-file-delete-perm:hover{background-color:var(--mp-accent-close)}.mp-file-card:hover .mp-file-delete-perm{opacity:1}.mp-tag-select-item{display:inline-flex;align-items:center;padding:6px 12px;border-radius:var(--mp-border-radius-sm);font-family:var(--mp-font-family-base);font-size:12px;font-weight:500;cursor:pointer;transition:all 150ms ease-in-out;background-color:var(--mp-bg-tertiary);color:var(--mp-text-tertiary);border:1px solid transparent}.mp-tag-select-item:hover{transform:scale(1.05);opacity:.9}.mp-tag-select-item.active{border-color:hsla(0,0%,100%,.3);box-shadow:0 2px 8px rgba(0,0,0,.15)}.mp-tags-accordion-footer{display:flex;justify-content:center;padding:8px;border-top:1px solid var(--mp-border-primary);background-color:var(--mp-bg-secondary);flex-shrink:0;position:relative;z-index:10}.mp-tags-manage-btn{display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;color:var(--mp-accent-primary);font-family:var(--mp-font-family-button);font-size:12px;font-weight:500;padding:6px 12px;border-radius:var(--mp-border-radius-sm);transition:background-color 150ms ease-in-out}.mp-tags-manage-btn:hover{background-color:color-mix(in srgb,var(--mp-accent-primary) 15%,transparent)}.mp-tags-manage-btn svg{width:14px;height:14px}.mp-icon-container{display:flex;align-items:center;justify-content:center;cursor:help;width:16px;height:16px;color:var(--mp-accent-primary)}.mp-syntax-container{position:relative!important;width:100%;height:100%}.mp-syntax-backdrop{position:absolute!important;top:0;left:0;right:0;bottom:0;overflow:hidden;pointer-events:none;z-index:0;font-family:var(--mp-font-family-editor)!important;font-size:inherit;font-weight:400!important;font-style:normal!important;line-height:inherit;letter-spacing:normal;word-spacing:normal;text-transform:none;text-indent:0;text-shadow:none!important;text-decoration:none!important;white-space:pre-wrap;overflow-wrap:break-word;word-wrap:break-word;word-break:normal;padding:16px;margin:0;border:none;box-sizing:border-box;color:var(--mp-text-primary);background:transparent;user-select:none;-webkit-user-select:none}textarea.mp-syntax-enabled{position:relative!important;z-index:1;background:transparent!important;color:transparent!important;-webkit-text-fill-color:transparent!important;white-space:pre-wrap!important;overflow-wrap:break-word!important;word-wrap:break-word!important;word-break:normal!important;caret-color:var(--mp-syntax-caret)!important}textarea.mp-syntax-enabled::-moz-selection,textarea.mp-syntax-enabled::selection{background:var(--mp-syntax-selection)!important}.mp-syn-esc{color:var(--mp-syntax-escape)}.mp-syn-ign-f{color:var(--mp-syntax-ignore-fence);opacity:.8}.mp-syn-ign-c{color:var(--mp-syntax-ignore-content);opacity:.6}.mp-syn-qt-f{color:var(--mp-syntax-quote-fence)}.mp-syn-qt-c{color:var(--mp-syntax-quote-content)}.mp-syn-dt-f,.mp-syn-dt-k{color:var(--mp-syntax-var-keyword)}.mp-syn-fl-k,.mp-syn-fl-p,.mp-syn-fl-t{color:var(--mp-syntax-file-keyword)}.mp-syn-sl-f{color:var(--mp-syntax-sel-fence)}.mp-syn-sl-h,.mp-syn-sl-hh{color:var(--mp-syntax-sel-header)}.mp-syn-sl-sep{color:var(--mp-syntax-sel-sep);opacity:.7}.mp-syn-sl-p-multi{color:var(--mp-syntax-sel-multi)}.mp-syn-sl-p-single{color:var(--mp-syntax-sel-single)}.mp-syn-sl-p-id{color:var(--mp-syntax-sel-id)}.mp-syn-sl-p-other{color:var(--mp-syntax-sel-other)}.mp-syn-def-s{color:var(--mp-syntax-def-sep)}.mp-syn-def-v{color:var(--mp-syntax-def-val)}.mp-syn-sel-chk{color:var(--mp-syntax-sel-checked)}.mp-syn-free-b,.mp-syn-free-l{color:var(--mp-syntax-free-label);background-color:color-mix(in srgb,var(--mp-syntax-free-bracket) 25%,transparent)}.mp-syn-in-b{color:var(--mp-syntax-in-bracket)}.mp-syn-in-l{color:var(--mp-syntax-in-label)}.mp-syn-in-e{color:var(--mp-syntax-in-eq)}.mp-syn-sil-b{color:var(--mp-syntax-sil-bracket)}.mp-syn-sil-l{color:var(--mp-syntax-sil-label)}.mp-syn-sil-e{color:var(--mp-syntax-sil-eq)}.mp-syn-in-c{color:var(--mp-syntax-context);opacity:.7}.mp-syn-in-v,.mp-syn-sil-v,.mp-syn-var{color:var(--mp-syntax-var)}.mp-syn-var{border-bottom:1px dotted var(--mp-syntax-var)}.mp-syntax-backdrop,textarea.mp-syntax-enabled{tab-size:4;-moz-tab-size:4}.mp-syntax-backdrop span{font-weight:inherit;font-style:inherit}.mp-syntax-backdrop span[class*=mp-syn-]{text-decoration:none!important;text-shadow:none!important}.mp-gist-import-btn{display:inline-flex;align-items:center;justify-content:center;gap:.25rem;padding:.5rem;height:1.75rem;font-size:.75rem;font-weight:500;font-family:var(--mp-font-family-button);line-height:1.625;border-radius:6px;border:1px solid var(--mp-border-secondary);cursor:pointer;background-color:var(--mp-accent-primary);color:var(--mp-text-buttons);box-shadow:var(--mp-shadow-sm);transition:all var(--mp-transition-fast);margin-right:8px;vertical-align:middle;text-decoration:none}.mp-gist-import-btn:hover{background-color:color-mix(in srgb,var(--mp-accent-primary) 10%,var(--mp-bg-primary));color:var(--mp-accent-primary);border-color:var(--mp-accent-primary);box-shadow:var(--mp-shadow-md)}.mp-gist-import-btn:active{transform:scale(.98)}.file-actions{display:flex}.mp-gist-import-btn[data-state=imported],.mp-gist-import-btn[data-state=imported]:active,.mp-gist-import-btn[data-state=imported]:hover{background-color:var(--mp-bg-tertiary);color:var(--mp-text-secondary);box-shadow:none;transform:none;border-color:var(--mp-text-secondary);opacity:.7;cursor:not-allowed!important;pointer-events:auto!important}#mp-notification-container{position:fixed;top:24px;left:50%;transform:translateX(-50%);z-index:999999;display:flex;flex-direction:column;gap:12px;pointer-events:none;align-items:center}.mp-notification{background-color:color-mix(in srgb,var(--mp-accent-primary) 10%,var(--mp-bg-primary));color:var(--mp-accent-primary);border:1px solid var(--mp-accent-primary);padding:10px 20px;border-radius:var(--mp-border-radius-md);box-shadow:var(--mp-shadow-md);font-family:var(--mp-font-family-button);font-size:14px;font-weight:500;opacity:0;transform:translateY(-20px);transition:all var(--mp-transition-fast);display:flex;align-items:center;pointer-events:auto}.mp-notification.mp-show{opacity:1;transform:translateY(0)}.mp-notification.mp-error{background-color:color-mix(in srgb,var(--mp-accent-close) 10%,var(--mp-bg-primary));color:var(--mp-accent-close);border-color:var(--mp-accent-close);box-shadow:0 4px 12px color-mix(in srgb,var(--mp-accent-close) 25%,transparent)}.mp-prompt-meta-highlight{border:2px solid var(--mp-accent-primary)!important;border-radius:6px!important;padding:8px!important;background-color:color-mix(in srgb,var(--mp-accent-primary) 10%,var(--mp-bg-primary))!important;box-shadow:0 0 12px color-mix(in srgb,var(--mp-accent-primary) 40%,transparent)!important;transition:all var(--mp-transition-fast) ease-in-out;cursor:pointer}.mp-prompt-meta-highlight:hover{background-color:color-mix(in srgb,var(--mp-accent-primary) 15%,var(--mp-bg-primary))!important;box-shadow:0 0 16px color-mix(in srgb,var(--mp-accent-primary) 60%,transparent)!important}.mp-prompt-meta-highlight,.mp-prompt-meta-highlight a,.mp-prompt-meta-highlight li,.mp-prompt-meta-highlight span,.mp-prompt-meta-highlight strong,.mp-prompt-meta-highlight svg{color:var(--mp-accent-primary)!important}.mp-prompt-meta-highlight svg{fill:var(--mp-accent-primary)!important}.mp-patreon-button{background-color:#f96854!important;color:#fff!important;display:flex!important;justify-content:center;align-items:center;text-decoration:none;margin-top:8px;transition:filter 150ms ease-in-out,transform .1s ease;border:none;cursor:pointer}.mp-patreon-button:hover{filter:brightness(1.1);text-decoration:none;color:#fff!important}.mp-patreon-button:active{filter:brightness(.9);transform:scale(.99)}.kfds-lyt-width-100.mp-patreon-button{box-sizing:border-box}.mp-expanded-filter-dropdown,.mp-filter-dropdown{z-index:100005!important}#__ap_settings_overlay{z-index:99990!important;position:fixed!important}#__ap_lang_modal_overlay{z-index:99999!important;position:fixed!important}#__ap_lang_modal_overlay .lang-box{z-index:100000!important;position:relative!important}.empty-state{padding:10px;text-align:center;color:var(--mp-text-tertiary);font-size:14px}.mp-dialogo-overlay{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:var(--mp-bg-overlay);opacity:0;transition:opacity var(--mp-transition-fast);pointer-events:none;padding:16px}.mp-dialogo-overlay.mp-dialogo-visible{opacity:1;pointer-events:auto}.mp-dialogo{background:var(--mp-bg-secondary);border-radius:var(--mp-border-radius-lg);box-shadow:var(--mp-shadow-lg);border:1px solid var(--mp-border-primary);width:100%;max-width:420px;display:flex;flex-direction:column;max-height:calc(100vh - 64px);transform:scale(.95) translateY(10px);opacity:0;transition:transform var(--mp-transition-fast),opacity var(--mp-transition-fast);font-family:var(--mp-font-family-base);outline:none}.mp-dialogo-overlay.mp-dialogo-visible .mp-dialogo{transform:scale(1) translateY(0);opacity:1}.mp-dialogo-header{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 0}.mp-dialogo-title{font-family:var(--mp-font-family-heading);font-size:16px;font-weight:600;color:var(--mp-text-primary);margin:0;line-height:1.3}.mp-dialogo-body{padding:16px 20px;flex:1;overflow-y:auto;min-height:0}.mp-dialogo-message{font-size:14px;line-height:1.6;color:var(--mp-text-secondary);margin:0;overflow-wrap:break-word;word-break:break-word}.mp-dialogo-header:empty+.mp-dialogo-body{padding-top:20px}.mp-dialogo-body::-webkit-scrollbar{width:6px}.mp-dialogo-body::-webkit-scrollbar-track{background:transparent}.mp-dialogo-body::-webkit-scrollbar-thumb{background:var(--mp-border-primary);border-radius:10px}.mp-dialogo-body::-webkit-scrollbar-thumb:hover{background:var(--mp-text-tertiary)}.mp-dialogo-body{scrollbar-width:thin;scrollbar-color:var(--mp-border-primary) transparent}.mp-dialogo-footer{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:4px 20px 20px}.mp-dialogo-footer:empty{display:none}.mp-dialogo-footer-checkbox{display:flex;align-items:center;margin-right:auto;font-size:12px;color:var(--mp-text-tertiary);user-select:none;cursor:pointer;line-height:1}.mp-dialogo-footer-checkbox .mp-checkbox{margin:0;width:14px;height:14px;flex-shrink:0}.mp-dialogo-footer-checkbox span{margin-left:6px}.mp-dialogo-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;border:1px solid transparent;border-radius:var(--mp-border-radius-sm);font-family:var(--mp-font-family-button);font-size:13px;font-weight:500;cursor:pointer;transition:all var(--mp-transition-fast);white-space:nowrap;line-height:1.4}.mp-dialogo-btn:hover,.save-button:hover{box-shadow:4px 4px 0 0 var(--mp-text-primary);transform:translate(-2px,-2px)}.mp-dialogo-btn:active,.save-button:active{box-shadow:0 0 0 0 var(--mp-text-primary);transform:translate(0)}.mp-dialogo-btn:focus-visible{outline:2px solid var(--mp-accent-primary);outline-offset:2px}.mp-dialogo-btn-icon{display:flex;align-items:center;justify-content:center;width:16px;height:16px;flex-shrink:0}.mp-dialogo-btn-icon svg{width:100%;height:100%}.mp-dialogo-btn-primary{background:var(--mp-accent-primary);color:var(--mp-text-buttons);border-color:var(--mp-accent-primary)}.mp-dialogo-btn-primary:hover{background:var(--mp-accent-primary-hover);border-color:var(--mp-accent-primary-hover)}.mp-dialogo-btn-secondary{background:transparent;color:var(--mp-text-secondary);border-color:var(--mp-text-primary)}.mp-dialogo-btn-secondary:hover{background:var(--mp-bg-tertiary);color:var(--mp-text-primary);border-color:var(--mp-text-primary)}.mp-dialogo-btn-danger{background:var(--mp-accent-close);color:var(--mp-text-buttons);border-color:var(--mp-accent-close)}.mp-dialogo-btn-danger:hover{background:var(--mp-accent-close-hover);border-color:var(--mp-accent-close-hover)}.mp-dialogo-btn-edit{background:var(--mp-accent-edit);color:var(--mp-text-buttons);border-color:var(--mp-accent-edit)}.mp-dialogo-btn-edit:hover{background:var(--mp-accent-edit-hover);border-color:var(--mp-accent-edit-hover)}.mp-shared-changelog-btn{display:inline-block;font-size:13px;color:var(--mp-accent-primary);cursor:pointer;margin-bottom:10px;text-decoration:underline}.mp-shared-changelog-content{background:var(--mp-bg-secondary);border:1px solid var(--mp-border-primary);border-radius:var(--mp-border-radius-md);padding:10px;font-size:13px;color:var(--mp-text-secondary);max-height:250px;overflow-y:auto;margin-bottom:15px;white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word}.mp-shared-changelog-content h1,.mp-shared-changelog-content h2,.mp-shared-changelog-content h3,.mp-shared-changelog-content h4,.mp-shared-changelog-content h5,.mp-shared-changelog-content h6{margin-top:0;margin-bottom:8px;color:var(--mp-text-primary)}.mp-shared-changelog-content p{margin:0 0 8px}.mp-shared-inline-code{background:var(--mp-bg-tertiary);padding:2px 4px;border-radius:3px;font-family:var(--mp-font-family-editor);color:var(--mp-accent-close)}.mp-shared-block-code{background:var(--mp-bg-tertiary);padding:10px;border-radius:var(--mp-border-radius-sm);overflow-x:auto;max-height:200px;white-space:pre-wrap;word-wrap:break-word;margin-bottom:8px;display:block}.mp-shared-block-code,.mp-shared-changelog-content code{font-family:var(--mp-font-family-editor)!important}.mp-shared-version-highlight{color:var(--mp-btn-add-color)}.mp-shared-info{margin-bottom:15px;padding:12px;background:var(--mp-bg-secondary);border-radius:var(--mp-border-radius-md);border:1px solid var(--mp-border-primary)}.mp-shared-info-manager{margin-top:15px;margin-bottom:0;padding:10px}.mp-shared-info-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.mp-shared-info-header.align-center{align-items:center}.mp-shared-info-list{font-size:13px;color:var(--mp-text-secondary);display:flex;flex-direction:column;gap:6px}.mp-shared-info-label{color:var(--mp-accent-primary)}.mp-shared-btn-secondary{background-color:var(--mp-bg-tertiary)!important;color:var(--mp-text-primary)!important;border:1px solid var(--mp-border-primary)!important}.mp-shared-btn-secondary:hover{background-color:var(--mp-bg-secondary)!important;opacity:.9}.mp-shared-btn-cancel{background:var(--mp-bg-secondary)!important;color:var(--mp-text-primary)!important;border:1px solid var(--mp-border-primary)!important}.mp-diff-column-full{width:100%!important}.mp-shared-cl-overlay{z-index:99995!important}.mp-shared-cl-box{max-width:600px!important;max-height:80vh!important;display:flex!important;flex-direction:column!important;cursor:default}.mp-shared-cl-title{flex-shrink:0;margin-bottom:15px}.mp-shared-cl-body{flex-grow:1;overflow-y:auto;max-height:none!important;margin-bottom:0!important;text-align:left}.mp-shared-intervals{display:flex;gap:10px;flex-wrap:wrap;padding:8px 12px;justify-content:space-between;align-items:center;background-color:var(--mp-bg-secondary);border-radius:var(--mp-border-radius-md);border:1px solid var(--mp-border-primary)}.mp-shared-interval-label{display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;color:var(--mp-text-secondary)}.mp-shared-version-badge{color:var(--mp-btn-add-color);font-weight:600;font-size:14px}.mp-shared-info-subtext{font-size:12px;color:var(--mp-text-secondary);margin-top:5px}.mp-shared-info-actions{margin-top:10px;display:flex;gap:8px}.mp-shared-info-actions .flex-1{flex:1}.mp-shared-form-group{margin-top:15px}.mp-shared-modal-footer{margin-top:20px}.mp-diff-view{width:100%!important;flex:1!important;padding:16px!important;border-radius:var(--mp-border-radius-md)!important;border:1px solid var(--mp-border-primary)!important;background-color:var(--mp-bg-secondary)!important;color:var(--mp-text-primary)!important;font-family:var(--mp-font-family-editor)!important;font-size:15px!important;line-height:1.6!important;box-sizing:border-box!important;overflow-y:auto!important;white-space:pre-wrap!important;word-break:break-all!important}.mp-diff-line-unchanged{color:var(--mp-text-primary)}.mp-diff-line-removed{background-color:rgba(239,68,68,.15)!important;color:#ef4444!important;display:block;width:100%}.mp-diff-line-added{background-color:rgba(16,185,129,.15)!important;color:#10b981!important;display:block;width:100%}.mp-diff-line-empty{background-color:transparent;opacity:.3;user-select:none}.mp-diff-column{position:relative!important}.mp-diff-enhanced-edit-btn{position:absolute!important;bottom:12px;right:12px;z-index:10;opacity:.35;transition:opacity 150ms ease-in-out,transform 150ms ease-in-out}.mp-diff-enhanced-edit-btn.active,.mp-diff-enhanced-edit-btn:hover{opacity:1!important}.save-button:has(svg){display:inline-flex!important;align-items:center!important;justify-content:center!important}.save-button svg{width:18px!important;height:18px!important;display:block!important;margin:0!important;pointer-events:none}input#__ap_shared_url{color:var(--mp-accent-primary)!important;font-weight:300!important}\n";
 
   // v28.0.0-Ψ: organization-engine stylesheet — a dedicated style element
   // so the giant MP_EMBEDDED_CSS line stays untouched; everything renders
@@ -2066,13 +1833,19 @@
     if (!document.getElementById("mp-font-override")) {
       const f = document.createElement("style");
       f.id = "mp-font-override";
-      f.textContent = `@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Orbitron:wght@700&display=swap');:root{--mp-font-family-base:'JetBrains Mono',monospace;--mp-font-family-heading:'Orbitron',sans-serif;--mp-border-radius-sm:0px;--mp-border-radius-md:0px;}`;
+      // v28.1.0: the radius tokens moved INTO themeDefinitions
+      // ("electric-glass" now carries sm 0px / md 4px per the spec) — the
+      // font override force-set them for EVERY theme, which both violated
+      // the 3lectric-Glass glass-panel mandate (md was 0) and contaminated
+      // alternate themes with the 3lectric brutalism. This layer now
+      // carries the font identity only.
+      f.textContent = `@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Orbitron:wght@700&display=swap');:root{--mp-font-family-base:'JetBrains Mono',monospace;--mp-font-family-heading:'Orbitron',sans-serif;}`;
       document.head.appendChild(f);
     }
     if (!document.getElementById("mp-electric-glass-override")) {
       const g = document.createElement("style");
       g.id = "mp-electric-glass-override";
-      g.textContent = `.modal-title{font-family:'Orbitron',sans-serif;font-weight:700;color:var(--mp-text-secondary);}.mp-dialogo-title{font-family:'Orbitron',sans-serif;font-weight:700;}.save-button,button,.mp-action-btn-full,.mp-btn-part{border-radius:0!important;transition:all 150ms ease-in-out;}.save-button:hover,.mp-action-btn-full:hover,.mp-btn-part:hover{box-shadow:0 0 20px rgba(0,229,255,0.5);}.save-button.mp-btn-secondary.destructive,.mp-dialogo-btn-danger{border-color:var(--mp-error)!important;color:var(--mp-error)!important;}.save-button.mp-btn-secondary.destructive:hover,.mp-dialogo-btn-danger:hover{box-shadow:0 0 25px var(--mp-error);background:rgba(255,0,85,0.3)!important;}.mp-switch input:checked+label{box-shadow:0 0 12px rgba(0,229,255,0.8);}.mp-tooltip-content{background-color:rgba(10,19,26,0.65)!important;color:var(--mp-text-primary)!important;border:1px solid rgba(0,229,255,0.3)!important;box-shadow:0 0 20px rgba(0,229,255,0.15)!important;backdrop-filter:blur(6px);}.mp-tooltip-preview-text{background-color:rgba(10,19,26,0.4)!important;color:var(--mp-text-primary)!important;border:1px solid rgba(0,229,255,0.2)!important;}.mp-tooltip-top .mp-tooltip-arrow{border-top-color:rgba(10,19,26,0.65)!important;}.mp-tooltip-bottom .mp-tooltip-arrow{border-bottom-color:rgba(10,19,26,0.65)!important;}.mp-tooltip-left .mp-tooltip-arrow{border-left-color:rgba(10,19,26,0.65)!important;}.mp-tooltip-right .mp-tooltip-arrow{border-right-color:rgba(10,19,26,0.65)!important;}.mp-tooltip-btn:focus,.mp-tooltip-btn:hover{background-color:rgba(0,229,255,0.2)!important;color:var(--mp-text-secondary)!important;}`;
+      g.textContent = `.modal-title{font-family:'Orbitron',sans-serif;font-weight:700;color:var(--mp-text-secondary);}.mp-dialogo-title{font-family:'Orbitron',sans-serif;font-weight:700;}.save-button,.mp-overlay button,.mp-dialogo button,.mp-expanded-modal button,#prompt-menu-container button,.mp-inline-menu button,.mp-org-sidebar button,.mp-action-btn-full,.mp-btn-part{border-radius:0!important;transition:all 150ms ease-in-out;}.save-button:hover,.mp-action-btn-full:hover,.mp-btn-part:hover{box-shadow:0 0 20px rgba(0,229,255,0.5);}.save-button.mp-btn-secondary.destructive,.mp-dialogo-btn-danger{border-color:var(--mp-error)!important;color:var(--mp-error)!important;}.save-button.mp-btn-secondary.destructive:hover,.mp-dialogo-btn-danger:hover{box-shadow:0 0 25px var(--mp-error);background:rgba(255,0,85,0.3)!important;}.mp-switch input:checked+label{box-shadow:0 0 12px rgba(0,229,255,0.8);}.mp-tooltip-content{background-color:rgba(10,19,26,0.65)!important;color:var(--mp-text-primary)!important;border:1px solid rgba(0,229,255,0.3)!important;box-shadow:0 0 20px rgba(0,229,255,0.15)!important;backdrop-filter:blur(6px);}.mp-tooltip-preview-text{background-color:rgba(10,19,26,0.4)!important;color:var(--mp-text-primary)!important;border:1px solid rgba(0,229,255,0.2)!important;}.mp-tooltip-top .mp-tooltip-arrow{border-top-color:rgba(10,19,26,0.65)!important;}.mp-tooltip-bottom .mp-tooltip-arrow{border-bottom-color:rgba(10,19,26,0.65)!important;}.mp-tooltip-left .mp-tooltip-arrow{border-left-color:rgba(10,19,26,0.65)!important;}.mp-tooltip-right .mp-tooltip-arrow{border-right-color:rgba(10,19,26,0.65)!important;}.mp-tooltip-btn:focus,.mp-tooltip-btn:hover{background-color:rgba(0,229,255,0.2)!important;color:var(--mp-text-secondary)!important;}.mp-brand-glyph{filter:drop-shadow(0 0 6px rgba(0,229,255,0.35));display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;}.mp-brand-glyph .mp-glyph-ring-1,.mp-brand-glyph .mp-glyph-ring-2{transform-box:fill-box;transform-origin:center;}.mp-brand-glyph .mp-glyph-ring-1{animation:mp-glyph-spin 24s linear infinite;}.mp-brand-glyph .mp-glyph-ring-2{animation:mp-glyph-spin-rev 36s linear infinite;}@keyframes mp-glyph-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}@keyframes mp-glyph-spin-rev{from{transform:rotate(0)}to{transform:rotate(-360deg)}}@media (prefers-reduced-motion:reduce){.mp-brand-glyph .mp-glyph-ring-1,.mp-brand-glyph .mp-glyph-ring-2{animation:none;}}`;
       document.head.appendChild(g);
     }
     if (!document.getElementById("mp-pill-copy-btn-style")) {
@@ -2236,6 +2009,12 @@
           e.removeEventListener("blur", g),
           e.removeEventListener("mousedown", f),
           e.removeEventListener("click", h),
+          // v28.1.0: teardown also reverts the accessibility surface the
+          // attach phase stamped — the dangling aria-describedby pointed
+          // at a removed node, and the injected tabindex reordered the
+          // HOST page's tab stops for the element's remaining lifetime.
+          e.removeAttribute("aria-describedby"),
+          e.removeAttribute("tabindex"),
           d(!0));
       }));
   }
@@ -2391,7 +2170,13 @@
       document.body.appendChild(n));
     const a = document.createElement("div");
     ((a.className = `mp-notification mp-${t}`),
-      setSafeInnerHTML(a, `<span>${e}</span>`),
+      // v28.1.0: the message body is HTML-escaped at this single sink —
+      // callers pass user-controlled text (saved-view names, bulk-tag
+      // lists, tag names) and setSafeInnerHTML is a Trusted-Types
+      // passthrough, not a sanitizer. No caller passes intentional
+      // markup, so escaping here is behavior-preserving for every
+      // existing toast.
+      setSafeInnerHTML(a, `<span>${escapeHtmlText(e)}</span>`),
       n.appendChild(a),
       requestAnimationFrame(() => {
         a.classList.add("mp-show");
@@ -2690,8 +2475,9 @@
   // :hover keeps the v27.0.5 instant CSS slide-out (and the no-JS
   // fallback), while .mp-dock-open is toggled by the initUI dwell wiring
   // to hold the dock out for FLOW_DOCK_HIDE_DELAY_MS after the pointer
-  // leaves. (3) The "Prompt Master" title glows the dock's established
-  // cyan (#7fd8ff, layered 6/16/30px text-shadow) on trigger hover.
+  // leaves. (3) The "Prompt Master" title glows the dock's electric
+  // cyan (spec #67E8F9, layered 6/16/30px text-shadow) under white
+  // trigger-hover text.
   // (4) The pill's Settings button joins the satellite collapse
   // choreography (see the .mp-btn-settings rules at the end of this
   // sheet), so the parked pill is plain glass and all three buttons
@@ -2709,23 +2495,36 @@
   // :hover rules), and swipes shorter than the intent window never reveal
   // the icons. The shimmer loop is disabled under prefers-reduced-motion.
   const FLOW_DOCK_HIDE_DELAY_MS = 2750;
+  // v28.2.0 (3lectric-Glass accent remap): the dock's blue-family
+  // literals remap onto the spec palette — the base hue 30,42,60 /
+  // 16,23,34 / 11,16,24 → the spec's 10,19,26 glass base (alphas
+  // untouched); borders 148,196,255/.30 → rgba(0,229,255,.3); the
+  // trigger washes 140,220,255 → rgba(0,229,255,·); the pill tints
+  // 148,190,235 → rgba(0,229,255,·); the glow family 127,216,255 →
+  // rgba(103,232,249,·) (the spec's #67E8F9 in rgba form); accents
+  // #7fd8ff → #67E8F9, #aeb9c8 → rgba(0,229,255,.7) (spec tertiary
+  // text), the title #e8eaf0 → #67E8F9 (spec title role) with white
+  // hover text, and the chevron body #e8eaf0 → #ffffff (spec absolute
+  // light). Every alpha, geometry, transition and timing is
+  // byte-identical — this is a hue-only migration onto the spec's
+  // colorimetry matrix.
   const FLOW_DOCK_CSS =
-    "#pm-flow-dock{position:fixed;right:0;bottom:24px;z-index:2147483646;display:flex;align-items:stretch;border-radius:6px 0 0 6px;overflow:hidden;background:linear-gradient(160deg,rgba(30,42,60,.58) 0%,rgba(16,23,34,.52) 55%,rgba(11,16,24,.60) 100%);backdrop-filter:blur(18px) saturate(1.5);-webkit-backdrop-filter:blur(18px) saturate(1.5);border:1px solid rgba(148,196,255,.30);border-right:none;box-shadow:inset 0 1px 0 rgba(200,230,255,.18),inset 0 -1px 0 rgba(0,0,0,.28),inset 1px 0 0 rgba(200,230,255,.10),-6px 10px 36px rgba(0,0,0,.50);transition:transform 400ms cubic-bezier(0.16,1,0.3,1),backdrop-filter 280ms ease,-webkit-backdrop-filter 280ms ease;transform:translateX(calc(100% - 22px));}" +
+    "#pm-flow-dock{position:fixed;right:0;bottom:24px;z-index:2147483646;display:flex;align-items:stretch;border-radius:6px 0 0 6px;overflow:hidden;background:linear-gradient(160deg,rgba(10,19,26,.58) 0%,rgba(10,19,26,.52) 55%,rgba(10,19,26,.60) 100%);backdrop-filter:blur(18px) saturate(1.5);-webkit-backdrop-filter:blur(18px) saturate(1.5);border:1px solid rgba(0,229,255,.3);border-right:none;box-shadow:inset 0 1px 0 rgba(103,232,249,.18),inset 0 -1px 0 rgba(0,0,0,.28),inset 1px 0 0 rgba(103,232,249,.10),-6px 10px 36px rgba(0,0,0,.50);transition:transform 400ms cubic-bezier(0.16,1,0.3,1),backdrop-filter 280ms ease,-webkit-backdrop-filter 280ms ease;transform:translateX(calc(100% - 22px));}" +
     "#pm-flow-dock:hover,#pm-flow-dock.mp-dock-open{transform:translateX(0);backdrop-filter:blur(22px) saturate(1.65);-webkit-backdrop-filter:blur(22px) saturate(1.65);}" +
-    "#pm-flow-dock .mp-dock-trigger{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:none;background:transparent;color:#e8eaf0;font:600 12.5px/1 ui-sans-serif,system-ui,Roboto,sans-serif;letter-spacing:.02em;cursor:pointer;transition:background 150ms ease-in-out;}" +
-    "#pm-flow-dock .mp-dock-trigger:hover{background:rgba(140,220,255,.08);}" +
-    "#pm-flow-dock .mp-dock-trigger:active{background:rgba(140,220,255,.2);}" +
-    "#pm-flow-dock .mp-dock-glyph{width:20px;height:20px;display:block;color:#7fd8ff;flex-shrink:0;}" +
-    "#pm-flow-dock .mp-dock-text{white-space:nowrap;font-family:'Cinzel Decorative',Georgia,'Times New Roman',serif;font-weight:700;font-size:13px;line-height:1;letter-spacing:.07em;color:#e8eaf0;transition:color 250ms ease,text-shadow 250ms ease;}" +
-    "#pm-flow-dock .mp-dock-trigger:hover .mp-dock-text{color:#7fd8ff;text-shadow:0 0 6px rgba(127,216,255,.55),0 0 16px rgba(127,216,255,.35),0 0 30px rgba(127,216,255,.18);}" +
+    "#pm-flow-dock .mp-dock-trigger{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:none;background:transparent;color:#00E5FF;font:600 12.5px/1 ui-sans-serif,system-ui,Roboto,sans-serif;letter-spacing:.02em;cursor:pointer;transition:background 150ms ease-in-out;}" +
+    "#pm-flow-dock .mp-dock-trigger:hover{background:rgba(0,229,255,.08);}" +
+    "#pm-flow-dock .mp-dock-trigger:active{background:rgba(0,229,255,.2);}" +
+    "#pm-flow-dock .mp-dock-glyph{width:20px;height:20px;display:block;color:#67E8F9;flex-shrink:0;}" +
+    "#pm-flow-dock .mp-dock-text{white-space:nowrap;font-family:'Cinzel Decorative',Georgia,'Times New Roman',serif;font-weight:700;font-size:13px;line-height:1;letter-spacing:.07em;color:#67E8F9;transition:color 250ms ease,text-shadow 250ms ease;}" +
+    "#pm-flow-dock .mp-dock-trigger:hover .mp-dock-text{color:#ffffff;text-shadow:0 0 6px rgba(103,232,249,.55),0 0 16px rgba(103,232,249,.35),0 0 30px rgba(103,232,249,.18);}" +
     "#pm-flow-dock .mp-prompt-wrapper{position:static;width:auto;height:auto;flex:0 0 auto;margin:0;}" +
     "#pm-flow-dock .mp-sliding-pill-container{position:relative;top:auto;right:auto;}" +
-    "#pm-flow-dock .mp-sliding-pill-container{height:100%;border-radius:0;border:none;box-shadow:none;background:rgba(148,190,235,.10);backdrop-filter:blur(2px) saturate(1.15);-webkit-backdrop-filter:blur(2px) saturate(1.15);transition:width var(--mp-transition-fast),height var(--mp-transition-fast),background-color var(--mp-transition-fast),border-color var(--mp-transition-fast),backdrop-filter 280ms ease,-webkit-backdrop-filter 280ms ease;}" +
-    "#pm-flow-dock .mp-sliding-pill-container:hover{background:rgba(148,190,235,.17);border:none;box-shadow:none;backdrop-filter:blur(14px) saturate(1.4);-webkit-backdrop-filter:blur(14px) saturate(1.4);}" +
-    "#pm-flow-dock .mp-sliding-pill-container:active{background:rgba(148,190,235,.24);}" +
-    "#pm-flow-dock .mp-btn-part{height:100%;color:#aeb9c8;}" +
-    "#pm-flow-dock .mp-btn-part:hover{color:#7fd8ff;}" +
-    "#pm-flow-dock .mp-sliding-pill-container:after,#pm-flow-dock .mp-sliding-pill-container:before{background-color:rgba(150,175,205,.28);}" +
+    "#pm-flow-dock .mp-sliding-pill-container{height:100%;border-radius:0;border:none;box-shadow:none;background:rgba(0,229,255,.10);backdrop-filter:blur(2px) saturate(1.15);-webkit-backdrop-filter:blur(2px) saturate(1.15);transition:width var(--mp-transition-fast),height var(--mp-transition-fast),background-color var(--mp-transition-fast),border-color var(--mp-transition-fast),backdrop-filter 280ms ease,-webkit-backdrop-filter 280ms ease;}" +
+    "#pm-flow-dock .mp-sliding-pill-container:hover{background:rgba(0,229,255,.17);border:none;box-shadow:none;backdrop-filter:blur(14px) saturate(1.4);-webkit-backdrop-filter:blur(14px) saturate(1.4);}" +
+    "#pm-flow-dock .mp-sliding-pill-container:active{background:rgba(0,229,255,.24);}" +
+    "#pm-flow-dock .mp-btn-part{height:100%;color:rgba(0,229,255,.7);}" +
+    "#pm-flow-dock .mp-btn-part:hover{color:#67E8F9;}" +
+    "#pm-flow-dock .mp-sliding-pill-container:after,#pm-flow-dock .mp-sliding-pill-container:before{background-color:rgba(0,229,255,.28);}" +
     "#pm-flow-dock .mp-btn-settings{flex:0 0 0;width:0;opacity:0;overflow:hidden;transition:flex-basis var(--mp-transition-fast),width var(--mp-transition-fast),height var(--mp-transition-fast),opacity var(--mp-transition-fast),transform var(--mp-transition-fast);}" +
     "#pm-flow-dock .mp-sliding-pill-container:hover .mp-btn-settings{flex:0 0 34px;width:34px;opacity:1;transform:translate(0);}" +
     "#pm-flow-dock .mp-dir-left .mp-btn-settings{transform:translateX(10px);}" +
@@ -2746,12 +2545,16 @@
     // them clipped — and the left-anchored copy would stack under the
     // parked chevron (the beta's interim glyph ambiguity).
     "#pm-flow-dock .mp-sliding-pill-container:hover .mp-btn-settings{transition-delay:var(--mp-pill-intent-ms,950ms);}" +
-    "#pm-flow-dock .mp-prompt-wrapper::before{content:'';position:absolute;z-index:1002;pointer-events:none;right:10px;top:50%;width:16px;height:16px;transform:translateY(-50%);background-color:#e8eaf0;background-image:linear-gradient(90deg,transparent 0%,transparent 42%,rgba(127,216,255,.95) 50%,transparent 58%,transparent 100%);background-size:280% 100%;animation:mp-chevron-flash 2.6s linear infinite;opacity:.9;transition:opacity var(--mp-transition-fast),background-color var(--mp-transition-fast),filter var(--mp-transition-fast);-webkit-mask-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M14.5 5.5 8 12 14.5 18.5' fill='none' stroke='white' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\");-webkit-mask-position:center;-webkit-mask-repeat:no-repeat;-webkit-mask-size:16px 16px;mask-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M14.5 5.5 8 12 14.5 18.5' fill='none' stroke='white' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\");mask-position:center;mask-repeat:no-repeat;mask-size:16px 16px;}" +
-    "#pm-flow-dock .mp-prompt-wrapper:has(.mp-sliding-pill-container:hover)::before{opacity:0;background-color:#7fd8ff;filter:drop-shadow(0 0 6px rgba(127,216,255,.85)) drop-shadow(0 0 14px rgba(127,216,255,.45));animation-play-state:paused;transition:opacity var(--mp-transition-fast) var(--mp-pill-intent-ms,950ms),background-color var(--mp-transition-fast),filter var(--mp-transition-fast);}" +
+    "#pm-flow-dock .mp-prompt-wrapper::before{content:'';position:absolute;z-index:1002;pointer-events:none;right:10px;top:50%;width:16px;height:16px;transform:translateY(-50%);background-color:#ffffff;background-image:linear-gradient(90deg,transparent 0%,transparent 42%,rgba(103,232,249,.95) 50%,transparent 58%,transparent 100%);background-size:280% 100%;animation:mp-chevron-flash 2.6s linear infinite;opacity:.9;transition:opacity var(--mp-transition-fast),background-color var(--mp-transition-fast),filter var(--mp-transition-fast);-webkit-mask-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M14.5 5.5 8 12 14.5 18.5' fill='none' stroke='white' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\");-webkit-mask-position:center;-webkit-mask-repeat:no-repeat;-webkit-mask-size:16px 16px;mask-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M14.5 5.5 8 12 14.5 18.5' fill='none' stroke='white' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\");mask-position:center;mask-repeat:no-repeat;mask-size:16px 16px;}" +
+    "#pm-flow-dock .mp-prompt-wrapper:has(.mp-sliding-pill-container:hover)::before{opacity:0;background-color:#67E8F9;filter:drop-shadow(0 0 6px rgba(103,232,249,.85)) drop-shadow(0 0 14px rgba(103,232,249,.45));animation-play-state:paused;transition:opacity var(--mp-transition-fast) var(--mp-pill-intent-ms,950ms),background-color var(--mp-transition-fast),filter var(--mp-transition-fast);}" +
     "@keyframes mp-chevron-flash{0%{background-position:180% 0;}100%{background-position:-80% 0;}}" +
     // v27.0.12: accessibility — the decorative infinite shimmer switches
     // off for reduced-motion users (the glow and state fades remain).
-    "@media (prefers-reduced-motion:reduce){#pm-flow-dock .mp-prompt-wrapper::before{animation:none;}}";
+    "@media (prefers-reduced-motion:reduce){#pm-flow-dock .mp-prompt-wrapper::before{animation:none;}}" +
+    // v28.1.1: lets the prompt list shrink inside positionMenu's dock
+    // clamp instead of overflowing (overflow:hidden would clip the
+    // menu footer when the menu is capped above the dock bar).
+    "#prompt-menu-container .prompt-menu-list{min-height:0;flex:1 1 auto;}";
   // v27.0.8: loads the 'Cinzel Decorative' display face used by the dock's
   // "Prompt Master" label. The css2 request and the woff2 payload are
   // fetched through GM_xmlhttpRequest — i.e. in the userscript-manager
@@ -2829,7 +2632,7 @@
       (n.style.width = "420px !important"),
       (n.style.maxHeight = "85vh !important"),
       (n.onclick = (e) => e.stopPropagation()));
-    const a = ` <div class="mp-settings-container"><div class="mp-tabs-header"><button class="mp-tab-btn active" data-tab="basic">${"Basic"}</button><button class="mp-tab-btn" data-tab="advanced">${"Advanced"}</button></div><div class="mp-scroll-wrapper" style="flex:1; overflow:hidden;"><div id="mp-settings-scroll-area" style="padding: 0 4px 12px 4px; overflow-y: auto;"><div class="mp-tab-content active" id="tab-basic" style="margin-bottom: 16px; margin-top: 16px;"><div class="mp-form-row"><div class="mp-form-group"><label class="mp-label">${"Backup"}</label><button id="mp-btn-open-backup" class="mp-action-btn-full"><span style="font-weight:600;">${"Export/Import"}</span><span class="mp-btn-icon">${ICONS.expImp}</span></button></div></div><div class="mp-form-group"><label class="mp-label">${"Color Mode"}</label><div class="mp-segmented-control"><div class="mp-segment-opt" data-val="auto">${ICONS.monitor} <span>${"Auto"}</span></div><div class="mp-segment-opt" data-val="light">${ICONS.sol} <span>${"Light"}</span></div><div class="mp-segment-opt" data-val="dark">${ICONS.lua} <span>${"Dark"}</span></div></div></div><div class="mp-form-group style=" style="margin-bottom: 0px;"><label class="mp-label">${"Theme"}</label><div class="mp-theme-scroll-container" id="mp-theme-list-container"></div></div></div><div class="mp-tab-content" id="tab-advanced" style="margin-bottom: 16px; margin-top: 16px;"><div class="mp-form-group"><label class="mp-label">${"Advanced Options"}</label><div class="mp-settings-switch-container" style="margin-bottom: 8px;"><span id="mp-preview-prompt-lbl">${"Prompt Preview"}</span><div style="display: flex; gap: 12px; align-items: center;"><div style="display: flex; align-items: center; gap: 6px;"><span style="font-size: 11px; color: var(--mp-text-secondary); font-family: var(--mp-font-family-base);">${"Normal List"}</span><div class="mp-switch"><input type="checkbox" id="mp_setting_preview_normal" /><label for="mp_setting_preview_normal">Toggle</label></div></div><div style="display: flex; align-items: center; gap: 6px;"><span style="font-size: 11px; color: var(--mp-text-secondary); font-family: var(--mp-font-family-base);">${"Expanded List"}</span><div class="mp-switch"><input type="checkbox" id="mp_setting_preview_expand" /><label for="mp_setting_preview_expand">Toggle</label></div></div></div></div><div class="mp-settings-switch-container" style="margin-bottom: 8px;"><span id="mp-smart-predict-lbl"> ${"Smart Predict"} </span><div class="mp-switch"><input type="checkbox" id="mp_setting_prediction" /><label for="mp_setting_prediction">Toggle</label></div></div><div class="mp-settings-switch-container" style="margin-bottom: 8px;"><span id="mp-nav-lbl"> ${"Quick Navigation"} </span><div class="mp-switch"><input type="checkbox" id="mp_setting_nav" ${currentNavConfig.enabled ? "checked" : ""} /><label for="mp_setting_nav">Toggle</label></div></div><div class="mp-settings-switch-container"><span id="mp-syntax-lbl"> ${"Syntax Highlighting"} </span><div style="display: flex; align-items: center; gap: 8px;"><div class="mp-switch"><span id="mp-syntax-info-icon" style="cursor: help !important;" class="mp-help-icon">${ICONS.info}</span><input type="checkbox" id="mp_setting_syntax" /><label for="mp_setting_syntax">Toggle</label></div></div></div></div><div class="mp-form-group"><label class="mp-label mp-label-row" style="display: flex; justify-content: space-between; align-items: center;"> ${"\"Enhance Prompt\" Settings"} <span id="mp-AI-info-icon" class="mp-help-icon">${ICONS.info}</span></label><input type="text" id="mp_ai_api_key_input" class="form-input hide-api-key" placeholder="${"Paste your API Key"}"><select id="mp_ai_model_select" class="form-input"><optgroup label="Google Gemini"><option value="gemini-3.5-flash" ${"gemini-3.5-flash" === currentAIConfig.model ? "selected" : ""}>Gemini 3.5 Flash</option><option value="gemini-3.1-pro-preview" ${"gemini-3.1-pro-preview" === currentAIConfig.model ? "selected" : ""}>Gemini 3.1 Pro Preview</option><option value="gemini-3.1-flash-lite" ${"gemini-3.1-flash-lite" === currentAIConfig.model ? "selected" : ""}>Gemini 3.1 Flash Lite</option><option value="gemini-3-flash-preview" ${"gemini-3-flash-preview" === currentAIConfig.model ? "selected" : ""}>Gemini 3 Flash Preview</option><option value="gemini-2.5-pro" ${"gemini-2.5-pro" === currentAIConfig.model ? "selected" : ""}>Gemini 2.5 Pro</option><option value="gemini-2.5-flash-lite" ${"gemini-2.5-flash-lite" === currentAIConfig.model ? "selected" : ""}>Gemini 2.5 Flash Lite</option><option value="gemini-pro-latest" ${"gemini-pro-latest" === currentAIConfig.model ? "selected" : ""}>Gemini Pro Latest</option><option value="gemini-flash-latest" ${"gemini-flash-latest" === currentAIConfig.model ? "selected" : ""}>Gemini Flash Latest</option><option value="gemini-flash-lite-latest" ${"gemini-flash-lite-latest" === currentAIConfig.model ? "selected" : ""}>Gemini Flash-Lite Latest</option><option value="gemma-4-26b-a4b-it" ${"gemma-4-26b-a4b-it" === currentAIConfig.model ? "selected" : ""}>Gemma 4 26B A4B IT</option><option value="gemma-4-31b-it" ${"gemma-4-31b-it" === currentAIConfig.model ? "selected" : ""}>Gemma 4 31B IT</option></optgroup><optgroup label="LongCat"><option value="LongCat-2.0-Preview" ${"LongCat-2.0-Preview" === currentAIConfig.model ? "selected" : ""}>LongCat 2.0 Preview</option><option value="LongCat-Flash-Thinking-2601" ${"LongCat-Flash-Thinking-2601" === currentAIConfig.model ? "selected" : ""}>LongCat Flash Thinking 2601</option><option value="LongCat-Flash-Chat" ${"LongCat-Flash-Chat" === currentAIConfig.model ? "selected" : ""}>LongCat Flash Chat</option><option value="LongCat-Flash-Lite" ${"LongCat-Flash-Lite" === currentAIConfig.model ? "selected" : ""}>LongCat Flash Lite</option></optgroup><optgroup label="Groq"><option value="openai/gpt-oss-120b" ${"openai/gpt-oss-120b" === currentAIConfig.model ? "selected" : ""}>GPT-OSS 120B</option><option value="openai/gpt-oss-20b" ${"openai/gpt-oss-20b" === currentAIConfig.model ? "selected" : ""}>GPT-OSS 20B</option><option value="openai/gpt-oss-safeguard-20b" ${"openai/gpt-oss-safeguard-20b" === currentAIConfig.model ? "selected" : ""}>GPT-OSS Safeguard 20B</option><option value="groq/compound" ${"groq/compound" === currentAIConfig.model ? "selected" : ""}>Groq Compound</option><option value="groq/compound-mini" ${"groq/compound-mini" === currentAIConfig.model ? "selected" : ""}>Groq Compound Mini</option><option value="qwen/qwen3-32b" ${"qwen/qwen3-32b" === currentAIConfig.model ? "selected" : ""}>Qwen3 32B</option><option value="llama-3.3-70b-versatile" ${"llama-3.3-70b-versatile" === currentAIConfig.model ? "selected" : ""}>Llama 3.3 70B</option><option value="llama-3.1-8b-instant" ${"llama-3.1-8b-instant" === currentAIConfig.model ? "selected" : ""}>Llama 3.1 8B</option><option value="meta-llama/llama-4-scout-17b-16e-instruct" ${"meta-llama/llama-4-scout-17b-16e-instruct" === currentAIConfig.model ? "selected" : ""}>Llama 4 Scout 17b-16e Instruct</option><option value="meta-llama/llama-prompt-guard-2-22m" ${"meta-llama/llama-prompt-guard-2-22m" === currentAIConfig.model ? "selected" : ""}>Llama Prompt Guard 2 22m</option><option value="meta-llama/llama-prompt-guard-2-86m" ${"meta-llama/llama-prompt-guard-2-86m" === currentAIConfig.model ? "selected" : ""}>Llama Prompt Guard 2 86m</option></optgroup><optgroup label="Hugging Face"><option value="hf|zai-org/GLM-5.1:zai-org" ${"hf|zai-org/GLM-5.1:zai-org" === currentAIConfig.model ? "selected" : ""}>HF: GLM 5.1</option><option value="hf|zai-org/GLM-5:zai-org" ${"hf|zai-org/GLM-5:zai-org" === currentAIConfig.model ? "selected" : ""}>HF: GLM 5</option><option value="hf|zai-org/zai-org/GLM-4.7:zai-org" ${"hf|zai-org/zai-org/GLM-4.7:zai-org" === currentAIConfig.model ? "selected" : ""}>HF: GLM 4.7</option><option value="hf|zai-org/GLM-4.7-Flash:zai-org" ${"hf|zai-org/GLM-4.7-Flash:zai-org" === currentAIConfig.model ? "selected" : ""}>HF: GLM 4.7 Fast</option><option value="hf|google/gemma-4-31B-it" ${"hf|google/gemma-4-31B-it" === currentAIConfig.model ? "selected" : ""}>HF: Gemma 4 31B IT</option><option value="hf|google/gemma-4-26B-A4B-it" ${"hf|google/gemma-4-26B-A4B-it" === currentAIConfig.model ? "selected" : ""}>HF: Gemma 4 26B A4B IT</option><option value="hf|Qwen/Qwen3.5-397B-A17B" ${"hf|Qwen/Qwen3.5-397B-A17B" === currentAIConfig.model ? "selected" : ""}>HF: Qwen3.5 397B A17B</option><option value="hf|Qwen/Qwen3.5-122B-A10B" ${"hf|Qwen/Qwen3.5-122B-A10B" === currentAIConfig.model ? "selected" : ""}>HF: Qwen3.5 122B A10B</option><option value="hf|Qwen/Qwen3.5-35B-A3B" ${"hf|Qwen/Qwen3.5-35B-A3B" === currentAIConfig.model ? "selected" : ""}>HF: Qwen3.5 35B A3B</option><option value="hf|deepseek-ai/DeepSeek-V4-Flash" ${"hf|deepseek-ai/DeepSeek-V4-Flash" === currentAIConfig.model ? "selected" : ""}>HF: DeepSeek V4 Flash</option><option value="hf|deepseek-ai/DeepSeek-R1" ${"hf|deepseek-ai/DeepSeek-R1" === currentAIConfig.model ? "selected" : ""}>HF: DeepSeek R1 </option><option value="hf|deepseek-ai/DeepSeek-V3" ${"hf|deepseek-ai/DeepSeek-V3" === currentAIConfig.model ? "selected" : ""}>HF: DeepSeek V3</option><option value="hf|deepseek-ai/DeepSeek-V3-0324" ${"hf|deepseek-ai/DeepSeek-V3-0324" === currentAIConfig.model ? "selected" : ""}>HF: DeepSeek V3 0324</option><option value="hf|openai/gpt-oss-120b" ${"hf|openai/gpt-oss-120b" === currentAIConfig.model ? "selected" : ""}>HF: GPT OSS 120B</option><option value="hf|openai/gpt-oss-20b" ${"hf|openai/gpt-oss-20b" === currentAIConfig.model ? "selected" : ""}>HF: GPT OSS 20B</option><option value="hf|MiniMaxAI/MiniMax-M2.7" ${"hf|MiniMaxAI/MiniMax-M2.7" === currentAIConfig.model ? "selected" : ""}>HF: MiniMax M2.7</option><option value="hf|meta-llama/Llama-3.1-8B-Instruct" ${"hf|meta-llama/Llama-3.1-8B-Instruct" === currentAIConfig.model ? "selected" : ""}>HF: Llama 3.1 8B Instruct</option></optgroup><optgroup label="OpenRouter"><option value="openrouter|openrouter/free" ${"openrouter|openrouter/free" === currentAIConfig.model ? "selected" : ""}>Free Models Router</option><option value="openrouter|nvidia/nemotron-3-super-120b-a12b:free" ${"openrouter|nvidia/nemotron-3-super-120b-a12b:free" === currentAIConfig.model ? "selected" : ""}>NVIDIA: Nemotron 3 Super (free)</option><option value="openrouter|nvidia/nvidia/nemotron-3-nano-30b-a3b:free" ${"openrouter|nvidia/nvidia/nemotron-3-nano-30b-a3b:free" === currentAIConfig.model ? "selected" : ""}>NVIDIA: Nemotron 3 Nano 30B A3B (free)</option><option value="openrouter|nvidia/nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free" ${"openrouter|nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free" === currentAIConfig.model ? "selected" : ""}>NVIDIA: Nemotron 3 Nano Omni (free)</option><option value="openrouter|nvidia/nvidia/nemotron-nano-9b-v2:free" ${"openrouter|nvidia/nemotron-nano-9b-v2:free" === currentAIConfig.model ? "selected" : ""}>NVIDIA: Nemotron Nano 9B V2 (free)</option><option value="openrouter|nvidia/nvidia/nemotron-nano-12b-v2-vl:free" ${"openrouter|nvidia/nemotron-nano-12b-v2-vl:free" === currentAIConfig.model ? "selected" : ""}>NVIDIA: Nemotron Nano 12B 2 VL (free)</option><option value="openrouter|poolside/laguna-m.1:free" ${"openrouter|poolside/laguna-m.1:free" === currentAIConfig.model ? "selected" : ""}>Poolside: Laguna M.1 (free)</option><option value="openrouter|poolside/laguna-xs.2:free" ${"openrouter|poolside/laguna-xs.2:free" === currentAIConfig.model ? "selected" : ""}>Poolside: Laguna XS.2 (free)</option><option value="openrouter|openai/gpt-oss-120b:free" ${"openrouter|openai/gpt-oss-120b:free" === currentAIConfig.model ? "selected" : ""}>OpenAI: gpt-oss-120b (free)</option><option value="openrouter|openai/gpt-oss-20b:free" ${"openrouter|openai/gpt-oss-20b:free" === currentAIConfig.model ? "selected" : ""}>OpenAI: gpt-oss-20b (free)</option><option value="openrouter|z-ai/glm-4.5-air:free" ${"openrouter|z-ai/glm-4.5-air:free" === currentAIConfig.model ? "selected" : ""}>Z.ai: GLM 4.5 Air (free)</option><option value="openrouter|google/gemma-4-31b-it:free" ${"openrouter|google/gemma-4-31b-it:free" === currentAIConfig.model ? "selected" : ""}>Google: Gemma 4 31B (free)</option><option value="openrouter|google/gemma-4-26b-a4b-it:free" ${"openrouter|google/gemma-4-26b-a4b-it:free" === currentAIConfig.model ? "selected" : ""}>Google: Gemma 4 26B A4B (free)</option><option value="openrouter|moonshotai/kimi-k2.6:free" ${"openrouter|moonshotai/kimi-k2.6:free" === currentAIConfig.model ? "selected" : ""}>MoonshotAI: Kimi K2.6 (free)</option><option value="openrouter|liquid/lfm-2.5-1.2b-thinking:free" ${"openrouter|liquid/lfm-2.5-1.2b-thinking:free" === currentAIConfig.model ? "selected" : ""}>LiquidAI: LFM2.5-1.2B-Thinking (free)</option><option value="openrouter|liquid/lfm-2.5-1.2b-instruct:free" ${"openrouter|liquid/lfm-2.5-1.2b-instruct:free" === currentAIConfig.model ? "selected" : ""}>LiquidAI: LFM2.5-1.2B-Instruct (free)</option><option value="openrouter|qwen/qwen3-next-80b-a3b-instruct:free" ${"openrouter|qwen/qwen3-next-80b-a3b-instruct:free" === currentAIConfig.model ? "selected" : ""}>Qwen: Qwen3 Next 80B A3B Instruct (free)</option><option value="openrouter|qwen/qwen3-coder:free" ${"openrouter|qwen/qwen3-coder:free" === currentAIConfig.model ? "selected" : ""}>Qwen: Qwen3 Coder 480B A35B (free)</option><option value="openrouter|meta-llama/llama-3.3-70b-instruct:free" ${"openrouter|meta-llama/llama-3.3-70b-instruct:free" === currentAIConfig.model ? "selected" : ""}>Meta: Llama 3.3 70B Instruct (free)</option><option value="openrouter|meta-llama/llama-3.2-3b-instruct:free" ${"openrouter|meta-llama/llama-3.2-3b-instruct:free" === currentAIConfig.model ? "selected" : ""}>Meta: Llama 3.2 3B Instruct (free)</option><option value="openrouter|cognitivecomputations/dolphin-mistral-24b-venice-edition:free" ${"openrouter|cognitivecomputations/dolphin-mistral-24b-venice-edition:free" === currentAIConfig.model ? "selected" : ""}>Venice: Uncensored (free)</option><option value="openrouter|nousresearch/hermes-3-llama-3.1-405b:free" ${"openrouter|nousresearch/hermes-3-llama-3.1-405b:free" === currentAIConfig.model ? "selected" : ""}>Nous: Hermes 3 405B Instruct (free)</option><option value="openrouter|google/gemini-3.5-flash" ${"openrouter|google/gemini-3.5-flash" === currentAIConfig.model ? "selected" : ""}>Google: Gemini 3.5 Flash</option><option value="openrouter|google/gemini-3.1-flash-lite" ${"openrouter|google/gemini-3.1-flash-lite" === currentAIConfig.model ? "selected" : ""}>Google: Gemini 3.1 Flash Lite</option><option value="openrouter|google/gemini-3.1-pro-preview" ${"openrouter|google/gemini-3.1-pro-preview" === currentAIConfig.model ? "selected" : ""}>Google: Gemini 3.1 Pro Preview</option><option value="openrouter|openai/gpt-chat-latest" ${"openrouter|openai/gpt-chat-latest" === currentAIConfig.model ? "selected" : ""}>OpenAI: GPT Chat Latest</option><option value="openrouter|openai/gpt-5.5-pro" ${"openrouter|openai/gpt-5.5-pro" === currentAIConfig.model ? "selected" : ""}>OpenAI: GPT-5.5 Pro</option><option value="openrouter|openai/gpt-5.5" ${"openrouter|openai/gpt-5.5" === currentAIConfig.model ? "selected" : ""}>OpenAI: GPT-5.5</option><option value="openrouter|anthropic/claude-opus-4.8-fast" ${"openrouter|anthropic/claude-opus-4.8-fast" === currentAIConfig.model ? "selected" : ""}>Anthropic: Claude Opus 4.8 (Fast)</option><option value="openrouter|anthropic/claude-opus-4.8" ${"openrouter|anthropic/claude-opus-4.8" === currentAIConfig.model ? "selected" : ""}>Anthropic: Claude Opus 4.8</option><option value="openrouter|anthropic/claude-opus-4.7" ${"openrouter|anthropic/claude-opus-4.7" === currentAIConfig.model ? "selected" : ""}>Anthropic: Claude Opus 4.7</option><option value="openrouter|x-ai/grok-4.3" ${"openrouter|x-ai/grok-4.3" === currentAIConfig.model ? "selected" : ""}>xAI: Grok 4.3</option><option value="openrouter|deepseek/deepseek-v4-flash" ${"openrouter|deepseek/deepseek-v4-flash" === currentAIConfig.model ? "selected" : ""}>DeepSeek: DeepSeek V4 Flash</option><option value="openrouter|deepseek/deepseek-v4-pro" ${"openrouter|deepseek/deepseek-v4-pro" === currentAIConfig.model ? "selected" : ""}>DeepSeek: DeepSeek V4 Pro</option><option value="openrouter|qwen/qwen3.7-max" ${"openrouter|qwen/qwen3.7-max" === currentAIConfig.model ? "selected" : ""}>Qwen: Qwen3.7 Max</option></optgroup></select><textarea id="mp_ai_sys_prompt_input" class="form-input" placeholder="${"Custom System Prompt (Optional)"}"></textarea></div><div class="mp-form-group" style="margin-bottom: 0px;"><label class="mp-label">${"Keyboard Shortcuts"}</label><div class="mp-shortcut-scroll-container" id="mp-shortcuts-list-container"></div></div><div class="mp-form-group" style="margin-bottom: 0px;"><label class="mp-label mp-label-row" style="display:flex;justify-content:space-between;align-items:center;">${"Gist Sync"}<span id="mp-gist-info-icon" class="mp-help-icon">${ICONS.gist}</span></label><input type="text" id="mp_gist_pat_input" class="form-input hide-api-key" placeholder="${"GitHub Personal Access Token (PAT)"}"><input type="text" id="mp_gist_id_input" class="form-input" placeholder="${"Gist ID (auto-filled after first sync)"}"></div></div></div></div></div><div class="mp-settings-footer"><button class="save-button" id="mp-settings-save">${"Save"}</button></div></div> `;
+    const a = ` <div class="mp-settings-container"><div class="mp-tabs-header"><button class="mp-tab-btn active" data-tab="basic">${"Basic"}</button><button class="mp-tab-btn" data-tab="advanced">${"Advanced"}</button></div><div class="mp-scroll-wrapper" style="flex:1; overflow:hidden;"><div id="mp-settings-scroll-area" style="padding: 0 4px 12px 4px; overflow-y: auto;"><div class="mp-tab-content active" id="tab-basic" style="margin-bottom: 16px; margin-top: 16px;"><div class="mp-form-row"><div class="mp-form-group"><label class="mp-label">${"Backup"}</label><button id="mp-btn-open-backup" class="mp-action-btn-full"><span style="font-weight:600;">${"Export/Import"}</span><span class="mp-btn-icon">${ICONS.expImp}</span></button></div></div><div class="mp-form-group"><label class="mp-label">${"Color Mode"}</label><div class="mp-segmented-control"><div class="mp-segment-opt" data-val="auto">${ICONS.monitor} <span>${"Auto"}</span></div><div class="mp-segment-opt" data-val="light">${ICONS.sol} <span>${"Light"}</span></div><div class="mp-segment-opt" data-val="dark">${ICONS.lua} <span>${"Dark"}</span></div></div></div><div class="mp-form-group" style="margin-bottom: 0px;"><label class="mp-label">${"Theme"}</label><div class="mp-theme-scroll-container" id="mp-theme-list-container"></div></div></div><div class="mp-tab-content" id="tab-advanced" style="margin-bottom: 16px; margin-top: 16px;"><div class="mp-form-group"><label class="mp-label">${"Advanced Options"}</label><div class="mp-settings-switch-container" style="margin-bottom: 8px;"><span id="mp-preview-prompt-lbl">${"Prompt Preview"}</span><div style="display: flex; gap: 12px; align-items: center;"><div style="display: flex; align-items: center; gap: 6px;"><span style="font-size: 11px; color: var(--mp-text-secondary); font-family: var(--mp-font-family-base);">${"Normal List"}</span><div class="mp-switch"><input type="checkbox" id="mp_setting_preview_normal" /><label for="mp_setting_preview_normal">Toggle</label></div></div><div style="display: flex; align-items: center; gap: 6px;"><span style="font-size: 11px; color: var(--mp-text-secondary); font-family: var(--mp-font-family-base);">${"Expanded List"}</span><div class="mp-switch"><input type="checkbox" id="mp_setting_preview_expand" /><label for="mp_setting_preview_expand">Toggle</label></div></div></div></div><div class="mp-settings-switch-container" style="margin-bottom: 8px;"><span id="mp-smart-predict-lbl"> ${"Smart Predict"} </span><div class="mp-switch"><input type="checkbox" id="mp_setting_prediction" /><label for="mp_setting_prediction">Toggle</label></div></div><div class="mp-settings-switch-container" style="margin-bottom: 8px;"><span id="mp-nav-lbl"> ${"Quick Navigation"} </span><div class="mp-switch"><input type="checkbox" id="mp_setting_nav" ${currentNavConfig.enabled ? "checked" : ""} /><label for="mp_setting_nav">Toggle</label></div></div><div class="mp-settings-switch-container"><span id="mp-syntax-lbl"> ${"Syntax Highlighting"} </span><div style="display: flex; align-items: center; gap: 8px;"><div class="mp-switch"><span id="mp-syntax-info-icon" style="cursor: help !important;" class="mp-help-icon">${ICONS.info}</span><input type="checkbox" id="mp_setting_syntax" /><label for="mp_setting_syntax">Toggle</label></div></div></div></div><div class="mp-form-group"><label class="mp-label mp-label-row" style="display: flex; justify-content: space-between; align-items: center;"> ${"\"Enhance Prompt\" Settings"} <span id="mp-AI-info-icon" class="mp-help-icon">${ICONS.info}</span></label><input type="text" id="mp_ai_api_key_input" class="form-input hide-api-key" placeholder="${"Paste your API Key"}"><select id="mp_ai_model_select" class="form-input"><optgroup label="Google Gemini"><option value="gemini-3.5-flash" ${"gemini-3.5-flash" === currentAIConfig.model ? "selected" : ""}>Gemini 3.5 Flash</option><option value="gemini-3.1-pro-preview" ${"gemini-3.1-pro-preview" === currentAIConfig.model ? "selected" : ""}>Gemini 3.1 Pro Preview</option><option value="gemini-3.1-flash-lite" ${"gemini-3.1-flash-lite" === currentAIConfig.model ? "selected" : ""}>Gemini 3.1 Flash Lite</option><option value="gemini-3-flash-preview" ${"gemini-3-flash-preview" === currentAIConfig.model ? "selected" : ""}>Gemini 3 Flash Preview</option><option value="gemini-2.5-pro" ${"gemini-2.5-pro" === currentAIConfig.model ? "selected" : ""}>Gemini 2.5 Pro</option><option value="gemini-2.5-flash-lite" ${"gemini-2.5-flash-lite" === currentAIConfig.model ? "selected" : ""}>Gemini 2.5 Flash Lite</option><option value="gemini-pro-latest" ${"gemini-pro-latest" === currentAIConfig.model ? "selected" : ""}>Gemini Pro Latest</option><option value="gemini-flash-latest" ${"gemini-flash-latest" === currentAIConfig.model ? "selected" : ""}>Gemini Flash Latest</option><option value="gemini-flash-lite-latest" ${"gemini-flash-lite-latest" === currentAIConfig.model ? "selected" : ""}>Gemini Flash-Lite Latest</option><option value="gemma-4-26b-a4b-it" ${"gemma-4-26b-a4b-it" === currentAIConfig.model ? "selected" : ""}>Gemma 4 26B A4B IT</option><option value="gemma-4-31b-it" ${"gemma-4-31b-it" === currentAIConfig.model ? "selected" : ""}>Gemma 4 31B IT</option></optgroup><optgroup label="LongCat"><option value="LongCat-2.0-Preview" ${"LongCat-2.0-Preview" === currentAIConfig.model ? "selected" : ""}>LongCat 2.0 Preview</option><option value="LongCat-Flash-Thinking-2601" ${"LongCat-Flash-Thinking-2601" === currentAIConfig.model ? "selected" : ""}>LongCat Flash Thinking 2601</option><option value="LongCat-Flash-Chat" ${"LongCat-Flash-Chat" === currentAIConfig.model ? "selected" : ""}>LongCat Flash Chat</option><option value="LongCat-Flash-Lite" ${"LongCat-Flash-Lite" === currentAIConfig.model ? "selected" : ""}>LongCat Flash Lite</option></optgroup><optgroup label="Groq"><option value="openai/gpt-oss-120b" ${"openai/gpt-oss-120b" === currentAIConfig.model ? "selected" : ""}>GPT-OSS 120B</option><option value="openai/gpt-oss-20b" ${"openai/gpt-oss-20b" === currentAIConfig.model ? "selected" : ""}>GPT-OSS 20B</option><option value="openai/gpt-oss-safeguard-20b" ${"openai/gpt-oss-safeguard-20b" === currentAIConfig.model ? "selected" : ""}>GPT-OSS Safeguard 20B</option><option value="groq/compound" ${"groq/compound" === currentAIConfig.model ? "selected" : ""}>Groq Compound</option><option value="groq/compound-mini" ${"groq/compound-mini" === currentAIConfig.model ? "selected" : ""}>Groq Compound Mini</option><option value="qwen/qwen3-32b" ${"qwen/qwen3-32b" === currentAIConfig.model ? "selected" : ""}>Qwen3 32B</option><option value="llama-3.3-70b-versatile" ${"llama-3.3-70b-versatile" === currentAIConfig.model ? "selected" : ""}>Llama 3.3 70B</option><option value="llama-3.1-8b-instant" ${"llama-3.1-8b-instant" === currentAIConfig.model ? "selected" : ""}>Llama 3.1 8B</option><option value="meta-llama/llama-4-scout-17b-16e-instruct" ${"meta-llama/llama-4-scout-17b-16e-instruct" === currentAIConfig.model ? "selected" : ""}>Llama 4 Scout 17b-16e Instruct</option><option value="meta-llama/llama-prompt-guard-2-22m" ${"meta-llama/llama-prompt-guard-2-22m" === currentAIConfig.model ? "selected" : ""}>Llama Prompt Guard 2 22m</option><option value="meta-llama/llama-prompt-guard-2-86m" ${"meta-llama/llama-prompt-guard-2-86m" === currentAIConfig.model ? "selected" : ""}>Llama Prompt Guard 2 86m</option></optgroup><optgroup label="Hugging Face"><option value="hf|zai-org/GLM-5.1:zai-org" ${"hf|zai-org/GLM-5.1:zai-org" === currentAIConfig.model ? "selected" : ""}>HF: GLM 5.1</option><option value="hf|zai-org/GLM-5:zai-org" ${"hf|zai-org/GLM-5:zai-org" === currentAIConfig.model ? "selected" : ""}>HF: GLM 5</option><option value="hf|zai-org/zai-org/GLM-4.7:zai-org" ${"hf|zai-org/zai-org/GLM-4.7:zai-org" === currentAIConfig.model ? "selected" : ""}>HF: GLM 4.7</option><option value="hf|zai-org/GLM-4.7-Flash:zai-org" ${"hf|zai-org/GLM-4.7-Flash:zai-org" === currentAIConfig.model ? "selected" : ""}>HF: GLM 4.7 Fast</option><option value="hf|google/gemma-4-31B-it" ${"hf|google/gemma-4-31B-it" === currentAIConfig.model ? "selected" : ""}>HF: Gemma 4 31B IT</option><option value="hf|google/gemma-4-26B-A4B-it" ${"hf|google/gemma-4-26B-A4B-it" === currentAIConfig.model ? "selected" : ""}>HF: Gemma 4 26B A4B IT</option><option value="hf|Qwen/Qwen3.5-397B-A17B" ${"hf|Qwen/Qwen3.5-397B-A17B" === currentAIConfig.model ? "selected" : ""}>HF: Qwen3.5 397B A17B</option><option value="hf|Qwen/Qwen3.5-122B-A10B" ${"hf|Qwen/Qwen3.5-122B-A10B" === currentAIConfig.model ? "selected" : ""}>HF: Qwen3.5 122B A10B</option><option value="hf|Qwen/Qwen3.5-35B-A3B" ${"hf|Qwen/Qwen3.5-35B-A3B" === currentAIConfig.model ? "selected" : ""}>HF: Qwen3.5 35B A3B</option><option value="hf|deepseek-ai/DeepSeek-V4-Flash" ${"hf|deepseek-ai/DeepSeek-V4-Flash" === currentAIConfig.model ? "selected" : ""}>HF: DeepSeek V4 Flash</option><option value="hf|deepseek-ai/DeepSeek-R1" ${"hf|deepseek-ai/DeepSeek-R1" === currentAIConfig.model ? "selected" : ""}>HF: DeepSeek R1 </option><option value="hf|deepseek-ai/DeepSeek-V3" ${"hf|deepseek-ai/DeepSeek-V3" === currentAIConfig.model ? "selected" : ""}>HF: DeepSeek V3</option><option value="hf|deepseek-ai/DeepSeek-V3-0324" ${"hf|deepseek-ai/DeepSeek-V3-0324" === currentAIConfig.model ? "selected" : ""}>HF: DeepSeek V3 0324</option><option value="hf|openai/gpt-oss-120b" ${"hf|openai/gpt-oss-120b" === currentAIConfig.model ? "selected" : ""}>HF: GPT OSS 120B</option><option value="hf|openai/gpt-oss-20b" ${"hf|openai/gpt-oss-20b" === currentAIConfig.model ? "selected" : ""}>HF: GPT OSS 20B</option><option value="hf|MiniMaxAI/MiniMax-M2.7" ${"hf|MiniMaxAI/MiniMax-M2.7" === currentAIConfig.model ? "selected" : ""}>HF: MiniMax M2.7</option><option value="hf|meta-llama/Llama-3.1-8B-Instruct" ${"hf|meta-llama/Llama-3.1-8B-Instruct" === currentAIConfig.model ? "selected" : ""}>HF: Llama 3.1 8B Instruct</option></optgroup><optgroup label="OpenRouter"><option value="openrouter|openrouter/free" ${"openrouter|openrouter/free" === currentAIConfig.model ? "selected" : ""}>Free Models Router</option><option value="openrouter|nvidia/nemotron-3-super-120b-a12b:free" ${"openrouter|nvidia/nemotron-3-super-120b-a12b:free" === currentAIConfig.model ? "selected" : ""}>NVIDIA: Nemotron 3 Super (free)</option><option value="openrouter|nvidia/nvidia/nemotron-3-nano-30b-a3b:free" ${"openrouter|nvidia/nvidia/nemotron-3-nano-30b-a3b:free" === currentAIConfig.model ? "selected" : ""}>NVIDIA: Nemotron 3 Nano 30B A3B (free)</option><option value="openrouter|nvidia/nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free" ${"openrouter|nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free" === currentAIConfig.model ? "selected" : ""}>NVIDIA: Nemotron 3 Nano Omni (free)</option><option value="openrouter|nvidia/nvidia/nemotron-nano-9b-v2:free" ${"openrouter|nvidia/nemotron-nano-9b-v2:free" === currentAIConfig.model ? "selected" : ""}>NVIDIA: Nemotron Nano 9B V2 (free)</option><option value="openrouter|nvidia/nvidia/nemotron-nano-12b-v2-vl:free" ${"openrouter|nvidia/nemotron-nano-12b-v2-vl:free" === currentAIConfig.model ? "selected" : ""}>NVIDIA: Nemotron Nano 12B 2 VL (free)</option><option value="openrouter|poolside/laguna-m.1:free" ${"openrouter|poolside/laguna-m.1:free" === currentAIConfig.model ? "selected" : ""}>Poolside: Laguna M.1 (free)</option><option value="openrouter|poolside/laguna-xs.2:free" ${"openrouter|poolside/laguna-xs.2:free" === currentAIConfig.model ? "selected" : ""}>Poolside: Laguna XS.2 (free)</option><option value="openrouter|openai/gpt-oss-120b:free" ${"openrouter|openai/gpt-oss-120b:free" === currentAIConfig.model ? "selected" : ""}>OpenAI: gpt-oss-120b (free)</option><option value="openrouter|openai/gpt-oss-20b:free" ${"openrouter|openai/gpt-oss-20b:free" === currentAIConfig.model ? "selected" : ""}>OpenAI: gpt-oss-20b (free)</option><option value="openrouter|z-ai/glm-4.5-air:free" ${"openrouter|z-ai/glm-4.5-air:free" === currentAIConfig.model ? "selected" : ""}>Z.ai: GLM 4.5 Air (free)</option><option value="openrouter|google/gemma-4-31b-it:free" ${"openrouter|google/gemma-4-31b-it:free" === currentAIConfig.model ? "selected" : ""}>Google: Gemma 4 31B (free)</option><option value="openrouter|google/gemma-4-26b-a4b-it:free" ${"openrouter|google/gemma-4-26b-a4b-it:free" === currentAIConfig.model ? "selected" : ""}>Google: Gemma 4 26B A4B (free)</option><option value="openrouter|moonshotai/kimi-k2.6:free" ${"openrouter|moonshotai/kimi-k2.6:free" === currentAIConfig.model ? "selected" : ""}>MoonshotAI: Kimi K2.6 (free)</option><option value="openrouter|liquid/lfm-2.5-1.2b-thinking:free" ${"openrouter|liquid/lfm-2.5-1.2b-thinking:free" === currentAIConfig.model ? "selected" : ""}>LiquidAI: LFM2.5-1.2B-Thinking (free)</option><option value="openrouter|liquid/lfm-2.5-1.2b-instruct:free" ${"openrouter|liquid/lfm-2.5-1.2b-instruct:free" === currentAIConfig.model ? "selected" : ""}>LiquidAI: LFM2.5-1.2B-Instruct (free)</option><option value="openrouter|qwen/qwen3-next-80b-a3b-instruct:free" ${"openrouter|qwen/qwen3-next-80b-a3b-instruct:free" === currentAIConfig.model ? "selected" : ""}>Qwen: Qwen3 Next 80B A3B Instruct (free)</option><option value="openrouter|qwen/qwen3-coder:free" ${"openrouter|qwen/qwen3-coder:free" === currentAIConfig.model ? "selected" : ""}>Qwen: Qwen3 Coder 480B A35B (free)</option><option value="openrouter|meta-llama/llama-3.3-70b-instruct:free" ${"openrouter|meta-llama/llama-3.3-70b-instruct:free" === currentAIConfig.model ? "selected" : ""}>Meta: Llama 3.3 70B Instruct (free)</option><option value="openrouter|meta-llama/llama-3.2-3b-instruct:free" ${"openrouter|meta-llama/llama-3.2-3b-instruct:free" === currentAIConfig.model ? "selected" : ""}>Meta: Llama 3.2 3B Instruct (free)</option><option value="openrouter|cognitivecomputations/dolphin-mistral-24b-venice-edition:free" ${"openrouter|cognitivecomputations/dolphin-mistral-24b-venice-edition:free" === currentAIConfig.model ? "selected" : ""}>Venice: Uncensored (free)</option><option value="openrouter|nousresearch/hermes-3-llama-3.1-405b:free" ${"openrouter|nousresearch/hermes-3-llama-3.1-405b:free" === currentAIConfig.model ? "selected" : ""}>Nous: Hermes 3 405B Instruct (free)</option><option value="openrouter|google/gemini-3.5-flash" ${"openrouter|google/gemini-3.5-flash" === currentAIConfig.model ? "selected" : ""}>Google: Gemini 3.5 Flash</option><option value="openrouter|google/gemini-3.1-flash-lite" ${"openrouter|google/gemini-3.1-flash-lite" === currentAIConfig.model ? "selected" : ""}>Google: Gemini 3.1 Flash Lite</option><option value="openrouter|google/gemini-3.1-pro-preview" ${"openrouter|google/gemini-3.1-pro-preview" === currentAIConfig.model ? "selected" : ""}>Google: Gemini 3.1 Pro Preview</option><option value="openrouter|openai/gpt-chat-latest" ${"openrouter|openai/gpt-chat-latest" === currentAIConfig.model ? "selected" : ""}>OpenAI: GPT Chat Latest</option><option value="openrouter|openai/gpt-5.5-pro" ${"openrouter|openai/gpt-5.5-pro" === currentAIConfig.model ? "selected" : ""}>OpenAI: GPT-5.5 Pro</option><option value="openrouter|openai/gpt-5.5" ${"openrouter|openai/gpt-5.5" === currentAIConfig.model ? "selected" : ""}>OpenAI: GPT-5.5</option><option value="openrouter|anthropic/claude-opus-4.8-fast" ${"openrouter|anthropic/claude-opus-4.8-fast" === currentAIConfig.model ? "selected" : ""}>Anthropic: Claude Opus 4.8 (Fast)</option><option value="openrouter|anthropic/claude-opus-4.8" ${"openrouter|anthropic/claude-opus-4.8" === currentAIConfig.model ? "selected" : ""}>Anthropic: Claude Opus 4.8</option><option value="openrouter|anthropic/claude-opus-4.7" ${"openrouter|anthropic/claude-opus-4.7" === currentAIConfig.model ? "selected" : ""}>Anthropic: Claude Opus 4.7</option><option value="openrouter|x-ai/grok-4.3" ${"openrouter|x-ai/grok-4.3" === currentAIConfig.model ? "selected" : ""}>xAI: Grok 4.3</option><option value="openrouter|deepseek/deepseek-v4-flash" ${"openrouter|deepseek/deepseek-v4-flash" === currentAIConfig.model ? "selected" : ""}>DeepSeek: DeepSeek V4 Flash</option><option value="openrouter|deepseek/deepseek-v4-pro" ${"openrouter|deepseek/deepseek-v4-pro" === currentAIConfig.model ? "selected" : ""}>DeepSeek: DeepSeek V4 Pro</option><option value="openrouter|qwen/qwen3.7-max" ${"openrouter|qwen/qwen3.7-max" === currentAIConfig.model ? "selected" : ""}>Qwen: Qwen3.7 Max</option></optgroup></select><textarea id="mp_ai_sys_prompt_input" class="form-input" placeholder="${"Custom System Prompt (Optional)"}"></textarea></div><div class="mp-form-group" style="margin-bottom: 0px;"><label class="mp-label">${"Keyboard Shortcuts"}</label><div class="mp-shortcut-scroll-container" id="mp-shortcuts-list-container"></div></div><div class="mp-form-group" style="margin-bottom: 0px;"><label class="mp-label mp-label-row" style="display:flex;justify-content:space-between;align-items:center;">${"Gist Sync"}<span id="mp-gist-info-icon" class="mp-help-icon">${ICONS.gist}</span></label><input type="text" id="mp_gist_pat_input" class="form-input hide-api-key" placeholder="${"GitHub Personal Access Token (PAT)"}"><input type="text" id="mp_gist_id_input" class="form-input" placeholder="${"Gist ID (auto-filled after first sync)"}"></div></div></div></div></div><div class="mp-settings-footer"><button class="save-button" id="mp-settings-save">${"Save"}</button></div></div> `;
     (setSafeInnerHTML(n, a), t.appendChild(n));
     const o = n.querySelector("#mp-theme-list-container"),
       r = document.createElement("input");
@@ -3441,7 +3244,10 @@
       )),
       (t = t.replace(/\[([^\]]+?)\](?:\(([^)]*)\))?/g, (e, t, n) => {
         if (t.startsWith("__") && t.endsWith("__")) return e;
-        if (o.has(e)) return e;
+        // v28.1.0: the `o.has(e)` guard removed — o keys are
+        // __INPUT_n__ placeholders while e is the full [label] match;
+        // they can never be equal, so the branch was unreachable (the
+        // placeholder check above already covers the intended case).
         let a = t,
           r = "";
         const s = t.indexOf("::");
@@ -3528,10 +3334,21 @@
         "height: 100%; width: 100%; display: flex; flex-direction: column;"),
       setSafeInnerHTML(
         n,
-        ` <h2 class="modal-title" style="flex-shrink:0; margin-top: 10px;">${"New Prompt"}</h2><div class="form-group" style="flex-shrink:0;"><div class="mp-label-wrapper"><label for="__ap_title" class="form-label" style="margin-bottom:0;">${"Title"}</label><div class="mp-modal-right-controls"><button id="__ap_color_btn_modal" class="mp-link-btn"><span class="icon">${ICONS.color}</span></button></div></div><input id="__ap_title" class="form-input" /></div><div class="form-group" style="height: 400px;"><div class="mp-label-wrapper"><label for="__ap_text" class="form-label" style="margin-bottom:0;">${"Prompt"}</label><div class="mp-modal-right-controls"><button id="__ap_link_btn_modal" class="mp-link-btn"><span class="icon">${ICONS.link}</span></button><button id="__ap_enhance_btn" class="mp-enhance-ai-btn"><span class="icon">${ICONS.magic}</span></button><button id="__ap_paste_btn_modal" class="mp-paste-btn">${ICONS.paste}</button></div></div><textarea id="__ap_text" class="form-textarea" spellcheck="false" style="height:100% !important; resize:none;"></textarea></div><div class="mp-accordions-row"><div class="mp-files-accordion" id="__ap_files_accordion"><div class="mp-accordion-header" id="__ap_files_header"><div style="display:flex;align-items:center;gap:8px;">${ICONS.folder}<span id="__ap_files_label">${"Attachments"}</span></div> ${ICONS.chevron} </div><div class="mp-accordion-content" id="__ap_files_content"><div id="__ap_file_scroll_wrapper" class="mp-file-scroll-wrapper"><div id="__ap_file_grid" class="mp-file-grid"></div></div><input type="file" id="__ap_file_input" multiple style="display:none"></div></div><div class="mp-tags-accordion" id="__ap_tags_accordion"><div class="mp-accordion-header" id="__ap_tags_header"><div style="display:flex;align-items:center;gap:8px;">${ICONS.tag}<span id="__ap_tags_label">${"Tags"}</span></div> ${ICONS.chevron} </div><div class="mp-accordion-content" id="__ap_tags_content"><div id="__ap_tags_scroll_wrapper" class="mp-tags-scroll-wrapper"><div id="__ap_tags_grid" class="mp-tags-grid"></div></div><div class="mp-tags-accordion-footer"><button id="__ap_tags_manage" class="mp-tags-manage-btn">${ICONS.edit}<span>${"Manage Tags"}</span></button></div></div></div></div><div class="mp-org-classify-row" id="__ap_org_classify_row"><div class="mp-org-classify-collection"><label class="form-label" for="__ap_org_collection">${"Collection"}</label><select id="__ap_org_collection" class="form-input" style="padding:6px 8px;"></select></div><div class="mp-org-classify-meta"><button type="button" id="__ap_org_favorite" class="mp-org-star-btn" aria-label="Favorite">${ICONS.star}</button><div id="__ap_org_rating" class="mp-org-rating" aria-label="Rating"></div><button type="button" id="__ap_org_archive" class="mp-org-archive-btn" aria-label="Archive">${ICONS.archiveBox}</button></div></div><div class="mp-switch-container"><div class="mp-switch" style="flex:1;"><input type="checkbox" id="__ap_use_placeholders" /><label for="__ap_use_placeholders">Toggle</label><span class="switch-text" onclick="document.getElementById('__ap_use_placeholders').click()">${"Dynamic Prompt"}</span></div><div class="mp-switch" style="flex:1;"><input type="checkbox" id="__ap_auto_execute" /><label for="__ap_auto_execute">Toggle</label><span class="switch-text" onclick="document.getElementById('__ap_auto_execute').click()">${"Auto Send"}</span></div><span id="shortcutInfo" style="cursor: help !important;" class="mp-help-icon">${ICONS.info}</span><div id="__ap_custom_shortcut_btn" class="mp-shortcut-option mp-prompt-shortcut" data-shortcut="">${"Shortcut"}</div></div><div class="modal-footer" style="flex-shrink:0; margin-top: auto;"><button id="__ap_save" class="save-button">${"Save"}</button></div> `,
+        ` <h2 class="modal-title" style="flex-shrink:0; margin-top: 10px;">${"New Prompt"}</h2><div class="form-group" style="flex-shrink:0;"><div class="mp-label-wrapper"><label for="__ap_title" class="form-label" style="margin-bottom:0;">${"Title"}</label><div class="mp-modal-right-controls"><button id="__ap_color_btn_modal" class="mp-link-btn"><span class="icon">${ICONS.color}</span></button></div></div><input id="__ap_title" class="form-input" /></div><div class="form-group" style="height: 400px;"><div class="mp-label-wrapper"><label for="__ap_text" class="form-label" style="margin-bottom:0;">${"Prompt"}</label><div class="mp-modal-right-controls"><button id="__ap_link_btn_modal" class="mp-link-btn"><span class="icon">${ICONS.link}</span></button><button id="__ap_enhance_btn" class="mp-enhance-ai-btn"><span class="icon">${ICONS.magic}</span></button><button id="__ap_paste_btn_modal" class="mp-paste-btn">${ICONS.paste}</button></div></div><textarea id="__ap_text" class="form-textarea" spellcheck="false" style="height:100% !important; resize:none;"></textarea></div><div class="mp-accordions-row"><div class="mp-files-accordion" id="__ap_files_accordion"><div class="mp-accordion-header" id="__ap_files_header"><div style="display:flex;align-items:center;gap:8px;">${ICONS.folder}<span id="__ap_files_label">${"Attachments"}</span></div> ${ICONS.chevron} </div><div class="mp-accordion-content" id="__ap_files_content"><div id="__ap_file_scroll_wrapper" class="mp-file-scroll-wrapper"><div id="__ap_file_grid" class="mp-file-grid"></div></div><input type="file" id="__ap_file_input" multiple style="display:none"></div></div><div class="mp-tags-accordion" id="__ap_tags_accordion"><div class="mp-accordion-header" id="__ap_tags_header"><div style="display:flex;align-items:center;gap:8px;">${ICONS.tag}<span id="__ap_tags_label">${"Tags"}</span></div> ${ICONS.chevron} </div><div class="mp-accordion-content" id="__ap_tags_content"><div id="__ap_tags_scroll_wrapper" class="mp-tags-scroll-wrapper"><div id="__ap_tags_grid" class="mp-tags-grid"></div></div><div class="mp-tags-accordion-footer"><button id="__ap_tags_manage" class="mp-tags-manage-btn">${ICONS.edit}<span>${"Manage Tags"}</span></button></div></div></div></div><div class="mp-org-classify-row" id="__ap_org_classify_row"><div class="mp-org-classify-collection"><label class="form-label" for="__ap_org_collection">${"Collection"}</label><select id="__ap_org_collection" class="form-input" style="padding:6px 8px;"></select></div><div class="mp-org-classify-meta"><button type="button" id="__ap_org_favorite" class="mp-org-star-btn" aria-label="Favorite">${ICONS.star}</button><div id="__ap_org_rating" class="mp-org-rating" aria-label="Rating"></div><button type="button" id="__ap_org_archive" class="mp-org-archive-btn" aria-label="Archive">${ICONS.archiveBox}</button></div></div><div class="mp-switch-container"><div class="mp-switch" style="flex:1;"><input type="checkbox" id="__ap_use_placeholders" /><label for="__ap_use_placeholders">Toggle</label><span class="switch-text" data-mp-switch-for="__ap_use_placeholders">${"Dynamic Prompt"}</span></div><div class="mp-switch" style="flex:1;"><input type="checkbox" id="__ap_auto_execute" /><label for="__ap_auto_execute">Toggle</label><span class="switch-text" data-mp-switch-for="__ap_auto_execute">${"Auto Send"}</span></div><span id="shortcutInfo" style="cursor: help !important;" class="mp-help-icon">${ICONS.info}</span><div id="__ap_custom_shortcut_btn" class="mp-shortcut-option mp-prompt-shortcut" data-shortcut="">${"Shortcut"}</div></div><div class="modal-footer" style="flex-shrink:0; margin-top: auto;"><button id="__ap_save" class="save-button">${"Save"}</button></div> `,
       ),
       t.appendChild(n),
       e.appendChild(t));
+    // v28.1.0: the switch labels are wired with real listeners — the old
+    // inline onclick attributes were dead clicks under strict-CSP hosts
+    // (several Google properties ship a CSP without unsafe-inline),
+    // leaving the Dynamic Prompt / Auto Send labels unreachable.
+    n.querySelectorAll("[data-mp-switch-for]").forEach((el) => {
+      el.addEventListener("click", (ev) => {
+        (ev.preventDefault(), ev.stopPropagation());
+        const cb = document.getElementById(el.dataset.mpSwitchFor);
+        cb && "checkbox" === cb.type && cb.click();
+      });
+    });
     const a = t.querySelector("#__ap_files_accordion"),
       o = t.querySelector("#__ap_files_header"),
       r = t.querySelector("#__ap_file_scroll_wrapper"),
@@ -3618,7 +3435,14 @@
             }),
             setTimeout(() => {
               e.click();
-            }, 10));
+            }, 10),
+            // v28.1.0: bounded lifetime — browsers that cancel the native
+            // picker without firing "change" (Escape on some platforms)
+            // used to strand this 1px node in the DOM forever; repeated
+            // open-cancel cycles accumulated them.
+            setTimeout(() => {
+              e.parentNode && e.remove();
+            }, 60000));
         } else
           "remove" === t &&
             (x.style.removeProperty("color"), (x.dataset.promptColor = ""));
@@ -3626,7 +3450,7 @@
       C &&
         C.addEventListener("click", (e) => {
           e.stopPropagation();
-          C.textContent;
+          // v28.1.0: the bare `C.textContent;` no-op removed.
           ((C.textContent = "Press a key..."),
             C.classList.add("recording"));
           const t = (e) => {
@@ -3947,8 +3771,10 @@
             size: n.size,
             data: e.target.result,
           };
-          (await saveGlobalFile(o),
-            currentActiveFileIds.add(o.id),
+          // v28.1.0: activate the CANONICAL record's id (dedupe hits hand
+          // back the previously stored twin — see saveGlobalFile).
+          const stored = await saveGlobalFile(o);
+          (currentActiveFileIds.add(stored.id),
             t.renderGlobalFiles &&
               (a.classList.contains("open") || a.classList.add("open"),
               t.renderGlobalFiles()));
@@ -3958,9 +3784,12 @@
     }
     (createCustomTooltip(w, "Close", "bottom"),
       (w.onclick = () => {
-        (SyntaxHighlighter.detach(),
-          e.classList.add("mp-hidden"),
-          setTimeout(() => e.remove(), 200));
+        // v28.1.0: hide through the shared lifecycle instead of removing
+        // the overlay node outright — removing it while currentModal still
+        // referenced the element left a modal that could never be reopened
+        // (showModal only toggles classes). initUI's authoritative handler
+        // (installed later) uses hideModal too, so this aligns the two.
+        (SyntaxHighlighter.detach(), hideModal(e));
       }),
       h.addEventListener("input", function () {
         setTimeout(() => {
@@ -4319,7 +4148,21 @@
         '<em style="font-style: italic !important;">$1</em>',
       )).replace(
         /\[([^\]]+)\]\(([^)]+)\)/gim,
-        '<a href="$2" target="_blank" style="color:var(--mp-accent-primary); text-decoration:underline;">$1</a>',
+        // v28.1.0: href scheme allow-list — the markdown source is remote
+        // (whitelisted gists), and a [text](javascript:…) or data: URL
+        // would execute in the page origin on click. The body is already
+        // HTML-escaped (attribute-safe), so only the scheme is gated;
+        // non-http(s) links degrade to their escaped link text.
+        (e, t, n) => {
+          let a = !1;
+          try {
+            const o = new URL(n, "https://raw.githubusercontent.com");
+            a = "http:" === o.protocol || "https:" === o.protocol;
+          } catch (e) {}
+          return a
+            ? `<a href="${n}" target="_blank" rel="noopener noreferrer" style="color:var(--mp-accent-primary); text-decoration:underline;">${t}</a>`
+            : t;
+        },
       )).replace(/\n/g, (e, t, n) => "<br>")).replace(
         /<br><(h[1-6]|hr|ul|ol|pre|div)/gim,
         "<$1",
@@ -4386,6 +4229,13 @@
     if (!t.title || !t.version || !t.prompt)
       throw new Error("Invalid JSON. title, version, and prompt are required.");
     t.title = escapeHtmlText(t.title.replace(/\n/g, "").substring(0, 50));
+    // v28.1.0: version was the one unescaped field of the shared-prompt
+    // metadata trio (title/summary/author were escaped) — a remote gist
+    // JSON carrying "version": "<img src=x onerror=...>" executed in the
+    // page the moment the confirm modal or manager rendered it.
+    t.version = escapeHtmlText(
+      String(t.version).replace(/\n/g, "").substring(0, 40),
+    );
     const n = escapeHtmlText(
         (t.summary || "").replace(/\n/g, "").substring(0, 200),
       ),
@@ -4489,14 +4339,18 @@
     const o = ` <div class="mp-shared-intervals"><label class="mp-shared-interval-label"><input type="checkbox" class="mp-checkbox mp-interval-cb" value="1"> 1 ${"day"} </label><label class="mp-shared-interval-label"><input type="checkbox" class="mp-checkbox mp-interval-cb" value="3"> 3 ${"days"} </label><label class="mp-shared-interval-label"><input type="checkbox" class="mp-checkbox mp-interval-cb" value="7"> 7 ${"days"} </label><label class="mp-shared-interval-label"><input type="checkbox" class="mp-checkbox mp-interval-cb" value="30"> 30 ${"days"} </label><label class="mp-shared-interval-label"><input type="checkbox" class="mp-checkbox mp-interval-cb" value="0"> ${"Never Update"} </label></div> `;
     let r = "";
     t?.isShared &&
-      (r = ` <div class="mp-shared-info mp-shared-info-manager"><div class="mp-shared-info-header align-center"><strong class="mp-shared-info-label">${t.title}</strong><span class="mp-shared-version-badge">v${t.version}</span></div><div class="mp-shared-info-subtext"><strong class="mp-shared-info-label">${"Author"}:</strong> ${t.author || "N/A"}<br><strong class="mp-shared-info-label">${"Summary"}:</strong> ${t.summary || "N/A"} </div><div class="mp-shared-info-actions"><button id="__ap_shared_update_now" class="save-button flex-1">${"Update Now"}</button> ${t.changelogText ? `<button id="__ap_shared_view_changelog" class="save-button mp-shared-btn-secondary flex-1">${"README"}</button>` : ""} </div></div> `);
+      // v28.1.0: the stored shared-prompt metadata (title/version/author/
+      // summary come from the prompt record, which predates the fetch-path
+      // escaping or may arrive via import) is escaped at this sink too —
+      // defense in depth for the same reason as fetchSharedPromptData.
+      (r = ` <div class="mp-shared-info mp-shared-info-manager"><div class="mp-shared-info-header align-center"><strong class="mp-shared-info-label">${escapeHtmlText(t.title || "")}</strong><span class="mp-shared-version-badge">v${escapeHtmlText(String(t.version || ""))}</span></div><div class="mp-shared-info-subtext"><strong class="mp-shared-info-label">${"Author"}:</strong> ${escapeHtmlText(t.author || "N/A")}<br><strong class="mp-shared-info-label">${"Summary"}:</strong> ${escapeHtmlText(t.summary || "N/A")} </div><div class="mp-shared-info-actions"><button id="__ap_shared_update_now" class="save-button flex-1">${"Update Now"}</button> ${t.changelogText ? `<button id="__ap_shared_view_changelog" class="save-button mp-shared-btn-secondary flex-1">${"README"}</button>` : ""} </div></div> `);
     const s = document.createElement("div");
     ((s.className = "mp-overlay mp-hidden"), (s.id = "__ap_shared_overlay"));
     const i = document.createElement("div");
     ((i.className = "mp-modal-box"),
       setSafeInnerHTML(
         i,
-        ` <button id="__ap_shared_close" class="mp-modal-close-btn">${ICONS.close}</button><h2 class="modal-title">${"External Prompt"}</h2><div class="form-group mp-shared-form-group"><label class="form-label" style="display: flex; justify-content: space-between; align-items: center;"> ${"JSON Metadata URL"} <span id="mp-pe" class="mp-help-icon">${ICONS.info}</span></label><input id="__ap_shared_url" class="form-input" type="text" value="${n}" placeholder="https://raw.githubusercontent.com/&#42;/&#42;/main/&#42;/meta.json"></div><div class="form-group"><label class="form-label">${"Update Frequency"}</label> ${o} </div> ${r} <div class="modal-footer mp-shared-modal-footer"><button id="__ap_shared_apply" class="save-button">${"Apply"}</button></div> `,
+        ` <button id="__ap_shared_close" class="mp-modal-close-btn">${ICONS.close}</button><h2 class="modal-title">${"External Prompt"}</h2><div class="form-group mp-shared-form-group"><label class="form-label" style="display: flex; justify-content: space-between; align-items: center;"> ${"JSON Metadata URL"} <span id="mp-pe" class="mp-help-icon">${ICONS.info}</span></label><input id="__ap_shared_url" class="form-input" type="text" value="${escapeHtmlText(n)}" placeholder="https://raw.githubusercontent.com/&#42;/&#42;/main/&#42;/meta.json"></div><div class="form-group"><label class="form-label">${"Update Frequency"}</label> ${o} </div> ${r} <div class="modal-footer mp-shared-modal-footer"><button id="__ap_shared_apply" class="save-button">${"Apply"}</button></div> `,
       ),
       s.appendChild(i),
       document.body.appendChild(s));
@@ -4767,7 +4621,13 @@
           o,
           ` <button id="__ap_diff_close" class="mp-modal-close-btn">${ICONS.close}</button><h2 class="modal-title">${"Compare Prompts"}</h2><div class="mp-diff-container"> ${(() => {
             if (r)
-              return ` <div class="mp-diff-column"><div class="mp-diff-label">${"Original"}</div><textarea id="__ap_diff_original" class="mp-diff-textarea" readonly>${e}</textarea></div><div class="mp-diff-column"><div class="mp-diff-label">${"Enhanced Version"}</div><button id="__ap_diff_toggle_mode" class="mp-pinned-action-btn mp-diff-enhanced-edit-btn active" type="button"> ${ICONS.edit} </button><textarea id="__ap_diff_enhanced" class="mp-diff-textarea">${s}</textarea></div> `;
+              // v28.1.0: edit-mode interpolates the original and the
+              // AI-enhanced text into <textarea> markup — a
+              // "</textarea><img src=x onerror=...>" sequence in either
+              // string broke out of the control and executed. Entities
+              // decode back to the literal text when .value is read, so
+              // the round-trip is lossless.
+              return ` <div class="mp-diff-column"><div class="mp-diff-label">${"Original"}</div><textarea id="__ap_diff_original" class="mp-diff-textarea" readonly>${escapeHtmlText(e)}</textarea></div><div class="mp-diff-column"><div class="mp-diff-label">${"Enhanced Version"}</div><button id="__ap_diff_toggle_mode" class="mp-pinned-action-btn mp-diff-enhanced-edit-btn active" type="button"> ${ICONS.edit} </button><textarea id="__ap_diff_enhanced" class="mp-diff-textarea">${escapeHtmlText(s)}</textarea></div> `;
             {
               const t = getSideBySideDiff(e, s);
               return ` <div class="mp-diff-column"><div class="mp-diff-label">${"Original"}</div><div id="__ap_diff_original_view" class="mp-diff-view">${t.left}</div></div><div class="mp-diff-column"><div class="mp-diff-label">${"Enhanced Version"}</div><button id="__ap_diff_toggle_mode" class="mp-pinned-action-btn mp-diff-enhanced-edit-btn" type="button"> ${ICONS.edit} </button><div id="__ap_diff_enhanced_view" class="mp-diff-view">${t.right}</div></div> `;
@@ -4868,13 +4728,19 @@
   }
   function showModal(e) {
     e &&
-      (e.classList.remove("mp-hidden"),
+      (e._mpHideTimer && clearTimeout(e._mpHideTimer),
+      e.classList.remove("mp-hidden"),
       setTimeout(() => e.classList.add("visible"), 10));
   }
   function hideModal(e) {
+    // v28.1.0: the delayed mp-hidden timer is stored and cancellable — a
+    // hide→show within the 200ms window used to let the pending timer
+    // fire after showModal had cleared mp-hidden, leaving the modal both
+    // .visible AND .mp-hidden (logically open, display:none).
     e &&
       (e.classList.remove("visible"),
-      setTimeout(() => e.classList.add("mp-hidden"), 200));
+      e._mpHideTimer && clearTimeout(e._mpHideTimer),
+      (e._mpHideTimer = setTimeout(() => e.classList.add("mp-hidden"), 200)));
   }
   async function openBackupManager() {
     closeMenu();
@@ -4882,7 +4748,11 @@
     ((e.className = "mp-overlay"), (e.id = "__ap_backup_overlay"));
     const t = document.createElement("div");
     ((t.className = "mp-modal-box"),
-      (t.style.width = "450px !important"),
+      // v28.1.0: setProperty with priority — the CSSOM silently DISCARDS
+      // "!important" inside the individual `style.width` setter, so the
+      // intended 450px never applied (same defect class as the backup
+      // manager's maxHeight).
+      t.style.setProperty("width", "450px", "important"),
       (t.onclick = (e) => e.stopPropagation()));
     const n = [
       {
@@ -5253,7 +5123,7 @@
           s = r ? getTag(n) : null;
         setSafeInnerHTML(
           t,
-          ` <button id="__mp_tags_close" class="mp-modal-close-btn">${ICONS.close}</button><h2 class="modal-title">${"Manage Tags"}</h2><div class="mp-tags-modal-content" id="__mp_tags_content_scroll"><div class="mp-tag-form"><div class="form-group"><label for="__mp_tag_name" class="form-label">${"Tag Name"}</label><input id="__mp_tag_name" class="form-input" placeholder="${"Ex: img, video, txt..."}" value="${r ? s.name : ""}" ${r ? 'readonly style="opacity:0.6;cursor:not-allowed;"' : ""} /></div><div class="form-group" style="margin-bottom: 0px !important;"><label for="__mp_tag_comment" class="form-label">${"Comment (optional)"}</label><input id="__mp_tag_comment" class="form-input" placeholder="${"Ex: Image Generators"}" value="${(r && s.comment) || ""}" /></div><div class="mp-tag-form-row"><div class="mp-tag-color-group"><label class="mp-tag-color-label">${"Background Color"}</label><input id="__mp_tag_bg_color" type="color" class="mp-tag-color-input" value="${(r && s.bgColor) || "#7071fc"}" /></div><div class="mp-tag-color-group"><label class="mp-tag-color-label">${"Text Color"}</label><input id="__mp_tag_text_color" type="color" class="mp-tag-color-input" value="${(r && s.textColor) || "#ffffff"}" /></div></div><button id="__mp_create_tag" class="save-button">${r ? "Save" : "Create Tag"}</button></div><div id="__mp_tags_list" class="mp-tags-list"></div></div> `,
+          ` <button id="__mp_tags_close" class="mp-modal-close-btn">${ICONS.close}</button><h2 class="modal-title">${"Manage Tags"}</h2><div class="mp-tags-modal-content" id="__mp_tags_content_scroll"><div class="mp-tag-form"><div class="form-group"><label for="__mp_tag_name" class="form-label">${"Tag Name"}</label><input id="__mp_tag_name" class="form-input" placeholder="${"Ex: img, video, txt..."}" value="${r ? escapeHtmlText(s.name) : ""}" ${r ? 'readonly style="opacity:0.6;cursor:not-allowed;"' : ""} /></div><div class="form-group" style="margin-bottom: 0px !important;"><label for="__mp_tag_comment" class="form-label">${"Comment (optional)"}</label><input id="__mp_tag_comment" class="form-input" placeholder="${"Ex: Image Generators"}" value="${r ? escapeHtmlText(s.comment || "") : ""}" /></div><div class="mp-tag-form-row"><div class="mp-tag-color-group"><label class="mp-tag-color-label">${"Background Color"}</label><input id="__mp_tag_bg_color" type="color" class="mp-tag-color-input" value="${r ? escapeHtmlText(s.bgColor || "#7071fc") : "#7071fc"}" /></div><div class="mp-tag-color-group"><label class="mp-tag-color-label">${"Text Color"}</label><input id="__mp_tag_text_color" type="color" class="mp-tag-color-input" value="${r ? escapeHtmlText(s.textColor || "#ffffff") : "#ffffff"}" /></div></div><button id="__mp_create_tag" class="save-button">${r ? "Save" : "Create Tag"}</button></div><div id="__mp_tags_list" class="mp-tags-list"></div></div> `,
         );
         t.querySelector("#__mp_tags_close").onclick = () => {
           ((n = null), hideModal(e));
@@ -5439,6 +5309,11 @@
                     (!0 === e || "dont_show_again" === e) &&
                     (await deleteTag(t.name),
                     showNotification("Deleted Successfully!"),
+                    // v28.1.0: the edit form resets with the list — the
+                    // deleted tag used to stay loaded in the form, and
+                    // pressing Save then silently re-created it (the
+                    // duplicate-name guard only covers the create path).
+                    (n = null),
                     o(),
                     currentMenu &&
                       currentMenu.classList.contains("visible") &&
@@ -5553,6 +5428,28 @@
     ((l = p >= o ? n.left : m >= o ? n.right - o : (s - o) / 2),
       (e.style.top = `${Math.max(8, Math.min(i, r - a - 8))}px`),
       (e.style.left = `${Math.max(8, Math.min(l, s - o - 8))}px`));
+    // v28.1.1: on Flow the menu must never extend under the dock bar
+    // either — the above-the-anchor placement already clears it on tall
+    // viewports, but the short-viewport fallback branch (Math.max(8,
+    // ...)) and post-placement content growth can push the menu's
+    // bottom edge past the dock's top, where z-index 2147483646 paints
+    // over the footer rows. Cap the menu's height at the dock floor;
+    // the list shrinks inside the cap (FLOW_DOCK_CSS: min-height:0 /
+    // flex on .prompt-menu-list) instead of clipping the footer.
+    // Idempotent on every call (open + resize) and a no-op wherever
+    // no dock exists.
+    if (currentPlatform === "flow") {
+      const dock = document.getElementById("pm-flow-dock");
+      if (dock && dock.isConnected) {
+        const dr = dock.getBoundingClientRect();
+        if (dr.width && dr.height) {
+          const top = parseFloat(e.style.top) || 8;
+          const maxH = dr.top - 8 - top;
+          if (maxH < a) e.style.maxHeight = `${Math.max(160, maxH)}px`;
+          else e.style.maxHeight = "";
+        }
+      }
+    } else if (e.style.maxHeight) e.style.maxHeight = "";
   }
   setTimeout(checkAllSharedPromptsUpdates, 6e3);
   const PREVIEW_PROMPT_STORAGE_KEY = "PreviewPrompt",
@@ -5627,15 +5524,36 @@
       o = window.innerWidth,
       r = 480,
       s = 10;
+    let c = n.left;
+    c + 212 > o && (c = Math.max(s, o - 220));
+    // v28.1.1: the dock's exclusion zone. On Flow the bottom-right
+    // corner belongs to #pm-flow-dock (z-index 2147483646 — above every
+    // popout this script stacks), so a dropdown floored at the viewport
+    // bottom renders its last tag rows UNDER the dock bar (the field
+    // report's screenshot: "SS" and everything below it invisible). The
+    // floor is now the dock's top edge, 8px clear, whenever the
+    // dropdown's horizontal span meets the dock's; the tag list
+    // (.mp-filter-list — flex:1, overflow-y:auto) scrolls inside the
+    // shorter box, so no row is lost. Platforms without the dock keep
+    // the exact v28.0.2 behavior: the clamp only engages when
+    // #pm-flow-dock exists and the spans actually meet.
+    let floor = a;
+    if (currentPlatform === "flow") {
+      const dock = document.getElementById("pm-flow-dock");
+      if (dock && dock.isConnected) {
+        const dr = dock.getBoundingClientRect();
+        if (dr.width && dr.height && c + 212 > dr.left - 8 && c < dr.right)
+          floor = Math.max(s + 40, dr.top - 8);
+      }
+    }
     let i = n.bottom + 8,
-      l = Math.min(r, a - i - s);
+      l = Math.min(r, floor - i - s);
     (l < 240 &&
         ((l = Math.min(r, n.top - s - 8)), (i = Math.max(s, n.top - l - 8))),
       (e.style.position = "fixed"),
       (e.style.top = `${i}px`),
       (e.style.maxHeight = `${l}px`));
-    let c = n.left;
-    (c + 212 > o && (c = Math.max(s, o - 220)), (e.style.left = `${c}px`));
+    e.style.left = `${c}px`;
   }
   function buildSharedFilterDropdown({
     dropdownClass: e,
@@ -5984,6 +5902,14 @@
   let _abrirPesquisaComAtalho = !1;
   async function refreshMenu(e = null, t = !1) {
     if (!currentMenu) return;
+    // v28.1.0: retire the PREVIOUS render's document-level dropdown
+    // listener (and its detached dropdown element) before rebuilding —
+    // the old code simply overwrote currentMenu._filterCleanup at the
+    // end of this function, so every refreshMenu call leaked one
+    // document click listener plus its captured subtree for the page
+    // lifetime (tag merges/deletes, imports, copies and search-reset all
+    // refresh while the dock is open).
+    currentMenu._filterCleanup && currentMenu._filterCleanup();
     const n = currentMenu.querySelector("#prompt-menu-list-el"),
       a = n ? n.scrollTop : 0;
     setSafeInnerHTML(currentMenu, "");
@@ -6048,10 +5974,14 @@
               currentTagsConfig.activeFilters.length > 0) ||
             (window.__mpSortMode && "manual" !== window.__mpSortMode);
           if (hadFilter) {
+            // v28.1.0: arm the flag BEFORE the re-render consumes it —
+            // the old ordering set it after await refreshMenu(), so this
+            // click never opened the search overlay and some LATER
+            // unrelated refresh slid it open out of nowhere instead.
             ((window.__mpSortMode = "manual"),
               await clearTagFilters(),
-              await refreshMenu(),
-              (_abrirPesquisaComAtalho = !0));
+              (_abrirPesquisaComAtalho = !0),
+              await refreshMenu());
           } else
             ((l.style.transform = "translateX(0)"),
               setTimeout(() => c.focus(), 50));
@@ -6181,7 +6111,14 @@
                 async () => {
                   ((a.favorite = !a.favorite),
                     await updateById(a.id, { favorite: a.favorite }),
-                    _(n, a, !1));
+                    // v28.1.0: with the Favorites facet (or any facet that
+                    // scopes by favorite state) engaged, the row's
+                    // membership itself changed — the in-place re-render
+                    // used to leave the list contradicting its own filter
+                    // until the next full rebuild.
+                    orgFacetsActive()
+                      ? S()
+                      : _(n, a, !1));
                 },
               ),
             ),
@@ -6391,22 +6328,22 @@
               s.appendChild(e));
           }
           r.appendChild(s);
-          const c = t.id === e;
-          (_(r, t, c), b.appendChild(r));
+          // v28.1.0: the third _() argument is a constant — the old
+          // `t.id === e` compared against a first parameter no caller
+          // ever passed (always null), so c was always false; a future
+          // caller passing an id would have wrongly rendered that row in
+          // drag mode.
+          (_(r, t, !1), b.appendChild(r));
         }),
           0 === a && n && (x.style.display = "block"));
       };
     (S(),
       currentMenu.appendChild(b),
       setupEnhancedScroll(b),
-      e
-        ? a > 0
-          ? (b.scrollTop = a)
-          : setTimeout(() => {
-              const t = b.querySelector(`[data-prompt-id="${e}"]`);
-              t && t.scrollIntoView({ block: "nearest" });
-            }, 50)
-        : a > 0 && (b.scrollTop = a),
+      // v28.1.0: the scroll-to-prompt branch removed — it keyed on the
+      // first parameter no caller ever passes; the scroll-position
+      // restore below is the live behavior.
+      a > 0 && (b.scrollTop = a),
       (c.oninput = (e) => {
         const t = e.target.value.toLowerCase(),
           n = b.querySelectorAll(".prompt-item-row");
@@ -6531,7 +6468,15 @@
             (
               ev.stopPropagation(),
               (rec.rating = cur() === i ? 0 : i),
-              updateById(rec.id, { rating: rec.rating }),
+              // v28.1.0: the persist call is failure-loud — a rejected
+              // save used to leave the widget showing a rating that was
+              // never stored.
+              updateById(rec.id, { rating: rec.rating }).catch((err) =>
+                showNotification(
+                  `Failed to save rating: ${err?.message || err}`,
+                  "error",
+                ),
+              ),
               render(),
               onChange && onChange(rec)
             );
@@ -6622,7 +6567,15 @@
   async function openMoveToCollectionDialog(ids, onDone) {
     const idList = Array.from(ids),
       t = document.createElement("div");
-    ((t.className = "mp-overlay"), (t.id = "__ap_movecol_overlay"));
+    ((t.className = "mp-overlay"),
+      (t.id = "__ap_movecol_overlay"),
+      // v28.1.0: the Move-to-Collection dialog is reachable from INSIDE
+      // the expanded view (per-row action + bulk bar), but .mp-overlay
+      // stacks at 99990 while .mp-expanded-overlay stacks at 100000 —
+      // the dialog rendered behind the full-screen grid and was
+      // unreachable. The inline elevation clears it (confirm dialogs
+      // already float at max-int, so their layering is unchanged).
+      (t.style.zIndex = "100100"));
     const box = document.createElement("div");
     ((box.className = "mp-modal-box"),
       (box.style.cssText =
@@ -7250,6 +7203,13 @@
     const p = (pathOrId || "").trim();
     if (!p) return "";
     if (currentCollectionsConfig.collections[p]) return p;
+    // v28.1.0: machine-local collection ids are never portable — an
+    // imported record carrying a stale col_* id (every pre-v28.1.0 JSON
+    // export, or any export from another profile) used to fall through
+    // to the path resolver and silently CREATE a junk root collection
+    // literally named "col_xxxxxx". Unknown machine ids resolve to
+    // Unfiled; genuine paths keep resolving segment-by-segment.
+    if (/^col_[a-z0-9]+$/i.test(p)) return "";
     const segs = p
       .split("/")
       .map((x) => x.trim())
@@ -7272,8 +7232,36 @@
   // the same grammar parseTextPrompt already reads, extended with
   // tags/collection/favorite/rating/archived. Only non-default fields
   // are written, so a v27-shaped prompt still exports a v27-shaped file.
+  // v28.1.0: field values are now escaped (\ → \\, ; → \;, , → \,) on
+  // write and unescaped on read — a title containing ";" used to split
+  // into garbage fields and a tag containing "," used to fork into two
+  // tags, silently corrupting every TXT round-trip of such prompts.
+  // Pre-v28.1.0 files parse exactly as before (unescaped values only
+  // lose their separators, which was already broken).
+  function mpEscapeTxtHeaderField(e) {
+    return String(null == e ? "" : e)
+      .replace(/\\/g, "\\\\")
+      .replace(/;/g, "\\;")
+      .replace(/,/g, "\\,");
+  }
+  function mpUnescapeTxtHeaderField(e) {
+    return String(null == e ? "" : e).replace(/\\([\\;,])/g, "$1");
+  }
+  function mpSplitTxtHeaderEscaped(e, t) {
+    const n = [];
+    let a = "";
+    for (let o = 0; o < e.length; o++) {
+      const r = e.charAt(o);
+      "\\" === r && o + 1 < e.length
+        ? ((a += r + e.charAt(o + 1)), o++)
+        : r === t
+          ? (n.push(a), (a = ""))
+          : (a += r);
+    }
+    return n.push(a), n;
+  }
   function buildPromptTxtHeader(rec) {
-    const parts = ["title:" + (rec.title || "")];
+    const parts = ["title:" + mpEscapeTxtHeaderField(rec.title || "")];
     return (
       rec.usePlaceholders && parts.push("useplaceholders:true"),
       rec.autoExecute && parts.push("autoexecute:true"),
@@ -7281,13 +7269,15 @@
         parts.push(
           "tags:" +
             rec.tags
-              .map((x) => (x || "").trim())
+              .map((x) => mpEscapeTxtHeaderField((x || "").trim()))
               .filter(Boolean)
               .join(","),
         ),
       rec.collectionId &&
         currentCollectionsConfig.collections[rec.collectionId] &&
-        parts.push("collection:" + collectionPathOf(rec.collectionId)),
+        parts.push(
+          "collection:" + mpEscapeTxtHeaderField(collectionPathOf(rec.collectionId)),
+        ),
       rec.favorite && parts.push("favorite:true"),
       (parseInt(rec.rating, 10) || 0) > 0 &&
         parts.push("rating:" + (parseInt(rec.rating, 10) || 0)),
@@ -7295,10 +7285,31 @@
       "{{" + parts.join(";") + "}}"
     );
   }
+  // v28.1.0: the canonical 4ndr0666 branding glyph — the Psi hexagon
+  // (dashed outer/inner rings, hex frame, Ψ core in Cinzel Decorative),
+  // transcribed from resources/4ndr0666_glyph.txt onto the --mp-* token
+  // system (accent = --mp-accent-primary, so every theme restyles it).
+  // The rings rotate slowly in opposite directions (reduced-motion aware
+  // — CSS lives in the mp-electric-glass-override layer).
+  function mpBrandGlyphSvg(size) {
+    return `<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" fill="none" stroke="var(--mp-accent-primary, #00E5FF)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path class="mp-glyph-ring-1" d="M 64,12 A 52,52 0 1 1 63.9,12 Z" stroke-dasharray="21.78 21.78" stroke-width="2"/><path class="mp-glyph-ring-2" d="M 64,20 A 44,44 0 1 1 63.9,20 Z" stroke-dasharray="10 10" stroke-width="1.5" opacity="0.7"/><path d="M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z"/><text x="64" y="67" text-anchor="middle" dominant-baseline="middle" fill="var(--mp-accent-primary, #00E5FF)" stroke="none" font-size="56" font-weight="700" font-family="'Cinzel Decorative', serif">Ψ</text></svg>`;
+  }
+  function createBrandGlyph(size) {
+    const el = document.createElement("div");
+    ((el.className = "mp-brand-glyph"),
+      (el.setAttribute("role", "img")),
+      (el.setAttribute("aria-label", "Prompt Master")),
+      setSafeInnerHTML(el, mpBrandGlyphSvg(size)));
+    return el;
+  }
   async function openInsightsModal() {
     const overlay = document.createElement("div");
     ((overlay.className = "mp-overlay"),
-      (overlay.id = "__ap_insights_overlay"));
+      (overlay.id = "__ap_insights_overlay"),
+      // v28.1.0: same expanded-view layering fix as the Move-to-Collection
+      // dialog — the Ψ Insights modal is opened from the expanded view's
+      // toolbar and used to render behind the grid (99990 < 100000).
+      (overlay.style.zIndex = "100100"));
     const box = document.createElement("div");
     ((box.className = "mp-modal-box"),
       (box.style.cssText =
@@ -7366,7 +7377,7 @@
       );
       setSafeInnerHTML(
         box,
-        ` <button id="__ap_close_insights" class="mp-modal-close-btn">${ICONS.close}</button><h2 class="modal-title">Ψ Insights — Prompt Library</h2> `,
+        ` <button id="__ap_close_insights" class="mp-modal-close-btn">${ICONS.close}</button><div class="mp-brand-glyph" style="display:inline-flex;vertical-align:middle;margin-right:8px;">${mpBrandGlyphSvg(30)}</div><h2 class="modal-title" style="display:inline;">Ψ Insights — Prompt Library</h2> `,
       );
       const body = document.createElement("div");
       ((body.className = "mp-insights-body"),
@@ -7417,12 +7428,9 @@
         cols.appendChild(row("No collections defined", "—"));
       else {
         buildCollectionTree().forEach((nd) => {
-          const flat = [];
-          const walkN = (nodes) =>
-            nodes.forEach((n2) => {
-              flat.push(n2), walkN(n2.children);
-            });
-          flat.length = 0;
+          // v28.1.0: flat/walkN removed — declared, never invoked (a
+          // leftover from the census refactor; only the direct/walkD
+          // pair below is live).
           const direct = [];
           const walkD = (nodes) =>
             nodes.forEach((n2) => {
@@ -7592,6 +7600,13 @@
       render());
   }
   async function openExpandedPromptMenu() {
+    // v28.1.0: re-entrancy guard — the Ctrl+Alt+P hotkey (keydown
+    // auto-repeat) and the dock's Expand path can both fire while an
+    // expanded overlay is already open; each previous press stacked
+    // another full-screen overlay with its own document keydown/click
+    // handlers, org sidebar and filter dropdown, none of which were
+    // ever torn down. One instance at a time.
+    if (document.querySelector(".mp-expanded-overlay")) return;
     const e = "Columns";
     let t = await getAll(),
       n = await GM_getValue(e, 3),
@@ -7615,7 +7630,9 @@
     const m = document.createElement("div");
     m.className = "mp-expanded-header";
     const u = document.createElement("div");
-    u.className = "mp-expanded-actions-left";
+    ((u.className = "mp-expanded-actions-left"),
+      // v28.1.0: the branding glyph anchors the expanded library header.
+      u.appendChild(createBrandGlyph(26)));
     const g = document.createElement("div");
     g.className = "mp-expanded-search-container";
     const f = document.createElement("input");
@@ -7867,7 +7884,9 @@
               (allFav ? " unfavorited." : " favorited."),
             "success",
           );
-          ((t = await getAll()), K());
+          // v28.1.0: the sidebar's Favorites smart-node count refreshes
+          // with the grid — bulk archive and bulk move already did this.
+          ((t = await getAll()), K(), sidebar && sidebar.refresh());
         },
       ),
       bulkRate = v(
@@ -7927,7 +7946,8 @@
               ".",
             "success",
           );
-          ((t = await getAll()), K());
+          // v28.1.0: sidebar refresh parity with the other bulk ops.
+          ((t = await getAll()), K(), sidebar && sidebar.refresh());
         },
       ),
       bulkTag = v("btn-bulk-tag", ICONS.tag, "Tag Selection", async () => {
@@ -7975,7 +7995,8 @@
             ".",
           "success",
         );
-        ((t = await getAll()), K());
+        // v28.1.0: sidebar refresh parity with the other bulk ops.
+        ((t = await getAll()), K(), sidebar && sidebar.refresh());
       });
     ((orgGroupSel.id = "mp-org-group-select"),
       (orgGroupSel.className = "mp-org-group-select"),
@@ -8075,6 +8096,12 @@
         extra &&
           "undefined" != typeof extra.search &&
           (f.value = extra.search || "");
+        // v28.1.0: applying a saved view mutates groupMode / sort mode /
+        // facets — the toolbar widgets now sync with it (the group-by
+        // select used to keep showing the previous mode while the rows
+        // were already regrouped, and the Filter button's active state
+        // lagged the same way).
+        (orgGroupSel.value = currentOrgPrefs.groupMode || "none", q());
         (y(), K(), sidebar && sidebar.refresh());
       },
     });
@@ -8332,8 +8359,11 @@
                   async () => {
                     ((e.favorite = !e.favorite),
                       await updateById(e.id, { favorite: e.favorite }),
+                      // v28.1.0: the sidebar's Favorites smart-node count
+                      // refreshes with the grid (bulk favorite already did).
                       (t = await getAll()),
-                      K());
+                      K(),
+                      sidebar && sidebar.refresh());
                   },
                 ),
               ),
@@ -8345,8 +8375,10 @@
                   async () => {
                     ((e.archived = !e.archived),
                       await updateById(e.id, { archived: e.archived }),
+                      // v28.1.0: sidebar refresh parity (Archived count).
                       (t = await getAll()),
-                      K());
+                      K(),
+                      sidebar && sidebar.refresh());
                   },
                 ),
               ),
@@ -8357,7 +8389,14 @@
                   });
                 }),
               ),
-              u.appendChild(buildRowRatingWidget(e)),
+              u.appendChild(
+                // v28.1.0: the widget now reports through onChange — a
+                // rating change re-renders the grid (Top Rated sort /
+                // Group:Rating stay honest) and refreshes the sidebar.
+                buildRowRatingWidget(e, async () => {
+                  ((t = await getAll()), K(), sidebar && sidebar.refresh());
+                }),
+              ),
               u.appendChild(
                 U("edit", ICONS.edit, "Edit", () => {
                   (z(), openPromptModal(e));
@@ -8515,6 +8554,11 @@
                   nxt = nxt.nextElementSibling
                 )
                   "none" !== nxt.style.display && visible++;
+                // v28.1.0: the badge quotes the SEARCH-VISIBLE count — it
+                // used to keep showing the unfiltered group size while
+                // the search pass hid most of the group's rows.
+                const badge = child.querySelector(".mp-group-count");
+                badge && (badge.textContent = String(visible));
                 0 === visible && child.remove();
               })();
           });
@@ -8532,6 +8576,17 @@
       },
       j = (e) => {
         if (!d.parentNode) return;
+        // v28.1.0: row navigation yields while any script-owned modal owns
+        // the screen — Move-to-Collection and Ψ Insights now float above
+        // the expanded view, and their inputs must not drive background
+        // row selection/execution (confirm dialogs are covered by
+        // .mp-dialogo-overlay).
+        if (
+          document.querySelector(
+            ".mp-overlay.visible, .mp-dialogo-overlay",
+          )
+        )
+          return;
         const t = Array.from(h.querySelectorAll(".prompt-item-row")).filter(
           (e) => "none" !== e.style.display,
         );
@@ -8570,28 +8625,47 @@
       setTimeout(() => f.focus(), 50));
   }
   function closeMenu() {
+    // v28.1.0: the session-state resets (sort mode / tag filters / org
+    // facets) now fire ONLY when the dock menu was actually visible.
+    // The document-level outside-click handler calls closeMenu()
+    // un-gated, and the old comma chain ran the resets regardless of
+    // menu state — every click inside the expanded view (search box,
+    // group headers, sidebar) silently wiped the user's active
+    // filtering and sort. Deliberate close paths (Escape, Expand,
+    // post-insert) all invoke this while the menu is open, so their
+    // designed "clean scope on close" behavior is byte-identical.
+    const wasVisible = !!(
+      currentMenu &&
+      currentMenu.classList.contains("visible")
+    );
     (currentMenu &&
       (currentMenu._filterCleanup && currentMenu._filterCleanup(),
-      currentMenu.classList.contains("visible") &&
-        currentMenu.classList.remove("visible")),
+      wasVisible && currentMenu.classList.remove("visible")),
       document
         .querySelectorAll(
           ".mp-filter-dropdown:not(.mp-expanded-filter-dropdown)",
         )
         .forEach((e) => e.remove()),
-      window.__mpSortMode &&
-        "manual" !== window.__mpSortMode &&
-        (window.__mpSortMode = "manual"),
-      currentTagsConfig &&
-        currentTagsConfig.activeFilters &&
-        currentTagsConfig.activeFilters.length > 0 &&
-        clearTagFilters(),
-      // v28.0.0: the dock menu's org facets are exactly as ephemeral as
-      // its tag filters — closing the dock (or expanding into the full
-      // view through it) starts from a clean scope, while the sidebar's
-      // smart nodes and saved views remain the persistent scoping
-      // surfaces.
-      orgFacetsActive() && resetOrgFacets());
+      wasVisible &&
+        (window.__mpSortMode &&
+          "manual" !== window.__mpSortMode &&
+          ((window.__mpSortMode = "manual"),
+          // v28.1.0: the stored sort follows the session reset — the dock
+          // used to display "Manual Order" after close while the persisted
+          // sortMode silently resurrected the old sort on the next page
+          // load. Tag filters were already reset symmetrically.
+          currentTagsConfig &&
+            ((currentTagsConfig.sortMode = "manual"), saveTagsConfig())),
+        currentTagsConfig &&
+          currentTagsConfig.activeFilters &&
+          currentTagsConfig.activeFilters.length > 0 &&
+          clearTagFilters(),
+        // v28.0.0: the dock menu's org facets are exactly as ephemeral as
+        // its tag filters — closing the dock (or expanding into the full
+        // view through it) starts from a clean scope, while the sidebar's
+        // smart nodes and saved views remain the persistent scoping
+        // surfaces.
+        orgFacetsActive() && resetOrgFacets()));
   }
   function openPlaceholderModal(e) {
     const {
@@ -8604,7 +8678,12 @@
     if (0 === a.size && 0 === o.size && 0 === r.size) {
       let a = t;
       n.forEach((e, t) => {
-        a = a.replace(t, e);
+        // v28.1.0: function replacement — a string replacement interprets
+        // $&, $`, $' and $$ in the restored block as replacement
+        // patterns, silently corrupting any prompt containing "$"
+        // sequences (this script's own $variable syntax!). The modal's
+        // Insert path already used split/join for exactly this reason.
+        a = a.split(t).join(e);
       });
       return void insertPrompt({ ...e, text: a });
     }
@@ -9380,7 +9459,12 @@
                 n.stopImmediatePropagation(),
                 (t = !0));
               const a = getTextBeforeCaret(e).match(/(?:^|\s)(#[^\s]*)$/),
-                o = a ? a[1] : "";
+                // v28.1.0: strip the leading "#" — the completion's caret
+                // re-match fallback computes the deletion length as
+                // t.length + 1 (tag + hash), so passing the hash inside
+                // t made it delete one character too many whenever the
+                // caret had moved between render and keypress.
+                o = a ? a[1].replace(/^#/, "") : "";
               completeInlinePrompt(inlineMenuCurrentItems[inlineMenuIndex], o);
             }
           } else "Escape" === n.key && (n.preventDefault(), closeInlineMenu());
@@ -9416,10 +9500,16 @@
           const n = getTextBeforeCaret(e).match(/(?:^|\s)#([^\s]*)$/);
           if (n) {
             const t = n[1],
-              a = t.toLowerCase().replace(/-/g, " "),
+              // v28.1.0: both sides of the match are hyphen-normalized —
+              // the query used to replace "-" with " " while titles kept
+              // theirs, so typing the exact name of a hyphenated prompt
+              // ("Fix-it" → "#fix-it") yielded zero matches and closed
+              // the menu.
+              norm = (s) => (s || "").toLowerCase().replace(/-/g, " "),
+              a = norm(t),
               o = await getAll();
             ((inlineMenuCurrentItems = o
-              .filter((e) => e.title.toLowerCase().includes(a))
+              .filter((e) => norm(e.title).includes(a))
               .slice(0, 8)),
               inlineMenuCurrentItems.length > 0
                 ? ((inlineMenuIndex = 0),
@@ -9443,7 +9533,53 @@
     TAG_MEMORY = { active: !1, list: [], index: 0, startPos: 0, typed: "" };
   let currentPredictionConfig = DEFAULT_PREDICTION_CONFIG,
     macroMemory = { active: !1, text: "", startIndex: 0, hashCount: 0 },
-    varMemory = { active: !1, list: [], index: 0, startPos: 0, typed: "" };
+    varMemory = { active: !1, list: [], all: [], index: 0, startPos: 0, typed: "" };
+    // v28.1.0: shared candidate refilter — one code path serves both the
+    // insert path and the new Backspace-narrowing path. varMemory.all
+    // keeps the harvested originals (the old insert path filtered .list
+    // destructively, so no deletion could ever widen the candidates
+    // back); TAG_MEMORY's base is stateless (derived from the typed
+    // prefix).
+    const refilterPrediction = (mem) => {
+      if (TAG_MEMORY === mem) {
+        const q = mem.typed.substring(1).toLowerCase();
+        let base = [];
+        q.startsWith("d")
+          ? (base = [
+              { label: "#date", type: "simple" },
+              { label: "#date-DD", type: "simple" },
+              { label: "#date-MM", type: "simple" },
+              { label: "#date-YY", type: "simple" },
+              { label: "#date+time", type: "simple" },
+            ])
+          : q.startsWith("t")
+            ? (base = [
+                { label: "#time", type: "simple" },
+                { label: "#time-HH", type: "simple" },
+                { label: "#time-MM", type: "simple" },
+                { label: "#time-SS", type: "simple" },
+                { label: "#time+date", type: "simple" },
+              ])
+            : q.startsWith("f")
+              ? (base = [
+                  { label: "#file", type: "file" },
+                  { label: "#file(Title)", type: "file-title" },
+                ])
+              : q.startsWith("s") &&
+                (base = [
+                  { label: "#start (Block)", type: "start-block" },
+                  { label: "#start (Inline)", type: "start-inline" },
+                ]);
+        mem.list = base.filter((e) =>
+          e.label.toLowerCase().startsWith(mem.typed.toLowerCase()),
+        );
+      } else {
+        mem.list = (mem.all || mem.list).filter((e) =>
+          e.startsWith(mem.typed),
+        );
+      }
+      mem.index = 0;
+    };
   async function loadPredictionConfig() {
     currentPredictionConfig = await GM_getValue(
       PREDICTION_STORAGE_KEY,
@@ -9574,7 +9710,11 @@
         else {
           if ("#" === l) return void macroMemory.hashCount++;
           const t = l ? l.toLowerCase() : "";
-          if (["s", "i"].includes(t)) {
+          // v28.1.0: modifier-guarded — a bare Ctrl+S / Ctrl+I / ⌘S while
+          // the macro is armed used to be preventDefault-ed and expanded
+          // as if the plain letter had been typed, eating the editor's
+          // save shortcut at exactly the wrong moment.
+          if (["s", "i"].includes(t) && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
             e.preventDefault();
             const n = "#".repeat(macroMemory.hashCount);
             let a = "";
@@ -9657,6 +9797,7 @@
                 const e = [...new Set(s.reverse())];
                 ((varMemory.active = !0),
                   (varMemory.list = e),
+                  (varMemory.all = e),
                   (varMemory.index = 0),
                   (varMemory.startPos = t - 1),
                   (varMemory.typed = "$"));
@@ -9668,6 +9809,7 @@
               (this.setRangeText("$", t, t, "end"),
                 (varMemory.active = !0),
                 (varMemory.list = e),
+                (varMemory.all = e),
                 (varMemory.index = 0),
                 (varMemory.startPos = t),
                 (varMemory.typed = "$"));
@@ -9694,48 +9836,27 @@
             "deleteContentBackward" === e.inputType ||
             "deleteContentForward" === e.inputType
           )
-            return t <= s.startPos
-              ? (varMemory.active && a(), void (TAG_MEMORY.active && o()))
-              : ((s.typed = n.substring(s.startPos, t)),
-                varMemory.active && a(),
-                void (TAG_MEMORY.active && o()));
+            if (t <= s.startPos)
+              return (varMemory.active && a(), void (TAG_MEMORY.active && o()));
+            else {
+              // v28.1.0: a Backspace INSIDE the prediction now narrows the
+              // candidate list instead of killing it — the old branch
+              // computed the updated typed string and then deactivated
+              // anyway (a dead assignment), so one mistyped letter cost
+              // the whole trigger. No re-hint on deletion: the user is
+              // removing text, and the completion keys complete from the
+              // caret as-is.
+              (s.typed = n.substring(s.startPos, t), refilterPrediction(s));
+              return void (
+                0 === s.list.length &&
+                (varMemory.active && a(), TAG_MEMORY.active && o())
+              );
+            }
           if (!r) return;
-          if (((s.typed += r), TAG_MEMORY.active)) {
-            const e = s.typed.substring(1).toLowerCase();
-            let t = [];
-            (e.startsWith("d")
-              ? (t = [
-                  { label: "#date", type: "simple" },
-                  { label: "#date-DD", type: "simple" },
-                  { label: "#date-MM", type: "simple" },
-                  { label: "#date-YY", type: "simple" },
-                  { label: "#date+time", type: "simple" },
-                ])
-              : e.startsWith("t")
-                ? (t = [
-                    { label: "#time", type: "simple" },
-                    { label: "#time-HH", type: "simple" },
-                    { label: "#time-MM", type: "simple" },
-                    { label: "#time-SS", type: "simple" },
-                    { label: "#time+date", type: "simple" },
-                  ])
-                : e.startsWith("f")
-                  ? (t = [
-                      { label: "#file", type: "file" },
-                      { label: "#file(Title)", type: "file-title" },
-                    ])
-                  : e.startsWith("s") &&
-                    (t = [
-                      { label: "#start (Block)", type: "start-block" },
-                      { label: "#start (Inline)", type: "start-inline" },
-                    ]),
-              (s.list = t.filter((e) =>
-                e.label.toLowerCase().startsWith(s.typed.toLowerCase()),
-              )));
-          } else if (varMemory.active) {
-            const e = s.list.filter((e) => e.startsWith(s.typed));
-            s.list = e;
-          }
+          // v28.1.0: the shared refilter (see refilterPrediction) serves
+          // both memory kinds; the surviving hint/deactivate ladder below
+          // is unchanged from the original insert path.
+          (s.typed += r), refilterPrediction(s);
           if (s.list.length > 0) {
             s.index = 0;
             const e = s.list[0],
@@ -9818,6 +9939,11 @@
     if (e.ctrlKey !== o) return !1;
     if (e.altKey !== r) return !1;
     if (e.shiftKey !== s) return !1;
+    // v28.1.0: macOS ⌘-commands must never satisfy a non-Meta binding —
+    // a shortcut recorded as a bare letter ("P") used to hijack ⌘P
+    // (Print), ⌘N and friends, preventDefault included. The recorder has
+    // no META syntax, so a metaKey press can only be a false match.
+    if (e.metaKey) return !1;
     const i = e.code ? e.code.toUpperCase() : "",
       l = e.key ? e.key.toUpperCase() : "";
     return 1 === a.length
@@ -9897,7 +10023,16 @@
     o >= a.length && (o = 0);
     const r = a[o],
       s = (o + 1) % a.length;
-    return ((currentAIConfig[n] = s), saveAIConfig({ [n]: s }), r);
+    // v28.1.0: the index rotation persists with a catch — a rejected
+    // GM_setValue used to surface as an unhandled rejection while the UI
+    // already behaved as if the rotation had been stored.
+    return (
+      (currentAIConfig[n] = s),
+      saveAIConfig({ [n]: s }).catch((err) =>
+        console.warn("[Prompt Master] API key rotation not persisted:", err),
+      ),
+      r
+    );
   }
   async function loadAIConfig() {
     const e = await GM_getValue(AI_SETTINGS_KEY, DEFAULT_AI_CONFIG);
@@ -10331,15 +10466,65 @@
     { key: "nb2", label: "Nano Banana 2", badge: "NB2", re: /nano\s*banana\s*2(?!\s*(?:lite|pro))/i },
   ];
   const FLOW_CREDIT_STORAGE_KEY = "pm_flow_credit_state";
+  // v28.3.0: THE OFFICIAL WALL — the Google AI Pro compute-unit budget,
+  // exactly as the user supplied it from the official Gemini output
+  // (2026-09-24): 2,400 compute units per 5-hour window and 48,384 per
+  // week, drawn per IMAGE — Nano Banana Pro 48 units, Nano Banana 2
+  // 12 units, Nano Banana 2 Lite 3 units single-turn / 4 units with
+  // reference context — with every model (plus chat and code
+  // executions) drawing from the ONE shared window budget, and a
+  // multi-image prompt deducting the unit cost per image returned.
+  // Clean-state caps fall straight out of the division: Pro 50 · NB2
+  // 200 · Lite 600 (reference) to 800 (single-turn) per window, Pro
+  // ~1,000 images per week. THE CORRECTION this round ships: the
+  // v28.2.2 seed table (182/33/21) was the 2026-09-23 wall-DAY counts
+  // — under the shared pool those three walls are the same 2,400
+  // units drained across models (21×48 + 33×12 + 182×4 ≈ 2,400), not
+  // per-model caps — so the arithmetic below meters the POOL, and
+  // every model's turns-left is floor(units left ÷ its per-image
+  // cost), which reproduces the official example exactly: 100 NB2
+  // images (1,200 units) halve Pro's allowance to 25. Update this
+  // table only from an official disclosure — never by hand from a
+  // guess.
+  const FLOW_CREDIT_OFFICIAL = {
+    budget5h: 2400,
+    budgetWeek: 48384,
+    costPerImage: { pro: 48, nb2: 12, nb2lite: 3 },
+    liteRefCost: 4,
+    proWeekGens: 1000,
+  };
+  // v28.2.0: the chip is rebuilt to the 3lectric-Glass spec — the data
+  // face is JetBrains Mono, the glass base is the spec's rgba(10,19,26)
+  // at the popover levels (0.65→0.72), the border is the spec's
+  // rgba(0,229,255,.3) with its 0 0 20px glow, the radius is the
+  // glass-panel 4px (the pill is gone — rectangular brutalism), and the
+  // label/values ride the spec's subtitle rgba(0,229,255,.7) and primary
+  // #00E5FF roles. The low/zero turns-left states (classes toggled on
+  // the model slot since v27.3.10) finally have rules — the spec's
+  // alert #ff0055, zero with the glow. Parked mode adds its berth glow.
   const FLOW_CREDIT_CSS =
-    "#pm-flow-credit-chip{position:fixed;left:-9999px;top:-9999px;z-index:2147483645;display:inline-flex;align-items:center;gap:7px;height:22px;padding:0 11px;border-radius:999px;font:600 11px/1 ui-sans-serif,system-ui,Roboto,sans-serif;letter-spacing:.02em;color:#e8eaf0;background:linear-gradient(160deg,rgba(30,42,60,.62) 0%,rgba(11,16,24,.66) 100%);backdrop-filter:blur(16px) saturate(1.45);-webkit-backdrop-filter:blur(16px) saturate(1.45);border:1px solid rgba(148,196,255,.28);box-shadow:inset 0 1px 0 rgba(200,230,255,.16),-4px 6px 18px rgba(0,0,0,.42);cursor:default;user-select:none;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.35);transition:opacity var(--mp-transition-fast,150ms),transform var(--mp-transition-fast,150ms);}" +
+    "#pm-flow-credit-chip{position:fixed;left:-9999px;top:-9999px;z-index:2147483645;display:inline-flex;align-items:center;gap:7px;height:22px;padding:0 10px;border-radius:4px;font:600 10.5px/1 'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;letter-spacing:.02em;color:#00E5FF;background:linear-gradient(160deg,rgba(10,19,26,.65) 0%,rgba(10,19,26,.72) 100%);backdrop-filter:blur(16px) saturate(1.45);-webkit-backdrop-filter:blur(16px) saturate(1.45);border:1px solid rgba(0,229,255,.3);box-shadow:0 0 20px rgba(0,229,255,.15),inset 0 1px 0 rgba(0,229,255,.14),-4px 6px 18px rgba(0,0,0,.42);cursor:default;user-select:none;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.35);transition:opacity var(--mp-transition-fast,150ms),transform var(--mp-transition-fast,150ms);}" +
     "#pm-flow-credit-chip.mp-credit-pending{opacity:.72;}" +
     "#pm-flow-credit-chip.mp-credit-hidden{opacity:0;pointer-events:none;transform:translateY(4px);}" +
-    "#pm-flow-credit-chip .mp-credit-model{color:#aeb9c8;max-width:110px;overflow:hidden;text-overflow:ellipsis;}" +
-    "#pm-flow-credit-chip .mp-credit-sep{width:1px;height:10px;background:rgba(150,175,205,.35);flex:0 0 1px;}" +
-    "#pm-flow-credit-chip .mp-credit-values{color:#7fd8ff;font-variant-numeric:tabular-nums;}" +
-    "#pm-flow-credit-chip .mp-credit-values.mp-credit-low{color:#ffc46b;}" +
-    "#pm-flow-credit-chip .mp-credit-values.mp-credit-zero{color:#ff9d9d;}";
+    "#pm-flow-credit-chip.mp-credit-parked{box-shadow:0 0 20px rgba(0,229,255,.15),0 0 34px rgba(0,229,255,.25),inset 0 1px 0 rgba(0,229,255,.14),-4px 6px 18px rgba(0,0,0,.42);}" +
+    "#pm-flow-credit-chip .mp-credit-glyph{width:12px;height:12px;display:block;flex:0 0 auto;color:rgba(0,229,255,.85);}" +
+    "#pm-flow-credit-chip .mp-credit-model{color:rgba(0,229,255,.7);max-width:110px;overflow:hidden;text-overflow:ellipsis;}" +
+    "#pm-flow-credit-chip .mp-credit-sep{width:1px;height:10px;background:rgba(0,229,255,.35);flex:0 0 1px;}" +
+    "#pm-flow-credit-chip .mp-credit-values{color:#00E5FF;font-variant-numeric:tabular-nums;}" +
+    "#pm-flow-credit-chip .mp-credit-model.mp-credit-low{color:#ff0055;}" +
+    "#pm-flow-credit-chip .mp-credit-model.mp-credit-zero{color:#ff0055;text-shadow:0 0 12px rgba(255,0,85,.6);}";
+  // v28.2.0: the canonical Ψ branding glyph at chip scale — the same
+  // geometry as the dock glyph (dual dashed rings, hex frame, serif Ψ
+  // core), 12px, stroked in currentColor so the chip's palette owns it.
+  // ASCII &#936; keeps the source file ASCII-clean, matching
+  // FLOW_DOCK_GLYPH's convention.
+  const FLOW_CREDIT_GLYPH =
+    '<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" class="mp-credit-glyph" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
+    '<path d="M 64,12 A 52,52 0 1 1 63.9,12 Z" stroke-dasharray="21.78 21.78" stroke-width="2"/>' +
+    '<path d="M 64,20 A 44,44 0 1 1 63.9,20 Z" stroke-dasharray="10 10" stroke-width="1.5" opacity="0.7"/>' +
+    '<path d="M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z"/>' +
+    '<text x="64" y="67" text-anchor="middle" dominant-baseline="middle" fill="currentColor" stroke="none" font-size="56" font-weight="700" font-family="serif">&#936;</text>' +
+    "</svg>";
 
   // Engine state — a single instance lives for the page lifetime. Dock
   // re-inits never spawn a second engine (startFlowCreditTracker is a
@@ -10357,6 +10542,11 @@
     flowCreditLastSig = "",
     flowCreditAnchorEl = null,
     flowCreditAnchorSrc = "",
+    // v28.2.0: parked-mode state — the first moment the anchor cascade
+    // failed (0 = an anchor is resolved). positionFlowCreditChip parks
+    // the chip above the Flow dock once the miss outlives the 15s grace;
+    // resolveFlowCreditAnchor resets it on every successful resolve.
+    flowCreditAnchorMissSince = 0,
     // v27.3.2: passive-observer state — pending network/storage
     // readings (drained by the tick), cumulative counters for the
     // settled status line, and the storage sweep timer.
@@ -10413,20 +10603,23 @@
     // day counters that roll over at local midnight.
     flowCreditUsageCount = 0,
     flowCreditTurnsSession = {},
-    flowCreditGenQueue = [],
-    flowCreditGenObserver = null,
     flowCreditGenUrl = "",
     flowCreditGenReseed = !1,
-    flowCreditLastNewAt = {},
     // v27.3.8: click-anchored generation state. flowCreditGenArm
     // maps model key -> {from, to} armed windows opened by real
     // generation clicks (media counts only inside them);
-    // flowCreditClicksSession/Total/Unattributed tally clicks for
-    // the report; flowCreditLastGen remembers the model, batch hint
-    // and time of the most recent generation; the hook installs
-    // once per page lifetime.
+    // flowCreditClicksTotal/Unattributed tally clicks for the report;
+    // flowCreditLastGen remembers the model, batch hint and time of
+    // the most recent generation; the hook installs once per page
+    // lifetime.
+    // v28.1.0 (zero-dead-code sweep): flowCreditGenQueue,
+    // flowCreditGenObserver, flowCreditLastNewAt and
+    // flowCreditClicksSession were removed — the queue lost its only
+    // producer when v28.0.0 removed flowCreditCollectMediaMutations
+    // (never pushed since), the observer was never assigned, and the
+    // other two were write-only (the report reads Total/Unattributed
+    // and TurnsSession/GensSession instead).
     flowCreditGenArm = {},
-    flowCreditClicksSession = {},
     flowCreditClicksTotal = 0,
     flowCreditClicksUnattributed = 0,
     flowCreditLastGen = null,
@@ -10443,7 +10636,20 @@
     // click) and genDay (its local day key) — the event anchors that
     // keep wallet freshness honest; absent in older stores, which
     // simply means "no generation has been witnessed since install".
-    return { v: 2, cv: 3, wallet: null, lastGenAt: 0, genDay: "", models: {} };
+    // v28.3.0: ledger — the official compute-unit meter, one entry
+    // per generation click ({t, m, n, r}; synthetic {t, m, u} entries
+    // carry raw units charged at a limit notice — the invisible
+    // chat/code spend reconciled at the wall). Pruned to 8 days (the
+    // weekly window needs 7) and bounded at 20,000 entries; cv 4.
+    return {
+      v: 2,
+      cv: 4,
+      wallet: null,
+      lastGenAt: 0,
+      genDay: "",
+      ledger: [],
+      models: {},
+    };
   }
   function flowCreditEntry(state, key) {
     let e = state.models[key];
@@ -10458,8 +10664,10 @@
         day: "",
         gensDay: 0,
         turnsDay: 0,
-        clicks: 0,
-        clicksDay: 0,
+        // v28.1.0: clicks/clicksDay removed — written by every armed
+        // generation but never read by the chip, report or self-test
+        // (and clicksDay was never day-rolled either, so it accumulated
+        // lifetime counts under a "Day" name).
         used: null,
         max: null,
         usageAt: 0,
@@ -10481,6 +10689,169 @@
         capResetAt: 0,
       };
     return e;
+  }
+  // v28.3.0: THE METER — the unit ledger helpers, replacing
+  // flowCreditSeedKnownCaps (the seed table seeded the wrong numbers:
+  // the official compute-unit constants ship in code, so there is
+  // nothing left to seed — the meter answers deterministically from
+  // boot). One entry per generation click: n images armed from the
+  // batch hint, r = 1 when a Lite generation carried reference
+  // context (4u/image) instead of single-turn (3u/image). A wall
+  // entry {t, m, u} charges raw units at a limit notice. Entries
+  // older than 8 days and anything past 20,000 are pruned; the
+  // ledger persists with the store and survives resets (the server
+  // drew those units whether or not the client resets).
+  function flowCreditLedgerPrune() {
+    if (!flowCreditState || !Array.isArray(flowCreditState.ledger)) return;
+    const cut = Date.now() - 8 * 86400000;
+    const led = flowCreditState.ledger;
+    let write = 0;
+    for (let i = 0; i < led.length; i++) {
+      const en = led[i];
+      if (en && typeof en.t === "number" && en.t > cut) led[write++] = en;
+    }
+    led.length = write;
+    if (led.length > 20000) led.splice(0, led.length - 20000);
+  }
+  function flowCreditLedgerAppend(m, n, refCtx) {
+    if (!flowCreditState) return null;
+    if (!Array.isArray(flowCreditState.ledger)) flowCreditState.ledger = [];
+    const en = {
+      t: Date.now(),
+      m: m,
+      n: Math.max(1, n > 0 ? Math.floor(n) : 1),
+      r: m === "nb2lite" && refCtx ? 1 : 0,
+    };
+    flowCreditState.ledger.push(en);
+    flowCreditLedgerPrune();
+    return en;
+  }
+  // flowCreditCountGens's revision path: the armed window attributed
+  // imgs new images to model m's generation — the official meter
+  // deducts per image RETURNED, so the entry's count rises to what
+  // actually rendered (never below the batch hint it armed with). The
+  // counted total rides the entry itself (c), so arm replacement
+  // mid-render cannot lose or double it. Idempotent by monotonicity:
+  // n only ever rises toward max(batch hint, counted total).
+  function flowCreditLedgerRevise(m, imgs) {
+    if (!flowCreditState || !Array.isArray(flowCreditState.ledger)) return;
+    if (!(imgs > 0)) return;
+    const now = Date.now();
+    const led = flowCreditState.ledger;
+    for (let i = led.length - 1; i >= 0; i--) {
+      const en = led[i];
+      if (!en || en.m !== m || en.u > 0) continue;
+      if (en.t > now || en.t <= now - 180000) continue;
+      en.c = (en.c || 0) + imgs;
+      en.n = Math.max(en.n || 1, en.c);
+      return;
+    }
+  }
+  // A ledger entry's unit cost: wall entries carry raw units (u);
+  // real generations cost images × the model's official per-image
+  // rate (Lite at its recorded context: 4u reference, 3u
+  // single-turn).
+  function flowCreditEntryUnits(en) {
+    if (!en) return 0;
+    if (en.u > 0) return en.u;
+    const cost =
+      en.m === "nb2lite"
+        ? en.r
+          ? FLOW_CREDIT_OFFICIAL.liteRefCost
+          : FLOW_CREDIT_OFFICIAL.costPerImage.nb2lite
+        : FLOW_CREDIT_OFFICIAL.costPerImage[en.m] || 0;
+    return Math.max(1, en.n || 1) * cost;
+  }
+  // Units spent in the trailing window (5h = the official window; 7d
+  // = the official week). Pure read over the ledger.
+  function flowCreditUnitsSpent(winMs) {
+    if (!flowCreditState || !Array.isArray(flowCreditState.ledger)) return 0;
+    const cut = Date.now() - winMs;
+    let u = 0;
+    for (const en of flowCreditState.ledger)
+      if (en && en.t > cut) u += flowCreditEntryUnits(en);
+    return u;
+  }
+  // Images charged to a model inside the window (Pro's weekly
+  // generation ceiling counts images, not units).
+  function flowCreditModelImages(m, winMs) {
+    if (!flowCreditState || !Array.isArray(flowCreditState.ledger)) return 0;
+    const cut = Date.now() - winMs;
+    let n = 0;
+    for (const en of flowCreditState.ledger)
+      if (en && en.m === m && en.t > cut && !(en.u > 0))
+        n += Math.max(1, en.n || 1);
+    return n;
+  }
+  // The per-image cost a model's N/M pair divides by. Pro and NB2
+  // are constants; Lite's is its OWN most recent generation's context
+  // (4u reference / 3u single-turn — the official rate flips with the
+  // conversation, and the chip's scale flips with it, honestly). No
+  // Lite history yet: the conservative reference rate (4u → the 600
+  // wall), never the optimistic one.
+  function flowCreditDisplayCost(key) {
+    if (key === "nb2lite") {
+      const led = flowCreditState && flowCreditState.ledger;
+      if (Array.isArray(led))
+        for (let i = led.length - 1; i >= 0; i--) {
+          const en = led[i];
+          if (en && en.m === "nb2lite" && !(en.u > 0))
+            return en.r
+              ? FLOW_CREDIT_OFFICIAL.liteRefCost
+              : FLOW_CREDIT_OFFICIAL.costPerImage.nb2lite;
+        }
+      return FLOW_CREDIT_OFFICIAL.liteRefCost;
+    }
+    return FLOW_CREDIT_OFFICIAL.costPerImage[key] || 0;
+  }
+  // Does the conversation carry reference context for a Lite
+  // generation? The official meter bills Lite 4u per image when the
+  // generation works from reference context and 3u single-turn; the
+  // client's honest proxies, both deterministic at click time: the
+  // page already shows media from this conversation (prior scenes
+  // the next generation builds on), or the composer anchor holds a
+  // visible image attachment. Fresh conversation, empty composer:
+  // single-turn.
+  function flowCreditLiteRefContext() {
+    try {
+      if (flowCreditMediaSeen && Object.keys(flowCreditMediaSeen).length)
+        return !0;
+      const a = flowCreditAnchorEl;
+      if (a && a.querySelectorAll) {
+        const imgs = a.querySelectorAll("img");
+        for (const img of imgs) {
+          try {
+            const r = img.getBoundingClientRect();
+            if (r.width >= 24 && r.height >= 24) return !0;
+          } catch (e) {}
+        }
+      }
+    } catch (e) {}
+    return !1;
+  }
+  // The wall reconciliation, fired from the limit-notice watcher:
+  // when Flow says a model ran out, the shared window is DRY
+  // server-side — including the chat and code-execution spend this
+  // client ledger cannot see. Charge the difference between the
+  // official budget and the metered spend at the wall moment,
+  // attributed as raw units; it empties every model's turns-left to 0
+  // exactly when Flow said so, then ages out of the 5h window like
+  // real spend. Idempotent per notice: a wall entry inside the last
+  // 60s means this wall was already reconciled.
+  function flowCreditLedgerWallCharge(key) {
+    if (!flowCreditState) return 0;
+    if (!Array.isArray(flowCreditState.ledger)) flowCreditState.ledger = [];
+    const now = Date.now();
+    const led = flowCreditState.ledger;
+    for (let i = led.length - 1; i >= 0; i--) {
+      const en = led[i];
+      if (en && en.u > 0 && en.t > now - 60000) return 0;
+    }
+    const rem = FLOW_CREDIT_OFFICIAL.budget5h - flowCreditUnitsSpent(5 * 3600000);
+    if (rem <= 0) return 0;
+    led.push({ t: now, m: key, u: rem });
+    flowCreditLedgerPrune();
+    return rem;
   }
   function flowCreditParseNum(s) {
     const n = parseInt(String(s).replace(/,/g, ""), 10);
@@ -10848,8 +11219,18 @@
   }
   // v27.3.6: the text-pattern gate for credit AND usage wording —
   // usage surfaces say tokens/turns/daily/limit, never "credit".
+  // v28.2.1: widened for the v27.3.8 remaining-forms — "Leaving
+  // 4/16", "4/16 left" and "4/16 available" carry none of the
+  // original gate words, so the canonical model-picker usage rows
+  // never reached the parser at all (proven by live execution: the
+  // tick harvested nothing from a visible "Leaving 4/16" row). The
+  // three additions mirror the parser's own forms exactly; the
+  // patterns stay the precision layer (a bare "leaving" or "left"
+  // with no N/M pair still parses to nothing) and merge attribution
+  // is unchanged (an unnamed usage reading only ever lands on the
+  // selected model, never the wallet).
   function flowCreditTextGate(s) {
-    return /credit|\bturn|\btoken|daily|usage|\blimit|remaining|generat|quota/i.test(s);
+    return /credit|\bturn|\btoken|daily|usage|\blimit|remaining|generat|quota|\bleav|\bleft\b|\bavailable\b/i.test(s);
   }
   // Walks one parsed JSON payload. An object's numeric fields count as
   // credit readings when their own key says "credit" ("creditsTotal"),
@@ -10904,7 +11285,11 @@
       const v = node[k];
       if (typeof v === "number" && Number.isFinite(v) && v >= 0) {
         const low = String(k).toLowerCase();
-        const usageKey = usageScope || /usage|daily|turn|token/.test(low);
+        // v28.1.0: limit|quota join the direct-key usage test — the
+    // child-object branch one level down already tested them, so a
+    // bare {"quota": 50} payload was dropped while the same value
+    // nested one level deeper parsed.
+    const usageKey = usageScope || /usage|daily|limit|quota|turn|token/.test(low);
         if (usageKey) {
           // Classify by the qualifier; inside a usage scope only
           // used/total/left make sense (cost stays a credit concept).
@@ -11073,17 +11458,25 @@
         };
         XO.prototype.send = function () {
           try {
-            this.addEventListener("load", function () {
-              try {
-                if (this.responseType !== "" && this.responseType !== "text") return;
-                const t = this.responseText;
-                if (t)
-                  flowCreditNetCount += scanFlowCreditStructured(
-                    t,
-                    this.__pmFlowCreditUrl || "xhr",
-                  );
-              } catch (e) {}
-            });
+            // v28.1.0: one-shot listener — a reused XHR object (open/send
+            // cycles are legal) accumulated one scanner per send, so the
+            // Nth response was scanned N times and the diagnostics
+            // counter over-reported.
+            this.addEventListener(
+              "load",
+              function () {
+                try {
+                  if (this.responseType !== "" && this.responseType !== "text") return;
+                  const t = this.responseText;
+                  if (t)
+                    flowCreditNetCount += scanFlowCreditStructured(
+                      t,
+                      this.__pmFlowCreditUrl || "xhr",
+                    );
+                } catch (e) {}
+              },
+              { once: !0 },
+            );
           } catch (e) {}
           return os_.apply(this, arguments);
         };
@@ -11117,6 +11510,18 @@
           continue;
         }
         if (!v || typeof v !== "string" || v.length > 300000) continue;
+        // v28.3.0: the sweep must not harvest the script's OWN
+        // persisted state. The tracker's store (and any pm_* key this
+        // script ever wrote) carries our own counts and cap texts,
+        // which parse as usage readings and then masquerade as Flow
+        // prints for a whole day — live-proven at the v28.3.0 boot:
+        // yesterday's turnsDay 182, still sitting in the pre-migration
+        // store JSON, echoed back through the sweep as a
+        // "Flow-printed" max of 182 that outranked the official pool
+        // until midnight. Flow's disclosures come from Flow's storage
+        // and the page — never from ours.
+        if (k === FLOW_CREDIT_STORAGE_KEY || /^pm_/i.test(String(k || "")))
+          continue;
         if (
           !/credit|wallet|quota|allowance|balance|usage|daily|\bturn|token|limit/i.test(
             (k || "") + " " + v.slice(0, 4000),
@@ -11233,10 +11638,13 @@
   // after each step. Safety rails: a menu that is ALREADY open is
   // harvested but never closed (it may be the user's own); anchors
   // (<a>) are never clicked — a stray navigation is the one
-  // unrecoverable side effect; one pull runs at a time; automatic
-  // pulls are debounced to one per 30s (manual/report pulls bypass);
-  // and the script's own chrome (dock, chip, modals) can never be
-  // mistaken for the profile menu.
+  // unrecoverable side effect; one pull runs at a time; v28.1.1:
+  // automatic pulls (boot / boot-retry / post-gen) are PASSIVE-ONLY —
+  // they harvest an organically open menu and never click the account
+  // chip, so the profile menu can never appear on its own; only
+  // user-initiated pulls ("manual" — the Copy Report command) open
+  // and close it; and the script's own chrome (dock, chip, modals)
+  // can never be mistaken for the profile menu.
   function flowCreditSleep(ms) {
     return new Promise(function (res) {
       setTimeout(res, ms);
@@ -11411,9 +11819,11 @@
   // session cap makes a runaway loop impossible; and the stale
   // check is re-evaluated at fire time — if a report or the boot
   // pull already refreshed the reading, the timer exits without
-  // touching Flow's profile menu at all. The pull itself is the same
-  // guarded cascade as the boot pull (in-flight lock, 30s debounce,
-  // links never clicked, menu closed through the v27.3.5 cascade).
+  // touching Flow's profile menu at all. v28.1.1: the pull itself is
+  // PASSIVE-ONLY for this automatic reason (see the allowlist gate in
+  // pullFlowCreditWallet) — it harvests a menu the user already has
+  // open and never opens one itself; the Copy Report command remains
+  // the explicit refresh path.
   function scheduleFlowCreditWalletRepull() {
     if (flowCreditRepullTimer) return;
     flowCreditRepullTimer = setTimeout(function fire() {
@@ -11426,8 +11836,13 @@
         }
         if (flowCreditRepullCount >= 5) return;
         if (!flowCreditWalletKnown() || flowCreditWalletFresh()) return;
-        flowCreditRepullCount++;
+        // v28.1.0: the budget is consumed only when a pull ACTUALLY runs —
+        // the old pre-increment burned one of the 5 session attempts on
+        // every refusal too (in-flight lock, 30s debounce, hidden tab),
+        // so a few unlucky overlaps could disable post-generation
+        // re-pulls for the whole session.
         pullFlowCreditWallet("post-gen").then(function (r) {
+          if (r && r.ran) flowCreditRepullCount++;
           if (r && r.ran && (r.opened === "clicked" || r.opened === "already open"))
             try {
               console.info(
@@ -11459,6 +11874,25 @@
         flowCreditPullRaw = (dlg.textContent || "").replace(/\s+/g, " ").trim().slice(0, 300);
         flowCreditPullInfo = "profile menu already open — harvested it without closing";
         return { ran: !0, opened: "already open", closed: "left open" };
+      }
+      // v28.1.1: AUTOMATIC pulls stop here — passive-only. The 2026-09-22
+      // field report flagged that Flow's profile menu "periodically
+      // appears on its own": the boot pull fired ~9s after every load
+      // with a stale wallet, and the post-generation re-pull fired 155s
+      // after wallet-mutating clicks — both unannounced UI takeovers of
+      // the host page. An allowlist (not a blocklist) is the safe
+      // posture: only "manual" — the Copy Report command's reason, where
+      // the visible open/read/close IS the action the user asked for —
+      // may click the account chip. Automatic reasons still harvest a
+      // menu that is already on screen (branch A above, and the 1s tick
+      // reads it regardless), and the wallet's freshness now converges
+      // on any live observation (see mergeFlowCreditReadings) instead
+      // of demanding a pull.
+      if (reason !== "manual") {
+        flowCreditPullRaw = "";
+        flowCreditPullInfo =
+          "passive-only — automatic pulls never open the profile menu; open it yourself or copy the report to refresh the wallet";
+        return { ran: !1, opened: "none (passive)", closed: "n/a" };
       }
       // B. find the account chip (links are never clicked).
       const btn = findFlowProfileMenuButton();
@@ -11644,6 +12078,31 @@
     if (!flowCreditState || !readings.length) return !1;
     let changed = !1;
     const now = Date.now();
+    // v28.2.1: multi-row usage surfaces — an open model picker prints
+    // usage for EVERY model at once, and each row's bare "Leaving N/M"
+    // span is an UNNAMED reading. The pre-fix attribution sent every
+    // unnamed usage reading to the SELECTED model, so the last sibling
+    // row in the picker overwrote the selected model's own numbers
+    // (live-proven: NB2 Lite's "Leaving 4/16" was clobbered to 13/16
+    // by NB2's row merged after it). When the batch carries ANY
+    // model-named usage reading, the batch is by construction a
+    // multi-model surface and the unnamed usage spans are ambiguous —
+    // they are dropped. A lone unnamed meter (the selected model's
+    // prompt-bar usage with no other surface open) still attributes to
+    // the selected model exactly as before; named readings and all
+    // non-usage kinds are unaffected.
+    let namedUsage = !1;
+    for (const r of readings) {
+      if (r.kind === "usage") {
+        const cm = FLOW_CREDIT_MODELS.filter((m) =>
+          m.re.test(r.context || ""),
+        );
+        if (cm.length === 1) {
+          namedUsage = !0;
+          break;
+        }
+      }
+    }
     for (const r of readings) {
       const ctxModels = FLOW_CREDIT_MODELS.filter((m) => m.re.test(r.context || ""));
       const named = ctxModels.length === 1 ? ctxModels[0] : null;
@@ -11654,8 +12113,11 @@
         // the one Flow had selected when it printed; it NEVER lands
         // on the wallet (that pool is Veo's, and per-model credit
         // budgets do not exist).
+        // v28.2.1: ...unless the batch already named another model —
+        // see namedUsage above.
         if (named) targets.push(flowCreditEntry(flowCreditState, named.key));
-        else if (model) targets.push(flowCreditEntry(flowCreditState, model.key));
+        else if (model && !namedUsage)
+          targets.push(flowCreditEntry(flowCreditState, model.key));
       } else if (named) {
         targets.push(flowCreditEntry(flowCreditState, named.key));
       } else if (r.kind === "cost") {
@@ -11669,6 +12131,19 @@
         // per-model budget, because none exists.
         if (!flowCreditState.wallet)
           flowCreditState.wallet = { left: null, total: null, cost: null, at: 0 };
+        // v28.1.0: a storage-sourced wallet echo can only SEED an empty
+        // wallet — the usage branch has guarded storage staleness since
+        // v27.3.12, but wallet left/total had no such guard, so a stale
+        // localStorage echo ("credits left: 280") silently overwrote a
+        // fresher profile-menu-pulled balance every 30s and stamped it
+        // fresh (at = now), suppressing the re-pull that would have
+        // restored the true number.
+        if (
+          /\[\s*storage:/i.test(r.context || "") &&
+          (flowCreditState.wallet.left != null ||
+            flowCreditState.wallet.total != null)
+        )
+          continue;
         targets.push(flowCreditState.wallet);
       }
       for (const e of targets) {
@@ -11730,6 +12205,29 @@
           }
         }
         if (entryChanged) {
+          e.at = now;
+          changed = !0;
+        } else if (
+          // v28.1.1: a LIVE wallet re-observation confirms freshness even
+          // at an unchanged value. `at` used to advance only when the
+          // VALUE changed, so on a free-NB-only day — the balance is
+          // provably constant, NB generations cost 0 Flow credits — one
+          // reading taken before any generation stayed stale forever:
+          // w.at could never pass lastGenAt, the boot pull re-armed on
+          // every page load, and the report's own re-pull quoted the
+          // same balance with the STALE flag still up. Any live page
+          // reading of the wallet (the profile menu open — pull or
+          // organic; the storage echo is excluded by context and was
+          // already routed past for populated wallets) is a direct
+          // observation: the balance is current as of NOW. Re-stamp
+          // immediately when it clears a stale flag, otherwise at a 30s
+          // cadence so an open menu cannot stamp a GM write on every
+          // 1s tick.
+          e === flowCreditState.wallet &&
+          !/\[\s*storage:/i.test(r.context || "") &&
+          ((e.at || 0) < (flowCreditState.lastGenAt || 0) ||
+            now - (e.at || 0) > 30000)
+        ) {
           e.at = now;
           changed = !0;
         }
@@ -11800,25 +12298,12 @@
     }
     return out;
   }
-  // v27.3.6: counting runs ONLY on Flow's editor route — the one view
-  // where generations render. The collection grid, project dashboards
-  // and every other route render HISTORY (thumbnails of past work),
-  // and the v27.3.5 counter attributed exactly that history to
-  // whichever model was selected while browsing it.
-  // v27.3.7: the URL-pattern gate assumed Flow's editor route contains
-  // "/edit/" in the path. Flow's real editor URL is
-  // "/project/<uuid>" with no such segment — the gate was permanently
-  // false there, silently disabling counting on the one page
-  // generations actually happen on (confirmed via a live diagnostic
-  // report: url had no "/edit/" while anchor already correctly read
-  // "editor"). Reusing that anchor signal instead of a second,
-  // independent URL guess — resolveFlowCreditAnchor() already proves
-  // out via findPlatformEditor("flow") + a viewport-position sanity
-  // check, so this gate now shares the exact detection that was
-  // already working.
-  function flowCreditCountRouteOK() {
-    return flowCreditAnchorSrc === "editor";
-  }
+  // v28.1.0: flowCreditCountRouteOK() removed under the zero-dead-code
+  // directive — v27.3.8's armed-window gate retired it (counting no
+  // longer depends on the route), and although the v27.3.8 comment
+  // claimed it "stays defined for that report signal", no report or
+  // self-test ever called it. The anchor source itself remains visible
+  // in the report line via flowCreditAnchorSrc.
   // v27.3.6: local-day key for the daily counters (the hidden NB
   // limit resets per day, so day counts are the relevant ones).
   function flowCreditDayKey(nowMs) {
@@ -11943,6 +12428,21 @@
             m[5] != null ? +m[5] : 0,
             m[6] || null,
           );
+          // v28.1.0: a year-less notice read near New Year ("resets
+          // 1/2, 3:00 AM" captured on Dec 31) parses into the past and
+          // the acceptance window used to discard the anchor entirely —
+          // falling back to local midnight, hours off the real boundary.
+          // Retry next year before giving up (only for year-less forms;
+          // an explicit past year is a genuine parse miss).
+          if (!isNaN(ts) && ts <= now && m[3] == null)
+            ts = mk(
+              y + 1,
+              +m[1] - 1,
+              +m[2],
+              m[4] != null ? +m[4] : 0,
+              m[5] != null ? +m[5] : 0,
+              m[6] || null,
+            );
         }
       }
       if (isNaN(ts)) {
@@ -11960,6 +12460,16 @@
             m[5] != null ? +m[5] : 0,
             m[6] || null,
           );
+          // v28.1.0: same New Year retry as the M/D/Y branch above.
+          if (!isNaN(ts) && ts <= now && m[3] == null)
+            ts = mk(
+              y + 1,
+              MON[m[1].toLowerCase()],
+              +m[2],
+              m[4] != null ? +m[4] : 0,
+              m[5] != null ? +m[5] : 0,
+              m[6] || null,
+            );
         }
       }
       if (isNaN(ts)) {
@@ -12003,21 +12513,37 @@
     return e;
   }
   // v27.3.10: THE function — how many turns of this model are left
-  // before it runs out, today. Priority: (1) Flow's own print
-  // (used/max from the model picker — left = max − used − the
-  // clicks made since the print); (2) the learned cap (when Flow's
-  // daily-limit notice fired, the click count at that moment WAS
-  // the cap — left = cap − clicks since). All-null when the cap is
-  // unknown: Flow discloses it only at those two moments, and the
-  // caller says so instead of inventing a number.
-  function flowCreditTurnsLeft(e) {
+  // before it runs out. v28.3.0: the meter is the OFFICIAL compute-
+  // unit pool (2,400u per rolling 5-hour window, 48,384u per week,
+  // ONE shared pool, billed per image — Pro 48u · NB2 12u · Lite 3u
+  // single-turn / 4u with reference). Priority: (1) Flow's own print
+  // (used/max from the model picker — left = max − used − the clicks
+  // made since the print; Flow's server numbers see the chat/code
+  // spend the client meter cannot, so they always outrank it); (2)
+  // the official pool — units left ÷ this model's per-image cost,
+  // floored, over BOTH the 5-hour window and the weekly budget (Pro
+  // additionally respects its official ~1,000-images-per-week
+  // ceiling). Both branches recompute from the ledger on every call,
+  // so the number is live after every turn and refills as the window
+  // rolls. All-null only for an unknown model key.
+  function flowCreditTurnsLeft(e, key) {
     if (!e) return { left: null, max: null, src: "" };
+    // v28.3.0: the key rides the call (render, report and self-test
+    // all know it); the identity scan is a defensive fallback for any
+    // caller that predates the parameter.
+    if (key == null && flowCreditState && flowCreditState.models) {
+      for (const k in flowCreditState.models)
+        if (flowCreditState.models[k] === e) {
+          key = k;
+          break;
+        }
+    }
     // v27.3.17: "today" for THIS model — its learned reset anchor
     // when one exists, local midnight otherwise.
     const today = flowCreditEntryDayKey(e);
     // v27.3.12: roll the day counters before any math — they only
-    // roll on the click path otherwise, and both branches below
-    // subtract e.turnsDay (see flowCreditRollEntryDay).
+    // roll on the click path otherwise, and the Flow-print branch
+    // below subtracts e.turnsDay (see flowCreditRollEntryDay).
     flowCreditRollEntryDay(e);
     if (
       e.max != null &&
@@ -12031,28 +12557,42 @@
         src: "Flow-printed",
       };
     }
-    // v27.3.12: the learned cap answers on EVERY following day — that
-    // is the entire point of persisting it ("every day after starts
-    // from a known limit"). v27.3.10 gated capAt to TODAY, so the
-    // stored cap never actually answered the next morning — the chip
-    // fell back to "cap ?" every day until the wall was hit AGAIN. A
-    // fresh Flow print (the branch above) still wins whenever Flow
-    // prints, and the next wall-hit re-learns the cap if the quota
-    // moved. turnsDay here is today's count (rolled above), so the
-    // morning after the wall reads cap − 0 = full again.
-    if (e.capTurns != null && e.capAt && e.capTurns > 0) {
-      return {
-        left: Math.max(0, e.capTurns - (e.turnsDay || 0)),
-        max: e.capTurns,
-        // v27.3.16: provenance honesty — a debug-injected cap must
-        // not masquerade as a wall-learned one in evidence reports.
-        src:
-          (e.capText || "").indexOf("[debug]") === 0
-            ? "debug-injected"
-            : "learned at the limit notice",
-      };
+    // v28.3.0: the official AI-Pro compute-unit pool — the acquired
+    // wall, metered live from the unit ledger. Turns left =
+    // floor(units left ÷ the model's per-image cost), the exact
+    // arithmetic of the official example: 100 NB2 images (1,200u)
+    // halve Pro's allowance to 25, because every model divides the
+    // ONE remaining pool by its own rate.
+    const known = FLOW_CREDIT_MODELS.some(function (x) {
+      return x.key === key;
+    });
+    const cost = known ? flowCreditDisplayCost(key) : 0;
+    if (!(cost > 0)) return { left: null, max: null, src: "" };
+    const rem5h = Math.max(
+      0,
+      FLOW_CREDIT_OFFICIAL.budget5h - flowCreditUnitsSpent(5 * 3600000),
+    );
+    const remWk = Math.max(
+      0,
+      FLOW_CREDIT_OFFICIAL.budgetWeek - flowCreditUnitsSpent(7 * 86400000),
+    );
+    let left = Math.min(Math.floor(rem5h / cost), Math.floor(remWk / cost));
+    let max = Math.min(
+      Math.floor(FLOW_CREDIT_OFFICIAL.budget5h / cost),
+      Math.floor(FLOW_CREDIT_OFFICIAL.budgetWeek / cost),
+    );
+    if (key === "pro") {
+      left = Math.min(
+        left,
+        Math.max(
+          0,
+          FLOW_CREDIT_OFFICIAL.proWeekGens -
+            flowCreditModelImages("pro", 7 * 86400000),
+        ),
+      );
+      max = Math.min(max, FLOW_CREDIT_OFFICIAL.proWeekGens);
     }
-    return { left: null, max: null, src: "" };
+    return { left: Math.max(0, left), max: max, src: "official AI-Pro unit pool" };
   }
   // v27.3.10: the daily-limit notice watcher — the second source of
   // turns-left. Flow's limit notice fires when a model runs out
@@ -12115,6 +12655,25 @@
         else if (flowCreditModel) key = flowCreditModel.key;
         if (key) {
           flowCreditLimitNotice.model = key;
+          // v28.3.0: the wall reconciliation — under the shared-pool
+          // meter, Flow's "limit reached" means the 2,400-unit window
+          // is dry server-side, INCLUDING the chat and code-execution
+          // spend this client ledger cannot see. Charge the unmetered
+          // difference at the wall moment (idempotent per notice —
+          // see flowCreditLedgerWallCharge) so every model's
+          // turns-left reads 0 exactly when Flow says the wall is
+          // here, then refills as the window rolls.
+          const wallUnits = flowCreditLedgerWallCharge(key);
+          if (wallUnits > 0) {
+            persistFlowCreditState();
+            try {
+              console.info(
+                "[Prompt Master] credit tracker: wall charge — " +
+                  wallUnits +
+                  " units of unmetered pool spend reconciled at the limit notice (chat and code executions are invisible to the client meter).",
+              );
+            } catch (e2) {}
+          }
           // v27.3.12: roll the day counters first — a notice seen
           // before the day's first click must not read yesterday's
           // turnsDay as today's wall count.
@@ -12243,22 +12802,34 @@
   }
   // Reads the images-per-generation batch hint ("x4") off the model
   // row — a short visible text that names exactly this model.
+  // v28.2.0: rewritten onto the proven candidate finders — the old
+  // whole-document div/span/li/p/button/h1-3 walk joined textContent
+  // for EVERY element (an O(N·L) pass over Flow's heaviest pages,
+  // paid exactly at click time). The button/aria hunt and the
+  // text-node promotion walk already find model-naming rows for the
+  // chip detector every second; the hint rides the same candidates,
+  // reads the xN off the promoted row's joined text (the candidates'
+  // own 140-char budget — the old 90-char gate stays satisfied by
+  // every row it ever accepted, so nothing that read before stops
+  // reading), and keeps the original geometry gate (lower three
+  // quarters of the viewport). One pass, one code path — and an open
+  // model-picker's menu rows are now excluded by the shared exclusion
+  // list, so a dropped-down picker can no longer supply the hint.
   function flowCreditReadBatchHint(model) {
     try {
-      const els = document.querySelectorAll(
-        "div, span, li, p, button, h1, h2, h3",
+      const exclusion =
+        '#pm-flow-dock, #pm-flow-credit-chip, .mp-overlay, .mp-modal-box, [role="menu"], [role="listbox"], [role="menuitem"], [role="option"], .cdk-overlay-container, [class*="overlay"]';
+      const cands = flowCreditModelCandidates(document, exclusion).concat(
+        flowCreditModelTextCandidates(document, exclusion),
       );
       const vh = window.innerHeight;
-      for (const el of els) {
-        const t = (el.textContent || "").replace(/\s+/g, " ").trim();
-        if (!t || t.length > 90) continue;
-        const hits = FLOW_CREDIT_MODELS.filter(function (m) {
-          return m.re.test(t);
-        });
-        if (hits.length !== 1 || hits[0].key !== model.key) continue;
+      for (const c of cands) {
+        if (c.model.key !== model.key) continue;
+        const t = (c.el.textContent || "").replace(/\s+/g, " ").trim();
+        if (!t || t.length > 140) continue;
         const bm = /\bx\s?([1-8])\b/i.exec(t);
         if (bm) {
-          const r = el.getBoundingClientRect();
+          const r = c.el.getBoundingClientRect();
           if (r.width && r.height && r.top + r.height / 2 > vh * 0.25)
             return parseInt(bm[1], 10);
         }
@@ -12295,8 +12866,6 @@
       if (prevArm && now - prevArm.from < 10000) return;
       const batch = flowCreditReadBatchHint(model);
       flowCreditGenArm[model.key] = { from: now, to: now + 150000 };
-      flowCreditClicksSession[model.key] =
-        (flowCreditClicksSession[model.key] || 0) + 1;
       const e = flowCreditEntry(flowCreditState, model.key);
       // v27.3.17: the model's OWN period key — anchor-aware when a
       // reset time has been learned; the genDay grant stamp below
@@ -12310,9 +12879,14 @@
       }
       e.turns = (e.turns || 0) + 1;
       e.turnsDay = (e.turnsDay || 0) + 1;
-      e.clicks = (e.clicks || 0) + 1;
-      e.clicksDay = (e.clicksDay || 0) + 1;
       e.at = now;
+      // v28.3.0: meter the official pool — every generation click
+      // charges its model's per-image cost × the batch size (the
+      // official metering deducts per image returned; the countGens
+      // sweep raises n to the media the 150s window actually
+      // attributes). Lite records its context: 4u reference, 3u
+      // single-turn.
+      flowCreditLedgerAppend(model.key, batch, flowCreditLiteRefContext());
       // v27.3.9: wallet invalidation stamp — the reading's freshness
       // gets an event anchor (lastGenAt) plus the day key of the most
       // recent witnessed generation (genDay). grantMoment records
@@ -12321,7 +12895,16 @@
       const gDayKey = flowCreditDayKey();
       const grantMoment = flowCreditState.genDay !== gDayKey;
       flowCreditState.genDay = gDayKey;
-      flowCreditState.lastGenAt = now;
+      // v28.1.0: lastGenAt now stamps only wallet-MUTATING clicks — the
+      // day's first generation (grant refresh) or a cost>0 model
+      // (per-generation deduction), exactly mirroring the re-pull gate
+      // below. The old unconditional stamp made every FREE NB re-click
+      // mark the wallet stale forever: flowCreditWalletFresh() is
+      // at >= lastGenAt, and a confirming re-pull could never clear the
+      // flag because w.at only advances when the VALUE changes.
+      const walletMutating =
+        grantMoment || (e.cost != null && e.cost > 0);
+      walletMutating && (flowCreditState.lastGenAt = now);
       flowCreditTurnsSession[model.key] =
         (flowCreditTurnsSession[model.key] || 0) + 1;
       flowCreditLastGen = {
@@ -12342,7 +12925,7 @@
       if (
         flowCreditWalletKnown() &&
         !flowCreditWalletFresh() &&
-        (grantMoment || (e.cost != null && e.cost > 0))
+        walletMutating
       )
         scheduleFlowCreditWalletRepull();
     } catch (e) {}
@@ -12369,9 +12952,29 @@
   // MutationObserver callback) removed under the user's zero-dead-code
   // directive — v27.3.8's click-anchored rebuild retired the observer
   // that fed it ("Media outside any armed window NEVER counts ... the
-  // click is the gate"), leaving this callback with zero callers; its
-  // flowCreditGenQueue consumer paths in flowCreditCountGens remain and
-  // degrade gracefully on the now permanently empty queue.
+  // click is the gate").
+  // v28.1.0: the now permanently-empty flowCreditGenQueue and its
+  // consumer paths were removed with it (same directive).
+  // v28.2.0: window-true attribution — the armed window that covers
+  // the media's timestamp owns it; when two windows overlap (a slow
+  // render from an earlier click outliving a newer one), the most
+  // recently opened window wins. Returns null when no window covers
+  // the timestamp (history browsing, lazy loads — never counted).
+  // Named so the self-test exercises the exact production path.
+  function flowCreditAttributionKey(t) {
+    let key = null,
+      armAt = 0;
+    for (const k in flowCreditGenArm) {
+      const arm = flowCreditGenArm[k];
+      if (!arm || !arm.from) continue;
+      if (t < arm.from - 2000 || t > arm.to + 30000) continue;
+      if (arm.from > armAt) {
+        key = k;
+        armAt = arm.from;
+      }
+    }
+    return key;
+  }
   function flowCreditCountGens() {
     if (!flowCreditState || !document.body) return;
     const fps = flowCreditMediaFingerprints();
@@ -12381,7 +12984,6 @@
       // belt to the /edit/ route gate's suspenders).
       flowCreditGenUrl = location.href;
       flowCreditGenReseed = !0;
-      flowCreditLastNewAt = {};
     }
     if (flowCreditMediaSeen === null || flowCreditGenReseed) {
       // First sweep, or a route change just landed: media on the page
@@ -12389,9 +12991,6 @@
       // new route renders) is history, not new generations.
       flowCreditMediaSeen = {};
       for (const fp of fps) flowCreditMediaSeen[fp] = 1;
-      for (let i = 0; i < flowCreditGenQueue.length; i++)
-        flowCreditMediaSeen[flowCreditGenQueue[i].fp] = 1;
-      flowCreditGenQueue.length = 0;
       flowCreditGenReseed = !1;
       return;
     }
@@ -12402,7 +13001,6 @@
       // for one tick).
       flowCreditMediaSeen = {};
       for (const fp of fps) flowCreditMediaSeen[fp] = 1;
-      flowCreditGenQueue.length = 0;
       return;
     }
     // v27.3.8: the ARM gate replaces the route gate. v27.3.7 made
@@ -12414,45 +13012,27 @@
     // because the click is the one signal history browsing, lazy
     // loads, and progressive re-renders cannot spoof. Every
     // fingerprint below is still marked seen (so media that rendered
-    // while unarmed is never counted later), the queue still drains,
-    // and the anchor/route stays in the diagnostics line — counting
-    // just no longer depends on it. flowCreditCountRouteOK() stays
-    // defined for that report signal.
+    // while unarmed is never counted later), and the anchor/route
+    // stays in the diagnostics line — counting just no longer depends
+    // on it.
     const now = Date.now();
-    const byFp = {};
-    for (let i = 0; i < flowCreditGenQueue.length; i++) {
-      const q = flowCreditGenQueue[i];
-      if (!byFp[q.fp]) byFp[q.fp] = q;
-    }
     const adds = {};
     for (const fp of fps) {
       if (seen[fp]) continue;
-      const q = byFp[fp];
-      const key = q ? q.model : flowCreditModel ? flowCreditModel.key : null;
-      const t = q ? q.t : now;
+      const t = now;
       seen[fp] = 1;
+      // v28.2.0: attribute to the armed window that COVERS this
+      // media's timestamp (most recent window on overlap) — the
+      // v27.3.8 design intent ("attribute NEW media to THAT model")
+      // finally matches the code: media rendering while the picker
+      // switched mid-generation, or with no model readable at sweep
+      // time, counts to the model that was actually clicked. Media
+      // outside every window stays seen-but-uncounted, exactly as
+      // before.
+      const key = flowCreditAttributionKey(t);
       if (!key) continue;
-      // v27.3.8: armed-window attribution — the record's OWN
-      // timestamp must fall inside a window opened by a generation
-      // click for that model (2s pre-grace for event ordering, 30s
-      // post-grace for slow renders). Outside every window this is
-      // history or lazy load: seen, never counted.
-      const arm = flowCreditGenArm[key];
-      if (!arm || t < arm.from - 2000 || t > arm.to + 30000) continue;
       if (t - flowCreditLastScrollAt < 700) continue;
       (adds[key] || (adds[key] = [])).push(t);
-    }
-    // Drain the queue: records still unmatched and older than 45s
-    // never became visible media (they were dropped/replaced nodes) —
-    // mark them seen so a late appearance is not counted either.
-    if (flowCreditGenQueue.length) {
-      let kept = [];
-      for (let i = 0; i < flowCreditGenQueue.length; i++) {
-        const q = flowCreditGenQueue[i];
-        if (!seen[q.fp] && now - q.t <= 45000) kept.push(q);
-        else seen[q.fp] = 1;
-      }
-      flowCreditGenQueue = kept;
     }
     const keys = Object.keys(adds);
     if (!keys.length) return;
@@ -12477,6 +13057,11 @@
       e.gensDay = (e.gensDay || 0) + imgs;
       flowCreditGensSession[k] = (flowCreditGensSession[k] || 0) + imgs;
       e.at = Date.now();
+      // v28.3.0: raise the ledger entry's image count to what the
+      // armed window actually attributed — the official meter
+      // deducts per image RETURNED (a multi-image prompt burns the
+      // rate per image, not per click).
+      flowCreditLedgerRevise(k, imgs);
       changed = !0;
     }
     if (changed) persistFlowCreditState();
@@ -12484,6 +13069,59 @@
 
   function flowCreditFmt(n) {
     return n == null ? "—" : n.toLocaleString("en-US");
+  }
+  // v28.2.0: THE DISPLAY LADDER — which model the chip speaks for.
+  // The selected model as always; when Flow's model chip isn't
+  // readable (the field report's "anchor: none · model: ?" state) the
+  // counter falls back instead of blanking: the most recently
+  // GENERATED model (15 min window — the same attribution horizon the
+  // limit-notice watcher uses), then the most recently USED model of
+  // the current period (its own anchor-aware day key, read-only — no
+  // day rolling here), then the last-known model with any history at
+  // all. Pure function: reads engine + store state, mutates nothing;
+  // the render's own paths roll the day counters as designed.
+  function flowCreditDisplayModel() {
+    if (flowCreditModel) return { m: flowCreditModel, src: "selected" };
+    const now = Date.now();
+    if (
+      flowCreditLastGen &&
+      flowCreditLastGen.model &&
+      now - flowCreditLastGen.at < 15 * 60000
+    ) {
+      const lg = FLOW_CREDIT_MODELS.filter(function (x) {
+        return x.key === flowCreditLastGen.model;
+      })[0];
+      if (lg) return { m: lg, src: "last-generated" };
+    }
+    if (flowCreditState && flowCreditState.models) {
+      let bestActive = null,
+        bestActiveAt = 0,
+        bestAny = null,
+        bestAnyAt = 0;
+      for (const k in flowCreditState.models) {
+        const e = flowCreditState.models[k];
+        if (!e || !e.at) continue;
+        const mm = FLOW_CREDIT_MODELS.filter(function (x) {
+          return x.key === k;
+        })[0];
+        if (!mm) continue;
+        if (e.at > bestAnyAt) {
+          bestAny = mm;
+          bestAnyAt = e.at;
+        }
+        if (
+          e.at > bestActiveAt &&
+          e.day === flowCreditEntryDayKey(e) &&
+          ((e.turnsDay || 0) > 0 || (e.gensDay || 0) > 0)
+        ) {
+          bestActive = mm;
+          bestActiveAt = e.at;
+        }
+      }
+      if (bestActive) return { m: bestActive, src: "recently-used" };
+      if (bestAny) return { m: bestAny, src: "last-known" };
+    }
+    return null;
   }
   // Re-renders only when the render signature moved: model switch,
   // wallet/cost/count/usage change, warn-state flip, or a minute tick
@@ -12505,7 +13143,12 @@
     const modelEl = chip.querySelector(".mp-credit-model");
     const valEl = chip.querySelector(".mp-credit-values");
     if (!modelEl || !valEl) return;
-    const m = flowCreditModel;
+    // v28.2.0: the display ladder — the chip speaks for the selected
+    // model when Flow's chip is readable, else the last-used model;
+    // mSrc records which (the hover title and the report disclose it).
+    const disp = flowCreditDisplayModel();
+    const m = disp ? disp.m : null;
+    const mSrc = disp ? disp.src : "";
     let left = null,
       total = null,
       cost = null,
@@ -12573,16 +13216,30 @@
       tMax = null,
       tSrc = "";
     if (m && flowCreditState) {
-      const tl = flowCreditTurnsLeft(flowCreditState.models[m.key]);
+      const tl = flowCreditTurnsLeft(flowCreditState.models[m.key], m.key);
       tLeft = tl.left;
       tMax = tl.max;
       tSrc = tl.src;
     }
+    // v28.3.0: the official pool numbers — carried by the render
+    // signature (the ledger rolls entries OUT of the 5h window with
+    // time, so a refill must re-render even when nothing else moved)
+    // and by the hover title below.
+    const u5 = flowCreditUnitsSpent(5 * 3600000);
+    const uw = flowCreditUnitsSpent(7 * 86400000);
+    const dCost = m ? flowCreditDisplayCost(m.key) : 0;
     // v27.3.10: low/zero now describe turns-left, not the wallet.
     const low = tLeft != null && tMax > 0 && tLeft > 0 && tLeft / tMax <= 0.2;
     const zero = tLeft === 0;
+    // v28.2.0: the wallet-fallback gate — no model history at all is
+    // the one state where the shared pool may occupy the chip.
+    const walletKnown = left != null || total != null;
     const sig =
       (m ? m.key : "?") +
+      "|" +
+      mSrc +
+      "|" +
+      (!m && walletKnown ? 1 : 0) +
       "|" +
       left +
       "|" +
@@ -12619,6 +13276,15 @@
       tLeft +
       "|" +
       tMax +
+      // v28.3.0: the pool meter — window/week spend and the display
+      // cost move with the ledger (charges, refills, Lite context
+      // flips), and the DOM must follow them.
+      "|" +
+      u5 +
+      "|" +
+      uw +
+      "|" +
+      dCost +
       // v27.3.12/v27.3.17: the period key — day-scoped values (tLeft
       // via the usageAt day gate, the rolled day counters above) can
       // flip at midnight OR at a learned reset anchor with no other
@@ -12633,31 +13299,55 @@
     // video pool) leaves the chip: the hover title and the report
     // carry it instead, per the directive that it has nothing to do
     // with model runout.
-    modelEl.textContent = !m
-      ? "—"
-      : tLeft != null
-        ? m.badge +
-          " · " +
-          tLeft +
-          "/" +
-          tMax +
-          " turns left" +
-          (tLeft === 0 ? " · at daily limit" : "")
-        : m.badge +
-          " · " +
-          turnsDay +
-          " turn" +
-          (turnsDay === 1 ? "" : "s") +
-          " today · cap ?";
-    valEl.textContent = !m ? "— / —" : gensDay + " img today";
+    // v28.2.0: the counter is never blank while anything is known —
+    // an unreadable model falls back to the display ladder's model
+    // (byte-identical line format), and a store with no model history
+    // at all shows the shared wallet (the account-wide pool, reported
+    // for completeness per the tracker's own tip; the wallet still
+    // never occupies the chip when any model line exists).
+    if (m) {
+      modelEl.textContent =
+        tLeft != null
+          ? m.badge +
+            " · " +
+            tLeft +
+            "/" +
+            tMax +
+            " turns left" +
+            (tLeft === 0 ? " · at the limit" : "")
+          : m.badge +
+            " · " +
+            turnsDay +
+            " turn" +
+            (turnsDay === 1 ? "" : "s") +
+            " today · cap ?";
+      valEl.textContent = gensDay + " img today";
+    } else if (walletKnown) {
+      modelEl.textContent = "Flow credits";
+      valEl.textContent =
+        (left != null ? flowCreditFmt(left) : "—") +
+        " left" +
+        (total != null ? " / " + flowCreditFmt(total) : "");
+    } else {
+      modelEl.textContent = "—";
+      valEl.textContent = "— / —";
+    }
     modelEl.classList.toggle("mp-credit-low", !!low);
     modelEl.classList.toggle("mp-credit-zero", !!zero);
-    valEl.classList.toggle("mp-credit-low", !1);
-    valEl.classList.toggle("mp-credit-zero", !1);
+    // v28.1.0: the valEl toggles (hard-coded off since v27.3.10 moved
+    // low/zero semantics to turns-left on the model line) and their
+    // unreachable .mp-credit-values rules were removed — the values
+    // slot shows an image count, not a depleting balance.
+    // v28.2.2: the pending dim also lifts when a cap answers — the
+    // seeded/learned cap means the counter KNOWS its number (full
+    // tank, "never blanks" per v28.2.0); "pending" is for knowing
+    // nothing at all.
     chip.classList.toggle(
       "mp-credit-pending",
-      !m ||
-        (left == null &&
+      (!m && !walletKnown) ||
+        (m &&
+          tLeft == null &&
+          left == null &&
           total == null &&
           cost == null &&
           used == null &&
@@ -12667,14 +13357,42 @@
     );
     let title = m
       ? m.label + " — Nano Banana usage"
-      : "Flow credit tracker — select a model to see its usage";
+      : walletKnown
+        ? "Flow credit tracker — shared Flow credits wallet"
+        : "Flow credit tracker — select a model to see its usage";
     if (m) {
-      // v27.3.10: the headline number first — turns left today.
+      // v28.2.0: disclose the fallback — the line above is the
+      // last-used model's data, not a live selection.
+      if (mSrc !== "selected")
+        title +=
+          "\nShowing the " +
+          (mSrc === "last-generated"
+            ? "most recently generated"
+            : mSrc === "recently-used"
+              ? "most recently used (current period)"
+              : "last-known") +
+          " model — Flow's model chip was not readable when this rendered; the chip switches back the moment selection is detectable again.";
+      // v27.3.10: the headline number first — turns left before this
+      // model's wall, in the current 5-hour window.
       title +=
-        "\nTurns left today: " +
+        "\nTurns left (5h window): " +
         (tLeft != null
           ? tLeft + " of " + tMax + " (" + tSrc + ")"
-          : "unknown — Flow prints it in the model picker when it prints at all, and the daily-limit notice teaches it when a model runs out");
+          : "unknown — Flow prints it in the model picker when it prints at all, and the limit notice marks the wall when a model runs out");
+      // v28.3.0: the official pool — the number every model's
+      // turns-left divides. One shared 2,400-unit window (48,384u
+      // per week), billed per image: Pro 48u · NB2 12u · Lite 3u
+      // single-turn / 4u with reference.
+      title +=
+        "\nUnit pool (official AI Pro): " +
+        flowCreditFmt(Math.max(0, FLOW_CREDIT_OFFICIAL.budget5h - u5)) +
+        " of " +
+        FLOW_CREDIT_OFFICIAL.budget5h +
+        " units left in the 5h window · " +
+        flowCreditFmt(Math.max(0, FLOW_CREDIT_OFFICIAL.budgetWeek - uw)) +
+        " of " +
+        flowCreditFmt(FLOW_CREDIT_OFFICIAL.budgetWeek) +
+        " this week · per image: Pro 48u · NB2 12u · Lite 3u single-turn / 4u with reference · one shared pool — turns left = floor(units left \u00f7 this model's per-image cost)";
       title +=
         "\nFlow-displayed usage: " +
         (used != null || max != null
@@ -12716,26 +13434,30 @@
         (cost != null
           ? flowCreditFmt(cost) + " credits per generation"
           : "not read yet — Flow prints it near the prompt box");
-      title +=
-        "\nFlow credits (shared wallet): " +
-        (left != null
-          ? flowCreditFmt(left) +
-            " left" +
-            (total != null ? " of " + flowCreditFmt(total) : "")
-          : "not read yet — the tracker opens Flow's profile menu (top-right avatar) once to read it");
-      // v27.3.9: flag a wallet reading that predates the last
-      // generation — the grant refresh happened after it, so the
-      // number on the chip is outdated until a re-pull lands.
-      if (wStale)
-        title +=
-          "\nWallet reading is STALE — the last generation (" +
-          new Date(flowCreditState.lastGenAt).toLocaleTimeString("en-US") +
-          ") may have refreshed the daily grant; the post-generation re-pull or the next report updates it.";
-      title +=
-        "\nNano Banana image generations cost 0 Flow credits — the pool above is consumed by video models; Nano Banana usage is capped by a server-side daily limit.";
-      if (at) title += "\nUpdated " + new Date(at).toLocaleTimeString("en-US");
-      title += "\nRead live from the Flow page · Reset via the userscript menu";
     }
+    // v28.2.0: the wallet lines moved out of the model gate — the
+    // wallet-fallback chip (no model history at all) carries them too,
+    // and the stale "opens the profile menu once" phrasing is reworded
+    // to the v28.1.1 passive truth (it reads a menu that is on screen).
+    title +=
+      "\nFlow credits (shared wallet): " +
+      (left != null
+        ? flowCreditFmt(left) +
+          " left" +
+          (total != null ? " of " + flowCreditFmt(total) : "")
+        : "not read yet — the tracker reads Flow's profile menu (top-right avatar) when it is on screen");
+    // v27.3.9: flag a wallet reading that predates the last
+    // generation — the grant refresh happened after it, so the
+    // number on the chip is outdated until a re-pull lands.
+    if (wStale)
+      title +=
+        "\nWallet reading is STALE — the last generation (" +
+        new Date(flowCreditState.lastGenAt).toLocaleTimeString("en-US") +
+        ") may have refreshed the daily grant; the post-generation re-pull or the next report updates it.";
+    title +=
+      "\nNano Banana image generations cost 0 Flow credits — the pool above is consumed by video models; Nano Banana usage is capped by a server-side daily limit.";
+    if (at) title += "\nUpdated " + new Date(at).toLocaleTimeString("en-US");
+    title += "\nRead live from the Flow page · Reset via the userscript menu";
     chip.title = title;
   }
 
@@ -12785,12 +13507,17 @@
   function resolveFlowCreditAnchor() {
     flowCreditAnchorEl = null;
     flowCreditAnchorSrc = "";
+    // v28.2.0: parked-mode bookkeeping — remember the first moment the
+    // cascade failed; positionFlowCreditChip parks the chip above the
+    // Flow dock once that miss outlives the 15s grace, and every
+    // successful resolve zeroes it (normal anchoring resumes).
     const ed = findPlatformEditor("flow");
     if (ed) {
       const er = flowCreditSaneAnchorRect(ed);
       if (er && er.top + er.height / 2 > window.innerHeight * 0.5) {
         flowCreditAnchorEl = ed;
         flowCreditAnchorSrc = "editor";
+        flowCreditAnchorMissSince = 0;
         return;
       }
     }
@@ -12798,13 +13525,67 @@
     if (comp && flowCreditSaneAnchorRect(comp)) {
       flowCreditAnchorEl = comp;
       flowCreditAnchorSrc = "composer";
+      flowCreditAnchorMissSince = 0;
       return;
     }
     const chipEl = flowCreditModelChipElement();
     if (chipEl && flowCreditSaneAnchorRect(chipEl)) {
       flowCreditAnchorEl = chipEl;
       flowCreditAnchorSrc = "model-chip";
+      flowCreditAnchorMissSince = 0;
+      return;
     }
+    if (!flowCreditAnchorMissSince) flowCreditAnchorMissSince = Date.now();
+  }
+  // v28.2.0: does the chip have anything worth parking? A display
+  // model (selected or any fallback rung) or a known wallet reading —
+  // parked mode is for a counter with numbers, not for dashes.
+  function flowCreditChipHasContent() {
+    if (flowCreditDisplayModel()) return !0;
+    const w = flowCreditState && flowCreditState.wallet;
+    return !!(w && (w.left != null || w.total != null));
+  }
+  // v28.2.0: the parked berth — above the script's Flow dock, clear of
+  // its hover expansion (offsetWidth is the layout width the CSS
+  // transform slides, so the berth is hover-stable), 8px clear of the
+  // dock's top edge; no dock on screen falls back to the viewport's
+  // bottom-right corner. Yields to the dock's own popouts (the filter
+  // dropdown / menu container clamp above the dock too — the v28.1.1
+  // occlusion lesson applied to the chip's berth).
+  function parkAtFlowDock(chip) {
+    const w = chip.offsetWidth,
+      h = chip.offsetHeight;
+    let x = window.innerWidth - 12 - w,
+      y = window.innerHeight - 64 - h;
+    const dock = document.getElementById("pm-flow-dock");
+    if (dock && dock.isConnected) {
+      const dr = dock.getBoundingClientRect();
+      if (dr.width && dr.height && dock.offsetWidth) {
+        x = window.innerWidth - dock.offsetWidth - w - 10;
+        y = dr.top - h - 8;
+      }
+    }
+    const pop = document.querySelector(
+      ".mp-filter-dropdown, #prompt-menu-container",
+    );
+    if (pop && pop.isConnected) {
+      const pr = pop.getBoundingClientRect();
+      if (
+        pr.width &&
+        pr.height &&
+        x + w > pr.left - 6 &&
+        x < pr.right &&
+        y + h > pr.top &&
+        y < pr.bottom
+      )
+        y = Math.max(8, pr.top - h - 8);
+    }
+    if (x < 8) x = 8;
+    if (y < 8) y = 8;
+    if (x + w > window.innerWidth - 8) x = window.innerWidth - 8 - w;
+    if (y + h > window.innerHeight - 8) y = window.innerHeight - 8 - h;
+    chip.style.left = Math.round(x) + "px";
+    chip.style.top = Math.round(y) + "px";
   }
   function positionFlowCreditChip() {
     const chip = flowCreditChip;
@@ -12814,10 +13595,31 @@
     const el = flowCreditAnchorEl;
     const r = el ? flowCreditSaneAnchorRect(el) : null;
     if (!r) {
+      // v28.2.0: PARKED MODE. An anchor that resolved but scrolled out
+      // of view keeps hiding exactly as before (the designed behavior);
+      // a cascade that found NOTHING for longer than the 15s grace
+      // parks the chip above the Flow dock — the counter stays
+      // readable with no composer on screen (bare project views, DOM
+      // drift, the field report's "anchor: none" state). A chip with
+      // nothing to show still hides. The berth re-tracks on the same
+      // 1s poll + mutation debounce + scroll/resize rAF cadence.
+      if (
+        !flowCreditAnchorSrc &&
+        flowCreditAnchorMissSince &&
+        Date.now() - flowCreditAnchorMissSince > 15000 &&
+        flowCreditChipHasContent()
+      ) {
+        chip.classList.remove("mp-credit-hidden");
+        chip.classList.add("mp-credit-parked");
+        parkAtFlowDock(chip);
+        return;
+      }
+      chip.classList.remove("mp-credit-parked");
       chip.classList.add("mp-credit-hidden");
       return;
     }
     chip.classList.remove("mp-credit-hidden");
+    chip.classList.remove("mp-credit-parked");
     const w = chip.offsetWidth,
       h = chip.offsetHeight;
     let x = r.right - w - 10,
@@ -12869,7 +13671,8 @@
       chip.setAttribute("aria-live", "polite"),
       setSafeInnerHTML(
         chip,
-        '<span class="mp-credit-model">—</span><span class="mp-credit-sep"></span><span class="mp-credit-values">— / —</span>',
+        FLOW_CREDIT_GLYPH +
+          '<span class="mp-credit-model">—</span><span class="mp-credit-sep"></span><span class="mp-credit-values">— / —</span>',
       ));
     return chip;
   }
@@ -12920,6 +13723,7 @@
     if (currentPlatform !== "flow" || flowCreditEngineActive) return;
     flowCreditEngineActive = !0;
     (async function () {
+      let storeTouched = !1;
       try {
         const stored = await GM_getValue(FLOW_CREDIT_STORAGE_KEY, null);
         // v27.3.8: the load gate demanded v === 1, but the writer has
@@ -12938,12 +13742,19 @@
           stored &&
           typeof stored === "object" &&
           (stored.v === 1 || stored.v === 2) &&
-          stored.models
+          stored.models &&
+          // v28.1.0: a corrupted store whose models is a string (or an
+          // array) used to pass this gate on mere truthiness; the
+          // normalization loop then wrote onto a primitive and every
+          // subsequent flowCreditEntry assignment into the map failed
+          // silently for the page lifetime.
+          "object" == typeof stored.models &&
+          !Array.isArray(stored.models)
         ) {
           flowCreditState = stored;
           stored.v = 2;
           let zeroed = !1;
-          if (stored.cv !== 3) {
+          if (stored.cv !== 3 && stored.cv !== 4) {
             zeroed = !0;
             for (const k of Object.keys(flowCreditState.models)) {
               const e0 = flowCreditState.models[k];
@@ -12956,9 +13767,42 @@
             }
             stored.cv = 3;
           }
-          flowCreditStoreInfo = zeroed
-            ? "loaded v2 (sweep-derived counters zeroed once for the click-anchored rebuild)"
-            : "loaded v2";
+          // v28.3.0: cv 4 — the official unit ledger joins the store,
+          // and the v28.2.2 [seed] caps are purged: the seed table
+          // (182/33/21) was the 2026-09-23 wall-DAY counts — under the
+          // shared pool those walls are the ONE 2,400-unit window
+          // drained across models (21×48 + 33×12 + 182×4 ≈ 2,400),
+          // not per-model caps — so the official compute-unit table
+          // supersedes them and no report may quote the wrong numbers
+          // again. A cap learned at a real limit notice is not [seed]
+          // and survives untouched.
+          let migrated = !1;
+          if (stored.cv === 3) {
+            migrated = !0;
+            for (const k of Object.keys(flowCreditState.models)) {
+              const e0 = flowCreditState.models[k];
+              if (e0 && (e0.capText || "").indexOf("[seed]") === 0) {
+                e0.capTurns = null;
+                e0.capAt = 0;
+                e0.capText = "";
+                e0.capResetAt = 0;
+              }
+            }
+            stored.cv = 4;
+          }
+          let ledgerInit = !1;
+          if (!Array.isArray(flowCreditState.ledger)) {
+            flowCreditState.ledger = [];
+            ledgerInit = !0;
+          } else flowCreditLedgerPrune();
+          if (migrated || ledgerInit) storeTouched = !0;
+          flowCreditStoreInfo =
+            (zeroed
+              ? "loaded v2 (sweep-derived counters zeroed once for the click-anchored rebuild)"
+              : "loaded v2") +
+            (migrated ? " · cv 4: [seed] caps purged, unit ledger joined" : "") +
+            (ledgerInit && !migrated ? " · unit ledger initialized" : "") +
+            " · official AI-Pro unit pool: 2,400u/5h · 48,384u/wk shared";
           // v27.3.5: v27.3.4-era entries carry no gens field —
           // normalize so counting can increment without guards.
           for (const k of Object.keys(flowCreditState.models)) {
@@ -12974,6 +13818,16 @@
         flowCreditStoreInfo = "load failed: " + ((e && e.message) || e);
       }
       if (!flowCreditState) flowCreditState = freshFlowCreditState();
+      // v28.3.0: the cv-4 migration (purged [seed] caps + the ledger
+      // field) persists immediately — the corrected state must survive
+      // even if no later mutation schedules a save this session. The
+      // official pool constants live in code: there is NOTHING to seed
+      // anymore — the meter answers deterministically from boot.
+      if (storeTouched) {
+        try {
+          persistFlowCreditState();
+        } catch (e2) {}
+      }
       if (!document.getElementById("pm-flow-credit-style")) {
         const s = document.createElement("style");
         ((s.id = "pm-flow-credit-style"),
@@ -13056,16 +13910,18 @@
           } catch (e) {}
         }
       }, 15000);
-      // v27.3.4: active wallet pull, once per load. If 9s in the
-      // store still holds no wallet reading (the passive sources
-      // found nothing — the live-site reality: the wallet only exists
-      // inside the closed profile menu), open that menu, harvest,
-      // and close it. One retry at 45s covers a slow SPA boot; the
-      // Copy Report command pulls on demand at any time. The outcome
-      // is one console line, never a second click storm. v27.3.5:
-      // the skip gate is a known-or-fresh wallet (left counts — the
-      // menu only prints a left), and a stale-but-known wallet (6h+)
-      // refreshes instead of skipping.
+      // v27.3.4: wallet pull attempt, once per load. v28.1.1: this is
+      // now a PASSIVE-ONLY check — pullFlowCreditWallet("boot")
+      // harvests a profile menu that is already on screen and never
+      // clicks the account chip (see the allowlist gate inside the
+      // pull), so the menu can never pop open on its own ~9s after a
+      // load. The wallet establishes through the user's own profile
+      // menu opens, the Copy Report command's explicit pull, or the
+      // net/storage passive sources; a stale wallet stays honestly
+      // marked STALE in the report until one of those re-reads it,
+      // and a live re-observation clears the flag even at an
+      // unchanged value (see mergeFlowCreditReadings). The 45s retry
+      // below covers a slow SPA boot the same passive way.
       setTimeout(function () {
         if (!flowCreditEngineActive || flowCreditPullAutoTried) return;
         flowCreditPullAutoTried = !0;
@@ -13111,6 +13967,12 @@
     // knowledge, not client state, and destroying it made turns-left
     // fall back to the weaker cap branch after a reset.
     const preservedToday = {};
+    // v28.3.0: the meter survives the reset (see the assignment after
+    // the fresh state below) — snapshotted here before the wipe.
+    const preservedLedger =
+      flowCreditState && Array.isArray(flowCreditState.ledger)
+        ? flowCreditState.ledger.slice()
+        : [];
     if (flowCreditState && flowCreditState.models) {
       for (const k in flowCreditState.models) {
         const m = flowCreditState.models[k];
@@ -13141,6 +14003,14 @@
       }
     }
     flowCreditState = freshFlowCreditState();
+    // v28.3.0: the LEDGER is preserved across the reset — it is the
+    // METER, not a count to wipe: the server drew those units from
+    // the shared pool whether or not the client resets (the v27.3.16
+    // honesty lesson, applied to the pool), and zeroing it would fake
+    // a full tank the server has already drawn down. It prunes to the
+    // rolling week exactly as on any other path.
+    flowCreditState.ledger = preservedLedger;
+    flowCreditLedgerPrune();
     for (const k in preservedCaps) {
       const e = flowCreditEntry(flowCreditState, k);
       e.capTurns = preservedCaps[k].capTurns;
@@ -13171,7 +14041,6 @@
     // turns session map (which the v27.3.6 reset never wiped).
     flowCreditTurnsSession = {};
     flowCreditGenArm = {};
-    flowCreditClicksSession = {};
     flowCreditClicksTotal = 0;
     flowCreditClicksUnattributed = 0;
     flowCreditLastGen = null;
@@ -13190,7 +14059,8 @@
     // preservedCaps restore above.
     flowCreditLimitNotice = null;
     flowCreditLimitLastAt = 0;
-    flowCreditStoreInfo = "fresh (reset)";
+    flowCreditStoreInfo =
+      "fresh (reset) · official AI-Pro unit pool: 2,400u/5h · 48,384u/wk shared · ledger preserved (the meter survives resets)";
     try {
       await GM_setValue(
         FLOW_CREDIT_STORAGE_KEY,
@@ -13207,26 +14077,29 @@
   // @grant above) is the manager-provided bridge to that real object;
   // assigning the hook there is what actually makes it reachable from
   // the console.
-  //   window.__flowCreditDebugSetCap("nb2", 16)   // model keys: nb2, nb2lite, pro
-  // then run the "📋 Flow Credits: Copy Report" menu command to see it
-  // reflected, then "🔄 Reset Flow Credit Tracker", then Copy Report
-  // again — capTurns/capAt/capText should still read the injected
-  // value instead of "cap not learned yet".
-  // v27.3.16 hardening, same hook: (1) the KEY is validated against
-  // FLOW_CREDIT_MODELS — flowCreditEntry auto-creates any key it is
-  // given, so a typo used to plant a phantom, reset-proof model row
-  // (preservedCaps restores anything with capTurns > 0); (2) the CAP
-  // is validated as a positive integer; (3) the assignment itself is
+  // v28.3.0: the debug hook is the METER now —
+  //   window.__flowCreditDebugCharge("nb2", 100)          // 100 NB2 images → 1,200u (the official example: Pro halves to 25)
+  //   window.__flowCreditDebugCharge("nb2lite", 10, true)  // 10 Lite reference-context images → 40u (4u/image)
+  // then run the "📋 Flow Credits: Copy Report" menu command to see
+  // the pool lines, or read the chip: turns-left = floor(units left
+  // ÷ cost), live. The v27.3.15–v28.2.2 __flowCreditDebugSetCap hook
+  // injected capTurns, which the official pool superseded — the cap
+  // branch is gone, and a hook that writes a field nothing reads
+  // would be dead code. Same hardening contract as the hook it
+  // replaces: (1) the KEY is validated against FLOW_CREDIT_MODELS
+  // (flowCreditEntry auto-creates any key it is given, so a typo used
+  // to plant a phantom, reset-proof model row); (2) the IMAGE count
+  // is validated as a positive integer; (3) the write itself is
   // try/caught and Flow-hostname-gated — an unguarded unsafeWindow
-  // write would kill every statement after it in this IIFE
-  // (start() included) on any manager that provides no unsafeWindow,
-  // and a page-reachable state-write primitive has no business on
-  // the other matched platforms; (4) it returns a JSON clone, never
-  // the live entry — the page realm must not hold a mutable
-  // reference into tracker state.
+  // write would kill every statement after it in this IIFE (start()
+  // included) on any manager that provides no unsafeWindow, and a
+  // page-reachable state-write primitive has no business on the
+  // other matched platforms; (4) it returns a JSON clone, never the
+  // live entry — the page realm must not hold a mutable reference
+  // into tracker state.
   try {
     if (/^flow\.google\.com$/i.test(location.hostname)) {
-      unsafeWindow.__flowCreditDebugSetCap = function (modelKey, capTurns) {
+      unsafeWindow.__flowCreditDebugCharge = function (modelKey, images, refCtx) {
         if (!flowCreditState || !flowCreditState.models) {
           console.warn("[Prompt Master] credit tracker not initialized yet.");
           return null;
@@ -13236,37 +14109,39 @@
         });
         if (validKeys.indexOf(modelKey) === -1) {
           console.warn(
-            '[Prompt Master] __flowCreditDebugSetCap: unknown model key "' +
+            '[Prompt Master] __flowCreditDebugCharge: unknown model key "' +
               modelKey +
               '" — valid keys: ' +
               validKeys.join(", "),
           );
           return null;
         }
-        const n = Number(capTurns);
+        const n = Number(images);
         if (!Number.isInteger(n) || n <= 0) {
           console.warn(
-            "[Prompt Master] __flowCreditDebugSetCap: capTurns must be a positive integer (got " +
-              capTurns +
+            "[Prompt Master] __flowCreditDebugCharge: images must be a positive integer (got " +
+              images +
               ").",
           );
           return null;
         }
-        const e = flowCreditEntry(flowCreditState, modelKey);
-        e.capTurns = n;
-        e.capAt = Date.now();
-        e.capText =
-          "[debug] manually injected via __flowCreditDebugSetCap for testing";
+        const en = flowCreditLedgerAppend(modelKey, n, !!refCtx);
         persistFlowCreditState();
         renderFlowCreditChip();
-        console.info(
-          "[Prompt Master] credit tracker: injected capTurns=" +
-            n +
-            " for model \"" +
-            modelKey +
-            "\" (test only).",
-        );
-        return JSON.parse(JSON.stringify(e));
+        try {
+          console.info(
+            "[Prompt Master] credit tracker: charged " +
+              n +
+              " image" +
+              (n === 1 ? "" : "s") +
+              " to \"" +
+              modelKey +
+              "\" (" +
+              flowCreditEntryUnits(en) +
+              " units — test only).",
+          );
+        } catch (e2) {}
+        return en ? JSON.parse(JSON.stringify(en)) : null;
       };
       // v27.3.17: the self-test rides the same gate — Flow-only,
       // console-reachable, but also exposed as the "🧪 Flow Credits:
@@ -13278,17 +14153,19 @@
   // v27.3.17: the self-test — the tracker verifies its own state
   // machine so no human ever has to walk a manual multi-step
   // procedure again. Covers every path the back-and-forth rounds
-  // were about: hook key/value validation, the cap branch and its
-  // provenance, Flow-print precedence, read-path day rolling,
+  // were about: hook key/value validation, the official unit pool
+  // and its arithmetic (v28.3.0: clean-state caps, the halving
+  // example, batch billing, Lite's two rates, the wall charge, the
+  // weekly budgets), Flow-print precedence, read-path day rolling,
   // anchor-aware period keys, the reset-time parser, and reset
-  // preservation/honesty. Runs entirely offline against the in-page
-  // state; snapshots EVERYTHING it touches (store, session maps,
-  // click tallies, notice capture) and restores it in a finally
-  // block, so a run leaves the tracker exactly as it found it.
-  // Reachable three ways: the "🧪 Flow Credits: Self-Test" menu
-  // command, window.__flowCreditDebugSelfTest() from the DevTools
-  // console, or awaited from other debug code. Returns the results
-  // array; prints a PASS/FAIL table either way.
+  // preservation/honesty (the meter survives the wipe). Runs entirely
+  // offline against the in-page state; snapshots EVERYTHING it
+  // touches (store, session maps, click tallies, notice capture) and
+  // restores it in a finally block, so a run leaves the tracker
+  // exactly as it found it. Reachable three ways: the "🧪 Flow
+  // Credits: Self-Test" menu command, window.__flowCreditDebugSelfTest()
+  // from the DevTools console, or awaited from other debug code.
+  // Returns the results array; prints a PASS/FAIL table either way.
   async function flowCreditDebugSelfTestImpl() {
     const results = [];
     const t = function (name, pass, detail) {
@@ -13311,6 +14188,21 @@
             : null,
           limitLastAt: flowCreditLimitLastAt,
           lastSig: flowCreditLastSig,
+          // v28.1.0: the reset invoked by this self-test also clears the
+          // pending network readings, the media fingerprint set and the
+          // post-generation re-pull state — the snapshot now carries all
+          // of them so the "leaves the tracker exactly as it found it"
+          // contract finally holds (a run mid-session used to silently
+          // cancel a scheduled wallet re-read and refill its budget).
+          pendingNet: flowCreditPendingNet.slice(),
+          mediaSeen: flowCreditMediaSeen
+            ? JSON.parse(JSON.stringify(flowCreditMediaSeen))
+            : null,
+          repullTimer: flowCreditRepullTimer,
+          repullCount: flowCreditRepullCount,
+          // v28.2.0: parked-mode state — restored with the rest so a
+          // mid-berth self-test cannot strand a phantom miss stamp.
+          anchorMissSince: flowCreditAnchorMissSince,
         }
       : null;
     try {
@@ -13322,26 +14214,35 @@
       const beforeKeys = Object.keys(flowCreditState.models).join(",");
       t(
         "typo key rejected, no phantom row",
-        unsafeWindow.__flowCreditDebugSetCap("nb2Typo", 16) === null &&
+        unsafeWindow.__flowCreditDebugCharge("nb2Typo", 5) === null &&
           Object.keys(flowCreditState.models).join(",") === beforeKeys,
         "an unknown key must warn and create nothing",
       );
       t(
-        "non-integer cap rejected",
-        unsafeWindow.__flowCreditDebugSetCap("nb2", "abc") === null,
+        "non-integer charge rejected",
+        unsafeWindow.__flowCreditDebugCharge("nb2", "abc") === null,
       );
       t(
-        "zero cap rejected",
-        unsafeWindow.__flowCreditDebugSetCap("nb2", 0) === null,
+        "zero charge rejected",
+        unsafeWindow.__flowCreditDebugCharge("nb2", 0) === null,
       );
+      const beforeLedger = Array.isArray(flowCreditState.ledger)
+        ? flowCreditState.ledger.length
+        : -1;
       t(
-        "injection accepted",
+        "charge accepted (a ledger entry is appended)",
         !!(
-          unsafeWindow.__flowCreditDebugSetCap("nb2", 16) &&
-          flowCreditState.models.nb2 &&
-          flowCreditState.models.nb2.capTurns === 16
+          unsafeWindow.__flowCreditDebugCharge("nb2", 5) &&
+          Array.isArray(flowCreditState.ledger) &&
+          flowCreditState.ledger.length === beforeLedger + 1 &&
+          flowCreditState.ledger[flowCreditState.ledger.length - 1].n === 5
         ),
       );
+      // v28.3.0: the pool pins run against a CONTROLLED ledger — the
+      // live one rides the snapshot's state deep-clone and is restored
+      // by the finally block; every scenario below sets exactly the
+      // entries it asserts against.
+      flowCreditState.ledger = [];
       // Baseline the entry so a live store's prints/counts cannot
       // skew the assertions (restored by the finally block).
       const e = flowCreditEntry(flowCreditState, "nb2");
@@ -13354,33 +14255,162 @@
       e.turns = 0;
       e.gens = 0;
       e.gensDay = 0;
-      let tl = flowCreditTurnsLeft(e);
+      let tl = flowCreditTurnsLeft(e, "nb2");
       t(
-        "cap branch: 16/16, src debug-injected",
-        tl.left === 16 && tl.max === 16 && tl.src === "debug-injected",
+        "pool: empty ledger answers the clean-state cap (NB2 200/200)",
+        tl.left === 200 &&
+          tl.max === 200 &&
+          tl.src === "official AI-Pro unit pool",
         JSON.stringify(tl),
       );
-      e.day = flowCreditEntryDayKey(e);
-      e.turnsDay = 5;
-      tl = flowCreditTurnsLeft(e);
+      // The official example, verbatim from the disclosure: 100 NB2
+      // images = 1,200 units, halving Pro's allowance to 25 — the
+      // shared pool reproducing exactly.
+      flowCreditLedgerAppend("nb2", 100, !1);
+      tl = flowCreditTurnsLeft(flowCreditEntry(flowCreditState, "pro"), "pro");
       t(
-        "cap branch subtracts current-period turns",
-        tl.left === 11,
-        "16-5 expected, got " + tl.left,
+        "pool: 100 NB2 images (1,200u) halve Pro to 25 — the official example",
+        tl.left === 25 && tl.max === 50,
+        JSON.stringify(tl),
       );
+      tl = flowCreditTurnsLeft(e, "nb2");
+      t(
+        "pool: the same 1,200u leave NB2 itself 100/200",
+        tl.left === 100 && tl.max === 200,
+        JSON.stringify(tl),
+      );
+      // The official batch rule: a multi-image prompt deducts per
+      // image RETURNED — one x4 Pro prompt burns 4 × 48 = 192u.
+      flowCreditState.ledger = [];
+      flowCreditLedgerAppend("pro", 4, !1);
+      tl = flowCreditTurnsLeft(flowCreditEntry(flowCreditState, "pro"), "pro");
+      t(
+        "pool: a 4-image Pro prompt burns 192u → 46/50",
+        tl.left === 46 && tl.max === 50,
+        JSON.stringify(tl),
+      );
+      // Lite's official rate pair: 3u single-turn (800/window) vs 4u
+      // with reference context (600/window) — the chip's own scale
+      // follows the model's most recent generation context, and the
+      // conservative 4u answers until Lite has history.
+      flowCreditState.ledger = [];
+      const eL = flowCreditEntry(flowCreditState, "nb2lite");
+      // Baseline like `e` above — a live store's same-day print (a
+      // picker row merged minutes ago) would outrank the pool branch
+      // and skew the rate pins; the finally-restore puts it back.
+      eL.used = null;
+      eL.max = null;
+      eL.usageAt = 0;
+      eL.turnsDayAtUsage = 0;
+      eL.day = "";
+      eL.turnsDay = 0;
+      tl = flowCreditTurnsLeft(eL, "nb2lite");
+      t(
+        "pool: Lite with no history bills the conservative reference wall (600)",
+        tl.left === 600 && tl.max === 600,
+        JSON.stringify(tl),
+      );
+      flowCreditLedgerAppend("nb2lite", 1, !1);
+      tl = flowCreditTurnsLeft(eL, "nb2lite");
+      t(
+        "pool: a single-turn Lite click flips the scale to 800 (3u/image)",
+        tl.left === 799 && tl.max === 800,
+        JSON.stringify(tl),
+      );
+      flowCreditLedgerAppend("nb2lite", 1, !0);
+      tl = flowCreditTurnsLeft(eL, "nb2lite");
+      t(
+        "pool: a reference-context Lite click flips it back to 600 (4u/image)",
+        tl.left === 598 && tl.max === 600,
+        JSON.stringify(tl),
+      );
+      // The wall reconciliation: a limit notice at 400u metered means
+      // 2,000u of invisible chat/code spend — charged at the wall, it
+      // empties EVERY model (the pool is shared) and never doubles.
+      flowCreditState.ledger = [];
+      flowCreditLedgerAppend("nb2lite", 100, !0);
+      const wallCharge = flowCreditLedgerWallCharge("nb2lite");
+      tl = flowCreditTurnsLeft(flowCreditEntry(flowCreditState, "pro"), "pro");
+      t(
+        "pool: the wall charge empties the shared pool — every model reads 0",
+        wallCharge === 2000 && tl.left === 0,
+        "charged=" + wallCharge + " pro=" + JSON.stringify(tl),
+      );
+      t(
+        "pool: the wall charge is idempotent per notice (60s window)",
+        flowCreditLedgerWallCharge("nb2") === 0,
+        "a second notice inside 60s must not double-charge",
+      );
+      // The weekly budget binds across windows, and Pro's official
+      // ~1,000-images/week ceiling binds before the units do.
+      flowCreditState.ledger = [];
+      flowCreditState.ledger.push({
+        t: Date.now() - 6 * 3600000,
+        m: "nb2",
+        u: 47000,
+      });
+      tl = flowCreditTurnsLeft(flowCreditEntry(flowCreditState, "pro"), "pro");
+      t(
+        "pool: the weekly budget binds — 47,000u of week spend leaves Pro 28",
+        tl.left === 28 && tl.max === 50,
+        JSON.stringify(tl),
+      );
+      flowCreditState.ledger = [];
+      flowCreditState.ledger.push({
+        t: Date.now() - 6 * 3600000,
+        m: "pro",
+        n: 1001,
+      });
+      tl = flowCreditTurnsLeft(flowCreditEntry(flowCreditState, "pro"), "pro");
+      t(
+        "pool: Pro's ~1,000/week generation ceiling binds before the unit budget",
+        tl.left === 0,
+        "units alone would allow 7 — got " + tl.left,
+      );
+      // The meter's media revision: the armed window's attributed
+      // images raise the entry's count (official per-image billing),
+      // never below the batch hint it armed with.
+      flowCreditState.ledger = [];
+      const enProv = flowCreditLedgerAppend("nb2", 1, !1);
+      flowCreditLedgerRevise("nb2", 3);
+      flowCreditLedgerRevise("nb2", 1);
+      t(
+        "ledger: the entry's count rises to the attributed media (4 images = 48u)",
+        enProv.n === 4 && flowCreditUnitsSpent(5 * 3600000) === 48,
+        "n=" + enProv.n + " units=" + flowCreditUnitsSpent(5 * 3600000),
+      );
+      // The 8-day prune: the weekly window needs 7 days of entries.
+      flowCreditState.ledger.push({
+        t: Date.now() - 9 * 86400000,
+        m: "nb2",
+        n: 5,
+      });
+      flowCreditLedgerPrune();
+      t(
+        "ledger: entries older than 8 days are pruned",
+        !flowCreditState.ledger.some(function (en) {
+          return en.t < Date.now() - 8 * 86400000;
+        }),
+        "entries=" + flowCreditState.ledger.length,
+      );
+      // Precedence, unchanged since v27.3.10: Flow's own print still
+      // outranks the client meter whenever it parses.
+      flowCreditState.ledger = [];
       e.used = 3;
       e.max = 16;
       e.usageAt = Date.now();
       e.turnsDayAtUsage = 4;
-      tl = flowCreditTurnsLeft(e);
+      e.day = flowCreditEntryDayKey(e);
+      e.turnsDay = 5;
+      tl = flowCreditTurnsLeft(e, "nb2");
       t(
-        "Flow print outranks the cap",
+        "Flow print outranks the pool",
         tl.left === 12 && tl.src === "Flow-printed",
         "16-3-(5-4)=12 expected, got " + tl.left + " (" + tl.src + ")",
       );
       e.day = "1970-1-1";
       e.turnsDay = 9;
-      tl = flowCreditTurnsLeft(e);
+      tl = flowCreditTurnsLeft(e, "nb2");
       t(
         "read-path day roll zeroes stale counters",
         e.day !== "1970-1-1" && e.turnsDay === 0 && tl.left === 13,
@@ -13442,17 +14472,25 @@
         p1 != null && Math.abs(p1 - target) < 90000,
         p1 == null ? "null" : new Date(p1).toISOString(),
       );
-      // Reset honesty — the point of v27.3.13/16/17.
+      // Reset honesty — the point of v27.3.13/16/17, extended in
+      // v28.3.0 to the meter: the ledger (the server's real draw-down
+      // of the shared pool) survives the wipe, so a reset can never
+      // fake a full tank.
       e.used = null;
       e.max = null;
       e.usageAt = 0;
       e.turnsDayAtUsage = 0;
       e.day = flowCreditEntryDayKey(e);
       e.turnsDay = 4;
+      e.capTurns = 16;
+      e.capAt = Date.now() - 1000;
+      e.capText = "[debug] keep me";
+      flowCreditState.ledger = [];
+      flowCreditLedgerAppend("nb2", 10, !1);
       await resetFlowCreditTracker();
       const e2 = flowCreditState.models.nb2;
       t(
-        "reset preserves the cap",
+        "reset preserves the notice-recorded cap evidence",
         !!(e2 && e2.capTurns === 16),
         e2 ? "capTurns=" + e2.capTurns : "entry missing",
       );
@@ -13466,8 +14504,12 @@
         flowCreditClicksTotal === 0 && !Object.keys(flowCreditGensSession).length,
         "clicks=" + flowCreditClicksTotal,
       );
-      tl = e2 ? flowCreditTurnsLeft(e2) : { left: null };
-      t("post-reset turns-left = 12 (16-4)", tl.left === 12, "got " + tl.left);
+      tl = e2 ? flowCreditTurnsLeft(e2, "nb2") : { left: null };
+      t(
+        "reset preserves the meter — post-reset turns-left keeps the drawn-down pool (200 − 10)",
+        tl.left === 190,
+        "got " + tl.left,
+      );
       flowCreditEntry(flowCreditState, "nb2lite").day = "1970-1-1";
       flowCreditState.models.nb2lite.turnsDay = 99;
       await resetFlowCreditTracker();
@@ -13477,6 +14519,261 @@
         e3.turnsDay === 0,
         "turnsDay=" + e3.turnsDay,
       );
+      // v28.2.0: the display ladder — which model the chip speaks for
+      // when Flow's own selection is unreadable. Runs against the
+      // post-reset store (state mutations are discarded by the
+      // finally-restore); module-level engine state is kept and
+      // restored locally.
+      {
+        const keepModel = flowCreditModel;
+        const keepLastGen = flowCreditLastGen;
+        flowCreditModel = null;
+        flowCreditLastGen = null;
+        let d = flowCreditDisplayModel();
+        t(
+          "display ladder: no history yields no model",
+          d === null,
+          d ? "expected null, got " + d.m.key + "/" + d.src : "",
+        );
+        const ee = flowCreditEntry(flowCreditState, "nb2");
+        ee.at = Date.now();
+        ee.day = flowCreditEntryDayKey(ee);
+        ee.turnsDay = 2;
+        d = flowCreditDisplayModel();
+        t(
+          "display ladder: current-period entry answers",
+          !!(d && d.m.key === "nb2" && d.src === "recently-used"),
+          d ? d.m.key + "/" + d.src : "null",
+        );
+        flowCreditLastGen = {
+          model: "pro",
+          label: "Nano Banana Pro",
+          batch: null,
+          at: Date.now() - 60000,
+        };
+        d = flowCreditDisplayModel();
+        t(
+          "display ladder: fresh generation outranks store recency",
+          !!(d && d.m.key === "pro" && d.src === "last-generated"),
+          d ? d.m.key + "/" + d.src : "null",
+        );
+        flowCreditLastGen.at = Date.now() - 16 * 60000;
+        d = flowCreditDisplayModel();
+        t(
+          "display ladder: 15-minute generation window expires",
+          !!(d && d.m.key === "nb2" && d.src === "recently-used"),
+          d ? d.m.key + "/" + d.src : "null",
+        );
+        flowCreditModel = keepModel;
+        flowCreditLastGen = keepLastGen;
+      }
+      // v28.2.0: window-true attribution — the production path
+      // (flowCreditAttributionKey) exercised directly.
+      {
+        const keepArm = JSON.parse(JSON.stringify(flowCreditGenArm));
+        flowCreditGenArm = {
+          nb2: {
+            from: Date.now() - 60000,
+            to: Date.now() - 60000 + 150000,
+          },
+          pro: {
+            from: Date.now() - 30000,
+            to: Date.now() - 30000 + 150000,
+          },
+        };
+        t(
+          "attribution: most recent covering window wins",
+          flowCreditAttributionKey(Date.now() - 20000) === "pro",
+          "expected pro, got " + flowCreditAttributionKey(Date.now() - 20000),
+        );
+        t(
+          "attribution: media outside every window counts to nothing",
+          flowCreditAttributionKey(Date.now() - 300000) === null,
+          "expected null, got " + flowCreditAttributionKey(Date.now() - 300000),
+        );
+        flowCreditGenArm = keepArm;
+      }
+      // v28.2.1: the harvest-gate pin — the exact chain that starved
+      // the canonical source for every build since v27.3.8: the GATE
+      // (does the row wording survive flowCreditTextGate?), the
+      // PARSER (does the surviving text yield the used/max pair?),
+      // and the LIVE HARVEST (does a real DOM node carrying the row
+      // text come back from harvestFlowCreditReadings — the
+      // production path, not the parser shortcut the older
+      // assertions used). The row is built transiently, read, and
+      // removed; nothing of the page is touched beyond it.
+      {
+        t(
+          "gate: canonical picker wordings survive the text gate",
+          flowCreditTextGate("Leaving 4/16") &&
+            flowCreditTextGate("4/16 left") &&
+            flowCreditTextGate("4/16 available") &&
+            !flowCreditTextGate("aspect ratio 16 9"),
+          "Leaving/left/available must gate in, numberless prose must not",
+        );
+        const pr = parseFlowCreditReadings("Leaving 4/16");
+        t(
+          "parser: Leaving 4/16 yields used 12 of max 16",
+          !!(
+            pr.length === 1 &&
+            pr[0].kind === "usage" &&
+            pr[0].used === 12 &&
+            pr[0].max === 16
+          ),
+          pr.length
+            ? "kind=" +
+              pr[0].kind +
+              " used=" +
+              pr[0].used +
+              " max=" +
+              pr[0].max
+            : "no reading",
+        );
+        const rowHost = document.createElement("div");
+        rowHost.innerHTML =
+          '<div role="option"><span>Nano Banana 2 Lite</span> <span>Leaving 4/16</span></div>';
+        rowHost.style.cssText =
+          "position:fixed;left:-9999px;top:0;width:200px;height:20px;";
+        document.body.appendChild(rowHost);
+        const live = harvestFlowCreditReadings();
+        document.body.removeChild(rowHost);
+        const liveUsage = live.filter(function (r) {
+          return r.kind === "usage" && /Nano Banana 2 Lite/.test(r.context || "");
+        });
+        // Split-span recovery parses the row once per small ancestor
+        // container (the option div and its host carry the same joined
+        // text) — the merge treats identical re-reads as no-ops, so the
+        // assertion is EXISTENCE, not count: at least one live reading
+        // with the printed pair, on any page state.
+        t(
+          "harvest: live DOM row with Leaving 4/16 is read end-to-end",
+          !!liveUsage.some(function (r) {
+            return r.used === 12 && r.max === 16;
+          }),
+          liveUsage.length
+            ? "readings=" +
+              liveUsage.length +
+              " first: used=" +
+              liveUsage[0].used +
+              " max=" +
+              liveUsage[0].max
+            : "no usage reading from the live row",
+        );
+      }
+      // v28.2.1: merge disambiguation — a multi-model batch (an open
+      // picker prints every row at once) must not let sibling rows'
+      // unnamed "Leaving" spans land on the selected model.
+      // Live-proven regression: NB2 Lite's "Leaving 4/16" was
+      // clobbered to 13/16 by NB2's row merged after it. The finally-
+      // restore returns the store exactly as it found it.
+      {
+        const sel = { key: "nb2lite", label: "Nano Banana 2 Lite", badge: "NB2 Lite" };
+        const eL = flowCreditEntry(flowCreditState, "nb2lite");
+        const e2 = flowCreditEntry(flowCreditState, "nb2");
+        eL.used = null;
+        eL.max = null;
+        e2.used = null;
+        e2.max = null;
+        mergeFlowCreditReadings(sel, [
+          {
+            kind: "usage",
+            left: null,
+            total: null,
+            cost: null,
+            used: 12,
+            max: 16,
+            context: "Nano Banana 2 Lite Leaving 4/16",
+          },
+          {
+            kind: "usage",
+            left: null,
+            total: null,
+            cost: null,
+            used: 3,
+            max: 16,
+            context: "Leaving 13/16",
+          },
+          {
+            kind: "usage",
+            left: null,
+            total: null,
+            cost: null,
+            used: 3,
+            max: 16,
+            context: "Nano Banana 2 Leaving 13/16",
+          },
+        ]);
+        t(
+          "merge: named rows win, sibling unnamed spans never touch the selected model",
+          !!(eL.used === 12 && eL.max === 16 && e2.used === 3 && e2.max === 16),
+          "nb2lite used=" +
+            eL.used +
+            "/" +
+            eL.max +
+            " nb2 used=" +
+            e2.used +
+            "/" +
+            e2.max,
+        );
+        eL.used = null;
+        eL.max = null;
+        mergeFlowCreditReadings(sel, [
+          {
+            kind: "usage",
+            left: null,
+            total: null,
+            cost: null,
+            used: 10,
+            max: 16,
+            context: "Leaving 6/16",
+          },
+        ]);
+        t(
+          "merge: a lone unnamed meter still attributes to the selected model",
+          !!(eL.used === 10 && eL.max === 16),
+          "used=" + eL.used + "/" + eL.max,
+        );
+      }
+      // v28.3.0: the storage-sweep self-echo pin — the script's own
+      // pm_* namespace must never come back as a Flow print (the
+      // live-boot defect: the pre-migration store's own 182 echoed
+      // through the sweep into a day-long fake print that outranked
+      // the official pool).
+      {
+        const echoKey = "pm_selfecho_probe";
+        let had = null,
+          probeSet = !1;
+        try {
+          had = localStorage.getItem(echoKey);
+          localStorage.setItem(echoKey, "Leaving 4/182 turns left");
+          probeSet = !0;
+        } catch (e9) {}
+        if (probeSet) {
+          const beforeNet = flowCreditPendingNet.length;
+          sweepFlowCreditStorage();
+          const echoed = flowCreditPendingNet
+            .slice(beforeNet)
+            .some(function (r) {
+              return (r.context || "").indexOf(echoKey) !== -1;
+            });
+          t(
+            "sweep: the script's own pm_* storage never echoes back as a print",
+            !echoed,
+            "probe readings queued: " + (flowCreditPendingNet.length - beforeNet),
+          );
+          try {
+            if (had == null) localStorage.removeItem(echoKey);
+            else localStorage.setItem(echoKey, had);
+          } catch (e9) {}
+        }
+      }
+      // v28.3.0: the v28.2.2 known-caps pins were REMOVED with the
+      // seed they pinned — the user-supplied official output
+      // superseded the 182/33/21 table (the wall-day counts of the
+      // shared pool), and the pool pins above now carry the
+      // deterministic-arithmetic contract (clean-state caps, the
+      // halving example, batch billing, both Lite rates, the wall
+      // charge, the weekly budgets, the reset-preserved meter).
     } catch (err) {
       t("self-test crashed", !1, String((err && err.message) || err));
     } finally {
@@ -13492,6 +14789,18 @@
         flowCreditLimitNotice = snap.limitNotice;
         flowCreditLimitLastAt = snap.limitLastAt;
         flowCreditLastSig = "";
+        // v28.1.0: restore the newly-snapshotted engine state — a pending
+        // timer id is only meaningful if it is still live, so a stale id
+        // (timer fired during the test) is dropped rather than restored.
+        if (snap.repullTimer) {
+          flowCreditRepullTimer = snap.repullTimer;
+          flowCreditRepullCount = snap.repullCount;
+        } else {
+          flowCreditRepullCount = snap.repullCount;
+        }
+        flowCreditPendingNet = snap.pendingNet;
+        flowCreditMediaSeen = snap.mediaSeen;
+        flowCreditAnchorMissSince = snap.anchorMissSince;
         persistFlowCreditState();
         renderFlowCreditChip();
       }
@@ -13568,9 +14877,28 @@
           (flowCreditEngineActive ? "active" : "not started") +
           " · anchor: " +
           (flowCreditAnchorSrc || "none") +
+          (flowCreditChip &&
+          flowCreditChip.classList.contains("mp-credit-parked")
+            ? " (chip parked at the dock)"
+            : "") +
           " · model: " +
           (flowCreditModel ? flowCreditModel.label : "?"),
       );
+      // v28.2.0: when the selection is unreadable, the report says
+      // which model the chip is speaking for instead — the display
+      // ladder's rung, so a pasted report explains its own "chip
+      // shows" line even in the anchor:none · model:? state.
+      if (!flowCreditModel) {
+        const dm = flowCreditDisplayModel();
+        if (dm)
+          lines.push(
+            "chip fallback: " +
+              dm.m.label +
+              " (" +
+              dm.src +
+              ") — the chip speaks for this model until Flow's model chip is readable again",
+          );
+      }
       lines.push(
         "sources this session — page text: " +
           flowCreditReadingsTotal +
@@ -13685,8 +15013,9 @@
             // generation and the client-side image counts — instead
             // of implying a per-model credit budget.
             // v27.3.10: and now the headline number itself — turns
-            // left before this model runs out today.
-            const tl = flowCreditTurnsLeft(e);
+            // left before this model runs out, in the current 5-hour
+            // window (v28.3.0: official pool arithmetic).
+            const tl = flowCreditTurnsLeft(e, k);
             lines.push(
               "model " +
                 (m ? m.label : k) +
@@ -13699,9 +15028,9 @@
                   : "") +
                 (tl && tl.left != null
                   ? " · " + tl.left + "/" + tl.max + " turns left (" + tl.src + ")"
-                  : " · turns left: cap not learned yet") +
+                  : " · turns left: n/a (unknown model key)") +
                 (e && e.capTurns != null && e.capAt
-                  ? " · cap " +
+                  ? " · limit-notice record " +
                     e.capTurns +
                     " (recorded " +
                     new Date(e.capAt).toISOString() +
@@ -13733,6 +15062,33 @@
                 (e && e.at ? " · as of " + new Date(e.at).toISOString() : ""),
             );
           }
+        // v28.3.0: the meter's own line — the official pool numbers
+        // every per-model turns-left above divides by.
+        lines.push(
+          "unit pool (official AI Pro): 5h window " +
+            flowCreditFmt(
+              Math.max(
+                0,
+                FLOW_CREDIT_OFFICIAL.budget5h - flowCreditUnitsSpent(5 * 3600000),
+              ),
+            ) +
+            " / " +
+            FLOW_CREDIT_OFFICIAL.budget5h +
+            " units left · week " +
+            flowCreditFmt(
+              Math.max(
+                0,
+                FLOW_CREDIT_OFFICIAL.budgetWeek - flowCreditUnitsSpent(7 * 86400000),
+              ),
+            ) +
+            " / " +
+            flowCreditFmt(FLOW_CREDIT_OFFICIAL.budgetWeek) +
+            " · per image: Pro 48u · NB2 12u · Lite 3u single-turn / 4u with reference · ONE shared pool across all models (plus chat and code executions — invisible to this client meter; Flow's prints and the limit-notice wall charge reconcile it) · ledger: " +
+            (Array.isArray(flowCreditState.ledger)
+              ? flowCreditState.ledger.length
+              : 0) +
+            " entries (rolling 5h window + 7-day week, pruned at 8 days)",
+        );
         if (!w && !keys.length)
           lines.push(
             "store: empty — no reading has ever landed this session",
@@ -13817,6 +15173,27 @@
             capBad += k + " ";
         }
         checks.push(["learned caps well-formed", capBad]);
+        // v28.3.0: the meter's own invariant — every ledger entry is
+        // well-formed (timestamped, a real model key, an image count
+        // or raw units) and the ledger is bounded.
+        let ledgerBad = "";
+        const ledArr = Array.isArray(flowCreditState.ledger)
+          ? flowCreditState.ledger
+          : [];
+        if (ledArr.length > 20000) ledgerBad += "oversize ";
+        for (const en of ledArr) {
+          if (
+            !en ||
+            typeof en.t !== "number" ||
+            !(en.t > 0) ||
+            validKeys.indexOf(en.m) === -1 ||
+            (!(en.u > 0) && !((en.n || 1) > 0))
+          ) {
+            ledgerBad += "malformed";
+            break;
+          }
+        }
+        checks.push(["unit ledger well-formed and bounded", ledgerBad]);
         const fails = checks.filter(function (c) {
           return c[1];
         });
@@ -13837,7 +15214,7 @@
         );
       }
       lines.push(
-        "tip: the function is TURNS LEFT per model — the hidden server-side daily limit. Flow discloses it in exactly two moments: model-picker usage rows (\"Leaving 6/16\" — canonical, parsed live into the per-model lines above) and the daily-limit notice when a model runs out (it carries the exact reset time — the tracker captures it verbatim above and learns the cap at that moment, so every day after starts from a known limit). Between prints, turns-left = print minus the clicks since it; turns are generation button clicks (exact) and images count only within 150s of a click. Nano Banana generations cost 0 Flow credits (support.google.com/flow/answer/16526234) — the wallet is the account-wide pool shared with Veo/Omni, reported for completeness; it has nothing to do with model runout.",
+        "tip: the meter is the OFFICIAL AI-Pro compute pool — 2,400 units per rolling 5-hour window (48,384 per week), shared by ALL Nano Banana models plus chat and code executions, billed per image: Pro 48u · NB2 12u · Lite 3u single-turn / 4u with reference context. Turns left per model = floor(units left \u00f7 its per-image cost) — clean-state caps Pro 50 · NB2 200 · Lite 600\u2013800 per window; 100 NB2 images (1,200u) halve Pro to 25; a multi-image prompt deducts per image returned (x4 on Pro = 192u). Flow's own prints (picker \"Leaving N/M\" rows, parsed live into the per-model lines above) still outrank the client meter whenever they parse, and the limit-notice wall charge reconciles the invisible chat/code spend at the wall. Nano Banana generations cost 0 Flow credits (support.google.com/flow/answer/16526234) — the wallet is the account-wide pool shared with Veo/Omni, reported for completeness; it has nothing to do with model runout.",
       );
     } catch (e) {
       lines.push("report aborted: " + ((e && e.message) || e));
@@ -14208,6 +15585,14 @@
       t,
     );
   }
+  // v28.1.0: module-level install guards for the nav/carousel chrome —
+  // the old element-level expando flags reset every time the host SPA
+  // removed and createNavInterface recreated the containers, so each
+  // recreation stacked another document-level click listener and another
+  // set of drag handlers on the long-lived document.
+  let _navOutsideClickInstalled = !1,
+    _carouselDocDragInstalled = !1,
+    _carouselResizeWatcher = null;
   const NAV_STORAGE_KEY = "NavConfig",
     NAV_SESSION_KEY = "NavState",
     INDEXED_DB_NAME = "MyPrompt",
@@ -14259,11 +15644,11 @@
   }
   function initDB() {
     return new Promise((e, t) => {
-      const n = indexedDB.open("MyPrompt", 1);
+      const n = indexedDB.open(INDEXED_DB_NAME, 1);
       ((n.onupgradeneeded = (e) => {
         const t = e.target.result;
-        t.objectStoreNames.contains("chatPins") ||
-          t.createObjectStore("chatPins", { keyPath: "chatId" });
+        t.objectStoreNames.contains(NAV_STORE_NAME) ||
+          t.createObjectStore(NAV_STORE_NAME, { keyPath: "chatId" });
       }),
         (n.onsuccess = () => e(n.result)),
         (n.onerror = (e) => t(e)));
@@ -14274,8 +15659,8 @@
       const t = await initDB();
       return new Promise((n) => {
         const a = t
-          .transaction(["chatPins"], "readonly")
-          .objectStore("chatPins")
+          .transaction([NAV_STORE_NAME], "readonly")
+          .objectStore(NAV_STORE_NAME)
           .get(e);
         ((a.onsuccess = () => n(a.result ? a.result.pins : [])),
           (a.onerror = () => n([])));
@@ -14289,8 +15674,8 @@
       const n = await initDB();
       return new Promise((a, o) => {
         const r = n
-          .transaction(["chatPins"], "readwrite")
-          .objectStore("chatPins");
+          .transaction([NAV_STORE_NAME], "readwrite")
+          .objectStore(NAV_STORE_NAME);
         if (!t || 0 === t.length) {
           const t = r.delete(e);
           return ((t.onsuccess = () => a(!0)), void (t.onerror = (e) => o(e)));
@@ -14340,16 +15725,26 @@
     );
   }
   function startChatChangeWatcher() {
+    // v28.1.0: sequence token — on rapid SPA route changes (A→B→C) the
+    // in-flight loadPinsFromDB(B) could resolve after (C)'s, leaving
+    // savedPins holding chat B's pins while currentChatId was C; the
+    // very next togglePinData then persisted B's pins under C's id
+    // (permanent cross-chat pin corruption). Only the latest chat's
+    // load may commit.
+    let seq = 0;
     setInterval(async () => {
       const e = getCurrentChatId();
-      e !== currentChatId &&
-        ((currentChatId = e),
-        (savedPins = await loadPinsFromDB(currentChatId)),
-        scanMessages(),
-        updateActivePins(),
-        navListPopup &&
-          navListPopup.classList.contains("active") &&
-          renderNavListItems());
+      if (e === currentChatId) return;
+      const my = ++seq;
+      currentChatId = e;
+      const pins = await loadPinsFromDB(e);
+      if (my !== seq) return;
+      savedPins = pins;
+      scanMessages();
+      updateActivePins();
+      navListPopup &&
+        navListPopup.classList.contains("active") &&
+        renderNavListItems();
     }, 500);
   }
   async function loadNavConfig() {
@@ -14400,7 +15795,7 @@
   function saveNavState(e, t) {
     if (e < 0) return;
     let n = {};
-    const a = sessionStorage.getItem("NavState");
+    const a = sessionStorage.getItem(NAV_SESSION_KEY);
     if (a)
       try {
         ((n = JSON.parse(a)), n.textPreview && !n[e] && (n = {}));
@@ -14412,11 +15807,11 @@
       textPreview: t ? t.substring(0, 50) : "",
       timestamp: Date.now(),
     }),
-      sessionStorage.setItem("NavState", JSON.stringify(n)),
+      sessionStorage.setItem(NAV_SESSION_KEY, JSON.stringify(n)),
       (currentNavIndex = e));
   }
   function restoreNavState() {
-    const e = sessionStorage.getItem("NavState");
+    const e = sessionStorage.getItem(NAV_SESSION_KEY);
     if (e)
       try {
         const t = JSON.parse(e);
@@ -14918,14 +16313,21 @@
       setupEnhancedScroll(r, "transparent", "0px"),
       navContainer.appendChild(navListPopup),
       document.body.appendChild(navContainer),
-      document.addEventListener("click", (e) => {
-        navListPopup &&
-          navListPopup.classList.contains("active") &&
-          navContainer &&
-          !navContainer.contains(e.target) &&
-          closeNavList();
-      }),
-      setInterval(syncCarouselWithScroll, 300));
+      // v28.1.0: the outside-click closer installs ONCE per page
+      // lifetime (the handler already no-ops when the popup is absent),
+      // and setInterval(syncCarouselWithScroll, 300) is gone — its
+      // callback was an empty stub since the carousel-sync refactor,
+      // firing every 300ms forever with a discarded handle that could
+      // never be cleared.
+      _navOutsideClickInstalled ||
+        ((_navOutsideClickInstalled = !0),
+        document.addEventListener("click", (e) => {
+          navListPopup &&
+            navListPopup.classList.contains("active") &&
+            navContainer &&
+            !navContainer.contains(e.target) &&
+            closeNavList();
+        })));
   }
   function createNavBtn(e, t, n) {
     const a = document.createElement("div");
@@ -14952,8 +16354,12 @@
     );
   }
   function setNavFilter(e) {
+    // v28.1.0: writes settings.filterMode — the property loadNavConfig
+    // actually restores. The old top-level write was dropped by the
+    // parser on every reload, so the All/User/AI filter choice never
+    // survived a page load.
     ((navFilterMode = e),
-      (currentNavConfig.filterMode = e),
+      (currentNavConfig.settings.filterMode = e),
       saveNavConfig(currentNavConfig));
     const t = navListPopup.querySelectorAll(".mp-nav-tab");
     (t.forEach((e) => e.classList.remove("active")),
@@ -15391,14 +16797,21 @@
           handleDragStart,
           { passive: !1 },
         ),
+        (pinnedCarouselContainer.hasDragListeners = !0)),
+      // v28.1.0: the DOCUMENT-level drag handlers are module-guarded —
+      // the old element-level flag reset every time the host SPA removed
+      // and this code recreated the wrapper, so each recreation stacked
+      // another set of document listeners (every drag event then ran N
+      // redundant handlers, each preventDefault-ing and writing layout).
+      _carouselDocDragInstalled ||
+        ((_carouselDocDragInstalled = !0),
         document.addEventListener("mousemove", handleDragMove),
         document.addEventListener("touchmove", handleDragMove, { passive: !1 }),
         document.addEventListener("mouseup", handleDragEnd),
-        document.addEventListener("touchend", handleDragEnd),
-        (pinnedCarouselContainer.hasDragListeners = !0)),
-      !pinnedCarouselContainer.hasResizeWatcher)
+        document.addEventListener("touchend", handleDragEnd)),
+      !_carouselResizeWatcher)
     ) {
-      (new ResizeObserver(() => {
+      (_carouselResizeWatcher = new ResizeObserver(() => {
         if (!pinnedCarouselContainer || !currentNavConfig) return;
         const e = getCarouselPosition();
         if (null !== e.cx) {
@@ -15424,8 +16837,8 @@
           } else applyCarouselPosition();
         }
         isDragMode && updateRulers();
-      }).observe(document.documentElement),
-        (pinnedCarouselContainer.hasResizeWatcher = !0));
+      }),
+      _carouselResizeWatcher.observe(document.documentElement));
     }
   }
   function renderPinnedCarousel() {
@@ -15708,7 +17121,6 @@
         t.style.transform = "translateX(" + o + "px)";
       }
   }
-  function syncCarouselWithScroll() {}
   const AUTO_BACKUP_KEY = "AutoBackup";
   const AUTO_BACKUP_KEYS = [
     "Prompts",
@@ -15742,7 +17154,7 @@
     GM_info.script &&
     GM_info.script.version
       ? GM_info.script.version
-      : "28.0.2-Ψ";
+      : "28.3.0-Ψ";
   // v27.0.12: canonical backup snapshot helper. The beta's Gist push
   // called snapshotKeys() before it existed anywhere, so every "Sync Now"
   // threw a ReferenceError; takeAutoBackup() now shares this one helper
@@ -15770,6 +17182,12 @@
   }
   async function restoreFromAutoBackup() {
     try {
+      // v28.1.0: an explicit "Start Fresh" (FirstRunDismissed) outranks the
+      // auto-restore — this runs BEFORE checkFirstRun() in the boot, so a
+      // library the user deliberately cleared used to be silently
+      // resurrected on the very next page load.
+      const dismissed = await GM_getValue("FirstRunDismissed", false);
+      if (dismissed) return false;
       const existing = await GM_getValue("Prompts");
       const hasData =
         existing != null &&
@@ -15781,10 +17199,23 @@
       if (!raw) return false;
       const snapshot = typeof raw === "string" ? JSON.parse(raw) : raw;
       if (!snapshot || typeof snapshot !== "object") return false;
+      // v28.1.0: only keys whose local value is empty are restored — the
+      // old blind overwrite resurrected ALL 16 keys, regressing newer
+      // NavConfig / PromptViews / DontShowAgain state to the older
+      // snapshot even when Prompts was the only thing that was lost.
+      let restoredAny = !1;
       for (const [k, v] of Object.entries(snapshot)) {
-        await GM_setValue(k, v);
+        const cur = await GM_getValue(k);
+        if (
+          cur == null ||
+          "" === cur ||
+          ("object" == typeof cur && 0 === Object.keys(cur).length)
+        ) {
+          await GM_setValue(k, v);
+          restoredAny = !0;
+        }
       }
-      return true;
+      return restoredAny;
     } catch (e) {
       return false;
     }
@@ -15825,11 +17256,18 @@
         GM_xmlhttpRequest({
           method: "GET",
           url: `https://api.github.com/gists?per_page=100&page=${page}`,
+          // v28.1.0: hard timeout — the script's own update-checker sets
+          // one; a stalled connection used to leave the sync button
+          // spinning forever across up to 40 sequential unbounded
+          // requests.
+          timeout: 20000,
           headers: {
             Authorization: `Bearer ${pat}`,
             Accept: "application/vnd.github+json",
             "X-GitHub-Api-Version": "2022-11-28",
           },
+          ontimeout: () =>
+            reject(new Error("GitHub API timed out (20s) listing gists")),
           onload: (e) => {
             if (e.status !== 200) {
               let msg = `GitHub API error ${e.status}`;
@@ -15902,6 +17340,8 @@
       GM_xmlhttpRequest({
         method,
         url,
+        // v28.1.0: hard timeout (30s — the push payload can be large).
+        timeout: 30000,
         headers: {
           Authorization: `Bearer ${pat}`,
           "Content-Type": "application/json",
@@ -15909,6 +17349,8 @@
           "X-GitHub-Api-Version": "2022-11-28",
         },
         data: JSON.stringify(body),
+        ontimeout: () =>
+          reject(new Error("GitHub API timed out (30s) pushing backup")),
         onload: async (e) => {
           if (e.status === 200 || e.status === 201) {
             try {
@@ -15953,23 +17395,62 @@
       GM_xmlhttpRequest({
         method: "GET",
         url: `https://api.github.com/gists/${gistId}`,
+        // v28.1.0: hard timeout, matching the other gist calls.
+        timeout: 20000,
         headers: {
           Authorization: `Bearer ${pat}`,
           Accept: "application/vnd.github+json",
           "X-GitHub-Api-Version": "2022-11-28",
         },
+        ontimeout: () =>
+          reject(new Error("GitHub API timed out (20s) reading the gist")),
         onload: (e) => {
           if (e.status === 200) {
             try {
               const r = JSON.parse(e.responseText);
               const file =
                 r.files && (r.files[filename] || Object.values(r.files)[0]);
-              if (!file || !file.content)
+              if (!file)
                 return void reject(new Error("Gist has no backup file"));
-              const parsed = JSON.parse(file.content);
-              if (!parsed || !parsed.data)
-                return void reject(new Error("Invalid backup format in Gist"));
-              resolve({ data: parsed.data, meta: parsed.meta || {} });
+              // v28.1.0: the gist API omits `content` (returns null with
+              // truncated: true and a raw_url) for files over ~1 MB — a
+              // large library (Prompts + GlobalFiles in one JSON file)
+              // made every pull fail with a misleading "no backup file"
+              // exactly when the backup mattered most. Fall back to
+              // fetching the raw_url.
+              const parseAndResolve = (text) => {
+                const parsed = JSON.parse(text);
+                if (!parsed || !parsed.data)
+                  throw new Error("Invalid backup format in Gist");
+                resolve({ data: parsed.data, meta: parsed.meta || {} });
+              };
+              if (file.content != null) {
+                parseAndResolve(file.content);
+              } else if (file.raw_url) {
+                GM_xmlhttpRequest({
+                  method: "GET",
+                  url: file.raw_url,
+                  timeout: 30000,
+                  headers: { Authorization: `Bearer ${pat}` },
+                  ontimeout: () =>
+                    reject(
+                      new Error("GitHub timed out (30s) fetching the raw backup"),
+                    ),
+                  onload: (raw) => {
+                    if (raw.status === 200) {
+                      try {
+                        parseAndResolve(raw.responseText);
+                      } catch (err) {
+                        reject(new Error("Failed to parse Gist content"));
+                      }
+                    } else
+                      reject(new Error(`GitHub raw fetch error ${raw.status}`));
+                  },
+                  onerror: () =>
+                    reject(new Error("Network error fetching raw backup")),
+                });
+              } else
+                return void reject(new Error("Gist has no backup file"));
             } catch (err) {
               reject(new Error("Failed to parse Gist content"));
             }
@@ -16475,7 +17956,7 @@
       case "arena":
         return (
           document.querySelector(
-            'button[type="submit"]:has(svg path[d^="M3 12L21 12M21 12L12.5"]))',
+            'button[type="submit"]:has(svg path[d^="M3 12L21 12M21 12L12.5"])',
           ) ||
           document.querySelector(
             'button[type="submit"]:has(svg path[d^="M3 12"])',
@@ -16505,7 +17986,7 @@
       case "grok":
         return (
           document.querySelector(
-            'button[type="submit"]:has(path[d^="M6 11L12 5"]))',
+            'button[type="submit"]:has(path[d^="M6 11L12 5"])',
           ) ||
           document.querySelector('button:has(svg path[d^="M6 11"])') ||
           document.querySelector('button[type="submit"]:has(svg)')
@@ -16586,7 +18067,7 @@
       case "ernie":
         return (
           document.querySelector(
-            'div[class^="send"] div[class^="btnContainer"] span:has(svg path[d^="M43,-63.43"]))',
+            'div[class^="send"] div[class^="btnContainer"] span:has(svg path[d^="M43,-63.43"])',
           ) || document.querySelector('span[class*="sendBtnLottie"]')
         );
       case "dreamina":
@@ -16606,26 +18087,26 @@
       case "nvidiaNim":
         return (
           document.querySelector(
-            'button:has(svg[data-icon-name="paperplane"]))',
+            'button:has(svg[data-icon-name="paperplane"])',
           ) ||
           document.querySelector('button:has(svg path[d^="M0.747,1.623"])') ||
           document.querySelector(
-            'button.btn-primary:has(use[href^="#paperplane"]))',
+            'button.btn-primary:has(use[href^="#paperplane"])',
           )
         );
       case "indicArena":
         return (
           document.querySelector(
-            'button[type="submit"]:has(svg path[d^="M14.536"]))',
+            'button[type="submit"]:has(svg path[d^="M14.536"])',
           ) ||
           document.querySelector("button:has(svg.lucide-send)") ||
           document.querySelector('button[type="submit"]:has(svg)')
         );
       case "qianwen":
         return (
-          document.querySelector('button:has(span[data-icon-type*="send"]))') ||
+          document.querySelector('button:has(span[data-icon-type*="send"])') ||
           document.querySelector(
-            'button:has(svg use[*|href^="#qwpcicon-sendChat"]))',
+            'button:has(svg use[*|href^="#qwpcicon-sendChat"])',
           ) ||
           document.querySelector('button:has(path[d^="M554.24 85.76"])')
         );
@@ -16739,7 +18220,11 @@
           s = window.getComputedStyle(o),
           i = "not-allowed" === s.cursor || parseFloat(s.opacity) < 0.5,
           l = "none" === s.display || "hidden" === s.visibility;
-        r || i || l || o.click();
+        // v28.1.0: the interval stops after ONE successful click — sites
+        // that clear the composer asynchronously (or keep the text) used
+        // to take up to ~150 repeat clicks of the send button over the
+        // 120s window, i.e. duplicate submissions of the same prompt.
+        r || i || l || (o.click(), clearInterval(a));
       }, 800);
   }
   function forceUpload(e, t = 12e4) {
@@ -17207,7 +18692,13 @@
                         a.dispatchEvent(e);
                       } catch (e) {}
                   }, 150)));
-      }, 100),
+        // v28.1.0: the text-insertion delay finally CONSUMES the
+        // size-scaled upload wait computed above (1500ms + ~1ms/KB) —
+        // the computed value was dead: the callback's inner const s
+        // shadowed it and the timeout stayed hardcoded at 100ms, so the
+        // prompt text could land while the site was still processing
+        // the file DataTransfer. No files -> the original 100ms.
+      }, r && s > 100 ? s : 100),
       e.id)
     ) {
       let t = await getAll();
@@ -17256,21 +18747,39 @@
         o.dispatchEvent(new Event("change", { bubbles: !0 })));
     }
   }
+  // v28.1.0: one shared builder for the .mp.prompt.json payload — the
+  // three export writers (single file / multiple files / gist insert)
+  // previously duplicated a field list that silently dropped color,
+  // shortcut, usageCount and lastUsedAt on every JSON round-trip (the
+  // importer already parsed usageCount/lastUsedAt back — proof the
+  // omission was an oversight, not a decision), and they wrote only the
+  // machine-local collectionId, which resolveCollectionPathToId treated
+  // as a junk path segment on any other profile. The portable
+  // collectionPath now rides alongside (collectionId is kept for
+  // pre-v28.1.0 readers of these files).
+  function toPortablePromptRecord(e) {
+    return {
+      title: e.title,
+      text: e.text,
+      usePlaceholders: e.usePlaceholders,
+      autoExecute: e.autoExecute,
+      tags: e.tags || [],
+      color: e.color || "",
+      shortcut: e.shortcut || "",
+      usageCount: e.usageCount || 0,
+      lastUsedAt: e.lastUsedAt || 0,
+      collectionPath:
+        e.collectionId && currentCollectionsConfig.collections[e.collectionId]
+          ? collectionPathOf(e.collectionId)
+          : "",
+      collectionId: e.collectionId || "",
+      favorite: !!e.favorite,
+      rating: e.rating || 0,
+      archived: !!e.archived,
+    };
+  }
   function exportJsonAsSingleFile(e) {
-    const t = e.map((e) => ({
-        title: e.title,
-        text: e.text,
-        usePlaceholders: e.usePlaceholders,
-        autoExecute: e.autoExecute,
-        // v28.0.0: lossless exchange — tags and org classification ride
-        // the .mp.prompt.json payload (consumers ignore unknown keys;
-        // pre-v28 files keep importing exactly as before).
-        tags: e.tags || [],
-        collectionId: e.collectionId || "",
-        favorite: !!e.favorite,
-        rating: e.rating || 0,
-        archived: !!e.archived,
-      })),
+    const t = e.map(toPortablePromptRecord),
       n =
         1 === e.length
           ? `${(e[0].title || "Prompt").replace(/[<>:"/\\|?*]/g, "").trim()}.mp.prompt.json`
@@ -17296,18 +18805,10 @@
         return;
     }
     for (const t of e) {
-      const e = {
-          title: t.title,
-          text: t.text,
-          usePlaceholders: t.usePlaceholders,
-          autoExecute: t.autoExecute,
-          // v28.0.0: lossless exchange (see exportJsonAsSingleFile).
-          tags: t.tags || [],
-          collectionId: t.collectionId || "",
-          favorite: !!t.favorite,
-          rating: t.rating || 0,
-          archived: !!t.archived,
-        },
+      // v28.1.0: shared payload builder + blob URL revocation — every
+      // exported file used to strand its object URL for the page lifetime
+      // (exportJsonAsSingleFile already revoked correctly).
+      const e = toPortablePromptRecord(t),
         n = document.createElement("a");
       n.href = URL.createObjectURL(
         new Blob([JSON.stringify(e, null, 2)], { type: "application/json" }),
@@ -17318,6 +18819,7 @@
         document.body.appendChild(n),
         n.click(),
         document.body.removeChild(n),
+        URL.revokeObjectURL(n.href),
         await new Promise((e) => setTimeout(e, 200)));
     }
   }
@@ -17460,7 +18962,14 @@
             return a;
           }),
       f = () => {
-        (t.classList.remove("visible"), setTimeout(() => t.remove(), 200));
+        // v28.1.0: the close path also detaches the document-level Escape
+        // listener — previously ONLY the Escape branch removed it, so
+        // closing the export dialog with the × button leaked one keydown
+        // closure (plus the detached overlay) per open on long-lived SPA
+        // pages.
+        (document.removeEventListener("keydown", h),
+          t.classList.remove("visible"),
+          setTimeout(() => t.remove(), 200));
       };
     n.querySelector("#__ap_close_export").onclick = f;
     const h = (e) => {
@@ -17475,18 +18984,7 @@
                 "No prompts to export.",
                 "error",
               );
-            const n = t.map((e) => ({
-                title: e.title,
-                text: e.text,
-                usePlaceholders: e.usePlaceholders,
-                autoExecute: e.autoExecute,
-                // v28.0.0: lossless exchange (see exportJsonAsSingleFile).
-                tags: e.tags || [],
-                collectionId: e.collectionId || "",
-                favorite: !!e.favorite,
-                rating: e.rating || 0,
-                archived: !!e.archived,
-              })),
+            const n = t.map(toPortablePromptRecord),
               a = JSON.stringify(n, null, 2);
             let o = "";
             if (1 === t.length)
@@ -17558,6 +19056,8 @@
                   document.body.appendChild(e),
                   e.click(),
                   document.body.removeChild(e),
+                  // v28.1.0: revoke the TXT blob like the JSON writers do
+                  URL.revokeObjectURL(e.href),
                   await new Promise((e) => setTimeout(e, 200)));
               }
             } else
@@ -17592,6 +19092,10 @@
         isFixed: !1,
         activeFileIds: [],
         tags: rec.tags || [],
+        // v28.1.0: color and per-prompt shortcut now round-trip — the
+        // v28.0.0 payload dropped both on every JSON exchange.
+        color: rec.color || "",
+        shortcut: rec.shortcut || "",
         usageCount: rec.usageCount || 0,
         collectionId: collectionId,
         favorite: rec.favorite || !1,
@@ -17638,12 +19142,15 @@
             text: "",
           }),
           (r = []));
-        s[1].split(";").forEach((e) => {
+        // v28.1.0: escape-aware splitting (see mpSplitTxtHeaderEscaped) —
+        // a literal ";" inside an escaped title/tag/collection value no
+        // longer forks the field list, and values are unescaped on read.
+        mpSplitTxtHeaderEscaped(s[1], ";").forEach((e) => {
           const t = e.split(":");
           if (t.length >= 2) {
             const e = t[0].trim().toLowerCase(),
               n = t.slice(1).join(":").trim();
-            ("title" === e && (o.title = n),
+            ("title" === e && (o.title = mpUnescapeTxtHeaderField(n)),
               "useplaceholders" === e &&
                 (o.usePlaceholders = "true" === n.toLowerCase()),
               "autoexecute" === e &&
@@ -17652,11 +19159,11 @@
               // old files parse exactly as before, new fields are
               // simply absent from them.
               "tags" === e &&
-                (o.tags = n
-                  .split(",")
-                  .map((x) => x.trim().toLowerCase())
+                (o.tags = mpSplitTxtHeaderEscaped(n, ",")
+                  .map((x) => mpUnescapeTxtHeaderField(x).trim().toLowerCase())
                   .filter(Boolean)),
-              "collection" === e && (o.collectionPath = n),
+              "collection" === e &&
+                (o.collectionPath = mpUnescapeTxtHeaderField(n)),
               "favorite" === e && (o.favorite = "true" === n.toLowerCase()),
               "rating" === e &&
                 (o.rating = Math.max(0, Math.min(5, parseInt(n, 10) || 0))),
@@ -17900,16 +19407,20 @@
       highlightPromptSnippetMeta());
     let e = location.href;
     new MutationObserver(() => {
-      (location.href !== e &&
+      // v28.1.0: the sweeps are gated on SPA URL change — the old comma
+      // chain ran all three whole-document querySelectorAll sweeps on
+      // EVERY childList mutation anywhere (every keystroke in the gist
+      // editor), plus a redundant third sweep via the 200ms timer.
+      location.href !== e &&
         ((e = location.href),
+        injectGistButtons(),
+        injectGistExportEditorButtons(),
+        highlightPromptSnippetMeta(),
         setTimeout(() => {
           (injectGistButtons(),
             injectGistExportEditorButtons(),
             highlightPromptSnippetMeta());
-        }, 200)),
-        injectGistButtons(),
-        injectGistExportEditorButtons(),
-        highlightPromptSnippetMeta());
+        }, 200));
     }).observe(document.body, { subtree: !0, childList: !0 });
   }
   function cleanup() {
@@ -18154,20 +19665,24 @@
           const micIcon = document.querySelector(
             'mat-icon[data-mat-icon-name="mic"]',
           );
+          // v28.1.0: closest() can return null when Google moves the
+          // wrapper class while the icon still resolves — the old code
+          // returned a truthy { element: null } that sailed past the
+          // !anchorData guard and threw on .parentElement, wiping the
+          // whole UI into the cleanup/retry loop. The wrapper must exist
+          // for the anchor to count.
           if (micIcon) {
-            return {
-              element: micIcon.closest(".input-buttons-wrapper-bottom"),
-              type: "mic-wrapper",
-            };
+            const wrapper = micIcon.closest(".input-buttons-wrapper-bottom");
+            if (wrapper)
+              return { element: wrapper, type: "mic-wrapper" };
           }
           const sendIcon = document.querySelector(
             'mat-icon[data-mat-icon-name="send"]',
           );
           if (sendIcon) {
-            return {
-              element: sendIcon.closest(".input-buttons-wrapper-bottom"),
-              type: "send-wrapper",
-            };
+            const wrapper = sendIcon.closest(".input-buttons-wrapper-bottom");
+            if (wrapper)
+              return { element: wrapper, type: "send-wrapper" };
           }
           return null;
         };
@@ -18520,6 +20035,11 @@
         insertionPoint = container;
         insertionMethod = "handled_manually";
       } else if (currentPlatform === "chatglm") {
+        // v28.1.0: five `targetType = "…"` assignments were removed here —
+        // the variable was never declared anywhere (strict mode made the
+        // first assignment a ReferenceError that aborted the whole mount
+        // branch) and never read even if it had been. The container/anchor
+        // resolution cascade below is otherwise unchanged.
         let container = document.querySelector(
           "div.options-container.flex.flex-y-center",
         );
@@ -18530,14 +20050,12 @@
         if (!container || !anchor) {
           container = document.querySelector("div.options[data-v-7dc2591c]");
           if (container) {
-            targetType = "element1";
             anchor = container.lastElementChild;
           }
         }
         if (!container || !anchor) {
           container = document.querySelector("div.options[data-v-7a34b085]");
           if (container) {
-            targetType = "element2";
             anchor = container.lastElementChild;
           }
         }
@@ -18545,13 +20063,10 @@
           container = await waitFor(".options, .options-container", 5000);
           if (!container) return;
           if (container.matches("[data-v-7dc2591c]")) {
-            targetType = "element1";
             anchor = container.lastElementChild;
           } else if (container.matches("[data-v-7a34b085]")) {
-            targetType = "element2";
             anchor = container.lastElementChild;
           } else {
-            targetType = "original";
             anchor = container.querySelector(".upload-image-wrap");
           }
         }
@@ -19605,7 +21120,15 @@
           const success = await updateById(promptId, fields);
           if (success) {
             const allPrompts = await getAll();
-            savedItem = findById(allPrompts, promptId);
+            // v28.1.0: findById was referenced here but never defined
+            // anywhere in the script — every Ctrl+Enter save-and-send on
+            // an EDIT died on a ReferenceError before hideModal/
+            // refreshMenu/insertPrompt could run (strict mode). The
+            // lookup is the plain id scan it always meant to be.
+            savedItem = allPrompts.find((p) => p.id === promptId) || {
+              ...fields,
+              isFixed: false,
+            };
           } else {
             savedItem = { ...fields, isFixed: false };
             await addItem(savedItem);
@@ -19831,7 +21354,10 @@
             variablesToApply.forEach((v) => {
               const escapedVar = v.name.replace(/\$/g, "\\$");
               const varRegex = new RegExp(escapedVar, "g");
-              t = t.replace(varRegex, v.value);
+              // v28.1.0: function replacement — variable values
+              // containing $&, $`, $', $$ were being interpreted as
+              // replacement patterns and corrupted on substitution.
+              t = t.replace(varRegex, () => v.value);
             });
             return t;
           };
@@ -20041,7 +21567,12 @@
   }
   async function start() {
     installAutoBackupProxy();
+    // v28.1.0: the restore outcome is finally user-visible — the value
+    // used to be computed and dropped, so a silent library resurrection
+    // (or its failure) was indistinguishable from magic.
     const wasRestored = await restoreFromAutoBackup();
+    wasRestored &&
+      showNotification("Library restored from automatic backup.", "success");
     checkFirstRun();
     await loadSyntaxConfig();
     await loadShortcuts();
