@@ -40,8 +40,8 @@
 // @compatible          edge
 // @compatible          brave
 // @compatible          opera
-// @downloadURL         https://raw.githubusercontent.com/4ndr0666/glm/main/promptmaster.user.js
-// @updateURL           https://raw.githubusercontent.com/4ndr0666/glm/main/promptmaster.user.js
+// @downloadURL         https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Prompt%20Master.user.js
+// @updateURL           https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Prompt%20Master.user.js
 // ==/UserScript==
 
 (function () {
