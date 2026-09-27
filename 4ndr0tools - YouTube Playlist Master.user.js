@@ -16,8 +16,8 @@
 // @grant        unsafeWindow
 // @run-at       document-idle
 // @noframes
-// @downloadURL  https://raw.githubusercontent.com/4ndr0666/glm/main/youtubeplaylistmaster.user.js
-// @updateURL    https://raw.githubusercontent.com/4ndr0666/glm/main/youtubeplaylistmaster.user.js
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20YouTube%20Playlist%20Master.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20YouTube%20Playlist%20Master.user.js
 // ==/UserScript==
 
 /* ============================================================================
