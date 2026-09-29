@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         4ndr0tools - Bunkr++
+// @name         4ndr0tools - Bunkr++BETA
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      7.3.0
+// @version      7.4.0
 // @author       4ndr0666
-// @description  Direct URL routing, auto-sort, hide visited, bypass dl gateway, bulk download, m3u8/CDN URL aggregation, broken-link repair, power-user hotkeys, LinkMaster-grade m3u8 stream resolution, web-archive dead-CDN resurrection (archive.org / archive.is), captcha-aware transport retry
+// @description  Direct URL routing, auto-sort, hide visited, bypass dl gateway, bulk download, m3u8/CDN URL aggregation (page-context net-hook + per-item stream glyphs + album-wide STREAMS aggregation), broken-link repair, power-user hotkeys, LinkMaster-grade m3u8 stream resolution with gateway fallback, MPV dispatch (URI/bridge), web-archive dead-CDN resurrection (archive.org / archive.is), captcha-aware transport retry
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // v7.1.0 [LM-B3]: bunkr{1,3} host family (bunkr / bunkrr / bunkrrr) — the
 // baseline pair-wise @include set could never match live bunkrrr.org hosts.
@@ -20,6 +20,7 @@
 // @grant        GM_download
 // @grant        unsafeWindow
 // @connect      *
+// @connect      127.0.0.1
 // @noframes
 // @run-at       document-start
 // @downloadURL  https://raw.githubusercontent.com/4ndr0666/glm/main/bunkr.user.js
@@ -120,10 +121,102 @@
 // GAP 27 fix: the grid glyph's cached resolution honors the signed URL's
 //   embedded `ex` expiry — clicks after token lapse re-resolve instead of
 //   downloading the CDN's 403 page.
+//
+// v7.4.0-Ψ superset revision (GUP v5.3 audited against the v7.3.0 golden
+// unit at repo commit 3ed7e98; LinkMasterBETA v5.1.1 cross-referenced).
+// THE M3U8 AGGREGATION FIX — the operator's documented failure: "bunkr
+// .user.js will not always aggregate the correct m3u8 but linkmasterbeta
+// .user.js always will." Cross-referencing the two scripts' aggregation
+// methods isolated the diff, and every element of it is now folded in:
+//
+//   [LM-C1] PAGE-CONTEXT NET-HOOK (Module 3): the baseline wrapped
+//           window.fetch and the sandbox's XMLHttpRequest — on sandboxed
+//           managers (Tampermonkey default) page code (hls.js!) runs
+//           against unsafeWindow transports the sandbox wraps never see,
+//           so the m3u8 sniffer was structurally blind exactly where HLS
+//           playlists surface; LinkMaster's net-hook installs into the
+//           page context and therefore always catches it. The sniffer now
+//           installs into BOTH contexts (mark-guarded against double
+//           wraps, fingerprint-masked toString) and additionally sweeps
+//           textual response BODIES for embedded media URLs (LinkMaster's
+//           IG-harvester technique) — request-URL capture alone cannot see
+//           URLs carried inside API/JSON responses. Content-type gating
+//           keeps media streams out of the tee; scans are 256KB-bounded.
+//   [LM-M1] PER-ITEM STREAM GLYPHS (Module 7, Context 2): LinkMaster
+//           resolves the m3u8/CDN URL for ANY listed bunkr link without
+//           navigation; the baseline's stream surface existed only on
+//           single-asset pages. Every grid item now carries a stream
+//           glyph (cached → signed pipeline → playlist refinement →
+//           playlist-preferring DOM resolver → Ψ-ARCHIVE; Shift+Click
+//           dispatches MPV).
+//   [LM-M1] ALBUM-WIDE STREAMS AGGREGATION (Module 11): a STREAMS bulk
+//           action resolves every grid item's m3u8/CDN URL en masse
+//           (pipeline concurrency/delay/PAUSE/STOP discipline, m3u8-first
+//           output copied to clipboard, every hit fed to the ledger).
+//           Hotkey S. This is the vision's "m3u8 URL aggregation" as a
+//           first-class bulk surface — what the operator used LinkMaster
+//           for, now native.
+//   [LM-M3] TIER E GATEWAY FALLBACK (Module 6.4): LinkMaster copies the
+//           download anchor href unconditionally — that semantic is why
+//           it "always resolves". resolveDomStreamUrl gained an opt-in
+//           allowGateway tier: when every strict tier fails, stream
+//           glyphs surface the gateway vector itself (never ledger-
+//           recorded; a gateway URL is a vector, not media).
+//   [LM-M4] MPV DISPATCH (Module 6.7): LinkMaster's signature consumption
+//           vector, ported — mpv:// URI protocol (hidden iframe, page
+//           never navigates) + local bridge (127.0.0.1:19999, 5s bound,
+//           abort-aware). Menu commands, hotkey M, Shift+Click on any
+//           stream glyph.
+//   [m3u8 CORRECTNESS] a non-playlist pipeline hit no longer settles the
+//           stream glyph: a playlist-preferring DOM pass runs afterward
+//           and a real m3u8 wins (single-asset glyph, grid glyphs, and
+//           bulk aggregation alike).
+//
+// GAP 28 fix: the single-asset stream glyph left style.color='#fff' (its
+//   spinner tint) on the glyph permanently after a copy — robustCopy
+//   captured '#fff' as the "original" and faithfully restored it.
+// GAP 29 fix: albumMatch was frozen at document-start, so an in-app SPA
+//   route into an album left the page with NO bulk panel and NO sort
+//   enforcement (and the probe reported the wrong topology). Runtime
+//   consumers now re-derive the match from the live URL; Module 1's
+//   one-time redirect decision is untouched.
+// GAP 30 fix: the signed pipeline hardcoded dl.bunkr.cr — the Set
+//   Canonical Domain menu had no effect on it. The dl-gateway base now
+//   derives from the canonical domain (dl.<canonical>, pinned-override
+//   key dlApiBase) and the /file/<id> regex accepts any bunkr-family TLD.
+//   The default domain reproduces the baseline URLs byte-for-byte.
+// GAP 31 fix: fetchPageHop never registered its GM handle in the shared
+//   abort registry — the bulk STOP surface could not abort in-flight
+//   resolver hops. (GAP 9 parity.)
+// GAP 32 fix: the bulk log grew unboundedly for the page lifetime on
+//   large albums — capped at 400 spans, oldest dropped.
+// HARDENING: duplicate-injection sentinel ([LM-A1] parity — a re-executed
+//   copy previously stacked prototype patches, observers and menus);
+//   og:video:url / og:video:secure_url / twitter:player:stream meta
+//   variants honored (accept()-gated); the inline-script m3u8 sweep and
+//   body sweep accept protocol-relative URLs; the PAUSE button's stale
+//   'RESUME' label is reset at run completion; opt-in spec typography
+//   (Orbitron / JetBrains Mono / Cinzel Decorative via lazy Google-Fonts
+//   load, OFF by default to preserve the baseline's OPSEC-quiet posture,
+//   immediate eviction on toggle-off [LM-G2 parity]); unified version
+//   surface (SCRIPT_VERSION drives banner + diagnostic probe).
 
 (function () {
     'use strict';
-    console.log('%c[4NDR0tools] Bunkr++ v7.3.0-Ψ', 'color:#00E5FF; font-family:monospace; font-weight:bold;');
+
+    // v7.4.0 [LM-A1 parity]: duplicate-injection sentinel — a re-executed
+    // copy (manager quirk, manual re-inject) previously stacked prototype
+    // patches, MutationObservers and menu commands on every pass. The
+    // DOM-based marker is sandbox-agnostic and shared across contexts.
+    try {
+        const _sentinelRoot = document.documentElement;
+        const _SENTINEL_ATTR = 'data-psi-bunkr-instance';
+        if (!_sentinelRoot || (_sentinelRoot.hasAttribute && _sentinelRoot.hasAttribute(_SENTINEL_ATTR))) return;
+        _sentinelRoot.setAttribute(_SENTINEL_ATTR, String(Date.now()));
+    } catch (_) { /* EAFP — proceed; guards below absorb re-runs */ }
+
+    const SCRIPT_VERSION = '7.4.0';
+    console.log(`%c[4NDR0tools] Bunkr++ v${SCRIPT_VERSION}-Ψ`, 'color:#00E5FF; font-family:monospace; font-weight:bold;');
 
     // =========================================================================
     // MODULE 0.1: SYNCHRONOUS ENVIRONMENT MOCKING (Sandbox Escape)
@@ -321,6 +414,41 @@
         showToast(`🗄 Web-archive fallback ${next ? 'ENABLED' : 'DISABLED'} — dead-link tier ${next ? 'armed' : 'off'}.`, 4000, true);
     });
 
+    // v7.4.0: spec typography (Orbitron display / JetBrains Mono body /
+    // Cinzel Decorative Ψ glyph per the 3lectric-Glass spec) as an OPT-IN
+    // remote-font load. The baseline is OPSEC-quiet — local font stacks only,
+    // zero third-party requests — and that default is preserved (the
+    // operator's counter-surveillance posture forbids a silent font-CDN
+    // beacon on every bunkr page; LinkMaster [A4] reached the same
+    // conclusion for its own HUD). Enabling injects the Google Fonts
+    // stylesheet lazily; disabling evicts it immediately ([G2]-parity
+    // symmetry — OFF means local stacks NOW, not next load).
+    const REMOTE_FONTS_ENABLED = () => _settings.remoteFonts === true;
+    let _fontsInjected = false;
+    function ensureRemoteFonts() {
+        if (_fontsInjected || !REMOTE_FONTS_ENABLED()) return;
+        _fontsInjected = true;
+        try {
+            if (!document.getElementById('psi-remote-fonts')) {
+                const link       = document.createElement('link');
+                link.id          = 'psi-remote-fonts';
+                link.rel         = 'stylesheet';
+                link.href        = 'https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=JetBrains+Mono:wght@500;700&family=Orbitron:wght@500;700&display=swap';
+                (document.head || document.documentElement).appendChild(link);
+            }
+        } catch (_) { /* EAFP */ }
+    }
+    function unloadRemoteFonts() {
+        _fontsInjected = false;
+        try { const el = document.getElementById('psi-remote-fonts'); if (el) el.remove(); } catch (_) { /* EAFP */ }
+    }
+    GM_registerMenuCommand('🔤 Typography: Remote Fonts ON/OFF', () => {
+        const next = !REMOTE_FONTS_ENABLED();
+        setSetting('remoteFonts', next);
+        if (next) ensureRemoteFonts(); else unloadRemoteFonts();
+        showToast(`🔤 Remote fonts ${next ? 'ON — Orbitron / JetBrains Mono / Cinzel Decorative (font CDN visible to network)' : 'OFF — local font stacks only (OPSEC-quiet)'}.`, 5000, true);
+    });
+
     // =========================================================================
     // INTERNAL STATE & CONSTANTS
     // =========================================================================
@@ -373,6 +501,18 @@
     }
 
     const albumMatch = u.pathname.match(/^\/a\/([^/]+)\/?$/);
+    // v7.4.0 (SPA fix): the boot-time albumMatch is frozen at document-start;
+    // after an in-app route (Module 10.7 pushState patch) the frozen flag no
+    // longer describes the current page, so sort enforcement, the bulk engine
+    // and the probe topology silently mis-armed (loading a /v/ page and
+    // routing into an album left the album with NO bulk panel and NO sort).
+    // Runtime consumers re-derive the match from the live URL; Module 1's
+    // one-time redirect decision keeps using the boot-time value exactly as
+    // before, so initial-load behavior is byte-identical.
+    const currentAlbumMatch = () => {
+        try { return window.location.pathname.match(/^\/a\/([^/]+)\/?$/); }
+        catch (_) { return albumMatch; }
+    };
     if (albumMatch) {
         if (u.searchParams.get('sort') !== 'size' || u.searchParams.get('order') !== 'desc') {
             u.searchParams.set('sort', 'size');
@@ -715,38 +855,151 @@
     // video.currentSrc is not yet populated (race condition on page load).
     // v7: every capture is also folded into the Module 3.5 URL ledger so
     // m3u8 playlists (hls.js traffic) and file CDN URLs aggregate uniformly.
+    //
+    // v7.4.0 [LM-C1 parity — THE aggregation fix]: the baseline wrapped
+    // window.fetch and the SANDBOX's XMLHttpRequest — on sandboxed managers
+    // (Tampermonkey default) page code (hls.js!) runs against unsafeWindow
+    // transports the sandbox wraps never see, so the m3u8 sniffer was
+    // structurally blind in exactly the context HLS playlists surface. That
+    // is the root cause of "does not always aggregate the correct m3u8" —
+    // LinkMasterBETA's net-hook installs into the PAGE context and therefore
+    // always catches it. The sniffer now installs into BOTH contexts
+    // (unsafeWindow first — the page context — then window), with a shared
+    // mark so a shared object is never double-wrapped and a fingerprint-
+    // masked toString so the wraps stay invisible to anti-tamper sweeps.
+    // Additionally, response bodies of textual payloads (HTML / JSON /
+    // playlist manifests) are swept for embedded media URLs — request-URL
+    // capture alone cannot see URLs carried INSIDE API responses (the
+    // LinkMaster IG harvester's proven technique, applied to the bunkr
+    // domain). Request-URL classification, _lastCdnMedia semantics and the
+    // GAP 26 epoch gate are byte-identical to the baseline.
     let _lastCdnMedia   = null;
     let _lastCdnMediaTs = 0; // v7.3.0 (GAP 26): capture epoch — gates the resolver fast-path
 
-    const _origFetchM3 = window.fetch;
-    window.fetch = async function (...args) {
-        const reqUrl = typeof args[0] === 'string'
-            ? args[0]
-            : (args[0] && args[0].url ? args[0].url : '');
-        if (reqUrl && isCdnUrl(reqUrl)) {
+    const _SNIFF_MARK = '__psiBunkrSniff';
+
+    function classifyRequestUrl(reqUrl) {
+        if (!reqUrl || typeof reqUrl !== 'string') return;
+        if (isCdnUrl(reqUrl)) {
             _lastCdnMedia   = reqUrl;
             _lastCdnMediaTs = Date.now();
             recordUrl(reqUrl, 'sniffer');
             console.log(`[Ψ-4NDR0666] M3: CDN URL captured: ${reqUrl.slice(0, 80)}`);
-        } else if (reqUrl && isMediaPlaylist(reqUrl)) {
+        } else if (isMediaPlaylist(reqUrl)) {
             recordUrl(reqUrl, 'sniffer');
         }
-        return _origFetchM3.apply(this, args);
-    };
+    }
 
-    const _origXhrOpen = XMLHttpRequest.prototype.open;
-    XMLHttpRequest.prototype.open = function (method, url, ...rest) {
-        if (typeof url === 'string') {
-            if (isCdnUrl(url)) {
-                _lastCdnMedia   = url;
-                _lastCdnMediaTs = Date.now();
-                recordUrl(url, 'sniffer');
-            } else if (isMediaPlaylist(url)) {
-                recordUrl(url, 'sniffer');
+    // Bounded textual sweep for media URLs embedded in response bodies
+    // (absolute or protocol-relative). Binary and large media bodies are
+    // rejected at the content-type gate BEFORE any clone()/text() call so
+    // media streams are never teed into memory just to look for strings.
+    const _MEDIA_URL_RE = /(?:(?:https?:)?\/\/)[^\s"'<>\\]+?\.(?:m3u8|mp4|webm|mkv|mov|zip|rar|7z)(?:\?[^\s"'<>\\]*)?/gi;
+    function sniffResponseBodyText(text, baseUrl) {
+        try {
+            if (!text || typeof text !== 'string') return;
+            const scan = text.slice(0, 262144); // 256 KB bound
+            for (const raw of scan.match(_MEDIA_URL_RE) || []) {
+                let url = raw.replace(/&amp;/g, '&').replace(/[.,;]+$/, '');
+                if (url.startsWith('//')) {
+                    try { url = new URL(url, baseUrl || 'https://bunkr.invalid').href; }
+                    catch (_) { continue; }
+                }
+                if (isCdnUrl(url) || isMediaPlaylist(url)) recordUrl(url, 'sniffer-body');
             }
+        } catch (_) { /* EAFP */ }
+    }
+
+    function _sniffableContentType(ct) {
+        if (!ct || typeof ct !== 'string') return true; // unknown → allow (scan is bounded)
+        const c = ct.toLowerCase();
+        if ((/^(video|image|audio)\//.test(c)) && !/mpegurl/.test(c)) return false;
+        if (c.includes('octet-stream')) return false;
+        return /text|json|xml|javascript|mpegurl/.test(c);
+    }
+
+    function installFetchSniff(target, label) {
+        try {
+            if (!target || typeof target.fetch !== 'function' || target.fetch[_SNIFF_MARK]) return;
+            const orig = target.fetch;
+            const wrapped = function (...args) {
+                try {
+                    const reqUrl = typeof args[0] === 'string'
+                        ? args[0]
+                        : (args[0] && args[0].url ? args[0].url : '');
+                    classifyRequestUrl(reqUrl);
+                } catch (_) { /* EAFP */ }
+                const p = orig.apply(this, args);
+                try {
+                    if (p && typeof p.then === 'function') {
+                        p.then((res) => {
+                            try {
+                                if (res && res.ok && res.status !== 204 && typeof res.clone === 'function') {
+                                    const ct = (res.headers && typeof res.headers.get === 'function')
+                                        ? res.headers.get('Content-Type')
+                                        : '';
+                                    if (_sniffableContentType(ct)) {
+                                        res.clone().text()
+                                            .then((t) => sniffResponseBodyText(t, res.url || ''))
+                                            .catch(() => {});
+                                    }
+                                }
+                            } catch (_) { /* EAFP */ }
+                        }).catch(() => {});
+                    }
+                } catch (_) { /* EAFP */ }
+                return p;
+            };
+            try { wrapped.toString = function () { return String(orig); }; } catch (_) { /* fingerprint mask */ }
+            try { Object.defineProperty(wrapped, _SNIFF_MARK, { value: true }); } catch (_) { wrapped[_SNIFF_MARK] = true; }
+            target.fetch = wrapped;
+            console.log(`[Ψ-4NDR0666] M3: fetch sniffer installed (${label}).`);
+        } catch (e) {
+            console.warn(`[Ψ-4NDR0666] M3: fetch sniffer install failed (${label}).`, e);
         }
-        return _origXhrOpen.apply(this, [method, url, ...rest]);
-    };
+    }
+
+    function installXhrSniff(target, label) {
+        try {
+            const xo = target && target.XMLHttpRequest && target.XMLHttpRequest.prototype;
+            if (!xo || typeof xo.open !== 'function' || xo[_SNIFF_MARK]) return;
+            const origOpen = xo.open;
+            xo.open = function (method, url, ...rest) {
+                try { classifyRequestUrl(typeof url === 'string' ? url : ''); } catch (_) { /* EAFP */ }
+                return origOpen.apply(this, [method, url, ...rest]);
+            };
+            const origSend = xo.send;
+            xo.send = function (...sendArgs) {
+                try {
+                    this.addEventListener('load', function () {
+                        try {
+                            let t = '';
+                            if (this.responseType === '' || this.responseType === 'text') t = this.responseText;
+                            let ct = '';
+                            try { ct = this.getResponseHeader('Content-Type') || ''; } catch (_) { /* EAFP */ }
+                            if (t && _sniffableContentType(ct)) sniffResponseBodyText(t, this.responseURL || '');
+                        } catch (_) { /* EAFP */ }
+                    });
+                } catch (_) { /* EAFP */ }
+                return origSend.apply(this, sendArgs);
+            };
+            try { xo.open.toString = function () { return String(origOpen); }; } catch (_) { /* fingerprint mask */ }
+            try { xo.send.toString = function () { return String(origSend); }; } catch (_) { /* fingerprint mask */ }
+            try { Object.defineProperty(xo, _SNIFF_MARK, { value: true }); } catch (_) { xo[_SNIFF_MARK] = true; }
+            console.log(`[Ψ-4NDR0666] M3: XHR sniffer installed (${label}).`);
+        } catch (e) {
+            console.warn(`[Ψ-4NDR0666] M3: XHR sniffer install failed (${label}).`, e);
+        }
+    }
+
+    let _pageCtx = null;
+    try { if (typeof unsafeWindow !== 'undefined' && unsafeWindow) _pageCtx = unsafeWindow; } catch (_) { /* EAFP */ }
+    if (_pageCtx) {
+        installFetchSniff(_pageCtx, 'page/unsafeWindow'); // hls.js lives here
+        installXhrSniff(_pageCtx, 'page/unsafeWindow');
+    }
+    installFetchSniff(window, 'sandbox/window');
+    installXhrSniff(window, 'sandbox/window');
 
     // =========================================================================
     // MODULE 3.5: URL LEDGER — m3u8 / CDN AGGREGATION
@@ -850,7 +1103,7 @@
     // MODULE 4: STATE-AWARE SORT HIJACK (Polled)
     // =========================================================================
     function forceLargestFirst() {
-        if (!albumMatch) return;
+        if (!currentAlbumMatch()) return;
         if (_sortExecuted) return;
         let attempts = 0;
         const sortInterval = setInterval(() => {
@@ -885,7 +1138,7 @@
     }
 
     function activateAdvancedView() {
-        if (!albumMatch) return;
+        if (!currentAlbumMatch()) return;
         let avAttempts = 0;
         const avInterval = setInterval(() => {
             avAttempts++;
@@ -1176,7 +1429,7 @@
             url,
             name,
             saveAs: false,
-            headers: { 'Referer': 'https://dl.bunkr.cr/' },
+            headers: { 'Referer': `${DL_API_BASE}/` },
             onerror(e) {
                 if (settled) return;
                 settled = true;
@@ -1305,7 +1558,7 @@
      * v7: every successful resolution is folded into the Module 3.5 URL
      * ledger so DOM-sourced URLs aggregate with sniffed/API-sourced ones.
      */
-    async function resolveDomStreamUrl(targetUrl, { preferPlaylist = false } = {}) {
+    async function resolveDomStreamUrl(targetUrl, { preferPlaylist = false, allowGateway = false } = {}) {
         if (!targetUrl) return null;
         if (isCdnUrl(targetUrl) || isMediaPlaylist(targetUrl)) return targetUrl;
 
@@ -1377,10 +1630,12 @@
         // v7.1.0: inline-script .m3u8 sweep. Structural HTML parsing stays
         // with DOMParser (D8); this is a bounded text scan over script
         // bodies — the only place hls sources / JSON embeds survive parsing.
+        // v7.4.0: the pattern additionally accepts protocol-relative URLs
+        // (//cdn…/file.m3u8 — resolved against the page via absResolve).
         const sweepScriptTextForPlaylist = (doc, base) => {
             for (const s of doc.querySelectorAll('script:not([src])')) {
                 const text = s.textContent || '';
-                const m = text.match(/https?:\/\/[^\s"'<>\\]+\.m3u8[^\s"'<>\\]*/i);
+                const m = text.match(/(?:https?:)?\/\/[^\s"'<>\\]+\.m3u8[^\s"'<>\\]*/i);
                 if (m) {
                     const abs = absResolve(m[0], base);
                     if (abs && isMediaPlaylist(abs)) return abs;
@@ -1410,8 +1665,16 @@
             if (res && res.status >= 200 && res.status < 300) {
                 const doc = new DOMParser().parseFromString(res.responseText, 'text/html');
 
-                // Tier 1: OG video meta — [LM-B3] resolved against the source page
-                const ogVideo = doc.querySelector("meta[property='og:video']");
+                // Tier 1: OG video meta — [LM-B3] resolved against the source
+                // page. v7.4.0: the full OG/Twitter player meta family is
+                // honored (og:video:url, og:video:secure_url,
+                // twitter:player:stream) — a page that only emits the
+                // :secure_url variant previously fell through every tier.
+                // Every candidate still passes the accept() gate.
+                const ogVideo = doc.querySelector(
+                    "meta[property='og:video'], meta[property='og:video:url'], " +
+                    "meta[property='og:video:secure_url'], meta[name='twitter:player:stream']"
+                );
                 const ogAbs   = ogVideo ? accept(ogVideo.getAttribute('content'), targetUrl) : null;
                 if (ogAbs) {
                     recordUrl(ogAbs, 'dom');
@@ -1476,7 +1739,7 @@
             }
         }
 
-        if (!gatewayUrl) return null;
+        if (!gatewayUrl) return null; // nothing deeper exists to surface
 
         console.log(`[Ψ-4NDR0666] Extracting from gateway: ${gatewayUrl}`);
         // v7.3.0: gateway hop consolidated into fetchPageHop (Module 6.55).
@@ -1506,6 +1769,18 @@
                 return finalUrl;
             }
         }
+
+        // v7.4.0 [LM-parity Tier E]: LinkMaster-grade terminal fallback — when
+        // the strict chain yields nothing, surface the download vector ITSELF.
+        // LinkMaster's resolver copies the first download-ish anchor href
+        // unconditionally; that semantic is exactly why it "always resolves".
+        // Here it is the LAST resort (validated tiers first), returned only
+        // when the caller opted in (stream glyphs), and never recorded into
+        // the ledger — a gateway URL is a vector, not media.
+        if (allowGateway) {
+            console.log(`[Ψ-4NDR0666] Tier E: surfacing gateway vector: ${gatewayUrl}`);
+            return gatewayUrl;
+        }
         return null;
     }
 
@@ -1523,6 +1798,18 @@
     const _API_TIMEOUT_MS = 20000;
     const _activeRequests = new Set(); // live GM_* handles — bulk STOP aborts them (GAP 9)
 
+    // v7.4.0: the dl-gateway host derives from the operator's canonical
+    // domain (dl.<canonical>) instead of the frozen bunkr.cr literal — the
+    // Set Canonical Domain menu previously had no effect on the signed
+    // pipeline's host. A pinned override (settings key dlApiBase, an
+    // https://… literal) wins when present; the default domain reproduces
+    // the baseline URL byte-for-byte. The sign API host (glb-apisign.cdn.cr)
+    // is a CDN-family constant and stays pinned.
+    const DL_API_BASE = (
+        typeof _settings.dlApiBase === 'string' &&
+        /^https:\/\/[a-z0-9][a-z0-9.-]{1,252}\/*$/i.test(_settings.dlApiBase)
+    ) ? _settings.dlApiBase.replace(/\/+$/, '') : `https://dl.${TARGET_DOMAIN}`;
+
     const sleep = ms => new Promise(r => setTimeout(r, ms));
 
     // Panel-independent pipeline logging: renders into the bulk panel log
@@ -1537,6 +1824,12 @@
             span.textContent = `[Ψ] ${msg}`;
             logEl.appendChild(span);
             logEl.scrollTop = logEl.scrollHeight;
+            // v7.4.0: bounded log — a 1000-item album at ~4 spans per item
+            // previously grew the (hidden) log unboundedly for the page
+            // lifetime; the oldest spans are dropped past 400.
+            while (logEl.childElementCount > 400 && logEl.firstElementChild) {
+                logEl.firstElementChild.remove();
+            }
             if (level === 'dbg') return;
         }
         console.log(`[Ψ-BULK] ${msg}`);
@@ -1618,8 +1911,10 @@
             }
         }
 
-        // 2. dl.bunkr.cr/file/<id> href in raw HTML
-        const dlm = html.match(/dl\.bunkr\.cr\/file\/(\d+)/i);
+        // 2. dl.bunkr{1,3}.<tld>/file/<id> href in raw HTML — host-agnostic
+        //    match (v7.4.0: any bunkr-family TLD, not just bunkr.cr, since
+        //    the canonical domain is operator-configurable).
+        const dlm = html.match(/dl\.bunkr{1,3}\.[a-z0-9.-]+\/file\/(\d+)/i);
         if (dlm) return { numId: dlm[1], fname: item.name };
 
         // 3. Generic numeric id regex fallback
@@ -1638,11 +1933,11 @@
         logBulk(`  POST _001_v2 {id:"${numId}"}`, 'dbg');
         const res = await gmFetchCaptchaAware({
             method: 'POST',
-            url:    'https://dl.bunkr.cr/api/_001_v2',
+            url:    `${DL_API_BASE}/api/_001_v2`,
             headers: {
                 'Content-Type': 'application/json',
-                'Origin':       'https://dl.bunkr.cr',
-                'Referer':      'https://dl.bunkr.cr/',
+                'Origin':       DL_API_BASE,
+                'Referer':      `${DL_API_BASE}/`,
                 'User-Agent':   navigator.userAgent,
             },
             data: JSON.stringify({ id: numId }),
@@ -1674,8 +1969,8 @@
             method:  'GET',
             url:     signURL,
             headers: {
-                'Origin':     'https://dl.bunkr.cr',
-                'Referer':    'https://dl.bunkr.cr/',
+                'Origin':     DL_API_BASE,
+                'Referer':    `${DL_API_BASE}/`,
                 'User-Agent': navigator.userAgent,
             },
         }, { label: 'sign API' });
@@ -1860,7 +2155,11 @@
     async function fetchPageHop(url, referer) {
         for (let attempt = 0; ; attempt++) {
             const res = await new Promise((resolve) => {
-                GM_xmlhttpRequest({
+                // v7.4.0 (GAP 9 parity): the hop handle registers in the
+                // shared abort registry — the bulk STOP surface can now
+                // abort in-flight resolver hops too, not just pipeline and
+                // download handles.
+                const control = GM_xmlhttpRequest({
                     method:    'GET',
                     url,
                     headers:   {
@@ -1869,11 +2168,12 @@
                         'Accept-Language': 'en-US,en;q=0.9', // [LM] transport parity
                     },
                     timeout:   12000,
-                    onload:    resolve,
-                    onerror:   () => resolve({ status: 500 }),
-                    ontimeout: () => resolve({ status: 408 }),
-                    onabort:   () => resolve({ status: 0 }), // [LM-G6] settle, never hang
+                    onload:    (r)  => { _activeRequests.delete(control); resolve(r);    },
+                    onerror:   () => { _activeRequests.delete(control); resolve({ status: 500 }); },
+                    ontimeout: () => { _activeRequests.delete(control); resolve({ status: 408 }); },
+                    onabort:   () => { _activeRequests.delete(control); resolve({ status: 0 }); }, // [LM-G6] settle, never hang
                 });
+                _activeRequests.add(control);
             });
             if (!responseLooksLikeCaptcha(res)) return res;
             notifyCaptchaEpisode((url.split('/')[2] || url).slice(0, 60));
@@ -2095,6 +2395,69 @@
     GM_registerMenuCommand('🗄 Audit Ledger vs Web Archive', auditLedgerAgainstArchive);
 
     // =========================================================================
+    // MODULE 6.7: MPV DISPATCH — URI PROTOCOL + LOCAL BRIDGE [LM M4 parity]
+    // =========================================================================
+    // v7.4.0: LinkMasterBETA's signature consumption vector, ported for the
+    // bunkr domain. A resolved m3u8/CDN URL is only useful if it can be
+    // PLAYED — both dispatch channels send the most recent stream URL
+    // straight to the operator's player:
+    //   • URI protocol (mpv://<url>) via a hidden iframe so the host page is
+    //     never navigated ([LM-A5] parity — location.href is the last-resort
+    //     transport only).
+    //   • Local bridge (POST http://127.0.0.1:19999, 5s hard bound, abort-
+    //     aware [LM-G6] parity) for the mpv-webm bridge listener.
+    // _lastStreamUrl is refreshed by every successful stream resolution
+    // (single-asset glyph, grid glyphs, bulk stream aggregation).
+    let _lastStreamUrl = null;
+
+    function launchMpvProtocol(url) {
+        const uri = `mpv://${encodeURIComponent(url)}`;
+        try {
+            const f = document.createElement('iframe');
+            f.style.cssText = 'position:fixed;width:0;height:0;border:0;visibility:hidden;';
+            f.src = uri;
+            (document.body || document.documentElement).appendChild(f);
+            setTimeout(() => { try { f.remove(); } catch (_) { /* EAFP */ } }, 4000);
+        } catch (_) {
+            try { window.location.href = uri; } catch (_) { /* EAFP */ } // last-resort transport
+        }
+    }
+
+    function streamToLocalMpv(url) {
+        if (typeof GM_xmlhttpRequest !== 'function') {
+            showToast('MPV bridge unavailable (no GM transport).', 4000);
+            return;
+        }
+        const control = GM_xmlhttpRequest({
+            method:  'POST',
+            url:     'http://127.0.0.1:19999',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            data:    `url=${encodeURIComponent(url)}`,
+            timeout: 5000,
+            onload: (resp) => {
+                _activeRequests.delete(control);
+                if (resp.status === 200) showToast('⦒ █▓░ Stream dispatched to MPV bridge.', 4000, true);
+                else showToast(`MPV bridge error: HTTP ${resp.status}`, 4000);
+            },
+            onerror: () => { _activeRequests.delete(control); showToast('MPV bridge unavailable (127.0.0.1:19999).', 4000); },
+            ontimeout: () => { _activeRequests.delete(control); showToast('MPV bridge timed out.', 4000); },
+            onabort: () => { _activeRequests.delete(control); showToast('MPV bridge aborted.', 4000); },
+        });
+        _activeRequests.add(control);
+    }
+
+    GM_registerMenuCommand('🎬 MPV: Send Last Stream (URI protocol)', () => {
+        if (!_lastStreamUrl) { showToast('No stream resolved yet — use a stream glyph first.', 4000); return; }
+        launchMpvProtocol(_lastStreamUrl);
+        showToast('⦒ █▓░ Stream dispatched to MPV (URI protocol).', 4000, true);
+    });
+
+    GM_registerMenuCommand('🎬 MPV: Send Last Stream (local bridge)', () => {
+        if (!_lastStreamUrl) { showToast('No stream resolved yet — use a stream glyph first.', 4000); return; }
+        streamToLocalMpv(_lastStreamUrl);
+    });
+
+    // =========================================================================
     // MODULE 7: UNIFIED DIRECT ACQUISITION
     // =========================================================================
     function makeAccessible(glyph, label, activateFn) {
@@ -2210,7 +2573,7 @@
                 const streamGlyph     = document.createElement('a');
                 streamGlyph.className = 'psi-stream-glyph psi-main-stream-glyph psi-glass-panel psi-btn';
                 streamGlyph.innerHTML = streamSvg;
-                streamGlyph.title     = 'Copy Stream URL';
+                streamGlyph.title     = 'Copy Stream URL (Shift+Click: MPV dispatch)';
                 const activateStream  = async (e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -2250,16 +2613,37 @@
                         }
                     }
 
-                    // Tier C: DOM gateway — playlist-preferring resolver
-                    if (!streamUrl) {
+                    // v7.4.0 [m3u8 correctness]: a pipeline hit that is NOT a
+                    // playlist does not satisfy "the m3u8" — before settling
+                    // for the file URL, run the playlist-preferring DOM chain
+                    // (embedded-sweep first) and prefer a real m3u8 if one
+                    // exists. This is the refinement the operator's
+                    // LinkMaster fallback existed to provide.
+                    const resolveTargetUrl = () => {
                         const gatewayAnchor = document.querySelector(NATIVE_DL_SEL);
-                        const targetUrl     = (gatewayAnchor?.href && gatewayAnchor.href !== window.location.href)
+                        return (gatewayAnchor?.href && gatewayAnchor.href !== window.location.href)
                             ? gatewayAnchor.href
                             : window.location.href;
-                        streamUrl = await resolveDomStreamUrl(targetUrl, { preferPlaylist: true });
+                    };
+                    if (streamUrl && !isMediaPlaylist(streamUrl)) {
+                        try {
+                            const playlist = await resolveDomStreamUrl(resolveTargetUrl(), { preferPlaylist: true });
+                            if (playlist && isMediaPlaylist(playlist)) streamUrl = playlist;
+                        } catch (_) { /* EAFP — keep the pipeline URL */ }
+                    }
+
+                    // Tier C: DOM gateway — playlist-preferring resolver.
+                    // v7.4.0: allowGateway (Tier E) — when every strict tier
+                    // fails, surface the download vector itself instead of
+                    // nothing (LinkMaster "always resolves" parity).
+                    if (!streamUrl) {
+                        const targetUrl = resolveTargetUrl();
+                        streamUrl = await resolveDomStreamUrl(targetUrl, { preferPlaylist: true, allowGateway: true });
 
                         // v7.2.0 Tier D: Ψ-ARCHIVE — the page is dead live;
                         // pull the m3u8/CDN URL out of the archived copy.
+                        // v7.4.0: probed only when the resolver yielded
+                        // nothing — a gateway URL means the page is alive.
                         if (!streamUrl && ARCHIVE_ENABLED()) {
                             streamUrl = await resolveViaWebArchive(
                                 [targetUrl, window.location.href],
@@ -2268,8 +2652,20 @@
                         }
                     }
 
+                    // v7.4.0 GAP 28 fix: the baseline left style.color='#fff'
+                    // (set for the spinner) on the glyph forever after a copy
+                    // — robustCopy captured '#fff' as the "original" color and
+                    // faithfully restored it. Clear it before the feedback
+                    // path so the restore returns the themed default.
                     streamGlyph.innerHTML = savedHtml;
+                    streamGlyph.style.color = '';
                     if (streamUrl) {
+                        _lastStreamUrl = streamUrl; // v7.4.0: MPV dispatch surface
+                        if (e.shiftKey) {
+                            launchMpvProtocol(streamUrl);
+                            showToast('⦒ █▓░ Stream dispatched to MPV (URI protocol).', 4000, true);
+                            return;
+                        }
                         recordUrl(streamUrl, 'stream'); // v7: ledger aggregation
                         robustCopy(streamUrl, streamGlyph);
                         // v7.2.0: archived sources get explicit labeling —
@@ -2277,10 +2673,14 @@
                         // a dead asset, not the live CDN.
                         const archivedCopy = !!unwrapWebArchiveUrl(streamUrl) ||
                             /^https?:\/\/archive\.(ph|is|today)\//i.test(streamUrl);
+                        const gatewayCopy = !archivedCopy &&
+                            !isMediaPlaylist(streamUrl) && !isCdnUrl(streamUrl);
                         if (isMediaPlaylist(streamUrl)) {
                             showToast(archivedCopy
                                 ? '🗄 ARCHIVED HLS playlist (m3u8) copied — live source is dead.'
                                 : '⦒ █▓░ HLS playlist (m3u8) copied for streaming.', 5000, true);
+                        } else if (gatewayCopy) {
+                            showToast('⦒ █▓░ Gateway link copied — direct CDN gated (open it to pass through).', 5000, true);
                         } else if (streamUrl.includes('token=') && streamUrl.includes('ex=')) {
                             showToast('⦒ █▓░URL copied for IP streaming.', 6000, true);
                         } else if (archivedCopy) {
@@ -2409,6 +2809,119 @@
                 dlGlyph.onmousedown = activateDl;
                 makeAccessible(dlGlyph, 'Download file', activateDl);
             }
+
+            // v7.4.0 [LM M1 parity]: per-item STREAM glyph — LinkMasterBETA
+            // resolves the m3u8/CDN URL for ANY listed bunkr link without
+            // navigation; the baseline's stream surface existed only on
+            // single-asset pages, so an album's m3u8s could not be
+            // aggregated at all without opening every item. Resolution
+            // order mirrors the single-asset glyph: cached (GAP 27
+            // expiry-honored) → signed 3-hop pipeline (with the m3u8
+            // refinement pass) → playlist-preferring DOM resolver (Tier E
+            // gateway fallback) → Ψ-ARCHIVE. Shift+Click dispatches MPV.
+            if (!el.querySelector('.psi-stream-glyph') && resolveBulkFile) {
+                const streamGlyph     = document.createElement('a');
+                streamGlyph.className = 'psi-stream-glyph psi-glass-panel psi-btn';
+                streamGlyph.innerHTML = streamSvg;
+                streamGlyph.title     = 'Copy Stream URL (Shift+Click: MPV dispatch)';
+                ensureRelative(el);
+                el.appendChild(streamGlyph);
+
+                const activateStream = async (e) => {
+                    if (e.type === 'mousedown' && e.button !== 0) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Cached resolution — honored unless its signed token
+                    // has lapsed (GAP 27 parity with the DL glyph).
+                    let streamUrl = (streamGlyph.dataset.resolvedStreamUrl &&
+                                     !isSignedUrlExpired(streamGlyph.dataset.resolvedStreamUrl))
+                        ? streamGlyph.dataset.resolvedStreamUrl
+                        : null;
+
+                    if (!streamUrl) {
+                        const savedHtml       = streamGlyph.innerHTML;
+                        streamGlyph.innerHTML = spinnerHtml;
+                        streamGlyph.style.color       = 'var(--text-cyan-active)';
+                        streamGlyph.style.borderColor = 'var(--text-cyan-active)';
+
+                        // Tier B: signed 3-hop pipeline
+                        try {
+                            // Name extraction mirrors scanFiles() logic
+                            let name = link.getAttribute('title') || '';
+                            if (!name) { const img = link.querySelector('img'); name = img ? (img.alt || '') : ''; }
+                            if (!name) { const sp  = el.querySelector('p,span'); name = sp ? sp.textContent.trim() : ''; }
+
+                            const item   = { filePageURL: link.href, slug: alphaId, name: name || alphaId };
+                            const result = await resolveBulkFile(item);
+                            if (result?.cdnURL) streamUrl = result.cdnURL;
+                        } catch (err) {
+                            console.warn(`[Ψ-4NDR0666] Grid stream pipeline failed for ${alphaId}: ${err.message}`);
+                        }
+
+                        // [m3u8 correctness]: prefer a real playlist over a
+                        // pipeline file-URL hit — the DOM chain's embedded
+                        // sweep runs playlist-first (single-asset parity).
+                        if (streamUrl && !isMediaPlaylist(streamUrl)) {
+                            try {
+                                const playlist = await resolveDomStreamUrl(link.href, { preferPlaylist: true });
+                                if (playlist && isMediaPlaylist(playlist)) streamUrl = playlist;
+                            } catch (_) { /* EAFP — keep the pipeline URL */ }
+                        }
+
+                        // Tier C: playlist-preferring DOM resolver with the
+                        // Tier E gateway fallback (LinkMaster semantics).
+                        if (!streamUrl) {
+                            streamUrl = await resolveDomStreamUrl(link.href, { preferPlaylist: true, allowGateway: true });
+                        }
+
+                        // Tier D: Ψ-ARCHIVE — the item's page is dead live.
+                        if (!streamUrl && ARCHIVE_ENABLED()) {
+                            try {
+                                streamUrl = await resolveViaWebArchive([link.href], { preferPlaylist: true });
+                            } catch (_) { streamUrl = null; }
+                        }
+
+                        streamGlyph.innerHTML         = savedHtml;
+                        streamGlyph.style.color       = '';
+                        streamGlyph.style.borderColor = '';
+                        if (streamUrl) streamGlyph.dataset.resolvedStreamUrl = streamUrl;
+                    }
+
+                    if (streamUrl) {
+                        _lastStreamUrl = streamUrl; // v7.4.0: MPV dispatch surface
+                        if (e.shiftKey) {
+                            launchMpvProtocol(streamUrl);
+                            showToast('⦒ █▓░ Stream dispatched to MPV (URI protocol).', 4000, true);
+                            return;
+                        }
+                        recordUrl(streamUrl, 'stream'); // ledger aggregation
+                        robustCopy(streamUrl, streamGlyph);
+                        const archivedCopy = !!unwrapWebArchiveUrl(streamUrl) ||
+                            /^https?:\/\/archive\.(ph|is|today)\//i.test(streamUrl);
+                        const gatewayCopy = !archivedCopy &&
+                            !isMediaPlaylist(streamUrl) && !isCdnUrl(streamUrl);
+                        if (isMediaPlaylist(streamUrl)) {
+                            showToast(archivedCopy
+                                ? '🗄 ARCHIVED HLS playlist (m3u8) copied — live source is dead.'
+                                : '⦒ █▓░ HLS playlist (m3u8) copied for streaming.', 5000, true);
+                        } else if (gatewayCopy) {
+                            showToast('⦒ █▓░ Gateway link copied — direct CDN gated (open it to pass through).', 5000, true);
+                        } else if (archivedCopy) {
+                            showToast('🗄 ARCHIVED media URL copied — live source is dead.', 5000, true);
+                        }
+                    } else {
+                        streamGlyph.style.color       = 'var(--red)';
+                        streamGlyph.style.borderColor = 'var(--red)';
+                        setTimeout(() => {
+                            streamGlyph.style.color       = '';
+                            streamGlyph.style.borderColor = '';
+                        }, 2500);
+                    }
+                };
+                streamGlyph.onmousedown = activateStream;
+                makeAccessible(streamGlyph, 'Copy stream URL', activateStream);
+            }
         });
     }
 
@@ -2468,9 +2981,10 @@
             if (rec.kind === 'm3u8') ledgerM3u8++; else ledgerFiles++;
         }
         const report = {
+            scriptVersion:  SCRIPT_VERSION, // v7.4.0: unified version surface
             timestamp:       new Date().toISOString(),
             url:             window.location.href,
-            topology:        albumMatch ? 'GRID_VIEW' : 'SINGLE_ASSET_VIEW',
+            topology:        currentAlbumMatch() ? 'GRID_VIEW' : 'SINGLE_ASSET_VIEW',
             scripts:         Array.from(document.querySelectorAll('script[data-file-id]'))
                                .map(s => s.outerHTML),
             nativeDls:       Array.from(document.querySelectorAll(
@@ -2483,6 +2997,7 @@
                              })),
             gridItemsCount:  document.querySelectorAll('.grid > div, .grid-images_box, .theItem').length,
             lastCdnMedia:    _lastCdnMedia || 'none',
+            lastStreamUrl:   _lastStreamUrl || 'none', // v7.4.0: MPV dispatch surface
             signedPipelineArmed: !!resolveBulkFile, // v7.1.0 (GAP 21): armed on every page now
             urlLedger: {
                 m3u8:  ledgerM3u8,
@@ -2492,12 +3007,14 @@
             },
             settings: {
                 canonicalDomain:  TARGET_DOMAIN,
+                dlApiBase:        DL_API_BASE, // v7.4.0: derived/pinned dl-gateway base
                 bulkConcurrency:  clampSetting(_settings.bulkConcurrency, 1, 6, 2),
                 bulkDelayMs:      clampSetting(_settings.bulkDelayMs, 200, 10000, 1200),
                 archiveFallback:  ARCHIVE_ENABLED(), // v7.2.0
+                remoteFonts:      REMOTE_FONTS_ENABLED(), // v7.4.0
             },
             captchaEpisodes: _captchaEpisodes, // v7.3.0: captcha walls seen this page epoch
-            hotkeys: 'V=cycle visited, B=pin bulk panel, U=copy URL ledger, A=archive audit',
+            hotkeys: 'V=cycle visited, B=pin bulk panel, U=copy URL ledger, A=archive audit, S=aggregate streams, M=MPV dispatch',
             envGlobals: {
                 jsSlug:        typeof window.jsSlug        !== 'undefined' ? window.jsSlug        : 'undefined',
                 jsCDN:         typeof window.jsCDN         !== 'undefined' ? window.jsCDN         : 'undefined',
@@ -2609,9 +3126,11 @@
     // Vision item "power user control": V cycles visited visibility (reuses
     // the toggle button's own handler so behaviour can never diverge), B
     // pins/unpins the bulk panel (touch/click parity with the hover peek),
-    // U exports the aggregated URL ledger, and A (v7.2.0) runs the ledger
-    // audit against the web archives. Modifier combos and text-entry
-    // contexts are excluded so page search/typing never collides.
+    // U exports the aggregated URL ledger, A (v7.2.0) runs the ledger
+    // audit against the web archives, S (v7.4.0) fires album-wide stream
+    // aggregation, and M (v7.4.0) dispatches the last resolved stream to
+    // MPV via the URI protocol. Modifier combos and text-entry contexts
+    // are excluded so page search/typing never collides.
     function initHotkeys() {
         document.addEventListener('keydown', (e) => {
             if (e.ctrlKey || e.altKey || e.metaKey || e.repeat) return;
@@ -2637,11 +3156,29 @@
                     auditLedgerAgainstArchive();
                     break;
                 }
+                case 's': { // v7.4.0 [LM M1 parity]: album-wide stream aggregation
+                    const btn = document.getElementById('btn-bulk-streams');
+                    if (btn && !btn.disabled) {
+                        btn.click();
+                    } else {
+                        showToast('Stream aggregation available on album pages — open the bulk panel (B).', 4000);
+                    }
+                    break;
+                }
+                case 'm': { // v7.4.0 [LM M4 parity]: MPV URI dispatch of the last stream
+                    if (_lastStreamUrl) {
+                        launchMpvProtocol(_lastStreamUrl);
+                        showToast('⦒ █▓░ Stream dispatched to MPV (URI protocol).', 4000, true);
+                    } else {
+                        showToast('No stream resolved yet — use a stream glyph first.', 4000);
+                    }
+                    break;
+                }
             }
         });
 
         GM_registerMenuCommand('⌨ Hotkey Reference', () => {
-            showToast('⌨ V: cycle visited · B: pin bulk panel · U: copy URL ledger · A: archive audit', 8000, true);
+            showToast('⌨ V: visited · B: pin bulk panel · U: copy ledger · A: archive audit · S: aggregate streams · M: MPV dispatch', 8000, true);
         });
     }
 
@@ -2676,7 +3213,7 @@
     // MODULE 11: BULK ACQUISITION ENGINE
     // =========================================================================
     function initBulkEngine() {
-        if (!albumMatch) return;
+        if (!currentAlbumMatch()) return;
         if (document.getElementById('psi-bulk-panel')) return;
 
         // ── Panel DOM ────────────────────────────────────────────────────────
@@ -2691,9 +3228,10 @@
                 <div id="psi-bulk-info">0 OK / 0 ERR / 0 TOTAL</div>
                 <div id="psi-bulk-progress"><div id="psi-bulk-bar"></div></div>
                 <div class="controls">
-                    <button id="btn-bulk-start"   class="psi-btn" aria-label="Start Bulk Download"  style="flex:1;padding:10px 6px;" disabled>START</button>
-                    <button id="btn-bulk-pause"   class="psi-btn" aria-label="Pause Bulk Download"  style="flex:1;padding:10px 6px;" disabled>PAUSE</button>
-                    <button id="btn-bulk-stop"    class="psi-btn psi-destructive" aria-label="Stop Bulk Download" style="flex:1;padding:10px 6px;" disabled>STOP</button>
+                    <button id="btn-bulk-start"   class="psi-btn" aria-label="Start Bulk Download"  style="flex:1;padding:10px 4px;" disabled>START</button>
+                    <button id="btn-bulk-streams" class="psi-btn" aria-label="Aggregate Stream URLs (m3u8/CDN) for all items" style="flex:1;padding:10px 4px;" disabled>STREAMS</button>
+                    <button id="btn-bulk-pause"   class="psi-btn" aria-label="Pause Bulk Download"  style="flex:1;padding:10px 4px;" disabled>PAUSE</button>
+                    <button id="btn-bulk-stop"    class="psi-btn psi-destructive" aria-label="Stop Bulk Download" style="flex:1;padding:10px 4px;" disabled>STOP</button>
                     <button id="btn-bulk-log-tog" class="psi-btn" aria-label="Toggle Log Display"   style="flex:0 0 auto;padding:10px 8px;">LOG</button>
                 </div>
                 <div id="psi-bulk-log"></div>
@@ -2794,7 +3332,7 @@
                     url,
                     name:   (filename || 'bunkr_file').replace(/[\\/:*?"<>|]/g, '_').substring(0, 200),
                     saveAs: false,
-                    headers: { 'Referer': 'https://dl.bunkr.cr/' },
+                    headers: { 'Referer': `${DL_API_BASE}/` },
                     onerror(e) {
                         if (settled) return;
                         settled = true;
@@ -2820,7 +3358,143 @@
             });
         }
 
-        // ── processBulkQueue ──────────────────────────────────────────────────
+        // v7.4.0 [LM M1 parity]: album-wide stream aggregation — resolve
+        // the m3u8/CDN URL for EVERY grid item without navigation, aggregate
+        // into the ledger, and copy the playlist-first list. This is the
+        // vision's "m3u8 URL aggregation" as a first-class bulk action,
+        // mirroring what the operator used LinkMasterBETA for: a table of
+        // bunkr links resolved en masse. Concurrency, inter-item delay,
+        // PAUSE and STOP (shared abort registry) all honor the same
+        // BulkState discipline as the download queue — the two queues are
+        // mutually exclusive (the inactive one's button is disabled).
+        async function resolveStreamUrlForItem(item) {
+            // Tier B: signed 3-hop pipeline
+            try {
+                const result = await resolveBulkFile(item);
+                if (result?.cdnURL) {
+                    let url = result.cdnURL;
+                    // [m3u8 correctness]: prefer a real playlist over a
+                    // pipeline file-URL hit (single-asset glyph parity).
+                    if (!isMediaPlaylist(url)) {
+                        try {
+                            const playlist = await resolveDomStreamUrl(item.filePageURL, { preferPlaylist: true });
+                            if (playlist && isMediaPlaylist(playlist)) url = playlist;
+                        } catch (_) { /* EAFP — keep the pipeline URL */ }
+                    }
+                    return url;
+                }
+            } catch (e) {
+                // A captcha wall is terminal for this item (v7.3.0 [A5]
+                // parity) — no archive probe, no stale copy; the branded
+                // toast already told the operator why.
+                if (e && e.isCaptcha) throw e;
+                console.warn(`[Ψ-4NDR0666] Stream pipeline failed for ${item.name}: ${e.message}`);
+            }
+            // Tier C: playlist-preferring DOM resolver (no gateway fallback
+            // in bulk — an album of gateway links is noise, not aggregation).
+            const domUrl = await resolveDomStreamUrl(item.filePageURL, { preferPlaylist: true });
+            if (domUrl) return domUrl;
+            // Tier D: Ψ-ARCHIVE — dead items may live in the snapshots.
+            if (ARCHIVE_ENABLED() && item.filePageURL) {
+                try {
+                    return await resolveViaWebArchive([item.filePageURL], { preferPlaylist: true });
+                } catch (_) { return null; }
+            }
+            return null;
+        }
+
+        async function processStreamQueue() {
+            const resolved = [];
+            while (BulkState.queue.length > 0 && !BulkState.aborted) {
+                if (BulkState.paused)                        { await sleep(400); continue; }
+                if (BulkState.running >= BulkState.MAX_CONCURRENT) { await sleep(200); continue; }
+
+                const item = BulkState.queue.shift();
+                BulkState.running++;
+
+                (async () => {
+                    try {
+                        setBulkStatus(`⟳ STREAM: ${item.name}`);
+                        logBulk(`→ STREAM: ${item.name}`, 'inf');
+                        const url = await resolveStreamUrlForItem(item);
+                        if (url) {
+                            recordUrl(url, 'stream');
+                            resolved.push(url);
+                            BulkState.done++;
+                            logBulk(`✓ STREAM OK: ${item.name}`, 'ok');
+                        } else {
+                            BulkState.failed++;
+                            logBulk(`✗ STREAM ERR: ${item.name} — no URL resolved`, 'err');
+                        }
+                    } catch (e) {
+                        BulkState.failed++;
+                        logBulk(`✗ STREAM ERR: ${item.name} — ${e.message}`, 'err');
+                    } finally {
+                        // GAP 10 parity: the inter-item delay runs while the
+                        // concurrency slot is still held.
+                        if (!BulkState.aborted && BulkState.queue.length > 0) {
+                            await sleep(BulkState.DELAY_MS);
+                        }
+                        BulkState.running--;
+                        updateBulkUI();
+                    }
+                })();
+            }
+
+            // Wait for all concurrent resolutions to settle
+            await new Promise(r => {
+                const iv = setInterval(() => {
+                    if (!BulkState.running) { clearInterval(iv); r(); }
+                }, 300);
+            });
+
+            if (!BulkState.aborted) {
+                const playlists  = resolved.filter(u => isMediaPlaylist(u));
+                const fileUrls   = resolved.filter(u => !isMediaPlaylist(u));
+                if (resolved.length) {
+                    robustCopy(playlists.concat(fileUrls).join('\n'), null);
+                    if (playlists.length) _lastStreamUrl = playlists[0];
+                    setBulkStatus(`✅ Streams: ${playlists.length} m3u8 / ${fileUrls.length} file / ${BulkState.failed} ERR — copied`);
+                    logBulk(`✓ Aggregated ${resolved.length} stream URL(s): ${playlists.length} m3u8 / ${fileUrls.length} CDN — list copied to clipboard.`, 'ok');
+                } else {
+                    setBulkStatus(`✅ Streams complete: 0 resolved / ${BulkState.failed} ERR`);
+                }
+                const bar = document.getElementById('psi-bulk-bar');
+                if (bar) {
+                    bar.style.background = 'var(--accent-cyan)';
+                    bar.style.boxShadow  = '0 0 8px var(--glow-cyan-active)';
+                }
+            }
+            resetBulkControls();
+        }
+
+        // v7.4.0: shared terminal control state — both queues and STOP land
+        // here (baseline cosmetic fix folded in: the PAUSE button previously
+        // kept a stale 'RESUME' label after a paused run completed).
+        function resetBulkControls() {
+            const startBtn   = document.getElementById('btn-bulk-start');
+            const streamsBtn = document.getElementById('btn-bulk-streams');
+            const pauseBtn   = document.getElementById('btn-bulk-pause');
+            const stopBtn    = document.getElementById('btn-bulk-stop');
+            if (startBtn)   startBtn.disabled   = false;
+            if (streamsBtn) streamsBtn.disabled = false;
+            if (pauseBtn)  { pauseBtn.disabled  = true;  pauseBtn.textContent = 'PAUSE'; }
+            if (stopBtn)    stopBtn.disabled    = true;
+            BulkState.paused = false;
+        }
+
+        function armBulkRun() {
+            const startBtn   = document.getElementById('btn-bulk-start');
+            const streamsBtn = document.getElementById('btn-bulk-streams');
+            const pauseBtn   = document.getElementById('btn-bulk-pause');
+            const stopBtn    = document.getElementById('btn-bulk-stop');
+            if (startBtn)   startBtn.disabled   = true;
+            if (streamsBtn) streamsBtn.disabled = true;
+            if (pauseBtn)   pauseBtn.disabled   = false;
+            if (stopBtn)    stopBtn.disabled    = false;
+        }
+
+        // ── processBulkQueue ────────────────────────────────────────────
         async function processBulkQueue() {
             while (BulkState.queue.length > 0 && !BulkState.aborted) {
                 if (BulkState.paused)                        { await sleep(400); continue; }
@@ -2915,9 +3589,7 @@
                     bar.style.boxShadow  = '0 0 10px #4ade80';
                 }
             }
-            document.getElementById('btn-bulk-start').disabled = false;
-            document.getElementById('btn-bulk-pause').disabled = true;
-            document.getElementById('btn-bulk-stop').disabled  = true;
+            resetBulkControls(); // v7.4.0: shared terminal state (incl. PAUSE label reset)
         }
 
         // ── Button event wiring ───────────────────────────────────────────────
@@ -2948,14 +3620,43 @@
                 bar.style.background = 'var(--accent-cyan)';
                 bar.style.boxShadow  = '0 0 8px var(--glow-cyan-active)';
             }
-            document.getElementById('btn-bulk-start').disabled = true;
-            document.getElementById('btn-bulk-pause').disabled = false;
-            document.getElementById('btn-bulk-stop').disabled  = false;
+            armBulkRun();
 
             updateBulkUI();
             setBulkStatus('Initiating Pipeline…');
             logBulk(`Registered ${files.length} payload(s) from DOM matrix.`, 'inf');
             processBulkQueue();
+        };
+
+        // v7.4.0 [LM M1 parity]: STREAMS — album-wide m3u8/CDN aggregation.
+        document.getElementById('btn-bulk-streams').onclick = async () => {
+            const files = scanFiles();
+            if (!files.length) { setBulkStatus('⚠ No files found!'); return; }
+
+            Object.assign(BulkState, {
+                queue:   [...files],
+                total:   files.length,
+                done:    0,
+                failed:  0,
+                running: 0,
+                paused:  false,
+                aborted: false,
+            });
+
+            const log = document.getElementById('psi-bulk-log');
+            const bar = document.getElementById('psi-bulk-bar');
+            if (log) log.innerHTML     = '';
+            if (log) log.style.display = 'block';
+            if (bar) {
+                bar.style.background = 'var(--accent-cyan)';
+                bar.style.boxShadow  = '0 0 8px var(--glow-cyan-active)';
+            }
+            armBulkRun();
+
+            updateBulkUI();
+            setBulkStatus('Initiating stream aggregation…');
+            logBulk(`Registered ${files.length} payload(s) for stream aggregation (m3u8 first).`, 'inf');
+            processStreamQueue();
         };
 
         document.getElementById('btn-bulk-pause').onclick = () => {
@@ -2970,15 +3671,14 @@
             BulkState.queue   = [];
             // GAP 9 fix: previously left already-running GM_xmlhttpRequest /
             // GM_download calls to finish on their own — STOP only prevented
-            // *new* items from starting. Now actively abort every live handle.
+            // *new* items from starting. Now actively abort every live handle
+            // (v7.4.0: resolver hops register too — fetchPageHop).
             for (const control of BulkState.activeRequests) {
                 try { control && typeof control.abort === 'function' && control.abort(); } catch (_) { /* EAFP */ }
             }
             BulkState.activeRequests.clear();
             setBulkStatus('✕ Pipeline Cancelled');
-            document.getElementById('btn-bulk-start').disabled = false;
-            document.getElementById('btn-bulk-pause').disabled = true;
-            document.getElementById('btn-bulk-stop').disabled  = true;
+            resetBulkControls();
         };
 
         // Initial scan — polls until grid is populated
@@ -2987,12 +3687,14 @@
         // infinite setTimeout chain that ticks forever on barren pages.
         let scanAttempts = 0;
         const scanAndShow = () => {
-            const files    = scanFiles();
-            const status   = document.getElementById('psi-bulk-status');
-            const startBtn = document.getElementById('btn-bulk-start');
+            const files      = scanFiles();
+            const status     = document.getElementById('psi-bulk-status');
+            const startBtn   = document.getElementById('btn-bulk-start');
+            const streamsBtn = document.getElementById('btn-bulk-streams');
             if (files.length) {
-                if (status)   status.textContent = `${files.length} grid files acquired.`;
-                if (startBtn) startBtn.disabled  = false;
+                if (status)     status.textContent   = `${files.length} grid files acquired.`;
+                if (startBtn)   startBtn.disabled    = false;
+                if (streamsBtn) streamsBtn.disabled  = false;
             } else if (++scanAttempts >= 60) {
                 if (status) status.textContent = 'No grid files detected after 90s — START rescans on demand.';
             } else {
@@ -3009,6 +3711,10 @@
     function bootstrap() {
         if (!document.body) { setTimeout(bootstrap, 50); return; }
         console.log('[Ψ-4NDR0666] Intelligence baseline established. Injecting payloads.');
+
+        // v7.4.0: opt-in spec typography (no-op unless the operator enabled
+        // remote fonts — OPSEC-quiet by default).
+        ensureRemoteFonts();
 
         // v7: new power-user surfaces come online before any acquisition
         // logic so every later module can rely on them — SPA nav events,
