@@ -23,8 +23,8 @@
 // @connect      127.0.0.1
 // @noframes
 // @run-at       document-start
-// @downloadURL  https://raw.githubusercontent.com/4ndr0666/glm/main/bunkr.user.js
-// @updateURL    https://raw.githubusercontent.com/4ndr0666/glm/main/bunkr.user.js
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Bunkr++%CE%A8.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Bunkr++%CE%A8.user.js
 // @license      UNLICENSED - RED TEAM USE ONLY
 // ==/UserScript==
 // v7.0.0-Ψ superset revision (GUP v5.3 audited).
