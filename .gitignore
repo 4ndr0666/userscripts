@@ -178,3 +178,5 @@ compare
 # IS the product (38 installables served via raw URLs). Re-include it:
 !dist/
 update-4ndr0666tools-suite-v1.2.0.sh
+update-4ndr0666tools-suite-v1.2.2.sh
+update-4ndr0666tools-suite-v1.2.1.sh
