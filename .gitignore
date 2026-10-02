@@ -172,3 +172,8 @@ testing/
 backups/
 package-lock.json
 compare
+
+# == 9. 4NDR0666TOOLS SUITE DIST — install channel (@updateURL target) ==
+# The blanket `dist/` rule above targets JS-app build output; the suite dist/
+# IS the product (38 installables served via raw URLs). Re-include it:
+!dist/

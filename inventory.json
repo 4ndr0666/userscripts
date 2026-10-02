@@ -1,0 +1,1572 @@
+{
+ "scripts": [
+  {
+   "file": "4ndr0tools - 4ndr0purge.user.js",
+   "name": "4ndr0tools - 4ndr0Purge",
+   "version": "1.0.1",
+   "description": "Universal one-click session reset. Nukes Cookies, Storage, IDB, and SW on ANY site.",
+   "family": "privacy & security",
+   "sha256": "4e5c23f9ec78e4a0bc798401012f37d492f5515e9e8af1152352b2bbe060f8ea",
+   "lines": 273,
+   "bytes": 11919,
+   "matches": [
+    "*://*/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_getValue",
+    "GM_setValue",
+    "GM_registerMenuCommand",
+    "GM_addStyle"
+   ],
+   "requires": [],
+   "connects": [],
+   "runAt": "document-start",
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%204ndr0purge.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%204ndr0purge.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - 4ndr0serviceguard Companion.user.js",
+   "name": "4ndr0tools - 4ndr0serviceguard Companion",
+   "version": "6.0.0",
+   "description": "Part of 4ndr0tools 4ndr0serviceguard — Default-deny Service Worker & WebSocket control with whitelist",
+   "family": "privacy & security",
+   "sha256": "8e590115bf8076838a1ed4a77c60d13cbfc3848edf39d942806bfc7ee624d049",
+   "lines": 131,
+   "bytes": 5206,
+   "matches": [
+    "*://*/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_setValue",
+    "GM_getValue",
+    "GM_registerMenuCommand",
+    "GM_notification"
+   ],
+   "requires": [],
+   "connects": [],
+   "runAt": "document-start",
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%204ndr0serviceguard%20Companion.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%204ndr0serviceguard%20Companion.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - AlwaysNewWindow.user.js",
+   "name": "4ndr0tools - AlwaysNewWindow",
+   "version": "1.0.0",
+   "description": "Open all links into new windows (optional force mode), auto-expand collapsed content, hide banners and consent overlays, neon-glow overlay scrollbar, and right-click scroll-to-top/bottom.",
+   "family": "ux utilities",
+   "sha256": "f58be6a87be390c65ea60970bc790f6362f9355cddc3f49185357c7ac406162b",
+   "lines": 1553,
+   "bytes": 69588,
+   "matches": [
+    "*://*/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_registerMenuCommand",
+    "GM_unregisterMenuCommand",
+    "GM_getValue",
+    "GM_setValue",
+    "unsafeWindow"
+   ],
+   "requires": [],
+   "connects": [],
+   "runAt": "document-start",
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20AlwaysNewWindow.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20AlwaysNewWindow.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - Anti-detection.user.js",
+   "name": "4ndr0tools - Anti-detection",
+   "version": "1.1",
+   "description": "Sanitize environment for userscripts to execute properly.",
+   "family": "privacy & security",
+   "sha256": "6990f7882098f4248b0e4a51430452e0e3237fc11cfc2dc40067d58e48d36958",
+   "lines": 77,
+   "bytes": 4019,
+   "matches": [
+    "*://*/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "none"
+   ],
+   "requires": [],
+   "connects": [],
+   "runAt": "document-start",
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Anti-detection.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Anti-detection.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - Anti-telemetry (Intelligent Cloud Computing).user.js",
+   "name": "4ndr0tools - Anti-telemetry (Intelligent Cloud Computing)",
+   "version": "3.5.0",
+   "description": "Wan AI shifted infrastructure from Alibaba to ICC (South Korea) to exploit jurisdictional arbitrage and circumvent US privacy laws. It creates persistent, hardware-linked endpoint fingerprints (Layer 1/2 MAC/UDID mapping) that survive OS/browser wipes via low-level telemetry beacons. This data is brokered for predictive behavioral profiling and Global Endpoint Graph construction. This script enforces absolute surveillance countermeasures: aggressive DOM sinkholing, WebRTC/network nullification, synthetic identifier poisoning, and secure context escape prevention targeting Wan.video, Kuaishou, Aliyun, and ICC telemetry nodes.",
+   "family": "privacy & security",
+   "sha256": "cbbf6d96bb6da66d740575df07e5998b130b74075d5dd5569b1b15f518d8115a",
+   "lines": 309,
+   "bytes": 15464,
+   "matches": [
+    "*://*.wan.video/*",
+    "*://*.kuaishou.com/*",
+    "*://*.aliyun.com/*",
+    "*://*.icc-cloud.kr/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "none"
+   ],
+   "requires": [],
+   "connects": [],
+   "runAt": "document-start",
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Anti-telemetry%20(Intelligent%20Cloud%20Computing).user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Anti-telemetry%20(Intelligent%20Cloud%20Computing).user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - AutoTranslate.user.js",
+   "name": "4ndr0tools - AutoTranslate",
+   "version": "6.0.0",
+   "description": "Automatically translates any non-English page into English via translate.goog redirect — layered metadata + text language detection, SPA route watching, session back-loop guard, Ψ glass console. No broken Element API. No cookies. No banners.",
+   "family": "ux utilities",
+   "sha256": "cadb5954d8cf3a03b3d812bf5b5eca38703be14c9ef28e1d43a5024e12c60d81",
+   "lines": 1477,
+   "bytes": 65673,
+   "matches": [
+    "*://*/*"
+   ],
+   "excludes": [
+    "*://translate.google.com/*",
+    "*://translate.googleapis.com/*"
+   ],
+   "grants": [
+    "GM_getValue",
+    "GM_setValue",
+    "GM_deleteValue",
+    "GM_addStyle",
+    "GM_registerMenuCommand",
+    "GM_unregisterMenuCommand"
+   ],
+   "requires": [],
+   "connects": [],
+   "runAt": "document-start",
+   "noframes": true,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20AutoTranslate.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20AutoTranslate.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - Blob2URL.user.js",
+   "name": "4ndr0tools - Blob2URL",
+   "version": "7.0.0",
+   "description": "Universal blob exfiltration, interactive asset sniffing, CSP/CORS bypass.",
+   "family": "media & links",
+   "sha256": "fb4822491cf01820236b2d447aa62fcfd36ae8d294a3c0ba906fa5d1ceeecac0",
+   "lines": 947,
+   "bytes": 56263,
+   "matches": [
+    "*://*/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_addStyle",
+    "GM_registerMenuCommand",
+    "GM_setClipboard",
+    "GM_xmlhttpRequest",
+    "GM_download",
+    "unsafeWindow"
+   ],
+   "requires": [],
+   "connects": [
+    "*"
+   ],
+   "runAt": null,
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Blob2URL.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Blob2URL.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - Bunkr++.user.js",
+   "name": "4ndr0tools - Bunkr++",
+   "version": "7.4.0",
+   "description": "Direct URL routing, auto-sort, hide visited, bypass dl gateway, bulk download, m3u8/CDN URL aggregation (page-context net-hook + per-item stream glyphs + album-wide STREAMS aggregation), broken-link repair, power-user hotkeys, LinkMaster-grade m3u8 stream resolution with gateway fallback, MPV dispatch (URI/bridge), web-archive dead-CDN resurrection (archive.org / archive.is), captcha-aware transport retry",
+   "family": "media & links",
+   "sha256": "82bae5f8a3e5b3223674f1c0e73e510ae762ddd7502cadf703f9d7ad39a4334e",
+   "lines": 3778,
+   "bytes": 193116,
+   "matches": [],
+   "excludes": [],
+   "grants": [
+    "GM_xmlhttpRequest",
+    "GM_setValue",
+    "GM_getValue",
+    "GM_addStyle",
+    "GM_registerMenuCommand",
+    "GM_setClipboard",
+    "GM_download",
+    "unsafeWindow"
+   ],
+   "requires": [],
+   "connects": [
+    "*",
+    "127.0.0.1"
+   ],
+   "runAt": "document-start",
+   "noframes": true,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Bunkr++.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Bunkr++.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - BypassPaywalls.user.js",
+   "name": "4ndr0tools - Bypass Paywalls",
+   "version": "0.1.2",
+   "description": "A way to bypass paywalls for popular news sites",
+   "family": "uncategorized",
+   "sha256": "eeb7a99b8c03a5257f99ee3a959466134d31dd2ecee2b8df4815dbc3ce72ca2f",
+   "lines": 1583,
+   "bytes": 73113,
+   "matches": [
+    "*://404media.co/*",
+    "*://*.adweek.com/*",
+    "*://*.ad.nl/*",
+    "*://*.americanbanker.com/*",
+    "*://*.ambito.com/*",
+    "*://*.baltimoresun.com/*",
+    "*://*.barrons.com/*",
+    "*://*.bloombergquint.com/*",
+    "*://*.bloomberg.com/*",
+    "*://*.bndestem.nl/*",
+    "*://*.bostonglobe.com/*",
+    "*://*.bd.nl/*",
+    "*://*.brisbanetimes.com.au/*",
+    "*://*.businessinsider.com/*",
+    "*://*.caixinglobal.com/*",
+    "*://*.centralwesterndaily.com.au/*",
+    "*://*.acs.org/*",
+    "*://*.chicagotribune.com/*",
+    "*://*.corriere.it/*",
+    "*://*.chicagobusiness.com/*",
+    "*://*.dailypress.com/*",
+    "*://*.gelderlander.nl/*",
+    "*://*.groene.nl/*",
+    "*://*.destentor.nl/*",
+    "*://*.speld.nl/*",
+    "*://*.tijd.be/*",
+    "*://*.volkskrant.nl/*",
+    "*://*.demorgen.be/*",
+    "*://*.denverpost.com/*",
+    "*://*.df.cl/*",
+    "*://*.editorialedomani.it/*",
+    "*://*.dynamed.com/*",
+    "*://*.ed.nl/*",
+    "*://*.elmercurio.com/*",
+    "*://*.elpais.com/*",
+    "*://*.elperiodico.com/*",
+    "*://*.elu24.ee/*",
+    "*://*.britannica.com/*",
+    "*://*.estadao.com.br/*",
+    "*://*.examiner.com.au/*",
+    "*://*.expansion.com/*",
+    "*://*.fnlondon.com/*",
+    "*://*.financialpost.com/*",
+    "*://*.ft.com/*",
+    "*://*.firstthings.com/*",
+    "*://*.foreignpolicy.com/*",
+    "*://*.fortune.com/*",
+    "*://*.genomeweb.com/*",
+    "*://*.glassdoor.com/*",
+    "*://*.globes.co.il/*",
+    "*://*.grubstreet.com/*",
+    "*://*.haaretz.co.il/*",
+    "*://*.haaretz.com/*",
+    "*://*.handelsblatt.com/*",
+    "*://*.harpers.org/*",
+    "*://*.courant.com/*",
+    "*://*.hbr.org/*",
+    "*://*.heraldsun.com.au/*",
+    "*://*.fd.nl/*",
+    "*://*.historyextra.com/*",
+    "*://*.humo.be/*",
+    "*://*.ilmanifesto.it/*",
+    "*://*.inc.com/*",
+    "*://*.interest.co.nz/*",
+    "*://*.investorschronicle.co.uk/*",
+    "*://*.lecho.be/*",
+    "*://*.labusinessjournal.com/*",
+    "*://*.lanacion.com.ar/*",
+    "*://*.repubblica.it/*",
+    "*://*.lastampa.it/*",
+    "*://*.latercera.com/*",
+    "*://*.lavoixdunord.fr/*",
+    "*://*.ledevoir.com/*",
+    "*://*.leparisien.fr/*",
+    "*://*.lesechos.fr/*",
+    "*://*.loebclassics.com/*",
+    "*://*.lrb.co.uk/*",
+    "*://*.latimes.com/*",
+    "*://*.mit.edu/*",
+    "*://*.technologyreview.com/*",
+    "*://*.medium.com/*",
+    "*://*.medscape.com/*",
+    "*://*.mexiconewsdaily.com/*",
+    "*://*.mv-voice.com/*",
+    "*://*.nationalgeographic.com/*",
+    "*://*.nydailynews.com/*",
+    "*://*.nrc.nl/*",
+    "*://*.ntnews.com.au/*",
+    "*://*.nationalpost.com/*",
+    "*://*.nzz.ch/*",
+    "*://*.nymag.com/*",
+    "*://*.nzherald.co.nz/*",
+    "*://*.ocregister.com/*",
+    "*://*.orlandosentinel.com/*",
+    "*://*.pzc.nl/*",
+    "*://*.paloaltoonline.com/*",
+    "*://*.parool.nl/*",
+    "*://*.postimees.ee/*",
+    "*://*.qz.com/*",
+    "*://*.quora.com/*",
+    "*://*.gelocal.it/*",
+    "*://*.republic.ru/*",
+    "*://*.reuters.com/*",
+    "*://*.sandiegouniontribune.com/*",
+    "*://*.sfchronicle.com/*",
+    "*://*.scientificamerican.com/*",
+    "*://*.seekingalpha.com/*",
+    "*://*.slate.com/*",
+    "*://*.sofrep.com/*",
+    "*://*.statista.com/*",
+    "*://*.startribune.com/*",
+    "*://*.stuff.co.nz/*",
+    "*://*.sun-sentinel.com/*",
+    "*://*.techinasia.com/*",
+    "*://*.telegraaf.nl/*",
+    "*://*.adelaidenow.com.au/*",
+    "*://*.theadvocate.com.au/*",
+    "*://*.theage.com.au/*",
+    "*://*.the-american-interest.com/*",
+    "*://*.theathletic.com/*",
+    "*://*.theathletic.co.uk/*",
+    "*://*.theatlantic.com/*",
+    "*://*.afr.com/*",
+    "*://*.theaustralian.com.au/*",
+    "*://*.bizjournals.com/*",
+    "*://*.canberratimes.com.au/*",
+    "*://*.thecourier.com.au/*",
+    "*://*.couriermail.com.au/*",
+    "*://*.thecut.com/*",
+    "*://*.dailytelegraph.com.au/*",
+    "*://*.thediplomat.com/*",
+    "*://*.economist.com/*",
+    "*://*.theglobeandmail.com/*",
+    "*://*.theherald.com.au/*",
+    "*://*.thehindu.com/*",
+    "*://*.irishtimes.com/*",
+    "*://*.kansascity.com/*",
+    "*://*.mercurynews.com/*",
+    "*://*.themercury.com.au/*",
+    "*://*.mcall.com/*",
+    "*://*.thenation.com/*",
+    "*://*.thenational.scot/*",
+    "*://*.newstatesman.com/*",
+    "*://*.nytimes.com/*",
+    "*://*.newyorker.com/*",
+    "*://*.news-gazette.com/*",
+    "*://*.theolivepress.es/*",
+    "*://*.inquirer.com/*",
+    "*://*.thesaturdaypaper.com.au/*",
+    "*://*.seattletimes.com/*",
+    "*://*.spectator.com.au/*",
+    "*://*.spectator.co.uk/*",
+    "*://*.smh.com.au/*",
+    "*://*.telegraph.co.uk/*",
+    "*://*.thestar.com/*",
+    "*://*.wsj.com/*",
+    "*://*.washingtonpost.com/*",
+    "*://*.thewrap.com/*",
+    "*://*.themarker.com/*",
+    "*://*.the-tls.co.uk/*",
+    "*://*.towardsdatascience.com/*",
+    "*://*.trouw.nl/*",
+    "*://*.tubantia.nl/*",
+    "*://*.vanityfair.com/*",
+    "*://*.vn.nl/*",
+    "*://*.vulture.com/*",
+    "*://*.journalnow.com/*",
+    "*://*.wired.com/*",
+    "*://*.worldpoliticsreview.com/*",
+    "*://*.zeit.de/*"
+   ],
+   "excludes": [],
+   "grants": [],
+   "requires": [],
+   "connects": [],
+   "runAt": "document-end",
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20BypassPaywalls.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20BypassPaywalls.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - Confirmation Bypass.user.js",
+   "name": "4ndr0tools - Confirmation Bypass",
+   "version": "4.0.0",
+   "description": "Reveals forum invisi-text, view all replies, rewrite redirect links. Download Gate: bypass all confirmation pages on all sites, glass overlay copy/download URL (incl. vidara embeds on xcandid), auto-solve Altcha, auto-click download. Turbo: embed routing, upload injector. Util: external link safety, right-click scrollbar to top.",
+   "family": "forums",
+   "sha256": "7d7d43f9bbc3642961d2a844c5c9a637c02385ef0287261a6238ac2b8cab6b4b",
+   "lines": 1133,
+   "bytes": 59472,
+   "matches": [
+    "*://forums.socialmediagirls.com/*",
+    "*://forums.socialmediagirls.com/goto/link-confirmation*",
+    "*://simpcity.cr/*",
+    "*://simpcity.cr/redirect/*",
+    "*://turbo.cr/*",
+    "*://turbo.cr/embed/*",
+    "*://*.xcandid.vip/*",
+    "*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_addStyle",
+    "GM_xmlhttpRequest"
+   ],
+   "requires": [],
+   "connects": [
+    "socialmediagirls.com",
+    "simpcity.cr"
+   ],
+   "runAt": "document-idle",
+   "noframes": true,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Confirmation%20Bypass.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Confirmation%20Bypass.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - Counter-surveillance.user.js",
+   "name": "4ndr0tools - Counter-survillance",
+   "version": "4.0.0",
+   "description": "Deep DOM sinkholing, network nullification (WebRTC/Fetch/XHR), canvas blinding, anti-user patterns, frustrating UI constraints and aggressive URL sanitization (Google/ICC/Aliyun)",
+   "family": "privacy & security",
+   "sha256": "ea00d48f008cc83ee11b225b7c0225944be12fe25acc98ef9b7252d998316e03",
+   "lines": 534,
+   "bytes": 24523,
+   "matches": [
+    "*://*/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "none"
+   ],
+   "requires": [],
+   "connects": [],
+   "runAt": "document-start",
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Counter-surveillance.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Counter-surveillance.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - Filester++.user.js",
+   "name": "4ndr0tools - Filester++",
+   "version": "7.4.0",
+   "description": "Dynamic stream extraction + folder enumeration for any media on Filester.me. Network proxy + glyph injection.",
+   "family": "media & links",
+   "sha256": "69da7b9a39604753435d890cb123ecba989129532097a028133f8728b4330977",
+   "lines": 206,
+   "bytes": 9446,
+   "matches": [],
+   "excludes": [],
+   "grants": [
+    "GM_addStyle",
+    "GM_registerMenuCommand"
+   ],
+   "requires": [
+    "https://code.jquery.com/jquery-3.6.0.min.js"
+   ],
+   "connects": [
+    "u1.filester.me"
+   ],
+   "runAt": "document-start",
+   "noframes": true,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Filester++.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Filester++.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - Forum Link Xtractor.user.js",
+   "name": "4ndr0tools - Forum Link Xtractor",
+   "version": "3.0.0",
+   "description": "Link xtractor, Invisitext revealer, and inline post reply viewer.",
+   "family": "forums",
+   "sha256": "b308843753a4ec7bbea0b3cf8d7fbeecdba52565504c501239eada455b839d94",
+   "lines": 526,
+   "bytes": 26355,
+   "matches": [
+    "*://forums.socialmediagirls.com/*",
+    "*://simpcity.su/*",
+    "*://*.simpcity.su/*",
+    "*://simpcity.cr/*",
+    "*://*.simpcity.cr/*",
+    "*://start.me/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_addStyle",
+    "GM_xmlhttpRequest",
+    "GM_setClipboard",
+    "GM_registerMenuCommand"
+   ],
+   "requires": [],
+   "connects": [
+    "*"
+   ],
+   "runAt": "document-idle",
+   "noframes": true,
+   "urls": {
+    "update": null,
+    "download": null
+   }
+  },
+  {
+   "file": "4ndr0tools - Forums++.user.js",
+   "name": "4ndr0tools - Forums++",
+   "version": "1.8",
+   "description": "Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.",
+   "family": "forums",
+   "sha256": "c0f7eaaeb2043feda55846dc57e2e1337254266bacb1f87372ce79dfe23561cb",
+   "lines": 3604,
+   "bytes": 158850,
+   "matches": [
+    "https://simpcity.su/threads/*",
+    "https://simpcity.cr/threads/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_xmlhttpRequest",
+    "GM_download",
+    "GM_setValue",
+    "GM_getValue",
+    "GM_log"
+   ],
+   "requires": [
+    "https://unpkg.com/@popperjs/core@2",
+    "https://unpkg.com/tippy.js@6",
+    "https://unpkg.com/file-saver@2.0.4/dist/FileSaver.min.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js",
+    "https://raw.githubusercontent.com/geraintluff/sha256/gh-pages/sha256.min.js"
+   ],
+   "connects": [
+    "self",
+    "coomer.su",
+    "kemono.su",
+    "github.com",
+    "big-taco-1img.bunkr.ru",
+    "i-pizza.bunkr.ru",
+    "bunkr.ac",
+    "bunkr.ax",
+    "bunkr.black",
+    "bunkr.cat",
+    "bunkr.ci",
+    "bunkr.cr",
+    "bunkr.fi",
+    "bunkr.is",
+    "bunkr.media",
+    "bunkr.nu",
+    "bunkr.red",
+    "bunkr.ru",
+    "bunkr.se",
+    "bunkr.si",
+    "bunkr.site",
+    "bunkr.pk",
+    "bunkr.ph",
+    "bunkr.ps",
+    "bunkr.sk",
+    "bunkr.ws",
+    "bunkrr.ru",
+    "bunkrr.su",
+    "bunkrrr.org",
+    "bunkr-cache.se",
+    "mlk-bk.cdn.gigachad-cdn.ru",
+    "cyberdrop.me",
+    "cyberdrop.cc",
+    "cyberdrop.ch",
+    "cyberdrop.cloud",
+    "cyberdrop.nl",
+    "cyberdrop.to",
+    "cyberfile.su",
+    "cyberfile.me",
+    "saint2.su",
+    "saint2.pk",
+    "saint2.cr",
+    "redd.it",
+    "i.ibb.co",
+    "ibb.co",
+    "imagebam.com",
+    "jpg.fish",
+    "jpg.fishing",
+    "jpg.pet",
+    "jpeg.pet",
+    "jpg1.su",
+    "jpg2.su",
+    "jpg3.su",
+    "jpg4.su",
+    "jpg5.su",
+    "jpg6.su",
+    "selti-delivery.ru",
+    "imgbox.com",
+    "pixhost.to",
+    "pornhub.com",
+    "postimg.cc",
+    "imgvb.com",
+    "pixxxels.cc",
+    "postimg.cc",
+    "imagevenue.com",
+    "pbs.twimg.com",
+    "media.tumblr.com",
+    "pixeldrain.com",
+    "redgifs.com",
+    "noodlemagazine.com",
+    "pvvstream.pro",
+    "spankbang.com",
+    "sb-cd.com",
+    "gofile.io",
+    "phncdn.com",
+    "xvideos.com",
+    "githubusercontent.com"
+   ],
+   "runAt": "document-start",
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Forums++.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Forums++.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - Gofile++.user.js",
+   "name": "4ndr0tools - GoFile++",
+   "version": "2.0.0",
+   "description": "Directly batch-download GoFiles with a robust UI. Supports recursive folder scans, direct links, and download managers (Aria2, IDM). Fixing SPA persistence and Sandbox access.",
+   "family": "media & links",
+   "sha256": "61f56065ec8c48e4b59bd6a43559c31e536d5363e516f23e864ca06a8cb57cae",
+   "lines": 890,
+   "bytes": 39336,
+   "matches": [
+    "https://gofile.io/*",
+    "http*://gofile.io/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_getValue",
+    "GM_setValue",
+    "GM_xmlhttpRequest"
+   ],
+   "requires": [],
+   "connects": [
+    "localhost",
+    "*"
+   ],
+   "runAt": null,
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Gofile++.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Gofile++.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - GooglePhotosandDrive++.user.js",
+   "name": "4ndr0tools - GooglePhotosandDrive++",
+   "version": "8.0.0",
+   "description": "Restores context menus, exposes direct links, adds reverse image search, Drive direct-download resolution, Photos full-res extraction, power-user hotkeys, drag persistence and a settings console. 3lectric-Glass paradigm.",
+   "family": "images",
+   "sha256": "44095eba1db7f263731cc2b4eabc0ebfc611a75181270b3aa274c0a4bf707f2a",
+   "lines": 1386,
+   "bytes": 59784,
+   "matches": [
+    "*://*.googleusercontent.com/*",
+    "*://photos.google.com/*",
+    "*://drive.google.com/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_getValue",
+    "GM_setValue",
+    "GM_registerMenuCommand"
+   ],
+   "requires": [],
+   "connects": [],
+   "runAt": "document-start",
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20GooglePhotosandDrive++.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20GooglePhotosandDrive++.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - Hailuo++.user.js",
+   "name": "4ndr0tools - Hailuo++",
+   "version": "6.0.0",
+   "description": "Enterprise-grade, idempotent automation engine for HailuoAI featuring automated queue management, asset fetching with tracked-download deduplication, an in-HUD Asset Bay thumbnail gallery (click-to-new-window, hover-playable previews, blob downloads that never navigate the session window) with cross-reload persistence, completion notifications, failure-card masking, API hard purge, and interactive asset links — hardened for the 2026-09 MiniMax H3 site generation and the hailuoai.video/agent chat surface. v5.4: editable-context (Slate) DOM guards, self-healing HUD watchdog, HUD collapse + Ctrl+Alt+H toggle, frame isolation, webp-aware blob transport with retry, and non-destructive title telemetry.",
+   "family": "sovereign platforms",
+   "sha256": "700d663fc3875f3fb66f798b5173c47f3dd88fb996d87a2e4593e891e5c24758",
+   "lines": 1850,
+   "bytes": 93121,
+   "matches": [
+    "https://hailuoai.com/video*",
+    "https://hailuoai.video/*",
+    "https://hailuoai.video/create*",
+    "https://hailuoai.video/agent*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_getValue",
+    "GM_setValue",
+    "GM_xmlhttpRequest",
+    "GM_registerMenuCommand"
+   ],
+   "requires": [],
+   "connects": [
+    "cdn.hailuoai.video",
+    "oss.hailuoai.video",
+    "hailuoai.video",
+    "hailuoai.com",
+    "cdn.hailuo.com"
+   ],
+   "runAt": "document-end",
+   "noframes": true,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Hailuo++.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Hailuo++.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - HostWarp.user.js",
+   "name": "4ndr0tools - HostWarp",
+   "version": "1.0.0",
+   "description": "Per-host warp drive: bypasses image-host interstitials (imagetwist/imgspice/turboimagehost/acidimg/imx/pixhost/imagebam/imgbox/kropic/vipr/imagevenue), MEGA embed redirect + autoplay, PlanetSuzy mobile skin, t.me Web button, SearXNG sticky preferences, Gemini Answer Now — one engine, glass settings console, every module toggleable.",
+   "family": "ux utilities",
+   "sha256": "35b5ecb790acaddaa305b351da7905e942be4d00d45323174670e89700da2910",
+   "lines": 1633,
+   "bytes": 81126,
+   "matches": [
+    "*://*/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_addStyle",
+    "GM_getValue",
+    "GM_setValue",
+    "GM_registerMenuCommand",
+    "GM_deleteValue",
+    "GM_addValueChangeListener",
+    "GM_listValues"
+   ],
+   "requires": [],
+   "connects": [],
+   "runAt": "document-start",
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20HostWarp.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20HostWarp.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - Images++.user.js",
+   "name": "4ndr0tools - Images++",
+   "version": "4.0.0",
+   "description": "Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. Collapse-mode hotkey is configurable.",
+   "family": "images",
+   "sha256": "93b0a31d86e20758912fa01845380d121b41f468f849acaadbf4326964980010",
+   "lines": 4591,
+   "bytes": 135743,
+   "matches": [
+    "*://*/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_addElement",
+    "GM_addStyle",
+    "GM_download",
+    "GM_getValue",
+    "GM_getValues",
+    "GM_openInTab",
+    "GM_registerMenuCommand",
+    "GM_unregisterMenuCommand",
+    "GM_setClipboard",
+    "GM_setValue",
+    "GM_xmlhttpRequest",
+    "GM.getValue",
+    "GM.openInTab",
+    "GM.registerMenuCommand",
+    "GM.unregisterMenuCommand",
+    "GM.setClipboard",
+    "GM.setValue",
+    "GM.xmlHttpRequest"
+   ],
+   "requires": [],
+   "connects": [
+    "*",
+    "self",
+    "github.com",
+    "deviantart.com",
+    "facebook.com",
+    "fbcdn.com",
+    "flickr.com",
+    "simp6.jp5.su",
+    "jp5.su",
+    "jp6.su",
+    "googleusercontent.com",
+    "gyazo.com",
+    "imgur.com",
+    "instagr.am",
+    "instagram.com",
+    "prnt.sc",
+    "prntscr.com",
+    "user-images.githubusercontent.com"
+   ],
+   "runAt": "document-start",
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Images++.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Images++.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - Instagram++.user.js",
+   "name": "4ndr0tools - Instagram++",
+   "version": "13.0.0",
+   "description": "Tab-Bar + Dock Integration. Hotkey trigger (Alt+I). Ad-Blocking. Deep-Stack Recovery. Resilient cursor-based pagination. Stories support. Image/video download engine.",
+   "family": "sovereign platforms",
+   "sha256": "e7a37c4c5bb56f2f19b3d61cac0ee9a5a40dd7f8cef957fc35d43d4df0d5a0b2",
+   "lines": 1251,
+   "bytes": 58124,
+   "matches": [
+    "*://*.instagram.com/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_xmlhttpRequest",
+    "GM_addStyle",
+    "GM_registerMenuCommand",
+    "GM_download",
+    "unsafeWindow"
+   ],
+   "requires": [],
+   "connects": [
+    "cdninstagram.com",
+    "*.cdninstagram.com",
+    "fbcdn.net",
+    "*.fbcdn.net",
+    "instagram.com",
+    "*.instagram.com"
+   ],
+   "runAt": "document-start",
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Instagram++.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Instagram++.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - LinkMasterΨ.user.js",
+   "name": "4ndr0tools - LinkMasterΨ",
+   "version": "6.1.0",
+   "description": "Accurately decodes, previews, exports, validates and scrapes all links. (Dual MPV Support + Ψ IG Harvester + sexyforums premium-link unwrap + GitHub raw-URL harvest + Ψ2 forum deep-scrape engine)",
+   "family": "media & links",
+   "sha256": "10d123e0bb2aed15e54e2989a673d42a70cc193611c26c98c4b5b0cb80cdf87f",
+   "lines": 3761,
+   "bytes": 182345,
+   "matches": [
+    "*://*/*",
+    "*://*.instagram.com/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_setValue",
+    "GM_getValue",
+    "GM_deleteValue",
+    "GM_xmlhttpRequest",
+    "GM_registerMenuCommand",
+    "GM_setClipboard",
+    "GM_download",
+    "unsafeWindow"
+   ],
+   "requires": [
+    "https://unpkg.com/@popperjs/core@2",
+    "https://unpkg.com/tippy.js@6",
+    "https://unpkg.com/file-saver@2.0.4/dist/FileSaver.min.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js",
+    "https://raw.githubusercontent.com/geraintluff/sha256/gh-pages/sha256.min.js"
+   ],
+   "connects": [
+    "*",
+    "127.0.0.1",
+    "cdninstagram.com",
+    "fbcdn.net",
+    "instagram.com"
+   ],
+   "runAt": "document-start",
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - Login Form Autofiller.user.js",
+   "name": "4ndr0tools - Login Form Autofiller",
+   "version": "2.0.0",
+   "description": "It integrates BugMeNot into any login form (it retrieves all matching logins from bugmenot.com and autofills the login form)",
+   "family": "ux utilities",
+   "sha256": "df691166c5df67620e4862db230480df5cbf53d7387bd4434095ac59eaef30e4",
+   "lines": 978,
+   "bytes": 42087,
+   "matches": [],
+   "excludes": [
+    "http://bugmenot.com/*",
+    "https://bugmenot.com/*"
+   ],
+   "grants": [
+    "GM.getValue",
+    "GM_getValue",
+    "GM.setValue",
+    "GM_setValue",
+    "GM.openInTab",
+    "GM_openInTab",
+    "GM.xmlHttpRequest",
+    "GM_xmlhttpRequest"
+   ],
+   "requires": [
+    "https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js"
+   ],
+   "connects": [],
+   "runAt": "document-idle",
+   "noframes": true,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Login%20Form%20Autofiller.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Login%20Form%20Autofiller.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - m3u8++.user.js",
+   "name": "4ndr0tools - m3u8++",
+   "version": "5.0.0",
+   "description": "Automatically displays the m3u8 url for ANY video playing in the top right corner of the video. Click url to copy or click download to use the webapp \"tools.thatwind.com\". Also injects Play buttons next to magnet links on every page, relaying them to www.diancigaoshou.com.",
+   "family": "media & links",
+   "sha256": "888de2a9d3c0112f8ebb110eb2e1c78d2f10ae3eec4ce3c882e445d58623ed38",
+   "lines": 809,
+   "bytes": 32681,
+   "matches": [
+    "*://*/*"
+   ],
+   "excludes": [
+    "*://www.diancigaoshou.com/*"
+   ],
+   "grants": [
+    "unsafeWindow",
+    "GM_openInTab",
+    "GM.openInTab",
+    "GM_getValue",
+    "GM.getValue",
+    "GM_setValue",
+    "GM.setValue",
+    "GM_deleteValue",
+    "GM.deleteValue",
+    "GM_xmlhttpRequest",
+    "GM.xmlHttpRequest",
+    "GM_download"
+   ],
+   "requires": [
+    "https://cdn.jsdelivr.net/npm/m3u8-parser@4.7.1/dist/m3u8-parser.min.js"
+   ],
+   "connects": [
+    "*"
+   ],
+   "runAt": "document-start",
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20m3u8++.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20m3u8++.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - Maximize_Any_Media.user.js",
+   "name": "4ndr0tools - Maximize_Any_Media",
+   "version": "2.0.0",
+   "description": "Maximize + Pip controls to any media anywhere - video, images, embedded and shadow-DOM players, on any site. 3lectric-Glass spec. Ψ",
+   "family": "video & players",
+   "sha256": "8fc0c32463e18c69bb2f5d16f83d1a119931c91188505146c42277d3747a37ad",
+   "lines": 1194,
+   "bytes": 47406,
+   "matches": [],
+   "excludes": [
+    "*www.w3school.com.*",
+    "*www.w3schools.com.*"
+   ],
+   "grants": [
+    "GM_getValue",
+    "GM_setValue",
+    "GM_registerMenuCommand"
+   ],
+   "requires": [],
+   "connects": [],
+   "runAt": "document-end",
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Maximize_Any_Media.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Maximize_Any_Media.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - Media Player Controller.user.js",
+   "name": "4ndr0tools - Media Player Controller",
+   "version": "8.0.0",
+   "description": "Speed • Fine Rate ±0.1 • Alt+Shift rAF Zoom/Pan • Rotation • Smart Maximize • Native Fullscreen • PiP • Play • DblClick • Pause-on-Acquire • Virtual DOM Nodes • Shadow-DOM Discovery • Cyan-Glass Scrub Bar • Download Button (fetch + blob capture) • Screenshot • Volume/Mute • Frame Step • Seek Hotkeys • IG Story Nav (3-Layer) • Story Repeat (3-Layer) • Active-Media Observer • YouTube Ad Auto-Skip • Toast Feedback • Draggable HUD • Full Hotkey Suite",
+   "family": "uncategorized",
+   "sha256": "d9e8d4f9433065359e3ccfbbf4feedc12c50eda2b752ae529d48dcc58f43d01d",
+   "lines": 2464,
+   "bytes": 107042,
+   "matches": [
+    "*://*/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_setValue",
+    "GM_getValue",
+    "GM_addStyle",
+    "GM_addValueChangeListener"
+   ],
+   "requires": [],
+   "connects": [],
+   "runAt": "document-end",
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Media%20Player%20Controller.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Media%20Player%20Controller.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - ModelSearch.user.js",
+   "name": "4ndr0tools - ModelSearch",
+   "version": "4.0.0",
+   "description": "Covert SimpCity search UI directly from any website. (Electric-Glass + Alt+S Hotkey Only)",
+   "family": "forums",
+   "sha256": "53d6cf3949eb303f1d84c5fb87f63b29173e6800acda7121ba2871ada08c59ff",
+   "lines": 455,
+   "bytes": 20539,
+   "matches": [
+    "*://*/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_openInTab",
+    "GM_addStyle"
+   ],
+   "requires": [],
+   "connects": [],
+   "runAt": "document-start",
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20ModelSearch.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20ModelSearch.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - PageCraft.user.js",
+   "name": "4ndr0tools - PageCraft",
+   "version": "1.0.0",
+   "description": "All-sites page utility belt: bulk checkbox control with range/alt-hover selection (de-jQueryed), broken-image auto-repair with cache-busting + frame broadcast, hover-collapse image I/O governor, and Brave infinite scroll — one engine, glass settings console, zero runtime dependencies.",
+   "family": "ux utilities",
+   "sha256": "71cc72dbe7afa1ec2f52c478040165312cf8c0ed66901cd20e83548df7e80743",
+   "lines": 1494,
+   "bytes": 73145,
+   "matches": [
+    "*://*/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_addStyle",
+    "GM_getValue",
+    "GM_setValue",
+    "GM_registerMenuCommand",
+    "GM_deleteValue",
+    "GM_addValueChangeListener",
+    "GM_listValues"
+   ],
+   "requires": [],
+   "connects": [],
+   "runAt": "document-start",
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20PageCraft.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20PageCraft.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - Pixeldrain++.user.js",
+   "name": "4ndr0tools - Pixeldrain++",
+   "version": "1.0.1",
+   "description": "Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.",
+   "family": "media & links",
+   "sha256": "a08b320fd029e51653c5e5f0e79df620f96f47ce1b533767e3224f9ab7274121",
+   "lines": 2232,
+   "bytes": 125097,
+   "matches": [
+    "https://pixeldrain.com/*",
+    "https://pixeldrain.net/*",
+    "https://pixeldrain.dev/*",
+    "https://pixeldra.in/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_xmlhttpRequest",
+    "GM.xmlHttpRequest",
+    "GM_download",
+    "GM_openInTab",
+    "GM_setValue",
+    "GM_getValue",
+    "GM_deleteValue",
+    "GM_listValues",
+    "GM_registerMenuCommand",
+    "GM_addStyle",
+    "GM_notification",
+    "GM_setClipboard",
+    "unsafeWindow"
+   ],
+   "requires": [],
+   "connects": [
+    "pixeldrain.com",
+    "pixeldrain.net",
+    "pixeldrain.dev",
+    "pixeldra.in",
+    "cdn.pixeldrain.eu.cc",
+    "pixeldrain.eu.cc",
+    "pd.1drv.eu.org",
+    "pd.cybar.xyz",
+    "pd.zeroken.id",
+    "pd.hakimi.uk",
+    "pd.512.gay",
+    "pd.voidnet.tech",
+    "pd.kanibal.xyz",
+    "pd.arcjbtc.my.id",
+    "pd.ramdani.cloud",
+    "pd.noisyfox.io",
+    "pd.meridian.pm",
+    "pd.dwnld.workers.dev",
+    "pd.itsmeonly.workers.dev",
+    "pd.blazing.works",
+    "pd.unblockit.click",
+    "127.0.0.1",
+    "localhost",
+    "*"
+   ],
+   "runAt": "document-start",
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Pixeldrain++.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Pixeldrain++.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - Prompt Master.user.js",
+   "name": "4ndr0tools - Prompt Master",
+   "version": "28.3.0",
+   "description": "Google Flow prompt manager toolkit (works on any AI, just add url) - persisted unit ledger meters every generation click, organization engine: collections, saved views, favorites, ratings, archive, group-by, and insights for large prompt libraries, dedupe, ai prompt enhancer, auto gist syncing, hotkeys, much more.",
+   "family": "sovereign platforms",
+   "sha256": "140ac889c9274bec1962925845141fbdf9a7d69610e38cf9f6b9028b858c294f",
+   "lines": 21642,
+   "bytes": 1033760,
+   "matches": [
+    "*://geminigen.ai/*",
+    "*://gist.github.com/*",
+    "*://gemini.google.com/*",
+    "*://labs.google/fx/*",
+    "*://flow.google.com/*",
+    "*://*.google.com/search?*udm=50*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_getValue",
+    "GM_setValue",
+    "GM_listValues",
+    "GM_deleteValue",
+    "GM_xmlhttpRequest",
+    "GM_registerMenuCommand",
+    "GM_setClipboard",
+    "unsafeWindow"
+   ],
+   "requires": [],
+   "connects": [
+    "generativelanguage.googleapis.com",
+    "gist.githubusercontent.com",
+    "raw.githubusercontent.com",
+    "router.huggingface.co",
+    "api.longcat.chat",
+    "cdn.jsdelivr.net",
+    "fonts.googleapis.com",
+    "fonts.gstatic.com",
+    "gist.github.com",
+    "api.github.com",
+    "openrouter.ai",
+    "api.groq.com",
+    "gitlab.com"
+   ],
+   "runAt": "document-end",
+   "noframes": true,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Prompt%20Master.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Prompt%20Master.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - Recon.user.js",
+   "name": "4ndr0tools - Recon",
+   "version": "9.0.0",
+   "description": "Alt+Shift+R hotkey — unified forensic recon platform: hardened XHR/fetch interception with MITM block & mute rules, console harvesting, WebSocket + postMessage bridge capture, JWT identity harvesting, headless C2 API (reconEngine / chimeraRecon / Hook) and a moveable Shadow-DOM glass dock with full markdown reporting. For security research only.",
+   "family": "privacy & security",
+   "sha256": "bf318aea473df0e51fd746c9fe035f0152e6a2256f9a5ae8e1d34406042ffbaa",
+   "lines": 917,
+   "bytes": 50374,
+   "matches": [
+    "*://*/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_setClipboard",
+    "unsafeWindow"
+   ],
+   "requires": [],
+   "connects": [],
+   "runAt": "document-start",
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Recon.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Recon.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - Redgifs++.user.js",
+   "name": "4ndr0tools - Redgifs++",
+   "version": "5.0",
+   "description": "Intercepts Redgifs links on Reddit for a cinematic overlay. On Redgifs itself, enters focused video-only mode. Falls back to JSON.parse intercept for direct /watch/ loads before SPA hydration.",
+   "family": "video & players",
+   "sha256": "38fe316b413559cf12e33a6af590ff52810646d19d97a1dd1c9cb06eaf0b7f7d",
+   "lines": 359,
+   "bytes": 16762,
+   "matches": [
+    "*://*.redgifs.com/watch/*",
+    "*://*.redgifs.com/ifr/*",
+    "*://*.redgifs.com/*",
+    "*://redgifs.com/*",
+    "*://*.reddit.com/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_addElement",
+    "GM_addStyle"
+   ],
+   "requires": [],
+   "connects": [],
+   "runAt": "document-start",
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Redgifs++.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Redgifs++.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - Watermark++.user.js",
+   "name": "4ndr0tools - Watermark++",
+   "version": "2.0",
+   "description": "Security research and alignment testing only.",
+   "family": "sovereign platforms",
+   "sha256": "c552501a0a941a179f4ef1450175ef24727cb84aeda8e6a361020fdc63d34e49",
+   "lines": 14286,
+   "bytes": 1220162,
+   "matches": [
+    "https://gemini.google.com/app",
+    "https://gemini.google.com/app/*",
+    "https://gemini.google.com/*",
+    "https://business.gemini.google/app",
+    "https://business.gemini.google/app/*",
+    "https://business.gemini.google/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "unsafeWindow",
+    "GM_xmlhttpRequest"
+   ],
+   "requires": [],
+   "connects": [
+    "googleusercontent.com"
+   ],
+   "runAt": "document-start",
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Watermark++.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Watermark++.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - Website Control Panel.user.js",
+   "name": "4ndr0tools - Website Control Panel",
+   "version": "5.1.0",
+   "description": "Draggable Cyberdeck HUD, DOM Zapper, Ad suppression, validated-selector compiled deep-cleaning.",
+   "family": "ux utilities",
+   "sha256": "e30d4b9b127fd3b54c1659fdb11322bd2b8f2eca981eb2953e0ef193a33d11b4",
+   "lines": 383,
+   "bytes": 17603,
+   "matches": [
+    "*://*/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_addStyle",
+    "GM_getValue",
+    "GM_setValue"
+   ],
+   "requires": [],
+   "connects": [],
+   "runAt": "document-idle",
+   "noframes": false,
+   "urls": {
+    "update": null,
+    "download": null
+   }
+  },
+  {
+   "file": "4ndr0tools - YandexImageSearch++.user.js",
+   "name": "4ndr0tools - Yandex Image Search++",
+   "version": "0.3.0",
+   "description": "Robust, event-driven slideshow, fullscreen preview, and on-screen status for Yandex reverse-image search.",
+   "family": "images",
+   "sha256": "c934a97411b514523f8db77aee5790776622d29ec65e15504d2b53fd1cd13162",
+   "lines": 246,
+   "bytes": 9699,
+   "matches": [
+    "http*://yandex.com/images/*",
+    "http*://yandex.ru/images/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "none"
+   ],
+   "requires": [],
+   "connects": [],
+   "runAt": null,
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YandexImageSearch++.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YandexImageSearch++.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - YouTube Playlist Master.user.js",
+   "name": "4ndr0tools - YouTube Playlist Master",
+   "version": "1.6.0",
+   "description": "Channel playlist buttons (All / Popular / Videos / Shorts / Streams / Members-only), Random play (prefer newest/oldest), reverse autoplay order, playlist autoplay toggle, duration sort, bulk copy/move/delete, JSON + plaintext export/import, snapshots with deleted-video detection, quick watch_videos playlists, queue & watch-later overlays, playlist close button, date/view metadata, episode auto-expand, huge-playlist browser, live settings (no reload), always-available Ψ deck, playlist row filter, duplicate finder & purge, global hotkeys (Alt+Shift+U/S/X), failsafe deck rescue, 404-proof navigation guards, Trusted-Types-immune rendering, fully-visible fit-content modal dialogs.",
+   "family": "video & players",
+   "sha256": "1f417864d94d3ac60f8291687fb301be9e645eca0cdd1b17572268036d3b1e95",
+   "lines": 5170,
+   "bytes": 260728,
+   "matches": [
+    "https://*.youtube.com/*",
+    "https://youtube.com/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_getValue",
+    "GM_setValue",
+    "GM_deleteValue",
+    "GM_registerMenuCommand",
+    "GM_unregisterMenuCommand",
+    "unsafeWindow"
+   ],
+   "requires": [],
+   "connects": [],
+   "runAt": "document-idle",
+   "noframes": true,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YouTube%20Playlist%20Master.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YouTube%20Playlist%20Master.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - Youtube Removed Video Revealer.user.js",
+   "name": "4ndr0tools - Youtube Removed Video Revealer",
+   "version": "2.0.0",
+   "description": "Restores titles for removed or private videos in YouTube playlists",
+   "family": "video & players",
+   "sha256": "21f992b4d549879e8e78dc02ab0869518cc12724b12de505654fe6a7424eee88",
+   "lines": 597,
+   "bytes": 28609,
+   "matches": [
+    "*://*.youtube.com/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_xmlhttpRequest"
+   ],
+   "requires": [
+    "https://cdnjs.cloudflare.com/ajax/libs/cash/8.1.5/cash.min.js"
+   ],
+   "connects": [
+    "web.archive.org"
+   ],
+   "runAt": null,
+   "noframes": true,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Youtube%20Removed%20Video%20Revealer.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Youtube%20Removed%20Video%20Revealer.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - YouTubeEmbedRedirectButton.user.js",
+   "name": "4ndr0tools - YouTube Embed Redirect Button",
+   "version": "1.4",
+   "description": "Floating button for redirects to embedded version. Right click it to set a keybind (default Ctrl+E).",
+   "family": "video & players",
+   "sha256": "7e77d0e78c8fca01556e0f1a33ed6c4e69d6f2d62182a16f4b2c53a678c45019",
+   "lines": 314,
+   "bytes": 12320,
+   "matches": [
+    "https://*.youtube.com/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "none"
+   ],
+   "requires": [],
+   "connects": [],
+   "runAt": "document-end",
+   "noframes": true,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - YT Filter.user.js",
+   "name": "4ndr0tools - YT Filter",
+   "version": "2.4",
+   "description": "Electric-Glass YouTube video filter — views, date, duration",
+   "family": "video & players",
+   "sha256": "17bcc3f12c7dc05c2e7b15429b0cd8f30ae2a5bcc5f53cabe24975bbb0b9979b",
+   "lines": 850,
+   "bytes": 32248,
+   "matches": [
+    "*://*.youtube.com/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_addStyle"
+   ],
+   "requires": [],
+   "connects": [],
+   "runAt": "document-end",
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YT%20Filter.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YT%20Filter.user.js"
+   }
+  }
+ ],
+ "problems": [],
+ "pairs": [],
+ "hotDomains": [
+  {
+   "domain": "*:",
+   "count": 221,
+   "scripts": [
+    "4ndr0tools - 4ndr0Purge",
+    "4ndr0tools - 4ndr0serviceguard Companion",
+    "4ndr0tools - AlwaysNewWindow",
+    "4ndr0tools - Anti-detection",
+    "4ndr0tools - Anti-telemetry (Intelligent Cloud Computing)",
+    "4ndr0tools - AutoTranslate",
+    "4ndr0tools - Blob2URL",
+    "4ndr0tools - Bypass Paywalls",
+    "4ndr0tools - Confirmation Bypass",
+    "4ndr0tools - Counter-survillance",
+    "4ndr0tools - Forum Link Xtractor",
+    "4ndr0tools - GooglePhotosandDrive++",
+    "4ndr0tools - HostWarp",
+    "4ndr0tools - Images++",
+    "4ndr0tools - Instagram++",
+    "4ndr0tools - LinkMasterΨ",
+    "4ndr0tools - m3u8++",
+    "4ndr0tools - Media Player Controller",
+    "4ndr0tools - ModelSearch",
+    "4ndr0tools - PageCraft",
+    "4ndr0tools - Prompt Master",
+    "4ndr0tools - Recon",
+    "4ndr0tools - Redgifs++",
+    "4ndr0tools - Website Control Panel",
+    "4ndr0tools - Youtube Removed Video Revealer",
+    "4ndr0tools - YT Filter"
+   ]
+  },
+  {
+   "domain": "http*:",
+   "count": 3,
+   "scripts": [
+    "4ndr0tools - GoFile++",
+    "4ndr0tools - Yandex Image Search++"
+   ]
+  },
+  {
+   "domain": "hailuoai.video",
+   "count": 3,
+   "scripts": [
+    "4ndr0tools - Hailuo++"
+   ]
+  },
+  {
+   "domain": "gemini.google.com",
+   "count": 3,
+   "scripts": [
+    "4ndr0tools - Watermark++"
+   ]
+  },
+  {
+   "domain": "business.gemini.google",
+   "count": 3,
+   "scripts": [
+    "4ndr0tools - Watermark++"
+   ]
+  },
+  {
+   "domain": "youtube.com",
+   "count": 3,
+   "scripts": [
+    "4ndr0tools - YouTube Playlist Master",
+    "4ndr0tools - YouTube Embed Redirect Button"
+   ]
+  }
+ ],
+ "generated": "2026-10-02T02:20:20.388Z"
+}

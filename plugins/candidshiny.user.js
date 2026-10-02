@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         LinkMasterΨ2 - CandidShiny Full Autopsy Plugin
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.1.0
-// @description  Scans ALL possible links, images, videos, attachments, even shadow roots, on CandidShiny.
+// @version      1.1.1
+// @description  Scans ALL possible links, images, videos, attachments, even shadow roots, on CandidShiny. v1.1.1: fixed three invalid selectors ('a[href]', 'a.attachment[href]') that threw SyntaxError and silently killed every scan.
 // @match        *://forum.candidshiny.com/*
 // @grant        none
 // ==/UserScript==

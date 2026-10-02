@@ -1,19 +1,16 @@
 {
-  "name": "4ndr0tools-userscripts",
-  "version": "3.0.0",
-  "description": "☠️ 4ndr0tools ☠️ — A modular userscript suite for digital emancipation.",
-  "author": "4ndr0666",
-  "license": "MIT",
-  "type": "module",
-  "scripts": {
-    "update-catalog": "node tools/update_catalog.mjs"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.39.1",
-    "eslint": "^9.39.2",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-userscripts": "^0.5.6",
-    "globals": "^16.5.0",
-    "prettier": "^3.7.3"
-  }
+    "name": "4ndr0666tools-suite",
+    "version": "1.1.0",
+    "description": "☠️ 4ndr0666tools ☠️ — consolidated userscript suite for digital sovereignty. Kernel-powered, GUP-governed, 3lectric-Glass native.",
+    "author": "4ndr0666",
+    "license": "MIT",
+    "type": "module",
+    "private": true,
+    "scripts": {
+        "build": "node tools/build.mjs",
+        "inventory": "node tools/inventory.mjs",
+        "validate": "node tools/validate.mjs",
+        "check": "node tools/build.mjs && node tools/inventory.mjs && node tools/validate.mjs"
+    },
+    "devDependencies": {}
 }
