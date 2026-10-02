@@ -1,0 +1,28 @@
+name: suite-validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Zero-dependency pipeline: no npm install needed. Gates (fail closed):
+      #   build     — kernel inliner + §1.1 lexical scan + placeholder scan
+      #   inventory — catalog/JSON regeneration (README + inventory.json)
+      #   validate  — GUP superset contract: coverage, unit identity,
+      #               V8 parse, metadata self-consistency, interference ledger
+      - name: Build + inventory + GUP validation
+        run: npm run check
+
+      - name: Kernel smoke tests
+        run: node tools/kernel-smoke.mjs

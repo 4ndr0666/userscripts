@@ -1,0 +1,22 @@
+[1mSTDIN[0m
+[38;2;248;248;242mname: suite-validation[0m
+[38;2;248;248;242mon:[0m
+[38;2;248;248;242m  push:[0m
+[38;2;248;248;242m    branches: [main][0m
+[38;2;248;248;242m  pull_request:[0m
+[38;2;248;248;242m    branches: [main][0m
+[38;2;248;248;242mjobs:[0m
+[38;2;248;248;242m  validate:[0m
+[38;2;248;248;242m    runs-on: ubuntu-latest[0m
+[38;2;248;248;242m    defaults:[0m
+[38;2;248;248;242m      run:[0m
+[38;2;248;248;242m        working-directory: 4ndr0666tools-suite[0m
+[38;2;248;248;242m    steps:[0m
+[38;2;248;248;242m      - uses: actions/checkout@v4[0m
+[38;2;248;248;242m      - uses: actions/setup-node@v4[0m
+[38;2;248;248;242m        with:[0m
+[38;2;248;248;242m          node-version: 22[0m
+[38;2;248;248;242m      - name: Build + inventory + GUP validation[0m
+[38;2;248;248;242m        run: npm run check[0m
+[38;2;248;248;242m      - name: Kernel smoke tests[0m
+[38;2;248;248;242m        run: node tools/kernel-smoke.mjs[0m

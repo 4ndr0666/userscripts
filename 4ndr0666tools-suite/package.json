@@ -1,0 +1,16 @@
+{
+    "name": "4ndr0666tools-suite",
+    "version": "1.0.0",
+    "description": "☠️ 4ndr0666tools ☠️ — consolidated userscript suite for digital sovereignty. Kernel-powered, GUP-governed, 3lectric-Glass native.",
+    "author": "4ndr0666",
+    "license": "MIT",
+    "type": "module",
+    "private": true,
+    "scripts": {
+        "build": "node tools/build.mjs",
+        "inventory": "node tools/inventory.mjs",
+        "validate": "node tools/validate.mjs",
+        "check": "node tools/build.mjs && node tools/inventory.mjs && node tools/validate.mjs"
+    },
+    "devDependencies": {}
+}
