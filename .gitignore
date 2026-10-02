@@ -177,3 +177,4 @@ compare
 # The blanket `dist/` rule above targets JS-app build output; the suite dist/
 # IS the product (38 installables served via raw URLs). Re-include it:
 !dist/
+update-4ndr0666tools-suite-v1.2.0.sh
