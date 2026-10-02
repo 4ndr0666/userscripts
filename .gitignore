@@ -175,8 +175,10 @@ compare
 
 # == 9. 4NDR0666TOOLS SUITE DIST — install channel (@updateURL target) ==
 # The blanket `dist/` rule above targets JS-app build output; the suite dist/
-# IS the product (38 installables served via raw URLs). Re-include it:
+# IS the product (installables served via raw URLs). Re-include it:
 !dist/
-update-4ndr0666tools-suite-v1.2.0.sh
-update-4ndr0666tools-suite-v1.2.2.sh
-update-4ndr0666tools-suite-v1.2.1.sh
+# one-shot suite update kits are transient delivery artifacts — never track them
+update-4ndr0666tools-suite-*.sh
+
+# personal operator manual — local-only reference, never publish
+OPERATOR-MANUAL.md

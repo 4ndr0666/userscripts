@@ -19,7 +19,7 @@
 
 Upgrading from the old repo? Follow the [**Migration Guide**](./docs/MIGRATION.md)
 (uninstall-then-install per script — never run both). The full audit trail
-(59 → 38 consolidation, superset verification, defect fixes) is in the
+(59 => 36 consolidation, superset verification, defect fixes) is in the
 [**Consolidation Report**](./docs/CONSOLIDATION.md).
 
 ## 🏗️ Suite Architecture
@@ -37,10 +37,11 @@ canon/     consolidated & promoted sources + EVIDENCE.json (per-script transform
 plugins/   companion plugins (LinkMaster CandidShiny autopsy, MPV bridge, autopage config)
 dist/      BUILT INSTALLABLES — install from here
 docs/      consolidation report + migration guide
-tools/     build.mjs · inventory.mjs · validate.mjs · kernel-smoke.mjs (GUP gates)
+tools/     build.mjs · inventory.mjs · validate.mjs · kernel-smoke.mjs · qr-verify.mjs (GUP gates)
+           canon-xref.mjs · baseline.json · ledger.json (evidence chain)
 ```
 
-`npm run build` → dist. `npm run check` → build + inventory + full validation
+`npm run build` → dist. `npm run check` → build + inventory + qr-verify + full validation
 (GUP superset contract, fail-closed). CI runs the same gates on every push.
 
 ## 🚀 Script Catalog
@@ -58,7 +59,7 @@ tools/     build.mjs · inventory.mjs · validate.mjs · kernel-smoke.mjs (GUP g
 | Bypass Paywalls | v0.1.2 | uncategorized | [4ndr0tools - BypassPaywalls.user.js](./dist/4ndr0tools%20-%20BypassPaywalls.user.js) | A way to bypass paywalls for popular news sites |
 | Confirmation Bypass | v4.0.0 | forums | [4ndr0tools - Confirmation Bypass.user.js](./dist/4ndr0tools%20-%20Confirmation%20Bypass.user.js) | Reveals forum invisi-text, view all replies, rewrite redirect links. Download Gate: bypass all confirmation pages on all sites, glass overlay copy/download URL (incl. vidara embeds on xcandid), auto-solve Altcha, auto-click download. Turbo: embed routing, upload injector. Util: external link safety, right-click scrollbar to top. |
 | Filester++ | v7.5.0 | media & links | [4ndr0tools - Filester++.user.js](./dist/4ndr0tools%20-%20Filester++.user.js) | Dynamic stream extraction + folder enumeration for any media on Filester.me. Network proxy + glyph injection. |
-| Forum Link Xtractor | v3.1.0 | forums | [4ndr0tools - Forum Link Xtractor.user.js](./dist/4ndr0tools%20-%20Forum%20Link%20Xtractor.user.js) | Link xtractor, Invisitext revealer, and inline post reply viewer. |
+| Forum Link Xtractor | v3.2.0 | forums | [4ndr0tools - Forum Link Xtractor.user.js](./dist/4ndr0tools%20-%20Forum%20Link%20Xtractor.user.js) | Link xtractor, Invisitext revealer, and inline post reply viewer. |
 | Forums++ | v1.9 | forums | [4ndr0tools - Forums++.user.js](./dist/4ndr0tools%20-%20Forums++.user.js) | Forum utils UI with powerful downloading, indexing, link checking, archiving features and more. |
 | GoFile++ | v2.1.0 | media & links | [4ndr0tools - Gofile++.user.js](./dist/4ndr0tools%20-%20Gofile++.user.js) | Directly batch-download GoFiles with a robust UI. Supports recursive folder scans, direct links, and download managers (Aria2, IDM). Fixing SPA persistence and Sandbox access. |
 | GooglePhotosandDrive++ | v8.0.0 | images | [4ndr0tools - GooglePhotosandDrive++.user.js](./dist/4ndr0tools%20-%20GooglePhotosandDrive++.user.js) | Restores context menus, exposes direct links, adds reverse image search, Drive direct-download resolution, Photos full-res extraction, power-user hotkeys, drag persistence and a settings console. 3lectric-Glass paradigm. |
@@ -91,7 +92,7 @@ tools/     build.mjs · inventory.mjs · validate.mjs · kernel-smoke.mjs (GUP g
 Scripts that match the same domains (by design or by overlap). Consult before
 bulk-installing the media family on the same pages:
 
-- `*:` — 217: 4ndr0tools - 4ndr0Purge, 4ndr0tools - 4ndr0serviceguard Companion, 4ndr0tools - Akasha Silence, 4ndr0tools - AlwaysNewWindow, 4ndr0tools - AutoTranslate, 4ndr0tools - Blob2URL, 4ndr0tools - Bypass Paywalls, 4ndr0tools - Confirmation Bypass, 4ndr0tools - Forum Link Xtractor, 4ndr0tools - GoFile++, 4ndr0tools - GooglePhotosandDrive++, 4ndr0tools - HostWarp, 4ndr0tools - Images++, 4ndr0tools - Instagram++, 4ndr0tools - LinkMasterΨ, 4ndr0tools - m3u8++, 4ndr0tools - Media Player Controller, 4ndr0tools - ModelSearch, 4ndr0tools - PageCraft, 4ndr0tools - Prompt Master, 4ndr0tools - Recon, 4ndr0tools - Redgifs++, 4ndr0tools - Website Control Panel, 4ndr0tools - Youtube Removed Video Revealer, 4ndr0tools - YT Filter
+- `*:` — 219: 4ndr0tools - 4ndr0Purge, 4ndr0tools - 4ndr0serviceguard Companion, 4ndr0tools - Akasha Silence, 4ndr0tools - AlwaysNewWindow, 4ndr0tools - AutoTranslate, 4ndr0tools - Blob2URL, 4ndr0tools - Bypass Paywalls, 4ndr0tools - Confirmation Bypass, 4ndr0tools - Forum Link Xtractor, 4ndr0tools - GoFile++, 4ndr0tools - GooglePhotosandDrive++, 4ndr0tools - HostWarp, 4ndr0tools - Images++, 4ndr0tools - Instagram++, 4ndr0tools - LinkMasterΨ, 4ndr0tools - m3u8++, 4ndr0tools - Media Player Controller, 4ndr0tools - ModelSearch, 4ndr0tools - PageCraft, 4ndr0tools - Prompt Master, 4ndr0tools - Recon, 4ndr0tools - Redgifs++, 4ndr0tools - Website Control Panel, 4ndr0tools - Youtube Removed Video Revealer, 4ndr0tools - YT Filter
 - `hailuoai.video` — 3: 4ndr0tools - Hailuo++
 - `gemini.google.com` — 3: 4ndr0tools - Watermark++
 - `business.gemini.google` — 3: 4ndr0tools - Watermark++

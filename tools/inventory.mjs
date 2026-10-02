@@ -220,7 +220,7 @@ function writeReadme(inv) {
 
 Upgrading from the old repo? Follow the [**Migration Guide**](./docs/MIGRATION.md)
 (uninstall-then-install per script — never run both). The full audit trail
-(59 → 38 consolidation, superset verification, defect fixes) is in the
+(59 => ${inv.scripts.length} consolidation, superset verification, defect fixes) is in the
 [**Consolidation Report**](./docs/CONSOLIDATION.md).
 
 ## 🏗️ Suite Architecture
@@ -238,10 +238,11 @@ canon/     consolidated & promoted sources + EVIDENCE.json (per-script transform
 plugins/   companion plugins (LinkMaster CandidShiny autopsy, MPV bridge, autopage config)
 dist/      BUILT INSTALLABLES — install from here
 docs/      consolidation report + migration guide
-tools/     build.mjs · inventory.mjs · validate.mjs · kernel-smoke.mjs (GUP gates)
+tools/     build.mjs · inventory.mjs · validate.mjs · kernel-smoke.mjs · qr-verify.mjs (GUP gates)
+           canon-xref.mjs · baseline.json · ledger.json (evidence chain)
 \`\`\`
 
-\`npm run build\` → dist. \`npm run check\` → build + inventory + full validation
+\`npm run build\` → dist. \`npm run check\` → build + inventory + qr-verify + full validation
 (GUP superset contract, fail-closed). CI runs the same gates on every push.
 
 ## 🚀 Script Catalog

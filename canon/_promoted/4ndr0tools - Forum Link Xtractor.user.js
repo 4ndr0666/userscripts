@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Forum Link Xtractor
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      3.1.0
+// @version      3.2.0
 // @description  Link xtractor, Invisitext revealer, and inline post reply viewer.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @author       4ndr0666
@@ -10,6 +10,8 @@
 // @match        *://*.simpcity.su/*
 // @match        *://simpcity.cr/*
 // @match        *://*.simpcity.cr/*
+// @match        *://candidshiny.com/*
+// @match        *://*.candidshiny.com/*
 // @match        *://start.me/*
 // @noframes
 // @run-at       document-idle
@@ -18,6 +20,8 @@
 // @grant        GM_setClipboard
 // @grant        GM_registerMenuCommand
 // @connect      *
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Forum%20Link%20Xtractor.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Forum%20Link%20Xtractor.user.js
 // @license      MIT
 // ==/UserScript==
 
@@ -26,6 +30,17 @@
  * Forum Link Xtractor BETA v2.1.0 promoted: XenForo Enhancer superset — extraction w/ download+copy radio flows, invisi-text revealer, inline reply viewer, optimized regex precompile; supersedes stable v1.0.
  * Retired duplicate: 4ndr0tools - Forum Link Xtractor.user.js (uninstall it; this script is its superset).
  * Built by the 4ndr0666tools consolidation (canon assembly, GUP v5.3).
+ * 3.1.0 — suite hardening: GM_xmlhttpRequest native timeout for the reply viewer
+ * (the AbortController shim never aborted a hung request); CONFIG.redColor
+ * defined for error styling.
+ * 3.2.0 — LUCASD FIX v2 (real-URL aggregation): candidshiny.com/lucasd-* video links
+ * bypass the exclusion filter and are resolved over the network to their final host
+ * (e.g. https://candidshiny.com/lucasd-LXWn → https://viderea.cloud/e/OVoPBz9nkQ8Y)
+ * at EXECUTE time, with bounded concurrency and a localStorage cache (psi_lucasd_cache).
+ * Adds @match for candidshiny.com, a "Clear Lucasd URL Cache" menu command, and
+ * the suite update channel (@updateURL/@downloadURL). Promotion convergence: the
+ * BETA had been built from the v3.0.0 base and regressed the v3.1.0 timeout
+ * hardening — re-ported during promotion (GUP superset-safe).
  * ═══════════════════════════════════════════════════════════════════════ */
 
 (function () {
@@ -39,7 +54,7 @@
     const CONFIG = {
         accentColor: '#00E5FF',
         yellowColor: '#FFD700',
-        redColor: '#FF3366',
+        redColor: '#FF4C4C',
         bgColor: 'rgba(10, 15, 26, 0.95)',
         excludeTerms: [
             'adglare.net', 'adtng', 'chatsex.xxx', 'cambb.xxx', 'comments',
@@ -49,7 +64,9 @@
             'stylesfactory.pl', 'theporndude.com', 'thread', 'twitter.com',
             'tiktok.com', 'data:image/svg+xml', 'xenforo.com', 'xentr.net',
             'youtube.com', 'youtu.be', 'x.com', 'google.com/chrome',
-            'login', 'register', 'search', 'whats-new', window.location.hostname
+            'login', 'register', 'search', 'whats-new', window.location.hostname,
+            'viderea.cloud',
+            'vidara.to',
         ],
         siteTerms: ['.badge', '.reaction', '.bookmark', '.comment', '.nav-link', '.p-navEl']
     };
@@ -57,6 +74,18 @@
     // Pre-compile Regex for O(1) high-speed matching during scans
     const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const EXCLUDE_REGEX = new RegExp(CONFIG.excludeTerms.map(escapeRegExp).join('|'), 'i');
+
+    // --- LUCASD FIX v2: real-URL detection ------------------------------------
+    // Listing pages on candidshiny.com expose video anchors like /lucasd-LXWn;
+    // each one resolves to its real host URL (e.g. https://viderea.cloud/e/OVoPBz9nkQ8Y).
+    // The real URL is only knowable by FOLLOWING the link — the /e/ token is not
+    // derivable from the /lucasd-LXWn path — so scanPage() captures these anchors
+    // and the EXECUTE handler resolves them over the network (Module 1 resolver).
+    // These links must bypass EXCLUDE_REGEX: on candidshiny the auto-added
+    // self-hostname term would otherwise discard every video link on the page.
+    const LUCASD_VIDEO_REGEX = /^https?:\/\/(?:[a-z0-9-]+\.)*candidshiny\.com\/lucasd-[A-Za-z0-9_-]+\/?(?:\?.*)?$/i;
+    const REAL_HOST_REGEX = /^https?:\/\/(?:[a-z0-9-]+\.)*(?:viderea\.cloud|vidara\.to)(?:\/|$)/i;
+    const ON_CANDIDSHINY = /(^|\.)candidshiny\.com$/i.test(window.location.hostname);
 
     const MAIN_STYLES = `
         @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&display=swap');
@@ -97,6 +126,7 @@
             font-size: 11px; transition: all 0.2s; flex: 1; text-align: center; border-radius: 4px;
         }
         .psi-btn:hover { background: ${CONFIG.accentColor}; color: #000; box-shadow: 0 0 10px ${CONFIG.accentColor}; }
+        .psi-btn:disabled { opacity: 0.5; cursor: wait; }
 
         /* Form Elements */
         label { cursor: pointer; user-select: none; }
@@ -184,6 +214,114 @@
         }
     }
 
+    // --- LUCASD FIX v2: real-URL resolver --------------------------------------
+    // A link like https://candidshiny.com/lucasd-LXWn resolves to its real URL
+    // (e.g. https://viderea.cloud/e/OVoPBz9nkQ8Y) only by following it. EXECUTE
+    // resolves every captured lucasd link via GM_xmlhttpRequest: first the final
+    // URL after HTTP redirects (res.finalUrl); if the redirect happens inside the
+    // page itself, the response HTML is parsed for meta refresh / JS redirect /
+    // iframe / anchor targets. Successful lookups are cached in localStorage
+    // (psi_lucasd_cache) so re-runs and cross-page aggregation stay cheap, and
+    // requests run through a small concurrency pool to stay polite to the host.
+
+    function loadLucasdCache() {
+        try { return JSON.parse(localStorage.getItem('psi_lucasd_cache') || '{}'); }
+        catch { return {}; }
+    }
+
+    function saveLucasdCache(cache) {
+        try { localStorage.setItem('psi_lucasd_cache', JSON.stringify(cache)); }
+        catch (e) { console.warn('[Ψ-4NDR0666] Lucasd cache save failed.', e); }
+    }
+
+    function hostOf(url) {
+        try { return new URL(url).hostname.toLowerCase(); }
+        catch { return null; }
+    }
+
+    function toAbsoluteUrl(candidate, baseUrl) {
+        try { return new URL(candidate, baseUrl).href; }
+        catch { return null; }
+    }
+
+    function extractRealLinkFromHtml(html, baseUrl) {
+        try {
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+
+            const metaRefresh = doc.querySelector('meta[http-equiv="refresh" i]');
+            if (metaRefresh) {
+                const m = (metaRefresh.getAttribute('content') || '').match(/url\s*=\s*['"]?([^'";\s]+)/i);
+                if (m) {
+                    const u = toAbsoluteUrl(m[1], baseUrl);
+                    if (u && hostOf(u) !== hostOf(baseUrl)) return u;
+                }
+            }
+
+            const jsMatch = html.match(/location(?:\.(?:href|replace))?\s*[=(]\s*['"]([^'"]+)['"]/i)
+                || html.match(/window\.open\(\s*['"]([^'"]+)['"]/i);
+            if (jsMatch) {
+                const u = toAbsoluteUrl(jsMatch[1], baseUrl);
+                if (u && hostOf(u) !== hostOf(baseUrl)) return u;
+            }
+
+            const candidates = [...doc.querySelectorAll('iframe[src], a[href], video[src], video source[src]')]
+                .map(el => el.src || el.href)
+                .filter(Boolean);
+            const realHostHit = candidates.find(u => REAL_HOST_REGEX.test(u));
+            if (realHostHit) return realHostHit;
+            return candidates.find(u => hostOf(u) && hostOf(u) !== hostOf(baseUrl)) || null;
+        } catch { return null; }
+    }
+
+    function resolveLucasdLink(url) {
+        return new Promise((resolve) => {
+            let settled = false;
+            const finish = (value) => { if (!settled) { settled = true; resolve(value); } };
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url: url,
+                timeout: 15000,
+                ontimeout: () => finish(null),
+                onerror: () => finish(null),
+                onabort: () => finish(null),
+                onload: (res) => {
+                    const finalUrl = res.finalUrl || url;
+                    if (hostOf(finalUrl) && hostOf(finalUrl) !== hostOf(url)) return finish(finalUrl);
+                    finish(res.responseText ? extractRealLinkFromHtml(res.responseText, url) : null);
+                }
+            });
+        });
+    }
+
+    async function resolveAllLucasdLinks(urls, onProgress) {
+        const cache = loadLucasdCache();
+        const resolved = new Map();
+        const pending = [];
+        urls.forEach(u => {
+            if (cache[u]) resolved.set(u, cache[u]);
+            else pending.push(u);
+        });
+
+        const CONCURRENCY = 5;
+        let cursor = 0;
+        let done = 0;
+
+        async function worker() {
+            while (cursor < pending.length) {
+                const url = pending[cursor++];
+                const real = await resolveLucasdLink(url);
+                if (real) cache[url] = real;
+                resolved.set(url, real);
+                done++;
+                if (onProgress) onProgress(done, pending.length);
+            }
+        }
+
+        await Promise.all(Array.from({ length: Math.min(CONCURRENCY, pending.length) }, () => worker()));
+        saveLucasdCache(cache);
+        return resolved;
+    }
+
     function scanPage() {
         const selectors = [
             'img[class*=bbImage]', 'video source', 'iframe[class*=saint-iframe]',
@@ -206,8 +344,23 @@
                     if (decoded) href = decoded;
                 } catch { /* Ignore malformed */ }
             }
-
             if (href.startsWith('http')) {
+                // === THIS IS THE LUCASD FIX (v2 — real-URL aggregation) ===
+                // candidshiny video links (/lucasd-LXWn) bypass the exclusion filter
+                // — the auto-added self-hostname term would drop them all — and are
+                // resolved to their real URLs (https://viderea.cloud/e/...) at
+                // EXECUTE time instead of being string-rewritten (the /e/ token is
+                // not derivable from the /lucasd- path; the link must be followed).
+                if (LUCASD_VIDEO_REGEX.test(href)) {
+                    rawLinks.add(href);
+                    return;
+                }
+                // On candidshiny itself, direct viderea/vidara links are targets,
+                // not noise — keep them out of the forum-oriented exclusion.
+                if (ON_CANDIDSHINY && REAL_HOST_REGEX.test(href)) {
+                    rawLinks.add(href);
+                    return;
+                }
                 // O(1) exclusion regex evaluation
                 if (EXCLUDE_REGEX.test(href)) return;
 
@@ -295,15 +448,30 @@
             }, duration);
         }
 
+        if (typeof GM_registerMenuCommand !== 'undefined') {
+            GM_registerMenuCommand('Clear Lucasd URL Cache', () => {
+                localStorage.removeItem('psi_lucasd_cache');
+                showToast('Lucasd resolution cache cleared.');
+            });
+        }
+
         // GUI Listeners
         toggleBtn.addEventListener('click', () => panel.classList.toggle('visible'));
         [rDownload.input, rCopy.input].forEach(input => {
             input.addEventListener('change', () => row3.style.display = rCopy.input.checked ? 'flex' : 'none');
         });
 
-        execBtn.addEventListener('click', () => {
+        execBtn.addEventListener('click', async () => {
+            if (execBtn.disabled) return;
+
             const pathSegments = window.location.pathname.split('#')[0].split('/');
-            const threadName = pathSegments.includes("threads") ? pathSegments[pathSegments.indexOf("threads") + 1] : "extracted_links";
+            let threadName = 'extracted_links';
+            const threadsIdx = pathSegments.indexOf('threads');
+            if (threadsIdx !== -1 && pathSegments[threadsIdx + 1]) {
+                threadName = pathSegments[threadsIdx + 1];
+            } else if (ON_CANDIDSHINY && /^lucasd/i.test(pathSegments[1] || '')) {
+                threadName = 'lucasd';
+            }
             const pageURL = window.location.href.split('#')[0];
 
             // Real-time scan and save
@@ -329,6 +497,57 @@
             }
 
             let finalLinks = Array.from(finalLinksSet);
+
+            // === THIS IS THE LUCASD FIX (v2 — resolve to real URLs) ===
+            // candidshiny video links collected above (current page + buffered
+            // pages of the same thread) are followed over the network and replaced
+            // by their real URLs. Unresolved links keep their original form so no
+            // data is silently lost; the toast reports how many failed.
+            const lucasdLinks = finalLinks.filter(link => LUCASD_VIDEO_REGEX.test(link));
+            if (lucasdLinks.length > 0) {
+                const originalLabel = execBtn.textContent;
+                execBtn.disabled = true;
+                execBtn.textContent = 'RESOLVING...';
+
+                const progressToast = document.createElement('div');
+                progressToast.className = 'psi-toast';
+                progressToast.textContent = `>> Resolving real URLs: 0/${lucasdLinks.length}`;
+                toastContainer.appendChild(progressToast);
+
+                try {
+                    const resolvedMap = await resolveAllLucasdLinks(lucasdLinks, (done, total) => {
+                        progressToast.textContent = `>> Resolving real URLs: ${done}/${total}`;
+                    });
+
+                    const reals = [];
+                    const unresolved = [];
+                    lucasdLinks.forEach(link => {
+                        const real = resolvedMap.get(link);
+                        if (real) reals.push(real); else unresolved.push(link);
+                    });
+
+                    finalLinks = finalLinks
+                        .filter(link => !LUCASD_VIDEO_REGEX.test(link))
+                        .concat(reals, unresolved);
+
+                    if (unresolved.length > 0) {
+                        showToast(`${unresolved.length} lucasd links unresolved — originals kept.`, 5000);
+                    }
+                } catch (err) {
+                    console.error('[Ψ-4NDR0666] Lucasd resolution error:', err);
+                    showToast('Lucasd resolution error — originals kept.', 5000);
+                } finally {
+                    execBtn.disabled = false;
+                    execBtn.textContent = originalLabel;
+                    setTimeout(() => {
+                        progressToast.style.opacity = '0';
+                        progressToast.style.transform = 'translateX(100%)';
+                        setTimeout(() => progressToast.remove(), 300);
+                    }, 1200);
+                }
+            }
+
+            finalLinks = Array.from(new Set(finalLinks));
             if (cSort.input.checked) finalLinks.sort();
 
             if (finalLinks.length === 0) {
@@ -374,7 +593,7 @@
     /** Async wrapper for GM_xmlhttpRequest using the manager's native
      *  timeout — actually aborts the underlying connection (the previous
      *  AbortController shim only rejected the promise late; the request
-     *  itself kept running). */
+     *  itself kept running — and a hung request never settled at all). */
     function fetchAnswersAsync(url) {
         return new Promise((resolve, reject) => {
             GM_xmlhttpRequest({

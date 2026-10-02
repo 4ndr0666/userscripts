@@ -467,18 +467,20 @@
   {
    "file": "4ndr0tools - Forum Link Xtractor.user.js",
    "name": "4ndr0tools - Forum Link Xtractor",
-   "version": "3.1.0",
+   "version": "3.2.0",
    "description": "Link xtractor, Invisitext revealer, and inline post reply viewer.",
    "family": "forums",
-   "sha256": "36f9f7019a56fdafe8f4bec5281159da8b6f0bcb186b6f642178b8be6a5dff59",
-   "lines": 527,
-   "bytes": 27252,
+   "sha256": "805c253acf8985a48d4a87d7b01a513f1d1fd43cb6e891969ebdd1748b2ef97c",
+   "lines": 746,
+   "bytes": 38087,
    "matches": [
     "*://forums.socialmediagirls.com/*",
     "*://simpcity.su/*",
     "*://*.simpcity.su/*",
     "*://simpcity.cr/*",
     "*://*.simpcity.cr/*",
+    "*://candidshiny.com/*",
+    "*://*.candidshiny.com/*",
     "*://start.me/*"
    ],
    "excludes": [],
@@ -495,8 +497,8 @@
    "runAt": "document-idle",
    "noframes": true,
    "urls": {
-    "update": null,
-    "download": null
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Forum%20Link%20Xtractor.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Forum%20Link%20Xtractor.user.js"
    }
   },
   {
@@ -1447,7 +1449,7 @@
  "hotDomains": [
   {
    "domain": "*:",
-   "count": 217,
+   "count": 219,
    "scripts": [
     "4ndr0tools - 4ndr0Purge",
     "4ndr0tools - 4ndr0serviceguard Companion",
@@ -1513,5 +1515,5 @@
    ]
   }
  ],
- "generated": "2026-10-02T12:49:18.851Z"
+ "generated": "2026-10-02T22:46:46.199Z"
 }
