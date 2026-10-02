@@ -263,6 +263,7 @@ function main() {
     fs.mkdirSync(DIST_DIR, { recursive: true });
     const failures = [];
     const built = [];
+    const outputs = new Set();
 
     // 1) Kernel-powered modules
     if (fs.existsSync(MODULES_DIR)) {
@@ -276,6 +277,7 @@ function main() {
                 failures.push(...placeholders);
                 fs.writeFileSync(path.join(DIST_DIR, filename), out);
                 built.push(filename);
+                outputs.add(filename);
             } catch (e) {
                 failures.push(`module ${entry.name}: ${e.message}`);
             }
@@ -291,14 +293,27 @@ function main() {
             for (const f of fs.readdirSync(dir)) {
                 if (!f.endsWith(".user.js")) continue;
                 fs.copyFileSync(path.join(dir, f), path.join(DIST_DIR, f));
+                outputs.add(f);
                 carried++;
             }
         }
     }
 
-    // 3) Report
+    // 3) Prune stale dist artifacts — orphaned installables whose canon
+    //    source was retired/merged are dead weight on the install channel
+    //    (and would keep answering @updateURL checks after retirement).
+    const stale = [];
+    for (const f of fs.readdirSync(DIST_DIR)) {
+        if (f.endsWith(".user.js") && !outputs.has(f)) {
+            fs.rmSync(path.join(DIST_DIR, f));
+            stale.push(f);
+        }
+    }
+
+    // 4) Report
     for (const f of built) console.log(`  ✓ built  ${f}`);
     if (carried) console.log(`  ✓ carried ${carried} canon script(s) verbatim`);
+    for (const f of stale) console.log(`  − pruned  ${f} (no canon source)`);
 
     if (failures.length > 0) {
         console.error("\nBUILD FAILURES:");

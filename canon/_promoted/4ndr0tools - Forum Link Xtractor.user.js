@@ -1,8 +1,9 @@
 // ==UserScript==
 // @name         4ndr0tools - Forum Link Xtractor
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      3.0.0
+// @version      3.1.0
 // @description  Link xtractor, Invisitext revealer, and inline post reply viewer.
+// @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @author       4ndr0666
 // @match        *://forums.socialmediagirls.com/*
 // @match        *://simpcity.su/*
@@ -38,6 +39,7 @@
     const CONFIG = {
         accentColor: '#00E5FF',
         yellowColor: '#FFD700',
+        redColor: '#FF3366',
         bgColor: 'rgba(10, 15, 26, 0.95)',
         excludeTerms: [
             'adglare.net', 'adtng', 'chatsex.xxx', 'cambb.xxx', 'comments',
@@ -369,21 +371,20 @@
     // MODULE 2: REPLY VIEWER (Promisified & Hardened)
     // =========================================================================
 
-    /** Async wrapper for GM_xmlhttpRequest with strict AbortController timeout */
+    /** Async wrapper for GM_xmlhttpRequest using the manager's native
+     *  timeout — actually aborts the underlying connection (the previous
+     *  AbortController shim only rejected the promise late; the request
+     *  itself kept running). */
     function fetchAnswersAsync(url) {
         return new Promise((resolve, reject) => {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 12000); // 12s strict timeout
-
             GM_xmlhttpRequest({
                 method: "GET",
                 url: url,
-                onabort: () => reject(new Error('Request aborted via timeout')),
+                timeout: 12000,
                 onerror: (err) => reject(err),
                 ontimeout: () => reject(new Error('Request timed out')),
+                onabort: () => reject(new Error('Request aborted')),
                 onload: (res) => {
-                    clearTimeout(timeoutId);
-                    if (controller.signal.aborted) return reject(new Error('Aborted'));
                     if (res.status >= 200 && res.status < 300) {
                         resolve(res.responseText);
                     } else {

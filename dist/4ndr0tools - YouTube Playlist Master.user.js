@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         4ndr0tools - YouTube Playlist Master
-// @namespace    https://github.com/4ndr0666
+// @namespace    https://github.com/4ndr0666/userscripts
 // @version      1.7.0
 // @description  Channel playlist buttons (All / Popular / Videos / Shorts / Streams / Members-only), Random play (prefer newest/oldest), reverse autoplay order, playlist autoplay toggle, duration sort, bulk copy/move/delete, JSON + plaintext export/import, snapshots with deleted-video detection, quick watch_videos playlists, queue & watch-later overlays, playlist close button, date/view metadata, episode auto-expand, huge-playlist browser, live settings (no reload), always-available Ψ deck, playlist row filter, duplicate finder & purge, global hotkeys (Alt+Shift+U/S/X), failsafe deck rescue, 404-proof navigation guards, Trusted-Types-immune rendering, fully-visible fit-content modal dialogs.
 // @author       4ndr0666
@@ -16,8 +16,8 @@
 // @grant        unsafeWindow
 // @run-at       document-idle
 // @noframes
-// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20YouTube%20Playlist%20Master.user.js
-// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20YouTube%20Playlist%20Master.user.js
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YouTube%20Playlist%20Master.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YouTube%20Playlist%20Master.user.js
 // ==/UserScript==
 
 /* ============================================================================

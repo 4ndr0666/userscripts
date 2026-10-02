@@ -62,6 +62,28 @@ feature — configurable collapse hotkey — is in v4.0.0. If you relied on the
 BETA's IG-specific hover behavior, the universal stable behavior (also in
 v4.0.0) covers it; Instagram++ remains the dedicated IG tool.
 
+### Privacy trio (three → one)
+
+| You had | Install instead | Then uninstall |
+|---|---|---|
+| Anti-detection v1.1 | [Akasha Silence v5.0.0](../dist/4ndr0tools%20-%20Akasha%20Silence.user.js) | Anti-detection |
+| Counter-surveillance v4.0.0 | [Akasha Silence v5.0.0](../dist/4ndr0tools%20-%20Akasha%20Silence.user.js) | Counter-surveillance |
+| Anti-telemetry (ICC) v3.5.0 | [Akasha Silence v5.0.0](../dist/4ndr0tools%20-%20Akasha%20Silence.user.js) | Anti-telemetry (ICC) |
+
+The three scripts shared ~70% of their core (hardware shroud, canvas
+blinding, network nullification) — running two of them together double-hooked
+the same natives. Akasha Silence is the strict union: the anti-analysis
+neutralizer, the Google link sanitizer, the Reddit/Instagram/Facebook fixes,
+the ICC worker pacifier (same ICC scope as before) and iframe propagation all
+live in one script. It also fixes the tell-tale defects of the trio:
+fingerprint values are now session-stable (`navigator.hardwareConcurrency ===
+navigator.hardwareConcurrency` holds), canvas noise is per-canvas seeded
+(reading the same canvas twice agrees), `toDataURL`/`toBlob` are blinded
+(the old getImageData-only hook was bypassable), and native hooks are Proxy
+facades that survive `toString()` inspection. If you run **4ndr0serviceguard
+Companion**, worker/socket control defers to it automatically — no double
+gating.
+
 ### Micro tools → composites
 
 | You had | Install instead | Then uninstall |

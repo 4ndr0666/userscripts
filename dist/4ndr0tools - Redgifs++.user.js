@@ -2,7 +2,7 @@
 // @name            4ndr0tools - Redgifs++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author          4ndr0666 
-// @version         5.0
+// @version         5.1
 // @description     Intercepts Redgifs links on Reddit for a cinematic overlay. On Redgifs itself, enters focused video-only mode. Falls back to JSON.parse intercept for direct /watch/ loads before SPA hydration.
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Redgifs++.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Redgifs++.user.js
@@ -32,17 +32,21 @@
         const SPINNER_COLOR     = '#d96946';
         const TRANSITION_SPEED  = '0.25s';
 
-        // Build DOM
+        const bootRedditOverlay = () => {
+        // Build DOM. v5.1: the spinner is appended AFTER the iframe — the
+        // `iframe ~ .rgpp-spinner` hide-rule is a following-sibling selector
+        // and never matched when the spinner came first (it spun over the
+        // video forever). Creation order now matches the selector.
         const container   = GM_addElement(document.body, 'div',    { id: 'rgpp-container', class: 'rgpp-hidden' });
-        const spinner     = GM_addElement(container,    'div',    { class: 'rgpp-spinner' });
         const closeButton = GM_addElement(container,    'div',    { id: 'rgpp-close-btn', textContent: '✕' });
         const iframe      = GM_addElement(container,    'iframe', {
             'data-rgpp-iframe': '',
             allowfullscreen: 'true',
             sandbox: 'allow-scripts allow-same-origin allow-presentation'
         });
+        const spinner     = GM_addElement(container,    'div',    { class: 'rgpp-spinner' });
 
-        // Suppress unused-variable lint: spinner is inserted for CSS targeting only.
+        // Spinner is inserted for CSS targeting only.
         void spinner;
 
         /** Convert a /watch/ URL to its /ifr/ embed equivalent. */
@@ -151,6 +155,16 @@
                 100% { transform: rotate(360deg); }
             }
         `);
+        };
+
+        // v5.1: @run-at document-start means document.body can still be null
+        // when this branch executes — GM_addElement(null, …) would kill the
+        // whole overlay. Gate on body readiness instead.
+        if (document.body) {
+            bootRedditOverlay();
+        } else {
+            document.addEventListener('DOMContentLoaded', bootRedditOverlay, { once: true });
+        }
 
         return; // Reddit branch is complete; do not fall through.
     }

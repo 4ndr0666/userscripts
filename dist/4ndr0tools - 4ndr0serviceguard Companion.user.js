@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         4ndr0tools - 4ndr0serviceguard Companion
-// @namespace    https://github.com/4ndr0666/4ndr0serviceguard
+// @namespace    https://github.com/4ndr0666/userscripts
 // @version      7.3.0
 // @author       4ndr0666
 // @description  Stealth Service Worker / WebSocket / SharedWorker firewall companion for the 4ndr0serviceguard extension. Default-deny with a three-way action model: AUTHORIZE (real), SPOOF (pacified live-looking socket) or DENY (native-faithful failure). Whitelist authorizes, spooflist auto-spoofs silently, the blacklist is an absolute prohibition. Defers to the extension's Gatekeeper whenever the extension is present — and routes list edits to it through the extension's confirm bar.

@@ -1,381 +1,398 @@
 [
- {
-  "dest": "4ndr0tools - m3u8++.user.js",
-  "mode": "promoted",
-  "source": "4ndr0tools - m3u8++BETA.user.js",
-  "source_sha16": "1eb282371f7d1965",
-  "retired": "4ndr0tools - m3u8++.user.js",
-  "retired_sha16": "04c4f1e32a41b451",
-  "version": "5.0.0",
-  "evidence": "m3u8++BETA v4.5 promoted: G1\u2013G10 GUP gap-mitigation set + magnet-play relays are a strict superset of stable v4.4 (verified by diff + embedded changelog)."
- },
- {
-  "dest": "4ndr0tools - Hailuo++.user.js",
-  "mode": "promoted",
-  "source": "4ndr0tools - Hailuo++BETA.user.js",
-  "source_sha16": "b8de4ca5d56ce533",
-  "retired": "4ndr0tools - Hailuo++.user.js",
-  "retired_sha16": "a4a4df8c478be46c",
-  "version": "6.0.0",
-  "evidence": "Hailuo++BETA v5.4.0 promoted: 'superset upgrade over 5.3.0 (zero functional removals)' \u2014 editable-context DOM guards, self-healing HUD watchdog, cross-reload persistence absent from stable v5.1.1."
- },
- {
-  "dest": "4ndr0tools - Blob2URL.user.js",
-  "mode": "promoted",
-  "source": "4ndr0tools - Blob2URLBETA.user.js",
-  "source_sha16": "ce77ed2fc35db970",
-  "retired": "4ndr0tools - Blob2URL.user.js",
-  "retired_sha16": "495ab3f25c728538",
-  "version": "7.0.0",
-  "evidence": "Blob2URLBETA v6.5 promoted: SUPerset gap mitigation (G1..G3) + IG vault render \u2014 strict superset of stable v6.3."
- },
- {
-  "dest": "4ndr0tools - Confirmation Bypass.user.js",
-  "mode": "promoted",
-  "source": "4ndr0tools - Confirmation Bypass BETA.user.js",
-  "source_sha16": "f02771ea82f5692b",
-  "retired": "4ndr0tools - Confirmation Bypass.user.js",
-  "retired_sha16": "aaeb1fa9a490e6ba",
-  "version": "4.0.0",
-  "evidence": "Confirmation Bypass BETA v3.6.2 promoted: GUP v5.3 stepwise gap mitigation over v3.6.1 (Set-based rel handling superset, xcandid overlay init fix)."
- },
- {
-  "dest": "4ndr0tools - ModelSearch.user.js",
-  "mode": "promoted",
-  "source": "4ndr0tools - ModelSearchBETA.user.js",
-  "source_sha16": "539d70f04768c048",
-  "retired": "4ndr0tools - ModelSearch.user.js",
-  "retired_sha16": "1a15bc13ce185c5d",
-  "version": "4.0.0",
-  "evidence": "ModelSearchBETA v3.2.0-\u03a8 promoted: Superset Protocol audit pass (BUG-1/2/3 fixes), Electric-Glass covert UI; supersedes stable v2.1 (Alt+S retained; legacy @updateURL pointing at the STABLE filename \u2014 a self-downgrade bug \u2014 corrected by the suite build)."
- },
- {
-  "dest": "4ndr0tools - GooglePhotosandDrive++.user.js",
-  "mode": "promoted",
-  "source": "4ndr0tools - GooglePhotosandDrive++BETA.user.js",
-  "source_sha16": "f95ea8badf1900f9",
-  "retired": "4ndr0tools - GooglePhotosandDrive++.user.js",
-  "retired_sha16": "6ad8e5b45ffe38f3",
-  "version": "8.0.0",
-  "evidence": "GooglePhotosandDrive++BETA v7.0.0 promoted: 'Unified superset revision \u2014 GUP gate: 0 MISSING' \u2014 Drive direct-download resolution, Photos full-res extraction, hotkeys, drag persistence, settings console; supersedes stable v1.5.0."
- },
- {
-  "dest": "4ndr0tools - Media Player Controller.user.js",
-  "mode": "promoted",
-  "source": "4ndr0tools - Media Player Controller BETA.user.js",
-  "source_sha16": "53e22992b19230bf",
-  "retired": "4ndr0tools - Media Player Controller.user.js",
-  "retired_sha16": "30c3184c98ab1788",
-  "version": "8.0.0",
-  "evidence": "Media Player Controller BETA v7.0.0-\u03a8 promoted: 'UNIFIED SUPERSET' over mediaplayercontroller v5.1.0 (31 baseline units) + IGDL v6.0.1 salvage \u2014 shadow-DOM discovery, scrub bar, download blob-capture, full hotkey suite."
- },
- {
-  "dest": "4ndr0tools - Forum Link Xtractor.user.js",
-  "mode": "promoted",
-  "source": "4ndr0tools - Forum Link Xtractor BETA.user.js",
-  "source_sha16": "8edb264774e81bd3",
-  "retired": "4ndr0tools - Forum Link Xtractor.user.js",
-  "retired_sha16": "58a781595222de8a",
-  "version": "3.0.0",
-  "evidence": "Forum Link Xtractor BETA v2.1.0 promoted: XenForo Enhancer superset \u2014 extraction w/ download+copy radio flows, invisi-text revealer, inline reply viewer, optimized regex precompile; supersedes stable v1.0."
- },
- {
-  "dest": "4ndr0tools - Prompt Master.user.js",
-  "mode": "carried",
-  "source": "4ndr0tools - Prompt Master.user.js",
-  "source_sha16": "74ee406cb50c8d41",
-  "changes": [
-   "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-  ]
- },
- {
-  "dest": "4ndr0tools - Watermark++.user.js",
-  "mode": "carried",
-  "source": "4ndr0tools - Watermark++.user.js",
-  "source_sha16": "8ade9e4488c8e3cf",
-  "changes": [
-   "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-  ]
- },
- {
-  "dest": "4ndr0tools - YouTube Playlist Master.user.js",
-  "mode": "carried",
-  "source": "4ndr0tools - YouTube Playlist Master.user.js",
-  "source_sha16": "2b90633c7efdc36f",
-  "changes": [
-   "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-  ]
- },
- {
-  "dest": "4ndr0tools - Bunkr++.user.js",
-  "mode": "carried",
-  "source": "4ndr0tools - Bunkr++.user.js",
-  "source_sha16": "f42a90443df64d63",
-  "changes": [
-   "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-  ]
- },
- {
-  "dest": "4ndr0tools - Forums++.user.js",
-  "mode": "carried",
-  "source": "4ndr0tools - Forums++.user.js",
-  "source_sha16": "92bc6a418239b2b3",
-  "changes": [
-   "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-  ]
- },
- {
-  "dest": "4ndr0tools - Instagram++.user.js",
-  "mode": "carried",
-  "source": "4ndr0tools - Instagram++.user.js",
-  "source_sha16": "7ee60c84f2c679e9",
-  "changes": [
-   "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-  ]
- },
- {
-  "dest": "4ndr0tools - Recon.user.js",
-  "mode": "carried",
-  "source": "4ndr0tools - Recon.user.js",
-  "source_sha16": "873bba773c6b0602",
-  "changes": [
-   "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-  ]
- },
- {
-  "dest": "4ndr0tools - BypassPaywalls.user.js",
-  "mode": "carried",
-  "source": "4ndr0tools - BypassPaywalls.user.js",
-  "source_sha16": "b71cb3330046ce6c",
-  "changes": [
-   "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-  ]
- },
- {
-  "dest": "4ndr0tools - AutoTranslate.user.js",
-  "mode": "carried",
-  "source": "4ndr0tools - AutoTranslate.user.js",
-  "source_sha16": "c6fb86ba2b54ea2a",
-  "changes": [
-   "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-  ]
- },
- {
-  "dest": "4ndr0tools - AlwaysNewWindow.user.js",
-  "mode": "carried",
-  "source": "4ndr0tools - AlwaysNewWindow.user.js",
-  "source_sha16": "21a57da8240ddc6c",
-  "changes": [
-   "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-  ]
- },
- {
-  "dest": "4ndr0tools - Website Control Panel.user.js",
-  "mode": "carried",
-  "source": "4ndr0tools - Website Control Panel.user.js",
-  "source_sha16": "e30d4b9b127fd3b5",
-  "changes": [
-   "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-  ]
- },
- {
-  "dest": "4ndr0tools - YT Filter.user.js",
-  "mode": "carried",
-  "source": "4ndr0tools - YT Filter.user.js",
-  "source_sha16": "89cbf24a43532f39",
-  "changes": [
-   "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-  ]
- },
- {
-  "dest": "4ndr0tools - Youtube Removed Video Revealer.user.js",
-  "mode": "carried",
-  "source": "4ndr0tools - Youtube Removed Video Revealer.user.js",
-  "source_sha16": "81adf38f5c3b9fe1",
-  "changes": [
-   "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-  ]
- },
- {
-  "dest": "4ndr0tools - YouTubeEmbedRedirectButton.user.js",
-  "mode": "carried",
-  "source": "4ndr0tools - YouTubeEmbedRedirectButton.user.js",
-  "source_sha16": "ccb777f5f295c7b6",
-  "changes": [
-   "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-  ]
- },
- {
-  "dest": "4ndr0tools - YandexImageSearch++.user.js",
-  "mode": "carried",
-  "source": "4ndr0tools - YandexImageSearch++.user.js",
-  "source_sha16": "4edd9c0394a95db6",
-  "changes": [
-   "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-  ]
- },
- {
-  "dest": "4ndr0tools - Redgifs++.user.js",
-  "mode": "carried",
-  "source": "4ndr0tools - Redgifs++.user.js",
-  "source_sha16": "737523d68c94a747",
-  "changes": [
-   "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-  ]
- },
- {
-  "dest": "4ndr0tools - Pixeldrain++.user.js",
-  "mode": "carried",
-  "source": "4ndr0tools - Pixeldrain++.user.js",
-  "source_sha16": "98613a41a8e6573e",
-  "changes": [
-   "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-  ]
- },
- {
-  "dest": "4ndr0tools - Gofile++.user.js",
-  "mode": "carried",
-  "source": "4ndr0tools - Gofile++.user.js",
-  "source_sha16": "ba31fbba3e41770c",
-  "changes": [
-   "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-  ]
- },
- {
-  "dest": "4ndr0tools - Filester++.user.js",
-  "mode": "carried",
-  "source": "4ndr0tools - Filester++.user.js",
-  "source_sha16": "eb0d312efbb5ba03",
-  "changes": [
-   "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-  ]
- },
- {
-  "dest": "4ndr0tools - Login Form Autofiller.user.js",
-  "mode": "carried",
-  "source": "4ndr0tools - Login Form Autofiller.user.js",
-  "source_sha16": "6b306b8489323db4",
-  "changes": [
-   "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-  ]
- },
- {
-  "dest": "4ndr0tools - 4ndr0purge.user.js",
-  "mode": "carried",
-  "source": "4ndr0tools - 4ndr0purge.user.js",
-  "source_sha16": "7a3eb7649fd04d7e",
-  "changes": [
-   "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-  ]
- },
- {
-  "dest": "4ndr0tools - 4ndr0serviceguard Companion.user.js",
-  "mode": "carried",
-  "source": "4ndr0tools - 4ndr0serviceguard Companion.user.js",
-  "source_sha16": "36879ff59aaf77ed",
-  "changes": [
-   "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-  ]
- },
- {
-  "dest": "4ndr0tools - Anti-detection.user.js",
-  "mode": "carried",
-  "source": "4ndr0tools - Anti-detection.user.js",
-  "source_sha16": "1c1decf9f5adb3a2",
-  "changes": [
-   "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-  ]
- },
- {
-  "dest": "4ndr0tools - Anti-telemetry (Intelligent Cloud Computing).user.js",
-  "mode": "carried",
-  "source": "4ndr0tools - Anti-telemetry (Intelligent Cloud Computing).user.js",
-  "source_sha16": "220ef6e7bc847c66",
-  "changes": [
-   "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-  ]
- },
- {
-  "dest": "4ndr0tools - Counter-surveillance.user.js",
-  "mode": "carried",
-  "source": "4ndr0tools - Counter-surveillance.user.js",
-  "source_sha16": "be9fa54837849ef6",
-  "changes": [
-   "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-  ]
- },
- {
-  "dest": "4ndr0tools - Maximize_Any_Media.user.js",
-  "mode": "carried",
-  "source": "4ndr0tools - Maximize_Any_Media.user.js",
-  "source_sha16": "c194e311c133c364",
-  "changes": [
-   "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-  ]
- },
- {
-  "dest": "4ndr0tools - LinkMaster\u03a8.user.js",
-  "mode": "merged",
-  "version": "6.1.0",
-  "sources": [
-   {
-    "file": "4ndr0tools - LinkMasterBETA.user.js",
-    "role": "base (v5.1.1, verified superset of LinkMaster\u03a8 v5.0.0; carries the paste-to-check bulk panel)",
-    "sha16": "e447e2292d605e11"
-   },
-   {
-    "file": "4ndr0tools - LinkMaster\u03a82.user.js",
-    "role": "forum deep-scrape engine ported in full at v6.1.0 (25 named units: resolver chain, hosts matchers, parsers, downloadPost packaging, config forms, check-scraped flow, linkmaster_settings persistence)",
-    "sha16": "de8c897636cb83f8"
-   },
-   {
-    "file": "4ndr0tools - Premium Link Revealer.user.js",
-    "role": "AbsorbedPLR module (sexyforums unfurl unwrap, verbatim)",
-    "sha16": "b75130b729627577"
-   },
-   {
-    "file": "4ndr0tools - Git Raw URL File List Parser.user.js",
-    "role": "AbsorbedGitRaw module (raw-URL harvest; double-domain URL bug fixed during absorption)",
-    "sha16": "bfee8698185ebba0"
-   },
-   {
-    "file": "archive/4ndr0tools - Linkmaster.user.js",
-    "role": "historical lineage (v1-4, fully superseded by the v5.x BETA line)",
-    "sha16": "f0bfa17dd58e48dd"
-   }
-  ],
-  "retired": [
-   "4ndr0tools - LinkMasterBETA.user.js",
-   "4ndr0tools - LinkMaster\u03a8.user.js (v5.0.0)",
-   "4ndr0tools - LinkMaster\u03a82.user.js",
-   "4ndr0tools - Premium Link Revealer.user.js",
-   "4ndr0tools - Git Raw URL File List Parser.user.js",
-   "archive/4ndr0tools - Linkmaster.user.js"
-  ],
-  "evidence": "v6.0.0 five-way merge; v6.1.0 SUPERSET COMPLETION: the Psi2 forum deep-scrape engine (30+ per-host resolvers, album recursion, password-protected album unlock via thread spoilers, post download packaging via GM_download/JSZip, check-scraped-links flow, linkmaster_settings persistence) ported in full after Gate-B verification flagged 25 missing units. All 25 units present by name; V8 parse clean; behavior-preserving adaptations documented in-file (Array.prototype.unique -> inline dedupe, closure-local logs, shared dock HUD). Paste-to-check retained via the BETA bulk panel.",
-  "sha16": "10d123e0bb2aed15"
- },
- {
-  "dest": "4ndr0tools - Images++.user.js",
-  "mode": "merged",
-  "version": "4.0.0",
-  "sources": [
-   {
-    "file": "4ndr0tools - Images++.user.js",
-    "role": "base (v3.0.0 universal stable \u2014 superset carrier)",
-    "sha16": "47a477270a9545b8"
-   },
-   {
-    "file": "4ndr0tools - Images++BETA.user.js",
-    "role": "divergent IG/imagefap-scoped branch; ONLY its configurable-hotkey feature was ported (the rest of the BETA is a strict subset of stable v3.0.0)",
-    "sha16": "19d6e644976fe089"
-   }
-  ],
-  "retired": [
-   "4ndr0tools - Images++.user.js (v3.0.0)",
-   "4ndr0tools - Images++BETA.user.js (v2.1.0)"
-  ],
-  "evidence": "Pair merge: universal stable v3.0.0 carries forward as base; the BETA's one non-subset feature (configurable collapse-mode hotkey, GM_setValue-backed) ported on top. BETA's IG/imagefap scoping was a regression vs stable and is intentionally not carried.",
-  "sha16": "93b0a31d86e20758"
- }
+  {
+    "dest": "4ndr0tools - m3u8++.user.js",
+    "mode": "promoted",
+    "source": "4ndr0tools - m3u8++BETA.user.js",
+    "source_sha16": "1eb282371f7d1965",
+    "retired": "4ndr0tools - m3u8++.user.js",
+    "retired_sha16": "04c4f1e32a41b451",
+    "version": "5.0.0",
+    "evidence": "m3u8++BETA v4.5 promoted: G1–G10 GUP gap-mitigation set + magnet-play relays are a strict superset of stable v4.4 (verified by diff + embedded changelog)."
+  },
+  {
+    "dest": "4ndr0tools - Hailuo++.user.js",
+    "mode": "promoted",
+    "source": "4ndr0tools - Hailuo++BETA.user.js",
+    "source_sha16": "b8de4ca5d56ce533",
+    "retired": "4ndr0tools - Hailuo++.user.js",
+    "retired_sha16": "a4a4df8c478be46c",
+    "version": "6.0.0",
+    "evidence": "Hailuo++BETA v5.4.0 promoted: 'superset upgrade over 5.3.0 (zero functional removals)' — editable-context DOM guards, self-healing HUD watchdog, cross-reload persistence absent from stable v5.1.1."
+  },
+  {
+    "dest": "4ndr0tools - Blob2URL.user.js",
+    "mode": "promoted",
+    "source": "4ndr0tools - Blob2URLBETA.user.js",
+    "source_sha16": "ce77ed2fc35db970",
+    "retired": "4ndr0tools - Blob2URL.user.js",
+    "retired_sha16": "495ab3f25c728538",
+    "version": "7.0.0",
+    "evidence": "Blob2URLBETA v6.5 promoted: SUPerset gap mitigation (G1..G3) + IG vault render — strict superset of stable v6.3."
+  },
+  {
+    "dest": "4ndr0tools - Confirmation Bypass.user.js",
+    "mode": "promoted",
+    "source": "4ndr0tools - Confirmation Bypass BETA.user.js",
+    "source_sha16": "f02771ea82f5692b",
+    "retired": "4ndr0tools - Confirmation Bypass.user.js",
+    "retired_sha16": "aaeb1fa9a490e6ba",
+    "version": "4.0.0",
+    "evidence": "Confirmation Bypass BETA v3.6.2 promoted: GUP v5.3 stepwise gap mitigation over v3.6.1 (Set-based rel handling superset, xcandid overlay init fix)."
+  },
+  {
+    "dest": "4ndr0tools - ModelSearch.user.js",
+    "mode": "promoted",
+    "source": "4ndr0tools - ModelSearchBETA.user.js",
+    "source_sha16": "539d70f04768c048",
+    "retired": "4ndr0tools - ModelSearch.user.js",
+    "retired_sha16": "1a15bc13ce185c5d",
+    "version": "4.0.0",
+    "evidence": "ModelSearchBETA v3.2.0-Ψ promoted: Superset Protocol audit pass (BUG-1/2/3 fixes), Electric-Glass covert UI; supersedes stable v2.1 (Alt+S retained; legacy @updateURL pointing at the STABLE filename — a self-downgrade bug — corrected by the suite build)."
+  },
+  {
+    "dest": "4ndr0tools - GooglePhotosandDrive++.user.js",
+    "mode": "promoted",
+    "source": "4ndr0tools - GooglePhotosandDrive++BETA.user.js",
+    "source_sha16": "f95ea8badf1900f9",
+    "retired": "4ndr0tools - GooglePhotosandDrive++.user.js",
+    "retired_sha16": "6ad8e5b45ffe38f3",
+    "version": "8.0.0",
+    "evidence": "GooglePhotosandDrive++BETA v7.0.0 promoted: 'Unified superset revision — GUP gate: 0 MISSING' — Drive direct-download resolution, Photos full-res extraction, hotkeys, drag persistence, settings console; supersedes stable v1.5.0."
+  },
+  {
+    "dest": "4ndr0tools - Media Player Controller.user.js",
+    "mode": "promoted",
+    "source": "4ndr0tools - Media Player Controller BETA.user.js",
+    "source_sha16": "53e22992b19230bf",
+    "retired": "4ndr0tools - Media Player Controller.user.js",
+    "retired_sha16": "30c3184c98ab1788",
+    "version": "8.0.0",
+    "evidence": "Media Player Controller BETA v7.0.0-Ψ promoted: 'UNIFIED SUPERSET' over mediaplayercontroller v5.1.0 (31 baseline units) + IGDL v6.0.1 salvage — shadow-DOM discovery, scrub bar, download blob-capture, full hotkey suite."
+  },
+  {
+    "dest": "4ndr0tools - Forum Link Xtractor.user.js",
+    "mode": "promoted",
+    "source": "4ndr0tools - Forum Link Xtractor BETA.user.js",
+    "source_sha16": "8edb264774e81bd3",
+    "retired": "4ndr0tools - Forum Link Xtractor.user.js",
+    "retired_sha16": "58a781595222de8a",
+    "version": "3.0.0",
+    "evidence": "Forum Link Xtractor BETA v2.1.0 promoted: XenForo Enhancer superset — extraction w/ download+copy radio flows, invisi-text revealer, inline reply viewer, optimized regex precompile; supersedes stable v1.0."
+  },
+  {
+    "dest": "4ndr0tools - Prompt Master.user.js",
+    "mode": "carried",
+    "source": "4ndr0tools - Prompt Master.user.js",
+    "source_sha16": "74ee406cb50c8d41",
+    "changes": [
+      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
+    ]
+  },
+  {
+    "dest": "4ndr0tools - Watermark++.user.js",
+    "mode": "carried",
+    "source": "4ndr0tools - Watermark++.user.js",
+    "source_sha16": "8ade9e4488c8e3cf",
+    "changes": [
+      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
+    ]
+  },
+  {
+    "dest": "4ndr0tools - YouTube Playlist Master.user.js",
+    "mode": "carried",
+    "source": "4ndr0tools - YouTube Playlist Master.user.js",
+    "source_sha16": "2b90633c7efdc36f",
+    "changes": [
+      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
+    ]
+  },
+  {
+    "dest": "4ndr0tools - Bunkr++.user.js",
+    "mode": "carried",
+    "source": "4ndr0tools - Bunkr++.user.js",
+    "source_sha16": "f42a90443df64d63",
+    "changes": [
+      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
+    ]
+  },
+  {
+    "dest": "4ndr0tools - Forums++.user.js",
+    "mode": "carried",
+    "source": "4ndr0tools - Forums++.user.js",
+    "source_sha16": "92bc6a418239b2b3",
+    "changes": [
+      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
+    ]
+  },
+  {
+    "dest": "4ndr0tools - Instagram++.user.js",
+    "mode": "carried",
+    "source": "4ndr0tools - Instagram++.user.js",
+    "source_sha16": "7ee60c84f2c679e9",
+    "changes": [
+      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
+    ]
+  },
+  {
+    "dest": "4ndr0tools - Recon.user.js",
+    "mode": "carried",
+    "source": "4ndr0tools - Recon.user.js",
+    "source_sha16": "873bba773c6b0602",
+    "changes": [
+      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
+    ]
+  },
+  {
+    "dest": "4ndr0tools - BypassPaywalls.user.js",
+    "mode": "carried",
+    "source": "4ndr0tools - BypassPaywalls.user.js",
+    "source_sha16": "b71cb3330046ce6c",
+    "changes": [
+      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
+    ]
+  },
+  {
+    "dest": "4ndr0tools - AutoTranslate.user.js",
+    "mode": "carried",
+    "source": "4ndr0tools - AutoTranslate.user.js",
+    "source_sha16": "c6fb86ba2b54ea2a",
+    "changes": [
+      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
+    ]
+  },
+  {
+    "dest": "4ndr0tools - AlwaysNewWindow.user.js",
+    "mode": "carried",
+    "source": "4ndr0tools - AlwaysNewWindow.user.js",
+    "source_sha16": "21a57da8240ddc6c",
+    "changes": [
+      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
+    ]
+  },
+  {
+    "dest": "4ndr0tools - Website Control Panel.user.js",
+    "mode": "carried",
+    "source": "4ndr0tools - Website Control Panel.user.js",
+    "source_sha16": "e30d4b9b127fd3b5",
+    "changes": [
+      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
+    ]
+  },
+  {
+    "dest": "4ndr0tools - YT Filter.user.js",
+    "mode": "carried",
+    "source": "4ndr0tools - YT Filter.user.js",
+    "source_sha16": "89cbf24a43532f39",
+    "changes": [
+      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
+    ]
+  },
+  {
+    "dest": "4ndr0tools - Youtube Removed Video Revealer.user.js",
+    "mode": "carried",
+    "source": "4ndr0tools - Youtube Removed Video Revealer.user.js",
+    "source_sha16": "81adf38f5c3b9fe1",
+    "changes": [
+      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
+    ]
+  },
+  {
+    "dest": "4ndr0tools - YouTubeEmbedRedirectButton.user.js",
+    "mode": "carried",
+    "source": "4ndr0tools - YouTubeEmbedRedirectButton.user.js",
+    "source_sha16": "ccb777f5f295c7b6",
+    "changes": [
+      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
+    ]
+  },
+  {
+    "dest": "4ndr0tools - YandexImageSearch++.user.js",
+    "mode": "carried",
+    "source": "4ndr0tools - YandexImageSearch++.user.js",
+    "source_sha16": "4edd9c0394a95db6",
+    "changes": [
+      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
+    ]
+  },
+  {
+    "dest": "4ndr0tools - Redgifs++.user.js",
+    "mode": "carried",
+    "source": "4ndr0tools - Redgifs++.user.js",
+    "source_sha16": "737523d68c94a747",
+    "changes": [
+      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
+    ]
+  },
+  {
+    "dest": "4ndr0tools - Pixeldrain++.user.js",
+    "mode": "carried",
+    "source": "4ndr0tools - Pixeldrain++.user.js",
+    "source_sha16": "98613a41a8e6573e",
+    "changes": [
+      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
+    ]
+  },
+  {
+    "dest": "4ndr0tools - Gofile++.user.js",
+    "mode": "carried",
+    "source": "4ndr0tools - Gofile++.user.js",
+    "source_sha16": "ba31fbba3e41770c",
+    "changes": [
+      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
+    ]
+  },
+  {
+    "dest": "4ndr0tools - Filester++.user.js",
+    "mode": "carried",
+    "source": "4ndr0tools - Filester++.user.js",
+    "source_sha16": "eb0d312efbb5ba03",
+    "changes": [
+      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
+    ]
+  },
+  {
+    "dest": "4ndr0tools - Login Form Autofiller.user.js",
+    "mode": "carried",
+    "source": "4ndr0tools - Login Form Autofiller.user.js",
+    "source_sha16": "6b306b8489323db4",
+    "changes": [
+      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
+    ]
+  },
+  {
+    "dest": "4ndr0tools - 4ndr0purge.user.js",
+    "mode": "carried",
+    "source": "4ndr0tools - 4ndr0purge.user.js",
+    "source_sha16": "7a3eb7649fd04d7e",
+    "changes": [
+      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
+    ]
+  },
+  {
+    "dest": "4ndr0tools - 4ndr0serviceguard Companion.user.js",
+    "mode": "carried",
+    "source": "4ndr0tools - 4ndr0serviceguard Companion.user.js",
+    "source_sha16": "36879ff59aaf77ed",
+    "changes": [
+      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
+    ]
+  },
+  {
+    "dest": "4ndr0tools - Anti-detection.user.js",
+    "mode": "carried",
+    "source": "4ndr0tools - Anti-detection.user.js",
+    "source_sha16": "1c1decf9f5adb3a2",
+    "changes": [
+      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
+    ]
+  },
+  {
+    "dest": "4ndr0tools - Anti-telemetry (Intelligent Cloud Computing).user.js",
+    "mode": "carried",
+    "source": "4ndr0tools - Anti-telemetry (Intelligent Cloud Computing).user.js",
+    "source_sha16": "220ef6e7bc847c66",
+    "changes": [
+      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
+    ]
+  },
+  {
+    "dest": "4ndr0tools - Counter-surveillance.user.js",
+    "mode": "carried",
+    "source": "4ndr0tools - Counter-surveillance.user.js",
+    "source_sha16": "be9fa54837849ef6",
+    "changes": [
+      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
+    ]
+  },
+  {
+    "dest": "4ndr0tools - Maximize_Any_Media.user.js",
+    "mode": "carried",
+    "source": "4ndr0tools - Maximize_Any_Media.user.js",
+    "source_sha16": "c194e311c133c364",
+    "changes": [
+      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
+    ]
+  },
+  {
+    "dest": "4ndr0tools - LinkMasterΨ.user.js",
+    "mode": "merged",
+    "version": "6.1.0",
+    "sources": [
+      {
+        "file": "4ndr0tools - LinkMasterBETA.user.js",
+        "role": "base (v5.1.1, verified superset of LinkMasterΨ v5.0.0; carries the paste-to-check bulk panel)",
+        "sha16": "e447e2292d605e11"
+      },
+      {
+        "file": "4ndr0tools - LinkMasterΨ2.user.js",
+        "role": "forum deep-scrape engine ported in full at v6.1.0 (25 named units: resolver chain, hosts matchers, parsers, downloadPost packaging, config forms, check-scraped flow, linkmaster_settings persistence)",
+        "sha16": "de8c897636cb83f8"
+      },
+      {
+        "file": "4ndr0tools - Premium Link Revealer.user.js",
+        "role": "AbsorbedPLR module (sexyforums unfurl unwrap, verbatim)",
+        "sha16": "b75130b729627577"
+      },
+      {
+        "file": "4ndr0tools - Git Raw URL File List Parser.user.js",
+        "role": "AbsorbedGitRaw module (raw-URL harvest; double-domain URL bug fixed during absorption)",
+        "sha16": "bfee8698185ebba0"
+      },
+      {
+        "file": "archive/4ndr0tools - Linkmaster.user.js",
+        "role": "historical lineage (v1-4, fully superseded by the v5.x BETA line)",
+        "sha16": "f0bfa17dd58e48dd"
+      }
+    ],
+    "retired": [
+      "4ndr0tools - LinkMasterBETA.user.js",
+      "4ndr0tools - LinkMasterΨ.user.js (v5.0.0)",
+      "4ndr0tools - LinkMasterΨ2.user.js",
+      "4ndr0tools - Premium Link Revealer.user.js",
+      "4ndr0tools - Git Raw URL File List Parser.user.js",
+      "archive/4ndr0tools - Linkmaster.user.js"
+    ],
+    "evidence": "v6.0.0 five-way merge; v6.1.0 SUPERSET COMPLETION: the Psi2 forum deep-scrape engine (30+ per-host resolvers, album recursion, password-protected album unlock via thread spoilers, post download packaging via GM_download/JSZip, check-scraped-links flow, linkmaster_settings persistence) ported in full after Gate-B verification flagged 25 missing units. All 25 units present by name; V8 parse clean; behavior-preserving adaptations documented in-file (Array.prototype.unique -> inline dedupe, closure-local logs, shared dock HUD). Paste-to-check retained via the BETA bulk panel.",
+    "sha16": "10d123e0bb2aed15"
+  },
+  {
+    "dest": "4ndr0tools - Images++.user.js",
+    "mode": "merged",
+    "version": "4.0.0",
+    "sources": [
+      {
+        "file": "4ndr0tools - Images++.user.js",
+        "role": "base (v3.0.0 universal stable — superset carrier)",
+        "sha16": "47a477270a9545b8"
+      },
+      {
+        "file": "4ndr0tools - Images++BETA.user.js",
+        "role": "divergent IG/imagefap-scoped branch; ONLY its configurable-hotkey feature was ported (the rest of the BETA is a strict subset of stable v3.0.0)",
+        "sha16": "19d6e644976fe089"
+      }
+    ],
+    "retired": [
+      "4ndr0tools - Images++.user.js (v3.0.0)",
+      "4ndr0tools - Images++BETA.user.js (v2.1.0)"
+    ],
+    "evidence": "Pair merge: universal stable v3.0.0 carries forward as base; the BETA's one non-subset feature (configurable collapse-mode hotkey, GM_setValue-backed) ported on top. BETA's IG/imagefap scoping was a regression vs stable and is intentionally not carried.",
+    "sha16": "93b0a31d86e20758"
+  },
+  {
+    "dest": "4ndr0tools - Akasha Silence.user.js",
+    "mode": "merged",
+    "sources": [
+      "4ndr0tools - Anti-detection.user.js",
+      "4ndr0tools - Counter-surveillance.user.js",
+      "4ndr0tools - Anti-telemetry (Intelligent Cloud Computing).user.js"
+    ],
+    "sources_sha16": [
+      "6990f7882098f424",
+      "ea00d48f008cc83e",
+      "cbbf6d96bb6da66d"
+    ],
+    "dest_sha16": "f5a71b33bd38750c",
+    "version": "5.0.0",
+    "evidence": "Three-way consolidation (user-directed synergy pass): Anti-detection v1.1 (anti-analysis neutralizer) + Counter-surveillance v4.0.0 (telemetry/canvas/Google/site defenses) + Anti-telemetry v3.5.0 (ICC worker pacifier, iframe propagation). All 19 baseline unit names preserved; blocklist and poison-key sets are the union. Engineering upgrades: Proxy-facade native hooks (D1 stealth), session-stable fingerprint values + per-canvas seeded noise (D2), toDataURL/toBlob/WebGL/AudioBuffer coverage (D3), pacified SPOOF WebSocket phantoms (D4), 4ndr0serviceguard interop (D5), async-faithful 40ms XHR mocks (D6), ICC-scoped worker pacifier preserved (D7)."
+  }
 ]

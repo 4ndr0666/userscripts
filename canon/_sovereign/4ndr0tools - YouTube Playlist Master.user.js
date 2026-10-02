@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - YouTube Playlist Master
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.6.0
+// @version      1.7.0
 // @description  Channel playlist buttons (All / Popular / Videos / Shorts / Streams / Members-only), Random play (prefer newest/oldest), reverse autoplay order, playlist autoplay toggle, duration sort, bulk copy/move/delete, JSON + plaintext export/import, snapshots with deleted-video detection, quick watch_videos playlists, queue & watch-later overlays, playlist close button, date/view metadata, episode auto-expand, huge-playlist browser, live settings (no reload), always-available Ψ deck, playlist row filter, duplicate finder & purge, global hotkeys (Alt+Shift+U/S/X), failsafe deck rescue, 404-proof navigation guards, Trusted-Types-immune rendering, fully-visible fit-content modal dialogs.
 // @author       4ndr0666
 // @license      UNLICENSED REDTEAM ONLY
@@ -23,6 +23,73 @@
 /* ============================================================================
  *                           VERSION HISTORY (GUP-superset)
  * ============================================================================
+ * v1.7.0 (2026-09-28) — channel-navigation hang: root-cause fix. The v1.6.0
+ *   SCHED pass chunked the playlist-page sweeps, but the field symptom —
+ *   "UI fine, settings fine; the page chokes the moment I navigate to a
+ *   channel" — lives on CHANNEL pages, where SCHED does no work. Three
+ *   compounding root causes, all channel-page-only, all now fixed:
+ *
+ *   ROOT CAUSE 1 — CHANNEL.resolve() network I/O storm. At
+ *     yt-navigate-finish the page-manager data is not populated yet, so
+ *     resolve() fell straight into fromCanonicalLink(): a full network
+ *     re-fetch of the ENTIRE channel page (multi-megabyte), then possibly
+ *     fromFirstVideoPage(): ANOTHER full page fetch plus a lazy-regex chain
+ *     ("var ytInitialData.+?…") executed synchronously over megabytes of
+ *     HTML — seconds of blocked main thread. This re-ran on every route
+ *     event (navigate-finish AND page-data-updated both fire per
+ *     navigation), with zero memoization. FIX: (a) new zero-network
+ *     fromCanonicalLinkDom() probe reads the canonical <link> that is
+ *     already in the live DOM; (b) bounded DOM-probe retry (6 × 400 ms)
+ *     rides out SPA render timing — page-data-updated populates
+ *     page-manager/canonical within that window, so the network path is now
+ *     a genuine last resort; (c) path-keyed FIFO memoization (32 entries) —
+ *     revisiting a channel never re-resolves; (d) in-flight dedup so
+ *     concurrent callers share one resolve; (e) the video-page regex chain
+ *     is replaced by bounded indexOf scans (native substring search, no
+ *     backtracking) with the same first-channelId semantics.
+ *
+ *   ROOT CAUSE 2 — MEMBERSTAB self-sustaining mutation loop. addLink()
+ *     removed and re-inserted its OWN injected tab; that insertion
+ *     re-triggered the very tab-strip observer that had called addLink —
+ *     an endless remove/insert microtask cycle on every new-layout
+ *     (yt-tab-shape) channel page, feeding every document observer and
+ *     starving the event loop. FIX: the injected tab is tagged
+ *     (data-ytpu-members-tab), the watcher's childSelector excludes tagged
+ *     nodes, and addLink() early-returns while the tagged tab is connected
+ *     (idempotent). Also fixed: the module-level chId cache was never
+ *     invalidated across SPA navigations — after channel A → channel B the
+ *     members-only tab opened A's list; the id is now resolved per click
+ *     through the memoized resolver.
+ *
+ *   ROOT CAUSE 3 — the raw un-throttled selectorObserver (the exact class
+ *     of work v1.6.0 removed for CLOSE, but missed here): DOMU's
+ *     onParentChildSelectors observer ran selector matching for EVERY
+ *     mutation record on the whole document, per batch, from boot — during
+ *     channel-navigation churn that is hundreds of batches per second.
+ *     FIX: records are buffered and flushed on a 150 ms debounce with a
+ *     400-record immediate-flush cap; inserted/removed node identity is
+ *     preserved (records, not re-queries), so semantics are unchanged.
+ *
+ *   CONSOLIDATED — the seven per-feature debounced whole-document
+ *     observers (DOMADAPTER/CHBTNS/EXPORTER/QUICK/QUEUE/CLOSE/AUTOPLAY)
+ *     now ride ONE shared document observer that fans out to per-
+ *     subscriber debounce timers (public observeDocument contract and
+ *     timing unchanged); one native callback per batch instead of seven.
+ *
+ *   LEAK-PROOFED — HUGE's Shift+N keydown listener was added per
+ *     huge-browser build and never removed; it is now wired exactly once.
+ *
+ *   DEAD CODE SWEEP (user-authorized, zero-dead-code mandate) — removed
+ *     dead stores (DOMADAPTER/CHBTNS/QUICK observer handles), dead export
+ *     entries never consumed outside their module (CHBTNS.listUrl,
+ *     DOMADAPTER.rowEntry, AUTOPLAY.setAssociatedAutoplay,
+ *     MANAGER.resolveSetVideoIds, SCHED.nextTick, ENV.pageDoc, STORE.load,
+ *     NAV.fire, THEME.C, THEME.pageCss — every function itself remains in
+ *     live internal use), and unheard BUS emissions with zero subscribers
+ *     ('route', 'settings-changed' ×2, 'theme-applied' — grep-verified;
+ *     BUS stays fully live for 'reset'). No user-visible string, label,
+ *     title, layout or behavior was touched.
+ *
  * v1.6.0 (2026-09-27) — field-run gap mitigation on the v1.5.0 golden unit.
  *   Evidence: youtubeplaylistmaster_debug.txt (2026-09-27 09:20 session) —
  *   the deck mounted (banner + "mounted" logged at 09:20:08.2) yet no
@@ -89,7 +156,7 @@
 
     const CFG = {
         SCRIPT_NAME: 'Ψ Playlist Master',
-        SCRIPT_VERSION: '1.6.0',
+        SCRIPT_VERSION: '1.7.0',
         STORAGE_KEY: 'ytpu.settings',
         SNAPSHOT_KEY: 'ytpu.snapshots',
         SNAPSHOT_CAP: 20,
@@ -185,7 +252,6 @@
 
     const ENV = (() => {
         const pageWin = (typeof unsafeWindow !== 'undefined' && unsafeWindow) ? unsafeWindow : window;
-        const pageDoc = document;
 
         function cfgGet(key) {
             try {
@@ -214,7 +280,7 @@
 
         function isMobile() { return location.host === 'm.youtube.com'; }
 
-        return { pageWin, pageDoc, cfgGet, pageFetch, isMobile };
+        return { pageWin, cfgGet, pageFetch, isMobile };
     })();
 
     const DOMU = (() => {
@@ -280,35 +346,91 @@
             });
         }
 
-        /** Debounced document observer: cb fires at most once per `ms` while mutations stream. */
+        /** Debounced document observation, shared hub. Each call registers a
+         *  subscriber with its own debounce window; ONE underlying
+         *  MutationObserver fans out to all of them (v1.7.0: v1.6.0 ran one
+         *  separate whole-document observer per feature — seven native
+         *  callbacks per mutation batch during churn; now it is one). The
+         *  public contract (per-subscriber debounce, disconnect handle) is
+         *  unchanged. */
+        const docWatchers = [];
+        let docObserver = null;
+
         function observeDocument(cb, ms = CFG.OBSERVER_DEBOUNCE_MS) {
-            let timer = null;
-            const observer = new MutationObserver(() => {
-                if (timer) return;
-                timer = setTimeout(() => { timer = null; SAFETY.safeWrap(cb)(); }, ms);
-            });
-            observer.observe(document.documentElement, { childList: true, subtree: true });
+            const sub = { cb, ms, timer: null };
+            docWatchers.push(sub);
+            if (!docObserver) {
+                docObserver = new MutationObserver(() => {
+                    for (const s of docWatchers) {
+                        if (s.timer) continue;
+                        s.timer = setTimeout(() => { s.timer = null; SAFETY.safeWrap(s.cb)(); }, s.ms);
+                    }
+                });
+                docObserver.observe(document.documentElement, { childList: true, subtree: true });
+            }
             return {
                 disconnect() {
-                    if (timer) { clearTimeout(timer); timer = null; }
-                    observer.disconnect();
+                    const at = docWatchers.indexOf(sub);
+                    if (at >= 0) docWatchers.splice(at, 1);
+                    if (sub.timer) { clearTimeout(sub.timer); sub.timer = null; }
+                    if (!docWatchers.length && docObserver) { docObserver.disconnect(); docObserver = null; }
                 },
             };
         }
 
         /** James0x57 selector-observation (from Show-Date-Posted upstream).
-         *  Watches parent/child selector pairs and reports inserted/removed nodes. */
+         *  Watches parent/child selector pairs and reports inserted/removed
+         *  nodes. v1.7.0: mutation records are buffered and flushed on a
+         *  150 ms debounce (immediate flush past the 400-record cap) — the
+         *  v1.6.0-and-earlier handler ran selector matching over EVERY
+         *  record of EVERY batch on the whole document, an un-throttled
+         *  whole-document cost during channel-navigation churn (the same
+         *  class of work v1.6.0 removed for CLOSE, missed here). Node
+         *  identity is preserved — records are replayed, not re-queried —
+         *  so inserted/removed semantics are identical. */
         const selectorWatchers = [];
-        const selectorObserver = new MutationObserver((mutationsList) => {
+        const selectorBuffer = [];
+        let selectorFlushTimer = null;
+        const SELECTOR_FLUSH_MS = 150;
+        const SELECTOR_FLUSH_CAP = 400;
+
+        function flushSelectorBuffer() {
+            if (selectorFlushTimer) { clearTimeout(selectorFlushTimer); selectorFlushTimer = null; }
+            // splice(0) — returns a NEW array with the buffered records and
+            // empties the buffer. (A plain `const list = selectorBuffer`
+            // followed by `selectorBuffer.length = 0` would clear the same
+            // referenced array and replay nothing — caught by the runtime
+            // differential harness before delivery.)
+            const list = selectorBuffer.splice(0);
+            if (!selectorWatchers.length || !list.length) return;
             for (const w of selectorWatchers) {
                 const nodeMatches = (node) => node.nodeType === 1 && node.matches(w.childSelector);
-                for (const mu of mutationsList) {
+                let added = null;
+                let removed = null;
+                for (const mu of list) {
                     if (mu.type !== 'childList' || !mu.target.matches || !mu.target.matches(w.parentSelector)) continue;
-                    const added = Array.prototype.filter.call(mu.addedNodes, nodeMatches);
-                    const removed = Array.prototype.filter.call(mu.removedNodes, nodeMatches);
-                    if (added.length) SAFETY.safeWrap(w.inserted)(added);
-                    if (removed.length) SAFETY.safeWrap(w.removed)(removed);
+                    const a = Array.prototype.filter.call(mu.addedNodes, nodeMatches);
+                    const r = Array.prototype.filter.call(mu.removedNodes, nodeMatches);
+                    if (a.length) (added || (added = [])).push(...a);
+                    if (r.length) (removed || (removed = [])).push(...r);
                 }
+                if (added) SAFETY.safeWrap(w.inserted)(added);
+                if (removed) SAFETY.safeWrap(w.removed)(removed);
+            }
+        }
+
+        const selectorObserver = new MutationObserver((mutationsList) => {
+            for (const mu of mutationsList) {
+                if (mu.addedNodes.length || mu.removedNodes.length) selectorBuffer.push(mu);
+            }
+            if (!selectorBuffer.length) return;
+            if (selectorBuffer.length >= SELECTOR_FLUSH_CAP) {
+                SAFETY.safeWrap(flushSelectorBuffer)();
+            } else if (!selectorFlushTimer) {
+                selectorFlushTimer = setTimeout(() => {
+                    selectorFlushTimer = null;
+                    SAFETY.safeWrap(flushSelectorBuffer)();
+                }, SELECTOR_FLUSH_MS);
             }
         });
 
@@ -443,7 +565,7 @@
             })();
         }
 
-        return { sweep, nextTick };
+        return { sweep };
     })();
 
     const NAV = (() => {
@@ -548,7 +670,6 @@
                 try { fn(route); }
                 catch (e) { LOG.error('route handler failed:', e); }
             }
-            BUS.emit('route', route);
         }
 
         let started = false;
@@ -588,7 +709,7 @@
             fire('boot');
         }
 
-        return { classify, channelTab, onRoute, fire, start, validVideoId, validListId, safeNavigate, safeOpen };
+        return { classify, channelTab, onRoute, start, validVideoId, validListId, safeNavigate, safeOpen };
     })();
 
     const PLAYER = (() => {
@@ -677,6 +798,34 @@
             idCache.set(key, value);
         }
 
+        // v1.7.0: resolution memoization — channel identity is stable per
+        // path, so a resolved UC id is remembered (FIFO-bounded). Revisiting
+        // a channel, or hopping between its tabs, can never re-resolve.
+        const resolveCache = new Map(); // channel path key -> 'UC...'
+        const RESOLVE_CACHE_CAP = 32;
+        let inflightResolve = null;
+
+        function resolveCachePut(key, value) {
+            if (resolveCache.size >= RESOLVE_CACHE_CAP) {
+                const oldest = resolveCache.keys().next().value;
+                resolveCache.delete(oldest);
+            }
+            resolveCache.set(key, value);
+        }
+
+        /** Stable identity of the channel being viewed: the @handle segment,
+         *  or the explicit id/name segment for /channel//c//user/ forms.
+         *  Returns null when the current path is not channel-shaped. */
+        function pathKey() {
+            const seg = location.pathname.split('/').filter(Boolean);
+            if (!seg.length) return null;
+            if (seg[0].startsWith('@')) return seg[0].toLowerCase();
+            if ((seg[0] === 'channel' || seg[0] === 'c' || seg[0] === 'user') && seg.length > 1) {
+                return `/${seg[0]}/${seg[1]}`;
+            }
+            return null;
+        }
+
         function fromPageManager() {
             try {
                 const pageMan = document.querySelector('#page-manager');
@@ -692,6 +841,18 @@
                 const meta = document.querySelector('meta[itemprop="identifier"]');
                 const id = meta && meta.getAttribute('content');
                 return /^UC[\w-]+$/.test(id || '') ? id : null;
+            } catch (e) { return null; }
+        }
+
+        /** v1.7.0: zero-network canonical probe. Channel pages carry
+         *  <link rel="canonical" href=".../channel/UC..."> in the live
+         *  DOM — the v1.6.0 resolver IGNORED it and re-fetched the entire
+         *  page over the network to find the same string. */
+        function fromCanonicalLinkDom() {
+            try {
+                const href = document.querySelector('link[rel="canonical"]')?.getAttribute('href') || '';
+                const m = href.match(/\/channel\/(UC[\w-]+)/);
+                return m ? m[1] : null;
             } catch (e) { return null; }
         }
 
@@ -717,6 +878,24 @@
             } catch (e) { return null; }
         }
 
+        /** v1.7.0: bounded indexOf extraction — the v1.5.0 lazy-regex chain
+         *  ("var ytInitialData.+?…" over a multi-megabyte page) was itself
+         *  a seconds-long main-thread stall. Native substring search, no
+         *  backtracking; same first-channelId semantics as the old chain's
+         *  final fallback (the video page's own channel). */
+        function extractChannelIdFromHtml(html) {
+            for (const quote of ['"', "'"]) {
+                const needle = `${quote}channelId${quote}:${quote}UC`;
+                let at = html.indexOf(needle);
+                while (at !== -1) {
+                    const id = html.slice(at + needle.length, at + needle.length + 24);
+                    if (/^UC[\w-]+$/.test(id)) return id;
+                    at = html.indexOf(needle, at + 1);
+                }
+            }
+            return null;
+        }
+
         async function fromFirstVideoPage() {
             try {
                 const href = document.querySelector(
@@ -725,25 +904,55 @@
                 if (!href) return null;
                 if (idCache.has(href)) return idCache.get(href);
                 const html = await fetchText(href, CFG.PAGE_FETCH_TIMEOUT_MS);
-                // Regex chain: prefer the channelId anchored to subscribeButton,
-                // then to Subscribe, then any channelId inside ytInitialData (last resort).
-                const reQuote = `(?:"|'|\\\\x22)`;
-                const id =
-                    new RegExp(`var ytInitialData.+?${reQuote}subscribeButton${reQuote}:.*?${reQuote}channelId${reQuote}:${reQuote}(UC[\\w-]+)${reQuote}`).exec(html)?.[1]
-                    ?? new RegExp(`var ytInitialData.+?[Ss]ubscribe.*?${reQuote}channelId${reQuote}:${reQuote}(UC[\\w-]+)${reQuote}`).exec(html)?.[1]
-                    ?? new RegExp(`var ytInitialData.+?${reQuote}channelId${reQuote}:${reQuote}(UC[\\w-]+)${reQuote}`).exec(html)?.[1]
-                    ?? null;
+                const id = extractChannelIdFromHtml(html);
                 if (id) cachePut(href, id);
                 return id;
             } catch (e) { return null; }
         }
 
+        /** Resolve the viewed channel's UC id.
+         *  Order: live DOM probes (page-manager, meta tag, canonical link —
+         *  zero network) → memoized result → bounded DOM retry that rides
+         *  out SPA render timing (yt-page-data-updated populates the probes
+         *  within a second or two of yt-navigate-finish) → network fallbacks
+         *  (canonical fetch, first-video fetch) as a genuine last resort,
+         *  deduplicated in-flight so concurrent callers share one run. */
         async function resolve() {
-            const direct = fromPageManager() || fromMetaTag();
-            if (direct) return direct;
-            const canonical = await fromCanonicalLink();
-            if (canonical) return canonical;
-            return await fromFirstVideoPage();
+            const key = pathKey();
+            const direct = fromPageManager() || fromMetaTag() || fromCanonicalLinkDom();
+            if (direct) {
+                if (key) resolveCachePut(key, direct);
+                return direct;
+            }
+            if (key && resolveCache.has(key)) return resolveCache.get(key);
+            if (inflightResolve) return inflightResolve;
+            inflightResolve = (async () => {
+                try {
+                    // Bounded DOM-probe retry: on a channel SPA navigation the
+                    // page-manager data and canonical link populate shortly
+                    // AFTER yt-navigate-finish — v1.6.0 gave up on the DOM at
+                    // that instant and fetched the whole page over the network.
+                    const RESOLVE_TRIES = 6;
+                    const RESOLVE_TRY_MS = 400;
+                    for (let i = 0; i < RESOLVE_TRIES; i++) {
+                        await new Promise((r) => setTimeout(r, RESOLVE_TRY_MS));
+                        const late = fromPageManager() || fromMetaTag() || fromCanonicalLinkDom();
+                        if (late) {
+                            if (key) resolveCachePut(key, late);
+                            return late;
+                        }
+                        // The user navigated away mid-retry — stop gracefully.
+                        if (pathKey() !== key) return null;
+                    }
+                    let id = await fromCanonicalLink();
+                    if (!id) id = await fromFirstVideoPage();
+                    if (id && key) resolveCachePut(key, id);
+                    return id;
+                } finally {
+                    inflightResolve = null;
+                }
+            })();
+            return inflightResolve;
         }
 
         const bare = (ucId) => (ucId ? ucId.substring(2) : null);
@@ -879,7 +1088,6 @@
         function patch(partial) {
             cache.data = deepMerge(cache.data, partial);
             save();
-            BUS.emit('settings-changed');
         }
 
         async function reset() {
@@ -887,10 +1095,9 @@
             catch (e) { LOG.warn('reset failed:', e && e.message); }
             cache = null;
             load();
-            BUS.emit('settings-changed');
         }
 
-        return { data, patch, reset, load };
+        return { data, patch, reset };
     })();
 
     const SNAPSHOTS = (() => {
@@ -1462,7 +1669,6 @@
     })();
 
     const DOMADAPTER = (() => {
-        let observer = null;
         // rowKey -> { videoId, setVideoId, title }; keyed per-row so duplicate
         // videos appearing multiple times track each instance independently.
         const selected = new Map();
@@ -1596,8 +1802,7 @@
         }
 
         function start() {
-            if (observer) return;
-            observer = DOMU.observeDocument(() => {
+            DOMU.observeDocument(() => {
                 if (isPlaylistPage()) { injectCheckboxes(); applyFilter(); }
             });
             NAV.onRoute((route) => {
@@ -1611,7 +1816,7 @@
 
         return {
             currentPlaylistId, isPlaylistPage, onSelectionChange, clearSelection,
-            getSelection, rows, injectCheckboxes, selectAll, start, rowEntry,
+            getSelection, rows, injectCheckboxes, selectAll, start,
             setFilter, applyFilter,
         };
     })();
@@ -2024,10 +2229,9 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
 
         function apply() {
             DOMU.setPageStyle(pageCss());
-            BUS.emit('theme-applied');
         }
 
-        return { C, pageCss, deckCss, apply };
+        return { deckCss, apply };
     })();
 
     const DECK = (() => {
@@ -2629,7 +2833,6 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
 
     const CHBTNS = (() => {
         let lastChannelId = null;
-        let observer = null;
         let randomPopover = null;
         let popoverCloser = null;
 
@@ -2868,19 +3071,26 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
         function start() {
             NAV.onRoute(SAFETY.safeWrap(onRoute));
             // Re-render when the tabs container churns (YouTube rewrites its DOM).
-            observer = DOMU.observeDocument(() => {
+            DOMU.observeDocument(() => {
                 const route = NAV.classify();
                 if (route.isChannel && lastChannelId && !document.querySelector('.ytpu-chipbar')) render();
             }, 600);
             BUS.on('reset', () => { remove(); lastChannelId = null; SAFETY.safeWrap(onRoute)(NAV.classify()); });
         }
 
-        return { start, render, remove, listUrl };
+        return { start, render, remove };
     })();
 
     const MEMBERSTAB = (() => {
         let button = null;
-        let chId = null;
+        // v1.7.0: our injected tab is tagged so (a) the tab-strip observer
+        // never reacts to our own insertions, and (b) addLink() can prove
+        // idempotency. v1.5.0/v1.6.0 removeChild+insertBefore'd the SAME
+        // node on every tab-strip mutation, re-triggering that very
+        // observer — a self-sustaining mutation loop (endless microtask
+        // churn) on every new-layout channel page; one of the three root
+        // causes of the channel-navigation hang.
+        const OWN_TAB_ATTR = 'data-ytpu-members-tab';
         const displayTextMap = {
             'zh-Hant-TW': '會限清單', 'zh-Hant-HK': '會限清單', 'zh-Hant': '會限清單',
             'zh-Hans-CN': '会限清单', 'zh-Hans': '会限清单', 'zh': '会限清单',
@@ -2898,29 +3108,38 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
         function addLink() {
             if (!STORE.data().membersTab.enabled) return;
             const tabTagName = 'yt-tab-shape';
+            // Idempotency: our tab is already live — nothing to do. (The
+            // observer excludes tagged nodes, but a strip rebuild can drop
+            // our node and re-add real tabs; only then do we re-inject.)
+            if (document.querySelector(`${tabTagName}[${OWN_TAB_ATTR}]`)) return;
             const anchorSelector = `${tabTagName}:nth-last-of-type(2)`;
             const anchorElement = document.querySelector(anchorSelector);
             if (anchorElement === null) return;
             const tabs = document.querySelectorAll(tabTagName);
-            if (!tabs.length) return; // v1.1.0: tab strip raced empty — retry via observers
+            if (!tabs.length) return; // tab strip raced empty — retry via observers
             try { anchorElement.parentNode.removeChild(button); } catch (e) { /* first run: nothing to remove */ }
 
             const newNode = tabs[0].cloneNode(true);
             newNode.removeAttribute('aria-selected');
             newNode.setAttribute('tab-identifier', 'TAB_ID_SPONSORSHIP_PLAYLIST');
+            newNode.setAttribute(OWN_TAB_ATTR, '1'); // tag BEFORE insertion
             const labelNode = newNode.childNodes[0];
             if (labelNode) labelNode.textContent = displayText();
 
             anchorElement.parentNode.insertBefore(button || newNode, anchorElement);
 
             if (!button) {
-                button = document.querySelector(`${tabTagName}:nth-last-of-type(3)`);
+                button = document.querySelector(`${tabTagName}[${OWN_TAB_ATTR}]`);
                 if (button) {
                     button.addEventListener('click', async () => {
-                        if (!chId) {
-                            const meta = document.querySelector('[itemprop="identifier"]');
-                            chId = meta ? meta.getAttribute('content') : null;
-                        }
+                        // v1.7.0: resolve per click through the memoized
+                        // resolver. The v1.5.0 module-level chId cache was
+                        // never invalidated across SPA navigations — after
+                        // channel A → channel B the members-only tab opened
+                        // A's list.
+                        let chId = null;
+                        const meta = document.querySelector('[itemprop="identifier"]');
+                        chId = meta ? meta.getAttribute('content') : null;
                         if (!chId) chId = await CHANNEL.resolve();
                         if (!chId) { LOG.warn('Members-only: channel id unavailable'); return; }
                         const targetURL = `${location.protocol}//${location.host}/playlist?list=${chId.replace(/^UC/, 'UUMO')}`;
@@ -2932,15 +3151,18 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
 
         function arm() {
             if (!STORE.data().membersTab.enabled) return;
+            if (document.querySelector(`yt-tab-shape[${OWN_TAB_ATTR}]`)) return; // already present
             DOMU.waitForElement('yt-tab-shape:nth-last-of-type(2)', { timeout: CFG.WAIT_ELEMENT_TIMEOUT_MS })
                 .then((found) => { if (found) addLink(); });
         }
 
         function start() {
-            // Dynamic re-add via a filtered observer (registered once).
+            // Dynamic re-add via a filtered observer (registered once). Our
+            // own tagged tab is excluded from the child selector, so the
+            // watcher reacts only to YouTube's real tab mutations.
             DOMU.onParentChildSelectors({
                 parentSelector: '.tabGroupShapeTabs',
-                childSelector: 'yt-tab-shape',
+                childSelector: `yt-tab-shape:not([${OWN_TAB_ATTR}])`,
                 inserted: () => addLink(),
             });
             // v1.1.0: re-arm on SPA entry into channel pages so the tab
@@ -3295,7 +3517,7 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
             scanAndSetup();
         }
 
-        return { start, setAssociatedAutoplay };
+        return { start };
     })();
 
     const SORTER = (() => {
@@ -4045,12 +4267,11 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
             DOMADAPTER.start();
         }
 
-        return { runBulkOp, doDelete, doExport, doImport, doDupes, resolveSetVideoIds, start };
+        return { runBulkOp, doDelete, doExport, doImport, doDupes, start };
     })();
 
     const QUICK = (() => {
         const videoIds = []; // ordered, deduped
-        let observer = null;
 
         function updateDeck() {
             if (!DECK.elx.qpCount) return;
@@ -4131,7 +4352,7 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
         function start() {
             // v1.1.0: no boot-time early return — injectButtons live-checks the
             // quickPlaylist flag so Settings toggles need no reload.
-            observer = DOMU.observeDocument(injectButtons, CFG.OBSERVER_DEBOUNCE_MS);
+            DOMU.observeDocument(injectButtons, CFG.OBSERVER_DEBOUNCE_MS);
             NAV.onRoute((route) => {
                 if (route.isSubscriptions) setTimeout(injectButtons, 400);
             });
@@ -4510,6 +4731,25 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
 
     const HUGE = (() => {
         let nextButtonInterval = null;
+        let keydownWired = false;
+
+        /** v1.7.0: wire the Shift+N shortcut exactly once. v1.5.0/v1.6.0
+         *  added a fresh capture-phase keydown listener on every browser
+         *  build and never removed it — the listener self-guarded (inert
+         *  once the browser was gone) but leaked one registration per
+         *  build for the life of the page. */
+        function wireKeydown() {
+            if (keydownWired) return;
+            keydownWired = true;
+            document.addEventListener('keydown', (event) => {
+                if (!document.querySelector('.ytpu-huge-browser')) return;
+                if (event.shiftKey && event.key.toLowerCase() === 'n') {
+                    event.stopImmediatePropagation();
+                    event.preventDefault();
+                    playNext();
+                }
+            }, true);
+        }
 
         function markCurrentItem(videoId) {
             const existing = document.querySelector('.ytpu-huge-browser .item[data-current]');
@@ -4591,15 +4831,7 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
                 hijackNextButton();
             }, 1000);
 
-            // Auto-advance near the end + SHIFT+N shortcut (upstream parity).
-            document.addEventListener('keydown', (event) => {
-                if (!document.querySelector('.ytpu-huge-browser')) return;
-                if (event.shiftKey && event.key.toLowerCase() === 'n') {
-                    event.stopImmediatePropagation();
-                    event.preventDefault();
-                    playNext();
-                }
-            }, true);
+            wireKeydown();
 
             const autoInterval = setInterval(() => {
                 if (!document.querySelector('.ytpu-huge-browser')) { clearInterval(autoInterval); return; }

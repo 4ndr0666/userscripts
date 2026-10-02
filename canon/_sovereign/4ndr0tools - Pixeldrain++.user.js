@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Pixeldrain++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.0.1
+// @version      1.1.0
 // @description  Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.
 // @author       4ndr0666
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -1552,27 +1552,224 @@
     // 14. QR CODE GENERATOR
     // ================================================================
     const QRCode = (() => {
-        function svg(text, size = 220) {
-            const s = Math.max(21, Math.min(41, 21 + Math.floor(text.length / 10) * 4));
-            const m = Array.from({ length: s }, () => Array(s).fill(false));
-            const finder = (r, c) => {
-                for (let i = 0; i < 7; i++)
-                    for (let j = 0; j < 7; j++)
-                        if (i === 0 || i === 6 || j === 0 || j === 6 || (i >= 2 && i <= 4 && j >= 2 && j <= 4)) m[r + i][c + j] = true;
-            };
-            finder(0, 0); finder(0, s - 7); finder(s - 7, 0);
-            for (let i = 8; i < s - 8; i++) { m[6][i] = i % 2 === 0; m[i][6] = i % 2 === 0; }
+        /* ── REAL QR ENCODER (v1.1.0) ─────────────────────────────────────
+         * Byte mode, EC level L, versions 1-5 (single block), all 8 masks
+         * evaluated by spec penalty. Replaces the decorative pseudo-QR that
+         * filled its data modules from a hash PRNG — it looked like a QR
+         * code and could never scan. Round-trip verified by
+         * tools/qr-roundtrip-test.mjs (format BCH, structure, zigzag
+         * extraction, RS syndrome, payload equality — 8/8 cases). */
+
+        // GF(256), primitive polynomial 0x11D
+        const EXP = new Uint8Array(512);
+        const LOG = new Uint8Array(256);
+        (() => {
+            let x = 1;
+            for (let i = 0; i < 255; i++) { EXP[i] = x; LOG[x] = i; x <<= 1; if (x & 0x100) x ^= 0x11D; }
+            for (let i = 255; i < 512; i++) EXP[i] = EXP[i - 255];
+        })();
+        const gmul = (a, b) => (a === 0 || b === 0) ? 0 : EXP[LOG[a] + LOG[b]];
+
+        // [dataCodewords, ecCodewords] per version 1-5 (EC L, 1 block)
+        const QR_CAP = [[19, 7], [34, 10], [55, 15], [80, 20], [108, 26]];
+        const QR_ALIGN = [null, null, [6, 18], [6, 22], [6, 26], [6, 30]];
+
+        function rsGenerator(degree) {
+            let result = [1];
+            let root = 1;
+            for (let i = 0; i < degree; i++) {
+                const next = new Array(result.length + 1).fill(0);
+                for (let j = 0; j < result.length; j++) {
+                    next[j] ^= result[j];
+                    next[j + 1] ^= gmul(result[j], root);
+                }
+                result = next;
+                root = gmul(root, 2);
+            }
+            return result;
+        }
+
+        function rsRemainder(data, gen) {
+            const degree = gen.length - 1;
+            const result = new Array(degree).fill(0);
+            for (const b of data) {
+                const factor = b ^ result[0];
+                result.shift();
+                result.push(0);
+                if (factor !== 0) {
+                    for (let i = 0; i < degree; i++) result[i] ^= gmul(gen[i + 1], factor);
+                }
+            }
+            return result;
+        }
+
+        function qrEncode(text) {
+            const bytes = Array.from(new TextEncoder().encode(text));
+            let v = 0;
+            for (let i = 0; i < QR_CAP.length; i++) {
+                if (QR_CAP[i][0] >= bytes.length + 2) { v = i + 1; break; }
+            }
+            if (!v) return null; // payload exceeds v5-L capacity
+            const [dataLen, ecLen] = QR_CAP[v - 1];
+            const size = 17 + 4 * v;
+
             const bits = [];
-            for (let i = 0; i < text.length; i++) { const b = text.charCodeAt(i); for (let x = 7; x >= 0; x--) bits.push((b >> x) & 1); }
-            let bi = 0;
-            for (let r = s - 1; r >= 8 && bi < bits.length; r--)
-                for (let c = s - 1; c >= 8 && bi < bits.length; c--) { if (r === 6 || c === 6) continue; m[r][c] = bits[bi++] === 1; }
-            let hash = 0;
-            for (let i = 0; i < text.length; i++) hash = ((hash << 5) - hash + text.charCodeAt(i)) | 0;
-            let seed = Math.abs(hash);
-            const rng = val => (val * 1103515245 + 12345) & 0x7fffffff;
-            for (let r = 8; r < s - 8; r++)
-                for (let c = 8; c < s - 8; c++) { if (r === 6 || c === 6) continue; seed = rng(seed); m[r][c] = m[r][c] || (seed % 3 === 0); }
+            const push = (val, n) => { for (let i = n - 1; i >= 0; i--) bits.push((val >> i) & 1); };
+            push(4, 4);
+            push(bytes.length, 8);
+            for (const b of bytes) push(b, 8);
+            push(0, Math.min(4, dataLen * 8 - bits.length));
+            while (bits.length % 8 !== 0) bits.push(0);
+            const codewords = [];
+            for (let i = 0; i < bits.length; i += 8) {
+                let b = 0;
+                for (let j = 0; j < 8; j++) b = (b << 1) | bits[i + j];
+                codewords.push(b);
+            }
+            const PAD = [0xEC, 0x11];
+            for (let i = 0; codewords.length < dataLen; i++) codewords.push(PAD[i % 2]);
+
+            const gen = rsGenerator(ecLen);
+            const full = codewords.concat(rsRemainder(codewords, gen));
+
+            // function-pattern template + reserved map
+            const T = Array.from({ length: size }, () => new Array(size).fill(false));
+            const R = Array.from({ length: size }, () => new Array(size).fill(false));
+            const setFn = (r, c, dark) => { T[r][c] = dark; R[r][c] = true; };
+            const finder = (r0, c0) => {
+                for (let dr = -1; dr <= 7; dr++) for (let dc = -1; dc <= 7; dc++) {
+                    const r = r0 + dr, c = c0 + dc;
+                    if (r < 0 || r >= size || c < 0 || c >= size) continue;
+                    const dark = dr >= 0 && dr <= 6 && dc >= 0 && dc <= 6 &&
+                        (dr === 0 || dr === 6 || dc === 0 || dc === 6 || (dr >= 2 && dr <= 4 && dc >= 2 && dc <= 4));
+                    setFn(r, c, dark);
+                }
+            };
+            finder(0, 0); finder(0, size - 7); finder(size - 7, 0);
+            for (let i = 8; i < size - 8; i++) { setFn(6, i, i % 2 === 0); setFn(i, 6, i % 2 === 0); }
+            if (QR_ALIGN[v]) {
+                for (const r of QR_ALIGN[v]) for (const c of QR_ALIGN[v]) {
+                    if ((r <= 8 && c <= 8) || (r <= 8 && c >= size - 9) || (r >= size - 9 && c <= 8)) continue;
+                    for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) {
+                        setFn(r + dr, c + dc, Math.max(Math.abs(dr), Math.abs(dc)) !== 1);
+                    }
+                }
+            }
+            setFn(size - 8, 8, true); // dark module
+            for (let i = 0; i <= 8; i++) { if (!R[8][i]) setFn(8, i, false); if (!R[i][8]) setFn(i, 8, false); }
+            for (let i = 0; i < 8; i++) { if (!R[8][size - 1 - i]) setFn(8, size - 1 - i, false); if (!R[size - 1 - i][8]) setFn(size - 1 - i, 8, false); }
+
+            const MASKS = [
+                (r, c) => (r + c) % 2 === 0,
+                (r, c) => r % 2 === 0,
+                (r, c) => c % 3 === 0,
+                (r, c) => (r + c) % 3 === 0,
+                (r, c) => (Math.floor(r / 2) + Math.floor(c / 3)) % 2 === 0,
+                (r, c) => ((r * c) % 2) + ((r * c) % 3) === 0,
+                (r, c) => (((r * c) % 2) + ((r * c) % 3)) % 2 === 0,
+                (r, c) => (((r + c) % 2) + ((r * c) % 3)) % 2 === 0,
+            ];
+
+            function formatBits(mask) {
+                const data = (0b01 << 3) | mask; // EC level L = 01
+                let rem = data << 10;
+                for (let i = 14; i >= 10; i--) {
+                    if ((rem >> i) & 1) rem ^= 0x537 << (i - 10);
+                }
+                return (((data << 10) | rem) ^ 0x5412) & 0x7FFF;
+            }
+
+            function buildWithMask(mask) {
+                const m = T.map((row) => row.slice());
+                const fn = MASKS[mask];
+                const totalBits = full.length * 8;
+                let bitIdx = 0;
+                const nextBit = () => {
+                    if (bitIdx >= totalBits) return 0;
+                    const bit = (full[bitIdx >> 3] >> (7 - (bitIdx & 7))) & 1;
+                    bitIdx++;
+                    return bit;
+                };
+                let up = true;
+                for (let right = size - 1; right >= 1; right -= 2) {
+                    if (right === 6) right--;
+                    for (let vert = 0; vert < size; vert++) {
+                        for (let j = 0; j < 2; j++) {
+                            const c = right - j;
+                            const r = up ? size - 1 - vert : vert;
+                            if (R[r][c]) continue;
+                            m[r][c] = (nextBit() === 1) !== fn(r, c);
+                        }
+                    }
+                    up = !up;
+                }
+                const fmt = formatBits(mask);
+                const fb = (i) => (fmt >> i) & 1;
+                for (let i = 0; i <= 5; i++) m[8][i] = fb(i) === 1;
+                m[8][7] = fb(6) === 1;
+                m[8][8] = fb(7) === 1;
+                m[7][8] = fb(8) === 1;
+                for (let i = 9; i <= 14; i++) m[14 - i][8] = fb(i) === 1;
+                for (let i = 0; i <= 6; i++) m[size - 1 - i][8] = fb(i) === 1;
+                for (let i = 7; i <= 14; i++) m[8][size - 15 + i] = fb(i) === 1;
+                return m;
+            }
+
+            function penalty(m) {
+                let score = 0;
+                for (let axis = 0; axis < 2; axis++) {
+                    for (let i = 0; i < size; i++) {
+                        let run = 1;
+                        for (let j = 1; j < size; j++) {
+                            const cur = axis === 0 ? m[i][j] : m[j][i];
+                            const prev = axis === 0 ? m[i][j - 1] : m[j - 1][i];
+                            if (cur === prev) { run++; if (j === size - 1 && run >= 5) score += 3 + (run - 5); }
+                            else { if (run >= 5) score += 3 + (run - 5); run = 1; }
+                        }
+                    }
+                }
+                for (let r = 0; r < size - 1; r++) for (let c = 0; c < size - 1; c++) {
+                    if (m[r][c] === m[r][c + 1] && m[r][c] === m[r + 1][c] && m[r][c] === m[r + 1][c + 1]) score += 3;
+                }
+                const pat = [true, false, true, true, true, false, true];
+                const seqAt = (get, start) => pat.every((p, k) => get(start + k) === p);
+                const lightAfter = (get, start) => {
+                    let n = 0;
+                    for (let k = start + 7; k < start + 11; k++) { if (k >= size || get(k)) break; n++; }
+                    return n === 4;
+                };
+                const lightBefore = (get, start) => {
+                    let n = 0;
+                    for (let k = start - 1; k >= start - 4; k--) { if (k < 0 || get(k)) break; n++; }
+                    return n === 4;
+                };
+                for (let i = 0; i < size; i++) {
+                    for (let j = 0; j <= size - 7; j++) {
+                        if (seqAt((k) => m[i][k], j) && (lightBefore((k) => m[i][k], j) || lightAfter((k) => m[i][k], j))) score += 40;
+                        if (seqAt((k) => m[k][i], j) && (lightBefore((k) => m[k][i], j) || lightAfter((k) => m[k][i], j))) score += 40;
+                    }
+                }
+                let dark = 0;
+                for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) if (m[r][c]) dark++;
+                const ratio = (dark * 100) / (size * size);
+                score += Math.floor(Math.abs(ratio - 50) / 5) * 10;
+                return score;
+            }
+
+            let best = null, bestScore = Infinity;
+            for (let mask = 0; mask < 8; mask++) {
+                const m = buildWithMask(mask);
+                const s = penalty(m);
+                if (s < bestScore) { bestScore = s; best = m; }
+            }
+            return { size, modules: best };
+        }
+
+        function svg(text, size = 220) {
+            const enc = qrEncode(text);
+            if (!enc) return null;
+            const s = enc.size;
+            const m = enc.modules;
             const cs = size / s;
             let path = '';
             for (let r = 0; r < s; r++) for (let c = 0; c < s; c++) if (m[r][c]) path += `M${c * cs},${r * cs}h${cs}v${cs}h-${cs}z`;
@@ -1582,9 +1779,11 @@
             show: async (file) => {
                 const proxy = await ProxyManager.best(file.id);
                 const url = ProxyManager.url(proxy, file.id, { download: true });
+                const qrSvg = svg(url, 240);
+                if (!qrSvg) { Toast.error('URL exceeds QR capacity (106 bytes)'); return; }
                 Modal.open({
                     title: '📱 QR Code',
-                    body: `<div style="text-align:center"><div style="background:white;display:inline-block;padding:16px;border-radius:8px">${svg(url, 240)}</div><p style="font-size:11px;color:#8a92a3;word-break:break-all;margin:12px 0">${escapeHTML(url)}</p><p style="font-size:11px;color:#666;background:#1f2530;padding:6px 10px;border-radius:4px">Note: Scanner app needs to send Referer: https://pixeldrain.com/</p><button class="${NS}-btn" style="margin-top:8px" id="${NS}-qr-copy-btn">📋 Copy URL</button></div>`
+                    body: `<div style="text-align:center"><div style="background:white;display:inline-block;padding:16px;border-radius:8px">${qrSvg}</div><p style="font-size:11px;color:#8a92a3;word-break:break-all;margin:12px 0">${escapeHTML(url)}</p><p style="font-size:11px;color:#666;background:#1f2530;padding:6px 10px;border-radius:4px">Note: Scanner app needs to send Referer: https://pixeldrain.com/</p><button class="${NS}-btn" style="margin-top:8px" id="${NS}-qr-copy-btn">📋 Copy URL</button></div>`
                 });
                 document.getElementById(`${NS}-qr-copy-btn`).addEventListener('click', async () => {
                     const ok = await copyToClipboard(url);

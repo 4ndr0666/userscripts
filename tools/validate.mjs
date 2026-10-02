@@ -68,6 +68,9 @@ const RECONCILED_NAMES = {
         "init": "module boots",
         "tryInject": "injectWebButton + waitFor retry (same flow)",
     },
+    "Pixeldrain++": {
+        "rng": "removed with the decorative pseudo-QR it served (hash-PRNG noise fill that could never scan); superseded by the real RS/mask QR encoder — tools/qr-verify.mjs round-trip proves the replacement",
+    },
     "Forum Link Xtractor": {
         "createRadio": "createUIElement('radio', …) — unified builder, same options (download/copy)",
         "createCheckbox": "createUIElement('checkbox', …) — unified builder, same options (current-page/sort)",
@@ -323,11 +326,24 @@ function gateC() {
         const name = m[1].match(/@name\s+(.+)/);
         if (!ver) failures.push(`[C] ${f}: no @version`);
         if (!name) failures.push(`[C] ${f}: no @name`);
-        const upd = m[1].match(/@updateURL\s+(\S+)/g) || [];
-        for (const u of upd) {
-            const url = u.replace(/@updateURL\s+/, "");
+        /* Update-channel integrity: keys must be canonical-case, URLs must
+         * carry the /dist/ install-channel segment, and must self-reference
+         * the file. Case-variant keys (@updateUrl) previously escaped this
+         * check entirely — a silent 404 update channel. */
+        const upd = m[1].match(/@\s*updateURL\s+(\S+)/gi) || [];
+        const dl = m[1].match(/@\s*downloadURL\s+(\S+)/gi) || [];
+        for (const u of [...upd, ...dl]) {
+            const key = u.match(/@(\w+)/)[1];
+            if (key !== "updateURL" && key !== "downloadURL") {
+                failures.push(`[C] ${f}: non-canonical metadata key case "${key}"`);
+                continue;
+            }
+            const url = u.replace(/@\w+\s+/, "");
+            if (!url.includes("/dist/")) {
+                failures.push(`[C] ${f}: ${key} missing /dist/ install-channel segment`);
+            }
             if (!url.includes(encodeURI(f).replace(/#/g, "%23")) && !url.includes(f.replace(/ /g, "%20"))) {
-                failures.push(`[C] ${f}: @updateURL self-reference drift (${url.slice(-40)})`);
+                failures.push(`[C] ${f}: ${key} self-reference drift (${url.slice(-40)})`);
             }
         }
         /* placeholder scan (comment/string-aware; see scanPlaceholders) */
@@ -374,6 +390,11 @@ function gateD() {
     if (!pc.includes("_cache_bust") || !pc.includes("RELOAD_BROKEN_IMAGES")) {
         failures.push(`[D] PageCraft: imgfix module not present`);
     } else passes.push(`[D] PageCraft modules verified`);
+
+    const asil = read("Akasha Silence");
+    if (!asil.includes("defuseScript") || !asil.includes("applyNetworkHooks") || !asil.includes("getRealLinkFromGoogleUrl") || !asil.includes("makePhantomWebSocket")) {
+        failures.push(`[D] Akasha Silence: absorbed trio modules not present`);
+    } else passes.push(`[D] Akasha Silence absorbed trio verified`);
 }
 
 gateA();
@@ -382,7 +403,7 @@ gateC();
 gateD();
 
 console.log("╔══════════════════════════════════════════════════════════════╗");
-console.log("║  GUP v5.3 SUITE VERIFICATION — " + new Date().toISOString().slice(0, 19) + "        ║");
+console.log("║  GUP v5.3.1 SUITE VERIFICATION — " + new Date().toISOString().slice(0, 19) + "        ║");
 console.log("╚══════════════════════════════════════════════════════════════╝");
 for (const p of passes) console.log("  ✓ " + p);
 if (failures.length > 0) {

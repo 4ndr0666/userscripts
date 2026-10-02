@@ -2,7 +2,7 @@
 // @name         4ndr0tools - Yandex Image Search++ 
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666 
-// @version      0.3.0
+// @version      0.4.0
 // @description  Robust, event-driven slideshow, fullscreen preview, and on-screen status for Yandex reverse-image search.
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YandexImageSearch++.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YandexImageSearch++.user.js
@@ -23,8 +23,9 @@
     const CONFIG = {
         // The main container for the image viewer modal. The script's logic activates when this appears.
         viewerContainerSelector: '.MMViewer',
-        // The button to advance to the next image.
-        nextButtonSelector: '.CircleButton_type_next',
+        // The button to advance to the next image. Ordered fallbacks:
+        // the classic CircleButton first, then the newer viewer variants.
+        nextButtonSelectors: ['.CircleButton_type_next', '.MMViewer-ButtonNext', '.MMViewer-Buttons .MMButton-Next'],
         // Key to toggle the slideshow on and off.
         toggleKey: 'ArrowDown',
         // Slideshow delay in milliseconds.
@@ -135,10 +136,12 @@
          */
         clickNext() {
             try {
-                const nextButton = document.querySelector(CONFIG.nextButtonSelector);
-                // Ensure the button exists before attempting to click it.
-                if (nextButton instanceof HTMLElement) {
-                    nextButton.click();
+                for (const sel of CONFIG.nextButtonSelectors) {
+                    const nextButton = document.querySelector(sel);
+                    if (nextButton instanceof HTMLElement) {
+                        nextButton.click();
+                        return;
+                    }
                 }
             } catch (error) {
                 logError('clickNext', error);
@@ -206,14 +209,24 @@
      * Sets up a MutationObserver to watch for when the Yandex image viewer is opened or closed.
      */
     function main() {
+        // v0.4: body readiness guard — observer.observe(null) throws, and the
+        // script can execute before body exists on slow parses.
+        if (!document.body) {
+            setTimeout(main, 50);
+            return;
+        }
         injectCSS();
         let activeController = null;
 
         const observer = new MutationObserver((mutations) => {
             for (const mutation of mutations) {
                 for (const node of mutation.addedNodes) {
-                    // When the viewer container is added to the DOM, create a new controller.
-                    if (node.nodeType === Node.ELEMENT_NODE && node.matches(CONFIG.viewerContainerSelector)) {
+                    // When the viewer container is added to the DOM, create a new
+                    // controller. v0.4: also probe INSIDE the added node — the
+                    // viewer may arrive wrapped in a portal container, which the
+                    // direct-children-only observer never saw.
+                    if (node.nodeType === Node.ELEMENT_NODE &&
+                        (node.matches(CONFIG.viewerContainerSelector) || node.querySelector?.(CONFIG.viewerContainerSelector))) {
                         if (!activeController) {
                             activeController = new SlideshowController();
                         }
@@ -222,7 +235,8 @@
                 }
                 for (const node of mutation.removedNodes) {
                     // When the viewer container is removed, destroy the active controller to clean up.
-                    if (node.nodeType === Node.ELEMENT_NODE && node.matches(CONFIG.viewerContainerSelector)) {
+                    if (node.nodeType === Node.ELEMENT_NODE &&
+                        (node.matches(CONFIG.viewerContainerSelector) || node.querySelector?.(CONFIG.viewerContainerSelector))) {
                         if (activeController) {
                             activeController.destroy();
                             activeController = null;

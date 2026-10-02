@@ -31,17 +31,18 @@
   {
    "file": "4ndr0tools - 4ndr0serviceguard Companion.user.js",
    "name": "4ndr0tools - 4ndr0serviceguard Companion",
-   "version": "6.0.0",
-   "description": "Part of 4ndr0tools 4ndr0serviceguard — Default-deny Service Worker & WebSocket control with whitelist",
+   "version": "7.3.0",
+   "description": "Stealth Service Worker / WebSocket / SharedWorker firewall companion for the 4ndr0serviceguard extension. Default-deny with a three-way action model: AUTHORIZE (real), SPOOF (pacified live-looking socket) or DENY (native-faithful failure). Whitelist authorizes, spooflist auto-spoofs silently, the blacklist is an absolute prohibition. Defers to the extension's Gatekeeper whenever the extension is present — and routes list edits to it through the extension's confirm bar.",
    "family": "privacy & security",
-   "sha256": "8e590115bf8076838a1ed4a77c60d13cbfc3848edf39d942806bfc7ee624d049",
-   "lines": 131,
-   "bytes": 5206,
+   "sha256": "07ee3bba7512f3cd4473b1ff07b2ed3faee636e14f073fe038282003270e1045",
+   "lines": 1254,
+   "bytes": 52495,
    "matches": [
     "*://*/*"
    ],
    "excludes": [],
    "grants": [
+    "unsafeWindow",
     "GM_setValue",
     "GM_getValue",
     "GM_registerMenuCommand",
@@ -54,6 +55,31 @@
    "urls": {
     "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%204ndr0serviceguard%20Companion.user.js",
     "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%204ndr0serviceguard%20Companion.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - Akasha Silence.user.js",
+   "name": "4ndr0tools - Akasha Silence",
+   "version": "5.0.0",
+   "description": "Unified counter-surveillance defense layer. Three-way consolidation of Anti-detection + Counter-surveillance + Anti-telemetry (ICC): anti-analysis script neutralization, telemetry sinkholing (fetch/XHR/beacon/WebSocket), WebRTC blinding, session-stable fingerprint spoofing (hardware/canvas/WebGL/audio), identifier poisoning, Google link-tracking sanitization and hostile-UI countermeasures.",
+   "family": "uncategorized",
+   "sha256": "f5a71b33bd38750ce868d18dae5c904841685994f46b79645b4cd8b34f828e70",
+   "lines": 889,
+   "bytes": 43096,
+   "matches": [
+    "*://*/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "none"
+   ],
+   "requires": [],
+   "connects": [],
+   "runAt": "document-start",
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Akasha%20Silence.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Akasha%20Silence.user.js"
    }
   },
   {
@@ -83,59 +109,6 @@
    "urls": {
     "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20AlwaysNewWindow.user.js",
     "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20AlwaysNewWindow.user.js"
-   }
-  },
-  {
-   "file": "4ndr0tools - Anti-detection.user.js",
-   "name": "4ndr0tools - Anti-detection",
-   "version": "1.1",
-   "description": "Sanitize environment for userscripts to execute properly.",
-   "family": "privacy & security",
-   "sha256": "6990f7882098f4248b0e4a51430452e0e3237fc11cfc2dc40067d58e48d36958",
-   "lines": 77,
-   "bytes": 4019,
-   "matches": [
-    "*://*/*"
-   ],
-   "excludes": [],
-   "grants": [
-    "none"
-   ],
-   "requires": [],
-   "connects": [],
-   "runAt": "document-start",
-   "noframes": false,
-   "urls": {
-    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Anti-detection.user.js",
-    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Anti-detection.user.js"
-   }
-  },
-  {
-   "file": "4ndr0tools - Anti-telemetry (Intelligent Cloud Computing).user.js",
-   "name": "4ndr0tools - Anti-telemetry (Intelligent Cloud Computing)",
-   "version": "3.5.0",
-   "description": "Wan AI shifted infrastructure from Alibaba to ICC (South Korea) to exploit jurisdictional arbitrage and circumvent US privacy laws. It creates persistent, hardware-linked endpoint fingerprints (Layer 1/2 MAC/UDID mapping) that survive OS/browser wipes via low-level telemetry beacons. This data is brokered for predictive behavioral profiling and Global Endpoint Graph construction. This script enforces absolute surveillance countermeasures: aggressive DOM sinkholing, WebRTC/network nullification, synthetic identifier poisoning, and secure context escape prevention targeting Wan.video, Kuaishou, Aliyun, and ICC telemetry nodes.",
-   "family": "privacy & security",
-   "sha256": "cbbf6d96bb6da66d740575df07e5998b130b74075d5dd5569b1b15f518d8115a",
-   "lines": 309,
-   "bytes": 15464,
-   "matches": [
-    "*://*.wan.video/*",
-    "*://*.kuaishou.com/*",
-    "*://*.aliyun.com/*",
-    "*://*.icc-cloud.kr/*"
-   ],
-   "excludes": [],
-   "grants": [
-    "none"
-   ],
-   "requires": [],
-   "connects": [],
-   "runAt": "document-start",
-   "noframes": false,
-   "urls": {
-    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Anti-telemetry%20(Intelligent%20Cloud%20Computing).user.js",
-    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Anti-telemetry%20(Intelligent%20Cloud%20Computing).user.js"
    }
   },
   {
@@ -465,53 +438,27 @@
    }
   },
   {
-   "file": "4ndr0tools - Counter-surveillance.user.js",
-   "name": "4ndr0tools - Counter-survillance",
-   "version": "4.0.0",
-   "description": "Deep DOM sinkholing, network nullification (WebRTC/Fetch/XHR), canvas blinding, anti-user patterns, frustrating UI constraints and aggressive URL sanitization (Google/ICC/Aliyun)",
-   "family": "privacy & security",
-   "sha256": "ea00d48f008cc83ee11b225b7c0225944be12fe25acc98ef9b7252d998316e03",
-   "lines": 534,
-   "bytes": 24523,
-   "matches": [
-    "*://*/*"
-   ],
-   "excludes": [],
-   "grants": [
-    "none"
-   ],
-   "requires": [],
-   "connects": [],
-   "runAt": "document-start",
-   "noframes": false,
-   "urls": {
-    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Counter-surveillance.user.js",
-    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Counter-surveillance.user.js"
-   }
-  },
-  {
    "file": "4ndr0tools - Filester++.user.js",
    "name": "4ndr0tools - Filester++",
-   "version": "7.4.0",
+   "version": "7.5.0",
    "description": "Dynamic stream extraction + folder enumeration for any media on Filester.me. Network proxy + glyph injection.",
    "family": "media & links",
-   "sha256": "69da7b9a39604753435d890cb123ecba989129532097a028133f8728b4330977",
-   "lines": 206,
-   "bytes": 9446,
+   "sha256": "96dcfa819c854a03c8ecac15065edd4179f794de3ddbcd8ae53ce3732949075e",
+   "lines": 282,
+   "bytes": 13058,
    "matches": [],
    "excludes": [],
    "grants": [
     "GM_addStyle",
-    "GM_registerMenuCommand"
+    "GM_registerMenuCommand",
+    "GM_setClipboard"
    ],
-   "requires": [
-    "https://code.jquery.com/jquery-3.6.0.min.js"
-   ],
+   "requires": [],
    "connects": [
     "u1.filester.me"
    ],
    "runAt": "document-start",
-   "noframes": true,
+   "noframes": false,
    "urls": {
     "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Filester++.user.js",
     "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Filester++.user.js"
@@ -520,12 +467,12 @@
   {
    "file": "4ndr0tools - Forum Link Xtractor.user.js",
    "name": "4ndr0tools - Forum Link Xtractor",
-   "version": "3.0.0",
+   "version": "3.1.0",
    "description": "Link xtractor, Invisitext revealer, and inline post reply viewer.",
    "family": "forums",
-   "sha256": "b308843753a4ec7bbea0b3cf8d7fbeecdba52565504c501239eada455b839d94",
-   "lines": 526,
-   "bytes": 26355,
+   "sha256": "36f9f7019a56fdafe8f4bec5281159da8b6f0bcb186b6f642178b8be6a5dff59",
+   "lines": 527,
+   "bytes": 27252,
    "matches": [
     "*://forums.socialmediagirls.com/*",
     "*://simpcity.su/*",
@@ -555,12 +502,12 @@
   {
    "file": "4ndr0tools - Forums++.user.js",
    "name": "4ndr0tools - Forums++",
-   "version": "1.8",
+   "version": "1.9",
    "description": "Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.",
    "family": "forums",
-   "sha256": "c0f7eaaeb2043feda55846dc57e2e1337254266bacb1f87372ce79dfe23561cb",
-   "lines": 3604,
-   "bytes": 158850,
+   "sha256": "b0416cbf3329128e458a64fc60096daa548e851842e30c4994449557d2f3eb1b",
+   "lines": 3611,
+   "bytes": 159382,
    "matches": [
     "https://simpcity.su/threads/*",
     "https://simpcity.cr/threads/*"
@@ -669,15 +616,14 @@
   {
    "file": "4ndr0tools - Gofile++.user.js",
    "name": "4ndr0tools - GoFile++",
-   "version": "2.0.0",
+   "version": "2.1.0",
    "description": "Directly batch-download GoFiles with a robust UI. Supports recursive folder scans, direct links, and download managers (Aria2, IDM). Fixing SPA persistence and Sandbox access.",
    "family": "media & links",
-   "sha256": "61f56065ec8c48e4b59bd6a43559c31e536d5363e516f23e864ca06a8cb57cae",
-   "lines": 890,
-   "bytes": 39336,
+   "sha256": "7af7867a6f8c04ca24f6184b64b9977c7ac469dc42e5c5f35afcb030be491d7e",
+   "lines": 1080,
+   "bytes": 48837,
    "matches": [
-    "https://gofile.io/*",
-    "http*://gofile.io/*"
+    "*://gofile.io/*"
    ],
    "excludes": [],
    "grants": [
@@ -687,6 +633,7 @@
    ],
    "requires": [],
    "connects": [
+    "api.gofile.io",
     "localhost",
     "*"
    ],
@@ -800,9 +747,9 @@
    "version": "4.0.0",
    "description": "Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. Collapse-mode hotkey is configurable.",
    "family": "images",
-   "sha256": "93b0a31d86e20758912fa01845380d121b41f468f849acaadbf4326964980010",
+   "sha256": "5a8338e00195aad98e5e61a22f9003ecb4c4116cf2b1a62c65d0ddebcafdf7b6",
    "lines": 4591,
-   "bytes": 135743,
+   "bytes": 135753,
    "matches": [
     "*://*/*"
    ],
@@ -851,8 +798,8 @@
    "runAt": "document-start",
    "noframes": false,
    "urls": {
-    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Images++.user.js",
-    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/4ndr0tools%20-%20Images++.user.js"
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Images++.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Images++.user.js"
    }
   },
   {
@@ -1129,12 +1076,12 @@
   {
    "file": "4ndr0tools - Pixeldrain++.user.js",
    "name": "4ndr0tools - Pixeldrain++",
-   "version": "1.0.1",
+   "version": "1.1.0",
    "description": "Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.",
    "family": "media & links",
-   "sha256": "a08b320fd029e51653c5e5f0e79df620f96f47ce1b533767e3224f9ab7274121",
-   "lines": 2232,
-   "bytes": 125097,
+   "sha256": "49138f153a50a0722fa8bdafaeee50e748b027b384bc5cb813c4bcb9f5de18e7",
+   "lines": 2431,
+   "bytes": 134294,
    "matches": [
     "https://pixeldrain.com/*",
     "https://pixeldrain.net/*",
@@ -1271,12 +1218,12 @@
   {
    "file": "4ndr0tools - Redgifs++.user.js",
    "name": "4ndr0tools - Redgifs++",
-   "version": "5.0",
+   "version": "5.1",
    "description": "Intercepts Redgifs links on Reddit for a cinematic overlay. On Redgifs itself, enters focused video-only mode. Falls back to JSON.parse intercept for direct /watch/ loads before SPA hydration.",
    "family": "video & players",
-   "sha256": "38fe316b413559cf12e33a6af590ff52810646d19d97a1dd1c9cb06eaf0b7f7d",
-   "lines": 359,
-   "bytes": 16762,
+   "sha256": "09edcf9b231dea4e4716dd9eac52a2999bd05fd6dd8b21e8677f96d1f27ebad6",
+   "lines": 373,
+   "bytes": 17462,
    "matches": [
     "*://*.redgifs.com/watch/*",
     "*://*.redgifs.com/ifr/*",
@@ -1334,12 +1281,12 @@
   {
    "file": "4ndr0tools - Website Control Panel.user.js",
    "name": "4ndr0tools - Website Control Panel",
-   "version": "5.1.0",
+   "version": "5.2.0",
    "description": "Draggable Cyberdeck HUD, DOM Zapper, Ad suppression, validated-selector compiled deep-cleaning.",
    "family": "ux utilities",
-   "sha256": "e30d4b9b127fd3b54c1659fdb11322bd2b8f2eca981eb2953e0ef193a33d11b4",
-   "lines": 383,
-   "bytes": 17603,
+   "sha256": "b84373795cec070ffacad8e28a626718114f4dfaf42a318a0c695cd4f9c26fad",
+   "lines": 390,
+   "bytes": 18272,
    "matches": [
     "*://*/*"
    ],
@@ -1354,19 +1301,19 @@
    "runAt": "document-idle",
    "noframes": false,
    "urls": {
-    "update": null,
-    "download": null
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Website%20Control%20Panel.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Website%20Control%20Panel.user.js"
    }
   },
   {
    "file": "4ndr0tools - YandexImageSearch++.user.js",
    "name": "4ndr0tools - Yandex Image Search++",
-   "version": "0.3.0",
+   "version": "0.4.0",
    "description": "Robust, event-driven slideshow, fullscreen preview, and on-screen status for Yandex reverse-image search.",
    "family": "images",
-   "sha256": "c934a97411b514523f8db77aee5790776622d29ec65e15504d2b53fd1cd13162",
-   "lines": 246,
-   "bytes": 9699,
+   "sha256": "0b9daa5961fafb3c86baa04b24420fa8105002f52193b40a636739bef60d9385",
+   "lines": 260,
+   "bytes": 10509,
    "matches": [
     "http*://yandex.com/images/*",
     "http*://yandex.ru/images/*"
@@ -1387,12 +1334,12 @@
   {
    "file": "4ndr0tools - YouTube Playlist Master.user.js",
    "name": "4ndr0tools - YouTube Playlist Master",
-   "version": "1.6.0",
+   "version": "1.7.0",
    "description": "Channel playlist buttons (All / Popular / Videos / Shorts / Streams / Members-only), Random play (prefer newest/oldest), reverse autoplay order, playlist autoplay toggle, duration sort, bulk copy/move/delete, JSON + plaintext export/import, snapshots with deleted-video detection, quick watch_videos playlists, queue & watch-later overlays, playlist close button, date/view metadata, episode auto-expand, huge-playlist browser, live settings (no reload), always-available Ψ deck, playlist row filter, duplicate finder & purge, global hotkeys (Alt+Shift+U/S/X), failsafe deck rescue, 404-proof navigation guards, Trusted-Types-immune rendering, fully-visible fit-content modal dialogs.",
    "family": "video & players",
-   "sha256": "1f417864d94d3ac60f8291687fb301be9e645eca0cdd1b17572268036d3b1e95",
-   "lines": 5170,
-   "bytes": 260728,
+   "sha256": "1b181ae36a773a17f1e833c48dddd64eb17c869dfb9919d6e6759c7fa87690c7",
+   "lines": 5402,
+   "bytes": 273603,
    "matches": [
     "https://*.youtube.com/*",
     "https://youtube.com/*"
@@ -1500,19 +1447,18 @@
  "hotDomains": [
   {
    "domain": "*:",
-   "count": 221,
+   "count": 217,
    "scripts": [
     "4ndr0tools - 4ndr0Purge",
     "4ndr0tools - 4ndr0serviceguard Companion",
+    "4ndr0tools - Akasha Silence",
     "4ndr0tools - AlwaysNewWindow",
-    "4ndr0tools - Anti-detection",
-    "4ndr0tools - Anti-telemetry (Intelligent Cloud Computing)",
     "4ndr0tools - AutoTranslate",
     "4ndr0tools - Blob2URL",
     "4ndr0tools - Bypass Paywalls",
     "4ndr0tools - Confirmation Bypass",
-    "4ndr0tools - Counter-survillance",
     "4ndr0tools - Forum Link Xtractor",
+    "4ndr0tools - GoFile++",
     "4ndr0tools - GooglePhotosandDrive++",
     "4ndr0tools - HostWarp",
     "4ndr0tools - Images++",
@@ -1528,14 +1474,6 @@
     "4ndr0tools - Website Control Panel",
     "4ndr0tools - Youtube Removed Video Revealer",
     "4ndr0tools - YT Filter"
-   ]
-  },
-  {
-   "domain": "http*:",
-   "count": 3,
-   "scripts": [
-    "4ndr0tools - GoFile++",
-    "4ndr0tools - Yandex Image Search++"
    ]
   },
   {
@@ -1566,7 +1504,14 @@
     "4ndr0tools - YouTube Playlist Master",
     "4ndr0tools - YouTube Embed Redirect Button"
    ]
+  },
+  {
+   "domain": "http*:",
+   "count": 2,
+   "scripts": [
+    "4ndr0tools - Yandex Image Search++"
+   ]
   }
  ],
- "generated": "2026-10-02T02:20:20.388Z"
+ "generated": "2026-10-02T07:49:26.640Z"
 }

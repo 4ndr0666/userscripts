@@ -1,284 +1,284 @@
 {
- "_comment": "GUP superset ledger — maps every legacy baseline artifact to its suite destination. modes: promoted (BETA became canonical), merged (hand-merge base), carried (verbatim + header normalization), absorbed (feature set lives inside dest), retired (kept only in legacy archive). evidence = human-readable superset argument.",
- "4ndr0purge": {
-  "dest": "4ndr0purge",
-  "mode": "carried"
- },
- "4ndr0serviceguard Companion": {
-  "dest": "4ndr0serviceguard Companion",
-  "mode": "carried"
- },
- "AlwaysNewWindow": {
-  "dest": "AlwaysNewWindow",
-  "mode": "carried"
- },
- "Anti-detection": {
-  "dest": "Anti-detection",
-  "mode": "carried"
- },
- "Anti-telemetry (Intelligent Cloud Computing)": {
-  "dest": "Anti-telemetry (Intelligent Cloud Computing)",
-  "mode": "carried"
- },
- "AutoTranslate": {
-  "dest": "AutoTranslate",
-  "mode": "carried"
- },
- "Blob2URL": {
-  "dest": "Blob2URL",
-  "mode": "absorbed",
-  "note": "stable v6.3 subsumed by promoted BETA v6.5 (SUPerset G1-G3 + IG vault)"
- },
- "Blob2URLBETA": {
-  "dest": "Blob2URL",
-  "mode": "promoted",
-  "evidence": "v6.5 superset gap mitigation, strictly additive, zero regressions (embedded changelog)"
- },
- "BrokenImgFixer": {
-  "dest": "PageCraft",
-  "mode": "absorbed",
-  "note": "imgfix module: moz-broken probe, cache-bust idempotency, frame broadcast preserved"
- },
- "Bunkr++": {
-  "dest": "Bunkr++",
-  "mode": "carried"
- },
- "BypassPaywalls": {
-  "dest": "BypassPaywalls",
-  "mode": "carried"
- },
- "Collapse All Images": {
-  "dest": "PageCraft",
-  "mode": "absorbed",
-  "note": "collapse module: identical CSS, size now configurable"
- },
- "Confirmation Bypass": {
-  "dest": "Confirmation Bypass",
-  "mode": "absorbed",
-  "note": "stable v3.6.1 subsumed by promoted BETA v3.6.2 (GUP stepwise gap mitigation)"
- },
- "Confirmation Bypass BETA": {
-  "dest": "Confirmation Bypass",
-  "mode": "promoted",
-  "evidence": "v3.6.2 GUP v5.3 silent superset audit over v3.6.1"
- },
- "Counter-surveillance": {
-  "dest": "Counter-surveillance",
-  "mode": "carried"
- },
- "Filester++": {
-  "dest": "Filester++",
-  "mode": "carried"
- },
- "Forum Link Xtractor": {
-  "dest": "Forum Link Xtractor",
-  "mode": "absorbed",
-  "note": "stable v1.0 link extraction subsumed by promoted BETA v2.1 extraction flows"
- },
- "Forum Link Xtractor BETA": {
-  "dest": "Forum Link Xtractor",
-  "mode": "promoted",
-  "evidence": "v2.1.0 XenForo Enhancer: extraction + invisi-text + inline replies"
- },
- "Forums++": {
-  "dest": "Forums++",
-  "mode": "carried"
- },
- "Gemini Answer Now": {
-  "dest": "HostWarp",
-  "mode": "absorbed",
-  "note": "gemini module; invalid CSS selectors fixed; updateURL no longer targets Blob2URL"
- },
- "Git Raw URL File List Parser": {
-  "dest": "LinkMasterΨ",
-  "mode": "absorbed",
-  "note": "GitRaw module; malformed raw-URL rewrite fixed"
- },
- "Gofile++": {
-  "dest": "Gofile++",
-  "mode": "carried"
- },
- "GooglePhotosandDrive++": {
-  "dest": "GooglePhotosandDrive++",
-  "mode": "absorbed",
-  "note": "stable v1.5.0 subsumed by promoted BETA v7.0.0 (GUP: 0 MISSING)"
- },
- "GooglePhotosandDrive++BETA": {
-  "dest": "GooglePhotosandDrive++",
-  "mode": "promoted",
-  "evidence": "v7.0.0 unified superset revision, GUP v5.3 gate passed"
- },
- "HDImgsOnly": {
-  "dest": "HostWarp",
-  "mode": "absorbed",
-  "note": "imagehosts module: all 11 domain handlers preserved"
- },
- "Hailuo++": {
-  "dest": "Hailuo++",
-  "mode": "absorbed",
-  "note": "stable v5.1.1 subsumed by promoted BETA v5.4.0 (zero functional removals)"
- },
- "Hailuo++BETA": {
-  "dest": "Hailuo++",
-  "mode": "promoted",
-  "evidence": "v5.4.0 superset upgrade over 5.3.0"
- },
- "Images++": {
-  "dest": "Images++",
-  "mode": "merged",
-  "evidence": "v3.0.0 universal base + BETA configurable hotkey ported (3 surgical edits)"
- },
- "Images++BETA": {
-  "dest": "Images++",
-  "mode": "absorbed",
-  "note": "divergent IG-scoped branch; unique hotkey feature ported into Images++ v4.0.0"
- },
- "InfiniteBrave": {
-  "dest": "PageCraft",
-  "mode": "absorbed",
-  "note": "brave module: offset paging + snippet clone + hasMore detection preserved"
- },
- "Instagram++": {
-  "dest": "Instagram++",
-  "mode": "carried"
- },
- "LinkMasterBETA": {
-  "dest": "LinkMasterΨ",
-  "mode": "promoted",
-  "evidence": "v5.1.1 GUP audit pass over v5.0.0 (8 gaps mitigated); base of v6.0.0 merge"
- },
- "LinkMasterΨ": {
-  "dest": "LinkMasterΨ",
-  "mode": "absorbed",
-  "note": "v5.0.0 subsumed by v5.1.1 lineage (Dual MPV + all dock/HUD/export units)"
- },
- "LinkMasterΨ2": {
-  "dest": "LinkMasterΨ",
-  "mode": "absorbed",
-  "note": "parallel v3.1.0 redesign; full forum deep-scrape engine ported at v6.1.0 after Gate-B flagged 25 missing units (resolver chain, downloadPost packaging, check-scraped flow, linkmaster_settings persistence)"
- },
- "Login Form Autofiller": {
-  "dest": "Login Form Autofiller",
-  "mode": "carried"
- },
- "Maximize_Any_Media": {
-  "dest": "Maximize_Any_Media",
-  "mode": "carried",
-  "note": "+ Alt+S -> Alt+Shift+S console collision fix"
- },
- "Media Player Controller": {
-  "dest": "Media Player Controller",
-  "mode": "absorbed",
-  "note": "stable v5.1.0 (31 units) subsumed by promoted BETA v7.0.0-Ψ unified superset"
- },
- "Media Player Controller BETA": {
-  "dest": "Media Player Controller",
-  "mode": "promoted",
-  "evidence": "v7.0.0-Ψ UNIFIED SUPERSET over v5.1.0 + IGDL v6.0.1 salvage"
- },
- "MegaEmbedRedirector": {
-  "dest": "HostWarp",
-  "mode": "absorbed",
-  "note": "mega module: file->embed regex + autoplay + cross-vendor fullscreen preserved"
- },
- "ModelSearch": {
-  "dest": "ModelSearch",
-  "mode": "absorbed",
-  "note": "stable v2.1 subsumed by promoted BETA v3.2.0-Ψ"
- },
- "ModelSearchBETA": {
-  "dest": "ModelSearch",
-  "mode": "promoted",
-  "evidence": "v3.2.0-Ψ Superset Protocol pass (BUG-1/2/3)"
- },
- "Pixeldrain++": {
-  "dest": "Pixeldrain++",
-  "mode": "carried"
- },
- "PlanetsuzyMobileSkinRedirect": {
-  "dest": "HostWarp",
-  "mode": "absorbed",
-  "note": "planetsuzy module: styleid=4 redirect preserved"
- },
- "Premium Link Revealer": {
-  "dest": "LinkMasterΨ",
-  "mode": "absorbed",
-  "note": "AbsorbedPLR module: unfurl data-url unwrap + observer preserved"
- },
- "Prompt Master": {
-  "dest": "Prompt Master",
-  "mode": "carried"
- },
- "Recon": {
-  "dest": "Recon",
-  "mode": "carried",
-  "note": "+ Alt+R -> Alt+Shift+R collision fix"
- },
- "Redgifs++": {
-  "dest": "Redgifs++",
-  "mode": "carried"
- },
- "Searxng Sticky Settings": {
-  "dest": "HostWarp",
-  "mode": "absorbed",
-  "note": "searxng module; PLACEHOLDER constant promoted to persisted setting"
- },
- "SelectAllCheckboxes": {
-  "dest": "PageCraft",
-  "mode": "absorbed",
-  "note": "checkboxes module; de-jQueryed, interaction semantics identical"
- },
- "Telegram Web Redirect": {
-  "dest": "HostWarp",
-  "mode": "absorbed",
-  "note": "telegram module: glass button + banner hide + fragment encoding fix preserved"
- },
- "Watermark++": {
-  "dest": "Watermark++",
-  "mode": "carried"
- },
- "Website Control Panel": {
-  "dest": "Website Control Panel",
-  "mode": "carried"
- },
- "YT Filter": {
-  "dest": "YT Filter",
-  "mode": "carried"
- },
- "YandexImageSearch++": {
-  "dest": "YandexImageSearch++",
-  "mode": "carried"
- },
- "Youtube Removed Video Revealer": {
-  "dest": "Youtube Removed Video Revealer",
-  "mode": "carried"
- },
- "YouTube Playlist Master": {
-  "dest": "YouTube Playlist Master",
-  "mode": "carried"
- },
- "YouTubeEmbedRedirectButton": {
-  "dest": "YouTubeEmbedRedirectButton",
-  "mode": "carried"
- },
- "m3u8++": {
-  "dest": "m3u8++",
-  "mode": "absorbed",
-  "note": "stable v4.4 subsumed by promoted BETA v4.5 (G1-G10)"
- },
- "m3u8++BETA": {
-  "dest": "m3u8++",
-  "mode": "promoted",
-  "evidence": "v4.5 GUP v5.3 stepwise gap mitigation, 10 fixes, magnet relays"
- },
- "archive/4ndr0tools - Linkmaster": {
-  "dest": null,
-  "mode": "retired",
-  "note": "historical gold standard; superseded by LinkMasterΨ lineage"
- },
- "plugins/candidshiny": {
-  "dest": "plugins/candidshiny",
-  "mode": "carried",
-  "note": "3 invalid selectors fixed (aref] -> a[href])"
- }
+  "_comment": "GUP superset ledger — maps every legacy baseline artifact to its suite destination. modes: promoted (BETA became canonical), merged (hand-merge base), carried (verbatim + header normalization), absorbed (feature set lives inside dest), retired (kept only in legacy archive). evidence = human-readable superset argument.",
+  "4ndr0purge": {
+    "dest": "4ndr0purge",
+    "mode": "carried"
+  },
+  "4ndr0serviceguard Companion": {
+    "dest": "4ndr0serviceguard Companion",
+    "mode": "carried"
+  },
+  "AlwaysNewWindow": {
+    "dest": "AlwaysNewWindow",
+    "mode": "carried"
+  },
+  "Anti-detection": {
+    "dest": "Akasha Silence",
+    "mode": "merged"
+  },
+  "Anti-telemetry (Intelligent Cloud Computing)": {
+    "dest": "Akasha Silence",
+    "mode": "merged"
+  },
+  "AutoTranslate": {
+    "dest": "AutoTranslate",
+    "mode": "carried"
+  },
+  "Blob2URL": {
+    "dest": "Blob2URL",
+    "mode": "absorbed",
+    "note": "stable v6.3 subsumed by promoted BETA v6.5 (SUPerset G1-G3 + IG vault)"
+  },
+  "Blob2URLBETA": {
+    "dest": "Blob2URL",
+    "mode": "promoted",
+    "evidence": "v6.5 superset gap mitigation, strictly additive, zero regressions (embedded changelog)"
+  },
+  "BrokenImgFixer": {
+    "dest": "PageCraft",
+    "mode": "absorbed",
+    "note": "imgfix module: moz-broken probe, cache-bust idempotency, frame broadcast preserved"
+  },
+  "Bunkr++": {
+    "dest": "Bunkr++",
+    "mode": "carried"
+  },
+  "BypassPaywalls": {
+    "dest": "BypassPaywalls",
+    "mode": "carried"
+  },
+  "Collapse All Images": {
+    "dest": "PageCraft",
+    "mode": "absorbed",
+    "note": "collapse module: identical CSS, size now configurable"
+  },
+  "Confirmation Bypass": {
+    "dest": "Confirmation Bypass",
+    "mode": "absorbed",
+    "note": "stable v3.6.1 subsumed by promoted BETA v3.6.2 (GUP stepwise gap mitigation)"
+  },
+  "Confirmation Bypass BETA": {
+    "dest": "Confirmation Bypass",
+    "mode": "promoted",
+    "evidence": "v3.6.2 GUP v5.3 silent superset audit over v3.6.1"
+  },
+  "Counter-surveillance": {
+    "dest": "Akasha Silence",
+    "mode": "merged"
+  },
+  "Filester++": {
+    "dest": "Filester++",
+    "mode": "carried"
+  },
+  "Forum Link Xtractor": {
+    "dest": "Forum Link Xtractor",
+    "mode": "absorbed",
+    "note": "stable v1.0 link extraction subsumed by promoted BETA v2.1 extraction flows"
+  },
+  "Forum Link Xtractor BETA": {
+    "dest": "Forum Link Xtractor",
+    "mode": "promoted",
+    "evidence": "v2.1.0 XenForo Enhancer: extraction + invisi-text + inline replies"
+  },
+  "Forums++": {
+    "dest": "Forums++",
+    "mode": "carried"
+  },
+  "Gemini Answer Now": {
+    "dest": "HostWarp",
+    "mode": "absorbed",
+    "note": "gemini module; invalid CSS selectors fixed; updateURL no longer targets Blob2URL"
+  },
+  "Git Raw URL File List Parser": {
+    "dest": "LinkMasterΨ",
+    "mode": "absorbed",
+    "note": "GitRaw module; malformed raw-URL rewrite fixed"
+  },
+  "Gofile++": {
+    "dest": "Gofile++",
+    "mode": "carried"
+  },
+  "GooglePhotosandDrive++": {
+    "dest": "GooglePhotosandDrive++",
+    "mode": "absorbed",
+    "note": "stable v1.5.0 subsumed by promoted BETA v7.0.0 (GUP: 0 MISSING)"
+  },
+  "GooglePhotosandDrive++BETA": {
+    "dest": "GooglePhotosandDrive++",
+    "mode": "promoted",
+    "evidence": "v7.0.0 unified superset revision, GUP v5.3 gate passed"
+  },
+  "HDImgsOnly": {
+    "dest": "HostWarp",
+    "mode": "absorbed",
+    "note": "imagehosts module: all 11 domain handlers preserved"
+  },
+  "Hailuo++": {
+    "dest": "Hailuo++",
+    "mode": "absorbed",
+    "note": "stable v5.1.1 subsumed by promoted BETA v5.4.0 (zero functional removals)"
+  },
+  "Hailuo++BETA": {
+    "dest": "Hailuo++",
+    "mode": "promoted",
+    "evidence": "v5.4.0 superset upgrade over 5.3.0"
+  },
+  "Images++": {
+    "dest": "Images++",
+    "mode": "merged",
+    "evidence": "v3.0.0 universal base + BETA configurable hotkey ported (3 surgical edits)"
+  },
+  "Images++BETA": {
+    "dest": "Images++",
+    "mode": "absorbed",
+    "note": "divergent IG-scoped branch; unique hotkey feature ported into Images++ v4.0.0"
+  },
+  "InfiniteBrave": {
+    "dest": "PageCraft",
+    "mode": "absorbed",
+    "note": "brave module: offset paging + snippet clone + hasMore detection preserved"
+  },
+  "Instagram++": {
+    "dest": "Instagram++",
+    "mode": "carried"
+  },
+  "LinkMasterBETA": {
+    "dest": "LinkMasterΨ",
+    "mode": "promoted",
+    "evidence": "v5.1.1 GUP audit pass over v5.0.0 (8 gaps mitigated); base of v6.0.0 merge"
+  },
+  "LinkMasterΨ": {
+    "dest": "LinkMasterΨ",
+    "mode": "absorbed",
+    "note": "v5.0.0 subsumed by v5.1.1 lineage (Dual MPV + all dock/HUD/export units)"
+  },
+  "LinkMasterΨ2": {
+    "dest": "LinkMasterΨ",
+    "mode": "absorbed",
+    "note": "parallel v3.1.0 redesign; full forum deep-scrape engine ported at v6.1.0 after Gate-B flagged 25 missing units (resolver chain, downloadPost packaging, check-scraped flow, linkmaster_settings persistence)"
+  },
+  "Login Form Autofiller": {
+    "dest": "Login Form Autofiller",
+    "mode": "carried"
+  },
+  "Maximize_Any_Media": {
+    "dest": "Maximize_Any_Media",
+    "mode": "carried",
+    "note": "+ Alt+S -> Alt+Shift+S console collision fix"
+  },
+  "Media Player Controller": {
+    "dest": "Media Player Controller",
+    "mode": "absorbed",
+    "note": "stable v5.1.0 (31 units) subsumed by promoted BETA v7.0.0-Ψ unified superset"
+  },
+  "Media Player Controller BETA": {
+    "dest": "Media Player Controller",
+    "mode": "promoted",
+    "evidence": "v7.0.0-Ψ UNIFIED SUPERSET over v5.1.0 + IGDL v6.0.1 salvage"
+  },
+  "MegaEmbedRedirector": {
+    "dest": "HostWarp",
+    "mode": "absorbed",
+    "note": "mega module: file->embed regex + autoplay + cross-vendor fullscreen preserved"
+  },
+  "ModelSearch": {
+    "dest": "ModelSearch",
+    "mode": "absorbed",
+    "note": "stable v2.1 subsumed by promoted BETA v3.2.0-Ψ"
+  },
+  "ModelSearchBETA": {
+    "dest": "ModelSearch",
+    "mode": "promoted",
+    "evidence": "v3.2.0-Ψ Superset Protocol pass (BUG-1/2/3)"
+  },
+  "Pixeldrain++": {
+    "dest": "Pixeldrain++",
+    "mode": "carried"
+  },
+  "PlanetsuzyMobileSkinRedirect": {
+    "dest": "HostWarp",
+    "mode": "absorbed",
+    "note": "planetsuzy module: styleid=4 redirect preserved"
+  },
+  "Premium Link Revealer": {
+    "dest": "LinkMasterΨ",
+    "mode": "absorbed",
+    "note": "AbsorbedPLR module: unfurl data-url unwrap + observer preserved"
+  },
+  "Prompt Master": {
+    "dest": "Prompt Master",
+    "mode": "carried"
+  },
+  "Recon": {
+    "dest": "Recon",
+    "mode": "carried",
+    "note": "+ Alt+R -> Alt+Shift+R collision fix"
+  },
+  "Redgifs++": {
+    "dest": "Redgifs++",
+    "mode": "carried"
+  },
+  "Searxng Sticky Settings": {
+    "dest": "HostWarp",
+    "mode": "absorbed",
+    "note": "searxng module; PLACEHOLDER constant promoted to persisted setting"
+  },
+  "SelectAllCheckboxes": {
+    "dest": "PageCraft",
+    "mode": "absorbed",
+    "note": "checkboxes module; de-jQueryed, interaction semantics identical"
+  },
+  "Telegram Web Redirect": {
+    "dest": "HostWarp",
+    "mode": "absorbed",
+    "note": "telegram module: glass button + banner hide + fragment encoding fix preserved"
+  },
+  "Watermark++": {
+    "dest": "Watermark++",
+    "mode": "carried"
+  },
+  "Website Control Panel": {
+    "dest": "Website Control Panel",
+    "mode": "carried"
+  },
+  "YT Filter": {
+    "dest": "YT Filter",
+    "mode": "carried"
+  },
+  "YandexImageSearch++": {
+    "dest": "YandexImageSearch++",
+    "mode": "carried"
+  },
+  "Youtube Removed Video Revealer": {
+    "dest": "Youtube Removed Video Revealer",
+    "mode": "carried"
+  },
+  "YouTube Playlist Master": {
+    "dest": "YouTube Playlist Master",
+    "mode": "carried"
+  },
+  "YouTubeEmbedRedirectButton": {
+    "dest": "YouTubeEmbedRedirectButton",
+    "mode": "carried"
+  },
+  "m3u8++": {
+    "dest": "m3u8++",
+    "mode": "absorbed",
+    "note": "stable v4.4 subsumed by promoted BETA v4.5 (G1-G10)"
+  },
+  "m3u8++BETA": {
+    "dest": "m3u8++",
+    "mode": "promoted",
+    "evidence": "v4.5 GUP v5.3 stepwise gap mitigation, 10 fixes, magnet relays"
+  },
+  "archive/4ndr0tools - Linkmaster": {
+    "dest": null,
+    "mode": "retired",
+    "note": "historical gold standard; superseded by LinkMasterΨ lineage"
+  },
+  "plugins/candidshiny": {
+    "dest": "plugins/candidshiny",
+    "mode": "carried",
+    "note": "3 invalid selectors fixed (aref] -> a[href])"
+  }
 }

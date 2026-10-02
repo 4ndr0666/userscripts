@@ -2,11 +2,11 @@
 // @name        4ndr0tools - GoFile++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     2.0.0
+// @version     2.1.0
 // @description Directly batch-download GoFiles with a robust UI. Supports recursive folder scans, direct links, and download managers (Aria2, IDM). Fixing SPA persistence and Sandbox access.
-// @match       https://gofile.io/*
+// @match       *://gofile.io/*
 // @icon        data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
-// @match       http*://gofile.io/*
+// @connect     api.gofile.io
 // @connect     localhost
 // @connect     *
 // @grant       GM_getValue
@@ -139,6 +139,7 @@
             unsupported_format: 'Unsupported Format',
             request_aborted: 'Request Aborted',
             request_timed_out: 'Request Timed Out',
+            abdm_not_configured: 'ABDM port not configured',
         },
     }
 
@@ -163,6 +164,186 @@
         plug_s: 'fas fa-plug',
         rotate_left_s: 'fas fa-rotate-left',
     }
+
+    /* ═══ UI LAYER (v2.1.0 — restored) ═════════════════════════════════════════
+     * The v2.0.0 rewrite referenced createNotification / createAlert /
+     * createPopup / closePopup / getContent but never defined them — every
+     * button action died on a ReferenceError before reaching its fetch.
+     * Restored here in the suite's electric-glass idiom, self-contained
+     * (no grants beyond the existing set: a <style> element + fixed
+     * z-index layer do the job). */
+    const GE_UI_STYLE_ID = 'GofileEnhanced_UILayer';
+    const GE_UI_CSS = `
+        #GofileEnhanced_Layer { position: fixed; inset: 0; z-index: 2147483000; pointer-events: none; }
+        #GofileEnhanced_Layer > * { pointer-events: auto; }
+        .ge-modal-backdrop {
+            position: fixed; inset: 0; background: rgba(5, 8, 14, 0.72);
+            backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center;
+            animation: geFadeIn 0.18s ease-out;
+        }
+        .ge-modal {
+            width: min(560px, calc(100vw - 48px)); max-height: calc(100vh - 96px); overflow: auto;
+            background: rgba(10, 15, 26, 0.97); border: 1px solid #00E5FF; border-radius: 10px;
+            box-shadow: 0 0 32px rgba(0, 229, 255, 0.25); color: #d7f7fb;
+            font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px;
+        }
+        .ge-modal-head {
+            display: flex; align-items: center; gap: 10px; padding: 14px 18px;
+            border-bottom: 1px solid rgba(0, 229, 255, 0.35); color: #00E5FF;
+            font-weight: 700; letter-spacing: 0.5px; position: sticky; top: 0;
+            background: rgba(10, 15, 26, 0.97); z-index: 1;
+        }
+        .ge-modal-close {
+            margin-left: auto; cursor: pointer; color: #7c8899; font-size: 18px; line-height: 1;
+            padding: 2px 8px; border-radius: 4px; border: none; background: none;
+        }
+        .ge-modal-close:hover { color: #ff5566; }
+        .ge-modal-body { padding: 16px 18px; }
+        .ge-modal-body a { color: #00E5FF; }
+        .ge-spinner {
+            width: 18px; height: 18px; border-radius: 50%; flex: none;
+            border: 2px solid rgba(0, 229, 255, 0.25); border-top-color: #00E5FF;
+            animation: geSpin 0.8s linear infinite;
+        }
+        #GofileEnhanced_Toasts {
+            position: fixed; right: 20px; bottom: 20px; display: flex;
+            flex-direction: column; gap: 10px; max-width: min(420px, calc(100vw - 40px));
+        }
+        .ge-toast {
+            background: rgba(10, 15, 26, 0.96); color: #d7f7fb; padding: 12px 16px;
+            border-left: 3px solid #00E5FF; border-radius: 6px; font-size: 12.5px;
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5); animation: geSlideIn 0.25s ease-out;
+        }
+        .ge-toast .ge-toast-title { font-weight: 700; color: #00E5FF; margin-bottom: 3px; }
+        .ge-toast.ge-success { border-left-color: #38d9a9; }
+        .ge-toast.ge-success .ge-toast-title { color: #38d9a9; }
+        .ge-toast.ge-error { border-left-color: #ff5566; }
+        .ge-toast.ge-error .ge-toast-title { color: #ff5566; }
+        .ge-toast.ge-warning { border-left-color: #FFD700; }
+        .ge-toast.ge-warning .ge-toast-title { color: #FFD700; }
+        @keyframes geSpin { to { transform: rotate(360deg); } }
+        @keyframes geFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes geSlideIn { from { transform: translateX(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+    `;
+
+    function ensureUiLayer() {
+        if (!document.getElementById(GE_UI_STYLE_ID)) {
+            const style = document.createElement('style');
+            style.id = GE_UI_STYLE_ID;
+            style.textContent = GE_UI_CSS;
+            document.head.appendChild(style);
+        }
+        let layer = document.getElementById('GofileEnhanced_Layer');
+        if (!layer) {
+            layer = document.createElement('div');
+            layer.id = 'GofileEnhanced_Layer';
+            const toasts = document.createElement('div');
+            toasts.id = 'GofileEnhanced_Toasts';
+            layer.appendChild(toasts);
+            document.documentElement.appendChild(layer);
+        }
+        return layer;
+    }
+
+    function createNotification(title, message, type = 'info') {
+        ensureUiLayer();
+        const toasts = document.querySelector('#GofileEnhanced_Toasts');
+        const toast = document.createElement('div');
+        toast.className = `ge-toast ge-${type}`;
+        const t = document.createElement('div');
+        t.className = 'ge-toast-title';
+        t.textContent = String(title || '');
+        const m = document.createElement('div');
+        m.textContent = String(message || '');
+        toast.append(t, m);
+        toasts.appendChild(toast);
+        setTimeout(() => {
+            toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(30px)';
+            setTimeout(() => toast.remove(), 320);
+        }, 4200);
+    }
+
+    function createAlert(type, message) {
+        // Compact non-dismissable modal — closed by closePopup(). The
+        // classic 'loading' spinner plus any status message.
+        ensureUiLayer();
+        closePopup();
+        const backdrop = document.createElement('div');
+        backdrop.className = 'ge-modal-backdrop';
+        const modal = document.createElement('div');
+        modal.className = 'ge-modal';
+        modal.style.width = 'auto';
+        const head = document.createElement('div');
+        head.className = 'ge-modal-head';
+        if (type === 'loading') head.appendChild(Object.assign(document.createElement('span'), { className: 'ge-spinner' }));
+        const title = document.createElement('span');
+        title.textContent = String(message || '');
+        head.appendChild(title);
+        const body = document.createElement('div');
+        body.className = 'ge-modal-body';
+        modal.append(head, body);
+        backdrop.appendChild(modal);
+        document.getElementById('GofileEnhanced_Layer').appendChild(backdrop);
+    }
+
+    function createPopup({ title, content, icon } = {}) {
+        ensureUiLayer();
+        closePopup();
+        const backdrop = document.createElement('div');
+        backdrop.className = 'ge-modal-backdrop';
+        const modal = document.createElement('div');
+        modal.className = 'ge-modal';
+        const head = document.createElement('div');
+        head.className = 'ge-modal-head';
+        if (icon) {
+            const i = document.createElement('i');
+            i.className = icon;
+            head.appendChild(i);
+        }
+        const t = document.createElement('span');
+        t.textContent = String(title || '');
+        head.appendChild(t);
+        const close = document.createElement('button');
+        close.className = 'ge-modal-close';
+        close.textContent = '✕';
+        close.title = 'Close';
+        close.addEventListener('click', closePopup);
+        head.appendChild(close);
+        const body = document.createElement('div');
+        body.className = 'ge-modal-body';
+        // content is trusted local markup built by this script (i18n text
+        // and file lists only — no remote data is ever interpolated).
+        body.innerHTML = content || '';
+        modal.append(head, body);
+        backdrop.appendChild(modal);
+        backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closePopup(); });
+        document.getElementById('GofileEnhanced_Layer').appendChild(backdrop);
+        const onKey = (e) => { if (e.key === 'Escape') { closePopup(); document.removeEventListener('keydown', onKey); } };
+        document.addEventListener('keydown', onKey);
+        return modal;
+    }
+
+    function closePopup() {
+        const layer = document.getElementById('GofileEnhanced_Layer');
+        if (!layer) return;
+        layer.querySelectorAll('.ge-modal-backdrop').forEach((el) => el.remove());
+    }
+
+    /** GoFile content fetch for the recursive scan (v2.1.0 — was missing
+     *  entirely). Uses the page's website token when available, with the
+     *  known public token as fallback, and carries the session cookie. */
+    async function getContent(contentId) {
+        const pageApp = (typeof appdata !== 'undefined' && appdata) ? appdata : null;
+        const wt = (pageApp && pageApp.wt) ? pageApp.wt : '4fd6sg89d7s6';
+        const res = await utils.gmFetch(`https://api.gofile.io/contents/${contentId}?wt=${wt}`, {
+            headers: { Cookie: utils.getToken() },
+        });
+        return res.json();
+    }
+
 
     const GE_CONFIG = {
         ABDM: {
@@ -217,6 +398,11 @@
             },
         },
     }
+
+    /* Page-state accessor: `appdata` is gofile.io's Nuxt payload and may
+     * not exist yet when our observer first fires — bare references throw
+     * ReferenceError, so every read goes through this guard. */
+    const pageApp = () => (typeof appdata !== 'undefined' && appdata) ? appdata : null
 
     const utils = {
         getValue: (name) => GM_getValue(name),
@@ -296,7 +482,8 @@
         async collectAllItems() {
             createAlert('loading', utils.getTranslation('fetching_file_list'))
 
-            const mainContentData = appdata.fileManager.mainContent.data
+            const mainContentData = pageApp()?.fileManager?.mainContent?.data
+            if (!mainContentData) { closePopup(); return { items: [] } }
             const tbdItems = []
 
             const collectItems = async (contentData, parentPath = '') => {
@@ -320,7 +507,7 @@
                                     const currentContentData = res.data
                                     await collectItems(currentContentData, currentPath)
                                 } else {
-                                    createNotification(utils.getTranslation('error'), `${utils.getTranslation('failed_to_fetch_folder_content')} ${childItem.name}: ${data.message}`, 'error')
+                                    createNotification(utils.getTranslation('error'), `${utils.getTranslation('failed_to_fetch_folder_content')} ${childItem.name}: ${res.message || 'unknown'}`, 'error')
                                 }
                             } catch (error) {
                                 createNotification(utils.getTranslation('error'), `${utils.getTranslation('failed_to_fetch_folder_content')} ${childItem.name}`, 'error')
@@ -531,7 +718,8 @@
             const url = URL.createObjectURL(blob)
             const link = document.createElement('a')
             link.href = url
-            link.download = `${appdata.fileManager.mainContent.data.name}.${fileExtension}`
+            const rootName = pageApp()?.fileManager?.mainContent?.data?.name
+            link.download = `${rootName || 'gofile-export'}.${fileExtension}`
             link.click()
             URL.revokeObjectURL(url)
         },
@@ -783,9 +971,11 @@
                 const { items } = await utils.collectAllItems()
                 tbdItems = items
             } else {
-                const allFiles = appdata.fileManager.mainContent.data.children
+                const pageData = pageApp()?.fileManager?.mainContent?.data
+                if (!pageData) { return createNotification(utils.getTranslation('error'), utils.getTranslation('loading_please_wait'), 'warning') }
+                const allFiles = pageData.children
+                const selectedKeys = pageApp()?.fileManager?.contentsSelected || {}
 
-                const selectedKeys = appdata.fileManager.contentsSelected
                 // all file keys or selected file keys
                 const fileKeys = Object.keys(selectMode ? selectedKeys : allFiles)
                 // to be downloaded keys
@@ -862,7 +1052,7 @@
                 const container = document.getElementById(GE_CONTAINER_ID)
 
                 // Check if the mainContent is available
-                if (appdata.fileManager?.mainContent?.data) {
+                if (pageApp()?.fileManager?.mainContent?.data) {
                     // Add buttons to sidebar
                     !container && operations.addContainerToSidebar()
                     // Stop observing
