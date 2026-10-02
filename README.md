@@ -19,7 +19,7 @@
 
 Upgrading from the old repo? Follow the [**Migration Guide**](./docs/MIGRATION.md)
 (uninstall-then-install per script — never run both). The full audit trail
-(59 → 38 consolidation, superset verification, defect fixes) is in the
+(59 => 38 consolidation, superset verification, defect fixes) is in the
 [**Consolidation Report**](./docs/CONSOLIDATION.md).
 
 ## 🏗️ Suite Architecture
