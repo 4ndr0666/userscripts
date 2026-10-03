@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Blob2URL
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      7.1.0
+// @version      7.1.1
 // @author       4ndr0666
 // @description  Universal blob exfiltration, universal media URL sniffer + wire capture + URL vault (Alt+Shift+V), interactive asset sniffing, CSP/CORS bypass.
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -107,7 +107,7 @@
        submission while sniffing), blob: captures also drive the full extraction pipeline
        (a raw blob: URL pasted off-page is inert — the file is the actionable artifact),
        clipboard writes fall back to navigator.clipboard/execCommand.
-   10  Hotkeys: Alt+S is case-insensitive with modifier/IME/repeat guards and listens in
+   10  Hotkeys: Alt+S (sniffer; now Alt+B after the v7.1.1 census round) is case-insensitive with modifier/IME/repeat guards and listens in
        the capture phase so page handlers cannot swallow it first.
    11  Manager portability guards for GM_addStyle/GM_setClipboard/GM_download/
        GM_registerMenuCommand with in-page fallbacks — graceful degradation instead of a
@@ -125,7 +125,8 @@
        debounced re-scan, and a one-shot full-DOM Route 2 sweep. The session is already
        authenticated, so cookies/login-wall juggling is moot; --save maps to the vault
        SAVE/AUTOSAVE actions.
-   15  Ψ IG VAULT panel (Alt+I / menu, instagram.com only): newest-first entries with
+   15  Ψ IG VAULT panel (Alt+J / menu, instagram.com only; was Alt+I before the
+       v7.1.1 census round): newest-first entries with
        per-URL SAVE/COPY, URL dedupe index, 500-entry cap, XSS-escaped rendering,
        RESCAN and AUTOSAVE toggle (auto-downloads the best progressive URL of each
        new capture, once per URL).
@@ -135,7 +136,7 @@
        on instagram.com so page shortcuts elsewhere are untouched.
    Superset check: every v6.1 feature — privileged fetch, button UX (labels/states/styles),
    mimeExt table, sniffer (mask/track/capture/toggle), deploy + MutationObserver + lock,
-   both menu commands, Alt+S / Enter hotkeys, per-frame operation, metadata — is intact.
+   both menu commands, Alt+S (now Alt+B after the v7.1.1 census round) / Enter hotkeys, per-frame operation, metadata — is intact.
 */
 
 /* ═══ v7.1.0 — UNIVERSAL SNIFFER + URL VAULT (suite v1.3.0) ═════════════════
@@ -652,7 +653,7 @@
             const host = String((location && location.hostname) || '').toLowerCase();
             this.active = /(^|\.)instagram\.com$/.test(host);
             if (!this.active) return;
-            log('IG module ONLINE — net-hook + DOM routes armed (Alt+I vault)');
+            log('IG module ONLINE — net-hook + DOM routes armed (Alt+J vault)');
             this.installNetHook();
             this.scanNewScripts();
             // One-shot Route 2 over the full DOM (deferred until the initial render settles).
@@ -1164,8 +1165,11 @@
         if (e.isComposing) return; // IME composition safety
         if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.repeat && typeof e.key === 'string') {
             const k = e.key.toLowerCase();
-            if (k === 's') { e.preventDefault(); sniffer.toggle(); return; }
-            if (k === 'i' && IG.active) { e.preventDefault(); IG.togglePanel(); return; } // [15] IG vault
+            // v7.1.1 hotkey-census round: sniffer was Alt+S (fought ModelSearch's
+            // suite-wide Alt+S AND GPD's on Google hosts) — Alt+B is free everywhere;
+            // IG vault was Alt+I (fought Instagram++'s Alt+I on its own host) — Alt+J is free.
+            if (k === 'b') { e.preventDefault(); sniffer.toggle(); return; }
+            if (k === 'j' && IG.active) { e.preventDefault(); IG.togglePanel(); return; } // [15] IG vault (Alt+J)
         }
         // [U1] universal vault — Alt+Shift+V (collision-checked: YTPM owns
         // Alt+Shift+U/S/X on YouTube, Recon R, MAM S — V is free suite-wide).

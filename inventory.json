@@ -147,12 +147,12 @@
   {
    "file": "4ndr0tools - Blob2URL.user.js",
    "name": "4ndr0tools - Blob2URL",
-   "version": "7.1.0",
+   "version": "7.1.1",
    "description": "Universal blob exfiltration, universal media URL sniffer + wire capture + URL vault (Alt+Shift+V), interactive asset sniffing, CSP/CORS bypass.",
    "family": "media & links",
-   "sha256": "d327fbafa285e66ce11724fbc94df6fc1ab315df7ca6017ef94732abcd43240c",
-   "lines": 1204,
-   "bytes": 71034,
+   "sha256": "4bff286562c4292bf0f4932798c5553d1690cccfe80e03cc5e937397b8e5e538",
+   "lines": 1208,
+   "bytes": 71454,
    "matches": [
     "*://*/*"
    ],
@@ -179,12 +179,12 @@
   {
    "file": "4ndr0tools - Bunkr++.user.js",
    "name": "4ndr0tools - Bunkr++",
-   "version": "7.5.0",
+   "version": "7.5.1",
    "description": "Direct URL routing, auto-sort, hide visited, bypass dl gateway, bulk download, m3u8/CDN URL aggregation (page-context net-hook + per-item stream glyphs + album-wide STREAMS aggregation), broken-link repair, power-user hotkeys, LinkMaster-grade m3u8 stream resolution with gateway fallback, MPV dispatch (URI/bridge), web-archive dead-CDN resurrection (archive.org / archive.is), captcha-aware transport retry",
    "family": "media & links",
-   "sha256": "05bc6ba1ce2c26b0461d32c21369d3ccbd85c5683a3037d43ea7a6c957eeb7be",
+   "sha256": "e379835ed7feb90ab773ab04fc7c6fd9d00ddd9b0ccea8099298c6c2d06cfd16",
    "lines": 3799,
-   "bytes": 194639,
+   "bytes": 194750,
    "matches": [],
    "excludes": [],
    "grants": [
@@ -649,12 +649,12 @@
   {
    "file": "4ndr0tools - GooglePhotosandDrive++.user.js",
    "name": "4ndr0tools - GooglePhotosandDrive++",
-   "version": "8.0.1",
+   "version": "8.0.2",
    "description": "Restores context menus, exposes direct links, adds reverse image search, Drive direct-download resolution, Photos full-res extraction, power-user hotkeys, drag persistence and a settings console. 3lectric-Glass paradigm.",
    "family": "images",
-   "sha256": "a2ccd74140ac5120bf4cdf01c0ceece90dd73746d75052e3f0177302e1064fda",
-   "lines": 1386,
-   "bytes": 59799,
+   "sha256": "3ae1f26605cf17e57e7d4601343be95a0b7c599167eecd04544fa044a4003212",
+   "lines": 1388,
+   "bytes": 60101,
    "matches": [
     "*://*.googleusercontent.com/*",
     "*://photos.google.com/*",
@@ -746,12 +746,12 @@
   {
    "file": "4ndr0tools - Images++.user.js",
    "name": "4ndr0tools - Images++",
-   "version": "4.0.1",
+   "version": "4.0.2",
    "description": "Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. Collapse-mode hotkey is configurable.",
    "family": "images",
-   "sha256": "1d46bb70999337163c9c37bd348e5fa74c70de4110240614d4d66c7bb9a535ae",
-   "lines": 4594,
-   "bytes": 136692,
+   "sha256": "8254e8e9bca0fcfb0ce142a301fa9d2ccd0e080d6f214bd88c0895d3782f4bf6",
+   "lines": 4598,
+   "bytes": 137131,
    "matches": [
     "*://*/*"
    ],
@@ -965,12 +965,12 @@
   {
    "file": "4ndr0tools - Maximize_Any_Media.user.js",
    "name": "4ndr0tools - Maximize_Any_Media",
-   "version": "2.0.0",
+   "version": "2.0.1",
    "description": "Maximize + Pip controls to any media anywhere - video, images, embedded and shadow-DOM players, on any site. 3lectric-Glass spec. Ψ",
    "family": "video & players",
-   "sha256": "8fc0c32463e18c69bb2f5d16f83d1a119931c91188505146c42277d3747a37ad",
-   "lines": 1194,
-   "bytes": 47406,
+   "sha256": "8ca583a4ea43c59a09b839483b6a43f465eb25e73584066b4a45a670f7f70947",
+   "lines": 1196,
+   "bytes": 47594,
    "matches": [],
    "excludes": [
     "*www.w3school.com.*",
@@ -993,12 +993,12 @@
   {
    "file": "4ndr0tools - Media Player Controller.user.js",
    "name": "4ndr0tools - Media Player Controller",
-   "version": "8.1.1",
+   "version": "8.1.2",
    "description": "Speed • Fine Rate ±0.1 • Alt+Shift rAF Zoom/Pan • Rotation • Smart Maximize • Native Fullscreen • PiP • Play • DblClick • Pause-on-Acquire • Virtual DOM Nodes • Shadow-DOM Discovery • Cyan-Glass Scrub Bar • Download Button (fetch + blob capture) • Screenshot • Volume/Mute • Frame Step • Seek Hotkeys • IG Story Nav (3-Layer) • Story Repeat (3-Layer) • Active-Media Observer • YouTube Ad Auto-Skip • Toast Feedback • Draggable HUD • Full Hotkey Suite",
    "family": "uncategorized",
-   "sha256": "66b2cf07f5cca7ebc63fd2bbb3eb4344eb56baab01915c05f6bdbf353745851c",
-   "lines": 2531,
-   "bytes": 110531,
+   "sha256": "f6d36b74dddeaab2f209cc28832acfaac31e81e7e14c815e7aa7cb3b9b3fad82",
+   "lines": 2545,
+   "bytes": 111416,
    "matches": [
     "*://*/*"
    ],
@@ -1557,5 +1557,5 @@
    ]
   }
  ],
- "generated": "2026-10-03T12:11:51.437Z"
+ "generated": "2026-10-03T13:38:39.403Z"
 }

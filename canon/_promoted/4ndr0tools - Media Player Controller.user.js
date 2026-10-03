@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Media Player Controller
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      8.1.1
+// @version      8.1.2
 // @author       4ndr0666
 // @description  Speed • Fine Rate ±0.1 • Alt+Shift rAF Zoom/Pan • Rotation • Smart Maximize • Native Fullscreen • PiP • Play • DblClick • Pause-on-Acquire • Virtual DOM Nodes • Shadow-DOM Discovery • Cyan-Glass Scrub Bar • Download Button (fetch + blob capture) • Screenshot • Volume/Mute • Frame Step • Seek Hotkeys • IG Story Nav (3-Layer) • Story Repeat (3-Layer) • Active-Media Observer • YouTube Ad Auto-Skip • Toast Feedback • Draggable HUD • Full Hotkey Suite
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -2410,6 +2410,16 @@
             if (candidate) { acquireTarget(candidate, false); v = candidate; }
         }
 
+        // v8.1.2 sovereignty gate (hotkey-census round): with no acquired
+        // VIDEO target this controller must not touch the keyboard at all.
+        // The switch previously preventDefaulted bare z/x/c/m/p/i/n/Enter
+        // and the arrows on EVERY page — hijacking text pages and fighting
+        // sibling scripts (Images++ KeyX collapse, Bunkr 'm' MPV dispatch,
+        // GPD plain letters on image tabs). On video pages behavior is
+        // unchanged 1:1; KeyN (IG story nav) stays reachable for its
+        // Instagram-only surface below.
+        if (!v && e.code !== 'KeyN') return;
+
         switch (e.code) {
             case 'Space':
                 if (!v) return;
@@ -2491,6 +2501,10 @@
                 return;
 
             case 'KeyN':
+                // v8.1.2: bare-N story nav is an Instagram-surface feature; on
+                // other hosts the Layer-1 aria search clicked unrelated
+                // "next" buttons site-wide.
+                if (!/(^|\.)instagram\.com$/.test(location.hostname)) return;
                 e.preventDefault(); e.stopImmediatePropagation();
                 igStoryNav(e.shiftKey ? 'prev' : 'next');
                 return;
@@ -2519,7 +2533,7 @@
     // BOOT LOG
     // ==========================================
     console.log(
-        '%c[4NDR0666OS] Media Player Controller v8.1.0-Ψ — Unified Superset. ' +
+        '%c[4NDR0666OS] Media Player Controller v8.1.2-Ψ — Unified Superset. ' +
         'Speed ±0.1 | rAF Zoom/Pan (0.5–8x) | Rotation | Smart Maximize (Video+Image) | ' +
         'Native Fullscreen | PiP | Play/DblClick/Space | Pause-on-Acquire | Fallback Target Acquisition | Virtual DOM | ' +
         'Shadow-DOM Discovery | Scrub Bar | Download (fetch + blob capture) | Screenshot | ' +

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - GooglePhotosandDrive++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      8.0.1
+// @version      8.0.2
 // @description  Restores context menus, exposes direct links, adds reverse image search, Drive direct-download resolution, Photos full-res extraction, power-user hotkeys, drag persistence and a settings console. 3lectric-Glass paradigm.
 // @author       4ndr0666
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -50,8 +50,10 @@
  *              glass HUD on /file/d/ pages and legacy ?id= URLs.
  *            · Photos full-res (=s0) viewer extraction, Lens reverse search
  *              and direct-URL clipboard ops from the open viewer.
- *            · Power-user hotkeys (S/O/C/F/R/D, Esc) — Alt-guarded on SPA
+ *            · Power-user hotkeys (G/O/C/F/V/D, Esc) — Alt-guarded on SPA
  *              hosts so native Photos/Drive shortcuts stay untouched.
+ *              v8.0.2 hotkey census round: S→G and R→V — bare Alt+S is
+ *              owned by ModelSearch suite-wide, Alt+R by PageCraft.
  *            · Persisted settings console (GM storage with localStorage
  *              fallback), draggable + collapsible HUDs with position memory,
  *              SPA route patch (pushState / replaceState / popstate).
@@ -1222,7 +1224,7 @@
                 const key = event.key.toLowerCase();
                 let handled = false;
 
-                if (key === 's') {
+                if (key === 'g') { // v8.0.2: was 's' — Alt+S is ModelSearch's suite-wide (hotkey census)
                     toggleSettingsConsole();
                     handled = true;
                 } else if (key === 'o') {
@@ -1242,7 +1244,7 @@
                         openCurrentPhotoFullRes();
                         handled = true;
                     }
-                } else if (key === 'r') {
+                } else if (key === 'v') { // v8.0.2: was 'r' — Alt+R is PageCraft's suite-wide (hotkey census; "reVerse")
                     if (host === 'photos.google.com' || plainKeysAllowed) {
                         reverseSearchCurrent();
                         handled = true;
@@ -1270,7 +1272,7 @@
     const registerMenuCommands = () => {
         try {
             if (typeof GM_registerMenuCommand !== 'function') return;
-            GM_registerMenuCommand('Ψ Settings console [S / Alt+S]', () => {
+            GM_registerMenuCommand('Ψ Settings console [G / Alt+G]', () => {
                 toggleSettingsConsole();
             });
             GM_registerMenuCommand('Ψ Toggle OSINT HUD [O]', () => {

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Maximize_Any_Media
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      2.0.0
+// @version      2.0.1
 // @author       4ndr0666
 // @description  Maximize + Pip controls to any media anywhere - video, images, embedded and shadow-DOM players, on any site. 3lectric-Glass spec. Ψ
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -65,7 +65,7 @@
       tip: "Iframe内视频，请用鼠标点击视频后重试",
       pipUnsupported: "当前浏览器或媒体不支持画中画",
       pipCors: "跨域图片无法进入画中画（CORS 保护）",
-      cHotkeys: "快捷键 (Esc/F2/Alt+Shift+S)",
+      cHotkeys: "快捷键 (Esc/F2/Alt+Shift+M)",
       cImgMax: "图片最大化",
       cImgPip: "图片画中画",
       cShadow: "Shadow-DOM 深度扫描",
@@ -83,7 +83,7 @@
       tip: "Iframe video. Please click on the video and try again",
       pipUnsupported: "Picture-in-Picture is unavailable for this browser or media",
       pipCors: "Cross-origin image cannot enter PiP (CORS-protected)",
-      cHotkeys: "Hotkeys (Esc/F2/Alt+Shift+S)",
+      cHotkeys: "Hotkeys (Esc/F2/Alt+Shift+M)",
       cImgMax: "Image maximize",
       cImgPip: "Image PiP",
       cShadow: "Shadow-DOM deep scan",
@@ -644,11 +644,13 @@
         return
       }
       const key = typeof e.key === "string" ? e.key : ""
-      // Ψ console toggle — Alt+Shift+S stays outside the typing guard so the console
+      // Ψ console toggle — Alt+Shift+M stays outside the typing guard so the console
       // can always be summoned, even while focused inside an input field.
-      // Suite collision fix: bare Alt+S is owned by ModelSearch's overlay trigger;
-      // the console takes the shifted combo.
-      if (e.altKey && e.shiftKey && (key == "s" || key == "S" || e.keyCode == 83)) {
+      // Suite collision fix (v2.0.1 hotkey-census round): bare Alt+S is owned
+      // by ModelSearch suite-wide, and Alt+Shift+S — the combo this console
+      // took in v2.0.0 — collides with YTPM's YouTube settings combo. The
+      // console now takes Alt+Shift+M (M for MAM/Media; MPC's HUD is bare Alt+M).
+      if (e.altKey && e.shiftKey && (key == "m" || key == "M" || e.keyCode == 77)) {
         e.preventDefault()
         mamConsole.toggle()
         return
@@ -1088,7 +1090,7 @@
 
   const registerMenu = () => {
     if (typeof GM_registerMenuCommand === "function") {
-      GM_registerMenuCommand("Ψ Maximize_Any_Media — console (Alt+Shift+S)", () => {
+      GM_registerMenuCommand("Ψ Maximize_Any_Media — console (Alt+Shift+M)", () => {
         mamConsole.toggle()
       })
     }

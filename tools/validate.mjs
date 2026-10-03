@@ -22,6 +22,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { runCensus } from "./hotkey-census.mjs";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const DIST = path.join(ROOT, "dist");
@@ -377,9 +378,14 @@ function gateD() {
     } else passes.push(`[D] Recon Alt+Shift+R fix verified`);
 
     const mam = read("Maximize_Any_Media");
-    if (!/console \(Alt\+Shift\+S\)/.test(mam)) {
-        failures.push(`[D] Maximize_Any_Media: Alt+Shift+S menu fix not present`);
-    } else passes.push(`[D] Maximize_Any_Media Alt+Shift+S fix verified`);
+    // v1.2.0 moved the MAM console from Alt+S (ModelSearch's suite-wide combo)
+    // to Alt+Shift+S; the v1.4.1 hotkey-census round moved it again to
+    // Alt+Shift+M — Alt+Shift+S is YTPM's YouTube settings combo.
+    if (!/console \(Alt\+Shift\+M\)/.test(mam)) {
+        failures.push(`[D] Maximize_Any_Media: Alt+Shift+M console combo not present`);
+    } else if (/console \(Alt\+Shift\+S\)/.test(mam) || /keyCode == 83/.test(mam)) {
+        failures.push(`[D] Maximize_Any_Media: stale Alt+Shift+S console remnants still present`);
+    } else passes.push(`[D] Maximize_Any_Media Alt+Shift+M console combo verified (YTPM owns Alt+Shift+S on YouTube)`);
 
     const lm = read("LinkMasterΨ");
     if (!lm.includes("AbsorbedPLR") || !lm.includes("AbsorbedGitRaw")) {
@@ -478,6 +484,24 @@ function gateD() {
     if (remoteImports.length) {
         failures.push(`[D] OPSEC: remote @import still present in: ${remoteImports.join(", ")}`);
     } else passes.push(`[D] OPSEC remote-asset ban verified (0 remote @imports across dist)`);
+
+    // Hotkey census (suite v1.4.1): registration-level co-install safety —
+    // every keyboard claim across canon/ + modules/ is mined idiom-aware
+    // (kernel registry, hand-rolled keydown, config defaults, combo tables)
+    // and same-combo + domain-overlap pairs fail closed.
+    const census = runCensus();
+    if (census.problems.length) {
+        for (const pr of census.problems) failures.push(`[D] hotkey census: unresolved site ${pr.file}:${pr.line} — ${pr.msg}`);
+    }
+    for (const col of census.collisions) {
+        failures.push(`[D] hotkey census: COLLISION ${col.combo} — ${col.a.script} × ${col.b.script}`);
+    }
+    for (const st of census.stale) {
+        failures.push(`[D] hotkey census: stale adjudication ${st.combo} × ${st.scripts.join(" × ")} — remove the dead entry`);
+    }
+    if (!census.problems.length && !census.collisions.length && !census.stale.length) {
+        passes.push(`[D] hotkey census verified (${census.registrations.length} combos across ${new Set(census.registrations.map(r => r.script)).size} scripts, ${census.siteTotal} sites scanned, 0 co-install collisions)`);
+    }
 }
 
 gateA();

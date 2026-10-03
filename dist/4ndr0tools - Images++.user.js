@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Images++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      4.0.1
+// @version      4.0.2
 // @description  Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. Collapse-mode hotkey is configurable.
 // @author       4ndr0666
 // @match        *://*/*
@@ -56,7 +56,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Images++.user v4.0.1 —
               file in the legacy repo was NOT a superset: it was a divergent,
               domain-scoped branch (instagram.com/imagefap only, v2.1.0).
    Ported:    the BETA branch's one unique capability — the CONFIGURABLE
-              collapse-mode hotkey (cfg.collapseModeHotkey, default 'KeyX',
+              collapse-mode hotkey (cfg.collapseModeHotkey, default '!KeyX' = Alt+X
               editable in the settings dialog; accepts KeyboardEvent.code
               values e.g. KeyX, Alt+KeyC). The hardcoded 'KeyX' switch case
               is replaced by the cfg-driven check; default behavior is
@@ -896,6 +896,10 @@ class Config {
       !(c.scales || 0).length || `${c.scales}` === `${DEFAULTS.scales}` ? 'large' :
         '';
     if (c.version !== DEFAULTS.version) {
+      // v8 (4.0.2): collapse hotkey default gained the Alt prefix — migrate
+      // only stored copies of the OLD default; deliberately customized keys survive.
+      if (c.version < 8 && c.collapseModeHotkey === 'KeyX')
+        c.collapseModeHotkey = '!KeyX';
       if (typeof c.hosts === 'string')
         c.hosts = c.hosts.split('\n')
           .map(s => tryJSON(s) || s)
@@ -945,7 +949,7 @@ Config.DEFAULTS = /** @type mpiv.Config */ {
   // New integrated feature options
   collapseModeActive: false,
   collapseModeSize: '200px',
-  collapseModeHotkey: 'KeyX',
+  collapseModeHotkey: '!KeyX', // v4.0.2 census round: bare KeyX fought MPC's video-page rate keys
   // prefer ' inside rules because " will be displayed as \"
   // example: "img[src*='icon']"
   hosts: [{
@@ -988,7 +992,7 @@ Config.DEFAULTS = /** @type mpiv.Config */ {
   uiShadowOnLoad: true,
   uiPadding: 0,
   uiMargin: 0,
-  version: 7, // Incremented version for new features
+  version: 8, // Incremented version for new features (v8: Alt-decorated collapse hotkey default)
   videoCtrl: true,
   waitLoad: false,
   xhr: true,
@@ -1193,7 +1197,7 @@ const Events = {
       return Events.onContext.call(this, e);
 
     // Global hotkeys (no popup required) — v4.0.0: configurable via
-    // cfg.collapseModeHotkey (default 'KeyX', settings-dialog editable).
+    // cfg.collapseModeHotkey (default '!KeyX' = Alt+X, settings-dialog editable).
     if (key === cfg.collapseModeHotkey) {
       CollapseMode.toggle();
       dropEvent(e);
@@ -4203,7 +4207,7 @@ function createSetupElement() {
             // Configuration for the new collapse mode feature
             $new('div.flex', {style: 'align-items:center; gap: 0.5em;'}, [
               $newCheck('Collapse Mode*', 'collapseModeActive', 'Enable collapsing all page images.'),
-              $new('label', {title: 'e.g., KeyX, Alt+KeyC. See MDN KeyboardEvent.code values.'}, ['Hotkey:', $new('input#collapseModeHotkey', {type: 'text', style: 'width: 6em;'})]),
+              $new('label', {title: 'e.g. KeyX (bare) or !KeyX (Alt+X). Prefixes: !Alt ^Ctrl #Meta +Shift. MDN KeyboardEvent.code values.'}, ['Hotkey:', $new('input#collapseModeHotkey', {type: 'text', style: 'width: 6em;'})]),
               $new('label', ['Size:', $new('input#collapseModeSize', {type: 'text', style: 'width: 6em;', placeholder: 'e.g. 200px'})]),
             ]),
           ]),
