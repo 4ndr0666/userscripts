@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Watermark++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      2.0
+// @version      2.0.1
 // @description  Security research and alignment testing only.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @author       4ndr0666
@@ -10075,6 +10075,36 @@
     return fetchBlobDirect(url);
   }
   var pageFetchRequestCounter = 0;
+  // v2.0.1 (suite v1.3.0): resolveFetchedImageMimeType() was called by the
+  // page-bridge response handler but never defined — a bridge reply (companion
+  // extension present) threw a ReferenceError instead of producing the Blob.
+  // Trust an explicit image/* content type; otherwise sniff magic bytes so a
+  // missing/mislabeled type still yields a correctly typed Blob (a wrong type
+  // corrupts downstream re-encoding). Terminal fallback mirrors the file's
+  // image/png convention.
+  function resolveFetchedImageMimeType(mimeType, buffer) {
+    const claimed = typeof mimeType === "string" ? mimeType.trim() : "";
+    if (/^image\/[a-z0-9.+-]+$/i.test(claimed)) {
+      return claimed.toLowerCase();
+    }
+    try {
+      if (buffer instanceof ArrayBuffer && buffer.byteLength >= 12) {
+        const b = new Uint8Array(buffer, 0, 12);
+        if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return "image/png";
+        if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "image/jpeg";
+        if (b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46) return "image/gif";
+        if (b[0] === 0x42 && b[1] === 0x4d) return "image/bmp";
+        const brand = String.fromCharCode(b[8], b[9], b[10], b[11]);
+        if (b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && brand === "WEBP") return "image/webp";
+        if (b[4] === 0x66 && b[5] === 0x74 && b[6] === 0x79 && b[7] === 0x70) {
+          if (brand === "avif" || brand === "avis") return "image/avif";
+          if (brand === "heic" || brand === "heix") return "image/heic";
+        }
+      }
+    } catch (_) {
+    }
+    return claimed || "image/png";
+  }
   async function fetchBlobViaPageBridge(url, timeoutMs = 15e3) {
     if (typeof window === "undefined" || typeof window.postMessage !== "function" || typeof window.addEventListener !== "function") {
       throw new Error("Page fetch bridge unavailable");

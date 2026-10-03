@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         4ndr0tools - Website Control Panel
 // @namespace    https://github.com/4ndr0666/userscripts
-// @description  Draggable Cyberdeck HUD, DOM Zapper, Ad suppression, validated-selector compiled deep-cleaning.
-// @version      5.2.0
+// @description  Draggable Cyberdeck HUD, DOM Zapper, Ad suppression, validated-selector compiled deep-cleaning, per-site HUD suppression + Alt+Shift+H hotkey.
+// @version      5.3.0
 // @author       4ndr0666
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Website%20Control%20Panel.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Website%20Control%20Panel.user.js
@@ -12,43 +12,83 @@
 // @grant        GM_addStyle
 // @grant        GM_getValue
 // @grant        GM_setValue
+// @grant        GM_registerMenuCommand
 // @run-at       document-idle
 // ==/UserScript==
+
+/* ═══ v5.3.0 — HUD SOVEREIGNTY PASS (suite v1.3.0) ═════════════════════
+ * The v5.2 HUD was welded onto every page with no way to dismiss it short
+ * of disabling the whole script. This pass gives the operator HUD
+ * sovereignty:
+ *   W1  × (close) and – (collapse) controls on the headerbar; Alt+Shift+H
+ *       toggles the HUD from any page (collision-checked across the suite:
+ *       Recon=R, MAM=S, YTPM=U/S/X — H was free); GM menu commands for
+ *       show/hide and per-site suppression.
+ *   W2  PER-SITE SUPPRESSION: "Hide HUD on this site" persists the hostname
+ *       — banking, webmail, printing views stay clean while the zapper and
+ *       cleaners keep working everywhere else (and re-arm the moment the
+ *       menu command is used again on that site).
+ *   W3  OFF-SCREEN CLAMP: saved drag coordinates are clamped into the live
+ *       viewport on load — a panel dragged away on a big monitor (or before
+ *       a window resize) used to become permanently unreachable.
+ *   W4  Remote Google-Fonts @import REMOVED: it phoned fonts.googleapis.com
+ *       from every page on the internet (OPSEC noise + CSP-blockable) and
+ *       violated the 3lectric-Glass local-stack doctrine the rest of the
+ *       suite follows (Bunkr++ v7.4 made remote fonts opt-in for exactly
+ *       this reason). Local monospace stack only.
+ *   W5  Boot banner is opt-in via localStorage psi_wcp_debug (was an
+ *       unconditional console.log on every page); version string drift
+ *       (log said 5.1.0 while shipping 5.2.0) fixed — banner now derives
+ *       from one constant.
+ *   W6  Drag uses Pointer Events (touch + pen + mouse) and ESC disarms the
+ *       DOM Zapper in addition to right-click.
+ * Every v5.2 feature (validated-selector compilation, five cleaners,
+ * zapper, position memory) is intact — this is a strict superset.
+ * ═══════════════════════════════════════════════════════════════════════ */
 
 (function () {
   'use strict';
 
-  console.log('%c[4NDR0666OS] WCP v5.1.0-Ψ — INITIATING CYBERDECK HUD', 'color:#00E5FF; font-family:monospace; font-weight:bold;');
+  const WCP_VERSION = '5.3.0';
+  const DEBUG = (() => { try { return localStorage.getItem('psi_wcp_debug') === '1'; } catch (e) { return false; } })();
+  const dbg = (...args) => { if (DEBUG) console.log('%c[4NDR0666OS] WCP v' + WCP_VERSION, 'color:#00E5FF;font-family:monospace;font-weight:bold;', ...args); };
+  dbg('CYBERDECK HUD INITIATING');
 
   // ==========================================
   // MODULE 1: ELECTRIC-GLASS AESTHETICS & STATE
   // ==========================================
+  // v5.3 (W4): remote font @import removed — local spec stack only.
   GM_addStyle(`
-    @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@500&display=swap');
     :root {
-      --bg-dark: rgba(10, 15, 26, 0.95); --accent-cyan: #00E5FF; --text-cyan-active: #e0ffff;
+      --bg-dark: rgba(10, 19, 26, 0.95); --accent-cyan: #00E5FF; --text-cyan-active: #e0ffff;
       --accent-cyan-bg-active: rgba(0, 229, 255, 0.15); --accent-cyan-glow-active: rgba(0, 229, 255, 0.4);
-      --text-secondary: #70c0c0; --font-body: 'Roboto Mono', monospace; --zapper-red: #FF0055;
+      --text-secondary: #70c0c0;
+      --font-body: "JetBrains Mono", "Cascadia Mono", "Fira Code", Consolas, "Roboto Mono", monospace;
+      --zapper-red: #FF0055;
+      --a4-transition: all 150ms ease-in-out;
     }
 
     #psi-control-panel {
       position: fixed; z-index: 9999999; background: var(--bg-dark);
       backdrop-filter: blur(8px); border: 1px solid var(--accent-cyan); border-radius: 8px; padding: 12px;
       box-shadow: 0 8px 32px rgba(0, 229, 255, 0.2); font-family: var(--font-body); color: var(--text-cyan-active);
-      width: 150px; user-select: none;
+      width: 150px; user-select: none; transition: var(--a4-transition);
     }
+    #psi-control-panel.hidden { display: none; }
 
     #psi-cp-header {
       font-size: 0.75rem; color: var(--accent-cyan); padding-bottom: 8px; border-bottom: 1px solid rgba(0, 229, 255, 0.3);
       margin-bottom: 8px; cursor: grab; text-align: center; font-weight: bold; letter-spacing: 1px;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
     }
     #psi-cp-header:active { cursor: grabbing; }
+    #psi-cp-header.dragging { cursor: grabbing; }
 
     .hud-button {
       display: flex; justify-content: center; align-items: center; width: 100%; padding: 6px;
       border: 1px solid transparent; font-family: var(--font-body); font-weight: bold; font-size: 0.75rem;
       text-transform: uppercase; color: var(--text-secondary); background-color: rgba(0,0,0,0.4);
-      cursor: pointer; transition: all 0.2s ease-in-out; margin-bottom: 6px; border-radius: 4px;
+      cursor: pointer; transition: var(--a4-transition); margin-bottom: 6px; border-radius: 4px;
     }
     .hud-button:last-child { margin-bottom: 0; }
     .hud-button:hover { color: var(--accent-cyan); border-color: rgba(0, 229, 255, 0.5); }
@@ -56,6 +96,15 @@
       color: #000; background-color: var(--accent-cyan);
       border-color: var(--accent-cyan); box-shadow: 0 0 10px var(--accent-cyan-glow-active);
     }
+
+    /* Headerbar mini-controls (W1) */
+    .cp-mini {
+      border: none; background: transparent; color: var(--text-secondary); cursor: pointer;
+      font-family: var(--font-body); font-size: 0.8rem; font-weight: bold; line-height: 1;
+      padding: 0 2px; transition: var(--a4-transition);
+    }
+    .cp-mini:hover { color: var(--accent-cyan); }
+    #psi-cp-close:hover { color: var(--zapper-red); }
 
     /* Zapper Button specific styles */
     #toggle-zapper.active { background-color: var(--zapper-red); border-color: var(--zapper-red); color: #fff; box-shadow: 0 0 10px rgba(255, 0, 85, 0.6); }
@@ -150,12 +199,62 @@
   const NAG_SELECTORS = compileSelectorList(NAG_SELECTORS_RAW, 'killNags');
 
   // ==========================================
+  // MODULE 2.5: HUD SOVEREIGNTY STATE (v5.3)
+  // ==========================================
+  const HUD_HIDDEN_KEY = 'hud_hidden';        // global soft-hide (hotkey / × / menu)
+  const SITE_BLOCKLIST_KEY = 'hud_site_off';  // per-site suppression (W2)
+
+  const readJson = (key, fallback) => {
+    try {
+      const raw = GM_getValue(key, null);
+      if (raw == null) return fallback;
+      const parsed = JSON.parse(raw);
+      return parsed === null || parsed === undefined ? fallback : parsed;
+    } catch (e) { return fallback; }
+  };
+  const writeJson = (key, value) => {
+    try { GM_setValue(key, JSON.stringify(value)); } catch (e) { /* quota — non-fatal */ }
+  };
+
+  const siteSuppressed = () => {
+    const list = readJson(SITE_BLOCKLIST_KEY, []);
+    return Array.isArray(list) && list.includes(location.hostname);
+  };
+  const setSiteSuppressed = (on) => {
+    const list = readJson(SITE_BLOCKLIST_KEY, []);
+    const next = (Array.isArray(list) ? list : []).filter((h) => h !== location.hostname);
+    if (on) next.push(location.hostname);
+    writeJson(SITE_BLOCKLIST_KEY, next);
+  };
+
+  const hudGloballyHidden = () => GM_getValue(HUD_HIDDEN_KEY, false) || siteSuppressed();
+  let panelEl = null;
+
+  const applyHudVisibility = () => {
+    if (!panelEl) return;
+    panelEl.classList.toggle('hidden', hudGloballyHidden());
+  };
+
+  const toggleHud = () => {
+    const next = !hudGloballyHidden();
+    GM_setValue(HUD_HIDDEN_KEY, next);
+    // A global show while this site is suppressed wins locally (W2).
+    if (!next && siteSuppressed()) setSiteSuppressed(false);
+    applyHudVisibility();
+    dbg('HUD visibility ->', next ? 'hidden' : 'visible');
+  };
+
+  // ==========================================
   // MODULE 3: HUD INJECTION & DRAG LOGIC
   // ==========================================
   let zapperActive = false;
 
   const createPanel = () => {
-    if (document.getElementById('psi-control-panel')) return;
+    if (document.getElementById('psi-control-panel')) {
+      panelEl = document.getElementById('psi-control-panel');
+      applyHudVisibility();
+      return;
+    }
 
     const panel = document.createElement('div');
     panel.id = 'psi-control-panel';
@@ -165,23 +264,52 @@
     const savedY = GM_getValue('hud_y', null);
 
     if (savedX && savedY) {
-        panel.style.left = savedX;
-        panel.style.top = savedY;
+        // W3: clamp into the live viewport — saved coords from a larger
+        // viewport used to strand the panel off-screen forever.
+        const x = Math.max(0, Math.min(parseFloat(savedX) || 0, window.innerWidth - 80));
+        const y = Math.max(0, Math.min(parseFloat(savedY) || 0, window.innerHeight - 40));
+        panel.style.left = x + 'px';
+        panel.style.top = y + 'px';
     } else {
         panel.style.right = '20px';
         panel.style.bottom = '20px';
     }
 
     panel.innerHTML = `
-      <div id="psi-cp-header">Ψ-WCP : HUD</div>
-      <button id="toggle-adblock" class="hud-button">Ad Block</button>
-      <button id="toggle-autoskip" class="hud-button">Auto Skip</button>
-      <button id="toggle-ageskip" class="hud-button">Age Bypass</button>
-      <button id="toggle-deepclean" class="hud-button">Deep Clean</button>
-      <button id="toggle-killnags" class="hud-button">Kill Nags</button>
-      <button id="toggle-zapper" class="hud-button" title="Point & click to obliterate DOM elements.">DOM Zapper</button>
+      <div id="psi-cp-header" title="Drag to move — double-click to collapse">
+        <span>Ψ-WCP</span>
+        <button id="psi-cp-collapse" class="cp-mini" title="Collapse panel">–</button>
+        <button id="psi-cp-close" class="cp-mini" title="Hide HUD (Alt+Shift+H to restore)">×</button>
+      </div>
+      <div id="psi-cp-body">
+        <button id="toggle-adblock" class="hud-button">Ad Block</button>
+        <button id="toggle-autoskip" class="hud-button">Auto Skip</button>
+        <button id="toggle-ageskip" class="hud-button">Age Bypass</button>
+        <button id="toggle-deepclean" class="hud-button">Deep Clean</button>
+        <button id="toggle-killnags" class="hud-button">Kill Nags</button>
+        <button id="toggle-zapper" class="hud-button" title="Point & click to obliterate DOM elements.">DOM Zapper</button>
+      </div>
     `;
     document.body.appendChild(panel);
+    panelEl = panel;
+
+    // Headerbar mini-controls (W1)
+    panel.querySelector('#psi-cp-close').addEventListener('click', (e) => {
+      e.stopPropagation();
+      GM_setValue(HUD_HIDDEN_KEY, true);
+      applyHudVisibility();
+    });
+    let collapsed = false;
+    panel.querySelector('#psi-cp-collapse').addEventListener('click', (e) => {
+      e.stopPropagation();
+      collapsed = !collapsed;
+      panel.querySelector('#psi-cp-body').style.display = collapsed ? 'none' : '';
+      e.currentTarget.textContent = collapsed ? '+' : '–';
+    });
+    panel.querySelector('#psi-cp-header').addEventListener('dblclick', (e) => {
+      if (e.target.closest('.cp-mini')) return;
+      panel.querySelector('#psi-cp-collapse').click();
+    });
 
     // State Hydration
     const defaults = { adblock: true, autoskip: false, ageskip: false, deepclean: false, killnags: false };
@@ -203,12 +331,14 @@
     // Zapper specific binding
     document.getElementById('toggle-zapper').addEventListener('click', toggleZapper);
 
-    // Draggable Logic
+    // Draggable Logic — Pointer Events (W6: touch + pen + mouse)
     const header = document.getElementById('psi-cp-header');
     let isDragging = false, startX, startY, initialX, initialY;
 
-    header.addEventListener('mousedown', (e) => {
+    header.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('.cp-mini')) return; // mini-buttons are not drag handles
       isDragging = true;
+      header.classList.add('dragging');
       startX = e.clientX; startY = e.clientY;
       const rect = panel.getBoundingClientRect();
       initialX = rect.left; initialY = rect.top;
@@ -218,10 +348,11 @@
       panel.style.bottom = 'auto';
       panel.style.left = `${initialX}px`;
       panel.style.top = `${initialY}px`;
-      e.preventDefault(); // prevent text selection
+      e.preventDefault(); // prevent text selection / touch scroll
+      try { header.setPointerCapture(e.pointerId); } catch (_) { /* non-compliant host */ }
     });
 
-    document.addEventListener('mousemove', (e) => {
+    header.addEventListener('pointermove', (e) => {
       if (!isDragging) return;
       const dx = e.clientX - startX;
       const dy = e.clientY - startY;
@@ -229,14 +360,21 @@
       panel.style.top = `${initialY + dy}px`;
     });
 
-    document.addEventListener('mouseup', () => {
-      if (isDragging) {
-        isDragging = false;
-        // Persist location
-        GM_setValue('hud_x', panel.style.left);
-        GM_setValue('hud_y', panel.style.top);
-      }
-    });
+    const endDrag = () => {
+      if (!isDragging) return;
+      isDragging = false;
+      header.classList.remove('dragging');
+      // Persist location (clamped so a resize can never strand it)
+      const rect = panel.getBoundingClientRect();
+      const x = Math.max(0, Math.min(rect.left, window.innerWidth - 80));
+      const y = Math.max(0, Math.min(rect.top, window.innerHeight - 40));
+      GM_setValue('hud_x', x + 'px');
+      GM_setValue('hud_y', y + 'px');
+    };
+    header.addEventListener('pointerup', endDrag);
+    header.addEventListener('pointercancel', endDrag);
+
+    applyHudVisibility();
   };
 
   // ==========================================
@@ -326,22 +464,29 @@
       }
   };
 
+  // W6: ESC also disarms (right-click is easy to miss mid-zap).
+  const zapperEsc = (e) => {
+      if (e.key === 'Escape' && zapperActive) toggleZapper();
+  };
+
   const toggleZapper = () => {
       zapperActive = !zapperActive;
       const btn = document.getElementById('toggle-zapper');
-      btn.classList.toggle('active', zapperActive);
+      if (btn) btn.classList.toggle('active', zapperActive);
 
       if (zapperActive) {
           document.body.classList.add('psi-zapper-mode');
           document.addEventListener('mouseover', zapperHover, true);
           document.addEventListener('click', zapperClick, true);
           document.addEventListener('contextmenu', zapperCancel, true);
-          console.log('[Ψ-4NDR0666] DOM Zapper Armed. Left-click to obliterate. Right-click to disarm.');
+          document.addEventListener('keydown', zapperEsc, true);
+          console.log('[Ψ-4NDR0666] DOM Zapper Armed. Left-click to obliterate. Right-click / ESC to disarm.');
       } else {
           document.body.classList.remove('psi-zapper-mode');
           document.removeEventListener('mouseover', zapperHover, true);
           document.removeEventListener('click', zapperClick, true);
           document.removeEventListener('contextmenu', zapperCancel, true);
+          document.removeEventListener('keydown', zapperEsc, true);
           if (hoveredElement) {
               hoveredElement.classList.remove('psi-zapper-target');
               hoveredElement = null;
@@ -384,6 +529,35 @@
       setTimeout(init, 50);
     }
   };
+
+  // ==========================================
+  // MODULE 7: SOVEREIGNTY SURFACES (v5.3)
+  // ==========================================
+  // Alt+Shift+H — collision-checked across the suite (Recon=R, MAM=S,
+  // YTPM=U/S/X, MPC=Alt+M). Capture-phase so page handlers cannot swallow.
+  document.addEventListener('keydown', (e) => {
+    if (e.altKey && e.shiftKey && !e.ctrlKey && !e.metaKey && !e.repeat &&
+        typeof e.key === 'string' && e.key.toLowerCase() === 'h') {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleHud();
+    }
+  }, true);
+
+  if (typeof GM_registerMenuCommand === 'function') {
+    GM_registerMenuCommand('Ψ WCP — show / hide HUD (Alt+Shift+H)', toggleHud);
+    GM_registerMenuCommand(siteSuppressed()
+      ? `Ψ WCP — re-enable HUD on ${location.hostname}`
+      : `Ψ WCP — hide HUD on ${location.hostname} only`, () => {
+        setSiteSuppressed(!siteSuppressed());
+        applyHudVisibility();
+      });
+    GM_registerMenuCommand('Ψ WCP — toggle debug logging', () => {
+      const next = !DEBUG;
+      try { localStorage.setItem('psi_wcp_debug', next ? '1' : '0'); } catch (e) {}
+      console.log(`[Ψ-4NDR0666] WCP debug logging ${next ? 'ON (reload to apply)' : 'OFF'}`);
+    });
+  }
 
   init();
 })();

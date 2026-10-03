@@ -60,12 +60,12 @@
   {
    "file": "4ndr0tools - Akasha Silence.user.js",
    "name": "4ndr0tools - Akasha Silence",
-   "version": "5.0.0",
-   "description": "Unified counter-surveillance defense layer. Three-way consolidation of Anti-detection + Counter-surveillance + Anti-telemetry (ICC): anti-analysis script neutralization, telemetry sinkholing (fetch/XHR/beacon/WebSocket), WebRTC blinding, session-stable fingerprint spoofing (hardware/canvas/WebGL/audio), identifier poisoning, Google link-tracking sanitization and hostile-UI countermeasures.",
+   "version": "5.1.0",
+   "description": "Unified counter-surveillance defense layer with a three-stage strictness valve (full / core / off via Ctrl+Alt+Shift+K). Three-way consolidation of Anti-detection + Counter-surveillance + Anti-telemetry (ICC): anti-analysis script neutralization, telemetry sinkholing (fetch/XHR/beacon/WebSocket), WebRTC blinding, session-stable fingerprint spoofing (hardware/canvas/WebGL/audio), identifier poisoning, Google link-tracking sanitization and hostile-UI countermeasures.",
    "family": "uncategorized",
-   "sha256": "f5a71b33bd38750ce868d18dae5c904841685994f46b79645b4cd8b34f828e70",
-   "lines": 889,
-   "bytes": 43096,
+   "sha256": "776c363b207a8e4cf246864ee8b7b531175524d7aa68d5b0c8d4ace7f941f463",
+   "lines": 986,
+   "bytes": 48578,
    "matches": [
     "*://*/*"
    ],
@@ -147,12 +147,12 @@
   {
    "file": "4ndr0tools - Blob2URL.user.js",
    "name": "4ndr0tools - Blob2URL",
-   "version": "7.0.0",
-   "description": "Universal blob exfiltration, interactive asset sniffing, CSP/CORS bypass.",
+   "version": "7.1.0",
+   "description": "Universal blob exfiltration, universal media URL sniffer + wire capture + URL vault (Alt+Shift+V), interactive asset sniffing, CSP/CORS bypass.",
    "family": "media & links",
-   "sha256": "fb4822491cf01820236b2d447aa62fcfd36ae8d294a3c0ba906fa5d1ceeecac0",
-   "lines": 947,
-   "bytes": 56263,
+   "sha256": "d327fbafa285e66ce11724fbc94df6fc1ab315df7ca6017ef94732abcd43240c",
+   "lines": 1204,
+   "bytes": 71034,
    "matches": [
     "*://*/*"
    ],
@@ -179,12 +179,12 @@
   {
    "file": "4ndr0tools - Bunkr++.user.js",
    "name": "4ndr0tools - Bunkr++",
-   "version": "7.4.0",
+   "version": "7.5.0",
    "description": "Direct URL routing, auto-sort, hide visited, bypass dl gateway, bulk download, m3u8/CDN URL aggregation (page-context net-hook + per-item stream glyphs + album-wide STREAMS aggregation), broken-link repair, power-user hotkeys, LinkMaster-grade m3u8 stream resolution with gateway fallback, MPV dispatch (URI/bridge), web-archive dead-CDN resurrection (archive.org / archive.is), captcha-aware transport retry",
    "family": "media & links",
-   "sha256": "82bae5f8a3e5b3223674f1c0e73e510ae762ddd7502cadf703f9d7ad39a4334e",
-   "lines": 3778,
-   "bytes": 193116,
+   "sha256": "008f5d7473c8a935172d077f66545ac0706588b46c699513f0782d359488c2d3",
+   "lines": 3799,
+   "bytes": 194611,
    "matches": [],
    "excludes": [],
    "grants": [
@@ -504,12 +504,12 @@
   {
    "file": "4ndr0tools - Forums++.user.js",
    "name": "4ndr0tools - Forums++",
-   "version": "1.9",
+   "version": "1.9.1",
    "description": "Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.",
    "family": "forums",
-   "sha256": "b0416cbf3329128e458a64fc60096daa548e851842e30c4994449557d2f3eb1b",
-   "lines": 3611,
-   "bytes": 159382,
+   "sha256": "32b1a28b027b616088f1f77b61d893a2fe45ca556433aede459ce2a4607d9ae4",
+   "lines": 3625,
+   "bytes": 160019,
    "matches": [
     "https://simpcity.su/threads/*",
     "https://simpcity.cr/threads/*"
@@ -715,12 +715,12 @@
   {
    "file": "4ndr0tools - HostWarp.user.js",
    "name": "4ndr0tools - HostWarp",
-   "version": "1.0.0",
+   "version": "1.1.0",
    "description": "Per-host warp drive: bypasses image-host interstitials (imagetwist/imgspice/turboimagehost/acidimg/imx/pixhost/imagebam/imgbox/kropic/vipr/imagevenue), MEGA embed redirect + autoplay, PlanetSuzy mobile skin, t.me Web button, SearXNG sticky preferences, Gemini Answer Now — one engine, glass settings console, every module toggleable.",
    "family": "ux utilities",
-   "sha256": "35b5ecb790acaddaa305b351da7905e942be4d00d45323174670e89700da2910",
-   "lines": 1633,
-   "bytes": 81126,
+   "sha256": "ced1d15a6ad74e08d4469b4b23086f3dd15baa4d1f9c84951206efcaacc069f6",
+   "lines": 1701,
+   "bytes": 84854,
    "matches": [
     "*://*/*"
    ],
@@ -843,12 +843,12 @@
   {
    "file": "4ndr0tools - LinkMasterΨ.user.js",
    "name": "4ndr0tools - LinkMasterΨ",
-   "version": "6.1.0",
+   "version": "6.2.0",
    "description": "Accurately decodes, previews, exports, validates and scrapes all links. (Dual MPV Support + Ψ IG Harvester + sexyforums premium-link unwrap + GitHub raw-URL harvest + Ψ2 forum deep-scrape engine)",
    "family": "media & links",
-   "sha256": "10d123e0bb2aed15e54e2989a673d42a70cc193611c26c98c4b5b0cb80cdf87f",
-   "lines": 3761,
-   "bytes": 182345,
+   "sha256": "d5d6df9c0126715ef7c6c85b422a2f09f8721014543d3a6cccf2844464406792",
+   "lines": 3847,
+   "bytes": 187310,
    "matches": [
     "*://*/*",
     "*://*.instagram.com/*"
@@ -993,12 +993,12 @@
   {
    "file": "4ndr0tools - Media Player Controller.user.js",
    "name": "4ndr0tools - Media Player Controller",
-   "version": "8.0.0",
+   "version": "8.1.0",
    "description": "Speed • Fine Rate ±0.1 • Alt+Shift rAF Zoom/Pan • Rotation • Smart Maximize • Native Fullscreen • PiP • Play • DblClick • Pause-on-Acquire • Virtual DOM Nodes • Shadow-DOM Discovery • Cyan-Glass Scrub Bar • Download Button (fetch + blob capture) • Screenshot • Volume/Mute • Frame Step • Seek Hotkeys • IG Story Nav (3-Layer) • Story Repeat (3-Layer) • Active-Media Observer • YouTube Ad Auto-Skip • Toast Feedback • Draggable HUD • Full Hotkey Suite",
    "family": "uncategorized",
-   "sha256": "d9e8d4f9433065359e3ccfbbf4feedc12c50eda2b752ae529d48dcc58f43d01d",
-   "lines": 2464,
-   "bytes": 107042,
+   "sha256": "fd9f2daef3ec544a71d53bd124057f1ecfd05c886dd2a4b51a536969ac099bd5",
+   "lines": 2531,
+   "bytes": 110474,
    "matches": [
     "*://*/*"
    ],
@@ -1047,12 +1047,12 @@
   {
    "file": "4ndr0tools - PageCraft.user.js",
    "name": "4ndr0tools - PageCraft",
-   "version": "1.0.0",
+   "version": "1.1.0",
    "description": "All-sites page utility belt: bulk checkbox control with range/alt-hover selection (de-jQueryed), broken-image auto-repair with cache-busting + frame broadcast, hover-collapse image I/O governor, and Brave infinite scroll — one engine, glass settings console, zero runtime dependencies.",
    "family": "ux utilities",
-   "sha256": "71cc72dbe7afa1ec2f52c478040165312cf8c0ed66901cd20e83548df7e80743",
-   "lines": 1494,
-   "bytes": 73145,
+   "sha256": "78583c93e5e03a90c60af6f2e6c31eb8ffbb291355ea787d917a183b2ecee99b",
+   "lines": 1559,
+   "bytes": 76667,
    "matches": [
     "*://*/*"
    ],
@@ -1248,14 +1248,53 @@
    }
   },
   {
+   "file": "4ndr0tools - Stream Interceptor.user.js",
+   "name": "4ndr0tools - Stream Interceptor",
+   "version": "3.2.0",
+   "description": "Intercepts, parses, and extracts stream tokens, manifests, and direct video sources via network hooks and DOM inspection. Suite promotion of the v3.1 BETA: ShadowDOM piercing, context-safe Reflect hooks, ReDoS-proof regex, 3lectric-Glass card surface, universal URL registry cap.",
+   "family": "uncategorized",
+   "sha256": "2a9472920e385a61ce247611d912ce436caa0a722bf98d2f4ecd08e65643a392",
+   "lines": 897,
+   "bytes": 39799,
+   "matches": [
+    "*://*/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_setClipboard",
+    "GM_download",
+    "GM_registerMenuCommand",
+    "unsafeWindow"
+   ],
+   "requires": [],
+   "connects": [
+    "playmogo.com",
+    "vidara.to",
+    "viderea.cloud",
+    "doodcdn.com",
+    "doodcdn.io",
+    "dood.to",
+    "dood.wf",
+    "dood.la",
+    "doodstream.com",
+    "*"
+   ],
+   "runAt": "document-start",
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Stream%20Interceptor.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Stream%20Interceptor.user.js"
+   }
+  },
+  {
    "file": "4ndr0tools - Watermark++.user.js",
    "name": "4ndr0tools - Watermark++",
-   "version": "2.0",
+   "version": "2.0.1",
    "description": "Security research and alignment testing only.",
    "family": "sovereign platforms",
-   "sha256": "c552501a0a941a179f4ef1450175ef24727cb84aeda8e6a361020fdc63d34e49",
-   "lines": 14286,
-   "bytes": 1220162,
+   "sha256": "4f3e2ef54c818af8d6248580ea015a78da529f1c3650e22ead2e91b7a97a5027",
+   "lines": 14316,
+   "bytes": 1221833,
    "matches": [
     "https://gemini.google.com/app",
     "https://gemini.google.com/app/*",
@@ -1283,12 +1322,12 @@
   {
    "file": "4ndr0tools - Website Control Panel.user.js",
    "name": "4ndr0tools - Website Control Panel",
-   "version": "5.2.0",
-   "description": "Draggable Cyberdeck HUD, DOM Zapper, Ad suppression, validated-selector compiled deep-cleaning.",
+   "version": "5.3.0",
+   "description": "Draggable Cyberdeck HUD, DOM Zapper, Ad suppression, validated-selector compiled deep-cleaning, per-site HUD suppression + Alt+Shift+H hotkey.",
    "family": "ux utilities",
-   "sha256": "b84373795cec070ffacad8e28a626718114f4dfaf42a318a0c695cd4f9c26fad",
-   "lines": 390,
-   "bytes": 18272,
+   "sha256": "abad250fc32b8f677621e09c011eb838a22dcc55b7dd09a7f61bd5f6b2fa35cd",
+   "lines": 564,
+   "bytes": 26844,
    "matches": [
     "*://*/*"
    ],
@@ -1296,7 +1335,8 @@
    "grants": [
     "GM_addStyle",
     "GM_getValue",
-    "GM_setValue"
+    "GM_setValue",
+    "GM_registerMenuCommand"
    ],
    "requires": [],
    "connects": [],
@@ -1449,7 +1489,7 @@
  "hotDomains": [
   {
    "domain": "*:",
-   "count": 219,
+   "count": 220,
    "scripts": [
     "4ndr0tools - 4ndr0Purge",
     "4ndr0tools - 4ndr0serviceguard Companion",
@@ -1473,6 +1513,7 @@
     "4ndr0tools - Prompt Master",
     "4ndr0tools - Recon",
     "4ndr0tools - Redgifs++",
+    "4ndr0tools - Stream Interceptor",
     "4ndr0tools - Website Control Panel",
     "4ndr0tools - Youtube Removed Video Revealer",
     "4ndr0tools - YT Filter"
@@ -1515,5 +1556,5 @@
    ]
   }
  ],
- "generated": "2026-10-02T22:48:55.474Z"
+ "generated": "2026-10-03T10:23:36.035Z"
 }

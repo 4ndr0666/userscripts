@@ -48,15 +48,31 @@
     function ns(prefix) {
         if (!prefix || typeof prefix !== 'string') throw new Error('store.ns: prefix required');
         const watchers = [];
-        let valueListenerBound = false;
-        const bindValueListener = () => {
-            if (valueListenerBound || typeof GM_addValueChangeListener !== 'function') return;
-            valueListenerBound = true;
-            GM_addValueChangeListener(`${prefix}::*`, (name, oldV, newV, remote) => {
-                // Cross-tab/cross-script sync for this namespace's keys.
+        const gmListenerKeys = new Set();
+
+        /* v1.3.0 watch() repair — two defects fixed:
+         *   (a) the GM cross-tab listener was registered ONCE on the literal
+         *       key `${prefix}::*` — GM_addValueChangeListener matches EXACT
+         *       keys, the `*` is not a wildcard, so remote changes never fired
+         *       any watcher;
+         *   (b) set() never notified local watchers at all, so even same-tab
+         *       live-apply (PageCraft's collapse governor) was dead.
+         * Listeners are now bound per exact key, and set() notifies local
+         * watchers synchronously (remote=false) before returning. */
+        const notifyLocal = (key, newV, oldV) => {
+            for (const w of watchers) {
+                if (w.key === key) {
+                    try { w.cb(newV, oldV, false); }
+                    catch (e) { console.debug('[a4/store] watcher failed:', key, e.message); }
+                }
+            }
+        };
+        const bindValueListener = (fullK) => {
+            if (typeof GM_addValueChangeListener !== 'function' || gmListenerKeys.has(fullK)) return;
+            gmListenerKeys.add(fullK);
+            GM_addValueChangeListener(fullK, (name, oldV, newV, remote) => {
+                memory.set(fullK, newV);
                 const key = name.slice(prefix.length + 2);
-                const full = fullKey(prefix, key);
-                memory.set(full, newV);
                 for (const w of watchers) {
                     if (w.key === key) {
                         try { w.cb(newV, oldV, remote); }
@@ -72,8 +88,14 @@
                 const v = readRaw(fullKey(prefix, key));
                 return v === null || v === undefined ? dflt : v;
             },
-            /** Quota-guarded set. */
-            set(key, value) { writeRaw(fullKey(prefix, key), value); return value; },
+            /** Quota-guarded set. Notifies local watchers (v1.3.0). */
+            set(key, value) {
+                const full = fullKey(prefix, key);
+                const oldV = readRaw(full);
+                writeRaw(full, value);
+                notifyLocal(key, value, oldV);
+                return value;
+            },
             /** JSON get with default (objects/arrays). */
             getJson(key, dflt) {
                 const v = this.get(key, null);
@@ -97,7 +119,7 @@
             watch(key, cb) {
                 const entry = { key, cb };
                 watchers.push(entry);
-                bindValueListener();
+                bindValueListener(fullKey(prefix, key));
                 return () => {
                     const i = watchers.indexOf(entry);
                     if (i >= 0) watchers.splice(i, 1);

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - PageCraft
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.0.0
+// @version      1.1.0
 // @description  All-sites page utility belt: bulk checkbox control with range/alt-hover selection (de-jQueryed), broken-image auto-repair with cache-busting + frame broadcast, hover-collapse image I/O governor, and Brave infinite scroll — one engine, glass settings console, zero runtime dependencies.
 // @author       4ndr0666
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -19,7 +19,7 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20PageCraft.user.js
 // ==/UserScript==
 
-/* 4ndr0tools - PageCraft v1.0.0 — built from modules/pagecraft + kernel {brand, core, glass, store, hotkeys}
+/* 4ndr0tools - PageCraft v1.1.0 — built from modules/pagecraft + kernel {brand, core, glass, store, hotkeys}
  * All-sites page utility belt: bulk checkbox control with range/alt-hover selection (de-jQueryed), broken-image auto-repair with cache-busting + frame broadcast, hover-collapse image I/O governor, and Brave infinite scroll — one engine, glass settings console, zero runtime dependencies.
  * This is a generated file; edit modules/ and run `npm run build`.
  */
@@ -386,6 +386,15 @@
     const { PALETTE, FONTS, TRANSITION, GLYPH_SVG } = Ψ.brand;
     const { $, $new, escapeHTML } = Ψ.core;
 
+    /* v1.3.0 facade repair: Ψ.store is a namespaced-store FACTORY
+     * ({ns, hasGM}) — the get/set/getJson/setJson methods live on the
+     * ns() facades, not on the factory. hud()/settingsConsole() previously
+     * called Ψ.store.getJson(...) directly → TypeError inside hud()
+     * construction → every glass settings console (HostWarp, PageCraft)
+     * opened to nothing. All glass persistence now goes through one
+     * glass-owned facade. */
+    const glassStore = (Ψ.store && typeof Ψ.store.ns === 'function') ? Ψ.store.ns('a4:glass') : null;
+
     const STYLE_ID = 'a4-glass-stylesheet-v1';
 
     /* Scoped component stylesheet. Every rule nests under .a4-scope so the
@@ -510,6 +519,11 @@
 
     /* ── HUD frame (draggable, tabbed, optionally shadow-isolated) ──────── */
 
+    /* Live HUD registry per script instance — reopening the same console id
+     * reuses the existing frame instead of stacking a duplicate window
+     * (menu-click spam previously piled identical HUDs on top of each other). */
+    const hudInstances = new Map();
+
     /**
      * Build a draggable glass HUD. Spec §4.2 window + §4.3 headerbar.
      *
@@ -532,6 +546,13 @@
             position = null, width = 380, height = 420,
             shadow = false, onReady = null,
         } = opts;
+
+        /* Reopen = show existing (dedup, v1.3.0). */
+        const existing = hudInstances.get(id);
+        if (existing) {
+            existing.show();
+            return existing;
+        }
 
         injectStyles();
 
@@ -606,15 +627,20 @@
         header.addEventListener('pointerup', endDrag);
         header.addEventListener('pointercancel', endDrag);
 
-        /* Position: persisted store or bottom-right default. */
-        const saved = Ψ.store ? Ψ.store.getJson(`hud:pos:${id}`, null) : null;
-        const pos = position || saved || { x: Math.max(8, window.innerWidth - width - 16), y: 64 };
+        /* Position: persisted store or bottom-right default. innerWidth can
+         * be undefined in exotic contexts (stubbed windows, some iframes) —
+         * the || fallbacks keep the default position a real number instead
+         * of NaN (NaNpx leaves the HUD invisible/unrecoverable). */
+        const saved = glassStore ? glassStore.getJson(`hud:pos:${id}`, null) : null;
+        const vw = Number(window.innerWidth) || 1024;
+        const vh = Number(window.innerHeight) || 768;
+        const pos = position || saved || { x: Math.max(8, vw - width - 16), y: 64 };
         frame.style.left = pos.x + 'px';
         frame.style.top = pos.y + 'px';
 
         const persistPos = Ψ.core.debounce(() => {
             const r = frame.getBoundingClientRect();
-            if (Ψ.store) Ψ.store.setJson(`hud:pos:${id}`, { x: r.left, y: r.top });
+            if (glassStore) glassStore.setJson(`hud:pos:${id}`, { x: r.left, y: r.top });
         }, 400);
 
         const api = {
@@ -636,11 +662,13 @@
             destroy() {
                 api.hide();
                 persistPos.cancel();
+                hudInstances.delete(id);
                 frame.replaceChildren();
             },
         };
         header.addEventListener('pointerup', persistPos);
 
+        hudInstances.set(id, api);
         for (const t of tabs) addTab(t);
         if (onReady) onReady(api);
         return api;
@@ -655,8 +683,15 @@
      * Values persist through Ψ.store under `ns`. Calls onChange(changedKey).
      */
     function settingsConsole(rootEl, ns, schema, onChange) {
-        const get = (k, d) => Ψ.store.get(`${ns}:${k}`, d);
-        const set = (k, v) => Ψ.store.set(`${ns}:${k}`, v);
+        /* v1.3.0: same facade repair as hud() — keys are written through the
+         * module's OWN namespace (Ψ.store.ns(ns)) so `mod:<key>` values read
+         * by the module body (`store.get('mod:xyz')`) and values written by
+         * this console land on the identical storage key. The previous
+         * direct Ψ.store.get/set calls not only crashed — they built keys
+         * in a different scheme than any reader. */
+        const store = (Ψ.store && typeof Ψ.store.ns === 'function') ? Ψ.store.ns(ns) : null;
+        const get = (k, d) => (store ? store.get(k, d) : d);
+        const set = (k, v) => { if (store) store.set(k, v); };
 
         const rows = schema.map((field) => {
             const row = $new('div', { class: 'a4-panel', style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' } });
@@ -816,15 +851,31 @@
     function ns(prefix) {
         if (!prefix || typeof prefix !== 'string') throw new Error('store.ns: prefix required');
         const watchers = [];
-        let valueListenerBound = false;
-        const bindValueListener = () => {
-            if (valueListenerBound || typeof GM_addValueChangeListener !== 'function') return;
-            valueListenerBound = true;
-            GM_addValueChangeListener(`${prefix}::*`, (name, oldV, newV, remote) => {
-                // Cross-tab/cross-script sync for this namespace's keys.
+        const gmListenerKeys = new Set();
+
+        /* v1.3.0 watch() repair — two defects fixed:
+         *   (a) the GM cross-tab listener was registered ONCE on the literal
+         *       key `${prefix}::*` — GM_addValueChangeListener matches EXACT
+         *       keys, the `*` is not a wildcard, so remote changes never fired
+         *       any watcher;
+         *   (b) set() never notified local watchers at all, so even same-tab
+         *       live-apply (PageCraft's collapse governor) was dead.
+         * Listeners are now bound per exact key, and set() notifies local
+         * watchers synchronously (remote=false) before returning. */
+        const notifyLocal = (key, newV, oldV) => {
+            for (const w of watchers) {
+                if (w.key === key) {
+                    try { w.cb(newV, oldV, false); }
+                    catch (e) { console.debug('[a4/store] watcher failed:', key, e.message); }
+                }
+            }
+        };
+        const bindValueListener = (fullK) => {
+            if (typeof GM_addValueChangeListener !== 'function' || gmListenerKeys.has(fullK)) return;
+            gmListenerKeys.add(fullK);
+            GM_addValueChangeListener(fullK, (name, oldV, newV, remote) => {
+                memory.set(fullK, newV);
                 const key = name.slice(prefix.length + 2);
-                const full = fullKey(prefix, key);
-                memory.set(full, newV);
                 for (const w of watchers) {
                     if (w.key === key) {
                         try { w.cb(newV, oldV, remote); }
@@ -840,8 +891,14 @@
                 const v = readRaw(fullKey(prefix, key));
                 return v === null || v === undefined ? dflt : v;
             },
-            /** Quota-guarded set. */
-            set(key, value) { writeRaw(fullKey(prefix, key), value); return value; },
+            /** Quota-guarded set. Notifies local watchers (v1.3.0). */
+            set(key, value) {
+                const full = fullKey(prefix, key);
+                const oldV = readRaw(full);
+                writeRaw(full, value);
+                notifyLocal(key, value, oldV);
+                return value;
+            },
             /** JSON get with default (objects/arrays). */
             getJson(key, dflt) {
                 const v = this.get(key, null);
@@ -865,7 +922,7 @@
             watch(key, cb) {
                 const entry = { key, cb };
                 watchers.push(entry);
-                bindValueListener();
+                bindValueListener(fullKey(prefix, key));
                 return () => {
                     const i = watchers.indexOf(entry);
                     if (i >= 0) watchers.splice(i, 1);
@@ -1447,13 +1504,16 @@ img:hover { max-width: 100%; max-height: 100%; }`;
  * ═══════════════════════════════════════════════════════════════════════ */
 
 function openSettings() {
-    Ψ.glass.injectStyles();
-    const hud = Ψ.glass.hud({
-        id: 'pagecraft-settings',
-        title: 'PAGECRAFT',
-        subtitle: 'page utility belt — ' + Ψ.brand.SUITE,
-        width: 420, height: 380,
-        tabs: [
+    /* v1.1.0: fail-loud console opens (see the hostwarp twin + kernel
+     * glass.js v1.3.0 facade repair for why this used to be dead). */
+    try {
+        Ψ.glass.injectStyles();
+        const hud = Ψ.glass.hud({
+            id: 'pagecraft-settings',
+            title: 'PAGECRAFT',
+            subtitle: 'page utility belt — ' + Ψ.brand.SUITE,
+            width: 420, height: 380,
+            tabs: [
             {
                 id: 'modules', label: 'MODULES',
                 render: (contentEl) => {
@@ -1483,7 +1543,12 @@ function openSettings() {
             },
         ],
     });
-    hud.show();
+        hud.show();
+    } catch (e) {
+        console.error('[Ψ PageCraft] settings console failed:', e);
+        try { Ψ.glass.toast(`Settings console error: ${e && e.message ? e.message : e}`, { type: 'error' }); }
+        catch (_) { alert(`Ψ PageCraft — settings console error:\n${e && e.message ? e.message : e}`); }
+    }
 }
 
 if (typeof GM_registerMenuCommand === 'function') {

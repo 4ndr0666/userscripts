@@ -335,13 +335,16 @@ img:hover { max-width: 100%; max-height: 100%; }`;
  * ═══════════════════════════════════════════════════════════════════════ */
 
 function openSettings() {
-    Ψ.glass.injectStyles();
-    const hud = Ψ.glass.hud({
-        id: 'pagecraft-settings',
-        title: 'PAGECRAFT',
-        subtitle: 'page utility belt — ' + Ψ.brand.SUITE,
-        width: 420, height: 380,
-        tabs: [
+    /* v1.1.0: fail-loud console opens (see the hostwarp twin + kernel
+     * glass.js v1.3.0 facade repair for why this used to be dead). */
+    try {
+        Ψ.glass.injectStyles();
+        const hud = Ψ.glass.hud({
+            id: 'pagecraft-settings',
+            title: 'PAGECRAFT',
+            subtitle: 'page utility belt — ' + Ψ.brand.SUITE,
+            width: 420, height: 380,
+            tabs: [
             {
                 id: 'modules', label: 'MODULES',
                 render: (contentEl) => {
@@ -371,7 +374,12 @@ function openSettings() {
             },
         ],
     });
-    hud.show();
+        hud.show();
+    } catch (e) {
+        console.error('[Ψ PageCraft] settings console failed:', e);
+        try { Ψ.glass.toast(`Settings console error: ${e && e.message ? e.message : e}`, { type: 'error' }); }
+        catch (_) { alert(`Ψ PageCraft — settings console error:\n${e && e.message ? e.message : e}`); }
+    }
 }
 
 if (typeof GM_registerMenuCommand === 'function') {

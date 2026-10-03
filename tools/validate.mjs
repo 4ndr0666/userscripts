@@ -154,7 +154,15 @@ function checkLexicalBalance(src) {
     let i = 0, line = 1;
     const stack = [];
     const n = src.length;
-    const prevSig = () => { let j = i - 1; while (j >= 0 && /\s/.test(src[j])) j--; return j >= 0 ? src[j] : ""; };
+    /* v1.3.0: prevSig() used to walk BACKWARDS over whitespace to decide
+     * regex-vs-division — but a block comment terminator directly before
+     * a regex literal made the walk stop at the comment's slash, which is
+     * not a regex preceder, so the literal was scanned as division and its
+     * parens corrupted the brace ledger (Akasha's commented blocklist
+     * regexes tripped this). lastSig is now tracked FORWARD: the last
+     * significant CODE character, with comments and string contents
+     * excluded by construction. */
+    let lastSig = "";
     const skipTemplate = (start) => {
         let k = start + 1;
         while (k < n) {
@@ -181,6 +189,7 @@ function checkLexicalBalance(src) {
                 if (src[i] === "\n") return `unterminated string at line ${line}`;
                 i++;
             }
+            lastSig = c;
             continue;
         }
         if (c === "`") {
@@ -205,9 +214,10 @@ function checkLexicalBalance(src) {
                 }
                 i++;
             }
+            lastSig = c;
             continue;
         }
-        if (c === "/" && /[(,=:[!&|?{};+\-*%<>~^]/.test(prevSig() || "(")) {
+        if (c === "/" && /[(,=:[!&|?{};+\-*%<>~^]/.test(lastSig || "(")) {
             i++;
             let inClass = false;
             while (i < n) {
@@ -218,15 +228,18 @@ function checkLexicalBalance(src) {
                 else if (src[i] === "\n") break;
                 i++;
             }
+            lastSig = "/";
             continue;
         }
-        if ("([{".includes(c)) stack.push({ c, line });
+        if ("([{".includes(c)) { stack.push({ c, line }); lastSig = c; i++; continue; }
         else if (")]}".includes(c)) {
             const top = stack.pop();
             if (!top) return `unmatched "${c}" at line ${line}`;
             const pairs = { "(": ")", "[": "]", "{": "}" };
             if (pairs[top.c] !== c) return `"${c}" at line ${line} closes "${top.c}" from line ${top.line}`;
+            lastSig = c; i++; continue;
         }
+        if (!/\s/.test(c)) lastSig = c;
         i++;
     }
     if (stack.length) return `unclosed "${stack[stack.length - 1].c}" from line ${stack[stack.length - 1].line}`;
@@ -395,6 +408,63 @@ function gateD() {
     if (!asil.includes("defuseScript") || !asil.includes("applyNetworkHooks") || !asil.includes("getRealLinkFromGoogleUrl") || !asil.includes("makePhantomWebSocket")) {
         failures.push(`[D] Akasha Silence: absorbed trio modules not present`);
     } else passes.push(`[D] Akasha Silence absorbed trio verified`);
+
+    /* v1.3.0 interference ledger — the nine documented fixes of this round. */
+    if (!asil.includes("AKASHA_PROFILE") || !asil.includes("Ctrl+Alt+Shift+K") || !asil.includes("akasha_silence_profile")) {
+        failures.push(`[D] Akasha Silence: strictness relief valve not present`);
+    } else passes.push(`[D] Akasha Silence profile valve verified`);
+
+    const bkr = read("Bunkr++");
+    if (!bkr.includes("/^\\/(?:a|v|d|e)\\//") || !bkr.includes("session-surface exemption")) {
+        failures.push(`[D] Bunkr++: session-surface exemption not present`);
+    } else passes.push(`[D] Bunkr++ session-surface exemption verified`);
+
+    const wcp = read("Website Control Panel");
+    if (!wcp.includes("hud_site_off") || !wcp.includes("psi-cp-close") || !wcp.includes("Alt+Shift+H")) {
+        failures.push(`[D] WCP: HUD sovereignty surfaces not present`);
+    } else passes.push(`[D] WCP HUD sovereignty verified`);
+    if (wcp.includes("@import url(") || wcp.includes("@importurl(") || /@import\s+url\(\s*['"]?https?:/i.test(wcp)) {
+        failures.push(`[D] WCP: remote font @import still present`);
+    } else passes.push(`[D] WCP local font stack verified`);
+
+    const mpc = read("Media Player Controller");
+    if (!mpc.includes("MEDIA PLAYER CONTROLLER") || !mpc.includes("acquireBestCandidate")) {
+        failures.push(`[D] MPC: rebrand + fallback acquisition not present`);
+    } else passes.push(`[D] MPC rebrand + fallback acquisition verified`);
+    if (mpc.includes("MEDIA GODMODE</div>") || /Media Godmode v\d/.test(mpc)) {
+        failures.push(`[D] MPC: legacy Godmode branding still present`);
+    } else passes.push(`[D] MPC legacy branding purged`);
+
+    const lm2 = read("LinkMasterΨ");
+    if (!lm2.includes("isVideoPageLink") || !lm2.includes("looksLikeMediaTile") || !lm2.includes("data-lazy-src")) {
+        failures.push(`[D] LinkMasterΨ: video-grid + lazy capture not present`);
+    } else passes.push(`[D] LinkMasterΨ video-grid + lazy capture verified`);
+
+    const b2u = read("Blob2URL");
+    if (!b2u.includes("URL VAULT") || !b2u.includes("__psi_vault")) {
+        failures.push(`[D] Blob2URL: universal vault + wire capture not present`);
+    } else passes.push(`[D] Blob2URL universal vault + wire capture verified`);
+
+    const si = read("Stream Interceptor");
+    if (!si || !si.includes("MAX_FOUND_URLS") || !si.includes("Stream Interceptor")) {
+        failures.push(`[D] Stream Interceptor: suite membership incomplete`);
+    } else passes.push(`[D] Stream Interceptor suite membership verified`);
+
+    const hwDist = read("HostWarp");
+    const pcDist = read("PageCraft");
+    if (!hwDist.includes("a4:glass") || !pcDist.includes("a4:glass")) {
+        failures.push(`[D] HostWarp/PageCraft: rebuilt without the repaired glass kernel`);
+    } else passes.push(`[D] HostWarp/PageCraft glass-kernel repair verified`);
+
+    const fpp = read("Forums++");
+    if (!fpp.includes("function setProcessing")) {
+        failures.push(`[D] Forums++: setProcessing restoration not present`);
+    } else passes.push(`[D] Forums++ setProcessing restoration verified`);
+
+    const wmk = read("Watermark++");
+    if (!wmk.includes("function resolveFetchedImageMimeType")) {
+        failures.push(`[D] Watermark++: resolveFetchedImageMimeType restoration not present`);
+    } else passes.push(`[D] Watermark++ mime resolver restoration verified`);
 }
 
 gateA();

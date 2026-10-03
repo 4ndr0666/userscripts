@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         4ndr0tools - Blob2URL
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      7.0.0
+// @version      7.1.0
 // @author       4ndr0666
-// @description  Universal blob exfiltration, interactive asset sniffing, CSP/CORS bypass.
+// @description  Universal blob exfiltration, universal media URL sniffer + wire capture + URL vault (Alt+Shift+V), interactive asset sniffing, CSP/CORS bypass.
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Blob2URL.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Blob2URL.user.js
@@ -136,6 +136,33 @@
    Superset check: every v6.1 feature — privileged fetch, button UX (labels/states/styles),
    mimeExt table, sniffer (mask/track/capture/toggle), deploy + MutationObserver + lock,
    both menu commands, Alt+S / Enter hotkeys, per-frame operation, metadata — is intact.
+*/
+
+/* ═══ v7.1.0 — UNIVERSAL SNIFFER + URL VAULT (suite v1.3.0) ═════════════════
+   The v6/v7 lineage was blob:-centric: outside instagram.com its discovery
+   surface was a blob:-only element scan plus the interactive sniffer — as a
+   “universal url sniffer and DOM scraper” that was structurally hit-or-miss.
+   U1  UNIVERSAL VAULT (Alt+Shift+V, every site): one registry of every
+       discovered media URL — DOM-scraped, wire-captured and sniffer-picked —
+       with per-URL COPY / SAVE, COPY ALL and RESCAN. 500-entry cap, deduped.
+   U2  WIRE CAPTURE: page-context fetch/XHR wraps (property wrap, CSP-safe,
+       fingerprint-masked toString — the [14] technique, now universal)
+       scan textual response bodies for media URLs (mp4/webm/m3u8/ts/m4s/
+       mpd/mkv/mov/flac/jpg/webp/…), so URLs that only ever exist inside
+       API/JSON payloads surface without opening devtools. On instagram.com
+       the same wrap feeds the IG structural parser (single wrap, no double
+       scanning).
+   U3  DOM SCRAPE DEPTH: every deploy() sweep also registers element-resolved
+       media URLs (video/audio/source/img/iframe/embed/object/anchor, plus
+       the data-src lazy family) into the vault — the vault is always the
+       complete answer even when no per-element button is mounted.
+   U4  EXTRACT-BUTTON REACH: direct (non-blob) media files now mount Ψ_EXTRACT
+       controls on A/V-bearing elements (video/audio/source/iframe/embed) —
+       previously only IG CDN mp4s qualified. Images/anchors stay vault +
+       sniffer territory (a button on every <img> on the internet was the
+       v6 design boundary and it stands).
+   Every v7.0 guarantee — privileged-first transports, IG module routes,
+   vault autosave, G1–G5 mitigations — is intact; this is a strict superset.
 */
 
 (function() {
@@ -435,6 +462,10 @@
     const buildFileName = (ext, prefix) =>
         `${prefix || 'exfiltrated'}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}${ext || '.bin'}`;
 
+    // v7.1 [U4]: direct-media predicate for A/V-bearing elements.
+    const DIRECT_MEDIA_RE = /\.(mp4|webm|mkv|mov|avi|flv|m4v|mp3|m4a|ogg|wav|flac|aac|m3u8|ts|m4s|mpd)([?#]|$)/i;
+    const isDirectMediaUrl = (url) => typeof url === 'string' && DIRECT_MEDIA_RE.test(url.split('#')[0]);
+
     const runExtraction = async (url, opts) => {
         try {
             const blob = await hardenedFetch(url);
@@ -455,8 +486,13 @@
         const url = resolveMediaUrl(el);
         if (!url) return;
         const isBlob = url.indexOf('blob:') === 0;
-        // Direct (non-blob) hooking is reserved for IG CDN media under opts.allowDirect.
-        if (!isBlob && !(opts && opts.allowDirect && IG.isIgVideoUrl(url))) return; // no lock set → element re-checked on later scans
+        // Direct (non-blob) hooking: IG CDN media under opts.allowDirect (v6)
+        // — v7.1 [U4] extends the same opt-in to ANY A/V-bearing element
+        // (video/audio/source/iframe/embed) whose resolved URL is a media
+        // file. Images/anchors remain vault + sniffer territory.
+        const tag = (el.tagName || '').toUpperCase();
+        const isAvElement = tag === 'VIDEO' || tag === 'AUDIO' || tag === 'SOURCE' || tag === 'IFRAME' || tag === 'EMBED';
+        if (!isBlob && !(opts && opts.allowDirect && (IG.isIgVideoUrl(url) || (isAvElement && isDirectMediaUrl(url))))) return; // no lock set → element re-checked on later scans
 
         // [06] <source> lives inside <video|audio|picture> where sibling buttons never
         // render — mount the control after the host media element instead.
@@ -511,6 +547,14 @@
                 const cs = el.currentSrc;
                 if (typeof cs === 'string' && cs.indexOf('blob:') === 0) hookAsset(el);
             });
+            // v7.1 [U4]: direct-media extract controls on A/V-bearing elements
+            // (any media file, any site — the v6 IG-only gate opened here).
+            document.querySelectorAll('video, audio, source, iframe, embed').forEach((el) => {
+                const url = resolveMediaUrl(el);
+                if (url && isDirectMediaUrl(url)) hookAsset(el, { allowDirect: true });
+            });
+            // v7.1 [U3]: every sweep also feeds the universal vault.
+            VAULT.scrapeDom();
             if (IG.active) { IG.scanNewScripts(); IG.sweep(); }
         } catch (err) { log('scan error: ' + (err && err.message ? err.message : err)); }
     };
@@ -575,6 +619,8 @@
             if (!sniffer.activeEl) return;
             const url = resolveMediaUrl(sniffer.activeEl);
             if (!url) { log('No URL detected'); return; }
+            // v7.1 [U1]: sniffer picks land in the universal vault too.
+            if (/^https?:/i.test(url)) VAULT.add(url, 'snif', 'picker');
             copyText(url).then((ok) => {
                 log(ok
                     ? `CAPTURED → clipboard: ${url.substring(0, 100)}${url.length > 100 ? '...' : ''}`
@@ -618,6 +664,14 @@
             let page = null;
             try { if (typeof unsafeWindow !== 'undefined' && unsafeWindow) page = unsafeWindow; } catch (_) {}
             if (!page) { log('IG net-hook idle — unsafeWindow unavailable (DOM routes only)'); return; }
+            // v7.1: the universal VAULT wrap (installed first in bootstrap)
+            // feeds IG.ingest on instagram.com — wrapping again would read
+            // every response body twice.
+            if ((page.fetch && page.fetch.__psi_vault) ||
+                (page.XMLHttpRequest && page.XMLHttpRequest.prototype && page.XMLHttpRequest.prototype.__psi_vault)) {
+                log('IG net-hook defers to the universal wire capture (single-wrap policy)');
+                return;
+            }
             try {
                 const origFetch = page.fetch;
                 if (typeof origFetch === 'function' && !origFetch.__psi_ig) {
@@ -890,6 +944,191 @@
         },
     };
 
+    // ═══[17] UNIVERSAL URL VAULT + WIRE CAPTURE (v7.1.0 [U1]–[U3]) ═══
+    // One registry for every media URL this page has disclosed: DOM scrape,
+    // page-context net capture, and sniffer picks all converge here. The IG
+    // vault stays untouched (its entries carry structural labels the CLI port
+    // depends on); VAULT is the universal surface.
+    const VAULT = {
+        entries: [],          // newest-first: {url, kind, tag}
+        index: new Set(),     // URL dedupe
+        panel: null,
+        renderTimer: null,
+        MAX: 500,
+
+        add(url, kind, tag) {
+            if (!url || typeof url !== 'string' || this.index.has(url)) return;
+            this.index.add(url);
+            this.entries.unshift({ url, kind, tag: tag || '' });
+            while (this.entries.length > this.MAX) { const drop = this.entries.pop(); this.index.delete(drop.url); }
+            this.renderSoon();
+        },
+
+        // [U3] DOM scrape — the element-resolved truth of the current page.
+        scrapeDom() {
+            let found = 0;
+            const consider = (url, tag) => {
+                if (!url || !/^https?:/i.test(url)) return;
+                if (!isDirectMediaUrl(url)) return;
+                this.add(url, 'dom', tag);
+                found++;
+            };
+            document.querySelectorAll('video, audio, source, img, iframe, embed, object, a[href]').forEach((el) => {
+                consider(resolveMediaUrl(el), (el.tagName || '').toLowerCase());
+            });
+            // lazy family — real thumbs/sources behind data-* placeholders
+            document.querySelectorAll('[data-src], [data-original], [data-lazy-src], [data-video], [data-file]').forEach((el) => {
+                for (const attr of ['data-src', 'data-original', 'data-lazy-src', 'data-video', 'data-file']) {
+                    const v = el.getAttribute && el.getAttribute(attr);
+                    if (v) { const abs = inspectUrlLike(v); if (abs) { consider(abs, (el.tagName || '').toLowerCase()); break; } }
+                }
+            });
+            return found;
+        },
+
+        // [U2] page-context wire capture — fetch/XHR bodies scanned for
+        // media URLs; on instagram.com the same handler feeds IG.ingest so
+        // the response is read exactly once.
+        installNetHook() {
+            let page = null;
+            try { if (typeof unsafeWindow !== 'undefined' && unsafeWindow) page = unsafeWindow; } catch (_) {}
+            if (!page) { log('wire capture idle — unsafeWindow unavailable (DOM routes only)'); return; }
+            const feed = (text) => {
+                if (typeof text !== 'string' || !text || text.length > 4_000_000) return;
+                this.ingestText(text);
+                if (IG.active) IG.ingest(text);
+            };
+            try {
+                const origFetch = page.fetch;
+                if (typeof origFetch === 'function' && !origFetch.__psi_vault) {
+                    const wrapped = function (...args) {
+                        const p = origFetch.apply(this, args);
+                        try {
+                            p.then((res) => {
+                                if (res && res.ok && typeof res.clone === 'function') {
+                                    res.clone().text().then((t) => feed(t)).catch(() => {});
+                                }
+                            }).catch(() => {});
+                        } catch (_) {}
+                        return p;
+                    };
+                    try { wrapped.toString = function () { return String(origFetch); }; } catch (_) {}
+                    wrapped.__psi_vault = true;
+                    page.fetch = wrapped;
+                }
+            } catch (_) {}
+            try {
+                const xo = page.XMLHttpRequest && page.XMLHttpRequest.prototype;
+                if (xo && typeof xo.send === 'function' && !xo.__psi_vault) {
+                    xo.__psi_vault = true;
+                    const origSend = xo.send;
+                    xo.send = function () {
+                        try {
+                            this.addEventListener('load', function () {
+                                try {
+                                    let t = '';
+                                    if (this.responseType === '' || this.responseType === 'text') t = this.responseText;
+                                    else if (this.responseType === 'json' && this.response) t = JSON.stringify(this.response);
+                                    if (t) feed(t);
+                                } catch (_) {}
+                            });
+                        } catch (_) {}
+                        return origSend.apply(this, arguments);
+                    };
+                    try { xo.send.toString = function () { return String(origSend); }; } catch (_) {}
+                }
+            } catch (_) {}
+        },
+
+        ingestText(text) {
+            NET_MEDIA_RE.lastIndex = 0;
+            let m;
+            while ((m = NET_MEDIA_RE.exec(text)) !== null) {
+                const url = m[0].replace(/&amp;/g, '&').replace(/[.,;\])}]+$/, '');
+                if (url && !this.index.has(url)) this.add(url, 'net', 'wire');
+            }
+            NET_MEDIA_RE.lastIndex = 0;
+        },
+
+        // [U1] the panel — 3lectric-Glass, same class family as the IG vault.
+        togglePanel() {
+            if (!this.panel) this.buildPanel();
+            if (!this.panel.isConnected) { try { (document.body || document.documentElement).appendChild(this.panel); } catch (_) {} }
+            const show = this.panel.style.display === 'none';
+            this.panel.style.display = show ? 'block' : 'none';
+            if (show) { this.scrapeDom(); this.render(); }
+        },
+        buildPanel() {
+            const p = document.createElement('div');
+            p.className = 'psi-ig-panel';
+            p.style.display = 'none';
+            p.addEventListener('click', (e) => {
+                const b = e.target && e.target.closest ? e.target.closest('button[data-psi-act]') : null;
+                if (!b) return;
+                e.preventDefault();
+                e.stopPropagation();
+                const act = b.getAttribute('data-psi-act');
+                if (act === 'close') { this.panel.style.display = 'none'; return; }
+                if (act === 'copyall') {
+                    const list = this.entries.map((e2) => e2.url).join('\n');
+                    if (!list) { log('Vault is empty'); return; }
+                    copyText(list).then((ok) => log(ok ? `CAPTURED → clipboard: ${this.entries.length} URL(s)` : `Clipboard blocked — ${this.entries.length} URL(s) logged only:\n${list}`));
+                    return;
+                }
+                if (act === 'rescan') {
+                    this.scrapeDom();
+                    try { this.ingestText(document.documentElement.outerHTML || ''); } catch (_) {}
+                    this.render();
+                    log(`Re-scan → ${this.entries.length} unique URL(s)`);
+                    return;
+                }
+                const url = b.getAttribute('data-psi-url');
+                if (!url) return;
+                if (act === 'copy') {
+                    copyText(url).then((ok) => log(ok
+                        ? `CAPTURED → clipboard: ${url.substring(0, 100)}${url.length > 100 ? '...' : ''}`
+                        : `Clipboard blocked — URL: ${url}`));
+                    return;
+                }
+                if (act === 'save') this.saveUrl(url);
+            });
+            (document.body || document.documentElement).appendChild(p);
+            this.panel = p;
+        },
+        render() {
+            if (!this.panel) return;
+            const rows = this.entries.map((e) => {
+                const safe = esc(e.url);
+                const short = e.url.length > 96 ? esc(e.url.slice(0, 96)) + '...' : safe;
+                return `<div class="psi-ig-entry"><span class="psi-ig-tag">[${esc(e.kind)}${e.tag ? ' · ' + esc(e.tag) : ''}]</span><div class="psi-ig-url">${short}</div><button class="psi-ig-act" data-psi-act="save" data-psi-url="${safe}">SAVE</button><button class="psi-ig-act" data-psi-act="copy" data-psi-url="${safe}">COPY</button></div>`;
+            }).join('');
+            const empty = this.entries.length ? '' :
+                '<div class="psi-ig-entry psi-ig-empty">no media URLs discovered yet — play the media, then RESCAN</div>';
+            this.panel.innerHTML = `<div class="psi-ig-head">${CONFIG.glyph}<span class="psi-ig-title">URL VAULT</span><span class="psi-ig-sub">${this.entries.length} URL(s) · universal</span><button class="psi-ig-act" data-psi-act="copyall">COPY ALL</button><button class="psi-ig-act" data-psi-act="rescan">RESCAN</button><button class="psi-ig-act psi-ig-close" data-psi-act="close">×</button></div>${empty}${rows}`;
+        },
+        renderSoon() {
+            if (this.renderTimer !== null) return;
+            this.renderTimer = setTimeout(() => {
+                this.renderTimer = null;
+                if (this.panel && this.panel.style.display !== 'none') this.render();
+            }, 400);
+        },
+        saveUrl(url) {
+            runExtraction(url, { namePrefix: 'vault' });
+        },
+    };
+
+    const NET_MEDIA_RE = /https?:\/\/[^\s"'<>\\]+?\.(?:mp4|webm|m3u8|ts|m4s|mpd|mkv|mov|avi|flv|mp3|m4a|ogg|wav|flac|aac|jpg|jpeg|png|webp|gif|avif|bmp)(?:\?[^\s"'<>\\]*)?/gi;
+
+    // resolveUrl is scope-private above; the vault's lazy-attr sweep needs a
+    // forgiving variant that also tolerates protocol-relative values.
+    const inspectUrlLike = (raw) => {
+        if (!raw || typeof raw !== 'string') return null;
+        const trimmed = raw.trim();
+        if (!trimmed) return null;
+        try { return new URL(trimmed, location.href).href; } catch (_) { return null; }
+    };
+
     // ──[12] Tradecraft controls ──
     const copyAllBlobUrls = () => {
         const urls = new Set();
@@ -908,6 +1147,15 @@
         GM_registerMenuCommand("Ψ: Toggle Universal Sniffer", () => sniffer.toggle());
         GM_registerMenuCommand("Ψ: Force DOM Re-scan", deploy);
         GM_registerMenuCommand("Ψ: Copy All Discovered Blob URLs", copyAllBlobUrls);
+        GM_registerMenuCommand("Ψ: Universal URL Vault (Alt+Shift+V)", () => VAULT.togglePanel());
+        GM_registerMenuCommand("Ψ: Copy All Discovered Media URLs", () => {
+            VAULT.scrapeDom();
+            const list = VAULT.entries.map((e) => e.url).join('\n');
+            if (!list) { log('No media URLs discovered on this page'); return; }
+            copyText(list).then((ok) => log(ok
+                ? `CAPTURED → clipboard: ${VAULT.entries.length} unique URL(s)`
+                : `Clipboard blocked — ${VAULT.entries.length} URL(s) logged only:\n${list}`));
+        });
         GM_registerMenuCommand("Ψ: IG Vault Panel", () => IG.togglePanel());
     };
 
@@ -918,6 +1166,14 @@
             const k = e.key.toLowerCase();
             if (k === 's') { e.preventDefault(); sniffer.toggle(); return; }
             if (k === 'i' && IG.active) { e.preventDefault(); IG.togglePanel(); return; } // [15] IG vault
+        }
+        // [U1] universal vault — Alt+Shift+V (collision-checked: YTPM owns
+        // Alt+Shift+U/S/X on YouTube, Recon R, MAM S — V is free suite-wide).
+        if (e.altKey && e.shiftKey && !e.ctrlKey && !e.metaKey && !e.repeat && typeof e.key === 'string'
+            && e.key.toLowerCase() === 'v') {
+            e.preventDefault();
+            VAULT.togglePanel();
+            return;
         }
         if (sniffMode && e.key === 'Escape') { sniffer.toggle(); return; } // [09] one-key exit
         if (sniffMode && e.key === 'Enter' && !e.repeat) {
@@ -938,9 +1194,10 @@
     whenBodyReady(() => {
         sniffer.init();
         registerMenus();
+        VAULT.installNetHook(); // [U2] FIRST — IG's hook defers to this wrap
         IG.init();
         deploy(); // Initial scan
     });
 
-    log("Ψ-4ndr0tools - blob2url_v6.5_ONLINE // 3LECTRIC-GLASS // GUP-G1..G5");
+    log("Ψ-4ndr0tools - blob2url_v7.1_ONLINE // 3LECTRIC-GLASS // GUP-G1..G5 + U1..U4");
 })();

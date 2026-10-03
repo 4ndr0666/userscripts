@@ -2,7 +2,7 @@
 // @name           4ndr0tools - LinkMasterΨ
 // @namespace      https://github.com/4ndr0666/userscripts
 // @author         4ndr0666
-// @version      6.1.0
+// @version      6.2.0
 // @description    Accurately decodes, previews, exports, validates and scrapes all links. (Dual MPV Support + Ψ IG Harvester + sexyforums premium-link unwrap + GitHub raw-URL harvest + Ψ2 forum deep-scrape engine)
 // @downloadURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
 // @updateURL      https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
@@ -503,6 +503,36 @@
     "mp3", "ogg", "wav", "flac", "aac", "m4a"
   ];
 
+  // [G11] v6.2.0 — VIDEO-GRID PARITY. Media sites present videos as PLAYER
+  // PAGES (/watch/123, /v/abc, /embed/xyz, /video/…) wrapped around poster
+  // thumbs, not as direct .mp4 files — the extension gate in isMediaFile()
+  // silently dropped every grid item, so "All Media" mode only ever
+  // propagated image thumbnails. Two predicates close the gap:
+  function isVideoPageLink(url) {
+    if (!url) return false;
+    try {
+      const u = new URL(url, location.origin);
+      if (!/^https?:$/.test(u.protocol)) return false;
+      if (/^\/(?:v|video|videos|embed|clip|watch|play|stream|movie|film)\//i.test(u.pathname)) return true;
+      if (/[?&](?:v|video|clip|watch)=/i.test(u.search)) return true;
+      // extensionless CDN paths that carry an explicit media hint
+      if (/\/(?:manifest|playlist|playback)\//i.test(u.pathname)) return true;
+      return false;
+    } catch { return false; }
+  }
+
+  // A video-page href only counts when the anchor presents like a media
+  // tile (embedded player/poster/thumbnail, or a tile-classified container)
+  // — plain nav links to /watch/live in a header menu stay out of the list.
+  function looksLikeMediaTile(a) {
+    try {
+      if (a.querySelector('video, [poster], iframe[src*="embed"]')) return true;
+      if (a.querySelector('img[src], img[data-src], source[src]')) return true;
+      const cls = (typeof a.className === 'string' && a.className) || '';
+      return /(?:^|[\s_-])(?:video|thumb|tile|card|poster|clip|media|item)(?:[\s_-]|$)/i.test(cls);
+    } catch { return false; }
+  }
+
   // ===========================================================================
   // UTILITY FUNCTIONS
   // ===========================================================================
@@ -680,10 +710,42 @@ const escape = { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&qu
       const deprox = decodeConfirmationHref(a);
       if (deprox) url = deprox.trim();
       if (isMediaFile(url) && !isJunkMedia(url)) links.add(url);
+      // [G11] v6.2.0: video-grid pass — anchors that point at player pages
+      // (watch/embed/video/…) and present like media tiles propagate their
+      // hrefs. Previously only the thumbnail IMAGES inside the grid were
+      // captured while every video link was dropped by the extension gate.
+      if (!isMediaFile(url) && isVideoPageLink(url) && !isJunkMedia(url) && looksLikeMediaTile(a)) {
+        links.add(url);
+      }
     });
     document.querySelectorAll("img[src]").forEach(img => {
-      const url = img.src.trim();
+      // [G12] v6.2.0: currentSrc first (srcset-aware — the browser-resolved
+      // candidate, not the placeholder), then the attribute fallbacks.
+      const url = (img.currentSrc || img.src || "").trim();
       if (isMediaFile(url) && !isJunkMedia(url)) links.add(url);
+    });
+    // [G12] lazy-loaded grids keep the real thumb in data-* attributes while
+    // src holds a 1×1 placeholder — those placeholders were all "All Media"
+    // mode ever saw on lazy sites.
+    document.querySelectorAll("img[data-src], img[data-original], img[data-lazy-src], img[data-srcset]").forEach(img => {
+      const candidates = [
+        img.getAttribute("data-src"),
+        img.getAttribute("data-original"),
+        img.getAttribute("data-lazy-src"),
+        (img.getAttribute("data-srcset") || "").split(",")[0].trim().split(/\s+/)[0]
+      ];
+      for (const c of candidates) {
+        const url = (c || "").trim();
+        if (url && isMediaFile(url) && !isJunkMedia(url)) { links.add(url); break; }
+      }
+    });
+    // [G12] <a> wrappers that carry the media in data-video/data-file (custom
+    // players) instead of the href.
+    document.querySelectorAll("a[data-video], a[data-file]").forEach(a => {
+      for (const attr of ["data-video", "data-file"]) {
+        const url = (a.getAttribute(attr) || "").trim();
+        if (url && isMediaFile(url) && !isJunkMedia(url)) links.add(url);
+      }
     });
     document.querySelectorAll("video, audio").forEach(el => {
       if (el.src && isMediaFile(el.src.trim()) && !isJunkMedia(el.src.trim())) links.add(el.src.trim());
@@ -691,6 +753,12 @@ const escape = { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&qu
 const url = src.src.trim();
         if (isMediaFile(url) && !isJunkMedia(url)) links.add(url);
       });
+    });
+    // [G12] poster frames — frequently the only media-bearing attribute on
+    // click-to-play tiles.
+    document.querySelectorAll("video[poster]").forEach(v => {
+      const url = (v.getAttribute("poster") || "").trim();
+      if (url && isMediaFile(url) && !isJunkMedia(url)) links.add(url);
     });
     return Array.from(links);
   }
@@ -1681,6 +1749,24 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", fn, { once: true });
     else fn();
   }
+
+
+/* ═══ v6.2.0 — CAPTURE-ROBUSTNESS PASS (suite v1.3.0) ══════════════════════
+   [G11] VIDEO-GRID PARITY: media sites present videos as PLAYER PAGES
+         (/watch/123, /v/abc, /embed/xyz) wrapped around poster thumbs —
+         the file-extension gate dropped every one of them, so "All Media"
+         mode only ever propagated image links on video-grid sites. Anchors
+         that target a video-page pattern AND present like a media tile
+         (embedded player/poster/thumbnail or tile-classified container)
+         now propagate their hrefs; plain header/nav links stay out.
+   [G12] DOM-SCRAPE DEPTH: img collection is srcset-aware (currentSrc first
+         — the browser-resolved candidate, not the attribute placeholder);
+         lazy-loaded grids (data-src / data-original / data-lazy-src /
+         data-srcset) are swept — previously a 1×1 placeholder was all the
+         scan ever saw on lazy sites; anchors carrying the media in
+         data-video / data-file (custom players) are harvested; video
+         poster frames are harvested.
+   ═════════════════════════════════════════════════════════════════════════ */
 
 
 /* ═══ v6.1.0 — SUPERSET COMPLETION (LinkMasterΨ2 v3.1.0 engine port) ════════

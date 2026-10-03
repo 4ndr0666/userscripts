@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         4ndr0tools - Akasha Silence
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      5.0.0
-// @description  Unified counter-surveillance defense layer. Three-way consolidation of Anti-detection + Counter-surveillance + Anti-telemetry (ICC): anti-analysis script neutralization, telemetry sinkholing (fetch/XHR/beacon/WebSocket), WebRTC blinding, session-stable fingerprint spoofing (hardware/canvas/WebGL/audio), identifier poisoning, Google link-tracking sanitization and hostile-UI countermeasures.
+// @version      5.1.0
+// @description  Unified counter-surveillance defense layer with a three-stage strictness valve (full / core / off via Ctrl+Alt+Shift+K). Three-way consolidation of Anti-detection + Counter-surveillance + Anti-telemetry (ICC): anti-analysis script neutralization, telemetry sinkholing (fetch/XHR/beacon/WebSocket), WebRTC blinding, session-stable fingerprint spoofing (hardware/canvas/WebGL/audio), identifier poisoning, Google link-tracking sanitization and hostile-UI countermeasures.
 // @author       4ndr0666
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @match        *://*/*
@@ -57,6 +57,28 @@
  *   D7-SCOPE     The SW/SharedWorker pacifier keeps its original
  *                ICC-scope (wan.video / kuaishou / aliyun / icc-cloud.kr)
  *                — every other defense runs globally.
+ *
+ * v5.1.0 (suite v1.3.0) — STRICTNESS RELIEF VALVE. The v5.0 posture was
+ * all-or-nothing: when a defense broke a site (canvas-dependent editors,
+ * g.alicdn-hosted libraries, sites whose functional API matched a broad
+ * blocklist token), the only remedy was killing the whole script. Three
+ * per-site profiles now exist, cycled live with Ctrl+Alt+Shift+K (the
+ * page reloads to re-install hooks at the new posture):
+ *   FULL — every defense (default; identical to v5.0).
+ *   CORE — telemetry sinkholing, identifier poisoning, Google link
+ *          sanitization and pushState SPM scrubbing only. Fingerprint
+ *          spoofing (navigator/canvas/WebGL/audio), the anti-analysis
+ *          neutralizer and the site-maintenance overrides are OFF — the
+ *          three most frequent site-breakers.
+ *   OFF  — completely inert (the hotkey stays armed so OFF is never a
+ *          one-way door).
+ * The profile persists per-origin in localStorage (grant:none page
+ * context — no GM storage available by design, since sandboxing would
+ * detach the hooks from the page). Also tightened two over-broad
+ * blocklist entries that produced false positives on legitimate traffic:
+ * '/track' now requires a path boundary (music sites' /tracks/<id> APIs
+ * were being mocked dead) and the blanket 'g.alicdn.com' CDN entry is
+ * narrowed to its known tracker artifacts (awsc/aplus/alidt paths).
  * ═══════════════════════════════════════════════════════════════════════ */
 
 (function () {
@@ -64,6 +86,62 @@
 
     const win = window;
     const domain = win.location.hostname;
+
+    /* ══ §0 STRICTNESS PROFILE + RELIEF VALVE (v5.1.0) ═══════════════ */
+
+    const PROFILE_KEY = 'akasha_silence_profile';
+    const PROFILES = ['full', 'core', 'off'];
+    let AKASHA_PROFILE = 'full';
+    try {
+        const stored = localStorage.getItem(PROFILE_KEY);
+        if (stored === 'full' || stored === 'core' || stored === 'off') AKASHA_PROFILE = stored;
+    } catch (e) { /* private mode — 'full' default stands */ }
+    const P_FULL = (AKASHA_PROFILE === 'full');
+    const P_CORE = P_FULL || (AKASHA_PROFILE === 'core'); // core defenses on
+
+    /* 3lectric-Glass toast (grant:none — no GM surfaces exist here). */
+    function akashaToast(text) {
+        try {
+            const host = document.body || document.documentElement;
+            if (!host) { console.log('[Ψ Akasha]', text); return; }
+            const el = document.createElement('div');
+            el.textContent = text;
+            el.style.cssText = [
+                'position:fixed', 'right:14px', 'bottom:14px', 'z-index:2147483647',
+                'background:rgba(10,19,26,0.95)', 'border:1px solid rgba(0,229,255,0.4)',
+                'border-left:3px solid #00E5FF', 'color:#e0ffff',
+                'font-family:"JetBrains Mono","Cascadia Mono",Consolas,monospace',
+                'font-size:12px', 'padding:10px 14px', 'max-width:340px',
+                'box-shadow:0 0 20px rgba(0,229,255,0.25)',
+                'transition:opacity 150ms ease-in-out', 'opacity:1', 'pointer-events:auto'
+            ].join(';');
+            host.appendChild(el);
+            setTimeout(() => {
+                el.style.opacity = '0';
+                setTimeout(() => { try { el.remove(); } catch (_) {} }, 200);
+            }, 1600);
+        } catch (e) { console.log('[Ψ Akasha]', text); }
+    }
+
+    /* The relief valve itself. Cycles full → core → off → full, persists
+     * per-origin, and reloads so document-start hooks re-install at the
+     * new posture. Runs in EVERY profile (OFF must never be a trap). */
+    document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.altKey && e.shiftKey && !e.metaKey && !e.repeat &&
+            typeof e.key === 'string' && e.key.toLowerCase() === 'k') {
+            e.preventDefault();
+            e.stopPropagation();
+            const next = PROFILES[(PROFILES.indexOf(AKASHA_PROFILE) + 1) % PROFILES.length];
+            try { localStorage.setItem(PROFILE_KEY, next); } catch (err) { /* non-fatal */ }
+            akashaToast(`Ψ AKASHA SILENCE — profile: ${AKASHA_PROFILE} → ${next}. Reloading…`);
+            setTimeout(() => { try { location.reload(); } catch (_) {} }, 900);
+        }
+    }, true);
+
+    if (AKASHA_PROFILE === 'off') {
+        console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: AKASHA_SILENCE v5.1.0 profile=OFF — INERT. Ctrl+Alt+Shift+K cycles the profile. ', 'background: #000; color: #00ff00; font-weight: bold; font-family: monospace; padding: 4px;');
+        return;
+    }
 
     /* ══ §1 CORE UTILITIES & HEX CORRUPTION LAYER ═══════════════════════ */
 
@@ -99,8 +177,9 @@
     /* Proxy facade: patched natives keep native toString/name/length. */
     const facade = (native, apply) => new Proxy(native, { apply });
 
-    /* ══ §2 FINGERPRINT NULLIFICATION (session-stable) ═════════════════ */
+    /* ══ §2 FINGERPRINT NULLIFICATION (session-stable) — FULL profile only */
 
+    if (P_FULL) {
     /* D2: values are computed ONCE per session — repeated reads agree. */
     const HW_THREADS = [2, 4, 8, 12, 16][Math.floor(Math.random() * 5)];
     const HW_MEMORY = [4, 8, 16, 32][Math.floor(Math.random() * 4)];
@@ -220,19 +299,29 @@
             return data;
         };
     } catch (e) {}
+    } /* end P_FULL fingerprint nullification */
 
     /* ══ §3 TELEMETRY ROUTING (union blocklist) ═════════════════════════ */
 
     const TELEMETRY_BLOCKLIST = [
         'log.aliyuncs.com',
-        '/track',
+        /* v5.1.0: '/track' tightened to a boundary match — the bare
+         * substring also mocked /tracks/<id> and /tracking/… API paths
+         * that legitimate music/streaming sites serve their content
+         * through (the #1 "Akasha broke this site" false positive). */
+        /(?:^|[?&/._-])track(?:[?#/.]|$)/i,
         '/progress/count',
         'fireyejs',
         'tracker-plugin',
         'aplus',
         'alidt.alicdn.com',
         'fourier.taobao.com',
-        'g.alicdn.com',
+        /* v5.1.0: the blanket 'g.alicdn.com' entry is narrowed to the
+         * known tracker artifacts — g.alicdn.com is a general-purpose CDN
+         * that serves arbitrary legitimate libraries (jQuery et al.);
+         * blocking it wholesale broke every site that loaded a script
+         * from it. */
+        /g\.alicdn\.com\/[^?#]*\/(?:awsc|aplus|alidt)/i,
         'awsc.js',
         'sufei_data',
         'stat-',
@@ -245,7 +334,8 @@
     const isTracker = (url) => {
         if (!url || typeof url !== 'string') return false;
         const normalizedUrl = url.toLowerCase();
-        return TELEMETRY_BLOCKLIST.some(block => normalizedUrl.includes(block));
+        return TELEMETRY_BLOCKLIST.some(block =>
+            block instanceof RegExp ? block.test(normalizedUrl) : normalizedUrl.includes(block));
     };
 
     const poisonData = (data) => {
@@ -476,8 +566,9 @@
 
     applyNetworkHooks(win);
 
-    /* ══ §5 ANTI-ANALYSIS NEUTRALIZER (from Anti-detection) ════════════ */
+    /* ══ §5 ANTI-ANALYSIS NEUTRALIZER (from Anti-detection) — FULL only */
 
+    if (P_FULL) {
     const SCRIPT_TEXT_FILTER = ['DisableDevtool', 'DevtoolsDetector', 'adblock', 'devtool', 'contextmenu', '_ads'];
     const SCRIPT_SRC_FILTER = ['disable-devtool', 'devtools-detector', 'detect2'];
 
@@ -549,6 +640,7 @@
             }
         }
     }).observe(document.documentElement, { childList: true, subtree: true });
+    } /* end P_FULL anti-analysis neutralizer */
 
     /* ══ §6 DOM SINKHOLE (dynamic script interception) ═════════════════ */
 
@@ -586,7 +678,7 @@
 
     const isGoogleDomain = domain.includes('google.') && !domain.includes('googleweblight.');
 
-    if (isGoogleDomain) {
+    if (P_CORE && isGoogleDomain) {
         let scriptCspNonce;
         let needsCspNonce = typeof browser !== 'undefined';
         let forceNoReferrer = true;
@@ -791,8 +883,9 @@
         setupAggressiveUglyLinkPreventer();
     }
 
-    /* ══ §8 SITE MAINTENANCE (Reddit/Instagram/Facebook) ═══════════════ */
+    /* ══ §8 SITE MAINTENANCE (Reddit/Instagram/Facebook) — FULL only ═══ */
 
+    if (P_FULL) {
     const createdStyles = [];
     const addCss = (css) => {
         const style = document.createElement('style');
@@ -858,8 +951,11 @@
         }
     }
 
+    } /* end P_FULL site maintenance */
+
     /* ══ §9 CONTEXT ESCAPE PREVENTION (iframe propagation) ═════════════ */
 
+    if (P_CORE) {
     const iframeObserver = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
             mutation.addedNodes.forEach((node) => {
@@ -880,9 +976,10 @@
     });
 
     iframeObserver.observe(document.documentElement || document.body, { childList: true, subtree: true });
+    } /* end P_CORE iframe propagation */
 
     /* ══ §10 BOOT ══════════════════════════════════════════════════════ */
 
-    console.log("%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: AKASHA_SILENCE v5.0.0 ACTIVE. ABSOLUTE SURVEILLANCE COUNTERMEASURES DEPLOYED. ", "background: #000; color: #00ff00; font-weight: bold; font-family: monospace; padding: 4px; border: 1px solid #00ff00;");
+    console.log(`%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: AKASHA_SILENCE v5.1.0 ACTIVE — profile=${AKASHA_PROFILE.toUpperCase()}. SURVEILLANCE COUNTERMEASURES DEPLOYED. Ctrl+Alt+Shift+K cycles strictness. `, "background: #000; color: #00ff00; font-weight: bold; font-family: monospace; padding: 4px; border: 1px solid #00ff00;");
     console.log("%c [4NDR0TOOLS] Initialization complete. Core shielded. ", "background: #000; color: #00ff00; font-weight: bold; padding: 4px; border: 1px solid #00ff00;");
 })();

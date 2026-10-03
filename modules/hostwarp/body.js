@@ -375,13 +375,19 @@ function telegramChannelId(url) {
  * ═══════════════════════════════════════════════════════════════════════ */
 
 function openSettings() {
-    Ψ.glass.injectStyles();
-    const hud = Ψ.glass.hud({
-        id: 'hostwarp-settings',
-        title: 'HOSTWARP',
-        subtitle: 'per-host warp drive — ' + Ψ.brand.SUITE,
-        width: 420, height: 380,
-        tabs: [
+    /* v1.1.0: console opens are fail-loud now. The original launch shipped
+     * a dead console (kernel glass.js called Ψ.store.getJson on the store
+     * FACTORY — TypeError swallowed by the menu dispatcher, nothing opened,
+     * nothing logged). Any future failure surfaces as a glass toast +
+     * console.error instead of silence. */
+    try {
+        Ψ.glass.injectStyles();
+        const hud = Ψ.glass.hud({
+            id: 'hostwarp-settings',
+            title: 'HOSTWARP',
+            subtitle: 'per-host warp drive — ' + Ψ.brand.SUITE,
+            width: 420, height: 380,
+            tabs: [
             {
                 id: 'modules', label: 'MODULES',
                 render: (contentEl) => {
@@ -418,8 +424,13 @@ function openSettings() {
                 },
             },
         ],
-    });
-    hud.show();
+        });
+        hud.show();
+    } catch (e) {
+        console.error('[Ψ HostWarp] settings console failed:', e);
+        try { Ψ.glass.toast(`Settings console error: ${e && e.message ? e.message : e}`, { type: 'error' }); }
+        catch (_) { alert(`Ψ HostWarp — settings console error:\n${e && e.message ? e.message : e}`); }
+    }
 }
 
 if (typeof GM_registerMenuCommand === 'function') {

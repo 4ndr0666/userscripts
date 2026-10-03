@@ -8,7 +8,28 @@
  *       declared, never mentioned in any other position (the getContent
  *       bug class);
  *   (3) GM APIs referenced but not @grant'd.
- * Heuristic by design — every hit is manually adjudicated before action. */
+ * Heuristic by design — every hit is manually adjudicated before action.
+ *
+ * ── v1.3.0 SCANNER REBUILD ──────────────────────────────────────────────
+ * The v1.2 scanner stripped comments with naive regexes BEFORE blanking
+ * strings, so a `//` inside any URL string literal ('https://…') was
+ * treated as a line comment, ate the closing quote, and flipped the
+ * string/comment state machine for the rest of the file — real function
+ * definitions were swallowed and CSS function names (rgba(, calc(, …)
+ * leaked out as pseudo-"calls". The result: ~220 false (2) hits and
+ * reported line numbers that matched nothing (multi-line template
+ * literals also collapsed when blanked).
+ * The rebuild is a single-pass, string-AWARE lexer:
+ *   • comments are only recognized OUTSIDE string/template literals;
+ *   • string + template contents are blanked to SPACES with newlines
+ *     preserved (line numbers in findings are now REAL line numbers);
+ *   • ${…} interpolation regions are kept as live code, recursively
+ *     handling nested templates/strings/comments/regexes inside them;
+ *   • regex literal contents are blanked too (the `tbm=isch(` class of
+ *     false hits — regex fragments are not function calls);
+ *   • identifiers supplied by @require libraries (sha256, saveAs, JSZip,
+ *     tippy, …) are auto-derived from the @require lines and excluded.
+ * ────────────────────────────────────────────────────────────────────── */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -39,12 +60,22 @@ const BUILTINS = new Set([
     "GM_listValues", "GM_getResourceText", "GM_getResourceURL", "GM_registerMenuCommand",
     "GM_unregisterMenuCommand", "GM_notification", "GM_openInTab", "GM_setClipboard",
     "GM_xmlhttpRequest", "GM_download", "GM_info", "unsafeWindow", "cloneInto",
+    "GM_addValueChangeListener", "GM_removeValueChangeListener",
     "exportFunction", "GM", "browser", "chrome", "arguments", "undefined",
     "parseInt", "parseFloat", "isNaN", "isFinite", "encodeURI", "encodeURIComponent",
     "decodeURI", "decodeURIComponent", "escape", "unescape", "eval",
     "requestIdleCallback", "reportError", "TextEncoder", "TextDecoder",
     "AggregateError", "FinalizationRegistry", "WeakRef", "WebSocketStream",
+    "ShadowRoot", "trustedTypes", "BigInt", "globalThis", "self", "top", "parent",
 ]);
+
+/* Known @require library globals → excluded from call-only findings. */
+const REQUIRE_GLOBALS = [
+    [/js-sha256|sha256/i, ["sha256"]],
+    [/FileSaver/i, ["saveAs"]],
+    [/jszip/i, ["JSZip"]],
+    [/tippy/i, ["tippy"]],
+];
 
 const files = [];
 (function walk(dir) {
@@ -54,27 +85,111 @@ const files = [];
     }
 })(CANON);
 
-function blankStrings(code) {
-    let out = "", i = 0;
-    const n = code.length;
-    while (i < n) {
-        const c = code[i];
-        if (c === '"' || c === "'" || c === "`") {
-            const q = c;
-            out += '""';
-            i++;
-            while (i < n) {
-                if (code[i] === "\\") { i += 2; continue; }
-                if (code[i] === q) { i++; break; }
-                if (q !== "`" && code[i] === "\n") break;
-                i++;
-            }
-            continue;
+/* ── Single-pass string-aware lexer ────────────────────────────────────
+ * Returns a "skeleton": same length + line structure as the source, with
+ * string/template/regex CONTENTS and comments replaced by spaces. Code
+ * (including ${…} interpolation bodies) survives verbatim. */
+function skeletonize(src) {
+    const out = src.split("");
+    const n = src.length;
+    const blank = (a, b) => { for (let k = a; k < b && k < n; k++) if (out[k] !== "\n") out[k] = " "; };
+    const prevCodeChar = (i) => {
+        let j = i - 1;
+        while (j >= 0 && (out[j] === " " || out[j] === "\n" || out[j] === "\t" || out[j] === "\r")) j--;
+        return j >= 0 ? src[j] : "";
+    };
+    const REGEX_PRECEDERS = /[(,=:[!&|?{};+\-*%<>~^]/;
+
+    function scanString(i, q) {
+        let j = i + 1;
+        while (j < n) {
+            if (src[j] === "\\") { j += 2; continue; }
+            if (src[j] === q) return j + 1;
+            if (q !== "`" && src[j] === "\n") return -1; /* unterminated single/double quote */
+            j++;
         }
-        out += c;
+        return -1;
+    }
+
+    function scanRegex(i) {
+        let j = i + 1, inClass = false;
+        while (j < n) {
+            if (src[j] === "\\") { j += 2; continue; }
+            if (src[j] === "[") inClass = true;
+            else if (src[j] === "]") inClass = false;
+            else if (src[j] === "/" && !inClass) return j + 1;
+            else if (src[j] === "\n") return -1; /* not a regex after all */
+            j++;
+        }
+        return -1;
+    }
+
+    function scanTemplate(i) {
+        /* i at opening backtick. Blanks raw-text segments, keeps ${…} bodies
+         * as code (recursively), blanks the delimiters themselves. */
+        out[i] = " ";
+        let j = i + 1;
+        let segStart = j;
+        while (j < n) {
+            if (src[j] === "\\") { j += 2; continue; }
+            if (src[j] === "`") { blank(segStart, j); out[j] = " "; return j + 1; }
+            if (src[j] === "$" && src[j + 1] === "{") {
+                blank(segStart, j);
+                let depth = 1, k = j + 2;
+                while (k < n && depth > 0) {
+                    const ch = src[k];
+                    if (ch === "{") depth++;
+                    else if (ch === "}") { depth--; if (depth === 0) break; }
+                    else if (ch === "`") { k = scanTemplate(k); continue; }
+                    else if (ch === '"' || ch === "'") {
+                        const e = scanString(k, ch);
+                        if (e !== -1) { blank(k + 1, e - 1); k = e; continue; }
+                    } else if (ch === "/" && src[k + 1] === "/") {
+                        let e = src.indexOf("\n", k); e = e === -1 ? n : e;
+                        blank(k, e); k = e; continue;
+                    } else if (ch === "/" && src[k + 1] === "*") {
+                        let e = src.indexOf("*/", k + 2); e = e === -1 ? n : e + 2;
+                        blank(k, e); k = e; continue;
+                    } else if (ch === "/" && REGEX_PRECEDERS.test(prevCodeChar(k))) {
+                        const e = scanRegex(k);
+                        if (e !== -1) { blank(k + 1, e - 1); k = e; continue; }
+                    }
+                    k++;
+                }
+                j = k + 1;
+                segStart = j;
+                continue;
+            }
+            j++;
+        }
+        blank(segStart, n);
+        return n;
+    }
+
+    let i = 0;
+    while (i < n) {
+        const c = src[i];
+        if (c === "/" && src[i + 1] === "/") {
+            let e = src.indexOf("\n", i); e = e === -1 ? n : e;
+            blank(i, e); i = e; continue;
+        }
+        if (c === "/" && src[i + 1] === "*") {
+            let e = src.indexOf("*/", i + 2); e = e === -1 ? n : e + 2;
+            blank(i, e); i = e; continue;
+        }
+        if (c === '"' || c === "'") {
+            const e = scanString(i, c);
+            if (e !== -1) { blank(i + 1, e - 1); i = e; continue; }
+            i++; continue; /* lone quote — leave as-is, nothing to swallow */
+        }
+        if (c === "`") { i = scanTemplate(i); continue; }
+        if (c === "/" && REGEX_PRECEDERS.test(prevCodeChar(i))) {
+            const e = scanRegex(i);
+            if (e !== -1) { blank(i + 1, e - 1); i = e; continue; }
+        }
         i++;
     }
-    return out;
+    return out.join("");
 }
 
 let totalHits = 0;
@@ -83,10 +198,17 @@ for (const file of files.sort()) {
     const rel = path.relative(ROOT, file);
     const hits = [];
 
-    const noComments = src
-        .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " "))
-        .replace(/\/\/[^\n]*/g, (m) => m.replace(/[^\n]/g, " "));
-    const noStrings = blankStrings(noComments);
+    const noStrings = skeletonize(src);
+
+    /* Externals supplied by @require libraries. */
+    const externals = new Set();
+    const reqRe = /\/\/\s*@require\s+(\S+)/g;
+    let rm;
+    while ((rm = reqRe.exec(src)) !== null) {
+        for (const [pat, names] of REQUIRE_GLOBALS) {
+            if (pat.test(rm[1])) for (const nm of names) externals.add(nm);
+        }
+    }
 
     /* ── (1) object-literal property cross-reference ── */
     const objDecls = new Map();
@@ -129,7 +251,7 @@ for (const file of files.sort()) {
     const KEYWORDS = new Set(["if", "for", "while", "switch", "catch", "return",
         "typeof", "new", "delete", "void", "do", "else", "function", "yield",
         "await", "throw", "case", "with", "in", "of", "instanceof", "import",
-        "async", "get", "set", "static"]);
+        "async", "get", "set", "static", "super", "this"]);
     const tokenRe2 = /[A-Za-z_$][\w$]*/g;
     /* find the character after the matching close-paren of an opening paren */
     const afterMatchingParen = (openIdx) => {
@@ -146,7 +268,7 @@ for (const file of files.sort()) {
     let tm;
     while ((tm = tokenRe2.exec(noStrings)) !== null) {
         const name = tm[0];
-        if (BUILTINS.has(name) || KEYWORDS.has(name)) continue;
+        if (BUILTINS.has(name) || KEYWORDS.has(name) || externals.has(name)) continue;
         /* previous significant char(s): method access? */
         let p = tm.index - 1;
         while (p >= 0 && /\s/.test(noStrings[p])) p--;

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Bunkr++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      7.4.0
+// @version      7.5.0
 // @author       4ndr0666
 // @description  Direct URL routing, auto-sort, hide visited, bypass dl gateway, bulk download, m3u8/CDN URL aggregation (page-context net-hook + per-item stream glyphs + album-wide STREAMS aggregation), broken-link repair, power-user hotkeys, LinkMaster-grade m3u8 stream resolution with gateway fallback, MPV dispatch (URI/bridge), web-archive dead-CDN resurrection (archive.org / archive.is), captcha-aware transport retry
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -121,6 +121,17 @@
 // GAP 27 fix: the grid glyph's cached resolution honors the signed URL's
 //   embedded `ex` expiry — clicks after token lapse re-resolve instead of
 //   downloading the CDN's 403 page.
+//
+// v7.5.0 (suite v1.3.0): SESSION-SURFACE EXEMPTION in Module 1 canonical
+// routing. Bunkr sessions are cookie-scoped per domain — an operator who
+// authenticates / uploads on bunk.cr while the canonical domain is bunkr.ws
+// was thrown onto bunkr.ws on every page, where no session exists (dead
+// uploader, login loop, unusable dashboard). The canonical-domain redirect
+// now fires ONLY on asset surfaces (/a/, /v/, /d/, /e/ — where the fetch,
+// probe and stream features want the canonical host) and never on CDN /
+// gateway hosts (unchanged); every front-of-house surface (uploader root,
+// /login, /dashboard, /settings, static pages) stays on whichever bunkr
+// domain the operator authenticated on.
 //
 // v7.4.0-Ψ superset revision (GUP v5.3 audited against the v7.3.0 golden
 // unit at repo commit 3ed7e98; LinkMasterBETA v5.1.1 cross-referenced).
@@ -489,9 +500,19 @@
     const u = new URL(window.location.href);
     let redirectNeeded = false;
 
+    // v7.5.0: session-surface exemption. Bunkr operator sessions are
+    // cookie-scoped PER DOMAIN: authenticating / uploading on bunk.cr while
+    // the canonical domain is bunkr.ws made this module throw the operator
+    // onto bunkr.ws on every page — where no session exists (upload widget
+    // dead, login loop, dashboard unusable). Canonical routing now applies
+    // ONLY to asset surfaces (/a/ albums, /v/ videos, /d/ download pages —
+    // where the fetch/probe features need the canonical host) and still
+    // never to CDN/gateway hosts; every front-of-house surface (uploader
+    // root, /login, /dashboard, /settings, static pages) stays on whichever
+    // bunkr domain the operator chose to authenticate on.
     if (u.hostname !== TARGET_DOMAIN) {
         const isAssetEndpoint = /cdn|get|media/i.test(u.hostname);
-        if (!isAssetEndpoint) {
+        if (!isAssetEndpoint && /^\/(?:a|v|d|e)\//.test(u.pathname)) {
             const pat = /(?:^|\.)(bunkr|bunker|bunkrr)\.[a-z0-9-]{2,}$/i;
             if (pat.test(u.hostname)) {
                 u.hostname = TARGET_DOMAIN;

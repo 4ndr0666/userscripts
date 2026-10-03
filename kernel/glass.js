@@ -21,6 +21,15 @@
     const { PALETTE, FONTS, TRANSITION, GLYPH_SVG } = Ψ.brand;
     const { $, $new, escapeHTML } = Ψ.core;
 
+    /* v1.3.0 facade repair: Ψ.store is a namespaced-store FACTORY
+     * ({ns, hasGM}) — the get/set/getJson/setJson methods live on the
+     * ns() facades, not on the factory. hud()/settingsConsole() previously
+     * called Ψ.store.getJson(...) directly → TypeError inside hud()
+     * construction → every glass settings console (HostWarp, PageCraft)
+     * opened to nothing. All glass persistence now goes through one
+     * glass-owned facade. */
+    const glassStore = (Ψ.store && typeof Ψ.store.ns === 'function') ? Ψ.store.ns('a4:glass') : null;
+
     const STYLE_ID = 'a4-glass-stylesheet-v1';
 
     /* Scoped component stylesheet. Every rule nests under .a4-scope so the
@@ -145,6 +154,11 @@
 
     /* ── HUD frame (draggable, tabbed, optionally shadow-isolated) ──────── */
 
+    /* Live HUD registry per script instance — reopening the same console id
+     * reuses the existing frame instead of stacking a duplicate window
+     * (menu-click spam previously piled identical HUDs on top of each other). */
+    const hudInstances = new Map();
+
     /**
      * Build a draggable glass HUD. Spec §4.2 window + §4.3 headerbar.
      *
@@ -167,6 +181,13 @@
             position = null, width = 380, height = 420,
             shadow = false, onReady = null,
         } = opts;
+
+        /* Reopen = show existing (dedup, v1.3.0). */
+        const existing = hudInstances.get(id);
+        if (existing) {
+            existing.show();
+            return existing;
+        }
 
         injectStyles();
 
@@ -241,15 +262,20 @@
         header.addEventListener('pointerup', endDrag);
         header.addEventListener('pointercancel', endDrag);
 
-        /* Position: persisted store or bottom-right default. */
-        const saved = Ψ.store ? Ψ.store.getJson(`hud:pos:${id}`, null) : null;
-        const pos = position || saved || { x: Math.max(8, window.innerWidth - width - 16), y: 64 };
+        /* Position: persisted store or bottom-right default. innerWidth can
+         * be undefined in exotic contexts (stubbed windows, some iframes) —
+         * the || fallbacks keep the default position a real number instead
+         * of NaN (NaNpx leaves the HUD invisible/unrecoverable). */
+        const saved = glassStore ? glassStore.getJson(`hud:pos:${id}`, null) : null;
+        const vw = Number(window.innerWidth) || 1024;
+        const vh = Number(window.innerHeight) || 768;
+        const pos = position || saved || { x: Math.max(8, vw - width - 16), y: 64 };
         frame.style.left = pos.x + 'px';
         frame.style.top = pos.y + 'px';
 
         const persistPos = Ψ.core.debounce(() => {
             const r = frame.getBoundingClientRect();
-            if (Ψ.store) Ψ.store.setJson(`hud:pos:${id}`, { x: r.left, y: r.top });
+            if (glassStore) glassStore.setJson(`hud:pos:${id}`, { x: r.left, y: r.top });
         }, 400);
 
         const api = {
@@ -271,11 +297,13 @@
             destroy() {
                 api.hide();
                 persistPos.cancel();
+                hudInstances.delete(id);
                 frame.replaceChildren();
             },
         };
         header.addEventListener('pointerup', persistPos);
 
+        hudInstances.set(id, api);
         for (const t of tabs) addTab(t);
         if (onReady) onReady(api);
         return api;
@@ -290,8 +318,15 @@
      * Values persist through Ψ.store under `ns`. Calls onChange(changedKey).
      */
     function settingsConsole(rootEl, ns, schema, onChange) {
-        const get = (k, d) => Ψ.store.get(`${ns}:${k}`, d);
-        const set = (k, v) => Ψ.store.set(`${ns}:${k}`, v);
+        /* v1.3.0: same facade repair as hud() — keys are written through the
+         * module's OWN namespace (Ψ.store.ns(ns)) so `mod:<key>` values read
+         * by the module body (`store.get('mod:xyz')`) and values written by
+         * this console land on the identical storage key. The previous
+         * direct Ψ.store.get/set calls not only crashed — they built keys
+         * in a different scheme than any reader. */
+        const store = (Ψ.store && typeof Ψ.store.ns === 'function') ? Ψ.store.ns(ns) : null;
+        const get = (k, d) => (store ? store.get(k, d) : d);
+        const set = (k, v) => { if (store) store.set(k, v); };
 
         const rows = schema.map((field) => {
             const row = $new('div', { class: 'a4-panel', style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' } });

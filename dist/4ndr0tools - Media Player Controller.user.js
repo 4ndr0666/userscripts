@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Media Player Controller
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      8.0.0
+// @version      8.1.0
 // @author       4ndr0666
 // @description  Speed • Fine Rate ±0.1 • Alt+Shift rAF Zoom/Pan • Rotation • Smart Maximize • Native Fullscreen • PiP • Play • DblClick • Pause-on-Acquire • Virtual DOM Nodes • Shadow-DOM Discovery • Cyan-Glass Scrub Bar • Download Button (fetch + blob capture) • Screenshot • Volume/Mute • Frame Step • Seek Hotkeys • IG Story Nav (3-Layer) • Story Repeat (3-Layer) • Active-Media Observer • YouTube Ad Auto-Skip • Toast Feedback • Draggable HUD • Full Hotkey Suite
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -52,7 +52,10 @@
     // ==========================================
     // SINGLETON GUARD (idempotency across double-injection)
     // ==========================================
-    if (window.psiMediaGodmodeLoaded) return;
+    if (window.psiMediaControllerLoaded || window.psiMediaGodmodeLoaded) return;
+    window.psiMediaControllerLoaded = true;
+    // legacy co-install guard kept — an older copy on the same page must
+    // still be recognized (and must recognize us via the legacy flag).
     window.psiMediaGodmodeLoaded = true;
 
     // ==========================================
@@ -456,11 +459,59 @@
         }
     }
 
+    /**
+     * v8.1.0 PLAY-REGISTRATION FALLBACK. Acquisition previously relied on
+     * the site firing a 'play' event (document capture / shadow listeners)
+     * or a mouseover on a SHADOW-rooted video — a paused-on-load video in
+     * the light DOM (poster grids, click-to-play sites, custom controls)
+     * never became active, so PLAY/Space did nothing on those sites. This
+     * picker selects the most plausible target directly: the LARGEST
+     * visible video (light DOM + every discovered shadow root), preferring
+     * one that is already playing, never an 0×0 node.
+     * @returns {Element|null}
+     */
+    function acquireBestCandidate() {
+        const candidates = allVideos().filter((v) => v.isConnected);
+        if (!candidates.length) return null;
+        let best = null, bestScore = -1;
+        for (const v of candidates) {
+            let r;
+            try { r = v.getBoundingClientRect(); } catch (_) { continue; }
+            const area = (r.width || 0) * (r.height || 0);
+            if (area <= 1) continue; // 0×0 / display:none node — never a real target
+            // A playing video outranks a bigger paused poster tile.
+            const playing = (!v.paused && !v.ended) ? 1e12 : 0;
+            const score = area + playing;
+            if (score > bestScore) { bestScore = score; best = v; }
+        }
+        return best;
+    }
+
+    /** True when the active target is missing or was detached by the host
+     * SPA — the signal to re-acquire before honoring PLAY/Space. */
+    function activeTargetStale() {
+        return !activeVideo || !activeVideo.isConnected;
+    }
+
+    /**
+     * v8.1.0: light-DOM mouseover acquisition — the shadow path (trackVideo)
+     * had hover acquisition, the light-DOM path did not. Document-level
+     * capture delegation, one handler, no per-video listeners.
+     */
+    document.addEventListener('mouseover', (e) => {
+        const t = e.target;
+        if (!t || t.tagName !== 'VIDEO') return;
+        if (t !== activeVideo) acquireTarget(t, false);
+    }, { passive: true, capture: true });
+
     hookAttachShadow();
     setTimeout(deepShadowWalk, 1200);
 
     // Continuous bounded discovery: cheap root scan every tick, deep walk every
     // 5th tick. Skipped entirely while the tab is hidden.
+    // v8.1.0: when no live target is held (initial load, SPA teardown), the
+    // tick also runs the fallback acquirer so the HUD's PLAY/Space/scrub are
+    // wired to the page's dominant video without waiting for a site 'play'.
     let discoveryTick = 0;
     setInterval(() => {
         if (document.hidden) return;
@@ -468,6 +519,10 @@
         allVideos().forEach(trackVideo);
         pruneDiscoveryRegistries();
         if (discoveryTick % 5 === 0) deepShadowWalk();
+        if (IS_TOP && activeTargetStale()) {
+            const candidate = acquireBestCandidate();
+            if (candidate) acquireTarget(candidate, false);
+        }
         applyMediaState(); // drift correction (sites reset playbackRate on ad insert, etc.)
     }, 1500);
 
@@ -531,7 +586,7 @@
         .psi-video-placeholder:hover { border-color: rgba(0,229,255,0.7) !important; }
 
         /* ── Draggable HUD — window.main-window topology (spec §4.2) ── */
-        #media-godmode-ui {
+        #mpc-hud-ui {
             position:        fixed;
             z-index:         2147483647;
             padding:         0;
@@ -551,15 +606,15 @@
             scrollbar-width: thin;
             scrollbar-color: var(--accent-cyan) rgba(0, 0, 0, 0.4);
         }
-        #media-godmode-ui::-webkit-scrollbar { width: 8px; }
-        #media-godmode-ui::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.4); }
-        #media-godmode-ui::-webkit-scrollbar-thumb {
+        #mpc-hud-ui::-webkit-scrollbar { width: 8px; }
+        #mpc-hud-ui::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.4); }
+        #mpc-hud-ui::-webkit-scrollbar-thumb {
             background:      var(--accent-cyan);
             border-radius:   0;
             min-height:      6px;
         }
-        #media-godmode-ui::-webkit-scrollbar-thumb:hover { background: var(--text-cyan-active); }
-        #media-godmode-ui.dragging { box-shadow: 0 0 25px var(--glow-cyan-hover); }
+        #mpc-hud-ui::-webkit-scrollbar-thumb:hover { background: var(--text-cyan-active); }
+        #mpc-hud-ui.dragging { box-shadow: 0 0 25px var(--glow-cyan-hover); }
 
         /* ── Headerbar (spec §4.3): drag surface + display typography ── */
         #mg-header {
@@ -580,12 +635,14 @@
             pointer-events:  none;
         }
         #mg-title {
+            /* v8.1.0 rebrand: compact label scale, not a heading — the name is
+             * Media Player Controller, set at control-label size per spec §4.3. */
             font-family:     var(--font-display);
-            font-size:       14pt;
+            font-size:       10px;
             font-weight:     700;
             color:           var(--text-cyan-active);
             line-height:     1.1;
-            letter-spacing:  1px;
+            letter-spacing:  2px;
         }
         #mg-subtitle {
             font-family:     var(--font-body);
@@ -611,7 +668,7 @@
         }
 
         /* ── Standard control surfaces (spec §4.4) ── */
-        #media-godmode-ui button {
+        #mpc-hud-ui button {
             background:      var(--glass-2-popup);
             border:          1px solid var(--accent-cyan-border);
             color:           var(--accent-cyan);
@@ -623,18 +680,18 @@
             font-family:     var(--font-body);
             font-weight:     bold;
         }
-        #media-godmode-ui button:hover {
+        #mpc-hud-ui button:hover {
             background:      var(--cyan-wash);
             border-color:    var(--accent-cyan);
             box-shadow:      0 0 20px var(--glow-cyan-hover);
             color:           var(--text-cyan-active);
         }
-        #media-godmode-ui button:active {
+        #mpc-hud-ui button:active {
             background:      var(--cyan-wash-strong);
             color:           var(--absolute-light);
         }
         /* toggled/checked state — switch:checked wash (spec §4.6) */
-        #media-godmode-ui button.active {
+        #mpc-hud-ui button.active {
             color:           var(--text-cyan-active);
             background:      var(--cyan-wash);
             border-color:    var(--accent-cyan);
@@ -1176,7 +1233,7 @@
     // HUD INJECTION (3LECTRIC-GLASS TOPOLOGY)
     // ==========================================
     const ui = document.createElement('div');
-    ui.id = 'media-godmode-ui';
+    ui.id = 'mpc-hud-ui';
     ui.innerHTML = `
         <div id="mg-header">
             <svg id="mg-glyph" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg"
@@ -1190,8 +1247,8 @@
                       font-family="'Cinzel Decorative', serif">Ψ</text>
             </svg>
             <div id="mg-titlebar-text">
-                <div id="mg-title">MEDIA GODMODE</div>
-                <div id="mg-subtitle">4NDR0666OS · v7.0.0-Ψ · UNIFIED SUPERSET</div>
+                <div id="mg-title">MEDIA PLAYER CONTROLLER</div>
+                <div id="mg-subtitle">4ndr0666tools · v8.1.0</div>
             </div>
             <button id="mg-help" class="mg-icon-btn" title="Hotkey reference">?</button>
         </div>
@@ -1364,10 +1421,14 @@
     };
 
     btnPlay.addEventListener('click', () => {
-        if (!activeVideo) {
-            const first = document.querySelector('video');
-            if (!first) return;
-            acquireTarget(first, false); // Full acquisition safe — nothing was active
+        // v8.1.0: the fallback uses the BEST candidate (largest visible,
+        // playing preferred — acquireBestCandidate), not the first <video>
+        // in the DOM (which was routinely a hidden/ad/preview node); a
+        // detached stale target (SPA teardown) is re-acquired the same way.
+        if (activeTargetStale()) {
+            const candidate = acquireBestCandidate();
+            if (!candidate) return;
+            acquireTarget(candidate, false); // Full acquisition safe — nothing was live
         }
         const v = activeVideo;
         if (!v) return;
@@ -1959,7 +2020,7 @@
             const candidates = Array.from(
                 container.querySelectorAll('button, div[tabindex], div[role="button"], [role="button"]')
             ).filter(el => {
-                if (el.closest('#media-godmode-ui')) return false; // Exclude own HUD
+                if (el.closest('#mpc-hud-ui')) return false; // Exclude own HUD
                 const r = el.getBoundingClientRect();
                 return (
                     r.height >= vRect.height * 0.5 &&
@@ -2337,11 +2398,17 @@
         // Space/Enter defer to focused interactive controls (native click)
         if ((e.code === 'Space' || e.key === 'Enter') &&
             t && (t.closest('button, a, summary, [role="button"]') ||
-                  t.closest('#media-godmode-ui, .psi-scrub-bar'))) {
+                  t.closest('#mpc-hud-ui, .psi-scrub-bar'))) {
             return;
         }
 
-        const v = activeVideo || document.querySelector('video');
+        // v8.1.0: same fallback acquisition as the PLAY button — a page whose
+        // videos never fire 'play' previously left Space dead too.
+        let v = activeVideo;
+        if (activeTargetStale()) {
+            const candidate = acquireBestCandidate();
+            if (candidate) { acquireTarget(candidate, false); v = candidate; }
+        }
 
         switch (e.code) {
             case 'Space':
@@ -2452,9 +2519,9 @@
     // BOOT LOG
     // ==========================================
     console.log(
-        '%c[4NDR0666OS] Media Godmode v7.0.0-Ψ — Unified Superset. ' +
+        '%c[4NDR0666OS] Media Player Controller v8.1.0-Ψ — Unified Superset. ' +
         'Speed ±0.1 | rAF Zoom/Pan (0.5–8x) | Rotation | Smart Maximize (Video+Image) | ' +
-        'Native Fullscreen | PiP | Play/DblClick/Space | Pause-on-Acquire | Virtual DOM | ' +
+        'Native Fullscreen | PiP | Play/DblClick/Space | Pause-on-Acquire | Fallback Target Acquisition | Virtual DOM | ' +
         'Shadow-DOM Discovery | Scrub Bar | Download (fetch + blob capture) | Screenshot | ' +
         'Volume/Mute | Frame Step | Seek | IG Nav (3-Layer) | IG Repeat (3-Layer) | ' +
         'Active-Media Observer | Ad Auto-Skip | Toast | Draggable HUD | Hotkey Reference.',
