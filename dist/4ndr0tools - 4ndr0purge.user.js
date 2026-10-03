@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - 4ndr0Purge
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.0.1
+// @version      1.0.2
 // @author       4ndr0666
 // @description  Universal one-click session reset. Nukes Cookies, Storage, IDB, and SW on ANY site.
 // @match        *://*/*
@@ -15,6 +15,7 @@
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @run-at       document-start
 // ==/UserScript==
+// 1.0.2 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
 
 (function () {
   'use strict';
@@ -138,8 +139,8 @@
       --accent-cyan-border-idle: rgba(0, 229, 255, 0.2);
       --accent-cyan-border-hover: rgba(0, 229, 255, 0.5);
       --glow-cyan-active: rgba(0, 229, 255, 0.4);
-      --text-primary: #EAEAEA;
-      --font-body: 'Roboto Mono', monospace;
+      --text-primary: #67E8F9;
+      --font-body: 'JetBrains Mono', monospace;
     }
 
     #omni-purge-dock {
@@ -152,7 +153,7 @@
       border-top: 1px solid rgba(255,255,255,0.1);
       border-left: 1px solid rgba(255,255,255,0.1);
       box-shadow: -4px 8px 32px 0 rgba(0, 0, 0, 0.37);
-      transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1), background 300ms ease;
+      transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1), background 150ms ease-in-out;
       transform: translateX(calc(100% - 22px));
     }
 
@@ -165,14 +166,14 @@
       background: transparent; border: none; color: var(--text-primary);
       padding: 12px 20px 12px 10px; font: 500 13px var(--font-body);
       text-transform: uppercase; letter-spacing: 0.05em;
-      cursor: pointer; transition: all 300ms ease-in-out;
+      cursor: pointer; transition: all 150ms ease-in-out;
     }
 
     .purge-icon {
       width: 24px; height: 24px;
       color: var(--accent-cyan);
       margin-right: 8px; flex-shrink: 0;
-      transition: filter 300ms, color 300ms;
+      transition: filter 150ms ease-in-out, color 150ms ease-in-out;
     }
 
     .purge-btn:hover {

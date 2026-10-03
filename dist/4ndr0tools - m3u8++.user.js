@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - m3u8++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      5.0.0
+// @version      5.0.1
 // @author       4ndr0666
 // @description  Automatically displays the m3u8 url for ANY video playing in the top right corner of the video. Click url to copy or click download to use the webapp "tools.thatwind.com". Also injects Play buttons next to magnet links on every page, relaying them to www.diancigaoshou.com.
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -26,6 +26,7 @@
 // @grant        GM_download
 // @run-at       document-start
 // ==/UserScript==
+// 5.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
 
 
 /* ═══ SUITE PROMOTION 5.0.0 ═══════════════════════════════════════════
@@ -138,9 +139,9 @@
             // old signature silently discarded. Type is now consumed: success/error get an accent
             // border; every pre-existing 2-arg call renders byte-identically (default "info").
             if (type === "success") {
-                mdiv.style.borderLeft = "3px solid #35c759";
+                mdiv.style.borderLeft = "3px solid #00E5FF";
             } else if (type === "error") {
-                mdiv.style.borderLeft = "3px solid #ff453a";
+                mdiv.style.borderLeft = "3px solid #ff0055";
             }
             p.appendChild(mdiv);
             setTimeout(() => {
@@ -362,16 +363,16 @@
             position: absolute;
             bottom: 0;
             right: 0;
-            color: #15FFFF;
+            color: #00E5FF;
             font-size: 14px;
             font-weight: bold;
-            background: #000;
+            background: rgba(10, 19, 26, 0.95);
             border-radius: 10px;
             padding: 3px 5px;
         }
 
         .copy-link:active{
-            color: #ccc;
+            color: #67E8F9;
         }
 
         .download-btn:hover{
@@ -663,10 +664,11 @@
                 border: none;
                 outline: none;
                 background: none;
-                background: #f7d308;
-                background: #08a6f7;
+                background: #67E8F9;
+                background: #00E5FF;
                 margin: 2px 8px;
                 border-radius: 3px;
+                font-family: 'JetBrains Mono', monospace;
                 color: white;
                 cursor: pointer;
                 display: inline-flex;
@@ -674,7 +676,7 @@
                 padding: 0 .8em;
                 align-items: center;
                 justify-content: center;
-                transition: background .15s;
+                transition: background 150ms ease-in-out;
                 text-decoration: none;
                 border-radius: 0.8em;
                 font-size: small;
@@ -685,12 +687,12 @@
                 pointer-events: none;
             }
             button[data-wtmzjk-mag-url]:hover{
-                background: #fae157;
-                background: #39b9f9;
+                background: #67E8F9;
+                background: #67E8F9;
             }
             button[data-wtmzjk-mag-url]:active{
-                background: #dfbe07;
-                background: #0797df;
+                background: #67E8F9;
+                background: #67E8F9;
             }
             button[data-wtmzjk-mag-url]>span{
                 pointer-events: none;

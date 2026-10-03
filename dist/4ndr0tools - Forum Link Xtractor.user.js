@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Forum Link Xtractor
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      3.2.0
+// @version      3.2.1
 // @description  Link xtractor, Invisitext revealer, and inline post reply viewer.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @author       4ndr0666
@@ -24,6 +24,7 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Forum%20Link%20Xtractor.user.js
 // @license      MIT
 // ==/UserScript==
+// 3.2.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
 
 
 /* ═══ SUITE PROMOTION 3.0.0 ═══════════════════════════════════════════
@@ -53,8 +54,8 @@
     // =========================================================================
     const CONFIG = {
         accentColor: '#00E5FF',
-        yellowColor: '#FFD700',
-        redColor: '#FF4C4C',
+        yellowColor: '#67E8F9',
+        redColor: '#ff0055',
         bgColor: 'rgba(10, 15, 26, 0.95)',
         excludeTerms: [
             'adglare.net', 'adtng', 'chatsex.xxx', 'cambb.xxx', 'comments',
@@ -88,8 +89,6 @@
     const ON_CANDIDSHINY = /(^|\.)candidshiny\.com$/i.test(window.location.hostname);
 
     const MAIN_STYLES = `
-        @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
 
         /* --- 4ndr0tools UI --- */
         #psi-container {
@@ -101,7 +100,7 @@
 
         #psi-toggle-btn {
             background: none; border: none; cursor: pointer; padding: 0;
-            width: 56px; height: 56px; transition: filter 0.3s ease, transform 0.2s ease;
+            width: 56px; height: 56px; transition: filter 150ms ease-in-out, transform 150ms ease-in-out;
             filter: drop-shadow(0 0 8px ${CONFIG.accentColor});
         }
         #psi-toggle-btn:hover { filter: drop-shadow(0 0 18px ${CONFIG.accentColor}); transform: scale(1.05); }
@@ -113,17 +112,17 @@
             border-radius: 6px; padding: 15px; margin-top: 10px; width: 280px;
             box-shadow: 0 0 20px rgba(0, 229, 255, 0.2); backdrop-filter: blur(5px);
             color: ${CONFIG.accentColor}; display: none; opacity: 0;
-            transform: translateY(-10px); transition: opacity 0.3s ease, transform 0.3s ease;
+            transform: translateY(-10px); transition: opacity 150ms ease-in-out, transform 150ms ease-in-out;
         }
         #psi-panel.visible { display: block; opacity: 1; transform: translateY(0); }
         .psi-row { display: flex; align-items: center; margin-bottom: 10px; gap: 10px; font-size: 11px; font-weight: bold; }
         .psi-row:last-child { margin-bottom: 0; }
 
         .psi-btn {
-            background: rgba(0, 229, 255, 0.1); border: 1px solid ${CONFIG.accentColor};
+            background: rgba(10, 19, 26, 0.65); border: 1px solid ${CONFIG.accentColor};
             color: ${CONFIG.accentColor}; padding: 8px 12px; cursor: pointer;
             font-family: inherit; text-transform: uppercase; font-weight: bold;
-            font-size: 11px; transition: all 0.2s; flex: 1; text-align: center; border-radius: 4px;
+            font-size: 11px; transition: all 150ms ease-in-out; flex: 1; text-align: center; border-radius: 4px;
         }
         .psi-btn:hover { background: ${CONFIG.accentColor}; color: #000; box-shadow: 0 0 10px ${CONFIG.accentColor}; }
         .psi-btn:disabled { opacity: 0.5; cursor: wait; }
@@ -144,7 +143,7 @@
             color: ${CONFIG.accentColor}; padding: 12px 20px; border-radius: 4px;
             font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: bold;
             box-shadow: 0 5px 15px rgba(0,229,255,0.2); animation: slideIn 0.3s ease-out forwards;
-            transition: opacity 0.3s ease, transform 0.3s ease;
+            transition: opacity 150ms ease-in-out, transform 150ms ease-in-out;
         }
 
         /* SVG Animations */
@@ -158,11 +157,11 @@
 
         /* --- MODULE: INVISITEXT --- */
         span[style*="Transparent"], span[style*="transparent"], span[style*="TRANSPARENT"] {
-            border: 1px dotted #99CC00; background: #000000; color: rgba(153, 204, 0, 0.5) !important;
+            border: 1px dotted #00E5FF; background: #000000; color: rgba(153, 204, 0, 0.5) !important;
             transition: color 0.3s;
         }
         span[style*="Transparent"]:hover, span[style*="transparent"]:hover, span[style*="TRANSPARENT"]:hover {
-            color: #99CC00 !important;
+            color: #00E5FF !important;
         }
 
         /* --- MODULE: REPLIES UI --- */
@@ -170,15 +169,15 @@
             margin-top: 10px; cursor: pointer; padding: 6px 12px; font-weight: bold;
             border: 1px solid ${CONFIG.accentColor}; background-color: rgba(0, 229, 255, 0.05);
             color: ${CONFIG.accentColor}; border-radius: 4px; font-size: 11px;
-            font-family: 'JetBrains Mono', monospace; transition: all 0.2s;
+            font-family: 'JetBrains Mono', monospace; transition: all 150ms ease-in-out;
         }
         .sc-replies-button:hover { background-color: ${CONFIG.accentColor}; color: #000; box-shadow: 0 0 8px ${CONFIG.accentColor}; }
         .sc-replies-container {
             margin-top: 10px; border: 1px solid ${CONFIG.accentColor}; padding: 10px;
             background-color: rgba(10, 15, 26, 0.8); border-radius: 4px;
         }
-        .sc-replies-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; color: #ddd; }
-        .sc-replies-table th, .sc-replies-table td { padding: 8px; border: 1px solid #333; text-align: left; }
+        .sc-replies-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; color: #67E8F9; }
+        .sc-replies-table th, .sc-replies-table td { padding: 8px; border: 1px solid rgba(0,229,255,0.35); text-align: left; }
         .sc-replies-table th { background: rgba(0, 229, 255, 0.1); text-align: center; color: ${CONFIG.accentColor}; }
         .sc-replies-table tr:nth-child(even) { background-color: rgba(255, 255, 255, 0.02); }
         .sc-replies-table a { color: ${CONFIG.accentColor}; text-decoration: none; font-weight: bold; }

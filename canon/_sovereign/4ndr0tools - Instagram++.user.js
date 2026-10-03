@@ -2,7 +2,7 @@
 // @name         4ndr0tools - Instagram++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666
-// @version      13.0.0
+// @version      13.0.1
 // @description  Tab-Bar + Dock Integration. Hotkey trigger (Alt+I). Ad-Blocking. Deep-Stack Recovery. Resilient cursor-based pagination. Stories support. Image/video download engine.
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Instagram++.user.js
@@ -22,6 +22,7 @@
 // @connect      *.instagram.com
 // @run-at       document-start
 // ==/UserScript==
+// 13.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
 
 (function () {
     'use strict';
@@ -30,9 +31,9 @@
     // [CONFIG]
     // =========================================================
     const CFG = {
-        ACCENT:      '#00ffff',
-        BG:          '#050505',
-        ERROR:       '#ff3e3e',
+        ACCENT:      '#00E5FF',
+        BG:          'rgba(10,19,26,0.85)',
+        ERROR:       '#ff0055',
         H_PCT:       0.88,
         W_PCT:       0.58,
         VOLUME:      0.03,
@@ -70,7 +71,7 @@
 
     const log = (msg) =>
         console.log(`%c[ARES-9 V7.0] %c${msg}`,
-            `color:${CFG.ACCENT}; font-weight:bold;`, `color:#ccc;`);
+            `color:${CFG.ACCENT}; font-weight:bold;`, `color:#67E8F9;`);
 
     // =========================================================
     // [TRUSTED TYPES BYPASS]
@@ -439,8 +440,8 @@
         btn.style.cssText =
             'position:absolute;top:8px;right:8px;z-index:2147483000;' +
             'width:26px;height:26px;display:flex;align-items:center;justify-content:center;' +
-            `background:rgba(0,20,0,0.75);color:${CFG.ACCENT};border:1px solid ${CFG.ACCENT};` +
-            'border-radius:6px;font-size:14px;line-height:1;cursor:pointer;font-family:monospace;' +
+            `background:rgba(10,19,26,0.72);color:${CFG.ACCENT};border:1px solid ${CFG.ACCENT};` +
+            'border-radius:6px;font-size:14px;line-height:1;cursor:pointer;font-family:"JetBrains Mono",monospace;transition:all 150ms ease-in-out;' +
             'opacity:0.85;pointer-events:auto;';
         btn.onmouseover = () => { btn.style.opacity = '1'; };
         btn.onmouseout  = () => { btn.style.opacity = '0.85'; };
@@ -744,9 +745,9 @@
             item.height = rect.height || item.height || 800;
             item.node.querySelectorAll('video').forEach(v => { v.pause(); v.src = ''; });
             const ph = document.createElement('div');
-            ph.style.cssText = `height:${item.height}px;width:100%;margin-bottom:80px;background:#050505;
-                border:1px solid #111;display:flex;align-items:center;justify-content:center;`;
-            ph.innerHTML = `<span style="color:#222;font-family:monospace;font-size:10px;">V-STASIS</span>`;
+            ph.style.cssText = `height:${item.height}px;width:100%;margin-bottom:80px;background:rgba(10,19,26,0.85);
+                border:1px solid rgba(0,229,255,0.2);display:flex;align-items:center;justify-content:center;`;
+            ph.innerHTML = `<span style="color:rgba(103,232,249,0.5);font-family:'JetBrains Mono',monospace;font-size:10px;">V-STASIS</span>`;
             if (item.node.parentNode) {
                 item.node.parentNode.replaceChild(ph, item.node);
                 item.node = ph;
@@ -879,7 +880,7 @@
             img.style.cssText   =
                 `max-height:${window.innerHeight * CFG.H_PCT}px;` +
                 `max-width:${window.innerWidth  * CFG.W_PCT}px;` +
-                `border:1px solid #333;display:block;cursor:pointer;pointer-events:auto;`;
+                `border:1px solid rgba(0,229,255,0.35);display:block;cursor:pointer;pointer-events:auto;`;
             const a    = document.createElement('a');
             a.href     = link;
             a.target   = '_blank';
@@ -903,7 +904,7 @@
         label.href            = link;
         label.target          = '_blank';
         label.style.cssText   =
-            `font-family:monospace;font-size:11px;color:${CFG.ACCENT};` +
+            `font-family:'JetBrains Mono',monospace;font-size:11px;color:${CFG.ACCENT};` +
             `opacity:0.6;text-decoration:none;pointer-events:auto;`;
         label.textContent = `[CODE: ${code || 'N/A'}] [${cur}/${total}]`;
         footer.appendChild(label);
@@ -957,22 +958,22 @@
 
         gui.innerHTML = `
         <div id="ares-header" style="position:sticky;top:0;background:rgba(0,0,0,0.95);padding:15px;
-            border-bottom:1px solid #111;display:flex;justify-content:space-between;align-items:center;
+            border-bottom:1px solid rgba(0,229,255,0.2);display:flex;justify-content:space-between;align-items:center;
             z-index:2147483648;backdrop-filter:blur(10px);">
             <div>
                 <div style="color:${CFG.ACCENT};font-family:monospace;font-weight:900;letter-spacing:1px;">
                     ARES-9 // SINGULARITY V7.0</div>
-                <div id="ares-stat" style="color:#555;font-family:monospace;font-size:10px;margin-top:4px;">
+                <div id="ares-stat" style="color:rgba(103,232,249,0.5);font-family:monospace;font-size:10px;margin-top:4px;">
                     INTERCEPTING FEED...</div>
             </div>
             <div style="display:flex;gap:12px;align-items:center;">
-                <button id="ares-more" style="background:#001a00;color:${CFG.ACCENT};border:1px solid ${CFG.ACCENT};
+                <button id="ares-more" style="background:rgba(10,19,26,0.85);color:${CFG.ACCENT};border:1px solid ${CFG.ACCENT};
                     padding:6px 14px;cursor:pointer;font-family:monospace;font-weight:bold;">LOAD MORE</button>
                 <button id="ares-dlall" style="background:transparent;color:${CFG.ACCENT};border:1px solid ${CFG.ACCENT};
                     padding:6px 14px;cursor:pointer;font-family:monospace;">⭳ DOWNLOAD ALL</button>
-                <button id="ares-dump" style="background:transparent;color:#aaa;border:1px solid #333;
+                <button id="ares-dump" style="background:transparent;color:#67E8F9;border:1px solid rgba(0,229,255,0.35);
                     padding:6px 14px;cursor:pointer;font-family:monospace;">DUMP HTML</button>
-                <button id="ares-exit" style="background:transparent;color:${CFG.ERROR};border:1px solid #500;
+                <button id="ares-exit" style="background:transparent;color:${CFG.ERROR};border:1px solid #ff0055;
                     padding:6px 16px;cursor:pointer;font-family:monospace;font-weight:bold;">EXIT</button>
             </div>
         </div>

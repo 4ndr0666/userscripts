@@ -2,7 +2,7 @@
 // @name         4ndr0tools - AlwaysNewWindow 
 // @namespace    https://github.com/4ndr0666/userscripts
 // @description  Open all links into new windows (optional force mode), auto-expand collapsed content, hide banners and consent overlays, neon-glow overlay scrollbar, and right-click scroll-to-top/bottom.
-// @version      1.0.0
+// @version      1.0.1
 // @author       4ndr0666
 // @match        *://*/*
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -16,6 +16,8 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20AlwaysNewWindow.user.js
 // @license      UNLICENSED - RED TEAM USE ONLY
 // ==/UserScript==
+// 1.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: AlwaysNewWindow.user v1.0.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 /* Paradigm: Event-Driven Userscript Toolkit — one IIFE, module registry with
  * independent enable/disable lifecycles, one MutationObserver per module,
@@ -1245,12 +1247,12 @@
             const css = `
     :root{
       /* Neon Glow theme (hardcoded) */
-      --bs-track: rgba(0,0,0,0.15);
-      --bs-thumb: linear-gradient(180deg,#00f5ff,#0ea5e9);
-      --bs-thumb-hover: linear-gradient(180deg,#22d3ee,#06b6d4);
+      --bs-track: rgba(10,19,26,0.55);
+      --bs-thumb: #00E5FF;
+      --bs-thumb-hover: #67E8F9;
       --bs-radius: 8px;
       --bs-width: 9px;
-      --bs-glow: 0 0 12px rgba(6,182,212,.6);
+      --bs-glow: 0 0 12px rgba(0,229,255,0.8);
       /* Idle indicator tuning */
       --bs-indicator-width: 3px;
       --bs-thin-thumb: 2px;
@@ -1262,9 +1264,9 @@
 
     .bs-bar{
       position:fixed; right:0; top:0; width:var(--bs-width); height:100vh;
-      background:var(--bs-track);
+      background:var(--bs-track); font-family:'JetBrains Mono',monospace;
       border-radius:var(--bs-radius) 0 0 var(--bs-radius);
-      z-index:${Z}; transition:opacity .2s,width .15s, background .15s;
+      z-index:${Z}; transition: all 150ms ease-in-out;
       opacity:0; pointer-events:none;
     }
     .bs-bar:hover{ width:calc(var(--bs-width) + 3px); }
@@ -1275,7 +1277,7 @@
       border-radius:var(--bs-radius);
       box-shadow:var(--bs-glow);
       cursor:grab; will-change:transform;
-      transition:background .15s, box-shadow .2s, opacity .15s;
+      transition: all 150ms ease-in-out;
       touch-action: none;
     }
     .bs-bar:hover .bs-thumb{ background:var(--bs-thumb-hover); box-shadow:var(--bs-glow), 0 2px 8px rgba(0,0,0,.25); }

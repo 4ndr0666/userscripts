@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - ModelSearch
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      4.0.0
+// @version      4.0.1
 // @description  Covert SimpCity search UI directly from any website. (Electric-Glass + Alt+S Hotkey Only)
 // @author       4ndr0666
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20ModelSearch.user.js
@@ -10,9 +10,12 @@
 // @icon         https://img.icons8.com/?size=30&id=44045&format=png
 // @grant        GM_openInTab
 // @grant        GM_addStyle
+// @grant        GM_getValue
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @run-at       document-start
 // ==/UserScript==
+// 4.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
+// · OPSEC: remote font fetch now opt-in (mst_remote_fonts, default OFF).
 
 
 /* ═══ SUITE PROMOTION 4.0.0 ═══════════════════════════════════════════
@@ -84,7 +87,7 @@ Changelog:
          */
         constructor() {
             try {
-                this.#injectFonts();
+                if (GM_getValue('mst_remote_fonts', false)) this.#injectFonts(); // OPSEC: opt-in remote fonts
                 this.#createUI();
                 this.#bindEvents();
             } catch (error) {
@@ -147,9 +150,9 @@ Changelog:
                     --shadow-glass-base:        0 8px 32px 0 rgba(0, 0, 0, 0.37);
                     --edge-light-top:           rgba(255, 255, 255, 0.1);
                     --edge-light-left:          rgba(255, 255, 255, 0.1);
-                    --text-primary:             #EAEAEA;
-                    --text-secondary:           #9E9E9E;
-                    --font-body:                'Roboto Mono', monospace;
+                    --text-primary:             #67E8F9;
+                    --text-secondary:           rgba(0,229,255,0.7);
+                    --font-body:                'JetBrains Mono', monospace;
                 }
 
                 * { box-sizing: border-box; pointer-events: auto; }
@@ -210,7 +213,7 @@ Changelog:
                     font-size: 24px;
                     color: var(--text-secondary);
                     cursor: pointer;
-                    transition: color 300ms ease-in-out;
+                    transition: color 150ms ease-in-out;
                     line-height: 1;
                 }
                 .close-button:hover { color: var(--accent-cyan); }
@@ -222,14 +225,14 @@ Changelog:
                 }
 
                 input {
-                    background: #070B14;
+                    background: rgba(10, 19, 26, 0.95);
                     color: var(--text-primary);
                     border: 1px solid rgba(0, 229, 255, 0.3);
                     padding: 12px;
                     border-radius: 6px;
                     font-family: var(--font-body);
                     font-size: 0.875rem;
-                    transition: all 300ms ease-in-out;
+                    transition: all 150ms ease-in-out;
                     outline: none;
                     width: 100%;
                 }
@@ -254,7 +257,7 @@ Changelog:
                     letter-spacing: 0.05em;
                     text-transform: uppercase;
                     cursor: pointer;
-                    transition: all 300ms ease-in-out;
+                    transition: all 150ms ease-in-out;
                     display: inline-flex;
                     align-items: center;
                     justify-content: center;

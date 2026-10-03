@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Confirmation Bypass
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      4.0.0
+// @version      4.0.1
 // @author       4ndr0666
 // @description  Reveals forum invisi-text, view all replies, rewrite redirect links. Download Gate: bypass all confirmation pages on all sites, glass overlay copy/download URL (incl. vidara embeds on xcandid), auto-solve Altcha, auto-click download. Turbo: embed routing, upload injector. Util: external link safety, right-click scrollbar to top.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -23,6 +23,8 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Confirmation%20Bypass.user.js
 // @license      UNLICENSED - RED TEAM USE ONLY
 // ==/UserScript==
+// 4.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.0.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px');
 
 
 /* ═══ SUITE PROMOTION 4.0.0 ═══════════════════════════════════════════
@@ -75,7 +77,6 @@
     // Tokens on :root with cb4-- prefix — unique enough not to clash.
     // ══════════════════════════════════════════════════════════════════════════
     GM_addStyle(`
-        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&family=Cinzel+Decorative:wght@700&display=swap');
 
         :root {
             --cb4-bg-dark-base:   #050A0F;
@@ -91,9 +92,9 @@
             --cb4-shadow-glow:    0 8px 32px 0 rgba(0, 229, 255, 0.15);
             --cb4-edge-top:       rgba(255, 255, 255, 0.1);
             --cb4-edge-left:      rgba(255, 255, 255, 0.1);
-            --cb4-text-primary:   #EAEAEA;
-            --cb4-text-secondary: #9E9E9E;
-            --cb4-font-body:      'Roboto Mono', monospace;
+            --cb4-text-primary:   #67E8F9;
+            --cb4-text-secondary: rgba(0,229,255,0.7);
+            --cb4-font-body:      'JetBrains Mono', monospace;
         }
 
         /* ── URL CONTEXT OVERLAY — Glass Engine §2 ──────────────────────── */
@@ -118,7 +119,7 @@
             user-select:           none;
             max-width:             440px;
             word-break:            break-all;
-            transition:            all 300ms ease-in-out;
+            transition:            all 150ms ease-in-out;
         }
 
         /* Fallback: no backdrop-filter support §4 §1 */
@@ -146,7 +147,7 @@
         }
 
         /* ── UPLOAD BUTTON — Interactive Topology §3 ─────────────────────── */
-        #cb4-upload-btn {
+        #67E8F9-upload-btn {
             display:         inline-flex;
             align-items:     center;
             justify-content: center;
@@ -161,21 +162,21 @@
             background:      rgba(0, 0, 0, 0.3);
             border:          1px solid transparent;
             border-radius:   6px;
-            transition:      all 300ms ease-in-out;
+            transition:      all 150ms ease-in-out;
             text-decoration: none;
         }
-        #cb4-upload-btn:hover {
+        #67E8F9-upload-btn:hover {
             color:            var(--cb4-accent-cyan);
             border-color:     var(--cb4-border-hover);
             background-color: var(--cb4-bg-hover);
         }
-        #cb4-upload-btn:active {
+        #67E8F9-upload-btn:active {
             color:            var(--cb4-text-active);
             background-color: var(--cb4-bg-active);
             border-color:     var(--cb4-accent-cyan);
             box-shadow:       0 0 15px var(--cb4-glow);
         }
-        #cb4-upload-btn:focus-visible {
+        #67E8F9-upload-btn:focus-visible {
             outline:        2px solid var(--cb4-accent-cyan);
             outline-offset: 2px;
         }
@@ -185,13 +186,13 @@
         span[style*="Transparent"],
         span[style*="transparent"],
         span[style*="TRANSPARENT"] {
-            border:     1px dotted #99CC00 !important;
+            border:     1px dotted #00E5FF !important;
             background: #000000 !important;
         }
         span[style*="Transparent"]:hover,
         span[style*="transparent"]:hover,
         span[style*="TRANSPARENT"]:hover {
-            color: #99CC00 !important;
+            color: #00E5FF !important;
         }
 
         /* ── VIEW REPLIES ────────────────────────────────────────────────── */
@@ -209,7 +210,7 @@
             font-size:        0.8rem;
             letter-spacing:   0.05em;
             text-transform:   uppercase;
-            transition:       all 300ms ease-in-out;
+            transition:       all 150ms ease-in-out;
         }
         .cb4-replies-btn:hover {
             background-color: var(--cb4-bg-hover);
@@ -283,7 +284,7 @@
             outline:        2px solid var(--cb4-accent-cyan) !important;
             outline-offset: 2px !important;
             box-shadow:     0 0 8px var(--cb4-glow) !important;
-            transition:     all 300ms ease-in-out !important;
+            transition:     all 150ms ease-in-out !important;
         }
     `);
 
@@ -328,7 +329,7 @@
         // Cherry-picked from C: explicit failure feedback
         const onFailure = (err) => {
             overlayEl.textContent = 'COPY FAILED ✗';
-            overlayEl.style.color = '#FF4444';
+            overlayEl.style.color = '#ff0055';
             setTimeout(restore, 1500);
             console.error('[4ndr0tools] Copy failed:', err);
         };
@@ -826,7 +827,7 @@
         const BUTTON_TEXT_HIDE = 'Hide Replies';
         const LOADING_TEXT     = 'Loading replies';
         const NO_REPLIES_HTML  = '<strong>No replies found.</strong>';
-        const ERROR_PREFIX     = '<strong style="color:#FF4444;">Error:</strong>';
+        const ERROR_PREFIX     = '<strong style="color:#ff0055;">Error:</strong>';
 
         const mainDomain = window.location.hostname.split('.').slice(-2).join('.');
 

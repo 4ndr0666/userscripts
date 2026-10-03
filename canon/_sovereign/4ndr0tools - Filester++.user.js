@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Filester++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      7.5.0
+// @version      7.5.1
 // @author       4ndr0666
 // @description  Dynamic stream extraction + folder enumeration for any media on Filester.me. Network proxy + glyph injection.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -16,6 +16,7 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Filester++.user.js
 // @license      UNLICENSED - RED TEAM USE ONLY
 // ==/UserScript==
+// 7.5.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
 
 /* ═══ v7.5.0 — framework realignment pass ═════════════════════════════════
  * · Dropped the dead @require of jQuery 3.6.0 — the v7.4.0 body never
@@ -44,15 +45,15 @@
     // STYLING
     // =========================================================================
     GM_addStyle(`
-        :root { --cyan: #00E5FF; --yellow: #FFD700; --purple: #C724FF; }
+        :root { --cyan: #00E5FF; --yellow: #67E8F9; --purple: #ff0055; }
 
         .psi-liberator-glyph {
             position: absolute; bottom: 10px; right: 10px;
-            width: 44px; height: 44px; background: rgba(15,22,35,0.96);
+            width: 44px; height: 44px; background: rgba(10,19,26,0.96);
             border: 2px solid var(--cyan); border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             font-size: 22px; color: var(--cyan); cursor: pointer;
-            z-index: 999999; transition: all 0.3s ease;
+            z-index: 999999; transition: all 150ms ease-in-out;
             box-shadow: 0 0 15px rgba(0,229,255,0.5);
         }
         .psi-liberator-glyph:hover {
@@ -67,8 +68,8 @@
 
         .psi-overlay {
             position: absolute; top: 8px; right: 8px; z-index: 99999;
-            background: rgba(10,15,26,0.95); color: var(--cyan);
-            padding: 5px 9px; font: 10.5px monospace; border: 1px solid var(--cyan);
+            background: rgba(10,19,26,0.95); color: var(--cyan);
+            padding: 5px 9px; font: 10.5px 'JetBrains Mono', monospace; border: 1px solid var(--cyan);
             border-radius: 4px; max-width: 360px; word-break: break-all;
             cursor: pointer;
         }

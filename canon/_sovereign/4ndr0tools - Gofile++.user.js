@@ -2,7 +2,7 @@
 // @name        4ndr0tools - GoFile++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     2.1.0
+// @version     2.1.1
 // @description Directly batch-download GoFiles with a robust UI. Supports recursive folder scans, direct links, and download managers (Aria2, IDM). Fixing SPA persistence and Sandbox access.
 // @match       *://gofile.io/*
 // @icon        data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -16,6 +16,8 @@
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Gofile++.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Gofile++.user.js
 // ==/UserScript==
+// 2.1.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.1.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 
 ; (function () {
@@ -177,27 +179,28 @@
         #GofileEnhanced_Layer { position: fixed; inset: 0; z-index: 2147483000; pointer-events: none; }
         #GofileEnhanced_Layer > * { pointer-events: auto; }
         .ge-modal-backdrop {
-            position: fixed; inset: 0; background: rgba(5, 8, 14, 0.72);
+            position: fixed; inset: 0; background: rgba(10, 19, 26, 0.72);
             backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center;
             animation: geFadeIn 0.18s ease-out;
         }
         .ge-modal {
             width: min(560px, calc(100vw - 48px)); max-height: calc(100vh - 96px); overflow: auto;
-            background: rgba(10, 15, 26, 0.97); border: 1px solid #00E5FF; border-radius: 10px;
-            box-shadow: 0 0 32px rgba(0, 229, 255, 0.25); color: #d7f7fb;
+            background: rgba(10, 19, 26, 0.97); border: 1px solid #00E5FF; border-radius: 10px;
+            transition: all 150ms ease-in-out;
+            box-shadow: 0 0 32px rgba(0, 229, 255, 0.25); color: #67E8F9;
             font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px;
         }
         .ge-modal-head {
             display: flex; align-items: center; gap: 10px; padding: 14px 18px;
             border-bottom: 1px solid rgba(0, 229, 255, 0.35); color: #00E5FF;
             font-weight: 700; letter-spacing: 0.5px; position: sticky; top: 0;
-            background: rgba(10, 15, 26, 0.97); z-index: 1;
+            background: rgba(10, 19, 26, 0.97); z-index: 1;
         }
         .ge-modal-close {
-            margin-left: auto; cursor: pointer; color: #7c8899; font-size: 18px; line-height: 1;
+            margin-left: auto; cursor: pointer; color: #ff0055; font-size: 18px; line-height: 1;
             padding: 2px 8px; border-radius: 4px; border: none; background: none;
         }
-        .ge-modal-close:hover { color: #ff5566; }
+        .ge-modal-close:hover { color: #ff0055; }
         .ge-modal-body { padding: 16px 18px; }
         .ge-modal-body a { color: #00E5FF; }
         .ge-spinner {
@@ -210,18 +213,18 @@
             flex-direction: column; gap: 10px; max-width: min(420px, calc(100vw - 40px));
         }
         .ge-toast {
-            background: rgba(10, 15, 26, 0.96); color: #d7f7fb; padding: 12px 16px;
+            background: rgba(10, 15, 26, 0.96); color: #67E8F9; padding: 12px 16px;
             border-left: 3px solid #00E5FF; border-radius: 6px; font-size: 12.5px;
             font-family: 'JetBrains Mono', ui-monospace, monospace;
             box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5); animation: geSlideIn 0.25s ease-out;
         }
         .ge-toast .ge-toast-title { font-weight: 700; color: #00E5FF; margin-bottom: 3px; }
-        .ge-toast.ge-success { border-left-color: #38d9a9; }
-        .ge-toast.ge-success .ge-toast-title { color: #38d9a9; }
-        .ge-toast.ge-error { border-left-color: #ff5566; }
-        .ge-toast.ge-error .ge-toast-title { color: #ff5566; }
-        .ge-toast.ge-warning { border-left-color: #FFD700; }
-        .ge-toast.ge-warning .ge-toast-title { color: #FFD700; }
+        .ge-toast.ge-success { border-left-color: #00E5FF; }
+        .ge-toast.ge-success .ge-toast-title { color: #00E5FF; }
+        .ge-toast.ge-error { border-left-color: #ff0055; }
+        .ge-toast.ge-error .ge-toast-title { color: #ff0055; }
+        .ge-toast.ge-warning { border-left-color: #67E8F9; }
+        .ge-toast.ge-warning .ge-toast-title { color: #67E8F9; }
         @keyframes geSpin { to { transform: rotate(360deg); } }
         @keyframes geFadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes geSlideIn { from { transform: translateX(30px); opacity: 0; } to { transform: none; opacity: 1; } }

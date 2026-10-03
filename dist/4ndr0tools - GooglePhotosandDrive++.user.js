@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - GooglePhotosandDrive++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      8.0.0
+// @version      8.0.1
 // @description  Restores context menus, exposes direct links, adds reverse image search, Drive direct-download resolution, Photos full-res extraction, power-user hotkeys, drag persistence and a settings console. 3lectric-Glass paradigm.
 // @author       4ndr0666
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -16,6 +16,7 @@
 // @grant        GM_setValue
 // @grant        GM_registerMenuCommand
 // ==/UserScript==
+// 8.0.1 (suite v1.4.0): OPSEC — remote Google-Fonts @import purged (IP-leak / fingerprint vector on every page load); local spec font stack retained. 3lectric-Glass universality round.
 
 
 /* ═══ SUITE PROMOTION 8.0.0 ═══════════════════════════════════════════
@@ -212,7 +213,6 @@
             const style = document.createElement('style');
             style.id = STYLE_ELEMENT_ID;
             style.textContent = `
-                @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=JetBrains+Mono:wght@500;700&family=Orbitron:wght@700&display=swap');
 
                 :root {
                     --glass-l1-window: rgba(10, 19, 26, 0.72);

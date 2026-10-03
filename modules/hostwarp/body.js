@@ -193,7 +193,7 @@ const TELEGRAM_CSS = `
     border-left: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 6px;
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37), 0 8px 32px 0 rgba(0, 229, 255, 0.15);
-    color: #9E9E9E;
+    color: rgba(0,229,255,0.7);
     transition: all 300ms ease-in-out;
 }
 @supports not (backdrop-filter: blur(1px)) { .tg4-web-btn { background: rgba(10, 19, 26, 0.92); } }

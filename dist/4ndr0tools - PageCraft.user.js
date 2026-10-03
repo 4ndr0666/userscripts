@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - PageCraft
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.1.0
+// @version      1.1.1
 // @description  All-sites page utility belt: bulk checkbox control with range/alt-hover selection (de-jQueryed), broken-image auto-repair with cache-busting + frame broadcast, hover-collapse image I/O governor, and Brave infinite scroll — one engine, glass settings console, zero runtime dependencies.
 // @author       4ndr0666
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -19,7 +19,7 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20PageCraft.user.js
 // ==/UserScript==
 
-/* 4ndr0tools - PageCraft v1.1.0 — built from modules/pagecraft + kernel {brand, core, glass, store, hotkeys}
+/* 4ndr0tools - PageCraft v1.1.1 — built from modules/pagecraft + kernel {brand, core, glass, store, hotkeys}
  * All-sites page utility belt: bulk checkbox control with range/alt-hover selection (de-jQueryed), broken-image auto-repair with cache-busting + frame broadcast, hover-collapse image I/O governor, and Brave infinite scroll — one engine, glass settings console, zero runtime dependencies.
  * This is a generated file; edit modules/ and run `npm run build`.
  */
@@ -443,8 +443,8 @@
 .a4-input::placeholder{color:var(--a4-text-dim);}
 /* Notification — spec .notification-label */
 .a4-toast{position:fixed;right:14px;z-index:2147483647;background:var(--a4-glass-2);border:1px solid var(--a4-brd-mid);border-left:3px solid var(--a4-cyan);color:var(--a4-cyan);padding:10px 14px;font-family:var(--a4-font);font-size:12px;max-width:340px;box-shadow:0 0 20px var(--a4-glow-aura);transition:opacity 150ms ease-in-out,transform 150ms ease-in-out;}
-.a4-toast--success{border-left-color:#35c759;}
-.a4-toast--error{border-left-color:#ff453a;}
+.a4-toast--success{border-left-color:#00E5FF;}
+.a4-toast--error{border-left-color:#ff0055;}
 .a4-toast--destructive{border-left-color:var(--a4-destructive);}
 .a4-toast .a4-toast-text{color:var(--a4-light);font-weight:bold;}
 /* Tabs */
@@ -758,7 +758,7 @@
         const render = () => {
             if (!listEl) return;
             listEl.replaceChildren(...lines.slice(-50).map((l) =>
-                $new('div', { style: { fontSize: '11px', padding: '2px 0', borderBottom: '1px solid rgba(0,229,255,0.08)', color: l.level === 'error' ? 'var(--a4-destructive)' : l.level === 'warn' ? '#FFD700' : 'var(--a4-cyan)' } },
+                $new('div', { style: { fontSize: '11px', padding: '2px 0', borderBottom: '1px solid rgba(0,229,255,0.08)', color: l.level === 'error' ? 'var(--a4-destructive)' : l.level === 'warn' ? '#67E8F9' : 'var(--a4-cyan)' } },
                     `[${l.ts}] ${l.text}`)));
             listEl.scrollTop = listEl.scrollHeight;
         };

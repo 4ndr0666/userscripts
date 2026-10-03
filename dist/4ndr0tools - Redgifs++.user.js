@@ -2,7 +2,7 @@
 // @name            4ndr0tools - Redgifs++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author          4ndr0666 
-// @version         5.1
+// @version         5.2
 // @description     Intercepts Redgifs links on Reddit for a cinematic overlay. On Redgifs itself, enters focused video-only mode. Falls back to JSON.parse intercept for direct /watch/ loads before SPA hydration.
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Redgifs++.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Redgifs++.user.js
@@ -17,6 +17,8 @@
 // @grant           GM_addElement
 // @grant           GM_addStyle
 // ==/UserScript==
+// 5.2 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Redgifs++.user v5.2 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 'use strict';
 
@@ -28,8 +30,8 @@
     // BRANCH A — Reddit side: cinematic iframe overlay
     // ─────────────────────────────────────────────────────────────────────────
     if (HOST === 'reddit.com' || HOST.endsWith('.reddit.com')) {
-        const MODAL_BG_COLOR    = 'rgba(0, 0, 0, 0.85)';
-        const SPINNER_COLOR     = '#d96946';
+        const MODAL_BG_COLOR    = 'rgba(10, 19, 26, 0.85)';
+        const SPINNER_COLOR     = '#00E5FF';
         const TRANSITION_SPEED  = '0.25s';
 
         const bootRedditOverlay = () => {
@@ -114,7 +116,7 @@
                 width: 95vw; height: 95vh;
                 max-width: 1800px;
                 border: none; border-radius: 8px;
-                background-color: #000;
+                background-color: #0A131A;
                 opacity: 0;
                 transition: opacity 0.3s ease 0.1s;
             }
@@ -125,15 +127,15 @@
                 position: absolute; top: 10px; right: 15px;
                 width: 32px; height: 32px;
                 display: flex; justify-content: center; align-items: center;
-                background-color: rgba(0,0,0,0.6); color: white;
-                border-radius: 50%; font-family: 'Arial Black', sans-serif;
+                background-color: rgba(10,19,26,0.6); color: #ffffff;
+                border-radius: 50%; font-family: 'JetBrains Mono', monospace;
                 font-size: 16px; cursor: pointer; user-select: none;
                 z-index: 1;
-                transition: transform 0.2s ease, background-color 0.2s ease;
+                transition: transform 150ms ease-in-out, background-color 150ms ease-in-out;
             }
             #rgpp-close-btn:hover {
                 transform: scale(1.1);
-                background-color: rgba(255,0,0,0.7);
+                background-color: rgba(255,0,85,0.7);
             }
             .rgpp-spinner {
                 position: absolute; display: block;
@@ -261,7 +263,7 @@
 
             body.${VIDEO_ONLY_CLASS} {
                 overflow: hidden;
-                background-color: #000;
+                background-color: #0A131A;
             }
             /* Hide every top-level element except our relocated player */
             body.${VIDEO_ONLY_CLASS} > *:not(.${PLAYER_CLASS}) {

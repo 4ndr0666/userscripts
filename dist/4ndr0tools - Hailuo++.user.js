@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Hailuo++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      6.0.0
+// @version      6.0.1
 // @author       4ndr0666
 // @description  Enterprise-grade, idempotent automation engine for HailuoAI featuring automated queue management, asset fetching with tracked-download deduplication, an in-HUD Asset Bay thumbnail gallery (click-to-new-window, hover-playable previews, blob downloads that never navigate the session window) with cross-reload persistence, completion notifications, failure-card masking, API hard purge, and interactive asset links — hardened for the 2026-09 MiniMax H3 site generation and the hailuoai.video/agent chat surface. v5.4: editable-context (Slate) DOM guards, self-healing HUD watchdog, HUD collapse + Ctrl+Alt+H toggle, frame isolation, webp-aware blob transport with retry, and non-destructive title telemetry.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -24,6 +24,8 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Hailuo++.user.js
 // @license      UNLICENSED - RED TEAM USE ONLY
 // ==/UserScript==
+// 6.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.0.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 
 /* ═══ SUITE PROMOTION 6.0.0 ═══════════════════════════════════════════
@@ -339,9 +341,9 @@
                   --shadow-glass-base: 0 12px 40px 0 rgba(0, 0, 0, 0.6);
                   --edge-light-top: rgba(255, 255, 255, 0.15);
                   --edge-light-left: rgba(255, 255, 255, 0.15);
-                  --text-primary: #EAEAEA;
-                  --text-secondary: #9E9E9E;
-                  --font-body: 'Roboto Mono', monospace;
+                  --text-primary: #67E8F9;
+                  --text-secondary: rgba(0,229,255,0.7);
+                  --font-body: 'JetBrains Mono', monospace;
                 }
                 #glass-hud-container {
                   position: fixed;
@@ -402,7 +404,7 @@
                   justify-content: center;
                   padding: 0;
                   font-family: var(--font-body);
-                  transition: all 200ms ease;
+                  transition: all 150ms ease-in-out;
                 }
                 .hud-collapse-btn:hover {
                   color: var(--accent-cyan);
@@ -443,7 +445,7 @@
                   letter-spacing: 0.05em;
                   color: var(--text-secondary);
                   cursor: pointer;
-                  transition: all 200ms ease;
+                  transition: all 150ms ease-in-out;
                   position: relative;
                 }
                 .mechanical-switch:hover {
@@ -461,9 +463,9 @@
                   width: 6px;
                   height: 6px;
                   border-radius: 50%;
-                  background: #ff4444;
-                  box-shadow: 0 0 6px #ff4444;
-                  transition: background 200ms ease, box-shadow 200ms ease;
+                  background: #ff0055;
+                  box-shadow: 0 0 6px #ff0055;
+                  transition: background 150ms ease-in-out, box-shadow 150ms ease-in-out;
                 }
                 .mechanical-switch.active .switch-indicator {
                   background: var(--accent-cyan);
@@ -472,7 +474,7 @@
                 .sys-btn {
                   background: rgba(255, 170, 0, 0.1);
                   border: 1px solid rgba(255, 170, 0, 0.3);
-                  color: #ffaa00;
+                  color: #67E8F9;
                   font-size: 0.68rem;
                   text-transform: uppercase;
                   padding: 8px;
@@ -481,11 +483,11 @@
                   text-align: center;
                   letter-spacing: 0.06em;
                   font-weight: bold;
-                  transition: all 200ms ease;
+                  transition: all 150ms ease-in-out;
                 }
                 .sys-btn:hover {
                   background: rgba(255, 170, 0, 0.25);
-                  border-color: #ffaa00;
+                  border-color: #67E8F9;
                   color: #ffffff;
                 }
                 .help-btn {
@@ -578,7 +580,7 @@
                   cursor: pointer;
                   text-transform: uppercase;
                   font-weight: bold;
-                  transition: all 200ms ease;
+                  transition: all 150ms ease-in-out;
                 }
                 .close-help-btn:hover {
                   background: var(--accent-cyan);
@@ -712,7 +714,7 @@
                 .bay-tool-btn {
                   background: rgba(255, 170, 0, 0.1);
                   border: 1px solid rgba(255, 170, 0, 0.3);
-                  color: #ffaa00;
+                  color: #67E8F9;
                   font-size: 0.6rem;
                   font-weight: bold;
                   text-transform: uppercase;
@@ -724,7 +726,7 @@
                 }
                 .bay-tool-btn:hover {
                   background: rgba(255, 170, 0, 0.25);
-                  border-color: #ffaa00;
+                  border-color: #67E8F9;
                   color: #ffffff;
                 }
                 .bay-grid {
@@ -807,7 +809,7 @@
             const documentStyle = document.createElement("style");
             documentStyle.id = "andr0666-doc-style";
             documentStyle.textContent = `
-                .linkElClass { color: #00E5FF; position: absolute; top: 10px; left: 10px; height: 18px; width: 48px; font-size: 10px; background-color: rgba(5, 10, 15, 0.9); font-family: 'Roboto Mono', monospace; font-weight: bold; text-align: center; line-height: 18px; border-radius: 4px; border: 1px solid rgba(0, 229, 255, 0.4); opacity: 0.8; z-index: 50; transition: all 200ms ease; text-decoration: none; display: block; }
+                .linkElClass { color: #00E5FF; position: absolute; top: 10px; left: 10px; height: 18px; width: 48px; font-size: 10px; background-color: rgba(5, 10, 15, 0.9); font-family: 'Roboto Mono', monospace; font-weight: bold; text-align: center; line-height: 18px; border-radius: 4px; border: 1px solid rgba(0, 229, 255, 0.4); opacity: 0.8; z-index: 50; transition: all 150ms ease-in-out; text-decoration: none; display: block; }
                 .linkElClass:hover { opacity: 1.0; border-color: #00E5FF; box-shadow: 0 0 10px rgba(0, 229, 255, 0.6); background-color: #050A0F; }
                 .linkElClass a { color: inherit; text-decoration: none; display: block; width: 100%; height: 100%; }
                 .videoPreviewElClass { position: absolute; top: 35px; left: 10px; width: 260px; max-width: 480px; max-height: 260px; z-index: 100; border: 2px solid #00E5FF; border-radius: 8px; box-shadow: 0 12px 36px rgba(0,0,0,0.9); background: #050A0F; pointer-events: none; }

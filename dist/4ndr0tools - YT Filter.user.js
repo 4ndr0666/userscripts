@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - YT Filter
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      2.4
+// @version      2.5
 // @author       4ndr0666
 // @description  Electric-Glass YouTube video filter — views, date, duration
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -12,6 +12,8 @@
 // @grant        GM_addStyle
 // @run-at       document-end
 // ==/UserScript==
+// 2.5 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: YT Filter.user v2.5 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 (() => {
   'use strict';
@@ -55,27 +57,25 @@
 
   // ---------- Styles ----------
   GM_addStyle(`
-    @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&family=Orbitron:wght@700&display=swap');
-
     :root {
-      --bg-panel:              #101827;
-      --bg-input:              #070B14;
-      --accent-cyan:           #15fafa;
-      --accent-cyan-mid:       #15adad;
-      --accent-cyan-dark:      #157d7d;
-      --accent-cyan-glow:      rgba(21, 250, 250, 0.20);
-      --accent-cyan-glow-hi:   rgba(21, 250, 250, 0.50);
-      --accent-cyan-border:    rgba(21, 250, 250, 0.60);
-      --accent-cyan-bg-active: rgba(21, 250, 250, 0.12);
-      --text-primary:          #e0ffff;
-      --text-secondary:        #a0f0f0;
-      --text-muted:            #70c0c0;
-      --text-inactive:         #9E9E9E;
-      --error-bg:              rgba(255, 68, 68, 0.10);
-      --error-border:          rgba(255, 68, 68, 0.80);
-      --error-text:            #ff6b6b;
-      --font-ui:               'Roboto Mono', monospace;
-      --font-head:             'Orbitron', monospace;
+      --bg-panel:              rgba(10, 19, 26, 0.92);
+      --bg-input:              rgba(10, 19, 26, 0.95);
+      --accent-cyan:           #00E5FF;
+      --accent-cyan-mid:       #67E8F9;
+      --accent-cyan-dark:      rgba(0, 229, 255, 0.55);
+      --accent-cyan-glow:      rgba(0, 229, 255, 0.20);
+      --accent-cyan-glow-hi:   rgba(0, 229, 255, 0.50);
+      --accent-cyan-border:    rgba(0, 229, 255, 0.60);
+      --accent-cyan-bg-active: rgba(0, 229, 255, 0.12);
+      --text-primary:          #67E8F9;
+      --text-secondary:        #00E5FF;
+      --text-muted:            rgba(0, 229, 255, 0.7);
+      --text-inactive:         rgba(103, 232, 249, 0.4);
+      --error-bg:              rgba(255, 0, 85, 0.10);
+      --error-border:          rgba(255, 0, 85, 0.80);
+      --error-text:            #ff0055;
+      --font-ui:               'JetBrains Mono', monospace;
+      --font-head:             'Orbitron', sans-serif;
       --transition-snap:       150ms ease-in-out;
       --transition-slide:      300ms cubic-bezier(0.4, 0, 0.2, 1);
     }
@@ -144,7 +144,7 @@
       max-height: 85vh;
       overflow-y: auto;
       overflow-x: hidden;
-      background: rgba(16, 24, 39, 0.92);
+      background: rgba(10, 19, 26, 0.92);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       color: var(--text-primary);

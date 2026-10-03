@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Images++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      4.0.0
+// @version      4.0.1
 // @description  Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. Collapse-mode hotkey is configurable.
 // @author       4ndr0666
 // @match        *://*/*
@@ -47,6 +47,8 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Images++.user.js
 // @license      UNLICENSED - RED TEAM USE ONLY
 // ==/UserScript==
+// 4.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Images++.user v4.0.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 /* ═══ v4.0.0 — SUITE CONSOLIDATION MERGE (GUP superset gate) ═════════════════
    Base:      Images++ v3.0.0 stable — the universal mouseover-preview lineage
@@ -3267,7 +3269,7 @@ const Util = {
         body {
           margin: 0;
           padding: 0;
-          background: #222;
+          background: rgba(10, 19, 26, 0.72);
         }
         .fit {
           overflow: hidden
@@ -3724,11 +3726,11 @@ const CSS_SETUP = /*language=css*/ `
     right: 20px !important;
     padding: 1.5em !important;
     color: #000 !important;
-    --bg: #eee;
+    --bg: rgba(10,19,26,0.72);
     background: var(--bg) !important;
     box-shadow: 5px 5px 25px 2px #000 !important;
     width: 33em !important;
-    border: 1px solid black !important;
+    border: 1px solid rgba(0,229,255,0.2) !important;
     display: flex !important;
     flex-direction: column !important;
   }
@@ -3823,9 +3825,9 @@ const CSS_SETUP = /*language=css*/ `
     position: relative;
     flex: 0 0 1.5em;
     height: 1.5em;
-    border: 1px solid #888;
+    border: 1px solid rgba(0,229,255,0.35);
     pointer-events: none;
-    color: #888;
+    color: rgba(0,229,255,0.35);
     background-image:
       linear-gradient(45deg, currentColor 25%, transparent 25%, transparent 75%, currentColor 75%),
       linear-gradient(45deg, currentColor 25%, transparent 25%, transparent 75%, currentColor 75%);
@@ -3853,7 +3855,7 @@ const CSS_SETUP = /*language=css*/ `
   }
   :invalid {
     background-color: #f002;
-    border-color: #800;
+    border-color: #ff0055;
   }
   code {
     font-weight: bold;
@@ -3873,10 +3875,10 @@ const CSS_SETUP = /*language=css*/ `
   kbd {
     padding: 1px 6px;
     font-weight: bold;
-    font-family: Consolas, monospace;
-    border: 1px solid #888;
+    font-family: 'JetBrains Mono', monospace;
+    border: 1px solid rgba(0,229,255,0.35);
     border-radius: 3px;
-    box-shadow: inset 1px 1px 5px #8888, .25px .5px 2px #0008;
+    box-shadow: inset 1px 1px 5px rgba(0,229,255,0.35)8, .25px .5px 2px #0008;
   }
   .column {
     display: flex;
@@ -3899,8 +3901,8 @@ const CSS_SETUP = /*language=css*/ `
     opacity: .5;
   }
   .matching-domain {
-    border-color: #56b8ff;
-    background: #d7eaff;
+    border-color: #00E5FF;
+    background: rgba(0,229,255,0.12);
   }
   #_mover {
     cursor: move;
@@ -3929,7 +3931,7 @@ const CSS_SETUP = /*language=css*/ `
     user-select: none;
   }
   #_x:hover {
-    background-color: #8884;
+    background-color: rgba(0,229,255,0.35)4;
   }
   #_cssApp {
     color: seagreen;
@@ -3956,10 +3958,10 @@ const CSS_SETUP = /*language=css*/ `
   }
   #_usage tr:nth-last-child(n + 2) > :not(br) {
     white-space: pre-line;
-    border-bottom: 1px dotted #8888;
+    border-bottom: 1px dotted rgba(0,229,255,0.35)8;
   }
   #_usage kbd {
-    font-family: monospace;
+    font-family: 'JetBrains Mono', monospace;
     font-weight: bold;
   }
   @keyframes fade-in {
@@ -3969,25 +3971,25 @@ const CSS_SETUP = /*language=css*/ `
   @media (prefers-color-scheme: dark) {
     :host {
       color: #aaa !important;
-      --bg: #333 !important;
+      --bg: rgba(10,19,26,0.85) !important;
     }
     a {
       color: deepskyblue;
     }
     button {
-      background: linear-gradient(-5deg, #333, #555);
+      background: linear-gradient(-5deg, rgba(10,19,26,0.85), rgba(103,232,249,0.5));
       border: 1px solid #000;
       box-shadow: 0 2px 6px #181818;
       border-radius: 3px;
       cursor: pointer;
     }
     button:hover {
-      background: linear-gradient(-5deg, #333, #666);
+      background: linear-gradient(-5deg, rgba(10,19,26,0.85), rgba(0,229,255,0.55));
     }
     textarea, input, select {
-      background: #111;
+      background: rgba(0,229,255,0.2);
       color: #BBB;
-      border: 1px solid #555;
+      border: 1px solid rgba(103,232,249,0.5);
     }
     input[type=checkbox] {
       filter: invert(1);
@@ -3999,7 +4001,7 @@ const CSS_SETUP = /*language=css*/ `
       filter: invert(1);
     }
     kbd {
-      border-color: #666;
+      border-color: rgba(0,229,255,0.55);
     }
     @supports (-moz-appearance: none) {
       input[type=checkbox],
@@ -4025,23 +4027,23 @@ const CSS_SETUP = /*language=css*/ `
     ::-webkit-scrollbar {
       width: 14px;
       height: 14px;
-      background: #333;
+      background: rgba(10,19,26,0.85);
     }
     ::-webkit-scrollbar-button:single-button {
-      background: radial-gradient(circle at center, #555 40%, #333 40%)
+      background: radial-gradient(circle at center, rgba(103,232,249,0.5) 40%, rgba(10,19,26,0.85) 40%)
     }
     ::-webkit-scrollbar-track-piece {
       background: #444;
-      border: 4px solid #333;
+      border: 4px solid rgba(10,19,26,0.85);
       border-radius: 8px;
     }
     ::-webkit-scrollbar-thumb {
-      border: 3px solid #333;
+      border: 3px solid rgba(10,19,26,0.85);
       border-radius: 8px;
-      background: #666;
+      background: rgba(0,229,255,0.55);
     }
     ::-webkit-resizer {
-      background: #111 linear-gradient(-45deg, transparent 3px, #888 3px, #888 4px, transparent 4px, transparent 6px, #888 6px, #888 7px, transparent 7px) no-repeat;
+      background: rgba(0,229,255,0.2) linear-gradient(-45deg, transparent 3px, rgba(0,229,255,0.35) 3px, rgba(0,229,255,0.35) 4px, transparent 4px, transparent 6px, rgba(0,229,255,0.35) 6px, rgba(0,229,255,0.35) 7px, transparent 7px) no-repeat;
       border: 2px solid transparent;
     }
   }
@@ -4290,10 +4292,11 @@ function createGlobalStyle() {
   left: 0;
   right: 0;
   text-align: center;
-  font-family: sans-serif;
+  font-family: 'JetBrains Mono', monospace;
   font-size: 15px;
   font-weight: bold;
   background: #0005;
+  transition: opacity 150ms ease-in-out;
   color: white;
   padding: 4px 10px;
   text-shadow: .5px .5px 2px #000;

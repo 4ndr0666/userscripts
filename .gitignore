@@ -182,5 +182,3 @@ update-4ndr0666tools-suite-*.sh
 
 # personal operator manual — local-only reference, never publish
 OPERATOR-MANUAL.md
-update-4ndr0666tools-suite-v1.3.0.sh
-update-4ndr0666tools-suite-v1.4.0.sh

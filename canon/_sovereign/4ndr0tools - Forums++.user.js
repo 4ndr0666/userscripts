@@ -3,7 +3,7 @@
 // @name        4ndr0tools - Forums++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     1.9.1
+// @version     1.9.2
 // @description Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @match       https://simpcity.su/threads/*
@@ -100,6 +100,8 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Forums++.user.js
 // @license      UNLICENSED - RED TEAM USE ONLY
 // ==/UserScript==
+// 1.9.2 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Forums++.user v1.9.2 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 /* global JSZip, tippy, GM_xmlhttpRequest, saveAs, sha256, GM_download, GM_getValue, GM_setValue */
 
@@ -740,7 +742,7 @@ const parsers = {
 
 const styles = {
     tippy: {
-        theme: `.tippy-box[data-theme~=transparent]{background-color:transparent}.tippy-box[data-theme~=transparent]>.tippy-arrow{width:14px;height:14px}.tippy-box[data-theme~=transparent][data-placement^=top]>.tippy-arrow:before{border-width:7px 7px 0;border-top-color:#3f3f3f}.tippy-box[data-theme~=transparent][data-placement^=bottom]>.tippy-arrow:before{border-width:1 7px 7px;border-bottom-color:#3f3f3f}.tippy-box[data-theme~=transparent][data-placement^=left]>.tippy-arrow:before{border-width:7px 0 7px 7px;border-left-color:#3f3f3f}.tippy-box[data-theme~=transparent][data-placement^=right]>.tippy-arrow:before{border-width:7px 7px 7px 0;border-right-color:#3f3f3f}.tippy-box[data-theme~=transparent]>.tippy-backdrop{background-color:transparent;}.tippy-box[data-theme~=transparent]>.tippy-svg-arrow{fill:gainsboro}`,
+        theme: `.tippy-box[data-theme~=transparent]{background-color:transparent}.tippy-box[data-theme~=transparent]>.tippy-arrow{width:14px;height:14px}.tippy-box[data-theme~=transparent][data-placement^=top]>.tippy-arrow:before{border-width:7px 7px 0;border-top-color:rgba(0,229,255,0.35)}.tippy-box[data-theme~=transparent][data-placement^=bottom]>.tippy-arrow:before{border-width:1 7px 7px;border-bottom-color:rgba(0,229,255,0.35)}.tippy-box[data-theme~=transparent][data-placement^=left]>.tippy-arrow:before{border-width:7px 0 7px 7px;border-left-color:rgba(0,229,255,0.35)}.tippy-box[data-theme~=transparent][data-placement^=right]>.tippy-arrow:before{border-width:7px 7px 7px 0;border-right-color:rgba(0,229,255,0.35)}.tippy-box[data-theme~=transparent]>.tippy-backdrop{background-color:transparent;}.tippy-box[data-theme~=transparent]>.tippy-svg-arrow{fill:#67E8F9}`,
     },
 };
 
@@ -750,7 +752,7 @@ const ui = {
      */
     getTooltipBackgroundColor: () => {
         // Determine theme based on a unique class/ID found in the body for purple vs classic
-        return document.body.innerHTML.includes('__&s=11') ? '#30204f' : '#2a2929';
+        return document.body.innerHTML.includes('__&s=11') ? 'rgba(10,19,26,0.85)' : 'rgba(10,19,26,0.85)';
     },
     /**
      * @param {HTMLElement|string} target
@@ -785,19 +787,19 @@ const ui = {
             return pb;
         },
         /**
-         * @param {string} [color='#46658b']
+         * @param {string} [color='#00E5FF']
          * @returns {HTMLDivElement}
          */
-        createFileProgressBar: (color = '#46658b') => {
+        createFileProgressBar: (color = '#00E5FF') => {
             const pb = ui.pBars.base(color);
             pb.style.marginBottom = '1px';
             return pb;
         },
         /**
-         * @param {string} [color='#545454']
+         * @param {string} [color='#67E8F9']
          * @returns {HTMLDivElement}
          */
-        createTotalProgressBar: (color = '#545454') => {
+        createTotalProgressBar: (color = '#67E8F9') => {
             const pb = ui.pBars.base(color);
             pb.style.marginBottom = '10px';
             return pb;
@@ -806,10 +808,10 @@ const ui = {
     labels: {
         /**
          * @param {string|null} [initialText=null]
-         * @param {string} [color='#959595']
+         * @param {string} [color='rgba(0,229,255,0.7)']
          * @returns {{container: HTMLDivElement, el: HTMLSpanElement}}
          */
-        createBlockLabel: (initialText = null, color = '#959595') => {
+        createBlockLabel: (initialText = null, color = 'rgba(0,229,255,0.7)') => {
             const container = document.createElement('div');
             container.style.color = color;
             container.style.fontSize = '12px';
@@ -909,7 +911,7 @@ const ui = {
          */
         createLabel: label => {
             return `
-                <div style="font-weight: bold; margin-top:5px; margin-bottom: 8px; color: dodgerblue;">
+                <div style="font-weight: bold; margin-top:5px; margin-bottom: 8px; color: #00E5FF;">
                     ${label}
                 </div>
             `;
@@ -961,7 +963,7 @@ const ui = {
                 createFilenameInput: (currentValue, postId, backgroundColor, placeholder) => {
                     return `
                         <div class="menu-row">
-                            <div style="font-weight: bold; margin-top:5px; margin-bottom: 8px; color: dodgerblue;">
+                            <div style="font-weight: bold; margin-top:5px; margin-bottom: 8px; color: #00E5FF;">
                                 File / Archive Name
                             </div>
                             <input
@@ -1041,7 +1043,7 @@ const ui = {
                  */
                 createFilterLabel: (hosts, getTotalDownloadableResourcesCB) => {
                     return `
-                        <div style="font-weight: bold; margin-top:5px; margin-bottom: 8px; margin-left: 8px; color: dodgerblue;">Filter <span id="filtered-count">(${getTotalDownloadableResourcesCB(
+                        <div style="font-weight: bold; margin-top:5px; margin-bottom: 8px; margin-left: 8px; color: #00E5FF;">Filter <span id="filtered-count">(${getTotalDownloadableResourcesCB(
                         hosts,
                     )})</span></div>
                     `;
@@ -1109,7 +1111,7 @@ const ui = {
 
                     const settingsHeading = `
                         <div class="menu-row">
-                            <div style="font-weight: bold; margin-top:3px; margin-bottom: 4px; color: dodgerblue;">
+                            <div style="font-weight: bold; margin-top:3px; margin-bottom: 4px; color: #00E5FF;">
                                 Settings
                             </div>
                         </div>
@@ -1128,7 +1130,7 @@ const ui = {
                         ui.forms.config.post.createVerifyBunkrLinksCheckbox(postId, currentSettings.verifyBunkrLinks),
                         ui.forms.config.post.createHostCheckboxes(postId, filterLabel, hostsHtml, parsedHosts.length > 1),
                         ui.forms.createRow(
-                            '<a href="#download-page" style="color: dodgerblue; font-weight: bold"><i class="fa fa-arrow-up"></i> Show Download Page Button</a>',
+                            '<a href="#download-page" style="color: #00E5FF; font-weight: bold"><i class="fa fa-arrow-up"></i> Show Download Page Button</a>',
                         ),
                     ].filter(c => c !== null).join('');
 
@@ -1292,7 +1294,7 @@ const init = {
     injectCustomStyles: () => {
         // Tippy transparent theme.
         const styleEl = document.createElement('style');
-        styleEl.textContent = styles.tippy.theme;
+        styleEl.textContent = styles.tippy.theme + '\n.menu-content{font-family:"JetBrains Mono",monospace;transition:all 150ms ease-in-out;box-shadow:0 0 40px rgba(0,229,255,0.15),0 8px 32px rgba(10,19,26,0.4);}';
         document.head.append(styleEl);
 
         const customStyles = document.createElement('style');
@@ -2825,7 +2827,7 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
     const totalPB = statusUI.totalPB;
 
     h.ui.setElProps(statusLabel.el, { // Access the actual span element
-        color: '#469cf3',
+        color: '#00E5FF',
         marginBottom: '3px',
         fontSize: '12px',
     });
@@ -2852,7 +2854,7 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
         const resources = host.resources;
 
         for (const resource of resources) {
-            h.ui.setElProps(statusLabel.el, { color: '#469cf3', fontWeight: 'bold' });
+            h.ui.setElProps(statusLabel.el, { color: '#00E5FF', fontWeight: 'bold' });
             h.ui.setText(statusLabel.el, `Resolving: ${h.limit(resource, 80)}`);
 
             let r = null; // Resolved data for the current resource
@@ -2899,7 +2901,7 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                 continue;
             }
 
-            h.ui.setElProps(statusLabel.el, { color: '#47ba24', fontWeight: 'bold' });
+            h.ui.setElProps(statusLabel.el, { color: '#67E8F9', fontWeight: 'bold' });
             h.ui.setText(statusLabel.el, `Resolved: ${resolved.length}`);
 
             const addResolved = (urlToAdd, folderName) => {
@@ -2942,7 +2944,7 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
     let totalDownloadable = resolved.filter(r => r.url).length;
     const totalResourcesInHostSelection = enabledHosts.reduce((acc, hst) => hst.resources.length + acc, 0);
 
-    h.ui.setElProps(statusLabel.el, { color: '#47ba24', fontWeight: 'bold' });
+    h.ui.setElProps(statusLabel.el, { color: '#67E8F9', fontWeight: 'bold' });
     h.ui.setText(statusLabel.el, `Resolved: ${resolved.length} / ${totalDownloadable} 🢒 ${totalResourcesInHostSelection} Total Links`);
 
     const downloadedFilenames = new Set(); // To track actual filenames saved, including deduplication renaming
@@ -3048,7 +3050,7 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                                 requestProgress.loaded = response.loaded;
                                 requestProgress.total = response.total;
 
-                                h.ui.setElProps(statusLabel.el, { color: '#469cf3', fontWeight: 'normal' });
+                                h.ui.setElProps(statusLabel.el, { color: '#00E5FF', fontWeight: 'normal' });
                                 const downloadedSizeInMB = (response.loaded / (1024 * 1024)).toFixed(2);
                                 const totalSizeInMB = (response.total !== -1 && response.total !== 0) ? (response.total / (1024 * 1024)).toFixed(2) : 'Unknown';
 
@@ -3068,7 +3070,7 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                             onload: response => {
                                 completed++;
                                 h.ui.setText(statusLabel.el, `${completed} / ${totalDownloadable} 🢒 ${ellipsedUrl}`);
-                                h.ui.setElProps(statusLabel.el, { color: '#2d9053' });
+                                h.ui.setElProps(statusLabel.el, { color: '#00E5FF' });
                                 h.ui.setElProps(totalPB, { width: `${(completed / totalDownloadable) * 100}%` });
 
                                 // Determine filename
@@ -3562,7 +3564,7 @@ const selectedPosts = [];
 
                 const ellipsedText = h.limit(defaultPostContent === '' ? threadTitle : defaultPostContent, 20);
 
-                const summary = `<a id="post-content-${postId}" href="#post-${postId}" style="color: dodgerblue"> ${ellipsedText} </a>`;
+                const summary = `<a id="post-content-${postId}" href="#post-${postId}" style="color: #00E5FF"> ${ellipsedText} </a>`;
                 html += ui.forms.createCheckbox(`config-download-post-${postId}`, `Post #${postNumber} ${summary}`, false);
             });
 
@@ -3578,7 +3580,7 @@ const selectedPosts = [];
                         // Add tooltips for post content summary links
                         ui.tooltip(
                             `#post-content-${postId}`,
-                            `<div style="overflow-y: auto; background: #242323; padding: 16px; width: 500px; max-height: 500px">
+                            `<div style="overflow-y: auto; background: rgba(10,19,26,0.85); padding: 16px; width: 500px; max-height: 500px">
                                 ${contentContainer.innerHTML}
                             </div>`,
                             { placement: 'right', offset: [10, 15] },

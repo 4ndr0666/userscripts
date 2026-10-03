@@ -2198,9 +2198,9 @@ input[type="file"] { display: none; }
 .log::-webkit-scrollbar { width: 6px; }
 .log::-webkit-scrollbar-thumb { background: ${s.cyan}; }
 .log-info { color: rgba(0, 229, 255, 0.75); }
-.log-ok { color: #67f5c8; }
-.log-warn { color: #fd7; }
-.log-err { color: #f77; }
+.log-ok { color: #00E5FF; }
+.log-warn { color: #67E8F9; }
+.log-err { color: #ff0055; }
 .hint { font-size: 10px; color: rgba(0, 229, 255, 0.55); padding: 4px 12px; letter-spacing: 0.1em; }
 dialog { border: none; padding: 0; background: none; box-shadow: none;
   width: fit-content; max-width: 94vw; }
@@ -4277,10 +4277,10 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
             if (!DECK.elx.qpCount) return;
             if (videoIds.length > 20) {
                 DECK.elx.qpCount.textContent = `${videoIds.length} videos — the playlist link will only play the first 20 videos.`;
-                DECK.elx.qpCount.style.color = '#fd7';
+                DECK.elx.qpCount.style.color = '#67E8F9';
             } else if (`https://www.youtube.com/watch_videos?video_ids=${videoIds.join(',')}`.length > 2000) {
                 DECK.elx.qpCount.textContent = `${videoIds.length} videos — too many videos, URL is too long. Some videos in the playlist link may not work.`;
-                DECK.elx.qpCount.style.color = '#fd7';
+                DECK.elx.qpCount.style.color = '#67E8F9';
             } else {
                 DECK.elx.qpCount.textContent = `${videoIds.length} video${videoIds.length === 1 ? '' : 's'}`;
                 DECK.elx.qpCount.style.color = '';
@@ -4822,7 +4822,7 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
             } catch (e) {
                 const box = browser.querySelector('.items');
                 box.textContent = `Could not load this playlist: ${e && e.message}`;
-                box.style.color = '#f77';
+                box.style.color = '#ff0055';
             }
 
             if (nextButtonInterval) clearInterval(nextButtonInterval);

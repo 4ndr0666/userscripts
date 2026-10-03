@@ -863,9 +863,9 @@
         #psi-bulk-log::-webkit-scrollbar-thumb { background: var(--accent-cyan); border-radius: 0px; }
         #psi-bulk-log::-webkit-scrollbar-thumb:hover { background: var(--text-cyan-active); }
         .psi-log-inf { color: var(--text-cyan-active); }
-        .psi-log-ok  { color: #4ade80 !important; border-left-color: #4ade80 !important; }
+        .psi-log-ok  { color: #00E5FF !important; border-left-color: #00E5FF !important; }
         .psi-log-err { color: var(--red)   !important; border-left-color: var(--red)   !important; }
-        .psi-log-dbg { color: #6b7280 !important; border-left-color: #6b7280 !important; display: none; }
+        .psi-log-dbg { color: rgba(103,232,249,0.5) !important; border-left-color: rgba(103,232,249,0.5) !important; display: none; }
     `);
 
     // =========================================================================
@@ -3606,8 +3606,8 @@
                 setBulkStatus(`✅ Complete: ${BulkState.done} OK / ${BulkState.failed} ERR`);
                 const bar = document.getElementById('psi-bulk-bar');
                 if (bar) {
-                    bar.style.background = '#4ade80';
-                    bar.style.boxShadow  = '0 0 10px #4ade80';
+                    bar.style.background = '#00E5FF';
+                    bar.style.boxShadow  = '0 0 10px #00E5FF';
                 }
             }
             resetBulkControls(); // v7.4.0: shared terminal state (incl. PAUSE label reset)

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Media Player Controller
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      8.1.0
+// @version      8.1.1
 // @author       4ndr0666
 // @description  Speed • Fine Rate ±0.1 • Alt+Shift rAF Zoom/Pan • Rotation • Smart Maximize • Native Fullscreen • PiP • Play • DblClick • Pause-on-Acquire • Virtual DOM Nodes • Shadow-DOM Discovery • Cyan-Glass Scrub Bar • Download Button (fetch + blob capture) • Screenshot • Volume/Mute • Frame Step • Seek Hotkeys • IG Story Nav (3-Layer) • Story Repeat (3-Layer) • Active-Media Observer • YouTube Ad Auto-Skip • Toast Feedback • Draggable HUD • Full Hotkey Suite
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -16,6 +16,7 @@
 // @all_frames   true
 // @run-at       document-end
 // ==/UserScript==
+// 8.1.1 (suite v1.4.0): OPSEC — remote Google-Fonts @import purged (IP-leak / fingerprint vector on every page load); local spec font stack retained. 3lectric-Glass universality round.
 
 
 /* ═══ SUITE PROMOTION 8.0.0 ═══════════════════════════════════════════
@@ -543,7 +544,6 @@
     // Orbitron 700 (display). Deviation note: -webkit-backdrop-filter is
     // retained alongside backdrop-filter for Safari engine support only.
     GM_addStyle(`
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Orbitron:wght@700&display=swap');
 
         :root {
             --matrix-deep-base:    rgba(10, 19, 26, 1.0);

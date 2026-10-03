@@ -2,7 +2,7 @@
 // @name         4ndr0tools - Recon
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666
-// @version      9.0.0
+// @version      9.0.1
 
 // @description  Alt+Shift+R hotkey — unified forensic recon platform: hardened XHR/fetch interception with MITM block & mute rules, console harvesting, WebSocket + postMessage bridge capture, JWT identity harvesting, headless C2 API (reconEngine / chimeraRecon / Hook) and a moveable Shadow-DOM glass dock with full markdown reporting. For security research only.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -14,6 +14,7 @@
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Recon.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Recon.user.js
 // ==/UserScript==
+// 9.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
 
 /* Paradigm (D1): Userscript Interceptor — document-start prototype patching of
  * fetch / XMLHttpRequest / WebSocket / console / postMessage on the page context
@@ -169,8 +170,8 @@
             style.id = STYLE_ID;
             style.textContent = `
                 .${CSS_PREFIX}-toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
-                    background:rgba(20,40,48,0.95); color:#00E5FF; padding:10px 22px; border-radius:6px;
-                    font:15px monospace; z-index:2147483647; opacity:0; transition:opacity .25s ease; pointer-events:none; }
+                    background:rgba(10,19,26,0.95); color:#00E5FF; padding:10px 22px; border-radius:6px;
+                    font:15px 'JetBrains Mono', monospace; z-index:2147483647; opacity:0; transition:opacity 150ms ease-in-out; pointer-events:none; }
                 .${CSS_PREFIX}-toast-visible { opacity:1; }
             `;
             (_document.head || _document.documentElement).appendChild(style);
@@ -687,14 +688,14 @@
                 backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
                 display:flex; flex-direction:column; font-family:'JetBrains Mono',monospace;
                 overflow:hidden; color:#fff; box-shadow:0 -4px 15px ${THEME.glow};
-                transition:transform 0.3s cubic-bezier(0.4,0,0.2,1); pointer-events:auto; }
+                transition:transform 300ms cubic-bezier(0.4,0,0.2,1), opacity 150ms ease-in-out; pointer-events:auto; }
             #panel.hidden { transform:translateY(100%); }
             #resizer { height:8px; cursor:ns-resize; width:100%; background:transparent; position:absolute; top:0; z-index:10; }
             #resizer:hover { background:${THEME.border}; }
             .header { display:flex; justify-content:space-between; align-items:center; padding:10px 15px;
                 background:rgba(0,229,255,0.05); border-bottom:1px solid ${THEME.border}; }
             .header-info { display:flex; align-items:center; gap:10px; color:${THEME.cyan}; font-weight:bold; font-size:11px; }
-            .counters { display:flex; gap:8px; font-size:9px; color:#888; }
+            .counters { display:flex; gap:8px; font-size:9px; color:rgba(0,229,255,0.35); }
             .tabs { display:flex; background:rgba(0,0,0,0.2); }
             .tab { padding:8px 20px; cursor:pointer; font-size:10px; border-right:1px solid ${THEME.border}; opacity:0.6; }
             .tab.active { opacity:1; color:${THEME.cyan}; background:rgba(0,229,255,0.05); border-bottom:2px solid ${THEME.cyan}; }
@@ -703,7 +704,7 @@
             .row { margin-bottom:3px; border-bottom:1px solid rgba(255,255,255,0.02); padding:2px 0; }
             .btn { background:transparent; border:1px solid ${THEME.border}; color:${THEME.cyan};
                 padding:3px 10px; font-size:10px; cursor:pointer; font-weight:bold; transition:0.2s; }
-            #status { font-size:9px; color:#00AAAA; text-align:center; border:1px solid #004444; padding:4px; margin:0 15px 8px 15px; }
+            #status { font-size:9px; color:#00E5FF; text-align:center; border:1px solid rgba(0,229,255,0.15); padding:4px; margin:0 15px 8px 15px; }
         `;
         shadow.appendChild(style);
         const ui = _document.createElement('div');
@@ -719,7 +720,7 @@
                 <div style="display:flex; gap:10px;">
                     <button class="btn" id="do-float">FLOAT</button>
                     <button class="btn" id="do-rep">REPORT</button>
-                    <button class="btn" id="do-purge" style="color:#FF00FF;">PURGE</button>
+                    <button class="btn" id="do-purge" style="color:#ff0055;">PURGE</button>
                 </div>
             </div>
             <div class="tabs">
@@ -763,7 +764,7 @@
                         : 'Clipboard copy failed — open the REPORT tab and copy manually.');
                 });
                 target.textContent = 'COPIED TO CLIPBOARD!';   // recon3 visual feedback
-                target.style.background = '#00FF00';
+                target.style.background = '#00E5FF';
                 target.style.color = '#000';
                 setTimeout(() => {
                     target.textContent = 'REPORT';
@@ -842,17 +843,17 @@
         if (!STATE.isUiReady || !viewportEl) return;
         if (STATE.currentTab === 'net') {
             viewportEl.innerHTML = STATE.network.slice(-VIEW_SLICE).reverse().map((n) =>
-                '<div class="row"><span style="color:#555">[' + HELPERS.escapeHtml(n.localTs) + ']</span> <span style="color:' + THEME.cyan + '">' + HELPERS.escapeHtml(n.protocol) + '</span> ' + HELPERS.escapeHtml(n.method) + ' ' + HELPERS.escapeHtml(n.displayUrl) + '</div>'
+                '<div class="row"><span style="color:rgba(103,232,249,0.5)">[' + HELPERS.escapeHtml(n.localTs) + ']</span> <span style="color:' + THEME.cyan + '">' + HELPERS.escapeHtml(n.protocol) + '</span> ' + HELPERS.escapeHtml(n.method) + ' ' + HELPERS.escapeHtml(n.displayUrl) + '</div>'
             ).join('') || '<div class="row">* No traffic captured yet.</div>';
         } else if (STATE.currentTab === 'log') {
             viewportEl.innerHTML = STATE.logs.slice(-VIEW_SLICE).reverse().map((l) =>
-                '<div class="row"><span style="color:#555">[' + HELPERS.escapeHtml(l.localTs) + ']</span> ' + HELPERS.escapeHtml(l.type) + ': ' + HELPERS.escapeHtml(l.content) + '</div>'
+                '<div class="row"><span style="color:rgba(103,232,249,0.5)">[' + HELPERS.escapeHtml(l.localTs) + ']</span> ' + HELPERS.escapeHtml(l.type) + ': ' + HELPERS.escapeHtml(l.content) + '</div>'
             ).join('') || '<div class="row">* No console output captured yet.</div>';
         } else if (STATE.currentTab === 'rep') {
-            viewportEl.innerHTML = '<pre style="white-space:pre-wrap; color:#ccc; margin:0;">' + HELPERS.escapeHtml(generateReport()) + '</pre>';
+            viewportEl.innerHTML = '<pre style="white-space:pre-wrap; color:#67E8F9; margin:0;">' + HELPERS.escapeHtml(generateReport()) + '</pre>';
         } else {
             // DATA tab — reconc's raw JSON ledger view
-            viewportEl.innerHTML = '<pre style="white-space:pre-wrap; color:#ccc; margin:0;">' + HELPERS.escapeHtml(HELPERS.safeStringify(STATE.sessionData) || '[]') + '</pre>';
+            viewportEl.innerHTML = '<pre style="white-space:pre-wrap; color:#67E8F9; margin:0;">' + HELPERS.escapeHtml(HELPERS.safeStringify(STATE.sessionData) || '[]') + '</pre>';
         }
     }
 

@@ -34,8 +34,8 @@
      * 4ndr0tools suite (BETA suffix stripped per promotion convention):
      *   P1  Suite metadata + update channel (raw dist/ URLs, Ψ glyph icon).
      *   P2  UI refactored to the 3lectric-Glass spec — the BETA cards ran an
-     *       off-spec palette (rgba(10,15,26) base, #ff003c destructive,
-     *       #15FFFF cyan, Courier New, 300ms transitions). Now: RGB(10,19,26)
+     *       off-spec palette (rgba(10,15,26) base, #ff0055 destructive,
+     *       #00E5FF cyan, Courier New, 300ms transitions). Now: RGB(10,19,26)
      *       glass base, #00E5FF primary / #67E8F9 hover / #ff0055 destructive,
      *       JetBrains Mono data + Orbitron label typography, 150ms
      *       ease-in-out transitions, 0px-radius brutalist buttons, toast
@@ -374,7 +374,7 @@
                 padding: 10px 12px;
                 font-family: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
                 font-size: 12px;
-                color: #e0ffff;
+                color: #67E8F9;
                 box-shadow: 0 4px 20px rgba(0, 229, 255, 0.25);
                 word-break: break-all;
                 backdrop-filter: blur(8px) saturate(130%);

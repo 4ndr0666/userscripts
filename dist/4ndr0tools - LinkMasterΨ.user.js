@@ -2,7 +2,7 @@
 // @name           4ndr0tools - LinkMasterΨ
 // @namespace      https://github.com/4ndr0666/userscripts
 // @author         4ndr0666
-// @version      6.2.0
+// @version      6.2.1
 // @description    Accurately decodes, previews, exports, validates and scrapes all links. (Dual MPV Support + Ψ IG Harvester + sexyforums premium-link unwrap + GitHub raw-URL harvest + Ψ2 forum deep-scrape engine)
 // @downloadURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
 // @updateURL      https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
@@ -46,6 +46,8 @@
 // @connect        fbcdn.net
 // @connect        instagram.com
 // ==/UserScript==
+// 6.2.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
+// · OPSEC: remote display fonts now default OFF (Settings toggle remains; local stacks always degrade).
 
 /* ═══ v6.0.0 — SUITE CONSOLIDATION MERGE (GUP superset gate) ════════════════
    Base:      LinkMasterBETA v5.1.1 (verified superset of LinkMasterΨ v5.0.0
@@ -247,7 +249,7 @@
   // STATE & CONSTANTS
   // ===========================================================================
   let extractionMode = getUserPref("extractionMode", "host");
-  let remoteFonts = getUserPref("remoteFonts", true);
+  let remoteFonts = getUserPref("remoteFonts", false);
   let currentTab = IS_IG ? "ig" : "scrape"; // [C2] IG pages open straight onto the vault
 
   const hudStyle = `
@@ -258,11 +260,11 @@
       --accent-cyan-border-idle: rgba(0, 229, 255, 0.2);
       --accent-cyan-border-hover: rgba(0, 229, 255, 0.5);
       --glow-cyan-active: rgba(0, 229, 255, 0.4);
-      --text-primary: #EAEAEA;
-      --text-secondary: #9E9E9E;
-      --font-body: 'Roboto Mono', monospace;
+      --text-primary: #67E8F9;
+      --text-secondary: rgba(0,229,255,0.7);
+      --font-body: 'JetBrains Mono', monospace;
       --font-hud: 'Orbitron', sans-serif;
-      --font-heading: 'Cinzel Decorative', serif;
+      --font-heading: 'Orbitron', sans-serif;
       --hud-z: 2147483646;
     }
 
@@ -279,7 +281,7 @@
       border-top: 1px solid rgba(255,255,255,0.1);
       border-left: 1px solid rgba(255,255,255,0.1);
       box-shadow: -4px 8px 32px 0 rgba(0, 0, 0, 0.37);
-      transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1), background 300ms ease;
+      transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1), background 150ms ease-in-out;
       transform: translateX(calc(100% - 22px));
     }
 
@@ -292,14 +294,14 @@
       background: transparent; border: none; color: var(--text-primary);
       padding: 12px 20px 12px 10px; font: 500 13px var(--font-body);
       text-transform: uppercase; letter-spacing: 0.05em;
-      cursor: pointer; transition: all 300ms ease-in-out;
+      cursor: pointer; transition: all 150ms ease-in-out;
     }
 
     .dock-icon {
       width: 24px; height: 24px;
       color: var(--accent-cyan);
       margin-right: 8px; flex-shrink: 0;
-      transition: filter 300ms, color 300ms;
+      transition: filter 150ms ease-in-out, color 150ms ease-in-out;
     }
 
     .dock-btn:hover {
@@ -351,7 +353,7 @@
       opacity: 0.7; transition: all 300ms ease; flex-shrink: 0; z-index: 2;
     }
     .hud-header .hud-close-btn:hover {
-      color: #ff4d4d; opacity: 1; filter: drop-shadow(0 0 8px rgba(255, 77, 77, 0.4));
+      color: #ff0055; opacity: 1; filter: drop-shadow(0 0 8px rgba(255, 77, 77, 0.4));
     }
 
     .hud-tabs {
@@ -362,7 +364,7 @@
       font-family: var(--font-heading); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
       font-weight: 700; background: transparent; padding: 10px 16px;
       border-radius: 6px 6px 0 0; border: 1px solid transparent; border-bottom: none;
-      color: var(--text-secondary); cursor: pointer; transition: all 300ms ease-in-out; box-shadow: none;
+      color: var(--text-secondary); cursor: pointer; transition: all 150ms ease-in-out; box-shadow: none;
     }
 .hud-tabs .hud-button.active {
       color: var(--text-cyan-active); border-color: var(--accent-cyan-border-idle);
@@ -393,7 +395,7 @@
       padding: 6px 12px; border-radius: 4px; border: 1px solid var(--accent-cyan-border-idle);
       font-family: var(--font-hud); font-weight: 500; font-size: 11px; text-transform: uppercase;
       background: transparent; color: var(--text-primary); cursor: pointer;
-      letter-spacing: 0.05em; transition: all 300ms ease-in-out; box-shadow: none; outline: none;
+      letter-spacing: 0.05em; transition: all 150ms ease-in-out; box-shadow: none; outline: none;
     }
     .hud-btn.active, .hud-btn:active {
       color: var(--text-cyan-active); border-color: var(--accent-cyan);
@@ -411,14 +413,14 @@
       border: 1px solid var(--accent-cyan-border-idle);
     }
     .chip.dead {
-      color: #ff4d4d; border-color: rgba(255, 77, 77, 0.5);
+      color: #ff0055; border-color: rgba(255, 77, 77, 0.5);
       background: rgba(255, 77, 77, 0.05);
     }
     .chip.unknown {
-      color: #ffea00; border-color: rgba(255, 234, 0, 0.5);
+      color: #67E8F9; border-color: rgba(103,232,249,0.5);
       background: rgba(255, 234, 0, 0.05);
     }
-    .chip.favicon { background: #111; color: var(--text-cyan-active); padding: 0; display: inline-flex; justify-content: center; align-items: center; }
+    .chip.favicon { background: rgba(10,19,26,0.85); color: var(--text-cyan-active); padding: 0; display: inline-flex; justify-content: center; align-items: center; }
 
     .hud-toast {
       position: fixed; z-index: calc(var(--hud-z) + 2000); bottom: 85px; right: 580px;
@@ -1621,7 +1623,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
         <button class="hud-btn" id="hud-mode-toggle-btn2">Switch to ${extractionMode === "host" ? "Media" : "Host"} Mode</button>
         <button class="hud-btn" id="hud-hostlist-btn">Show Host Patterns</button>
         <button class="hud-btn" id="hud-fonts-btn" title="Load display fonts from Google on HUD open (OPSEC: third-party font CDN)">Remote Fonts: ${remoteFonts ? "ON" : "OFF"}</button>
-        <button class="hud-btn" id="hud-clear-prefs-btn" style="border-color:rgba(255, 77, 77, 0.5);color:#ff4d4d;">Reset Prefs</button>
+        <button class="hud-btn" id="hud-clear-prefs-btn" style="border-color:rgba(255, 77, 77, 0.5);color:#ff0055;">Reset Prefs</button>
       </div>
 <div style="margin-bottom:16px;">
         <textarea id="hud-export-area" class="hud-input" rows="8" readonly placeholder="Exported links or pattern list will appear here."></textarea>
@@ -1819,7 +1821,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
         link.href = parsedUrl.href;
         link.title = "Direct link restored";
         link.classList.add("real-link-restored");
-        link.style.color = "#15FFFF";
+        link.style.color = "#00E5FF";
         link.style.fontWeight = "bold";
       }
     };
@@ -1858,7 +1860,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
   #raw-harvest-btn {
     position: relative; display: inline-flex; align-items: center; justify-content: center;
     padding: 6px 14px !important;
-    font-family: var(--font-body, 'Roboto Mono', monospace);
+    font-family: var(--font-body, 'JetBrains Mono', monospace);
     font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase;
     color: var(--accent-cyan, #00E5FF) !important;
     background: rgba(0, 0, 0, 0.35) !important;
@@ -1876,8 +1878,8 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
   #raw-harvest-btn:active { transform: scale(0.97); }
   #raw-harvest-btn.copied {
     background: rgba(0, 255, 157, 0.15) !important;
-    border-color: #00ff9d !important; color: #00ff9d !important;
-    box-shadow: 0 0 12px #00ff9d, 0 0 24px #00ff9d !important;
+    border-color: #67E8F9 !important; color: #67E8F9 !important;
+    box-shadow: 0 0 12px #67E8F9, 0 0 24px #67E8F9 !important;
   }`;
 
     const getFileRows = () => {
@@ -2308,7 +2310,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
   const styles = {
     tippy: {
       theme:
-        ".tippy-box[data-theme~=transparent]{background-color:transparent}.tippy-box[data-theme~=transparent]>.tippy-arrow{width:14px;height:14px}.tippy-box[data-theme~=transparent][data-placement^=top]>.tippy-arrow:before{border-width:7px 7px 0;border-top-color:#3f3f3f}.tippy-box[data-theme~=transparent][data-placement^=bottom]>.tippy-arrow:before{border-width:0 7px 7px;border-bottom-color:#3f3f3f}.tippy-box[data-theme~=transparent][data-placement^=left]>.tippy-arrow:before{border-width:7px 0 7px 7px;border-left-color:#3f3f3f}.tippy-box[data-theme~=transparent][data-placement^=right]>.tippy-arrow:before{border-width:7px 7px 7px 0;border-right-color:#3f3f3f}.tippy-box[data-theme~=transparent]>.tippy-backdrop{background-color:transparent;}.tippy-box[data-theme~=transparent]>.tippy-svg-arrow{fill:gainsboro}"
+        ".tippy-box[data-theme~=transparent]{background-color:transparent}.tippy-box[data-theme~=transparent]>.tippy-arrow{width:14px;height:14px}.tippy-box[data-theme~=transparent][data-placement^=top]>.tippy-arrow:before{border-width:7px 7px 0;border-top-color:rgba(0,229,255,0.35)}.tippy-box[data-theme~=transparent][data-placement^=bottom]>.tippy-arrow:before{border-width:0 7px 7px;border-bottom-color:rgba(0,229,255,0.35)}.tippy-box[data-theme~=transparent][data-placement^=left]>.tippy-arrow:before{border-width:7px 0 7px 7px;border-left-color:rgba(0,229,255,0.35)}.tippy-box[data-theme~=transparent][data-placement^=right]>.tippy-arrow:before{border-width:7px 7px 7px 0;border-right-color:rgba(0,229,255,0.35)}.tippy-box[data-theme~=transparent]>.tippy-backdrop{background-color:transparent;}.tippy-box[data-theme~=transparent]>.tippy-svg-arrow{fill:gainsboro}"
     }
   };
 
@@ -3344,7 +3346,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
 
     let totalDownloadable = resolved.filter((r) => r.url).length;
 
-    h.ui.setElProps(statusLabel, { color: "#47ba24", fontWeight: "bold" });
+    h.ui.setElProps(statusLabel, { color: "#67E8F9", fontWeight: "bold" });
     h.ui.setText(statusLabel, `Resolved ${totalDownloadable} unique links. Starting download...`);
 
     if (totalDownloadable === 0) {
@@ -3437,7 +3439,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
 
     setProcessing(false, postId);
     h.ui.setText(statusLabel, `Download for post #${postNumber} complete!`);
-    h.ui.setElProps(statusLabel, { color: "#47ba24" }); // Use setElProps to set style
+    h.ui.setElProps(statusLabel, { color: "#67E8F9" }); // Use setElProps to set style
     postDownloadCallbacks?.onComplete?.(totalDownloadable, completed);
   };
 

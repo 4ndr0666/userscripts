@@ -109,7 +109,7 @@
             el.style.cssText = [
                 'position:fixed', 'right:14px', 'bottom:14px', 'z-index:2147483647',
                 'background:rgba(10,19,26,0.95)', 'border:1px solid rgba(0,229,255,0.4)',
-                'border-left:3px solid #00E5FF', 'color:#e0ffff',
+                'border-left:3px solid #00E5FF', 'color:#67E8F9',
                 'font-family:"JetBrains Mono","Cascadia Mono",Consolas,monospace',
                 'font-size:12px', 'padding:10px 14px', 'max-width:340px',
                 'box-shadow:0 0 20px rgba(0,229,255,0.25)',

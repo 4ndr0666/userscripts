@@ -2,7 +2,7 @@
 // @name         4ndr0tools - Yandex Image Search++ 
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666 
-// @version      0.4.0
+// @version      0.4.1
 // @description  Robust, event-driven slideshow, fullscreen preview, and on-screen status for Yandex reverse-image search.
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YandexImageSearch++.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YandexImageSearch++.user.js
@@ -12,6 +12,8 @@
 // @license      MIT
 // @grant        none
 // ==/UserScript==
+// 0.4.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: YandexImageSearch++.user v0.4.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 (() => {
     'use strict';
@@ -35,7 +37,7 @@
             .MMImageContainer, .MMImage-Preview {
                 width: 100% !important;
                 height: 100% !important;
-                background: black !important;
+                background: rgba(10,19,26,0.95) !important;
                 margin: 0;
                 padding: 0;
             }
@@ -43,15 +45,16 @@
                 position: fixed;
                 bottom: 15px;
                 right: 15px;
-                background: rgba(0, 0, 0, 0.7);
-                color: #00FFFF; /* Cyan */
+                background: rgba(10, 19, 26, 0.7);
+                color: #00E5FF;
                 font-size: 16px;
                 padding: 5px 10px;
                 border-radius: 5px;
+                transition: all 150ms ease-in-out;
                 z-index: 2147483647; /* Max z-index */
                 pointer-events: none;
-                font-family: 'Segoe UI', sans-serif;
-                text-shadow: 0 0 5px #00FFFF;
+                font-family: 'JetBrains Mono', monospace;
+                text-shadow: 0 0 5px #00E5FF;
                 opacity: 0;
                 transition: opacity 0.3s ease-in-out;
             }

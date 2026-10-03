@@ -60,9 +60,9 @@
   // v5.3 (W4): remote font @import removed — local spec stack only.
   GM_addStyle(`
     :root {
-      --bg-dark: rgba(10, 19, 26, 0.95); --accent-cyan: #00E5FF; --text-cyan-active: #e0ffff;
+      --bg-dark: rgba(10, 19, 26, 0.95); --accent-cyan: #00E5FF; --text-cyan-active: #67E8F9;
       --accent-cyan-bg-active: rgba(0, 229, 255, 0.15); --accent-cyan-glow-active: rgba(0, 229, 255, 0.4);
-      --text-secondary: #70c0c0;
+      --text-secondary: rgba(0,229,255,0.7);
       --font-body: "JetBrains Mono", "Cascadia Mono", "Fira Code", Consolas, "Roboto Mono", monospace;
       --zapper-red: #FF0055;
       --a4-transition: all 150ms ease-in-out;

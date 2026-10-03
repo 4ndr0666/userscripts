@@ -465,6 +465,19 @@ function gateD() {
     if (!wmk.includes("function resolveFetchedImageMimeType")) {
         failures.push(`[D] Watermark++: resolveFetchedImageMimeType restoration not present`);
     } else passes.push(`[D] Watermark++ mime resolver restoration verified`);
+
+    // OPSEC invariant (suite v1.4.0): zero remote asset fetches — a
+    // counter-surveillance suite must never phone home to font CDNs
+    // (IP leak + fingerprint vector on every page load). Local stacks only.
+    const remoteImports = [];
+    for (const f of fs.readdirSync(DIST).filter(f => f.endsWith(".user.js"))) {
+        if (fs.readFileSync(path.join(DIST, f), "utf8").includes("@import url('http")) {
+            remoteImports.push(f);
+        }
+    }
+    if (remoteImports.length) {
+        failures.push(`[D] OPSEC: remote @import still present in: ${remoteImports.join(", ")}`);
+    } else passes.push(`[D] OPSEC remote-asset ban verified (0 remote @imports across dist)`);
 }
 
 gateA();

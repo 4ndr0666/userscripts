@@ -2,7 +2,7 @@
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @name         4ndr0tools - YouTube Embed Redirect Button
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.4
+// @version      1.5
 // @description  Floating button for redirects to embedded version. Right click it to set a keybind (default Ctrl+E).
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js
@@ -14,6 +14,8 @@
 // @run-at       document-end
 // @noframes
 // ==/UserScript==
+// 1.5 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: YouTubeEmbedRedirectButton.user v1.5 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 (function() {
   'use strict';
@@ -137,16 +139,16 @@
   const css = `
     #btn {
       padding: 6px 12px;
-      background: rgba(0,0,0,0.7);
-      color: #15FFFF;
+      background: rgba(10,19,26,0.7);
+      color: #00E5FF;
       border-radius: 4px;
-      font: 14px sans-serif;
+      font: 14px 'JetBrains Mono', monospace;
       cursor: grab; /* Indicates draggable */
-      transition: background .2s;
+      transition: all 150ms ease-in-out;
       box-shadow: 0 2px 5px rgba(0,0,0,0.3); /* Subtle shadow for depth */
     }
     #btn:hover {
-      background: rgba(0,0,0,0.9);
+      background: rgba(10,19,26,0.9);
     }
     #menu {
       position: absolute;
@@ -154,12 +156,12 @@
       top: 100%; /* Position below the button */
       right: 0;  /* Align to the right edge of the button's container */
       margin-top: 4px;
-      background: #000;
-      border: 1px solid #15FFFF;
+      background: rgba(10,19,26,0.95);
+      border: 1px solid #00E5FF;
       border-radius: 4px;
       min-width: 140px;
       font: 13px sans-serif;
-      color: #15FFFF;
+      color: #00E5FF;
       box-shadow: 0 2px 8px rgba(0,0,0,0.6); /* More prominent shadow for menu */
     }
     #menu ul {
@@ -172,7 +174,7 @@
       cursor: pointer;
     }
     #menu li:hover {
-      background: rgba(21,255,255,0.1);
+      background: rgba(0,229,255,0.1);
     }
   `;
   const style = document.createElement('style');

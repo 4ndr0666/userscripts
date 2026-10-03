@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Pixeldrain++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.1.0
+// @version      1.1.1
 // @description  Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.
 // @author       4ndr0666
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -51,6 +51,8 @@
 // @connect         localhost
 // @connect         *
 // ==/UserScript==
+// 1.1.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 /* eslint-disable no-undef */
 (function () {
@@ -1246,7 +1248,7 @@
             const w = window.open('about:blank', '_blank');
             if (!w) { Toast.error('Popup blocked'); return { ok: false }; }
             const tag = (mime || '').startsWith('audio/') ? 'audio' : 'video';
-            w.document.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><title>${escapeHTML(name)}</title><style>html,body{margin:0;background:#000;height:100%;display:flex;align-items:center;justify-content:center}${tag}{max-width:100vw;max-height:100vh;width:100%}</style></head><body><${tag} src="${url}" controls autoplay playsinline></${tag}></body></html>`);
+            w.document.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><title>${escapeHTML(name)}</title><style>html,body{margin:0;background:#0A131A;height:100%;display:flex;align-items:center;justify-content:center}${tag}{max-width:100vw;max-height:100vh;width:100%}</style></head><body><${tag} src="${url}" controls autoplay playsinline></${tag}></body></html>`);
             w.document.close();
             return { ok: true, mode: 'stream', proxy: proxy.host };
         },
@@ -1384,7 +1386,7 @@
                         ui.label.textContent = `→ ${s}`;
                         if (s === 'gm_download') {
                             ui.bar.style.width = '100%';
-                            ui.bar.style.background = 'repeating-linear-gradient(45deg,#a4be8c,#a4be8c 10px,#c4de9c 10px,#c4de9c 20px)';
+                            ui.bar.style.background = 'repeating-linear-gradient(45deg,#00E5FF,#00E5FF 10px,#67E8F9 10px,#67E8F9 20px)';
                             ui.speed.textContent = 'browser-managed';
                         }
                         result = await Strategies[s]({
@@ -1416,7 +1418,7 @@
                 SETTINGS = saveSettings({ downloadStats: stats });
 
                 ui.bar.style.width = '100%';
-                ui.bar.style.background = 'linear-gradient(90deg,#a4be8c,#c4de9c)';
+                ui.bar.style.background = 'linear-gradient(90deg,#00E5FF,#67E8F9)';
                 const elapsed = Date.now() - this._activeJobs.get(jobId).startTime;
                 const tag = result.mode === 'premium_direct'
                     ? `✓ Done (premium · no cap)`
@@ -1429,7 +1431,7 @@
             } catch (e) {
                 Log.error(e);
                 ui.label.textContent = `✗ ${e.message}`;
-                ui.bar.style.background = '#d97070';
+                ui.bar.style.background = '#ff0055';
                 ui.bar.style.width = '100%';
                 Toast.error(`Failed: ${e.message}`);
                 setTimeout(() => ui.wrap.remove(), 10000);
@@ -1460,7 +1462,7 @@
             const wrap = document.createElement('div');
             wrap.className = `${NS}-toast info`;
             wrap.style.minWidth = '360px';
-            wrap.innerHTML = `<div style="font-weight:600;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:280px" title="${escapeHTML(file.name)}">${escapeHTML(file.name)}</span><button class="${NS}-modal-close" style="font-size:16px;cursor:pointer;background:none;border:none;color:#8a92a3">&times;</button></div><div style="font-size:11px;color:#8a92a3;margin-bottom:4px">${formatBytes(file.size || 0)} · ${escapeHTML(file.mime_type || 'unknown')}</div><div class="${NS}-progress"><div class="${NS}-progress-bar"></div></div><div class="${NS}-stat"><span class="${NS}-dl-label">Preparing…</span><span class="${NS}-dl-speed"></span></div>`;
+            wrap.innerHTML = `<div style="font-weight:600;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:280px" title="${escapeHTML(file.name)}">${escapeHTML(file.name)}</span><button class="${NS}-modal-close" style="font-size:16px;cursor:pointer;background:none;border:none;color:#ff0055">&times;</button></div><div style="font-size:11px;color:#67E8F9;margin-bottom:4px">${formatBytes(file.size || 0)} · ${escapeHTML(file.mime_type || 'unknown')}</div><div class="${NS}-progress"><div class="${NS}-progress-bar"></div></div><div class="${NS}-stat"><span class="${NS}-dl-label">Preparing…</span><span class="${NS}-dl-speed"></span></div>`;
             wrap.querySelector(`.${NS}-modal-close`).addEventListener('click', () => { onCancel(); wrap.remove(); });
             (Toast.ensure ? Toast.ensure() : document.body).appendChild(wrap);
             return {
@@ -1497,9 +1499,9 @@
                 PowerShell: this.ps(url, name),
                 HTTPie: this.httpie(url, name)
             };
-            let html = `<div style="margin-bottom:12px;padding:8px;background:#1f2530;border-radius:6px;font-size:11px;color:#8a92a3"><strong>Mirror:</strong> ${escapeHTML(proxy.host)}<br><strong>URL:</strong> <span style="word-break:break-all">${escapeHTML(url)}</span></div>`;
+            let html = `<div style="margin-bottom:12px;padding:8px;background:rgba(10,19,26,0.55);border-radius:6px;font-size:11px;color:#67E8F9"><strong>Mirror:</strong> ${escapeHTML(proxy.host)}<br><strong>URL:</strong> <span style="word-break:break-all">${escapeHTML(url)}</span></div>`;
             for (const [k, v] of Object.entries(cmds)) {
-                html += `<div style="margin-bottom:10px"><div style="font-size:12px;font-weight:600;color:#a4be8c;margin-bottom:3px">${k}</div><pre style="background:#1f2530;padding:8px;border-radius:4px;font-size:11px;white-space:pre-wrap;word-break:break-all;margin:0;color:#d7dde8;cursor:pointer" title="Click to copy" data-cmd="${escapeHTML(v)}">${escapeHTML(v)}</pre></div>`;
+                html += `<div style="margin-bottom:10px"><div style="font-size:12px;font-weight:600;color:#00E5FF;margin-bottom:3px">${k}</div><pre style="background:rgba(10,19,26,0.55);padding:8px;border-radius:4px;font-size:11px;white-space:pre-wrap;word-break:break-all;margin:0;color:#67E8F9;cursor:pointer" title="Click to copy" data-cmd="${escapeHTML(v)}">${escapeHTML(v)}</pre></div>`;
             }
             const m = Modal.open({
                 title: `📤 Export: ${escapeHTML(name)}`,
@@ -1526,7 +1528,7 @@
             const curlLines = files.filter(f => !f.availability).map(f => this.curl(ProxyManager.url(proxy, f.id, { download: true }), f.name));
             const m = Modal.open({
                 title: `📤 Batch Export (${files.length} files)`,
-                body: `<div style="margin-bottom:8px;font-size:12px;color:#a4be8c;font-weight:600">aria2c (recommended - multi-threaded)</div><pre style="background:#1f2530;padding:8px;border-radius:4px;font-size:11px;max-height:200px;overflow:auto;color:#d7dde8">${escapeHTML(lines.join('\n'))}</pre><div style="margin:12px 0 8px;font-size:12px;color:#a4be8c;font-weight:600">curl</div><pre style="background:#1f2530;padding:8px;border-radius:4px;font-size:11px;max-height:200px;overflow:auto;color:#d7dde8">${escapeHTML(curlLines.join('\n'))}</pre>`,
+                body: `<div style="margin-bottom:8px;font-size:12px;color:#00E5FF;font-weight:600">aria2c (recommended - multi-threaded)</div><pre style="background:rgba(10,19,26,0.55);padding:8px;border-radius:4px;font-size:11px;max-height:200px;overflow:auto;color:#67E8F9">${escapeHTML(lines.join('\n'))}</pre><div style="margin:12px 0 8px;font-size:12px;color:#00E5FF;font-weight:600">curl</div><pre style="background:rgba(10,19,26,0.55);padding:8px;border-radius:4px;font-size:11px;max-height:200px;overflow:auto;color:#67E8F9">${escapeHTML(curlLines.join('\n'))}</pre>`,
                 footer: `<button class="${NS}-btn ${NS}-copy-aria">aria2c</button><button class="${NS}-btn ${NS}-copy-curl">curl</button><button class="${NS}-btn ${NS}-copy-urls">URLs</button><button class="${NS}-btn ${NS}-save-sh">💾 .sh</button><button class="${NS}-btn ${NS}-save-bat">💾 .bat</button><button class="${NS}-btn ${NS}-cancel">Close</button>`
             });
             m.el.querySelector(`.${NS}-copy-aria`).addEventListener('click', async () => { await copyToClipboard(lines.join('\n')); Toast.success('Copied'); });
@@ -1783,7 +1785,7 @@
                 if (!qrSvg) { Toast.error('URL exceeds QR capacity (106 bytes)'); return; }
                 Modal.open({
                     title: '📱 QR Code',
-                    body: `<div style="text-align:center"><div style="background:white;display:inline-block;padding:16px;border-radius:8px">${qrSvg}</div><p style="font-size:11px;color:#8a92a3;word-break:break-all;margin:12px 0">${escapeHTML(url)}</p><p style="font-size:11px;color:#666;background:#1f2530;padding:6px 10px;border-radius:4px">Note: Scanner app needs to send Referer: https://pixeldrain.com/</p><button class="${NS}-btn" style="margin-top:8px" id="${NS}-qr-copy-btn">📋 Copy URL</button></div>`
+                    body: `<div style="text-align:center"><div style="background:white;display:inline-block;padding:16px;border-radius:8px">${qrSvg}</div><p style="font-size:11px;color:#67E8F9;word-break:break-all;margin:12px 0">${escapeHTML(url)}</p><p style="font-size:11px;color:#666;background:rgba(10,19,26,0.55);padding:6px 10px;border-radius:4px">Note: Scanner app needs to send Referer: https://pixeldrain.com/</p><button class="${NS}-btn" style="margin-top:8px" id="${NS}-qr-copy-btn">📋 Copy URL</button></div>`
                 });
                 document.getElementById(`${NS}-qr-copy-btn`).addEventListener('click', async () => {
                     const ok = await copyToClipboard(url);
@@ -1868,38 +1870,38 @@
     // ================================================================
     const STYLES = `
     .${NS}-toast-container{position:fixed;top:1rem;right:1rem;z-index:99999;display:flex;flex-direction:column;gap:8px;max-width:420px;pointer-events:none}
-    .${NS}-toast{pointer-events:auto;background:#2f3541;color:#d7dde8;padding:10px 14px;border-radius:8px;font-size:13px;line-height:1.4;box-shadow:0 4px 16px rgba(0,0,0,.4);border-left:4px solid #a4be8c;animation:${NS}-slide .25s ease-out}
-    .${NS}-toast.success{border-left-color:#a4be8c}.${NS}-toast.warn{border-left-color:#ebcb8b}.${NS}-toast.error{border-left-color:#d97070}.${NS}-toast.info{border-left-color:#88c0d0}
+    .${NS}-toast{pointer-events:auto;background:rgba(10,19,26,0.85);color:#67E8F9;padding:10px 14px;border-radius:8px;font-size:13px;line-height:1.4;box-shadow:0 4px 16px rgba(0,0,0,.4);border-left:4px solid #00E5FF;animation:${NS}-slide .25s ease-out}
+    .${NS}-toast.success{border-left-color:#00E5FF}.${NS}-toast.warn{border-left-color:#67E8F9}.${NS}-toast.error{border-left-color:#ff0055}.${NS}-toast.info{border-left-color:#67E8F9}
     @keyframes ${NS}-slide{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
-    .${NS}-btn{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:6px;border:1px solid #555c6e;background:#2f3541;color:#d7dde8;font-size:12px;cursor:pointer;white-space:nowrap;transition:all .15s;font-family:inherit}
-    .${NS}-btn:hover{background:#3b4252;border-color:#a4be8c;color:#fff}
-    .${NS}-btn.primary{background:#4c7a3f;border-color:#a4be8c;color:#fff;font-weight:600}.${NS}-btn.primary:hover{background:#5c8a4f}
-    .${NS}-btn.gold{background:#7a6a3f;border-color:#d4be4c;color:#fff;font-weight:600}.${NS}-btn.gold:hover{background:#8a7a4f}
-    .${NS}-btn.danger{background:#703030;border-color:#d97070;color:#fff}.${NS}-btn.danger:hover{background:#804040}
+    .${NS}-btn{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:6px;border:1px solid rgba(0,229,255,0.2);background:rgba(10,19,26,0.65);color:#00E5FF;font-size:12px;cursor:pointer;white-space:nowrap;transition:all 150ms ease-in-out;font-family:'JetBrains Mono',monospace}
+    .${NS}-btn:hover{background:rgba(0,229,255,0.15);border-color:#00E5FF;color:#fff}
+    .${NS}-btn.primary{background:rgba(0,229,255,0.2);border-color:#00E5FF;color:#fff;font-weight:600}.${NS}-btn.primary:hover{background:rgba(0,229,255,0.35)}
+    .${NS}-btn.gold{background:rgba(103,232,249,0.15);border-color:#67E8F9;color:#fff;font-weight:600}.${NS}-btn.gold:hover{background:rgba(103,232,249,0.3)}
+    .${NS}-btn.danger{background:rgba(255,0,85,0.3);border-color:#ff0055;color:#fff}.${NS}-btn.danger:hover{background:#804040}
     .${NS}-btn:disabled{opacity:.5;cursor:not-allowed}
     .${NS}-btn-group{display:inline-flex;gap:0}.${NS}-btn-group .${NS}-btn{border-radius:0}.${NS}-btn-group .${NS}-btn:first-child{border-radius:6px 0 0 6px}.${NS}-btn-group .${NS}-btn:last-child{border-radius:0 6px 6px 0}
     .${NS}-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99998;display:flex;align-items:center;justify-content:center;animation:${NS}-fade .15s}
     @keyframes ${NS}-fade{from{opacity:0}to{opacity:1}}
-    .${NS}-modal{background:#2f3541;border-radius:12px;max-width:650px;width:92vw;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.5)}
-    .${NS}-modal-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #3b4252}
+    .${NS}-modal{background:rgba(10,19,26,0.72);border-radius:12px;max-width:650px;width:92vw;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+    .${NS}-modal-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid rgba(0,229,255,0.2)}
     .${NS}-modal-title{font-weight:600;font-size:15px}
-    .${NS}-modal-close{background:none;border:none;color:#8a92a3;font-size:22px;cursor:pointer;padding:0 4px}.${NS}-modal-close:hover{color:#d97070}
+    .${NS}-modal-close{background:none;border:none;color:#67E8F9;font-size:22px;cursor:pointer;padding:0 4px}.${NS}-modal-close:hover{color:#ff0055}
     .${NS}-modal-body{padding:18px;overflow-y:auto;flex:1}
-    .${NS}-modal-foot{padding:12px 18px;border-top:1px solid #3b4252;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
-    .${NS}-input{background:#1f2530;color:#d7dde8;border:1px solid #555c6e;border-radius:4px;padding:6px 10px;font-size:13px;width:100%;box-sizing:border-box;font-family:inherit}
-    .${NS}-input:focus{outline:none;border-color:#a4be8c}
+    .${NS}-modal-foot{padding:12px 18px;border-top:1px solid rgba(0,229,255,0.2);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+    .${NS}-input{background:rgba(10,19,26,0.55);color:#67E8F9;border:1px solid rgba(0,229,255,0.2);border-radius:4px;padding:6px 10px;font-size:13px;width:100%;box-sizing:border-box;font-family:'JetBrains Mono',monospace}
+    .${NS}-input:focus{outline:none;border-color:#00E5FF}
     .${NS}-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}.${NS}-row label{flex:1;font-size:13px}.${NS}-row input[type=checkbox]{width:16px;height:16px;cursor:pointer}
-    .${NS}-progress{width:100%;height:10px;background:#1f2530;border-radius:5px;overflow:hidden;margin-top:8px}
-    .${NS}-progress-bar{height:100%;background:linear-gradient(90deg,#a4be8c,#c4de9c);width:0%;transition:width .2s ease}
-    .${NS}-stat{font-size:11px;color:#8a92a3;margin-top:4px;display:flex;justify-content:space-between}
+    .${NS}-progress{width:100%;height:10px;background:rgba(10,19,26,0.55);border-radius:5px;overflow:hidden;margin-top:8px}
+    .${NS}-progress-bar{height:100%;background:linear-gradient(90deg,#00E5FF,#67E8F9);width:0%;transition:width .2s ease}
+    .${NS}-stat{font-size:11px;color:#67E8F9;margin-top:4px;display:flex;justify-content:space-between}
     .${NS}-pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500;margin:2px}
-    .${NS}-pill.ok{background:#3a5040;color:#a4be8c}.${NS}-pill.bad{background:#503a3a;color:#d97070}.${NS}-pill.gold{background:#5a4a20;color:#ebcb8b}.${NS}-pill.info{background:#2a4050;color:#88c0d0}
+    .${NS}-pill.ok{background:rgba(0,229,255,0.15);color:#00E5FF}.${NS}-pill.bad{background:rgba(255,0,85,0.15);color:#ff0055}.${NS}-pill.gold{background:rgba(103,232,249,0.12);color:#67E8F9}.${NS}-pill.info{background:rgba(10,19,26,0.55);color:#67E8F9}
     .${NS}-toolbar{display:inline-flex;gap:6px;flex-wrap:wrap;margin:6px 0;align-items:center}
-    .${NS}-section-title{margin:14px 0 10px;font-size:13px;color:#a4be8c;font-weight:600;border-bottom:1px solid #3b4252;padding-bottom:4px}
-    .${NS}-banner{background:#3b4252;padding:10px 14px;border-radius:6px;margin-bottom:12px;font-size:12px;border-left:3px solid #a4be8c;line-height:1.5}
-    .${NS}-badge{position:fixed;bottom:1rem;right:1rem;background:#2f3541;border:1px solid #3b4252;border-radius:8px;padding:6px 10px;font-size:11px;color:#8a92a3;z-index:99990;box-shadow:0 2px 8px rgba(0,0,0,.3);cursor:pointer;transition:all .2s}
-    .${NS}-badge:hover{border-color:#a4be8c;color:#d7dde8}
-    .${NS}-file-info{background:#1f2530;border-radius:6px;padding:10px 14px;margin-bottom:10px;font-size:12px;line-height:1.6}
+    .${NS}-section-title{margin:14px 0 10px;font-size:13px;color:#00E5FF;font-weight:600;border-bottom:1px solid rgba(0,229,255,0.2);padding-bottom:4px}
+    .${NS}-banner{background:rgba(10,19,26,0.85);padding:10px 14px;border-radius:6px;margin-bottom:12px;font-size:12px;border-left:3px solid #00E5FF;line-height:1.5}
+    .${NS}-badge{position:fixed;bottom:1rem;right:1rem;background:rgba(10,19,26,0.72);border:1px solid rgba(0,229,255,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:#67E8F9;z-index:99990;box-shadow:0 2px 8px rgba(0,0,0,.3);cursor:pointer;transition:all .2s}
+    .${NS}-badge:hover{border-color:#00E5FF;color:#67E8F9}
+    .${NS}-file-info{background:rgba(10,19,26,0.55);border-radius:6px;padding:10px 14px;margin-bottom:10px;font-size:12px;line-height:1.6}
     `;
 
     function injectStyles() {
@@ -1995,7 +1997,7 @@
             <div class="${NS}-row"><label>API Key</label><input type="password" data-k="apiKey" class="${NS}-input" placeholder="paste pixeldrain API key" style="max-width:320px"></div>
             <div class="${NS}-row"><label>Use direct when authenticated</label><input type="checkbox" data-k="useDirectIfAuth"></div>
             <div class="${NS}-row"><label>Direct threshold (bytes)</label><input type="number" data-k="directThresholdBytes" class="${NS}-input" style="max-width:140px"></div>
-            <div class="${NS}-row"><button class="${NS}-btn ${NS}-test-auth">🔑 Verify</button><span class="${NS}-auth-result" style="font-size:12px;color:#8a92a3;margin-left:8px"></span></div>
+            <div class="${NS}-row"><button class="${NS}-btn ${NS}-test-auth">🔑 Verify</button><span class="${NS}-auth-result" style="font-size:12px;color:#67E8F9;margin-left:8px"></span></div>
 
             <div class="${NS}-section-title">⚡ Speed Multiplication</div>
             <div class="${NS}-row"><label>Enable speed multiplier</label><input type="checkbox" data-k="speedMultiplier"></div>
@@ -2045,7 +2047,7 @@
                 <button class="${NS}-btn ${NS}-unblock">🔓 Unblock</button>
                 <button class="${NS}-btn ${NS}-reset-cb">Reset Circuits</button>
             </div>
-            <div class="${NS}-results" style="font-size:11px;color:#8a92a3;margin-top:6px;max-height:120px;overflow-y:auto"></div>
+            <div class="${NS}-results" style="font-size:11px;color:#67E8F9;margin-top:6px;max-height:120px;overflow-y:auto"></div>
 
             <div class="${NS}-section-title">External Downloaders</div>
             <div class="${NS}-row"><label>JDownloader URL</label><input type="text" data-k="jdownloaderUrl" class="${NS}-input" style="max-width:320px"></div>
@@ -2070,7 +2072,7 @@
                 <button class="${NS}-btn ${NS}-cleanup">Cleanup jobs</button>
                 <button class="${NS}-btn ${NS}-show-jobs">📋 Jobs</button>
             </div>
-            <div style="margin-top:14px;font-size:11px;color:#555c6e;text-align:center">v${VERSION} · ${PROXY_MIRRORS.length} mirrors · Circuit breaker · Speed multiplication</div>`;
+            <div style="margin-top:14px;font-size:11px;color:rgba(103,232,249,0.5);text-align:center">v${VERSION} · ${PROXY_MIRRORS.length} mirrors · Circuit breaker · Speed multiplication</div>`;
 
         const footer = `<button class="${NS}-btn ${NS}-cancel">Cancel</button><button class="${NS}-btn primary ${NS}-save">💾 Save</button>`;
         const m = Modal.open({ title: `⚙ Pixeldrain Bypass Pro v${VERSION}`, body, footer });
@@ -2120,7 +2122,7 @@
             const html = jobs.map(j => {
                 const sum = j.chunks.reduce((a, b) => a + b, 0);
                 const pct = j.fileSize ? (sum / j.fileSize * 100).toFixed(1) : '?';
-                return `<div style="padding:6px;border-bottom:1px solid #3b4252"><strong>${escapeHTML(j.fileName)}</strong> · ${pct}% (${formatBytes(sum)} / ${formatBytes(j.fileSize)})</div>`;
+                return `<div style="padding:6px;border-bottom:1px solid rgba(0,229,255,0.2)"><strong>${escapeHTML(j.fileName)}</strong> · ${pct}% (${formatBytes(sum)} / ${formatBytes(j.fileSize)})</div>`;
             }).join('');
             Modal.open({ title: `Pending Jobs (${jobs.length})`, body: html });
         });
@@ -2286,7 +2288,7 @@
         if (!id && kind !== 'fs') return;
 
         const host = document.createElement('div');
-        host.style.cssText = 'position:fixed;top:1rem;right:1rem;z-index:99997;background:#2f3541;padding:12px;border-radius:10px;border:1px solid #a4be8c;box-shadow:0 4px 16px rgba(0,0,0,.3);max-width:90vw;overflow-x:auto';
+        host.style.cssText = 'position:fixed;top:1rem;right:1rem;z-index:99997;background:rgba(10,19,26,0.85);padding:12px;border-radius:10px;border:1px solid rgba(0,229,255,0.2);box-shadow:0 4px 16px rgba(0,0,0,.3);max-width:90vw;overflow-x:auto';
 
         let file = getCurrentFileFromViewer();
         const v = getViewerData();
