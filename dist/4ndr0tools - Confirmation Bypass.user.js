@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Confirmation Bypass
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      4.0.1
+// @version      4.0.3
 // @author       4ndr0666
 // @description  Reveals forum invisi-text, view all replies, rewrite redirect links. Download Gate: bypass all confirmation pages on all sites, glass overlay copy/download URL (incl. vidara embeds on xcandid), auto-solve Altcha, auto-click download. Turbo: embed routing, upload injector. Util: external link safety, right-click scrollbar to top.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -300,14 +300,19 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.0
         // restore it forever. Ignore re-clicks while a cycle is in flight.
         if (overlayEl.dataset.cb4Copying === '1') return;
         overlayEl.dataset.cb4Copying = '1';
-        const originalHTML   = overlayEl.innerHTML;
+        /* v4.0.3 (suite v1.4.3 TT class fix): capture the live child NODES
+         * (cloned) instead of an innerHTML string — restoring via
+         * innerHTML is a TrustedHTML sink under enforcement, and the
+         * node-clone snapshot is strictly more faithful (attribute
+         * exactness preserved; no re-parse round-trip). */
+        const originalNodes = Array.from(overlayEl.childNodes).map((n) => n.cloneNode(true));
         const originalColor  = overlayEl.style.color;
         const originalBorder = overlayEl.style.borderColor;
         const originalBg     = overlayEl.style.background;
         const originalShadow = overlayEl.style.boxShadow;
 
         const restore = () => {
-            overlayEl.innerHTML        = originalHTML;
+            overlayEl.replaceChildren(...originalNodes);
             overlayEl.style.color      = originalColor;
             overlayEl.style.borderColor = originalBorder;
             overlayEl.style.background  = originalBg;
@@ -826,8 +831,14 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.0
         const BUTTON_TEXT_VIEW = 'View Replies';
         const BUTTON_TEXT_HIDE = 'Hide Replies';
         const LOADING_TEXT     = 'Loading replies';
-        const NO_REPLIES_HTML  = '<strong>No replies found.</strong>';
-        const ERROR_PREFIX     = '<strong style="color:#ff0055;">Error:</strong>';
+        /* v4.0.3: the reply view renders through createElement (TT sink
+         * class fix); the two HTML-string constants it used are gone. */
+        const strongEl = (text, color) => {
+            const el = document.createElement('strong');
+            if (color) el.style.color = color;
+            el.textContent = text;
+            return el;
+        };
 
         const mainDomain = window.location.hostname.split('.').slice(-2).join('.');
 
@@ -836,23 +847,53 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.0
             return m ? m[1] : null;
         };
 
-        // Safe text → anchor conversion (no raw-HTML injection)
+        // Safe text → anchor conversion (no raw-HTML injection).
         // G2 (v3.6.2): the pattern originally contained a literal backspace
         // (U+0008) where \b was intended — URLs could never match.
-        const convertLinks = (text) => {
-            if (!text) return '';
-            const safe = document.createElement('div');
-            safe.textContent = text;
-            return safe.innerHTML.replace(
-                /(\b(https?):\/\/[-A-Z0-9+&@#/%?=~_|!:,.;]*[-A-Z0-9+&@#/%=~_|])/ig,
-                (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`
-            );
+        // v4.0.3 (suite v1.4.3): builder form — text segments and anchors
+        // are appended as nodes, so no HTML string is ever assembled and
+        // href goes through the property (entity round-trips are gone).
+        const appendLinks = (host, text) => {
+            if (!text) return;
+            const URL_RE = /(\b(https?):\/\/[-A-Z0-9+&@#/%?=~_|!:,.;]*[-A-Z0-9+&@#/%=~_|])/ig;
+            let last = 0, m;
+            while ((m = URL_RE.exec(text)) !== null) {
+                if (m.index > last) host.appendChild(document.createTextNode(text.slice(last, m.index)));
+                const a = document.createElement('a');
+                a.href = m[0];
+                a.target = '_blank';
+                a.rel = 'noopener noreferrer';
+                a.textContent = m[0];
+                host.appendChild(a);
+                last = m.index + m[0].length;
+            }
+            if (last < text.length) host.appendChild(document.createTextNode(text.slice(last)));
         };
 
         const showError = (container, msg) => {
-            container.innerHTML = `${ERROR_PREFIX} ${msg}`;
+            container.replaceChildren(strongEl('Error:', '#ff0055'), document.createTextNode(` ${msg}`));
             delete container.dataset.loading;
         };
+
+        /* v4.0.2 (suite v1.4.2 TT class fix): parseFromString is a Trusted
+         * Types sink under require-trusted-types-for 'script'. Mint an
+         * identity policy where the host allows it; raw fallback otherwise
+         * (the answer-parse call below is inside onload — a TT throw would
+         * strand the loading state, hence the wrap). */
+        const TTwrap = (() => {
+            let policy = null, tried = false;
+            return (s) => {
+                if (!tried) {
+                    tried = true;
+                    try {
+                        const TT = window.trustedTypes;
+                        if (TT && typeof TT.createPolicy === 'function')
+                            policy = TT.createPolicy('4ndr0666tools#cbp', { createHTML: (v) => v });
+                    } catch (e) { policy = null; }
+                }
+                return policy ? policy.createHTML(s) : s;
+            };
+        })();
 
         const fetchReplies = (searchURL, container) => {
             GM_xmlhttpRequest({
@@ -865,18 +906,24 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.0
                         showError(container, `Status ${res.status}`);
                         return;
                     }
-                    const doc = new DOMParser().parseFromString(res.responseText, 'text/html');
+                    const doc = new DOMParser().parseFromString(TTwrap(res.responseText), 'text/html');
                     const blocks = doc.querySelectorAll(
                         'li.block-row.block-row--separated.js-inlineModContainer[data-author]'
                     );
-                    if (!blocks.length) { container.innerHTML = NO_REPLIES_HTML; return; }
+                    if (!blocks.length) { container.replaceChildren(strongEl('No replies found.')); return; }
 
-                    container.innerHTML = '';
+                    container.replaceChildren();
                     const table = document.createElement('table');
                     table.className = 'cb4-replies-table';
-                    table.innerHTML = `<thead><tr>
-                        <th>Post #</th><th>Date</th><th>Reply</th>
-                    </tr></thead>`;
+                    const thead = document.createElement('thead');
+                    const headRow = document.createElement('tr');
+                    for (const h of ['Post #', 'Date', 'Reply']) {
+                        const th = document.createElement('th');
+                        th.textContent = h;
+                        headRow.appendChild(th);
+                    }
+                    thead.appendChild(headRow);
+                    table.appendChild(thead);
                     const tbody   = document.createElement('tbody');
                     const frag    = document.createDocumentFragment();
 
@@ -902,7 +949,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.0
                         tdDate.title = postTime.getAttribute('datetime') || '';
 
                         const tdContent = document.createElement('td');
-                        tdContent.innerHTML = convertLinks(snippet.textContent.trim());
+                        appendLinks(tdContent, snippet.textContent.trim());
 
                         row.append(tdNum, tdDate, tdContent);
                         frag.appendChild(row);

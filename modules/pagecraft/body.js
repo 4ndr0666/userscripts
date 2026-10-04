@@ -290,7 +290,9 @@ img:hover { max-width: 100%; max-height: 100%; }`;
             const response = await fetch(baseUrl.toString());
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const text = await response.text();
-            const newDoc = new DOMParser().parseFromString(text, 'text/html');
+            /* v1.4.2: TT-safe parse — Ψ.core.parseHTML policy-wraps the
+             * string when the host enforces require-trusted-types-for. */
+            const newDoc = Ψ.core.parseHTML(text);
 
             const container = $new('div', { id: `page-${pageNumber}`, style: { marginTop: '20px' } });
             const results = newDoc.querySelectorAll('#results > .snippet');

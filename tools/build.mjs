@@ -25,7 +25,21 @@ const MODULES_DIR = path.join(ROOT, "modules");
 const CANON_DIR = path.join(ROOT, "canon");
 const DIST_DIR = path.join(ROOT, "dist");
 
-const KERNEL_ORDER = ["brand", "core", "glass", "net", "store", "clipboard", "hotkeys", "hosts"];
+const KERNEL_ORDER = ["brand", "core", "glass", "store", "hotkeys", "hosts"];
+
+/* Canon scripts that consume kernel modules at build time (suite v1.4.3):
+ * the file is carried with the listed modules inlined directly after the
+ * ==/UserScript== block — canon stays the review source, dist stays
+ * self-contained, kernel/ stays the single source of truth (the v1.1.0
+ * design shipped kernel/net.js with zero consumers; it was purged as dead
+ * surface in v1.4.2. This map is how a kernel module stays alive with
+ * canon-carried consumers). The module's top-level identifier
+ * (e.g. __4NDR0_NET_API__) is script-scope visible to the consumer's
+ * body; validate.mjs machine-checks both wiring directions. */
+const CANON_KERNEL = {
+    "4ndr0tools - Blob2URL.user.js": ["net"],
+    "4ndr0tools - LinkMasterΨ.user.js": ["net"],
+};
 const GLYPH_ICON =
     "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E";
 
@@ -284,7 +298,8 @@ function main() {
         }
     }
 
-    // 2) Canon carries (verbatim)
+    // 2) Canon carries (verbatim) — except CANON_KERNEL consumers, which
+    //    are carried with their declared kernel modules inlined.
     let carried = 0;
     if (fs.existsSync(CANON_DIR)) {
         for (const entry of fs.readdirSync(CANON_DIR, { withFileTypes: true })) {
@@ -292,9 +307,31 @@ function main() {
             const dir = path.join(CANON_DIR, entry.name);
             for (const f of fs.readdirSync(dir)) {
                 if (!f.endsWith(".user.js")) continue;
-                fs.copyFileSync(path.join(dir, f), path.join(DIST_DIR, f));
+                const kernelList = CANON_KERNEL[f];
+                if (!kernelList) {
+                    fs.copyFileSync(path.join(dir, f), path.join(DIST_DIR, f));
+                    outputs.add(f);
+                    carried++;
+                    continue;
+                }
+                const src = fs.readFileSync(path.join(dir, f), "utf8");
+                const chunks = [];
+                for (const mod of kernelList) {
+                    const p = path.join(KERNEL_DIR, `${mod}.js`);
+                    if (!fs.existsSync(p)) {
+                        failures.push(`canon ${f}: kernel module "${mod}" not found`);
+                        continue;
+                    }
+                    chunks.push(`/* ══ kernel/${mod}.js (inlined by tools/build.mjs — edit kernel/, not here) ══ */\n${fs.readFileSync(p, "utf8").trim()}`);
+                }
+                const marker = src.indexOf("==/UserScript==");
+                const cut = marker === -1 ? 0 : src.indexOf("\n", marker) + 1;
+                const out = src.slice(0, cut) + "\n" + chunks.join("\n\n") + "\n\n" + src.slice(cut);
+                const balanceErr = checkLexicalBalance(out, f);
+                if (balanceErr) failures.push(balanceErr);
+                failures.push(...scanPlaceholders(out, f));
+                fs.writeFileSync(path.join(DIST_DIR, f), out);
                 outputs.add(f);
-                carried++;
             }
         }
     }
@@ -313,6 +350,9 @@ function main() {
     // 4) Report
     for (const f of built) console.log(`  ✓ built  ${f}`);
     if (carried) console.log(`  ✓ carried ${carried} canon script(s) verbatim`);
+    for (const f of Object.keys(CANON_KERNEL)) {
+        if (outputs.has(f)) console.log(`  ✓ carried ${f} + kernel {${CANON_KERNEL[f].join(", ")}}`);
+    }
     for (const f of stale) console.log(`  − pruned  ${f} (no canon source)`);
 
     if (failures.length > 0) {

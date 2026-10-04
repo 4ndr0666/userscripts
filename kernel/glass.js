@@ -8,8 +8,9 @@
  * Translation rules (GTK3 → hostile host page):
  *   - Never style bare widget names (button, menu, …): every selector is
  *     scoped under `.a4-` classes (spec §1.2 universal-selector ban, web-side).
- *   - All DOM construction uses createElement/textContent only — Trusted
- *     Types-immune on require-trusted-types pages (no innerHTML anywhere).
+ *   - All DOM construction uses createElement/createElementNS/textContent
+ *     only — Trusted Types-immune on require-trusted-types pages (no
+ *     innerHTML, no parseFromString, anywhere in the kernel).
  *   - CSS custom properties live on `.a4-scope` (each glass surface), never
  *     on :root — zero leakage into the host document.
  *   - Optional closed-Shadow-DOM mounting for maximally hostile pages.
@@ -18,7 +19,7 @@
 Ψ.glass = (() => {
     'use strict';
 
-    const { PALETTE, FONTS, TRANSITION, GLYPH_SVG } = Ψ.brand;
+    const { PALETTE, FONTS, TRANSITION } = Ψ.brand;
     const { $, $new, escapeHTML } = Ψ.core;
 
     /* v1.3.0 facade repair: Ψ.store is a namespaced-store FACTORY
@@ -102,12 +103,17 @@
         return style;
     }
 
-    /** Branding glyph as a live SVG Element (clonable, stylable). */
+    /** Branding glyph as a live SVG Element (clonable, stylable).
+     * v1.4.2 (TT hardening): built through Ψ.brand.glyphNode()
+     * (createElementNS only). The previous DOMParser.parseFromString was a
+     * Trusted Types sink — under require-trusted-types-for 'script' it
+     * killed EVERY glass HUD at header construction (HostWarp/PageCraft
+     * settings consoles on TT hosts surfaced it as
+     * "Failed to execute 'parseFromString' on 'DOMParser'"). The kernel is
+     * now zero-string-sink: no innerHTML, no parseFromString, anywhere. */
     function glyphEl(size = 20) {
         const wrap = $new('span', { class: 'a4-glyph', style: { display: 'inline-flex', width: size + 'px', height: size + 'px', flex: 'none' } });
-        const host = document.createElement('div'); // parse isolated constant, TT-safe via DOMParser
-        const parsed = new DOMParser().parseFromString(GLYPH_SVG, 'image/svg+xml');
-        const svg = document.importNode(parsed.documentElement, true);
+        const svg = Ψ.brand.glyphNode();
         svg.setAttribute('width', '100%');
         svg.setAttribute('height', '100%');
         wrap.append(svg);

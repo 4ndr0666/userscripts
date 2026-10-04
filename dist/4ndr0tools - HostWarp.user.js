@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - HostWarp
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.1.1
+// @version      1.1.2
 // @description  Per-host warp drive: bypasses image-host interstitials (imagetwist/imgspice/turboimagehost/acidimg/imx/pixhost/imagebam/imgbox/kropic/vipr/imagevenue), MEGA embed redirect + autoplay, PlanetSuzy mobile skin, t.me Web button, SearXNG sticky preferences, Gemini Answer Now — one engine, glass settings console, every module toggleable.
 // @author       4ndr0666
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -19,7 +19,7 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20HostWarp.user.js
 // ==/UserScript==
 
-/* 4ndr0tools - HostWarp v1.1.1 — built from modules/hostwarp + kernel {brand, core, glass, store, hotkeys, hosts}
+/* 4ndr0tools - HostWarp v1.1.2 — built from modules/hostwarp + kernel {brand, core, glass, store, hotkeys, hosts}
  * Per-host warp drive: bypasses image-host interstitials (imagetwist/imgspice/turboimagehost/acidimg/imx/pixhost/imagebam/imgbox/kropic/vipr/imagevenue), MEGA embed redirect + autoplay, PlanetSuzy mobile skin, t.me Web button, SearXNG sticky preferences, Gemini Answer Now — one engine, glass settings console, every module toggleable.
  * This is a generated file; edit modules/ and run `npm run build`.
  */
@@ -62,6 +62,56 @@
     /** Minimal URI-encoded glyph for userscript @icon headers. */
     const GLYPH_ICON_URI =
         'data:image/svg+xml,' + encodeURIComponent(GLYPH_SVG).replace(/%20/g, '%20');
+
+    /** Glyph as a live SVG Element, built purely through createElementNS.
+     *
+     * v1.4.2 (TT hardening): DOMParser.parseFromString is a Trusted Types
+     * sink under `require-trusted-types-for 'script'` enforcement — even
+     * for 'image/svg+xml' (field-proven twice: YTPM v1.4.0's 54 uncaught
+     * TypeErrors on YouTube, and HostWarp/PageCraft settings consoles
+     * dying at glyphEl() on TT hosts — kernel glass.js used to parse this
+     * very constant). createElementNS is intercepted by no policy, so the
+     * glyph is TT-immune BY CONSTRUCTION, with no policy exemption needed
+     * from any host page's CSP.
+     *
+     * SYNC LOCK — the geometry below mirrors GLYPH_SVG above 1:1. Any edit
+     * to one must be mirrored in the other (GLYPH_SVG remains the source
+     * for the build-time @icon data-URI; glyphNode is the runtime source).
+     *
+     * @param {Document} [doc] owner document (defaults to the current one)
+     * @returns {SVGElement} clonable, stylable root <svg> */
+    function glyphNode(docRef) {
+        const d = docRef || document;
+        const NS = 'http://www.w3.org/2000/svg';
+        const attr = (node, attrs) => { for (const k of Object.keys(attrs)) node.setAttribute(k, attrs[k]); };
+        const svg = d.createElementNS(NS, 'svg');
+        attr(svg, {
+            viewBox: '0 0 128 128', fill: 'none',
+            stroke: PALETTE.accentPrimary, 'stroke-width': '3',
+            'stroke-linecap': 'round', 'stroke-linejoin': 'round',
+        });
+        const ringOuter = d.createElementNS(NS, 'path');
+        attr(ringOuter, {
+            d: 'M 64,12 A 52,52 0 1 1 63.9,12 Z',
+            'stroke-dasharray': '21.78 21.78', 'stroke-width': '2',
+        });
+        const ringInner = d.createElementNS(NS, 'path');
+        attr(ringInner, {
+            d: 'M 64,20 A 44,44 0 1 1 63.9,20 Z',
+            'stroke-dasharray': '10 10', 'stroke-width': '1.5', opacity: '0.7',
+        });
+        const hex = d.createElementNS(NS, 'path');
+        attr(hex, { d: 'M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z' });
+        const psi = d.createElementNS(NS, 'text');
+        attr(psi, {
+            x: '64', y: '67', 'text-anchor': 'middle', 'dominant-baseline': 'middle',
+            fill: PALETTE.accentPrimary, stroke: 'none', 'font-size': '56',
+            'font-weight': '700', 'font-family': 'Cinzel Decorative, serif',
+        });
+        psi.textContent = 'Ψ';
+        svg.append(ringOuter, ringInner, hex, psi);
+        return svg;
+    }
 
     /* 3lectric-Glass colorimetry matrix — 3lectric_6lass-spec.md §2.1.
      * Names mirror the spec's functional roles so audits map 1:1. */
@@ -122,7 +172,7 @@
         `--a4-transition:${TRANSITION};` +
         `}`;
 
-    return Object.freeze({ SUITE, KERNEL_VERSION, GLYPH_SVG, GLYPH_ICON_URI, PALETTE, FONTS, TRANSITION, cssVars });
+    return Object.freeze({ SUITE, KERNEL_VERSION, GLYPH_SVG, GLYPH_ICON_URI, glyphNode, PALETTE, FONTS, TRANSITION, cssVars });
 })();
     /* ══ kernel/core.js ══ */
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -286,6 +336,61 @@
     /** HTML-escape untrusted text for innerHTML interpolation (defense-in-depth). */
     const escapeHTML = (s) => String(s).replace(/[&<>"']/g, (ch) => ESCAPE_MAP[ch]);
 
+    /* ── Trusted-Types-safe parsing (v1.4.2) ─────────────────────────── */
+
+    /* DOMParser.parseFromString is a Trusted Types sink under
+     * `require-trusted-types-for 'script'` enforcement — including the
+     * image/svg+xml and application/xml MIME branches (field-proven:
+     * YTPM v1.4.0's 54 uncaught TypeErrors on YouTube; HostWarp/PageCraft
+     * settings-console deaths on TT hosts). Sites that enforce TT but do
+     * NOT publish a `trusted-types` name allowlist accept any policy
+     * name; sites WITH an allowlist reject ours — there the probe fails,
+     * we fall back to the raw string, and the caller's existing try/catch
+     * degrades the feature gracefully (parsing remote HTML on a locked
+     * host is impossible by design; our own DOM building never needs it).
+     *
+     * Multi-name probe: co-installed suite scripts on the same page each
+     * create their OWN policy (createPolicy throws on a taken name), so
+     * the second and third suite instances walk down this list instead
+     * of collapsing to the raw fallback. */
+    const TT_POLICY_NAMES = ['4ndr0666tools#dom', '4ndr0666tools#dom.2', '4ndr0666tools#dom.3'];
+    const tt = (() => {
+        let policy = null, tried = false;
+        const wrap = (s) => {
+            if (!tried) {
+                tried = true;
+                try {
+                    const TT = typeof trustedTypes !== 'undefined' && trustedTypes;
+                    if (TT && typeof TT.createPolicy === 'function') {
+                        for (const name of TT_POLICY_NAMES) {
+                            try { policy = TT.createPolicy(name, { createHTML: (v) => v }); break; }
+                            catch (e) { /* name taken (co-installed suite script) or CSP-blocked */ }
+                        }
+                    }
+                } catch (e) { policy = null; }
+            }
+            return policy ? policy.createHTML(s) : s;
+        };
+        return Object.freeze({
+            createHTML: wrap,
+            /** Probe result: true when a TrustedHTML can be minted here. */
+            available: () => { wrap(''); return policy !== null; },
+        });
+    })();
+
+    /** Parse an HTML string into an inert Document — TT-safe on
+     *  enforcing hosts (policy-wrapped when a policy can be minted).
+     *  @param {string} str */
+    function parseHTML(str) {
+        return new DOMParser().parseFromString(tt.createHTML(str), 'text/html');
+    }
+
+    /** Parse an XML string (manifests, SVG sources) into a Document —
+     *  TT-safe for the same reason. @param {string} str */
+    function parseXML(str) {
+        return new DOMParser().parseFromString(tt.createHTML(str), 'application/xml');
+    }
+
     /* ── DOM observation (bounded, self-cleaning) ────────────────────────── */
 
     /**
@@ -358,7 +463,7 @@
     return Object.freeze({
         $, $$, $new, $dataset, $propUp,
         sleep, debounce, throttle, once, uid,
-        FIFOCache, escapeHTML,
+        FIFOCache, escapeHTML, tt, parseHTML, parseXML,
         waitFor, watchDOM, trustedAppend,
     });
 })();
@@ -373,8 +478,9 @@
  * Translation rules (GTK3 → hostile host page):
  *   - Never style bare widget names (button, menu, …): every selector is
  *     scoped under `.a4-` classes (spec §1.2 universal-selector ban, web-side).
- *   - All DOM construction uses createElement/textContent only — Trusted
- *     Types-immune on require-trusted-types pages (no innerHTML anywhere).
+ *   - All DOM construction uses createElement/createElementNS/textContent
+ *     only — Trusted Types-immune on require-trusted-types pages (no
+ *     innerHTML, no parseFromString, anywhere in the kernel).
  *   - CSS custom properties live on `.a4-scope` (each glass surface), never
  *     on :root — zero leakage into the host document.
  *   - Optional closed-Shadow-DOM mounting for maximally hostile pages.
@@ -383,7 +489,7 @@
 Ψ.glass = (() => {
     'use strict';
 
-    const { PALETTE, FONTS, TRANSITION, GLYPH_SVG } = Ψ.brand;
+    const { PALETTE, FONTS, TRANSITION } = Ψ.brand;
     const { $, $new, escapeHTML } = Ψ.core;
 
     /* v1.3.0 facade repair: Ψ.store is a namespaced-store FACTORY
@@ -467,12 +573,17 @@
         return style;
     }
 
-    /** Branding glyph as a live SVG Element (clonable, stylable). */
+    /** Branding glyph as a live SVG Element (clonable, stylable).
+     * v1.4.2 (TT hardening): built through Ψ.brand.glyphNode()
+     * (createElementNS only). The previous DOMParser.parseFromString was a
+     * Trusted Types sink — under require-trusted-types-for 'script' it
+     * killed EVERY glass HUD at header construction (HostWarp/PageCraft
+     * settings consoles on TT hosts surfaced it as
+     * "Failed to execute 'parseFromString' on 'DOMParser'"). The kernel is
+     * now zero-string-sink: no innerHTML, no parseFromString, anywhere. */
     function glyphEl(size = 20) {
         const wrap = $new('span', { class: 'a4-glyph', style: { display: 'inline-flex', width: size + 'px', height: size + 'px', flex: 'none' } });
-        const host = document.createElement('div'); // parse isolated constant, TT-safe via DOMParser
-        const parsed = new DOMParser().parseFromString(GLYPH_SVG, 'image/svg+xml');
-        const svg = document.importNode(parsed.documentElement, true);
+        const svg = Ψ.brand.glyphNode();
         svg.setAttribute('width', '100%');
         svg.setAttribute('height', '100%');
         wrap.append(svg);

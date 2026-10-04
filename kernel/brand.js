@@ -33,6 +33,56 @@
     const GLYPH_ICON_URI =
         'data:image/svg+xml,' + encodeURIComponent(GLYPH_SVG).replace(/%20/g, '%20');
 
+    /** Glyph as a live SVG Element, built purely through createElementNS.
+     *
+     * v1.4.2 (TT hardening): DOMParser.parseFromString is a Trusted Types
+     * sink under `require-trusted-types-for 'script'` enforcement — even
+     * for 'image/svg+xml' (field-proven twice: YTPM v1.4.0's 54 uncaught
+     * TypeErrors on YouTube, and HostWarp/PageCraft settings consoles
+     * dying at glyphEl() on TT hosts — kernel glass.js used to parse this
+     * very constant). createElementNS is intercepted by no policy, so the
+     * glyph is TT-immune BY CONSTRUCTION, with no policy exemption needed
+     * from any host page's CSP.
+     *
+     * SYNC LOCK — the geometry below mirrors GLYPH_SVG above 1:1. Any edit
+     * to one must be mirrored in the other (GLYPH_SVG remains the source
+     * for the build-time @icon data-URI; glyphNode is the runtime source).
+     *
+     * @param {Document} [doc] owner document (defaults to the current one)
+     * @returns {SVGElement} clonable, stylable root <svg> */
+    function glyphNode(docRef) {
+        const d = docRef || document;
+        const NS = 'http://www.w3.org/2000/svg';
+        const attr = (node, attrs) => { for (const k of Object.keys(attrs)) node.setAttribute(k, attrs[k]); };
+        const svg = d.createElementNS(NS, 'svg');
+        attr(svg, {
+            viewBox: '0 0 128 128', fill: 'none',
+            stroke: PALETTE.accentPrimary, 'stroke-width': '3',
+            'stroke-linecap': 'round', 'stroke-linejoin': 'round',
+        });
+        const ringOuter = d.createElementNS(NS, 'path');
+        attr(ringOuter, {
+            d: 'M 64,12 A 52,52 0 1 1 63.9,12 Z',
+            'stroke-dasharray': '21.78 21.78', 'stroke-width': '2',
+        });
+        const ringInner = d.createElementNS(NS, 'path');
+        attr(ringInner, {
+            d: 'M 64,20 A 44,44 0 1 1 63.9,20 Z',
+            'stroke-dasharray': '10 10', 'stroke-width': '1.5', opacity: '0.7',
+        });
+        const hex = d.createElementNS(NS, 'path');
+        attr(hex, { d: 'M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z' });
+        const psi = d.createElementNS(NS, 'text');
+        attr(psi, {
+            x: '64', y: '67', 'text-anchor': 'middle', 'dominant-baseline': 'middle',
+            fill: PALETTE.accentPrimary, stroke: 'none', 'font-size': '56',
+            'font-weight': '700', 'font-family': 'Cinzel Decorative, serif',
+        });
+        psi.textContent = 'Ψ';
+        svg.append(ringOuter, ringInner, hex, psi);
+        return svg;
+    }
+
     /* 3lectric-Glass colorimetry matrix — 3lectric_6lass-spec.md §2.1.
      * Names mirror the spec's functional roles so audits map 1:1. */
     const PALETTE = Object.freeze({
@@ -92,5 +142,5 @@
         `--a4-transition:${TRANSITION};` +
         `}`;
 
-    return Object.freeze({ SUITE, KERNEL_VERSION, GLYPH_SVG, GLYPH_ICON_URI, PALETTE, FONTS, TRANSITION, cssVars });
+    return Object.freeze({ SUITE, KERNEL_VERSION, GLYPH_SVG, GLYPH_ICON_URI, glyphNode, PALETTE, FONTS, TRANSITION, cssVars });
 })();

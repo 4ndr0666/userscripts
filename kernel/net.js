@@ -1,266 +1,158 @@
 /* ═══════════════════════════════════════════════════════════════════════════
- * kernel/net.js — hardened network transport + the NetHook singleton
+ * kernel/net.js — the NetHook singleton (suite v1.4.3 restore + hardening)
  * ----------------------------------------------------------------------------
- * Two responsibilities:
+ * THE co-install interference fix for the media family. Before this module,
+ * every network-tapping script installed its own fetch/XHR proxy on shared
+ * pages; co-installed, they stacked — Blob2URL's vault over LinkMasterΨ's
+ * IG harvester on instagram.com read every response body twice, with wrap
+ * chains N scripts deep (the v1.4.3 sink census measured the surface).
+ * NetHook installs exactly ONE wrap per realm and fans every captured body
+ * out to isolated suite subscribers.
  *
- * 1. Ψ.net.gmFetch — GM_xmlhttpRequest wrapper with a hard timeout (GUP
- *    D2/4.2), bounded retries with backoff, and specific error classes.
- *    Consolidates the ad-hoc retry/timeout fragments from Pixeldrain++,
- *    Gofile++, Bunkr++, and m3u8++.
+ * Consumed via build-time injection into the canon scripts that declare it
+ * (tools/build.mjs CANON_KERNEL) — the identifier `__4NDR0_NET_API__` below
+ * is script-scope visible to the consumer's IIFE.
  *
- * 2. Ψ.net.hook — THE co-install interference fix for the media family.
- *    Before this kernel, seven suite scripts each installed their own
- *    fetch/XHR proxy on the same pages; co-installed, they stacked proxies
- *    (double capture, listener leaks, latency). NetHook installs exactly ONE
- *    proxy per realm and lets every suite script register isolated handlers
- *    against it.
- *
- *    Cross-script coordination uses a single non-enumerable, versioned
- *    contract slot (`__4NDR0_NET__`) — the same interop pattern as
- *    window.jQuery/GM_info, deliberately exempt from the "zero window
- *    pollution" rule because two userscripts share no other memory. The
- *    slot is feature-detected, never overwritten (highest version wins),
- *    and every handler failure is isolated with scoped console.debug per
- *    GUP D6 (deliberate interception).
- * ═══════════════════════════════════════════════════════════════════════ */
-
-Ψ.net = (() => {
+ * Design contract (v2 — restored from the v1.1.0 design, hardened):
+ *   - PAGE REALM FIRST: the slot + wraps live on unsafeWindow when
+ *     available (that is where host page fetches live — the same realm
+ *     choice the per-script wraps already made), window otherwise.
+ *   - LAZY ARM: zero wraps until the first subscriber registers — a
+ *     co-installed script that only subscribes on its own host costs
+ *     nothing anywhere else.
+ *   - SINGLE BODY READ: one clone().text() per response, dispatched to
+ *     every subscriber — the two-vault double-read on instagram is the
+ *     exact failure this replaces. 4 MB read cap (Blob2URL's wire limit).
+ *   - FINGERPRINT MASKING: wrapped.toString() reports the native source
+ *     (anti-bot parity with the per-script wraps it replaces).
+ *   - ISOLATION: a throwing subscriber can never break the host page or
+ *     its siblings (scoped console.debug, GUP D6 deliberate interception).
+ *   - VERSIONED SLOT: `__4NDR0_NET__` on the realm — highest version
+ *     wins, never overwritten; the second suite script reuses the first's
+ *     wraps through the slot (cross-script memory is the documented interop
+ *     exception, same class as window.jQuery/GM_info).
+ * ═══════════════════════════════════════════════════════════════════════════ */
+const __4NDR0_NET_API__ = (function () {
     'use strict';
 
-    const NET_HOOK_SLOT = '__4NDR0_NET__';
-    const NET_HOOK_VERSION = 1;
-    const MAX_HANDLERS = 64;          // bounded registry (GUP B.1)
+    const SLOT = '__4NDR0_NET__';
+    const VERSION = 2;
+    const MAX_SUBS = 32;            /* bounded registry (GUP B.1) */
+    const MAX_BODY = 4000000;       /* 4 MB read cap (Blob2URL's wire limit) */
 
-    /* ── Error taxonomy (specific exceptions, never generic) ────────────── */
+    function realm() {
+        try { if (typeof unsafeWindow !== 'undefined' && unsafeWindow) return unsafeWindow; } catch (e) { /* sandboxed away */ }
+        try { if (typeof window !== 'undefined' && window) return window; } catch (e) { /* no DOM */ }
+        return null;
+    }
 
-    class NetError extends Error {
-        constructor(message, { url, status, kind } = {}) {
-            super(message);
-            this.name = 'NetError';
-            this.url = url;
-            this.status = status;
-            this.kind = kind || 'transport';
-        }
-    }
-    class NetTimeoutError extends NetError {
-        constructor(url, ms) {
-            super(`gmFetch timeout after ${ms}ms: ${url}`, { url, kind: 'timeout' });
-            this.name = 'NetTimeoutError';
-        }
-    }
-    class NetHttpError extends NetError {
-        constructor(url, status, statusText) {
-            super(`HTTP ${status} ${statusText || ''} — ${url}`, { url, status, kind: 'http' });
-            this.name = 'NetHttpError';
+    const subs = new Map();         /* key -> fn(text) */
+    let seq = 0;
+    let armed = false;
+
+    function dispatch(text) {
+        for (const [, fn] of subs) {
+            try { fn(text); }
+            catch (e) { console.debug('[a4/net] subscriber failed:', (e && e.message) || e); }
         }
     }
 
-    /* ── gmFetch — privileged transport with timeout + bounded retry ────── */
-
-    /**
-     * Promise-wrapped GM_xmlhttpRequest with hard timeout and optional retry.
-     * @param {string} url
-     * @param {{method?:string, headers?:object, data?:string, timeout?:number,
-     *          retries?:number, responseType?:string, checkStatus?:boolean}} [opts]
-     * @returns {Promise<{status:number, statusText:string, responseText:string,
-     *                     responseHeaders:string, finalUrl:string}>}
-     */
-    function gmFetch(url, opts = {}) {
-        const {
-            method = 'GET', headers = {}, data = null,
-            timeout = 15000, retries = 0, responseType = 'text',
-            checkStatus = true,
-        } = opts;
-
-        const attempt = (triesLeft) => new Promise((resolve, reject) => {
-            let settled = false;
-            const done = (fn, arg) => { if (!settled) { settled = true; fn(arg); } };
-            const req = {
-                method, url, headers, data, timeout,
-                responseType: responseType === 'text' ? 'text' : responseType,
-                onload: (r) => {
-                    if (checkStatus && (r.status < 200 || r.status >= 400)) {
-                        done(reject, new NetHttpError(url, r.status, r.statusText));
-                    } else {
-                        done(resolve, r);
-                    }
-                },
-                onerror: () => done(reject, new NetError('network error', { url })),
-                ontimeout: () => done(reject, new NetTimeoutError(url, timeout)),
-                onabort: () => done(reject, new NetError('aborted', { url, kind: 'abort' })),
-            };
-            try {
-                GM_xmlhttpRequest(req);
-            } catch (e) {
-                done(reject, new NetError('dispatch failed: ' + e.message, { url }));
-            }
-        });
-
-        return (async () => {
-            let lastErr = null;
-            for (let attemptNo = 0; attemptNo <= retries; attemptNo++) {
-                try {
-                    return await attempt(0);
-                } catch (e) {
-                    lastErr = e;
-                    // Retry only transient failures — never HTTP 4xx logic errors.
-                    if (!(e instanceof NetTimeoutError || e.kind === 'transport')) throw e;
-                    if (attemptNo < retries) await Ψ.core.sleep(300 * (attemptNo + 1));
-                }
-            }
-            throw lastErr;
-        })();
-    }
-
-    /* ── Download dispatch (manager-first, tab fallback) ─────────────────── */
-
-    /**
-     * Download via GM_download with graceful fallback to GM_openInTab.
-     * @returns {Promise<{mode: 'manager'|'tab'}>}
-     */
-    function download({ url, name, headers = null, saveAs = false }) {
-        return new Promise((resolve, reject) => {
-            const finishManager = (mode) => resolve({ mode });
-            try {
-                if (typeof GM_download === 'function') {
-                    const handle = GM_download(
-                        { url, name: name || url.split('/').pop() || 'download', headers, saveAs },
-                        finishManager.bind(null, 'manager'));
-                    // GM_download returns an object with abort(); some managers
-                    // also fire onerror — surface it rather than hanging.
-                    if (handle && typeof handle.then === 'function') {
-                        handle.then(() => finishManager('manager'), reject);
-                    }
-                    // If the manager neither resolves nor errors, resolve anyway
-                    // once the tab-level fallback window elapses.
-                    setTimeout(() => resolve({ mode: 'manager' }), 8000);
-                    return;
-                }
-                throw new NetError('GM_download unavailable', { url, kind: 'unsupported' });
-            } catch (e) {
-                if (typeof GM_openInTab === 'function') {
-                    const tab = GM_openInTab(url, { active: false });
-                    resolve({ mode: 'tab', tab });
-                } else {
-                    reject(e instanceof NetError ? e : new NetError(String(e && e.message || e), { url }));
-                }
-            }
-        });
-    }
-
-    /* ── NetHook — one proxy per realm, many isolated consumers ─────────── */
-
-    /**
-     * Obtain (installing exactly once) the suite's network interception hub.
-     * Page-context fetch/XHR events are captured and fanned out to isolated
-     * handlers. API (also reachable cross-script via the versioned slot):
-     *
-     *   netHook.version
-     *   netHook.onFetch(patternOrFn, handler)   -> unsubscribe()
-     *   netHook.onXhr(patternOrFn, handler)     -> unsubscribe()
-     *     handler(request, response) — response may be undefined pre-flight.
-     *
-     * Handlers are try/catch-isolated per D6; a throwing handler can never
-     * break the host page or sibling handlers.
-     */
-    function netHook() {
-        const existing = window[NET_HOOK_SLOT];
-        if (existing && existing.version >= NET_HOOK_VERSION) return existing;
-
-        const fetchHandlers = new Ψ.core.FIFOCache(MAX_HANDLERS); // insertion-ordered registry
-        const xhrHandlers = new Ψ.core.FIFOCache(MAX_HANDLERS);
-
-        const matches = (matcher, arg) =>
-            typeof matcher === 'function' ? matcher(arg) : String(arg).includes(matcher);
-
-        const dispatch = (registry, evt) => {
-            for (const [key, entry] of registry.map) {
-                try {
-                    if (matches(entry.matcher, evt.url)) entry.handler(evt);
-                } catch (e) {
-                    // D6 deliberate interception: log, never propagate.
-                    console.debug('[a4/net-hook] handler failed:', (e && e.message) || e);
-                }
-            }
-        };
-
-        /* fetch proxy — installed once; chained over whatever was there. */
-        const originalFetch = window.fetch ? window.fetch.bind(window) : null;
-        if (originalFetch) {
-            window.fetch = function proxiedFetch(input, init) {
-                const url = typeof input === 'string' ? input
-                    : (input && input.url) || String(input);
-                dispatch(fetchHandlers, { url, init, kind: 'fetch', stage: 'request' });
-                return originalFetch(input, init).then((response) => {
-                    // Tee the body without consuming it: clone() is cheap and
-                    // safe for all consumers we register (text inspection).
-                    try {
-                        if (!response.bodyUsed) {
-                            response.clone().text().then((text) => {
-                                dispatch(fetchHandlers, { url, init, kind: 'fetch', stage: 'response', status: response.status, text });
-                            }).catch(() => { /* body unparsable — request-stage event already fired */ });
-                        }
-                    } catch (e) {
-                        console.debug('[a4/net-hook] response tee failed:', (e && e.message) || e);
-                    }
-                    return response;
-                });
-            };
-        }
-
-        /* XHR proxy — open/send capture, response text on loadend. */
-        const originalOpen = XMLHttpRequest.prototype.open;
-        const originalSend = XMLHttpRequest.prototype.send;
-        XMLHttpRequest.prototype.open = function proxiedOpen(method, url, ...rest) {
-            this.__a4Url = String(url);
-            this.__a4Method = String(method || 'GET');
-            return originalOpen.call(this, method, url, ...rest);
-        };
-        XMLHttpRequest.prototype.send = function proxiedSend(body) {
-            const url = this.__a4Url;
-            if (url !== undefined) {
-                dispatch(xhrHandlers, { url, method: this.__a4Method, body, kind: 'xhr', stage: 'request', xhr: this });
-                this.addEventListener('loadend', () => {
-                    try {
-                        dispatch(xhrHandlers, {
-                            url, method: this.__a4Method, kind: 'xhr', stage: 'response',
-                            status: this.status, text: this.responseType === '' || this.responseType === 'text' ? this.responseText : null,
-                            xhr: this,
-                        });
-                    } catch (e) {
-                        console.debug('[a4/net-hook] xhr loadend dispatch failed:', (e && e.message) || e);
-                    }
-                }, { once: true });
-            }
-            return originalSend.call(this, body);
-        };
-
-        const api = {
-            version: NET_HOOK_VERSION,
-            onFetch(matcher, handler) {
-                const key = Ψ.core.uid('fh');
-                fetchHandlers.set(key, { matcher, handler });
-                return () => fetchHandlers.delete(key);
-            },
-            onXhr(matcher, handler) {
-                const key = Ψ.core.uid('xh');
-                xhrHandlers.set(key, { matcher, handler });
-                return () => xhrHandlers.delete(key);
-            },
-            get fetchHandlerCount() { return fetchHandlers.size; },
-            get xhrHandlerCount() { return xhrHandlers.size; },
-        };
-
+    function arm(target) {
+        if (armed) return;
+        armed = true;
+        /* fetch — one wrap, body tee only while subscribers exist */
         try {
-            Object.defineProperty(window, NET_HOOK_SLOT, {
-                value: api, writable: false, enumerable: false, configurable: false,
-            });
-        } catch (e) {
-            // Slot collision with a foreign script: keep our local api.
-            console.debug('[a4/net-hook] slot registration skipped:', (e && e.message) || e);
-        }
-        return api;
+            const origFetch = target.fetch;
+            if (typeof origFetch === 'function' && !origFetch.__4ndro_net) {
+                const wrapped = function () {
+                    const p = origFetch.apply(this, arguments);
+                    try {
+                        if (subs.size) {
+                            p.then(function (res) {
+                                if (res && res.ok && typeof res.clone === 'function') {
+                                    res.clone().text().then(function (t) {
+                                        if (typeof t === 'string' && t && t.length <= MAX_BODY) dispatch(t);
+                                    }).catch(function () { /* body unreadable */ });
+                                }
+                            }).catch(function () { /* request itself failed */ });
+                        }
+                    } catch (e) { /* exotic thenable */ }
+                    return p;
+                };
+                try { wrapped.toString = function () { return String(origFetch); }; } catch (e) { /* frozen fn */ }
+                wrapped.__4ndro_net = true;
+                target.fetch = wrapped;
+            }
+        } catch (e) { console.debug('[a4/net] fetch arm skipped:', (e && e.message) || e); }
+        /* XHR — send-time load listener, response text dispatched once */
+        try {
+            const xo = target.XMLHttpRequest && target.XMLHttpRequest.prototype;
+            if (xo && typeof xo.send === 'function' && !xo.__4ndro_net) {
+                xo.__4ndro_net = true;
+                const origSend = xo.send;
+                xo.send = function () {
+                    try {
+                        if (subs.size) {
+                            const xhr = this;
+                            xhr.addEventListener('load', function () {
+                                try {
+                                    let t = '';
+                                    if (xhr.responseType === '' || xhr.responseType === 'text') t = xhr.responseText;
+                                    else if (xhr.responseType === 'json' && xhr.response) t = JSON.stringify(xhr.response);
+                                    if (t) dispatch(t);
+                                } catch (e) { /* responseType-locked body */ }
+                            }, { once: true });
+                        }
+                    } catch (e) { /* non-compliant XHR shim */ }
+                    return origSend.apply(this, arguments);
+                };
+                try { xo.send.toString = function () { return String(origSend); }; } catch (e) { /* frozen fn */ }
+            }
+        } catch (e) { console.debug('[a4/net] xhr arm skipped:', (e && e.message) || e); }
     }
 
-    return Object.freeze({ NetError, NetTimeoutError, NetHttpError, gmFetch, download, netHook });
+    const api = {
+        version: VERSION,
+        /* onBody(fn) -> unsubscribe. fn(text) receives every textual
+         * response body captured in the page realm (ok fetch responses +
+         * XHR text/json loads), read once per response, capped at 4 MB.
+         * A throwing subscriber is isolated — never page-fatal.
+         *
+         * HUB DELEGATION: every script inlines its own copy of this
+         * module, so module-local state would double-wrap the realm when
+         * two consumers co-install. The first consumer to register
+         * installs its api into the realm slot and therefore OWNS the
+         * wraps; every later copy sees the slot here and delegates its
+         * subscriptions to that hub — exactly one wrap set per realm,
+         * no matter how many suite scripts carry the module. */
+        onBody: function (fn) {
+            if (typeof fn !== 'function') return function () {};
+            const target = realm();
+            if (target) {
+                try {
+                    const hub = target[SLOT];
+                    if (hub && hub !== api && hub.version >= VERSION && typeof hub.onBody === 'function') {
+                        return hub.onBody(fn);
+                    }
+                } catch (e) { /* unreadable slot — fall through to local hub */ }
+            }
+            if (subs.size >= MAX_SUBS) return function () {};
+            const key = 'nb' + (++seq);
+            subs.set(key, fn);
+            if (target) {
+                arm(target);
+                try {
+                    const existing = target[SLOT];
+                    if (!existing || existing.version < VERSION || typeof existing.onBody !== 'function') {
+                        Object.defineProperty(target, SLOT, {
+                            value: api, writable: false, enumerable: false, configurable: true,
+                        });
+                    }
+                } catch (e) { /* slot collision with a foreign script — local hub only */ }
+            }
+            return function () { subs.delete(key); };
+        },
+        get subscriberCount() { return subs.size; },
+    };
+    return api;
 })();

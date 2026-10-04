@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Blob2URL
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      7.1.1
+// @version      7.2.0
 // @author       4ndr0666
 // @description  Universal blob exfiltration, universal media URL sniffer + wire capture + URL vault (Alt+Shift+V), interactive asset sniffing, CSP/CORS bypass.
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -24,6 +24,28 @@
  * Retired duplicate: 4ndr0tools - Blob2URL.user.js (uninstall it; this script is its superset).
  * Built by the 4ndr0666tools consolidation (canon assembly, GUP v5.3).
  * ═══════════════════════════════════════════════════════════════════════ */
+
+/* ═══ v7.2.0 — suite v1.4.3 TT render class fix (live-proven) ═══
+   tt-smoke (tools/tt-smoke.mjs) caught the vault panels DEAD on any
+   require-trusted-types-for host: both render() paths assigned innerHTML,
+   so the universal URL vault + IG vault could not open — "Failed to set the
+   'innerHTML' property on 'Element': This document requires 'TrustedHTML'
+   assignment". The renders are now createElement builders (shared el /
+   panelHead / glyphEl helpers; the Ψ glyph is createElementNS geometry, the
+   CONFIG.glyph string is retired), row buttons carry their payloads through
+   setAttribute, and clean()'s textarea innerHTML entity-decode idiom is a
+   string decoder (decodeEntities). Escaping discipline is now structural:
+   textContent + setAttribute — no HTML assembly anywhere in the panels.
+
+/* ═══ v7.1.3 — suite v1.4.3 NetHook round ═══
+   The universal wire capture now subscribes to the shared kernel/net.js singleton
+   (build-inlined) instead of installing its own fetch/XHR property wraps. One wrap
+   per realm, every response body read once and fanned out to all suite subscribers
+   (this vault + the IG module's ingest on instagram.com; LinkMasterΨ's IG harvester
+   rides the same hub — the v7.1.2 + LMΨ 6.2.2 co-install read every body twice).
+   4 MB per-body cap and res.ok gating preserved from the v7.1.2 wrap. The IG
+   module's own deferred net-hook is removed as redundant (vault feed covers it).
+   TT-immunity unchanged (no string-sink sites added; parse path untouched).
 
 /* ═══ v6.5 — SUPerset gap mitigation (GUP v5.3 audit; strictly additive, zero regressions) ═══
    G1  Page-context fetch() fallback transport is now hard-bounded by a 45s AbortController
@@ -216,7 +238,6 @@
             .psi-ig-act.psi-ig-close { border-color:#ff0055; color:#ff0055; }
             .psi-ig-act.psi-ig-close:hover { background:rgba(255,0,85,0.3); border-color:#ff0055; color:#ffffff; box-shadow:0 0 25px #ff0055; }
         `,
-        glyph: `<svg class="psi-glyph" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#00E5FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M 64,12 A 52,52 0 1 1 63.9,12 Z" stroke-dasharray="21.78 21.78" stroke-width="2"/><path d="M 64,20 A 44,44 0 1 1 63.9,20 Z" stroke-dasharray="10 10" stroke-width="1.5" opacity="0.7"/><path d="M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z"/><text x="64" y="67" text-anchor="middle" dominant-baseline="middle" fill="#00E5FF" stroke="none" font-size="56" font-weight="700" font-family="Cinzel Decorative, serif">Ψ</text></svg>`,
         labels: { init: "Ψ_EXTRACT", load: "Ψ_PROC...", win: "Ψ_DONE", fail: "Ψ_ERR" },
         mimeExt: {
             // v6.1 set (preserved)
@@ -278,6 +299,26 @@
         }
         resolve(fallbackCopy(text));
     });
+
+    /* v7.1.2 (suite v1.4.2 TT class fix): Blob2URL is universal-scope
+     * (wildcard match), so the DASH-manifest parse must survive
+     * require-trusted-types-for 'script' hosts. Mint an identity policy
+     * where allowed; raw fallback otherwise (the existing try/catch at
+     * the parse site degrades gracefully). */
+    const TTwrapXML = (() => {
+        let policy = null, tried = false;
+        return (s) => {
+            if (!tried) {
+                tried = true;
+                try {
+                    const TT = window.trustedTypes;
+                    if (TT && typeof TT.createPolicy === 'function')
+                        policy = TT.createPolicy('4ndr0666tools#b2u', { createHTML: (v) => v });
+                } catch (e) { policy = null; }
+            }
+            return policy ? policy.createHTML(s) : s;
+        };
+    })();
 
     // ──[08] Unified, type-safe URL resolution (superset of every v6.1 path) ──
     const firstSrcsetUrl = (el) => {
@@ -636,8 +677,74 @@
 
     // ═══[13–16] IG AUTO-EXTRACT MODULE — JS port of ig_extract.py (FINAL REVISION) ═══
     const MP4_RE = /https:\/\/[^\s"'<>\\]+?\.mp4(?:\?[^\s"'<>\\]*)?/g;
-    const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
-        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    /* v7.2.0 (suite v1.4.3 TT render class fix): the vault renders are
+     * built through createElement — the v7.1.x panel-head/row innerHTML
+     * renders died on require-trusted-types-for hosts (tt-smoke live
+     * proof: "Failed to set the 'innerHTML' property on 'Element'"),
+     * taking the whole vault UI with them. esc() string-escaping is
+     * retired with them: attributes now go through setAttribute, text
+     * through textContent — no HTML assembly anywhere in the panels. */
+    const el = (tag, cls) => {
+        const n = document.createElement(tag);
+        if (cls) n.className = cls;
+        return n;
+    };
+    /* Ψ glyph via createElementNS — same geometry as the retired
+     * CONFIG.glyph string (innerHTML of an SVG string is a TT sink). */
+    const glyphEl = () => {
+        const NS = 'http://www.w3.org/2000/svg';
+        const svgEl = (tag, attrs) => {
+            const n = document.createElementNS(NS, tag);
+            for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+            return n;
+        };
+        const svg = svgEl('svg', { class: 'psi-glyph', viewBox: '0 0 128 128', xmlns: NS, fill: 'none',
+            stroke: '#00E5FF', 'stroke-width': '3', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' });
+        svg.appendChild(svgEl('path', { d: 'M 64,12 A 52,52 0 1 1 63.9,12 Z', 'stroke-dasharray': '21.78 21.78', 'stroke-width': '2' }));
+        svg.appendChild(svgEl('path', { d: 'M 64,20 A 44,44 0 1 1 63.9,20 Z', 'stroke-dasharray': '10 10', 'stroke-width': '1.5', opacity: '0.7' }));
+        svg.appendChild(svgEl('path', { d: 'M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z' }));
+        const psi = svgEl('text', { x: '64', y: '67', 'text-anchor': 'middle', 'dominant-baseline': 'middle',
+            fill: '#00E5FF', stroke: 'none', 'font-size': '56', 'font-weight': '700', 'font-family': 'Cinzel Decorative, serif' });
+        psi.textContent = '\u03A8';
+        svg.appendChild(psi);
+        return svg;
+    };
+    const panelHead = (title, sub, buttons) => {
+        const head = el('div', 'psi-ig-head');
+        head.appendChild(glyphEl());
+        const t = el('span', 'psi-ig-title');
+        t.textContent = title;
+        head.appendChild(t);
+        const sb = el('span', 'psi-ig-sub');
+        sb.textContent = sub;
+        head.appendChild(sb);
+        for (const b of buttons) {
+            const btn = el('button', 'psi-ig-act' + (b.on ? ' psi-ig-on' : '') + (b.cls ? ' ' + b.cls : ''));
+            btn.setAttribute('data-psi-act', b.act);
+            btn.textContent = b.label;
+            head.appendChild(btn);
+        }
+        return head;
+    };
+    /* String entity decoder — replaces the textarea innerHTML decode
+     * idiom in clean() (a TrustedHTML sink under enforcement). Named set
+     * covers the entities the IG payloads actually carry; numeric dec/hex
+     * covers the rest. */
+    const NAMED_ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: '\u00A0',
+        copy: '\u00A9', reg: '\u00AE', hellip: '\u2026', mdash: '\u2014', ndash: '\u2013',
+        lsquo: '\u2018', rsquo: '\u2019', ldquo: '\u201C', rdquo: '\u201D', deg: '\u00B0',
+        middot: '\u00B7', bull: '\u2022', dagger: '\u2020', permil: '\u2030',
+        lsaquo: '\u2039', rsaquo: '\u203A', euro: '\u20AC', pound: '\u00A3', yen: '\u00A5',
+        cent: '\u00A2', sect: '\u00A7', para: '\u00B6', plusmn: '\u00B1', times: '\u00D7',
+        divide: '\u00F7', frac12: '\u00BD', sup2: '\u00B2', sup3: '\u00B3', micro: '\u00B5' };
+    const decodeEntities = (str) => String(str).replace(/&(#[xX]?[0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*);/g, (m, e) => {
+        if (e[0] === '#') {
+            const code = (e[1] === 'x' || e[1] === 'X') ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
+            if (!Number.isFinite(code) || code <= 0 || code > 0x10FFFF) return m;
+            try { return String.fromCodePoint(code); } catch (_) { return m; }
+        }
+        return NAMED_ENTITIES[e] || m;
+    });
 
     const IG = {
         active: false,
@@ -653,66 +760,13 @@
             const host = String((location && location.hostname) || '').toLowerCase();
             this.active = /(^|\.)instagram\.com$/.test(host);
             if (!this.active) return;
-            log('IG module ONLINE — net-hook + DOM routes armed (Alt+J vault)');
-            this.installNetHook();
+            // v7.1.3: net route removed — the universal vault's NetHook
+            // subscription (installNetHook above) feeds IG.ingest for every
+            // captured body on instagram.com (single-wrap, single-read).
+            log('IG module ONLINE — vault-fed net route + DOM routes armed (Alt+J vault)');
             this.scanNewScripts();
             // One-shot Route 2 over the full DOM (deferred until the initial render settles).
             setTimeout(() => { try { this.route2(document.documentElement.outerHTML || ''); } catch (_) {} }, 1500);
-        },
-
-        // ──[14] Page-context response sniffing (property wrap: CSP-safe, no inline script) ──
-        installNetHook() {
-            let page = null;
-            try { if (typeof unsafeWindow !== 'undefined' && unsafeWindow) page = unsafeWindow; } catch (_) {}
-            if (!page) { log('IG net-hook idle — unsafeWindow unavailable (DOM routes only)'); return; }
-            // v7.1: the universal VAULT wrap (installed first in bootstrap)
-            // feeds IG.ingest on instagram.com — wrapping again would read
-            // every response body twice.
-            if ((page.fetch && page.fetch.__psi_vault) ||
-                (page.XMLHttpRequest && page.XMLHttpRequest.prototype && page.XMLHttpRequest.prototype.__psi_vault)) {
-                log('IG net-hook defers to the universal wire capture (single-wrap policy)');
-                return;
-            }
-            try {
-                const origFetch = page.fetch;
-                if (typeof origFetch === 'function' && !origFetch.__psi_ig) {
-                    const wrapped = function (...args) {
-                        const p = origFetch.apply(this, args);
-                        try {
-                            p.then((res) => {
-                                if (res && res.ok && typeof res.clone === 'function') {
-                                    res.clone().text().then((t) => IG.ingest(t)).catch(() => {});
-                                }
-                            }).catch(() => {});
-                        } catch (_) {}
-                        return p;
-                    };
-                    try { wrapped.toString = function () { return String(origFetch); }; } catch (_) {} // fingerprint masking
-                    wrapped.__psi_ig = true;
-                    page.fetch = wrapped;
-                }
-            } catch (_) {}
-            try {
-                const xo = page.XMLHttpRequest && page.XMLHttpRequest.prototype;
-                if (xo && typeof xo.send === 'function' && !xo.__psi_ig) {
-                    xo.__psi_ig = true;
-                    const origSend = xo.send;
-                    xo.send = function () {
-                        try {
-                            this.addEventListener('load', function () {
-                                try {
-                                    let t = '';
-                                    if (this.responseType === '' || this.responseType === 'text') t = this.responseText;
-                                    else if (this.responseType === 'json' && this.response) t = JSON.stringify(this.response);
-                                    if (t) IG.ingest(t);
-                                } catch (_) {}
-                            });
-                        } catch (_) {}
-                        return origSend.apply(this, arguments);
-                    };
-                    try { xo.send.toString = function () { return String(origSend); }; } catch (_) {}
-                }
-            } catch (_) {}
         },
 
         // ──[13] Route 1 walk (video_versions progressive + video_dash_manifest DASH) ──
@@ -732,7 +786,7 @@
                 const manifest = node.video_dash_manifest;
                 if (typeof manifest === 'string' && manifest) {
                     try {
-                        const doc = new DOMParser().parseFromString(manifest, 'application/xml');
+                        const doc = new DOMParser().parseFromString(TTwrapXML(manifest), 'application/xml');
                         const reps = doc.getElementsByTagName('Representation');
                         for (let i = 0; i < reps.length; i++) {
                             const bases = reps[i].getElementsByTagName('BaseURL');
@@ -762,10 +816,10 @@
 
         // ──[13] Route 2 clean chain: entities → surrogate pairs → \u singles → \/ \"
         clean(text) {
+            // v7.2.0: string entity decoder — the textarea innerHTML idiom
+            // was a TrustedHTML sink under enforcement (tt-smoke live proof).
             try {
-                const ta = document.createElement('textarea');
-                ta.innerHTML = text;
-                text = ta.value;
+                text = decodeEntities(text);
             } catch (_) {}
             text = text.replace(/\\u(d[89ab][0-9a-f]{2})\\u(d[cdef][0-9a-f]{2})/gi, (m, hi, lo) =>
                 String.fromCodePoint(0x10000 + ((parseInt(hi, 16) - 0xD800) << 10) + (parseInt(lo, 16) - 0xDC00)));
@@ -876,17 +930,42 @@
             // [G3] Render every retained entry (bounded by the 500 cap). v6.4 sliced to the
             // newest 100, leaving entries 101+ present in state but unreachable from any UI
             // action — contradicting the documented per-URL SAVE/COPY capability.
-            const rows = this.entries.map((e) => {
+            // v7.2.0: builder form (TT-immune).
+            this.panel.replaceChildren(panelHead('IG VAULT', `${this.entries.length} URL(s)`, [
+                { act: 'autosave', label: `AUTOSAVE: ${this.autoSave ? 'ON' : 'OFF'}`, on: this.autoSave },
+                { act: 'rescan', label: 'RESCAN' },
+                { act: 'close', label: '×', cls: 'psi-ig-close' },
+            ]));
+            if (!this.entries.length) {
+                const empty = el('div', 'psi-ig-entry psi-ig-empty');
+                empty.textContent = 'no mp4 captured — login wall? scroll the feed or open a post, then RESCAN';
+                this.panel.appendChild(empty);
+                return;
+            }
+            for (const e of this.entries) {
                 const tag = e.kind === 'progressive' ? `progressive type ${e.type} — video+audio`
                     : e.kind === 'dash' ? `dash ${e.label} — video-only`
                     : 'fallback net';
-                const safe = esc(e.url);
-                const short = e.url.length > 96 ? esc(e.url.slice(0, 96)) + '...' : safe;
-                return `<div class="psi-ig-entry"><span class="psi-ig-tag">[${esc(tag)}]</span><span class="psi-ig-code">${esc(e.code || '')}</span><div class="psi-ig-url">${short}</div><button class="psi-ig-act" data-psi-act="save" data-psi-url="${safe}" data-psi-code="${esc(e.code || '')}">SAVE</button><button class="psi-ig-act" data-psi-act="copy" data-psi-url="${safe}">COPY</button></div>`;
-            }).join('');
-            const empty = this.entries.length ? '' :
-                '<div class="psi-ig-entry psi-ig-empty">no mp4 captured — login wall? scroll the feed or open a post, then RESCAN</div>';
-            this.panel.innerHTML = `<div class="psi-ig-head">${CONFIG.glyph}<span class="psi-ig-title">IG VAULT</span><span class="psi-ig-sub">${this.entries.length} URL(s)</span><button class="psi-ig-act${this.autoSave ? ' psi-ig-on' : ''}" data-psi-act="autosave">AUTOSAVE: ${this.autoSave ? 'ON' : 'OFF'}</button><button class="psi-ig-act" data-psi-act="rescan">RESCAN</button><button class="psi-ig-act psi-ig-close" data-psi-act="close">×</button></div>${empty}${rows}`;
+                const row = el('div', 'psi-ig-entry');
+                const tagEl = el('span', 'psi-ig-tag');
+                tagEl.textContent = `[${tag}]`;
+                row.appendChild(tagEl);
+                const codeEl = el('span', 'psi-ig-code');
+                codeEl.textContent = e.code || '';
+                row.appendChild(codeEl);
+                const urlEl = el('div', 'psi-ig-url');
+                urlEl.textContent = e.url.length > 96 ? `${e.url.slice(0, 96)}...` : e.url;
+                row.appendChild(urlEl);
+                for (const [act, label] of [['save', 'SAVE'], ['copy', 'COPY']]) {
+                    const b = el('button', 'psi-ig-act');
+                    b.setAttribute('data-psi-act', act);
+                    b.setAttribute('data-psi-url', e.url);
+                    if (act === 'save') b.setAttribute('data-psi-code', e.code || '');
+                    b.textContent = label;
+                    row.appendChild(b);
+                }
+                this.panel.appendChild(row);
+            }
         },
         renderSoon() {
             if (this.renderTimer !== null) return;
@@ -987,58 +1066,28 @@
             return found;
         },
 
-        // [U2] page-context wire capture — fetch/XHR bodies scanned for
-        // media URLs; on instagram.com the same handler feeds IG.ingest so
-        // the response is read exactly once.
+        // ──[14] Page-context response sniffing (v7.1.3: shared NetHook) ──
+        // The v7.1.2 per-script wrap (property wrap: CSP-safe, no inline
+        // script) stacked with LinkMasterΨ's own IG-harvester wrap on
+        // instagram.com — every response body read twice. Both consumers
+        // now subscribe to the build-inlined kernel/net.js singleton:
+        // ONE wrap per realm, one body read, fanned out to all suite
+        // subscribers (this vault + IG.ingest below).
         installNetHook() {
-            let page = null;
-            try { if (typeof unsafeWindow !== 'undefined' && unsafeWindow) page = unsafeWindow; } catch (_) {}
-            if (!page) { log('wire capture idle — unsafeWindow unavailable (DOM routes only)'); return; }
-            const feed = (text) => {
-                if (typeof text !== 'string' || !text || text.length > 4_000_000) return;
-                this.ingestText(text);
-                if (IG.active) IG.ingest(text);
-            };
-            try {
-                const origFetch = page.fetch;
-                if (typeof origFetch === 'function' && !origFetch.__psi_vault) {
-                    const wrapped = function (...args) {
-                        const p = origFetch.apply(this, args);
-                        try {
-                            p.then((res) => {
-                                if (res && res.ok && typeof res.clone === 'function') {
-                                    res.clone().text().then((t) => feed(t)).catch(() => {});
-                                }
-                            }).catch(() => {});
-                        } catch (_) {}
-                        return p;
-                    };
-                    try { wrapped.toString = function () { return String(origFetch); }; } catch (_) {}
-                    wrapped.__psi_vault = true;
-                    page.fetch = wrapped;
+            if (typeof __4NDR0_NET_API__ !== 'undefined' && __4NDR0_NET_API__ && typeof __4NDR0_NET_API__.onBody === 'function') {
+                const feed = (text) => {
+                    this.ingestText(text);
+                    if (IG.active) IG.ingest(text);
+                };
+                try {
+                    __4NDR0_NET_API__.onBody(feed);
+                    log('wire capture ONLINE — shared NetHook subscriber (4 MB cap, single body read)');
+                } catch (e) {
+                    log('wire capture idle — ' + ((e && e.message) || e));
                 }
-            } catch (_) {}
-            try {
-                const xo = page.XMLHttpRequest && page.XMLHttpRequest.prototype;
-                if (xo && typeof xo.send === 'function' && !xo.__psi_vault) {
-                    xo.__psi_vault = true;
-                    const origSend = xo.send;
-                    xo.send = function () {
-                        try {
-                            this.addEventListener('load', function () {
-                                try {
-                                    let t = '';
-                                    if (this.responseType === '' || this.responseType === 'text') t = this.responseText;
-                                    else if (this.responseType === 'json' && this.response) t = JSON.stringify(this.response);
-                                    if (t) feed(t);
-                                } catch (_) {}
-                            });
-                        } catch (_) {}
-                        return origSend.apply(this, arguments);
-                    };
-                    try { xo.send.toString = function () { return String(origSend); }; } catch (_) {}
-                }
-            } catch (_) {}
+            } else {
+                log('wire capture idle — NetHook module unavailable (DOM routes only)');
+            }
         },
 
         ingestText(text) {
@@ -1098,14 +1147,35 @@
         },
         render() {
             if (!this.panel) return;
-            const rows = this.entries.map((e) => {
-                const safe = esc(e.url);
-                const short = e.url.length > 96 ? esc(e.url.slice(0, 96)) + '...' : safe;
-                return `<div class="psi-ig-entry"><span class="psi-ig-tag">[${esc(e.kind)}${e.tag ? ' · ' + esc(e.tag) : ''}]</span><div class="psi-ig-url">${short}</div><button class="psi-ig-act" data-psi-act="save" data-psi-url="${safe}">SAVE</button><button class="psi-ig-act" data-psi-act="copy" data-psi-url="${safe}">COPY</button></div>`;
-            }).join('');
-            const empty = this.entries.length ? '' :
-                '<div class="psi-ig-entry psi-ig-empty">no media URLs discovered yet — play the media, then RESCAN</div>';
-            this.panel.innerHTML = `<div class="psi-ig-head">${CONFIG.glyph}<span class="psi-ig-title">URL VAULT</span><span class="psi-ig-sub">${this.entries.length} URL(s) · universal</span><button class="psi-ig-act" data-psi-act="copyall">COPY ALL</button><button class="psi-ig-act" data-psi-act="rescan">RESCAN</button><button class="psi-ig-act psi-ig-close" data-psi-act="close">×</button></div>${empty}${rows}`;
+            // v7.2.0: builder form (TT-immune; see the shared helpers above).
+            this.panel.replaceChildren(panelHead('URL VAULT', `${this.entries.length} URL(s) · universal`, [
+                { act: 'copyall', label: 'COPY ALL' },
+                { act: 'rescan', label: 'RESCAN' },
+                { act: 'close', label: '×', cls: 'psi-ig-close' },
+            ]));
+            if (!this.entries.length) {
+                const empty = el('div', 'psi-ig-entry psi-ig-empty');
+                empty.textContent = 'no media URLs discovered yet — play the media, then RESCAN';
+                this.panel.appendChild(empty);
+                return;
+            }
+            for (const e of this.entries) {
+                const row = el('div', 'psi-ig-entry');
+                const tagEl = el('span', 'psi-ig-tag');
+                tagEl.textContent = `[${e.kind}${e.tag ? ' · ' + e.tag : ''}]`;
+                row.appendChild(tagEl);
+                const urlEl = el('div', 'psi-ig-url');
+                urlEl.textContent = e.url.length > 96 ? `${e.url.slice(0, 96)}...` : e.url;
+                row.appendChild(urlEl);
+                for (const [act, label] of [['save', 'SAVE'], ['copy', 'COPY']]) {
+                    const b = el('button', 'psi-ig-act');
+                    b.setAttribute('data-psi-act', act);
+                    b.setAttribute('data-psi-url', e.url);
+                    b.textContent = label;
+                    row.appendChild(b);
+                }
+                this.panel.appendChild(row);
+            }
         },
         renderSoon() {
             if (this.renderTimer !== null) return;

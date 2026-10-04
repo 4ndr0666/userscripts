@@ -55,7 +55,9 @@ const REGEX_PRECEDERS = new Set([
     "typeof", "in", "of", "new", "delete", "void", "case", "do", "else",
 ]);
 
-function stripComments(src) {
+/* Exported for validate.mjs Gate D (kernel TT-immunity scan) — same
+ * string-aware lexer discipline the census itself uses (lesson 7). */
+export function stripComments(src) {
     const out = src.split("");
     let i = 0;
     const n = src.length;

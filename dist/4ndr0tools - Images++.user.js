@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Images++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      4.0.2
+// @version      4.0.3
 // @description  Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. Collapse-mode hotkey is configurable.
 // @author       4ndr0666
 // @match        *://*/*
@@ -4526,8 +4526,8 @@ const $css = (el, props) =>
   Object.entries(props).forEach(([k, v]) =>
     el.style.setProperty(k, v, 'important'));
 
-const $parseHtml = str =>
-  new DOMParser().parseFromString(str, 'text/html');
+const $parseHtml = str => // v4.0.3 (suite v1.4.2): TT-safe parse — routes through the page-policy capture when a TT-enforcing host mints one
+  new DOMParser().parseFromString(trustedHTML ? trustedHTML(str) : str, 'text/html');
 
 const $many = (q, doc) => {
   for (const selector of ensureArray(q)) {

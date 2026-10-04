@@ -30,7 +30,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const DIST = path.join(ROOT, "dist");
@@ -182,7 +182,18 @@ function inventory() {
         .map(([domain, scripts]) => ({ domain, count: scripts.length, scripts: [...new Set(scripts)] }))
         .sort((a, b) => b.count - a.count);
 
-    return { scripts, problems, pairs, hotDomains, generated: new Date().toISOString() };
+    /* Suite v1.4.3: this object is byte-reproducible. The legacy
+     * `generated: new Date().toISOString()` wall-clock field made every
+     * `npm run check` rewrite inventory.json with a fresh timestamp —
+     * kit base detection (content-hash, git-state agnostic) then failed
+     * G1 with "content drift (not base, not applied)" after any
+     * post-apply verification run (operator field report, v1.4.2).
+     * The digest replaces the clock: a content-addressed fingerprint
+     * of everything above, so drift is still detectable while
+     * regeneration is deterministic (validate.mjs enforces byte parity). */
+    const stable = { scripts, problems, pairs, hotDomains };
+    const digest = crypto.createHash("sha256").update(JSON.stringify(stable)).digest("hex");
+    return { ...stable, digest };
 }
 
 function renderCatalog(inv) {
@@ -232,13 +243,16 @@ JSZip/tippy/FileSaver/sha256 — for its download-packaging engine) — single
 source of truth for the 3lectric-Glass design system.
 
 \`\`\`
-kernel/    canonical shared modules (brand · core · glass · net · store · clipboard · hotkeys · hosts)
+kernel/    canonical shared modules (brand · core · glass · store · hotkeys · hosts · net) — every module inlined by at least one dist build (zero dead kernel surface; net is consumed via the canon CANON_KERNEL injection)
 modules/   kernel-powered consolidated scripts (HostWarp, PageCraft)
 canon/     consolidated & promoted sources + EVIDENCE.json (per-script transform evidence)
 plugins/   companion plugins (LinkMaster CandidShiny autopsy, MPV bridge, autopage config)
 dist/      BUILT INSTALLABLES — install from here
 docs/      consolidation report + migration guide
+documentation/ per-script references (generated: npm run docs) + deep devlogs
+           (bunkr · hailuo++ · m3u8++) + INDEX.md master catalog
 tools/     build.mjs · inventory.mjs · validate.mjs · kernel-smoke.mjs · qr-verify.mjs (GUP gates)
+           sink-census.mjs (HTML-string sink + net-tap census, adjudication ledger)
            canon-xref.mjs · baseline.json · ledger.json (evidence chain)
 \`\`\`
 
@@ -246,6 +260,9 @@ tools/     build.mjs · inventory.mjs · validate.mjs · kernel-smoke.mjs · qr-
 (GUP superset contract, fail-closed). CI runs the same gates on every push.
 
 ## 🚀 Script Catalog
+
+Per-script references — purpose, scope, features, verified keymap, settings,
+OPSEC notes, lineage — live in [\`documentation/INDEX.md\`](./documentation/INDEX.md).
 
 <!-- BEGIN_CATALOG -->
 ${renderCatalog(inv)}
@@ -269,13 +286,19 @@ ${inv.hotDomains.slice(0, 12).map((d) => `- \`${d.domain}\` — ${d.count}: ${d.
     fs.writeFileSync(README, tpl);
 }
 
+/* Exported for the determinism gate in tools/validate.mjs (byte-parity
+ * between the file on disk and a fresh recomputation) and for gen-docs. */
+export function serialize(inv) {
+    return JSON.stringify(inv, null, 1);
+}
+
 function main() {
     if (!fs.existsSync(DIST)) {
         console.error("dist/ not built. Run `npm run build` first.");
         process.exit(2);
     }
     const inv = inventory();
-    fs.writeFileSync(path.join(ROOT, "inventory.json"), JSON.stringify(inv, null, 1));
+    fs.writeFileSync(path.join(ROOT, "inventory.json"), serialize(inv));
     writeReadme(inv);
 
     console.log(`Inventory: ${inv.scripts.length} scripts, ${inv.scripts.reduce((n, s) => n + s.lines, 0)} lines`);
@@ -290,4 +313,10 @@ function main() {
     process.exit(1);
 }
 
-main();
+/* Exported (determinism gate + docs generator). */
+export { inventory as computeInventory };
+
+/* CLI entry — only when executed directly, not when imported. */
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+    main();
+}

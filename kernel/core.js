@@ -159,6 +159,61 @@
     /** HTML-escape untrusted text for innerHTML interpolation (defense-in-depth). */
     const escapeHTML = (s) => String(s).replace(/[&<>"']/g, (ch) => ESCAPE_MAP[ch]);
 
+    /* ── Trusted-Types-safe parsing (v1.4.2) ─────────────────────────── */
+
+    /* DOMParser.parseFromString is a Trusted Types sink under
+     * `require-trusted-types-for 'script'` enforcement — including the
+     * image/svg+xml and application/xml MIME branches (field-proven:
+     * YTPM v1.4.0's 54 uncaught TypeErrors on YouTube; HostWarp/PageCraft
+     * settings-console deaths on TT hosts). Sites that enforce TT but do
+     * NOT publish a `trusted-types` name allowlist accept any policy
+     * name; sites WITH an allowlist reject ours — there the probe fails,
+     * we fall back to the raw string, and the caller's existing try/catch
+     * degrades the feature gracefully (parsing remote HTML on a locked
+     * host is impossible by design; our own DOM building never needs it).
+     *
+     * Multi-name probe: co-installed suite scripts on the same page each
+     * create their OWN policy (createPolicy throws on a taken name), so
+     * the second and third suite instances walk down this list instead
+     * of collapsing to the raw fallback. */
+    const TT_POLICY_NAMES = ['4ndr0666tools#dom', '4ndr0666tools#dom.2', '4ndr0666tools#dom.3'];
+    const tt = (() => {
+        let policy = null, tried = false;
+        const wrap = (s) => {
+            if (!tried) {
+                tried = true;
+                try {
+                    const TT = typeof trustedTypes !== 'undefined' && trustedTypes;
+                    if (TT && typeof TT.createPolicy === 'function') {
+                        for (const name of TT_POLICY_NAMES) {
+                            try { policy = TT.createPolicy(name, { createHTML: (v) => v }); break; }
+                            catch (e) { /* name taken (co-installed suite script) or CSP-blocked */ }
+                        }
+                    }
+                } catch (e) { policy = null; }
+            }
+            return policy ? policy.createHTML(s) : s;
+        };
+        return Object.freeze({
+            createHTML: wrap,
+            /** Probe result: true when a TrustedHTML can be minted here. */
+            available: () => { wrap(''); return policy !== null; },
+        });
+    })();
+
+    /** Parse an HTML string into an inert Document — TT-safe on
+     *  enforcing hosts (policy-wrapped when a policy can be minted).
+     *  @param {string} str */
+    function parseHTML(str) {
+        return new DOMParser().parseFromString(tt.createHTML(str), 'text/html');
+    }
+
+    /** Parse an XML string (manifests, SVG sources) into a Document —
+     *  TT-safe for the same reason. @param {string} str */
+    function parseXML(str) {
+        return new DOMParser().parseFromString(tt.createHTML(str), 'application/xml');
+    }
+
     /* ── DOM observation (bounded, self-cleaning) ────────────────────────── */
 
     /**
@@ -231,7 +286,7 @@
     return Object.freeze({
         $, $$, $new, $dataset, $propUp,
         sleep, debounce, throttle, once, uid,
-        FIFOCache, escapeHTML,
+        FIFOCache, escapeHTML, tt, parseHTML, parseXML,
         waitFor, watchDOM, trustedAppend,
     });
 })();

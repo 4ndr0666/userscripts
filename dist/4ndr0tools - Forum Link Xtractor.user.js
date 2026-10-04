@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Forum Link Xtractor
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      3.2.1
+// @version      3.2.3
 // @description  Link xtractor, Invisitext revealer, and inline post reply viewer.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @author       4ndr0666
@@ -243,9 +243,29 @@
         catch { return null; }
     }
 
+    /* v3.2.2 (suite v1.4.2 TT class fix): parseFromString is a Trusted
+     * Types sink under require-trusted-types-for 'script'. Mint an identity
+     * policy where the host allows it; raw fallback otherwise (both parse
+     * sites sit inside try/catch error paths that degrade gracefully). */
+    const TTparse = (() => {
+        let policy = null, tried = false;
+        const wrap = (s) => {
+            if (!tried) {
+                tried = true;
+                try {
+                    const TT = window.trustedTypes;
+                    if (TT && typeof TT.createPolicy === "function")
+                        policy = TT.createPolicy("4ndr0666tools#flx", { createHTML: (v) => v });
+                } catch (e) { policy = null; }
+            }
+            return policy ? policy.createHTML(s) : s;
+        };
+        return { html: (s) => new DOMParser().parseFromString(wrap(s), "text/html") };
+    })();
+
     function extractRealLinkFromHtml(html, baseUrl) {
         try {
-            const doc = new DOMParser().parseFromString(html, 'text/html');
+            const doc = TTparse.html(html);
 
             const metaRefresh = doc.querySelector('meta[http-equiv="refresh" i]');
             if (metaRefresh) {
@@ -381,14 +401,32 @@
         const toggleBtn = document.createElement('button');
         toggleBtn.id = 'psi-toggle-btn';
         toggleBtn.title = 'Initialize Extraction Protocol';
-        toggleBtn.innerHTML = `
-            <svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="${CONFIG.accentColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                <path class="glyph-ring-1" d="M 64,12 A 52,52 0 1 1 63.9,12 Z" stroke-dasharray="21.78 21.78" stroke-width="2" />
-                <path class="glyph-ring-2" d="M 64,20 A 44,44 0 1 1 63.9,20 Z" stroke-dasharray="10 10" stroke-width="1.5" />
-                <path class="glyph-hex" d="M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z" />
-                <text x="64" y="70" text-anchor="middle" dominant-baseline="middle" fill="${CONFIG.accentColor}" stroke="none" font-size="48" font-weight="700" style="font-family: 'Cinzel Decorative', serif;">Ψ</text>
-            </svg>
-        `;
+        /* v3.2.3 (suite v1.4.3 TT class fix): the glyph is built through
+         * createElementNS — innerHTML is a TrustedHTML sink under
+         * require-trusted-types-for 'script' (same class as the
+         * v1.4.2 glass-kernel repair). Geometry 1:1 with the template. */
+        const SVG_NS = 'http://www.w3.org/2000/svg';
+        const svgEl = (tag, attrs) => {
+            const el = document.createElementNS(SVG_NS, tag);
+            for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+            return el;
+        };
+        const glyphSvg = svgEl('svg', {
+            viewBox: '0 0 128 128', xmlns: SVG_NS, fill: 'none',
+            stroke: CONFIG.accentColor, 'stroke-width': '3',
+            'stroke-linecap': 'round', 'stroke-linejoin': 'round',
+        });
+        glyphSvg.appendChild(svgEl('path', { class: 'glyph-ring-1', d: 'M 64,12 A 52,52 0 1 1 63.9,12 Z', 'stroke-dasharray': '21.78 21.78', 'stroke-width': '2' }));
+        glyphSvg.appendChild(svgEl('path', { class: 'glyph-ring-2', d: 'M 64,20 A 44,44 0 1 1 63.9,20 Z', 'stroke-dasharray': '10 10', 'stroke-width': '1.5' }));
+        glyphSvg.appendChild(svgEl('path', { class: 'glyph-hex', d: 'M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z' }));
+        const glyphPsi = svgEl('text', {
+            x: '64', y: '70', 'text-anchor': 'middle', 'dominant-baseline': 'middle',
+            fill: CONFIG.accentColor, stroke: 'none', 'font-size': '48', 'font-weight': '700',
+        });
+        glyphPsi.style.fontFamily = "'Cinzel Decorative', serif";
+        glyphPsi.textContent = 'Ψ';
+        glyphSvg.appendChild(glyphPsi);
+        toggleBtn.appendChild(glyphSvg);
 
         const panel = document.createElement('div');
         panel.id = 'psi-panel';
@@ -421,7 +459,15 @@
         row3.id = 'row-separator'; row3.style.display = 'none';
         const sepLabel = document.createElement('span'); sepLabel.textContent = 'Separator: ';
         const sepSelect = document.createElement('select');
-        sepSelect.innerHTML = `<option value="\\n">New Line</option><option value=" ">Space</option>`;
+        /* v3.2.3: option elements, not an HTML string (TT sink). The
+         * newline option keeps the literal two-char "\\n" attribute value
+         * the template produced — L578's sepSelect.value check expects it. */
+        for (const [val, label] of [['\\n', 'New Line'], [' ', 'Space']]) {
+            const opt = document.createElement('option');
+            opt.value = val;
+            opt.textContent = label;
+            sepSelect.appendChild(opt);
+        }
         row3.append(sepLabel, sepSelect);
 
         const row4 = document.createElement('div'); row4.className = 'psi-row';
@@ -642,7 +688,10 @@
                 // Create container
                 repliesContainer = document.createElement('div');
                 repliesContainer.className = 'sc-replies-container';
-                repliesContainer.innerHTML = `<strong style="color: ${CONFIG.yellowColor}">Hunting replies...</strong>`;
+                const hunting = document.createElement('strong');
+                hunting.style.color = CONFIG.yellowColor;
+                hunting.textContent = 'Hunting replies...';
+                repliesContainer.replaceChildren(hunting);
                 mainContainer.appendChild(repliesContainer);
                 btn.textContent = "Hide Replies";
 
@@ -659,19 +708,28 @@
                     const searchURL = `https://${mainDomain}/search/1/?q=post-${postId}&t=post&c[thread]=${threadId}&o=date`;
 
                     const htmlText = await fetchAnswersAsync(searchURL);
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(htmlText, "text/html");
+                    const doc = TTparse.html(htmlText);
                     const answerBlocks = doc.querySelectorAll("li.block-row.block-row--separated.js-inlineModContainer[data-author]");
 
                     if (!answerBlocks || answerBlocks.length === 0) {
-                        repliesContainer.innerHTML = "<strong>No replies found.</strong>";
+                        const none = document.createElement('strong');
+                        none.textContent = 'No replies found.';
+                        repliesContainer.replaceChildren(none);
                         return;
                     }
 
-                    repliesContainer.innerHTML = "";
+                    repliesContainer.replaceChildren();
                     const table = document.createElement("table");
                     table.className = "sc-replies-table";
-                    table.innerHTML = `<thead><tr><th>Post #</th><th>Date</th><th>Reply Snippet</th></tr></thead>`;
+                    const thead = document.createElement("thead");
+                    const headRow = document.createElement("tr");
+                    for (const h of ["Post #", "Date", "Reply Snippet"]) {
+                        const th = document.createElement("th");
+                        th.textContent = h;
+                        headRow.appendChild(th);
+                    }
+                    thead.appendChild(headRow);
+                    table.appendChild(thead);
                     const tbody = document.createElement("tbody");
 
                     answerBlocks.forEach((block) => {
@@ -684,11 +742,26 @@
                             const postIdMatch = postLink.href.match(/\/post-(\d+)/);
                             const postIdText = postIdMatch ? `#${postIdMatch[1]}` : 'Link';
 
-                            row.innerHTML = `
-                                <td style="text-align:center"><a href="${postLink.href}" target="_blank">${postIdText}</a></td>
-                                <td style="text-align:center; white-space:nowrap">${postTime.textContent.trim()}</td>
-                                <td>${contentSnippet.textContent.trim()}</td>
-                            `;
+                            /* v3.2.3: row cells via createElement. The
+                             * v3.2.2 template interpolated remote snippet
+                             * text raw into HTML — a post containing markup
+                             * would have been parsed as markup (latent
+                             * injection hazard); textContent renders it as
+                             * visible text, which is what the table means. */
+                            const tdNum = document.createElement('td');
+                            tdNum.style.textAlign = 'center';
+                            const postA = document.createElement('a');
+                            postA.href = postLink.href;
+                            postA.target = '_blank';
+                            postA.textContent = postIdText;
+                            tdNum.appendChild(postA);
+                            const tdDate = document.createElement('td');
+                            tdDate.style.textAlign = 'center';
+                            tdDate.style.whiteSpace = 'nowrap';
+                            tdDate.textContent = postTime.textContent.trim();
+                            const tdSnippet = document.createElement('td');
+                            tdSnippet.textContent = contentSnippet.textContent.trim();
+                            row.append(tdNum, tdDate, tdSnippet);
                             tbody.appendChild(row);
                         }
                     });
@@ -697,7 +770,10 @@
 
                 } catch (err) {
                     console.error('[Ψ-4NDR0666] Reply fetch error:', err);
-                    repliesContainer.innerHTML = `<strong style="color:${CONFIG.redColor}">Fetch Error: ${err.message}</strong>`;
+                    const errStrong = document.createElement('strong');
+                    errStrong.style.color = CONFIG.redColor;
+                    errStrong.textContent = `Fetch Error: ${err.message}`;
+                    repliesContainer.replaceChildren(errStrong);
                 }
             });
         });

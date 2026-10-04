@@ -147,12 +147,12 @@
   {
    "file": "4ndr0tools - Blob2URL.user.js",
    "name": "4ndr0tools - Blob2URL",
-   "version": "7.1.1",
+   "version": "7.2.0",
    "description": "Universal blob exfiltration, universal media URL sniffer + wire capture + URL vault (Alt+Shift+V), interactive asset sniffing, CSP/CORS bypass.",
    "family": "media & links",
-   "sha256": "4bff286562c4292bf0f4932798c5553d1690cccfe80e03cc5e937397b8e5e538",
-   "lines": 1208,
-   "bytes": 71454,
+   "sha256": "1aff417e48c3741060b15cd81a969656b7e6438ae906049259dc1efabe0f69fa",
+   "lines": 1439,
+   "bytes": 82319,
    "matches": [
     "*://*/*"
    ],
@@ -179,12 +179,12 @@
   {
    "file": "4ndr0tools - Bunkr++.user.js",
    "name": "4ndr0tools - Bunkr++",
-   "version": "7.5.1",
+   "version": "7.5.2",
    "description": "Direct URL routing, auto-sort, hide visited, bypass dl gateway, bulk download, m3u8/CDN URL aggregation (page-context net-hook + per-item stream glyphs + album-wide STREAMS aggregation), broken-link repair, power-user hotkeys, LinkMaster-grade m3u8 stream resolution with gateway fallback, MPV dispatch (URI/bridge), web-archive dead-CDN resurrection (archive.org / archive.is), captcha-aware transport retry",
    "family": "media & links",
-   "sha256": "e379835ed7feb90ab773ab04fc7c6fd9d00ddd9b0ccea8099298c6c2d06cfd16",
-   "lines": 3799,
-   "bytes": 194750,
+   "sha256": "a2275ba0cdb342b5fc7a4aa59f0480578b0af38cbfcc22e60d87c67b4d17c17e",
+   "lines": 3819,
+   "bytes": 195656,
    "matches": [],
    "excludes": [],
    "grants": [
@@ -212,12 +212,12 @@
   {
    "file": "4ndr0tools - BypassPaywalls.user.js",
    "name": "4ndr0tools - Bypass Paywalls",
-   "version": "0.1.3",
+   "version": "0.1.5",
    "description": "A way to bypass paywalls for popular news sites",
    "family": "uncategorized",
-   "sha256": "700b8bf3f3ef6b50048bd68d6387f68289011d016347098a40e6512e25fb8177",
-   "lines": 1585,
-   "bytes": 73520,
+   "sha256": "0b7ec6e0f0867578381b0ddbbebd63fc378366bd3e124394aae41b9d6cf1a955",
+   "lines": 1606,
+   "bytes": 74586,
    "matches": [
     "*://404media.co/*",
     "*://*.adweek.com/*",
@@ -404,12 +404,12 @@
   {
    "file": "4ndr0tools - Confirmation Bypass.user.js",
    "name": "4ndr0tools - Confirmation Bypass",
-   "version": "4.0.1",
+   "version": "4.0.3",
    "description": "Reveals forum invisi-text, view all replies, rewrite redirect links. Download Gate: bypass all confirmation pages on all sites, glass overlay copy/download URL (incl. vidara embeds on xcandid), auto-solve Altcha, auto-click download. Turbo: embed routing, upload injector. Util: external link safety, right-click scrollbar to top.",
    "family": "forums",
-   "sha256": "3ff32d7fab1cdfd7f6bcf0ec8b42194e59d1d8627f9aec061709049298e03cbd",
-   "lines": 1134,
-   "bytes": 59765,
+   "sha256": "40a8bf0577d3a8a609409c6d334a91ac827013021af36250480adba2b4b9c991",
+   "lines": 1181,
+   "bytes": 62270,
    "matches": [
     "*://forums.socialmediagirls.com/*",
     "*://forums.socialmediagirls.com/goto/link-confirmation*",
@@ -467,12 +467,12 @@
   {
    "file": "4ndr0tools - Forum Link Xtractor.user.js",
    "name": "4ndr0tools - Forum Link Xtractor",
-   "version": "3.2.1",
+   "version": "3.2.3",
    "description": "Link xtractor, Invisitext revealer, and inline post reply viewer.",
    "family": "forums",
-   "sha256": "3b6444d2a863f989f474693a8e29f5462198c823028f021387b8c4d12c3b2f61",
-   "lines": 745,
-   "bytes": 38163,
+   "sha256": "6b8f2095f8ed040b3e94183038a81f337b954c7b214ffc05f893e331d20398db",
+   "lines": 821,
+   "bytes": 41929,
    "matches": [
     "*://forums.socialmediagirls.com/*",
     "*://simpcity.su/*",
@@ -715,12 +715,12 @@
   {
    "file": "4ndr0tools - HostWarp.user.js",
    "name": "4ndr0tools - HostWarp",
-   "version": "1.1.1",
+   "version": "1.1.2",
    "description": "Per-host warp drive: bypasses image-host interstitials (imagetwist/imgspice/turboimagehost/acidimg/imx/pixhost/imagebam/imgbox/kropic/vipr/imagevenue), MEGA embed redirect + autoplay, PlanetSuzy mobile skin, t.me Web button, SearXNG sticky preferences, Gemini Answer Now — one engine, glass settings console, every module toggleable.",
    "family": "ux utilities",
-   "sha256": "0e432393b46c2f253f87b0bbb81792529305188dcfe706b04adc12b227b37a9a",
-   "lines": 1701,
-   "bytes": 84866,
+   "sha256": "057ab017917ec9c55b96166e2107900c000e8e5a4e68da5c722a1f27c206ddff",
+   "lines": 1812,
+   "bytes": 90505,
    "matches": [
     "*://*/*"
    ],
@@ -746,12 +746,12 @@
   {
    "file": "4ndr0tools - Images++.user.js",
    "name": "4ndr0tools - Images++",
-   "version": "4.0.2",
+   "version": "4.0.3",
    "description": "Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. Collapse-mode hotkey is configurable.",
    "family": "images",
-   "sha256": "8254e8e9bca0fcfb0ce142a301fa9d2ccd0e080d6f214bd88c0895d3782f4bf6",
+   "sha256": "feb5cc8e1df539dc17d7c06559a787d296b32fb6d1af3079811ffc20a46ffddc",
    "lines": 4598,
-   "bytes": 137131,
+   "bytes": 137282,
    "matches": [
     "*://*/*"
    ],
@@ -843,12 +843,12 @@
   {
    "file": "4ndr0tools - LinkMasterΨ.user.js",
    "name": "4ndr0tools - LinkMasterΨ",
-   "version": "6.2.1",
+   "version": "6.2.4",
    "description": "Accurately decodes, previews, exports, validates and scrapes all links. (Dual MPV Support + Ψ IG Harvester + sexyforums premium-link unwrap + GitHub raw-URL harvest + Ψ2 forum deep-scrape engine)",
    "family": "media & links",
-   "sha256": "1413de519566655f54cc64f0ecf5d14e3e8adf83223a45b48e90565af8ef9930",
-   "lines": 3849,
-   "bytes": 187722,
+   "sha256": "1df1baae758898103f3412169b53d1dd1d670f9fb3bde87ba698030ca12015f6",
+   "lines": 4039,
+   "bytes": 198095,
    "matches": [
     "*://*/*",
     "*://*.instagram.com/*"
@@ -888,12 +888,12 @@
   {
    "file": "4ndr0tools - Login Form Autofiller.user.js",
    "name": "4ndr0tools - Login Form Autofiller",
-   "version": "2.0.1",
+   "version": "2.0.2",
    "description": "It integrates BugMeNot into any login form (it retrieves all matching logins from bugmenot.com and autofills the login form)",
    "family": "ux utilities",
-   "sha256": "657ed85c0388231b8bf38626e232f892cb938aa7be82e7aea2f93fa35cc93d2d",
-   "lines": 980,
-   "bytes": 42545,
+   "sha256": "43001ecd68529b9be5c3c6e2f1bd8e8d1b01fbf4ce4789a73524a7ded62165ad",
+   "lines": 998,
+   "bytes": 43419,
    "matches": [],
    "excludes": [
     "http://bugmenot.com/*",
@@ -1048,12 +1048,12 @@
   {
    "file": "4ndr0tools - PageCraft.user.js",
    "name": "4ndr0tools - PageCraft",
-   "version": "1.1.1",
+   "version": "1.1.2",
    "description": "All-sites page utility belt: bulk checkbox control with range/alt-hover selection (de-jQueryed), broken-image auto-repair with cache-busting + frame broadcast, hover-collapse image I/O governor, and Brave infinite scroll — one engine, glass settings console, zero runtime dependencies.",
    "family": "ux utilities",
-   "sha256": "f826e68bf375bd312c5f8428198abe63e20ca53869c5ed0ef3aa106024eda3fa",
-   "lines": 1559,
-   "bytes": 76667,
+   "sha256": "3e6b1cd2000a2f0338e574fa881aca4763affa509654501c08fed9e167c8aa17",
+   "lines": 1672,
+   "bytes": 82430,
    "matches": [
     "*://*/*"
    ],
@@ -1557,5 +1557,5 @@
    ]
   }
  ],
- "generated": "2026-10-03T13:38:39.403Z"
+ "digest": "9ce8d6f9f1e584b38fae6a677b2b04b327cadfa529e28845287aa6bb25aad569"
 }

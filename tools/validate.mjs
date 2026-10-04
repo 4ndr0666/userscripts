@@ -22,7 +22,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { runCensus } from "./hotkey-census.mjs";
+import { runCensus, stripComments } from "./hotkey-census.mjs";
+import { runSinkCensus } from "./sink-census.mjs";
+import { computeInventory, serialize } from "./inventory.mjs";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const DIST = path.join(ROOT, "dist");
@@ -320,6 +322,28 @@ function scanPlaceholders(src) {
 function gateC() {
     if (!fs.existsSync(DIST)) { failures.push("[C] dist/ not built"); return; }
     const files = fs.readdirSync(DIST).filter((f) => f.endsWith(".user.js"));
+
+    /* Docs-coincide invariant (suite v1.4.2, operator mandate): every dist
+     * script must have coinciding documentation. The INDEX.md version
+     * stamps must match the live inventory — fail-closed when a version
+     * bump forgets `npm run docs` (docs drift = stale manifests, the
+     * exact failure mode GUP 5.2.2 codified for code). */
+    const docsIndexPath = path.join(ROOT, "documentation", "INDEX.md");
+    if (!fs.existsSync(docsIndexPath)) {
+        failures.push(`[C] documentation: INDEX.md missing — run \`npm run docs\``);
+    } else if (files.length) {
+        const idx = fs.readFileSync(docsIndexPath, "utf8");
+        const invPath = path.join(ROOT, "inventory.json");
+        const invScripts = JSON.parse(fs.readFileSync(invPath, "utf8")).scripts;
+        const drift = [];
+        for (const s of invScripts) {
+            const short = s.name.replace(/^4ndr0tools\s*-\s*/, "");
+            if (!idx.includes(`| **${short}** | \`${s.version}\``)) drift.push(`${short} v${s.version}`);
+        }
+        if (drift.length) {
+            failures.push(`[C] documentation drift (INDEX.md stale for: ${drift.join(", ")}) — run \`npm run docs\``);
+        } else passes.push(`[C] documentation coincides with all ${invScripts.length} dist scripts (INDEX version-stamped)`);
+    }
     let n = 0;
     for (const f of files) {
         n++;
@@ -447,9 +471,9 @@ function gateD() {
     } else passes.push(`[D] LinkMasterΨ video-grid + lazy capture verified`);
 
     const b2u = read("Blob2URL");
-    if (!b2u.includes("URL VAULT") || !b2u.includes("__psi_vault")) {
-        failures.push(`[D] Blob2URL: universal vault + wire capture not present`);
-    } else passes.push(`[D] Blob2URL universal vault + wire capture verified`);
+    if (!b2u.includes("URL VAULT") || !b2u.includes("__4NDR0_NET_API__")) {
+        failures.push(`[D] Blob2URL: universal vault + NetHook wire capture not present`);
+    } else passes.push(`[D] Blob2URL universal vault + shared NetHook wire capture verified`);
 
     const si = read("Stream Interceptor");
     if (!si || !si.includes("MAX_FOUND_URLS") || !si.includes("Stream Interceptor")) {
@@ -461,6 +485,41 @@ function gateD() {
     if (!hwDist.includes("a4:glass") || !pcDist.includes("a4:glass")) {
         failures.push(`[D] HostWarp/PageCraft: rebuilt without the repaired glass kernel`);
     } else passes.push(`[D] HostWarp/PageCraft glass-kernel repair verified`);
+
+    // Kernel TT-immunity invariant (suite v1.4.2): DOMParser.parseFromString
+    // is a Trusted Types sink under require-trusted-types-for 'script' —
+    // including the image/svg+xml branch (field-proven: YTPM v1.4.0's 54
+    // uncaught TypeErrors on YouTube; the HostWarp/PageCraft settings-
+    // console deaths at glyphEl()). The kernel must be zero-string-sink BY
+    // CONSTRUCTION: no parseFromString, no innerHTML/outerHTML assignment,
+    // no insertAdjacentHTML, no document.write, no eval/new Function in
+    // kernel/*.js. Scripts that must parse remote strings route through
+    // Ψ.core.parseHTML/parseXML (policy-wrapped, verified in kernel-smoke).
+    // Comment-aware scan — changelog notes never satisfy a gate (lesson 7).
+    const KERNEL = path.join(ROOT, "kernel");
+    const TT_SINK_RE = /parseFromString\s*\(|\.(?:inner|outer)HTML\s*=|insertAdjacentHTML\s*\(|document\.write\s*\(|\beval\s*\(|new\s+Function\s*\(/;
+    const kernelSinks = [];
+    for (const f of fs.readdirSync(KERNEL).filter(f => f.endsWith(".js"))) {
+        const code = stripComments(fs.readFileSync(path.join(KERNEL, f), "utf8"));
+        if (f === "core.js") {
+            // core.js HOSTS the sanctioned wrappers (parseHTML/parseXML) —
+            // every parseFromString there must feed tt.createHTML(...).
+            const bare = code.match(/parseFromString\(\s*(?!tt\.createHTML\()/g);
+            if (bare) kernelSinks.push(`${f}: ${bare.length} un-wrapped parseFromString call(s)`);
+            const m2 = code.match(/\.(?:inner|outer)HTML\s*=|insertAdjacentHTML\s*\(|document\.write\s*\(|\beval\s*\(|new\s+Function\s*\(/);
+            if (m2) kernelSinks.push(`${f}: ${m2[0].trim()}`);
+        } else {
+            const m = code.match(TT_SINK_RE);
+            if (m) kernelSinks.push(`${f}: ${m[0].trim()}`);
+        }
+    }
+    if (kernelSinks.length) {
+        for (const k of kernelSinks) failures.push(`[D] kernel TT-immunity: string sink in ${k}`);
+    } else passes.push(`[D] kernel TT-immunity verified (0 parseFromString/innerHTML/eval sinks in kernel/)`);
+    const glyphSrc = fs.readFileSync(path.join(KERNEL, "brand.js"), "utf8");
+    if (!glyphSrc.includes("glyphNode") || !fs.readFileSync(path.join(KERNEL, "glass.js"), "utf8").includes("Ψ.brand.glyphNode()")) {
+        failures.push(`[D] kernel TT-immunity: glyph must be built via Ψ.brand.glyphNode (createElementNS), not parsed`);
+    } else passes.push(`[D] glyph createElementNS construction verified`);
 
     const fpp = read("Forums++");
     if (!fpp.includes("function setProcessing")) {
@@ -501,6 +560,74 @@ function gateD() {
     }
     if (!census.problems.length && !census.collisions.length && !census.stale.length) {
         passes.push(`[D] hotkey census verified (${census.registrations.length} combos across ${new Set(census.registrations.map(r => r.script)).size} scripts, ${census.siteTotal} sites scanned, 0 co-install collisions)`);
+    }
+
+    // Sink census (suite v1.4.3, operator mandate): every HTML-string
+    // sink + page-network tap across dist is counted and adjudicated in
+    // tools/sink-census.mjs's ledger; fail closed on unadjudicated sites,
+    // count drift in either direction, and any kernel class-A sink.
+    // Migrated-to-zero this round: FLX (8), Confirmation Bypass (6),
+    // BypassPaywalls (2); the Blob2URL + LinkMasterΨ net layers ride the
+    // shared kernel/net.js NetHook singleton.
+    const sinks = runSinkCensus();
+    if (sinks.problems.length) {
+        for (const sk of sinks.problems) failures.push(`[D] sink census: ${sk}`);
+    } else {
+        passes.push(`[D] sink census verified (${sinks.totalSites} HTML-string/net-tap sites across ${sinks.fileCount} dist files, all adjudicated; FLX/CB/BPW at zero, NetHook owns the ψ-family wraps)`);
+    }
+
+    // Inventory regeneration determinism (suite v1.4.3): the legacy
+    // `generated: <wall clock>` field made every `npm run check` rewrite
+    // inventory.json — kit base detection (content-hash, git-state
+    // agnostic) then failed G1 with "content drift (not base, not
+    // applied)" after any post-apply verification run (operator field
+    // report, v1.4.2 apply). The field is now a content-addressed
+    // digest; a fresh recomputation must be byte-identical to the file
+    // on disk.
+    try {
+        const invOnDisk = fs.readFileSync(path.join(ROOT, "inventory.json"), "utf8");
+        const invFresh = serialize(computeInventory());
+        if (invOnDisk !== invFresh) {
+            failures.push(`[D] inventory regeneration drift — dist and inventory.json are out of sync (run: npm run inventory)`);
+        } else {
+            const digest = JSON.parse(invOnDisk).digest;
+            passes.push(`[D] inventory regeneration deterministic (content digest ${String(digest).slice(0, 16)}…)`);
+        }
+    } catch (e) {
+        failures.push(`[D] inventory determinism check failed: ${e.message}`);
+    }
+
+    // Canon-kernel wiring (suite v1.4.3): kernel modules consumed by
+    // canon-carried scripts (build.mjs CANON_KERNEL) must be inlined
+    // byte-identically into the dist twin, and only into files whose
+    // canon source references the module identifier — both directions,
+    // so a forgotten map entry or an accidental injection both fail.
+    const NET_ID = "__4NDR0_NET_API__";
+    const netModule = fs.readFileSync(path.join(KERNEL, "net.js"), "utf8").trim();
+    const canonDirs = ["_sovereign", "_promoted", "_merged"];
+    let netConsumers = 0;
+    for (const cd of canonDirs) {
+        const dir = path.join(ROOT, "canon", cd);
+        if (!fs.existsSync(dir)) continue;
+        for (const f of fs.readdirSync(dir).filter((x) => x.endsWith(".user.js"))) {
+            const canonSrc = fs.readFileSync(path.join(dir, f), "utf8");
+            const distSrc = fs.existsSync(path.join(DIST, f))
+                ? fs.readFileSync(path.join(DIST, f), "utf8") : "";
+            const canonUses = canonSrc.includes(NET_ID);
+            const distHas = distSrc.includes(netModule.slice(0, 200));
+            if (canonUses && !distHas) {
+                failures.push(`[D] canon-kernel wiring: ${f} references ${NET_ID} but dist carries no kernel/net.js — add the CANON_KERNEL map entry`);
+            } else if (!canonUses && distHas) {
+                failures.push(`[D] canon-kernel wiring: ${f} dist carries kernel/net.js without a canon reference — accidental injection`);
+            } else if (canonUses && distHas) {
+                netConsumers++;
+            }
+        }
+    }
+    if (netConsumers === 0) {
+        failures.push(`[D] canon-kernel wiring: zero NetHook consumers — kernel/net.js is dead kernel surface`);
+    } else {
+        passes.push(`[D] NetHook singleton wiring verified (${netConsumers} canon consumer(s) share one page-realm wrap; lazy arm + 4 MB single-read contract)`);
     }
 }
 
