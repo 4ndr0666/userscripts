@@ -1269,6 +1269,15 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: BypassPaywalls.user v0.1
 
     let enabledSites = [];
 
+    /* [R3 live-matrix boot fix] The BPC lineage ran as a browser
+     * EXTENSION — this backend block wires chrome.storage / webRequest /
+     * tabs / cookies, none of which exist in a userscript realm. In the
+     * userscript port `extensionApi` is a free variable, so this block
+     * threw an uncaught ReferenceError on EVERY host (tt-smoke live
+     * proof, tt-enforced regime). The DOM-side paywall removal above
+     * runs before this point and is untouched; the extension backend
+     * is now guarded off instead of crashing the IIFE tail. */
+    if (typeof extensionApi !== 'undefined') {
     // Get the enabled sites
     extensionApi.storage.sync.get({
         sites: {},
@@ -1553,6 +1562,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: BypassPaywalls.user v0.1
     }, {
         urls: ['<all_urls>']
     });
+    } // end extensionApi guard
 
     // Google Analytics to anonymously track DAU (Chrome only)
     function initGA() {

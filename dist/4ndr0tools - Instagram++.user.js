@@ -747,7 +747,10 @@
             const ph = document.createElement('div');
             ph.style.cssText = `height:${item.height}px;width:100%;margin-bottom:80px;background:rgba(10,19,26,0.85);
                 border:1px solid rgba(0,229,255,0.2);display:flex;align-items:center;justify-content:center;`;
-            ph.innerHTML = `<span style="color:rgba(103,232,249,0.5);font-family:'JetBrains Mono',monospace;font-size:10px;">V-STASIS</span>`;
+            const vs = document.createElement('span');
+            vs.style.cssText = "color:rgba(103,232,249,0.5);font-family:'JetBrains Mono',monospace;font-size:10px;";
+            vs.textContent = 'V-STASIS';
+            ph.appendChild(vs);
             if (item.node.parentNode) {
                 item.node.parentNode.replaceChild(ph, item.node);
                 item.node = ph;
@@ -917,19 +920,53 @@
     // =========================================================
     // [UI ENGINE]
     // =========================================================
-    const GLYPH = `
-    <svg viewBox="0 0 128 128" style="width:24px;height:24px;filter:drop-shadow(0 0 6px ${CFG.ACCENT});">
-        <style>
+    /* [R3] glyph builder — createElementNS twin of the retired string
+     * constant (spin animations preserved: the <style> child rides inside
+     * the SVG exactly as before). TT-immune by construction. */
+    const buildGlyph = () => {
+        const SVG_NS = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(SVG_NS, 'svg');
+        svg.setAttribute('viewBox', '0 0 128 128');
+        svg.setAttribute('style', `width:24px;height:24px;filter:drop-shadow(0 0 6px ${CFG.ACCENT});`);
+        const st = document.createElementNS(SVG_NS, 'style');
+        st.textContent = `
             .g1{transform-origin:center;animation:sp 10s linear infinite;}
             .g2{transform-origin:center;animation:sp 15s linear infinite reverse;}
             @keyframes sp{100%{transform:rotate(360deg);}}
-        </style>
-        <path class="g1" d="M64,12 A52,52 0 1 1 63.9,12Z" fill="none" stroke="${CFG.ACCENT}" stroke-dasharray="21.78 21.78" stroke-width="2"/>
-        <path class="g2" d="M64,20 A44,44 0 1 1 63.9,20Z" fill="none" stroke="${CFG.ACCENT}" stroke-dasharray="10 10" stroke-width="1.5" opacity="0.7"/>
-        <path d="M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47Z" fill="none" stroke="${CFG.ACCENT}" stroke-width="3"/>
-        <text x="64" y="76" text-anchor="middle" dominant-baseline="middle"
-              fill="${CFG.ACCENT}" font-size="46" font-weight="700" font-family="monospace">Ψ</text>
-    </svg>`;
+        `;
+        const p1 = document.createElementNS(SVG_NS, 'path');
+        p1.setAttribute('class', 'g1');
+        p1.setAttribute('d', 'M64,12 A52,52 0 1 1 63.9,12Z');
+        p1.setAttribute('fill', 'none');
+        p1.setAttribute('stroke', CFG.ACCENT);
+        p1.setAttribute('stroke-dasharray', '21.78 21.78');
+        p1.setAttribute('stroke-width', '2');
+        const p2 = document.createElementNS(SVG_NS, 'path');
+        p2.setAttribute('class', 'g2');
+        p2.setAttribute('d', 'M64,20 A44,44 0 1 1 63.9,20Z');
+        p2.setAttribute('fill', 'none');
+        p2.setAttribute('stroke', CFG.ACCENT);
+        p2.setAttribute('stroke-dasharray', '10 10');
+        p2.setAttribute('stroke-width', '1.5');
+        p2.setAttribute('opacity', '0.7');
+        const p3 = document.createElementNS(SVG_NS, 'path');
+        p3.setAttribute('d', 'M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47Z');
+        p3.setAttribute('fill', 'none');
+        p3.setAttribute('stroke', CFG.ACCENT);
+        p3.setAttribute('stroke-width', '3');
+        const psi = document.createElementNS(SVG_NS, 'text');
+        psi.setAttribute('x', '64');
+        psi.setAttribute('y', '76');
+        psi.setAttribute('text-anchor', 'middle');
+        psi.setAttribute('dominant-baseline', 'middle');
+        psi.setAttribute('fill', CFG.ACCENT);
+        psi.setAttribute('font-size', '46');
+        psi.setAttribute('font-weight', '700');
+        psi.setAttribute('font-family', 'monospace');
+        psi.textContent = 'Ψ';
+        svg.append(st, p1, p2, p3, psi);
+        return svg;
+    };
 
     function buildUI() {
         if (document.getElementById('igBigContainer')) return;
@@ -956,28 +993,39 @@
             `background:${CFG.BG};width:100vw;height:100vh;z-index:2147483647;` +
             `position:fixed;top:0;left:0;overflow-y:auto;color:#fff;`;
 
-        gui.innerHTML = `
-        <div id="ares-header" style="position:sticky;top:0;background:rgba(0,0,0,0.95);padding:15px;
-            border-bottom:1px solid rgba(0,229,255,0.2);display:flex;justify-content:space-between;align-items:center;
-            z-index:2147483648;backdrop-filter:blur(10px);">
-            <div>
-                <div style="color:${CFG.ACCENT};font-family:monospace;font-weight:900;letter-spacing:1px;">
-                    ARES-9 // SINGULARITY V7.0</div>
-                <div id="ares-stat" style="color:rgba(103,232,249,0.5);font-family:monospace;font-size:10px;margin-top:4px;">
-                    INTERCEPTING FEED...</div>
-            </div>
-            <div style="display:flex;gap:12px;align-items:center;">
-                <button id="ares-more" style="background:rgba(10,19,26,0.85);color:${CFG.ACCENT};border:1px solid ${CFG.ACCENT};
-                    padding:6px 14px;cursor:pointer;font-family:monospace;font-weight:bold;">LOAD MORE</button>
-                <button id="ares-dlall" style="background:transparent;color:${CFG.ACCENT};border:1px solid ${CFG.ACCENT};
-                    padding:6px 14px;cursor:pointer;font-family:monospace;">⭳ DOWNLOAD ALL</button>
-                <button id="ares-dump" style="background:transparent;color:#67E8F9;border:1px solid rgba(0,229,255,0.35);
-                    padding:6px 14px;cursor:pointer;font-family:monospace;">DUMP HTML</button>
-                <button id="ares-exit" style="background:transparent;color:${CFG.ERROR};border:1px solid #ff0055;
-                    padding:6px 16px;cursor:pointer;font-family:monospace;font-weight:bold;">EXIT</button>
-            </div>
-        </div>
-        <div id="igAllImages" style="padding:80px 0 300px;display:flex;flex-direction:column;align-items:center;"></div>`;
+        const hdr = document.createElement('div');
+        hdr.id = 'ares-header';
+        hdr.style.cssText = 'position:sticky;top:0;background:rgba(0,0,0,0.95);padding:15px;' +
+            'border-bottom:1px solid rgba(0,229,255,0.2);display:flex;justify-content:space-between;align-items:center;' +
+            'z-index:2147483648;backdrop-filter:blur(10px);';
+        const hdrText = document.createElement('div');
+        const hdrTitle = document.createElement('div');
+        hdrTitle.style.cssText = `color:${CFG.ACCENT};font-family:monospace;font-weight:900;letter-spacing:1px;`;
+        hdrTitle.textContent = 'ARES-9 // SINGULARITY V7.0';
+        const hdrStat = document.createElement('div');
+        hdrStat.id = 'ares-stat';
+        hdrStat.style.cssText = 'color:rgba(103,232,249,0.5);font-family:monospace;font-size:10px;margin-top:4px;';
+        hdrStat.textContent = 'INTERCEPTING FEED...';
+        hdrText.append(hdrTitle, hdrStat);
+        const hdrBtns = document.createElement('div');
+        hdrBtns.style.cssText = 'display:flex;gap:12px;align-items:center;';
+        const mkBtn = (id, text, css) => {
+            const b = document.createElement('button');
+            b.id = id;
+            b.style.cssText = css;
+            b.textContent = text;
+            return b;
+        };
+        hdrBtns.append(
+            mkBtn('ares-more', 'LOAD MORE', `background:rgba(10,19,26,0.85);color:${CFG.ACCENT};border:1px solid ${CFG.ACCENT};padding:6px 14px;cursor:pointer;font-family:monospace;font-weight:bold;`),
+            mkBtn('ares-dlall', '⭳ DOWNLOAD ALL', `background:transparent;color:${CFG.ACCENT};border:1px solid ${CFG.ACCENT};padding:6px 14px;cursor:pointer;font-family:monospace;`),
+            mkBtn('ares-dump', 'DUMP HTML', 'background:transparent;color:#67E8F9;border:1px solid rgba(0,229,255,0.35);padding:6px 14px;cursor:pointer;font-family:monospace;'),
+            mkBtn('ares-exit', 'EXIT', `background:transparent;color:${CFG.ERROR};border:1px solid #ff0055;padding:6px 16px;cursor:pointer;font-family:monospace;font-weight:bold;`));
+        hdr.append(hdrText, hdrBtns);
+        const imgWall = document.createElement('div');
+        imgWall.id = 'igAllImages';
+        imgWall.style.cssText = 'padding:80px 0 300px;display:flex;flex-direction:column;align-items:center;';
+        gui.append(hdr, imgWall);
 
         document.documentElement.appendChild(gui);
 
@@ -1085,7 +1133,7 @@
             const dock = document.createElement('div');
             dock.id           = '4ndr0666-dock';
             dock.title        = 'ARES-9 — Alt+I or click';
-            dock.innerHTML    = GLYPH;
+            dock.replaceChildren(buildGlyph());
             dock.style.cssText =
                 'cursor:pointer;margin-left:20px;display:flex;align-items:center;' +
                 'opacity:0.7;transition:transform 0.2s,opacity 0.2s;height:52px;';
@@ -1100,7 +1148,7 @@
             const dock = document.createElement('div');
             dock.id           = '4ndr0666-dock';
             dock.title        = 'ARES-9 — Alt+I or click';
-            dock.innerHTML    = GLYPH;
+            dock.replaceChildren(buildGlyph());
             dock.style.cssText =
                 'position:fixed;bottom:28px;left:88px;z-index:2147483646;' +
                 'cursor:pointer;opacity:0.65;transition:transform 0.2s,opacity 0.2s;';
@@ -1232,7 +1280,7 @@
                 const dock = document.createElement('div');
                 dock.id           = '4ndr0666-dock';
                 dock.title        = 'ARES-9 — click or Alt+I';
-                dock.innerHTML    = GLYPH;
+                dock.replaceChildren(buildGlyph());
                 dock.style.cssText =
                     'position:fixed;bottom:28px;left:88px;z-index:2147483646;' +
                     'cursor:pointer;opacity:0.65;';

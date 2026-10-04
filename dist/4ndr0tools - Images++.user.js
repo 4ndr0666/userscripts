@@ -667,10 +667,14 @@ const Bar = {
 
   setText(text) {
     if (/<([a-z][-a-z]*)[^<>]*>[^<>]*<\/\1\s*>/i.test(text)) { // checking for <tag...>...</tag>
-      ai.bar.innerHTML = trustedHTML ? trustedHTML(text) : text;
-    } else {
-      ai.bar.textContent = text;
+      /* [R3] markup captions adopt the TT-safe $parseHtml path instead of
+       * an innerHTML write (same page-policy wrap, zero string sinks). */
+      try {
+        ai.bar.replaceChildren(...$parseHtml(text).body.childNodes);
+        return;
+      } catch (_) { /* plain-text fallback below */ }
     }
+    ai.bar.textContent = text;
   },
 
   show(force) {

@@ -2,7 +2,7 @@
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @name         4ndr0tools - YouTube Embed Redirect Button
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.5
+// @version      1.6
 // @description  Floating button for redirects to embedded version. Right click it to set a keybind (default Ctrl+E).
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js
@@ -190,12 +190,16 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: YouTubeEmbedRedirectButt
 
   const menu = document.createElement('div');
   menu.id = 'menu';
-  menu.innerHTML = `
-    <ul>
-      <li id="doEmbed">Embed Now</li>
-      <li id="setHotkey">Set Hotkey (${formatHotkeyForDisplay(getHotkey())})</li>
-    </ul>
-  `;
+  /* [R3] element-built menu (was an innerHTML template). */
+  const menuList = document.createElement('ul');
+  const liEmbed = document.createElement('li');
+  liEmbed.id = 'doEmbed';
+  liEmbed.textContent = 'Embed Now';
+  const liHotkey = document.createElement('li');
+  liHotkey.id = 'setHotkey';
+  liHotkey.textContent = `Set Hotkey (${formatHotkeyForDisplay(getHotkey())})`;
+  menuList.append(liEmbed, liHotkey);
+  menu.appendChild(menuList);
   sd.appendChild(menu);
 
   // —————————— Menu Event Wiring ——————————

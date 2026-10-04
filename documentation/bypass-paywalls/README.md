@@ -13,7 +13,7 @@ BypassPaywalls restores access to metered and hard-paywalled news content across
 | Version | `0.1.5` |
 | Matches | `*://404media.co/*`, `*://*.adweek.com/*`, `*://*.ad.nl/*`, `*://*.americanbanker.com/*` (+166 more) |
 | Run-at | `document-end` |
-| Size | 72.8 KB · 1606 lines |
+| Size | 73.5 KB · 1616 lines |
 | Install | [dist/4ndr0tools - BypassPaywalls.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20BypassPaywalls.user.js) |
 
 ## Feature Inventory

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - PageCraft
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.1.2
+// @version      1.1.3
 // @description  All-sites page utility belt: bulk checkbox control with range/alt-hover selection (de-jQueryed), broken-image auto-repair with cache-busting + frame broadcast, hover-collapse image I/O governor, and Brave infinite scroll — one engine, glass settings console, zero runtime dependencies.
 // @author       4ndr0666
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -19,7 +19,7 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20PageCraft.user.js
 // ==/UserScript==
 
-/* 4ndr0tools - PageCraft v1.1.2 — built from modules/pagecraft + kernel {brand, core, glass, store, hotkeys}
+/* 4ndr0tools - PageCraft v1.1.3 — built from modules/pagecraft + kernel {brand, core, glass, store, hotkeys}
  * All-sites page utility belt: bulk checkbox control with range/alt-hover selection (de-jQueryed), broken-image auto-repair with cache-busting + frame broadcast, hover-collapse image I/O governor, and Brave infinite scroll — one engine, glass settings console, zero runtime dependencies.
  * This is a generated file; edit modules/ and run `npm run build`.
  */
@@ -201,8 +201,24 @@
      * Element factory. attrs applied via direct property assignment where
      * possible (style, dataset keys via `data-*`, event handlers via `on*`).
      * Children may be Nodes or strings (text nodes).
+     *
+     * v1.4.4 VARIADIC REPAIR (live field report: "settings tabs do nothing,
+     * console body empty"): the signature accepted exactly ONE child, but
+     * glass.js and module bodies pass multiple children as EXTRA ARGUMENTS
+     * (`$new('div', {style}, tabbar, content)`). JavaScript silently drops
+     * surplus arguments — the 4th+ children vanished at construction time.
+     * Blast radius: every glass HUD lost its title block + collapse button
+     * (header: glyph, titleBlock, collapseBtn), every console lost its
+     * `.a4-content` render target (bodyWrap: tabbar, content) so tab clicks
+     * rendered into a DETACHED node — "nothing happens when clicked", the
+     * exact operator report. Caught by live per-site integration testing,
+     * missed by every static gate and the render-only smoke.
+     *
+     * Children now accept: any number of extra arguments, one or more
+     * arrays (flattened one level deep per argument), null/undefined
+     * entries skipped (conditional slots like `subtitle ? el : null`).
      */
-    function $new(tag, attrs, children) {
+    function $new(tag, attrs, ...rest) {
         const el = doc().createElement(tag);
         if (attrs) {
             for (const key of Object.keys(attrs)) {
@@ -221,10 +237,14 @@
                 }
             }
         }
-        if (children != null) {
-            for (const child of Array.isArray(children) ? children : [children]) {
-                el.append(child instanceof Node ? child : doc().createTextNode(String(child)));
-            }
+        const children = [];
+        for (const c of rest) {
+            if (Array.isArray(c)) children.push(...c);
+            else children.push(c);
+        }
+        for (const child of children) {
+            if (child == null) continue;
+            el.append(child instanceof Node ? child : doc().createTextNode(String(child)));
         }
         return el;
     }

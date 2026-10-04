@@ -13,7 +13,7 @@
 | Version | `1.0.2` |
 | Matches | `*://*/*` |
 | Run-at | `document-start` |
-| Size | 11.9 KB · 274 lines |
+| Size | 13.1 KB · 306 lines |
 | Install | [dist/4ndr0tools - 4ndr0purge.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%204ndr0purge.user.js) |
 
 ## Feature Inventory

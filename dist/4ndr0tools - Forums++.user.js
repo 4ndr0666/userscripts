@@ -848,7 +848,7 @@ const ui = {
         createPostDownloadButton: () => {
             const downloadPostBtn = document.createElement('a');
             downloadPostBtn.setAttribute('href', '#');
-            downloadPostBtn.innerHTML = '🡳 Download';
+            downloadPostBtn.textContent = '🡳 Download';
 
             return downloadPostBtn;
         },
@@ -1271,7 +1271,7 @@ const ui = {
                                             .filter(currentHost => currentHost.enabled && currentHost.resources.length)
                                             .reduce((acc, currentHost) => acc + currentHost.resources.length, 0);
 
-                                        btnDownloadPost.innerHTML = `🡳 Download (${totalDownloadableResources}/${totalResources})`;
+                                        btnDownloadPost.textContent = `🡳 Download (${totalDownloadableResources}/${totalResources})`;
 
                                         if (parsedHosts.length > 1) {
                                             const toggleAllHostsCheckbox = h.element(`#settings-toggle-all-hosts-${postId}`);
@@ -3280,7 +3280,9 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
  */
 const addDuplicateTabLink = postEl => {
     const span = document.createElement('span');
-    span.innerHTML = '<i class="fa fa-copy"></i> Duplicate Tab';
+    const icon = document.createElement('i');
+    icon.className = 'fa fa-copy';
+    span.append(icon, ' Duplicate Tab');
 
     const dupTabLI = postEl.parentNode.querySelector('.u-concealed')?.cloneNode(true);
     if (!dupTabLI) return; // Ensure element exists
@@ -3306,7 +3308,9 @@ const addDuplicateTabLink = postEl => {
  */
 const addShowDownloadPageBtnLink = postEl => {
     const span = document.createElement('span');
-    span.innerHTML = '<i class="fa fa-arrow-up"></i> Download Page';
+    const icon = document.createElement('i');
+    icon.className = 'fa fa-arrow-up';
+    span.append(icon, ' Download Page');
 
     const dupTabLI = postEl.parentNode.querySelector('.u-concealed')?.cloneNode(true);
     if (!dupTabLI) return; // Ensure element exists
@@ -3462,7 +3466,7 @@ const selectedPosts = [];
             const { btn: btnDownloadPost } = ui.buttons.addDownloadPostButton(post);
             const totalResources = parsedHosts.reduce((acc, host) => acc + host.resources.length, 0);
             const checkedLength = getTotalDownloadableResourcesForPostCB(parsedHosts);
-            btnDownloadPost.innerHTML = `🡳 Download (${checkedLength}/${totalResources})`;
+            btnDownloadPost.textContent = `🡳 Download (${checkedLength}/${totalResources})`;
 
             // Create download status / progress elements.
             const { el: statusTextEl, container: statusTextContainer } = ui.labels.status.createStatusLabel();

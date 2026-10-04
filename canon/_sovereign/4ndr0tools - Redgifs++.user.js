@@ -2,7 +2,7 @@
 // @name            4ndr0tools - Redgifs++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author          4ndr0666 
-// @version         5.2
+// @version         5.3
 // @description     Intercepts Redgifs links on Reddit for a cinematic overlay. On Redgifs itself, enters focused video-only mode. Falls back to JSON.parse intercept for direct /watch/ loads before SPA hydration.
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Redgifs++.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Redgifs++.user.js
@@ -203,22 +203,21 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Redgifs++.user v5.2 — 
             // Restore original JSON.parse immediately — single-fire intercept.
             JSON.parse = originalParse;
 
-            document.body.innerHTML = `
-                <img
-                    src="${poster}"
-                    aria-hidden="true"
-                    style="position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1;filter:blur(90px);transform:scale(1.1);"
-                >
-                <video
-                    controls
-                    autoplay
-                    loop
-                    playsinline
-                    src="${videoSrc}"
-                    poster="${poster}"
-                    style="max-height:calc(100vh - 20px);max-width:calc(100vw - 20px);border-radius:10px;cursor:pointer;"
-                ></video>
-            `;
+            /* [R3] element-built player stage (was a document.body
+             * innerHTML replacement — TT-immune by construction now). */
+            const bg = document.createElement('img');
+            bg.src = poster;
+            bg.setAttribute('aria-hidden', 'true');
+            bg.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1;filter:blur(90px);transform:scale(1.1);';
+            const vid = document.createElement('video');
+            vid.controls = true;
+            vid.autoplay = true;
+            vid.loop = true;
+            vid.playsInline = true;
+            vid.src = videoSrc;
+            vid.poster = poster;
+            vid.style.cssText = 'max-height:calc(100vh - 20px);max-width:calc(100vw - 20px);border-radius:10px;cursor:pointer;';
+            document.body.replaceChildren(bg, vid);
             document.body.style.cssText =
                 'margin:0;display:flex;justify-content:center;align-items:center;height:100vh;background:#000;overflow:hidden;';
         };

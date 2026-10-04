@@ -1,4 +1,4 @@
-# Redgifs++ · v5.2
+# Redgifs++ · v5.3
 
 > Redgifs cinematic integration — `video & players` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ Redgifs++ intercepts Redgifs links on Reddit and renders them in a cinematic ove
 
 | Dimension | Value |
 |---|---|
-| Version | `5.2` |
+| Version | `5.3` |
 | Matches | `*://*.redgifs.com/watch/*`, `*://*.redgifs.com/ifr/*`, `*://*.redgifs.com/*`, `*://redgifs.com/*` (+1 more) |
 | Run-at | `document-start` |
-| Size | 17.5 KB · 375 lines |
+| Size | 17.7 KB · 374 lines |
 | Install | [dist/4ndr0tools - Redgifs++.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Redgifs%2B%2B.user.js) |
 
 ## Feature Inventory

@@ -249,17 +249,49 @@
     const btn = document.createElement('button');
     btn.className = 'purge-btn';
 
-    // Self-contained inline SVG Glyph
-    const svgGlyph = `
-      <svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" class="purge-icon" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M 64,12 A 52,52 0 1 1 63.9,12 Z" stroke-dasharray="21.78 21.78" stroke-width="2" />
-        <path d="M 64,20 A 44,44 0 1 1 63.9,20 Z" stroke-dasharray="10 10" stroke-width="1.5" opacity="0.7" />
-        <path d="M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z" />
-        <text x="64" y="68" text-anchor="middle" dominant-baseline="middle" fill="currentColor" stroke="none" font-size="56" font-weight="700" font-family="serif">Ψ</text>
-      </svg>
-    `;
+    // Self-contained inline SVG Glyph — [R3] built through createElementNS
+    // (the string constant + innerHTML splice is retired; TT-immune).
+    const buildGlyph = () => {
+      const SVG_NS = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(SVG_NS, 'svg');
+      svg.setAttribute('viewBox', '0 0 128 128');
+      svg.setAttribute('xmlns', SVG_NS);
+      svg.setAttribute('class', 'purge-icon');
+      svg.setAttribute('fill', 'none');
+      svg.setAttribute('stroke', 'currentColor');
+      svg.setAttribute('stroke-width', '3');
+      svg.setAttribute('stroke-linecap', 'round');
+      svg.setAttribute('stroke-linejoin', 'round');
+      const ring1 = document.createElementNS(SVG_NS, 'path');
+      ring1.setAttribute('d', 'M 64,12 A 52,52 0 1 1 63.9,12 Z');
+      ring1.setAttribute('stroke-dasharray', '21.78 21.78');
+      ring1.setAttribute('stroke-width', '2');
+      const ring2 = document.createElementNS(SVG_NS, 'path');
+      ring2.setAttribute('d', 'M 64,20 A 44,44 0 1 1 63.9,20 Z');
+      ring2.setAttribute('stroke-dasharray', '10 10');
+      ring2.setAttribute('stroke-width', '1.5');
+      ring2.setAttribute('opacity', '0.7');
+      const hex = document.createElementNS(SVG_NS, 'path');
+      hex.setAttribute('d', 'M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z');
+      const psi = document.createElementNS(SVG_NS, 'text');
+      psi.setAttribute('x', '64');
+      psi.setAttribute('y', '68');
+      psi.setAttribute('text-anchor', 'middle');
+      psi.setAttribute('dominant-baseline', 'middle');
+      psi.setAttribute('fill', 'currentColor');
+      psi.setAttribute('stroke', 'none');
+      psi.setAttribute('font-size', '56');
+      psi.setAttribute('font-weight', '700');
+      psi.setAttribute('font-family', 'serif');
+      psi.textContent = 'Ψ';
+      svg.append(ring1, ring2, hex, psi);
+      return svg;
+    };
 
-    btn.innerHTML = `${svgGlyph}<span class="purge-text">4ndr0Purge</span>`;
+    const textSpan = document.createElement('span');
+    textSpan.className = 'purge-text';
+    textSpan.textContent = '4ndr0Purge';
+    btn.append(buildGlyph(), textSpan);
     btn.onclick = runPurge;
 
     const float = document.createElement('div');

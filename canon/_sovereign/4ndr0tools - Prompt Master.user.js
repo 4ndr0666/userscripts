@@ -66,8 +66,22 @@
         });
         break;
       } catch (e) {}
+  /* [R3] TTwrap — sanctioned policy wrapper for the parse route (the
+   * census SANCTIONED_PARSE_ARG family). */
+  function TTwrap(t) {
+    return scriptPolicy ? scriptPolicy.createHTML(t) : t;
+  }
   function setSafeInnerHTML(e, t) {
-    e && (e.innerHTML = scriptPolicy ? scriptPolicy.createHTML(t) : t);
+    /* [R3] parse-then-adopt: same rendering as the retired innerHTML
+     * write, but the live DOM never receives a string sink — the markup
+     * is parsed through the TT policy and its body children adopted. */
+    if (!e) return;
+    try {
+      const doc = new DOMParser().parseFromString(TTwrap(t), "text/html");
+      e.replaceChildren(...doc.body.childNodes);
+    } catch (_) {
+      e.textContent = t;
+    }
   }
   const platformSelectors = {
       chatgpt: "#prompt-textarea",
@@ -1924,9 +1938,7 @@
                 const e = document.createElement("span");
                 ((e.className = "mp-tooltip-btn-icon"),
                   "string" == typeof t.icon
-                    ? "function" == typeof setSafeInnerHTML
-                      ? setSafeInnerHTML(e, t.icon)
-                      : (e.innerHTML = t.icon)
+                    ? setSafeInnerHTML(e, t.icon)
                     : t.icon instanceof HTMLElement && e.appendChild(t.icon),
                   n.appendChild(e));
               }
@@ -14631,8 +14643,14 @@
             : "no reading",
         );
         const rowHost = document.createElement("div");
-        rowHost.innerHTML =
-          '<div role="option"><span>Nano Banana 2 Lite</span> <span>Leaving 4/16</span></div>';
+        const rowOption = document.createElement("div");
+        rowOption.setAttribute("role", "option");
+        const rowSpan1 = document.createElement("span");
+        rowSpan1.textContent = "Nano Banana 2 Lite";
+        const rowSpan2 = document.createElement("span");
+        rowSpan2.textContent = "Leaving 4/16";
+        rowOption.append(rowSpan1, " ", rowSpan2);
+        rowHost.appendChild(rowOption);
         rowHost.style.cssText =
           "position:fixed;left:-9999px;top:0;width:200px;height:20px;";
         document.body.appendChild(rowHost);

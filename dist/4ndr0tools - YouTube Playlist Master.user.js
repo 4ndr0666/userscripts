@@ -2257,7 +2257,7 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
             // profiles. The innerHTML fallback only ever runs on pre-2020
             // engines, none of which implement Trusted Types.
             if (typeof elx.log.replaceChildren === 'function') elx.log.replaceChildren();
-            else elx.log.innerHTML = '';
+            else elx.log.textContent = '';
             for (const e of logRing.slice(-10).reverse()) {
                 elx.log.appendChild(DOMU.el('div', { class: `log-${e.kind}` }, { textContent: e.msg }));
             }
@@ -2475,7 +2475,7 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
             const header = DOMU.el('div', { class: 'header' }, {}, {}, {}, [
                 DOMU.el('div', { class: 'title' }, {}, {}, {}, [
                     DOMU.el('div', { class: 't1' }, { textContent: 'PLAYLIST MASTER' }),
-				    DOMU.el('div', { class: 't2' }, { textContent: `v${CFG.SCRIPT_VERSION}`}),
+                                    DOMU.el('div', { class: 't2' }, { textContent: `v${CFG.SCRIPT_VERSION}`}),
                 ]),
                 DOMU.el('span', { class: 'acct', id: 'acct', title: 'Active account' }),
                 DOMU.el('span', { class: 'count', id: 'count' }),

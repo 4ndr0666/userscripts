@@ -1,4 +1,4 @@
-# YouTube Embed Redirect Button · v1.5
+# YouTube Embed Redirect Button · v1.6
 
 > One-click embed view — `video & players` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ A floating glass button on YouTube that redirects to the embedded version of the
 
 | Dimension | Value |
 |---|---|
-| Version | `1.5` |
+| Version | `1.6` |
 | Matches | `https://*.youtube.com/*` |
 | Run-at | `document-end` |
-| Size | 12.5 KB · 316 lines |
+| Size | 12.8 KB · 320 lines |
 | Install | [dist/4ndr0tools - YouTubeEmbedRedirectButton.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js) |
 
 ## Feature Inventory

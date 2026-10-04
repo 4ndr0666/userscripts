@@ -1385,10 +1385,70 @@
     // =========================================================================
     // MODULE 6: ACQUISITION UTILITIES
     // =========================================================================
-    const downloadSvg  = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
-    const streamSvg    = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`;
-    const spinnerHtml  = '<span style="font-size:8px;font-family:var(--font-body);">...</span>';
-    const specPsiSvg   = `<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" class="psi-toast-icon" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path class="glyph-ring-1" d="M 64,12 A 52,52 0 1 1 63.9,12 Z" stroke-dasharray="21.78 21.78" stroke-width="2" /><path class="glyph-ring-2" d="M 64,20 A 44,44 0 1 1 63.9,20 Z" stroke-dasharray="10 10" stroke-width="1.5" opacity="0.7" /><path class="glyph-hex" d="M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z" /><text x="64" y="67" text-anchor="middle" dominant-baseline="middle" fill="currentColor" stroke="none" font-size="56" font-weight="700" font-family="'Cinzel Decorative', serif" class="glyph-core-psi">Ψ</text></svg>`;
+    /* [R3 createElement migration — suite v1.4.4] The four module-scope SVG
+     * STRING constants are retired: every glyph mount/swap below uses these
+     * createElementNS builders instead (TT-immune by construction — no
+     * TrustedHTML assignment anywhere). Each call returns a FRESH element
+     * so swap/restore cycles never share mounted nodes. */
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    function svgEl(tag, attrs, parent) {
+        const n = document.createElementNS(SVG_NS, tag);
+        if (attrs) for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+        if (parent) parent.appendChild(n);
+        return n;
+    }
+    function psiDownloadGlyph() {
+        const svg = svgEl('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+        svgEl('path', { d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' }, svg);
+        svgEl('polyline', { points: '7 10 12 15 17 10' }, svg);
+        svgEl('line', { x1: '12', y1: '15', x2: '12', y2: '3' }, svg);
+        return svg;
+    }
+    function psiStreamGlyph() {
+        const svg = svgEl('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+        svgEl('polygon', { points: '5 3 19 12 5 21 5 3' }, svg);
+        return svg;
+    }
+    function psiSpinnerGlyph() {
+        const s = document.createElement('span');
+        s.style.cssText = 'font-size:8px;font-family:var(--font-body);';
+        s.textContent = '...';
+        return s;
+    }
+    function psiSpecGlyph() {
+        const svg = svgEl('svg', { viewBox: '0 0 128 128', xmlns: SVG_NS, class: 'psi-toast-icon', fill: 'none', stroke: 'currentColor', 'stroke-width': '3', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+        svgEl('path', { class: 'glyph-ring-1', d: 'M 64,12 A 52,52 0 1 1 63.9,12 Z', 'stroke-dasharray': '21.78 21.78', 'stroke-width': '2' }, svg);
+        svgEl('path', { class: 'glyph-ring-2', d: 'M 64,20 A 44,44 0 1 1 63.9,20 Z', 'stroke-dasharray': '10 10', 'stroke-width': '1.5', opacity: '0.7' }, svg);
+        svgEl('path', { class: 'glyph-hex', d: 'M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z' }, svg);
+        const t = svgEl('text', { x: '64', y: '67', 'text-anchor': 'middle', 'dominant-baseline': 'middle', fill: 'currentColor', stroke: 'none', 'font-size': '56', 'font-weight': '700', 'font-family': "'Cinzel Decorative', serif", class: 'glyph-core-psi' }, svg);
+        t.textContent = 'Ψ';
+        return svg;
+    }
+    /* General element builder — same contract as the kernel's Ψ.core.$new
+     * (variadic children, null-skipped, style string-or-object; data-dash,
+     * aria-dash and role attrs via setAttribute, on-prefixed keys as
+     * listeners). */
+    function mkEl(tag, attrs, ...rest) {
+        const el = document.createElement(tag);
+        if (attrs) {
+            for (const key of Object.keys(attrs)) {
+                const val = attrs[key];
+                if (val == null) continue;
+                if (key === 'style' && typeof val === 'object') Object.assign(el.style, val);
+                else if (key.startsWith('data-') || key.startsWith('aria-') || key === 'role' || key === 'class') el.setAttribute(key, String(val));
+                else if (key.startsWith('on') && typeof val === 'function') el.addEventListener(key.slice(2), val);
+                else if (key in el && typeof val !== 'string') el[key] = val;
+                else el.setAttribute(key, String(val));
+            }
+        }
+        const kids = [];
+        for (const c of rest) { if (Array.isArray(c)) kids.push(...c); else kids.push(c); }
+        for (const c of kids) {
+            if (c == null) continue;
+            el.append(c instanceof Node ? c : document.createTextNode(String(c)));
+        }
+        return el;
+    }
 
     function isCdnUrl(url) {
         if (!url || typeof url !== 'string') return false;
@@ -1484,28 +1544,28 @@
             overlay.classList.contains('psi-dl-glyph') ||
             overlay.classList.contains('psi-stream-glyph')
         );
-        const origContent = isGlyph ? overlay.innerHTML    : '';
+        const origNodes   = isGlyph ? [...overlay.childNodes]  : [];
         const origColor   = isGlyph ? overlay.style.color  : '';
         const origBorder  = isGlyph ? overlay.style.borderColor : '';
 
         const onCopied = () => {
             if (!isGlyph) return;
-            overlay.innerHTML = '<span style="font-size:14px;font-family:var(--font-body);font-weight:bold;">✓</span>';
+            overlay.replaceChildren(mkEl('span', { style: 'font-size:14px;font-family:var(--font-body);font-weight:bold;' }, '✓'));
             overlay.style.color       = 'var(--accent-cyan)';
             overlay.style.borderColor = 'var(--accent-cyan)';
             setTimeout(() => {
-                overlay.innerHTML = origContent;
+                overlay.replaceChildren(...origNodes.map(n => n.cloneNode(true)));
                 overlay.style.color       = origColor;
                 overlay.style.borderColor = origBorder;
             }, 1400);
         };
         const onFailed = () => {
             if (!isGlyph) return;
-            overlay.innerHTML = '<span style="font-size:14px;font-family:var(--font-body);font-weight:bold;">X</span>';
+            overlay.replaceChildren(mkEl('span', { style: 'font-size:14px;font-family:var(--font-body);font-weight:bold;' }, 'X'));
             overlay.style.color       = 'var(--red)';
             overlay.style.borderColor = 'var(--red)';
             setTimeout(() => {
-                overlay.innerHTML = origContent;
+                overlay.replaceChildren(...origNodes.map(n => n.cloneNode(true)));
                 overlay.style.color       = origColor;
                 overlay.style.borderColor = origBorder;
             }, 2200);
@@ -2538,17 +2598,17 @@
             if (!document.querySelector('.psi-main-dl-glyph')) {
                 const dlGlyph     = document.createElement('a');
                 dlGlyph.className = 'psi-dl-glyph psi-main-dl-glyph psi-glass-panel psi-btn';
-                dlGlyph.innerHTML = downloadSvg;
+                dlGlyph.replaceChildren(psiDownloadGlyph());
                 dlGlyph.title     = 'Direct Download';
                 const activateDl  = async (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    dlGlyph.innerHTML = spinnerHtml;
+                    dlGlyph.replaceChildren(psiSpinnerGlyph());
 
                     // Tier A: video.currentSrc (fastest — player already running)
                     const vidEl = document.querySelector('video');
                     if (vidEl?.currentSrc && !vidEl.currentSrc.startsWith('blob:') && isCdnUrl(vidEl.currentSrc)) {
-                        dlGlyph.innerHTML = downloadSvg;
+                        dlGlyph.replaceChildren(psiDownloadGlyph());
                         nativeDownload(vidEl.currentSrc);
                         return;
                     }
@@ -2565,7 +2625,7 @@
                             };
                             const { cdnURL, fname } = await resolveBulkFile(item);
                             if (cdnURL) {
-                                dlGlyph.innerHTML = downloadSvg;
+                                dlGlyph.replaceChildren(psiDownloadGlyph());
                                 nativeDownload(cdnURL, fname);
                                 return;
                             }
@@ -2581,7 +2641,7 @@
                         : window.location.href;
 
                     const cdnUrl = await resolveDomStreamUrl(targetUrl);
-                    dlGlyph.innerHTML = downloadSvg;
+                    dlGlyph.replaceChildren(psiDownloadGlyph());
                     if (cdnUrl) {
                         nativeDownload(cdnUrl);
                     } else if (ARCHIVE_ENABLED()) {
@@ -2613,13 +2673,13 @@
             if (!document.querySelector('.psi-main-stream-glyph')) {
                 const streamGlyph     = document.createElement('a');
                 streamGlyph.className = 'psi-stream-glyph psi-main-stream-glyph psi-glass-panel psi-btn';
-                streamGlyph.innerHTML = streamSvg;
+                streamGlyph.replaceChildren(psiStreamGlyph());
                 streamGlyph.title     = 'Copy Stream URL (Shift+Click: MPV dispatch)';
                 const activateStream  = async (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    const savedHtml               = streamGlyph.innerHTML;
-                    streamGlyph.innerHTML         = spinnerHtml;
+                    const savedNodes               = [...streamGlyph.childNodes];
+                    streamGlyph.replaceChildren(psiSpinnerGlyph());
                     streamGlyph.style.color       = '#fff';
                     streamGlyph.style.borderColor = '';
 
@@ -2698,7 +2758,7 @@
                     // — robustCopy captured '#fff' as the "original" color and
                     // faithfully restored it. Clear it before the feedback
                     // path so the restore returns the themed default.
-                    streamGlyph.innerHTML = savedHtml;
+                    streamGlyph.replaceChildren(...savedNodes);
                     streamGlyph.style.color = '';
                     if (streamUrl) {
                         _lastStreamUrl = streamUrl; // v7.4.0: MPV dispatch surface
@@ -2796,7 +2856,7 @@
             if (!el.querySelector('.psi-dl-glyph') && resolveBulkFile) {
                 const dlGlyph     = document.createElement('a');
                 dlGlyph.className = 'psi-dl-glyph psi-glass-panel psi-btn';
-                dlGlyph.innerHTML = downloadSvg;
+                dlGlyph.replaceChildren(psiDownloadGlyph());
                 dlGlyph.title     = 'Direct Download';
                 ensureRelative(el);
                 el.appendChild(dlGlyph);
@@ -2821,7 +2881,7 @@
                     // --yellow token to the spec highlight #67E8F9.
                     dlGlyph.style.color       = 'var(--text-cyan-active)';
                     dlGlyph.style.borderColor = 'var(--text-cyan-active)';
-                    dlGlyph.innerHTML         = spinnerHtml;
+                    dlGlyph.replaceChildren(psiSpinnerGlyph());
 
                     try {
                         // Name extraction mirrors scanFiles() logic
@@ -2832,12 +2892,12 @@
                         const item   = { filePageURL: link.href, slug: alphaId, name: name || alphaId };
                         const { cdnURL, fname } = await resolveBulkFile(item);
                         dlGlyph.dataset.resolvedUrl = cdnURL;
-                        dlGlyph.innerHTML           = downloadSvg;
+                        dlGlyph.replaceChildren(psiDownloadGlyph());
                         dlGlyph.style.color         = '';
                         dlGlyph.style.borderColor   = '';
                         nativeDownload(cdnURL, fname);
                     } catch (err) {
-                        dlGlyph.innerHTML = downloadSvg;
+                        dlGlyph.replaceChildren(psiDownloadGlyph());
                         dlGlyph.style.color       = 'var(--red)';
                         dlGlyph.style.borderColor = 'var(--red)';
                         console.warn(`[Ψ-4NDR0666] Grid DL failed for ${alphaId}: ${err.message}`);
@@ -2863,7 +2923,7 @@
             if (!el.querySelector('.psi-stream-glyph') && resolveBulkFile) {
                 const streamGlyph     = document.createElement('a');
                 streamGlyph.className = 'psi-stream-glyph psi-glass-panel psi-btn';
-                streamGlyph.innerHTML = streamSvg;
+                streamGlyph.replaceChildren(psiStreamGlyph());
                 streamGlyph.title     = 'Copy Stream URL (Shift+Click: MPV dispatch)';
                 ensureRelative(el);
                 el.appendChild(streamGlyph);
@@ -2881,8 +2941,8 @@
                         : null;
 
                     if (!streamUrl) {
-                        const savedHtml       = streamGlyph.innerHTML;
-                        streamGlyph.innerHTML = spinnerHtml;
+                        const savedNodes       = [...streamGlyph.childNodes];
+                        streamGlyph.replaceChildren(psiSpinnerGlyph());
                         streamGlyph.style.color       = 'var(--text-cyan-active)';
                         streamGlyph.style.borderColor = 'var(--text-cyan-active)';
 
@@ -2923,7 +2983,7 @@
                             } catch (_) { streamUrl = null; }
                         }
 
-                        streamGlyph.innerHTML         = savedHtml;
+                        streamGlyph.replaceChildren(...savedNodes);
                         streamGlyph.style.color       = '';
                         streamGlyph.style.borderColor = '';
                         if (streamUrl) streamGlyph.dataset.resolvedStreamUrl = streamUrl;
@@ -3002,7 +3062,7 @@
             // API, or DOM data), so it's still safe to inject as markup; the
             // label is now a real text node, which cannot be reinterpreted
             // as HTML no matter what it contains.
-            toast.innerHTML   = specPsiSvg;
+            toast.replaceChildren(psiSpecGlyph());
             const label       = document.createElement('span');
             label.className   = 'psi-toast-label';
             label.textContent = msg;
@@ -3261,23 +3321,20 @@
         const panel = document.createElement('div');
         panel.id    = 'psi-bulk-panel';
         // specPsiSvg is defined at module scope — no re-declaration needed (GAP 1)
-        panel.innerHTML = `
-            <div id="psi-bulk-peek">${specPsiSvg}</div>
-            <div id="psi-bulk-content">
-                <h3>// DOWNLOAD ALL</h3>
-                <div id="psi-bulk-status">Scanning files...</div>
-                <div id="psi-bulk-info">0 OK / 0 ERR / 0 TOTAL</div>
-                <div id="psi-bulk-progress"><div id="psi-bulk-bar"></div></div>
-                <div class="controls">
-                    <button id="btn-bulk-start"   class="psi-btn" aria-label="Start Bulk Download"  style="flex:1;padding:10px 4px;" disabled>START</button>
-                    <button id="btn-bulk-streams" class="psi-btn" aria-label="Aggregate Stream URLs (m3u8/CDN) for all items" style="flex:1;padding:10px 4px;" disabled>STREAMS</button>
-                    <button id="btn-bulk-pause"   class="psi-btn" aria-label="Pause Bulk Download"  style="flex:1;padding:10px 4px;" disabled>PAUSE</button>
-                    <button id="btn-bulk-stop"    class="psi-btn psi-destructive" aria-label="Stop Bulk Download" style="flex:1;padding:10px 4px;" disabled>STOP</button>
-                    <button id="btn-bulk-log-tog" class="psi-btn" aria-label="Toggle Log Display"   style="flex:0 0 auto;padding:10px 8px;">LOG</button>
-                </div>
-                <div id="psi-bulk-log"></div>
-            </div>
-        `;
+        panel.append(
+            mkEl('div', { id: 'psi-bulk-peek' }, psiSpecGlyph()),
+            mkEl('div', { id: 'psi-bulk-content' },
+                mkEl('h3', null, '// DOWNLOAD ALL'),
+                mkEl('div', { id: 'psi-bulk-status' }, 'Scanning files...'),
+                mkEl('div', { id: 'psi-bulk-info' }, '0 OK / 0 ERR / 0 TOTAL'),
+                mkEl('div', { id: 'psi-bulk-progress' }, mkEl('div', { id: 'psi-bulk-bar' })),
+                mkEl('div', { class: 'controls' },
+                    mkEl('button', { id: 'btn-bulk-start',   class: 'psi-btn', 'aria-label': 'Start Bulk Download',  style: 'flex:1;padding:10px 4px;', disabled: true }, 'START'),
+                    mkEl('button', { id: 'btn-bulk-streams', class: 'psi-btn', 'aria-label': 'Aggregate Stream URLs (m3u8/CDN) for all items', style: 'flex:1;padding:10px 4px;', disabled: true }, 'STREAMS'),
+                    mkEl('button', { id: 'btn-bulk-pause',   class: 'psi-btn', 'aria-label': 'Pause Bulk Download', style: 'flex:1;padding:10px 4px;', disabled: true }, 'PAUSE'),
+                    mkEl('button', { id: 'btn-bulk-stop',    class: 'psi-btn psi-destructive', 'aria-label': 'Stop Bulk Download', style: 'flex:1;padding:10px 4px;', disabled: true }, 'STOP'),
+                    mkEl('button', { id: 'btn-bulk-log-tog', class: 'psi-btn', 'aria-label': 'Toggle Log Display',   style: 'flex:0 0 auto;padding:10px 8px;' }, 'LOG')),
+                mkEl('div', { id: 'psi-bulk-log' })));
         document.body.appendChild(panel);
 
         // v7: clicking/tapping the peek handle pins the panel open — parity
@@ -3655,7 +3712,7 @@
 
             const log = document.getElementById('psi-bulk-log');
             const bar = document.getElementById('psi-bulk-bar');
-            if (log) log.innerHTML     = '';
+            if (log) log.replaceChildren();
             if (log) log.style.display = 'block';
             if (bar) {
                 bar.style.background = 'var(--accent-cyan)';
@@ -3686,7 +3743,7 @@
 
             const log = document.getElementById('psi-bulk-log');
             const bar = document.getElementById('psi-bulk-bar');
-            if (log) log.innerHTML     = '';
+            if (log) log.replaceChildren();
             if (log) log.style.display = 'block';
             if (bar) {
                 bar.style.background = 'var(--accent-cyan)';

@@ -709,29 +709,77 @@
         shadow.appendChild(style);
         const ui = _document.createElement('div');
         ui.id = 'panel';
-        ui.innerHTML = `
-            <div id="resizer"></div>
-            <div class="header">
-                <div class="header-info">
-                    <svg viewBox="0 0 128 128" style="width:14px;height:14px;"><path d="M 64,12 A 52,52 0 1 1 63.9,12 Z" stroke="${THEME.cyan}" fill="none" stroke-width="2" /><text x="64" y="75" text-anchor="middle" fill="${THEME.cyan}" font-size="50" font-weight="700">Ψ</text></svg>
-                    <span>RECON_Ω_UNIFIED_9.0.0-Ω</span>
-                    <span class="counters">PKT:<b id="p-count">0</b> LOG:<b id="l-count">0</b> ID:<b id="i-count">0</b> EVT:<b id="evt-count">0</b></span>
-                </div>
-                <div style="display:flex; gap:10px;">
-                    <button class="btn" id="do-float">FLOAT</button>
-                    <button class="btn" id="do-rep">REPORT</button>
-                    <button class="btn" id="do-purge" style="color:#ff0055;">PURGE</button>
-                </div>
-            </div>
-            <div class="tabs">
-                <div class="tab active" id="tab-net">NETWORK</div>
-                <div class="tab" id="tab-log">CONSOLE</div>
-                <div class="tab" id="tab-rep">REPORT</div>
-                <div class="tab" id="tab-data">DATA</div>
-            </div>
-            <div id="status" class="status">SNIFFING_ACTIVE...</div>
-            <div id="viewport"></div>
-        `;
+        /* [R3] element-built panel (was an innerHTML template inside the
+         * closed shadow root). IDs/classes/handlers preserved 1:1. */
+        const resizer = _document.createElement('div');
+        resizer.id = 'resizer';
+        const header = _document.createElement('div');
+        header.className = 'header';
+        const headerInfo = _document.createElement('div');
+        headerInfo.className = 'header-info';
+        const SVG_NS = 'http://www.w3.org/2000/svg';
+        const glyph = _document.createElementNS(SVG_NS, 'svg');
+        glyph.setAttribute('viewBox', '0 0 128 128');
+        glyph.setAttribute('style', 'width:14px;height:14px;');
+        const glyphRing = _document.createElementNS(SVG_NS, 'path');
+        glyphRing.setAttribute('d', 'M 64,12 A 52,52 0 1 1 63.9,12 Z');
+        glyphRing.setAttribute('stroke', THEME.cyan);
+        glyphRing.setAttribute('fill', 'none');
+        glyphRing.setAttribute('stroke-width', '2');
+        const glyphPsi = _document.createElementNS(SVG_NS, 'text');
+        glyphPsi.setAttribute('x', '64');
+        glyphPsi.setAttribute('y', '75');
+        glyphPsi.setAttribute('text-anchor', 'middle');
+        glyphPsi.setAttribute('fill', THEME.cyan);
+        glyphPsi.setAttribute('font-size', '50');
+        glyphPsi.setAttribute('font-weight', '700');
+        glyphPsi.textContent = 'Ψ';
+        glyph.append(glyphRing, glyphPsi);
+        const titleSpan = _document.createElement('span');
+        titleSpan.textContent = 'RECON_Ω_UNIFIED_9.0.0-Ω';
+        const counters = _document.createElement('span');
+        counters.className = 'counters';
+        counters.append('PKT:', (() => { const b = _document.createElement('b'); b.id = 'p-count'; b.textContent = '0'; return b; })(),
+            ' LOG:', (() => { const b = _document.createElement('b'); b.id = 'l-count'; b.textContent = '0'; return b; })(),
+            ' ID:', (() => { const b = _document.createElement('b'); b.id = 'i-count'; b.textContent = '0'; return b; })(),
+            ' EVT:', (() => { const b = _document.createElement('b'); b.id = 'evt-count'; b.textContent = '0'; return b; })());
+        headerInfo.append(glyph, titleSpan, counters);
+        const headerBtns = _document.createElement('div');
+        headerBtns.style.cssText = 'display:flex; gap:10px;';
+        const mkBtn = (id, text, extraStyle) => {
+            const b = _document.createElement('button');
+            b.className = 'btn';
+            b.id = id;
+            if (extraStyle) b.style.cssText = extraStyle;
+            b.textContent = text;
+            return b;
+        };
+        headerBtns.append(
+            mkBtn('do-float', 'FLOAT'),
+            mkBtn('do-rep', 'REPORT'),
+            mkBtn('do-purge', 'PURGE', 'color:#ff0055;'));
+        header.append(headerInfo, headerBtns);
+        const tabs = _document.createElement('div');
+        tabs.className = 'tabs';
+        const mkTab = (id, text, active) => {
+            const t = _document.createElement('div');
+            t.className = 'tab' + (active ? ' active' : '');
+            t.id = id;
+            t.textContent = text;
+            return t;
+        };
+        tabs.append(
+            mkTab('tab-net', 'NETWORK', true),
+            mkTab('tab-log', 'CONSOLE', false),
+            mkTab('tab-rep', 'REPORT', false),
+            mkTab('tab-data', 'DATA', false));
+        const status = _document.createElement('div');
+        status.id = 'status';
+        status.className = 'status';
+        status.textContent = 'SNIFFING_ACTIVE...';
+        const viewport = _document.createElement('div');
+        viewport.id = 'viewport';
+        ui.append(resizer, header, tabs, status, viewport);
         shadow.appendChild(ui);
         return { host: host, shadow: shadow, ui: ui };
     }
@@ -841,19 +889,46 @@
 
     function updateView() {
         if (!STATE.isUiReady || !viewportEl) return;
+        /* [R3] element-built views (was per-row HTML string assembly —
+         * textContent carries the payloads, so escapeHtml is no longer
+         * needed on this path: structural safety by construction). */
+        const mkRow = (...kids) => {
+            const row = _document.createElement('div');
+            row.className = 'row';
+            row.append(...kids.filter(Boolean));
+            return row;
+        };
+        const mkSpan = (color, text) => {
+            const s = _document.createElement('span');
+            if (color) s.style.color = color;
+            s.textContent = text;
+            return s;
+        };
+        const mkPre = (text) => {
+            const pre = _document.createElement('pre');
+            pre.style.cssText = 'white-space:pre-wrap; color:#67E8F9; margin:0;';
+            pre.textContent = text;
+            return pre;
+        };
         if (STATE.currentTab === 'net') {
-            viewportEl.innerHTML = STATE.network.slice(-VIEW_SLICE).reverse().map((n) =>
-                '<div class="row"><span style="color:rgba(103,232,249,0.5)">[' + HELPERS.escapeHtml(n.localTs) + ']</span> <span style="color:' + THEME.cyan + '">' + HELPERS.escapeHtml(n.protocol) + '</span> ' + HELPERS.escapeHtml(n.method) + ' ' + HELPERS.escapeHtml(n.displayUrl) + '</div>'
-            ).join('') || '<div class="row">* No traffic captured yet.</div>';
+            const rows = STATE.network.slice(-VIEW_SLICE).reverse().map((n) =>
+                mkRow(
+                    mkSpan('rgba(103,232,249,0.5)', '[' + n.localTs + ']'),
+                    ' ',
+                    mkSpan(THEME.cyan, n.protocol),
+                    ' ' + n.method + ' ' + n.displayUrl));
+            viewportEl.replaceChildren(...(rows.length ? rows : [mkRow('* No traffic captured yet.')]));
         } else if (STATE.currentTab === 'log') {
-            viewportEl.innerHTML = STATE.logs.slice(-VIEW_SLICE).reverse().map((l) =>
-                '<div class="row"><span style="color:rgba(103,232,249,0.5)">[' + HELPERS.escapeHtml(l.localTs) + ']</span> ' + HELPERS.escapeHtml(l.type) + ': ' + HELPERS.escapeHtml(l.content) + '</div>'
-            ).join('') || '<div class="row">* No console output captured yet.</div>';
+            const rows = STATE.logs.slice(-VIEW_SLICE).reverse().map((l) =>
+                mkRow(
+                    mkSpan('rgba(103,232,249,0.5)', '[' + l.localTs + ']'),
+                    ' ' + l.type + ': ' + l.content));
+            viewportEl.replaceChildren(...(rows.length ? rows : [mkRow('* No console output captured yet.')]));
         } else if (STATE.currentTab === 'rep') {
-            viewportEl.innerHTML = '<pre style="white-space:pre-wrap; color:#67E8F9; margin:0;">' + HELPERS.escapeHtml(generateReport()) + '</pre>';
+            viewportEl.replaceChildren(mkPre(generateReport()));
         } else {
             // DATA tab — reconc's raw JSON ledger view
-            viewportEl.innerHTML = '<pre style="white-space:pre-wrap; color:#67E8F9; margin:0;">' + HELPERS.escapeHtml(HELPERS.safeStringify(STATE.sessionData) || '[]') + '</pre>';
+            viewportEl.replaceChildren(mkPre(HELPERS.safeStringify(STATE.sessionData) || '[]'));
         }
     }
 

@@ -14,7 +14,7 @@ Maximize_Any_Media gives any media — video, images, embedded and shadow-DOM pl
 | Matches | universal (no @match) |
 | Excludes | `*www.w3school.com.*`, `*www.w3schools.com.*` |
 | Run-at | `document-end` |
-| Size | 46.5 KB · 1196 lines |
+| Size | 48.2 KB · 1220 lines |
 | Install | [dist/4ndr0tools - Maximize_Any_Media.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Maximize_Any_Media.user.js) |
 
 ## Feature Inventory

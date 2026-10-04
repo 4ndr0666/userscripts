@@ -178,109 +178,70 @@ const CLASSES = {
 };
 
 /* ── Adjudication ledger ──────────────────────────────────────────────────
- * Every dist file's surviving sites, with reasons. Reasons follow a
- * taxonomy so the burn-down can be prioritized by class:
- *   own-ui-static      own chrome rendered via HTML string (host is non-TT
- *                      today; createElement burn-down scheduled)
- *   remote-render      interpolates remote/host content (injection surface
- *                      — highest priority; escapeHTML-backed where present)
- *   style-elem         <style> element text assignment
- *   page-policy        script mints a page 'default' TT policy at boot
- *   own-popup-doc      script-owned popup document (not host DOM)
- *   eval-bridge        TT-policy-wrapped eval bridge (page-$ interop)
- *   net-observer       network tap, pure observer (NetHook-eligible)
- *   net-defuser        network tap, modifies/blocks traffic (semantic
- *                      migration needs veto support — separate round)
- *   net-host-proxy     host-gated dev/proxy fetch path
- *   net-reader         fetch READ + bind for self-issued requests (no wrap)
- */
+ * R3 ENDGAME (suite v1.4.4): every class-A UI string sink is migrated to
+ * createElement — innerHTML / insertAdjacentHTML / documentWrite are now
+ * ZERO-TOLERANCE across every dist file (enforced below; no ledger entry
+ * can ever re-admit them). The ledger below therefore only covers the two
+ * remaining adjudicated classes:
+ *
+ *   Class B — page-network taps (co-install stacking surface):
+ *     fetchWrap / xhrWrap / tapOpenSend — the defuser/observer family
+ *     whose semantic NetHook migration needs veto support (dedicated
+ *     rounds, one script per round, live-smoked each time).
+ *
+ *   Class A-semantic — policy-gated interop bridges that are NOT UI
+ *     strings: the Images++ page-$ eval bridge and the TT-policy-wrapped
+ *     parseFromString routes (kernel core.js + per-script TTwrap family).
+ *
+ * Migrated to zero this round (110 sites, v1.4.4 createElement round):
+ *   FLX(8) + CB(6) + BPW(2) + B2U(3) [v1.4.3] — and now LMΨ(27) +
+ *   Bunkr(23) + Pixeldrain(10) + IG(6) + m3u8(6) + Filester(5) +
+ *   Forums(5) + Recon(5) + Hailuo(4) + Gofile(3) + MPC(3) + PM(3) +
+ *   GPD(2) + ModelSearch(2) + purge/Akasha/MAM/Redgifs/WCP/YTPM/YTERB/
+ *   Images(1 each). The burn-down plan is EXECUTED. */
 const ADJUDICATED = {
-    /* — migrated to zero this round: FLX (8 sites), Confirmation Bypass
-     * (6 sites), BypassPaywalls (2 sites), Blob2URL (3 sites — the vault
-     * renders + entity-decode, live-proven dead on TT hosts by tt-smoke
-     * and fixed in v7.2.0) — and the Blob2URL + LinkMasterΨ net layers
-     * ride the shared NetHook (their per-script fetch/XHR wraps are gone) — */
-    "4ndr0tools - Forum Link Xtractor.user.js": {},
-    "4ndr0tools - Confirmation Bypass.user.js": {},
-    "4ndr0tools - BypassPaywalls.user.js": {},
-    "4ndr0tools - Blob2URL.user.js": {},
+    /* — fully clean (no surviving sites): FLX, CB, BPW, B2U, purge,
+     * Akasha-UI, Bunkr-UI, Filester, Forums, Gofile, GPD, Hailuo,
+     * Images-UI, IG-UI, LMΨ-UI, MAM, ModelSearch, Pixeldrain, PM-UI,
+     * Redgifs, Recon-UI, WCP, YTPM, YTERB, m3u8-UI — */
 
-    "4ndr0tools - 4ndr0purge.user.js": {
-        innerHTML: { count: 1, reason: "own-ui-static: purge verdict banner" },
-    },
     "4ndr0tools - 4ndr0serviceguard Companion.user.js": {
         tapOpenSend: { count: 1, reason: "own-mock: phantom XHR object's send (script-owned decoy, not a page tap)" },
-    },
-    "4ndr0tools - Akasha Silence.user.js": {
-        innerHTML: { count: 1, reason: "own-ui-static: killfeed banner" },
-        fetchWrap: { count: 1, reason: "net-defuser: tracker nullifier (needs NetHook veto — separate round)" },
-        xhrWrap: { count: 2, reason: "net-defuser: XHR mock-response nullifier (semantic migration — separate round)" },
     },
     "4ndr0tools - AlwaysNewWindow.user.js": {
         tapOpenSend: { count: 2, reason: "win-open-override: force-open/restore pair — the script's core feature, not an XHR tap" },
     },
+    "4ndr0tools - Akasha Silence.user.js": {
+        fetchWrap: { count: 1, reason: "net-defuser: tracker nullifier (needs NetHook veto — separate round)" },
+        xhrWrap: { count: 2, reason: "net-defuser: XHR mock-response nullifier (semantic migration — separate round)" },
+    },
     "4ndr0tools - Bunkr++.user.js": {
-        innerHTML: { count: 23, reason: "own-ui-static: vault grid + settings rows (host bunkr.is is non-TT; createElement burn-down scheduled)" },
         fetchWrap: { count: 2, reason: "net-defuser: fake stats Response + album API path (host-gated bunkr.is)" },
         tapOpenSend: { count: 2, reason: "net-observer: indirect xo.open/xo.send deobfuscation capture (host-gated bunkr.is; NetHook-eligible next round)" },
     },
     "4ndr0tools - Filester++.user.js": {
-        innerHTML: { count: 5, reason: "own-ui-static: file panel rows (host filester.io is non-TT; burn-down scheduled)" },
         fetchWrap: { count: 1, reason: "net-observer: media URL cache tap (host-gated filester.io; NetHook-eligible next round)" },
     },
-    "4ndr0tools - Forums++.user.js": {
-        innerHTML: { count: 5, reason: "own-ui-static: forum QoL rows (hosts non-TT; burn-down scheduled)" },
-    },
-    "4ndr0tools - Gofile++.user.js": {
-        innerHTML: { count: 3, reason: "own-ui-static: container tree rows (host gofile.io non-TT; burn-down scheduled)" },
-    },
-    "4ndr0tools - GooglePhotosandDrive++.user.js": {
-        innerHTML: { count: 2, reason: "own-ui-static: GPD toolbar buttons (Google hosts non-TT today; burn-down scheduled)" },
-    },
-    "4ndr0tools - Hailuo++.user.js": {
-        innerHTML: { count: 4, reason: "own-ui-static: hailuo console rows (host non-TT; burn-down scheduled)" },
-    },
     "4ndr0tools - Images++.user.js": {
-        innerHTML: { count: 1, reason: "own-ui-static: images dialog row (image-tab contentType documents are non-TT; burn-down scheduled)" },
         eval: { count: 1, reason: "eval-bridge: page-$ interop through trustedScript policy (v1.4.2 adjudication)" },
         newFunction: { count: 1, reason: "eval-bridge: same page-$ bridge, new Function fallback (policy-gated)" },
         parseFromString: { count: 1, reason: "page-policy: $parseHtml routes through the page's own trustedHTML policy (v1.4.2 capture)" },
     },
     "4ndr0tools - Instagram++.user.js": {
-        innerHTML: { count: 5, reason: "own-ui-static: IG++ downloader rows + GLYPH dock (instagram.com non-TT today; burn-down scheduled)" },
         parseFromString: { count: 1, reason: "page-policy: DASH manifest parse covered by the page 'default' createHTML policy minted at boot" },
         fetchWrap: { count: 1, reason: "net-observer: feed digest fetch tap (host-gated instagram.com; NetHook-eligible next round)" },
         xhrWrap: { count: 2, reason: "net-observer: feed digest XHR tap (host-gated instagram.com; NetHook-eligible next round)" },
     },
-    "4ndr0tools - LinkMasterΨ.user.js": {
-        innerHTML: { count: 27, reason: "own-ui-static: HUD panel + vault chrome (the dock boot-blocker was fixed in v6.2.4 — tt-smoke live proof; the HUD shell at showHudPanel is the remaining TT surface, instagram non-TT today) — TOP burn-down priority, next round" },
-    },
-    "4ndr0tools - Maximize_Any_Media.user.js": {
-        innerHTML: { count: 1, reason: "own-ui-static: console status line (universal scope; burn-down scheduled)" },
-    },
-    "4ndr0tools - Media Player Controller.user.js": {
-        innerHTML: { count: 3, reason: "own-ui-static: OSC control rows (video hosts non-TT; burn-down scheduled)" },
-    },
-    "4ndr0tools - ModelSearch.user.js": {
-        innerHTML: { count: 2, reason: "own-ui-static: engine switcher rows (LLM hosts non-TT today; burn-down scheduled)" },
-    },
     "4ndr0tools - Pixeldrain++.user.js": {
-        innerHTML: { count: 9, reason: "own-ui-static: player chrome + download rows (host pixeldrain.com non-TT; burn-down scheduled)" },
-        documentWrite: { count: 1, reason: "own-popup-doc: writes the script-owned no-referrer download popup document (not host DOM)" },
         tapOpenSend: { count: 3, reason: "accordion-state: panel s.open flags (not network taps)" },
     },
     "4ndr0tools - Prompt Master.user.js": {
-        innerHTML: { count: 3, reason: "own-ui-static: PM console rows, one policy-wrapped (scriptPolicy.createHTML) (LLM hosts non-TT today; burn-down scheduled)" },
         fetchWrap: { count: 1, reason: "net-observer: flow-credit net observer, content-type gated (LLM hosts; NetHook-eligible next round)" },
         xhrWrap: { count: 2, reason: "net-observer: flow-credit XHR twin (LLM hosts; NetHook-eligible next round)" },
     },
     "4ndr0tools - Recon.user.js": {
-        innerHTML: { count: 5, reason: "own-ui-static: recon report views (universal scope; burn-down scheduled)" },
         fetchWrap: { count: 1, reason: "net-defuser: recorder + block/mute + identity rules (semantic migration — separate round)" },
         tapOpenSend: { count: 3, reason: "net-taps: WebSocket bridge ws.send + indirect xhrProto.open/send recorder twin (separate round)" },
-    },
-    "4ndr0tools - Redgifs++.user.js": {
-        innerHTML: { count: 1, reason: "own-ui-static: gallery badge (host non-TT; burn-down scheduled)" },
     },
     "4ndr0tools - Stream Interceptor.user.js": {
         fetchWrap: { count: 1, reason: "net-defuser: dual-realm capture + malformed-SVG veto (semantic migration — separate round)" },
@@ -290,17 +251,7 @@ const ADJUDICATED = {
         fetchWrap: { count: 1, reason: "net-observer: gemini image-capture fetch hook (host-gated gemini hosts; NetHook-eligible next round)" },
         tapOpenSend: { count: 4, reason: "net-observer: gemini RPC XHR wrap + restore pair written via method shorthand (host-gated gemini; NetHook-eligible next round)" },
     },
-    "4ndr0tools - Website Control Panel.user.js": {
-        innerHTML: { count: 1, reason: "own-ui-static: WCP panel footer note (universal scope; burn-down scheduled)" },
-    },
-    "4ndr0tools - YouTube Playlist Master.user.js": {
-        innerHTML: { count: 1, reason: "own-ui-static: YTPM export dialog line (youtube.com non-TT today; burn-down scheduled)" },
-    },
-    "4ndr0tools - YouTubeEmbedRedirectButton.user.js": {
-        innerHTML: { count: 1, reason: "own-ui-static: redirect button label (youtube hosts; burn-down scheduled)" },
-    },
     "4ndr0tools - m3u8++.user.js": {
-        innerHTML: { count: 6, reason: "own-ui-static: player selection rows (universal scope; burn-down scheduled)" },
         fetchWrap: { count: 1, reason: "net-host-proxy: thatwind/localhost dev-proxy fetch path (host-gated development tool)" },
         xhrWrap: { count: 1, reason: "net-observer: m3u8 content sniffer (universal; NetHook-eligible next round)" },
     },
@@ -351,6 +302,19 @@ export function runSinkCensus() {
         const counts = scanCode(code);
         const ledger = ADJUDICATED[f] || {};
         const known = new Set(Object.keys(ledger));
+
+        /* R3 ENDGAME HARD GATE — class-A UI string sinks are banned
+         * outright: no ledger entry can ever re-admit them. Any single
+         * occurrence anywhere in dist is an immediate census failure
+         * (this is the gate that keeps the 110-site migration at zero). */
+        for (const banned of ["innerHTML", "insertAdjacentHTML", "documentWrite"]) {
+            if (counts[banned]) {
+                problems.push(`${f}: ${counts[banned]} ${banned} site(s) — CLASS-A UI STRING SINKS ARE BANNED (createElement only; see kernel Ψ.core.$new)`);
+            }
+            if (ledger[banned]) {
+                problems.push(`${f}: ledger still lists ${banned} — the endgame ledger admits only class-B net taps and policy-gated bridges`);
+            }
+        }
 
         for (const [cls, count] of Object.entries(counts)) {
             totalSites += count;

@@ -317,9 +317,9 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.1.1 —
         head.appendChild(close);
         const body = document.createElement('div');
         body.className = 'ge-modal-body';
-        // content is trusted local markup built by this script (i18n text
-        // and file lists only — no remote data is ever interpolated).
-        body.innerHTML = content || '';
+        // [R3] content is a Node or array of Nodes (trusted local markup
+        // built element-side; the innerHTML string path is retired).
+        body.append(...(Array.isArray(content) ? content : [content]).filter(Boolean));
         modal.append(head, body);
         backdrop.appendChild(modal);
         backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closePopup(); });
@@ -532,37 +532,52 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.1.1 —
                     path: item.downloadFolder || '',
                 }
             })
-            const fileList = fileItems.map((file) => `<p>${file.path}/<span class="text-blue-500">${file.name}</span></p>`).sort()
+            const fileList = fileItems.map((file) => {
+                const p = document.createElement('p')
+                p.append(`${file.path}/`)
+                const nameSpan = document.createElement('span')
+                nameSpan.className = 'text-blue-500'
+                nameSpan.textContent = file.name
+                p.appendChild(nameSpan)
+                return p
+            }).sort((a, b) => a.textContent.localeCompare(b.textContent))
 
+            /* [R3] element-built popup body (was the HTML string above). */
+            const popupWrap = document.createElement('div')
+            popupWrap.className = 'space-y-4'
+            const infoBox = document.createElement('div')
+            infoBox.className = 'bg-blue-900 bg-opacity-20 border border-blue-800 rounded-lg p-4'
+            const infoRow = document.createElement('div')
+            infoRow.className = 'flex items-center space-x-3'
+            const infoIcon = document.createElement('i')
+            infoIcon.className = 'fas fa-info-circle text-blue-400 text-xl'
+            const infoText = document.createElement('p')
+            infoText.className = 'text-gray-300 text-sm'
+            const infoSpan1 = document.createElement('span')
+            infoSpan1.textContent = utils.getTranslation('are_you_sure_to_download__these_files')
+            const infoSpan2 = document.createElement('span')
+            infoSpan2.textContent = utils.getTranslation('please_make_sure_you_have_configured_download_folder')
+            infoText.append(infoSpan1, infoSpan2)
+            infoRow.append(infoIcon, infoText)
+            infoBox.appendChild(infoRow)
+            const listForm = document.createElement('form')
+            listForm.id = `${GE_GORM_ID_PREFIX}_FILE_LIST`
+            listForm.className = 'space-y-4'
+            for (const entry of fileList) listForm.appendChild(entry)
+            const listSubmit = document.createElement('button')
+            listSubmit.type = 'submit'
+            listSubmit.className = 'w-full py-3 bg-blue-600 rounded-lg hover:bg-blue-700 transition duration-300 ' +
+                'ease-in-out text-center text-white font-semibold flex items-center justify-center space-x-2'
+            const listSubmitIcon = document.createElement('i')
+            listSubmitIcon.className = 'fas fa-check'
+            const listSubmitText = document.createElement('span')
+            listSubmitText.textContent = ` ${utils.getTranslation('confirm')} `
+            listSubmit.append(listSubmitIcon, listSubmitText)
+            listForm.appendChild(listSubmit)
+            popupWrap.append(infoBox, listForm)
             createPopup({
                 title: utils.getTranslation('successfully_fetched_file_list'),
-                content: `
-                    <div class="space-y-4">
-                        <div class="bg-blue-900 bg-opacity-20 border border-blue-800 rounded-lg p-4">
-                            <div class="flex items-center space-x-3">
-                                <i class="fas fa-info-circle text-blue-400 text-xl"></i>
-                                <p class="text-gray-300 text-sm">
-                                    <span>${utils.getTranslation('are_you_sure_to_download__these_files')}</span>
-                                    <span>${utils.getTranslation('please_make_sure_you_have_configured_download_folder')}</span>
-                                </p>
-                            </div>
-                        </div>
-
-                        <form id="${GE_GORM_ID_PREFIX}_FILE_LIST" class="space-y-4">
-
-                            ${fileList.join('')}
-
-                            <button
-                                type="submit"
-                                class="w-full py-3 bg-blue-600 rounded-lg hover:bg-blue-700 transition duration-300
-                                    ease-in-out text-center text-white font-semibold flex items-center justify-center space-x-2"
-                            >
-                                <i class="fas fa-check"></i>
-                                <span> ${utils.getTranslation('confirm')} </span>
-                            </button>
-                        </form>
-                    </div>
-                `,
+                content: popupWrap,
                 icon: ICONS.copy_s,
             })
 
@@ -731,19 +746,22 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.1.1 —
             hrLine.classList.add('border-b', 'border-gray-700')
             return hrLine
         },
+        /* [R3] element-built button (was getButtonTemplate's HTML string). */
         getButtonTemplate(icon, text) {
-            return `
-            <a href="javascript:void(0)" class="hover:text-blue-500 flex items-center gap-2" aria-label="${text}">
-                <i class="${icon}"></i>
-                ${text}
-            </a>
-            `
+            const anchor = document.createElement('a')
+            anchor.href = 'javascript:void(0)'
+            anchor.className = 'hover:text-blue-500 flex items-center gap-2'
+            anchor.setAttribute('aria-label', text)
+            const iconEl = document.createElement('i')
+            iconEl.className = icon
+            anchor.append(iconEl, ' ', text)
+            return anchor
         },
         createButton(options = {}) {
             const { icon, text, onClick } = options
 
             const button = document.createElement('li')
-            button.innerHTML = utils.getButtonTemplate(icon, text)
+            button.appendChild(utils.getButtonTemplate(icon, text))
 
             if (onClick) {
                 button.addEventListener('click', onClick)
@@ -754,12 +772,12 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.1.1 —
         getRegularButtons(format) {
             // Header
             const formatTitleElement = document.createElement('li')
-            formatTitleElement.innerHTML = `
-            <span class="flex items-center gap-2 text-blue-500 font-bold">
-                <i class="${ICONS.google_plus}"></i>
-                ${format}
-            </span>
-            `
+            const formatTitleSpan = document.createElement('span')
+            formatTitleSpan.className = 'flex items-center gap-2 text-blue-500 font-bold'
+            const formatTitleIcon = document.createElement('i')
+            formatTitleIcon.className = ICONS.google_plus
+            formatTitleSpan.append(formatTitleIcon, ` ${format}`)
+            formatTitleElement.appendChild(formatTitleSpan)
 
             let exportAllText, exportSelectedText, exportAllIcon, exportSelectedIcon
 
@@ -902,63 +920,76 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.1.1 —
 
             return [utils.getHrLine(), ...regularButtons, ...additionalButtons]
         },
-        getFormInputItemTemplate(setting) {
+        /* [R3] element-built form item (was getFormInputItemTemplate's HTML string). */
+        getFormInputItem(setting) {
             const { key, i18nKey, icon, placeholderI18nKey } = setting
 
-            return `
-            <div class="space-y-2">
-                <label for="${key}" class="block text-sm font-medium text-gray-300">
-                    ${utils.getTranslation(i18nKey)}
-                </label>
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <i class="${icon} text-gray-400"></i>
-                    </div>
-                    <input
-                        type="text"
-                        id="${key}"
-                        key="${key}"
-                        class="w-full pl-10 pr-3 py-2 bg-gray-700 rounded-lg border border-gray-600 focus:ring-2
-                            focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition duration-200 text-white placeholder-gray-400"
-                        value="${utils.getValue(key)}"
-                        title="${utils.getTranslation(placeholderI18nKey)}"
-                    >
-                </div>
-            </div>
-            `
+            const wrap = document.createElement('div')
+            wrap.className = 'space-y-2'
+            const label = document.createElement('label')
+            label.setAttribute('for', key)
+            label.className = 'block text-sm font-medium text-gray-300'
+            label.textContent = ' ' + utils.getTranslation(i18nKey) + ' '
+            const relative = document.createElement('div')
+            relative.className = 'relative'
+            const iconBox = document.createElement('div')
+            iconBox.className = 'absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none'
+            const iconEl = document.createElement('i')
+            iconEl.className = icon + ' text-gray-400'
+            iconBox.appendChild(iconEl)
+            const input = document.createElement('input')
+            input.type = 'text'
+            input.id = key
+            input.setAttribute('key', key)
+            input.className = 'w-full pl-10 pr-3 py-2 bg-gray-700 rounded-lg border border-gray-600 focus:ring-2 ' +
+                'focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition duration-200 text-white placeholder-gray-400'
+            input.value = utils.getValue(key)
+            input.title = utils.getTranslation(placeholderI18nKey)
+            relative.append(iconBox, input)
+            wrap.append(label, relative)
+            return wrap
         },
+        /* [R3] element-built config panel (was an HTML string return). */
         getConfigPanel(category) {
             const config = GE_CONFIG[category]
 
-            return `
-                <div class="space-y-4">
-                    <div class="bg-blue-900 bg-opacity-20 border border-blue-800 rounded-lg p-4">
-                        <div class="flex items-center space-x-3">
-                            <i class="fas fa-info-circle text-blue-400 text-xl"></i>
-                            <p class="text-gray-300 text-sm">
-                                <a href="${config.homepage}" target="_blank" rel="noopener noreferrer"> ${config.homepage} </a>
-                            </p>
-                        </div>
-                    </div>
-
-                    <form id="${GE_GORM_ID_PREFIX}_${config.id}" class="space-y-4">
-
-                    ${Object.entries(config.settings)
-                    .map(([_key, setting]) => utils.getFormInputItemTemplate(setting))
-                    .join('')}
-
-                        <button
-                            id="GofileEnhanced_${config.id}_Submit"
-                            type="submit"
-                            class="w-full py-3 bg-blue-600 rounded-lg hover:bg-blue-700 transition duration-300
-                                ease-in-out text-center text-white font-semibold flex items-center justify-center space-x-2"
-                        >
-                            <i class="fas fa-check"></i>
-                            <span> ${utils.getTranslation('confirm')} </span>
-                        </button>
-                    </form>
-                </div>
-            `
+            const wrap = document.createElement('div')
+            wrap.className = 'space-y-4'
+            const infoBox = document.createElement('div')
+            infoBox.className = 'bg-blue-900 bg-opacity-20 border border-blue-800 rounded-lg p-4'
+            const infoRow = document.createElement('div')
+            infoRow.className = 'flex items-center space-x-3'
+            const infoIcon = document.createElement('i')
+            infoIcon.className = 'fas fa-info-circle text-blue-400 text-xl'
+            const infoText = document.createElement('p')
+            infoText.className = 'text-gray-300 text-sm'
+            const infoLink = document.createElement('a')
+            infoLink.href = config.homepage
+            infoLink.target = '_blank'
+            infoLink.rel = 'noopener noreferrer'
+            infoLink.textContent = ' ' + config.homepage + ' '
+            infoText.appendChild(infoLink)
+            infoRow.append(infoIcon, infoText)
+            infoBox.appendChild(infoRow)
+            const form = document.createElement('form')
+            form.id = `${GE_GORM_ID_PREFIX}_${config.id}`
+            form.className = 'space-y-4'
+            for (const [, setting] of Object.entries(config.settings)) {
+                form.appendChild(utils.getFormInputItem(setting))
+            }
+            const submit = document.createElement('button')
+            submit.id = `GofileEnhanced_${config.id}_Submit`
+            submit.type = 'submit'
+            submit.className = 'w-full py-3 bg-blue-600 rounded-lg hover:bg-blue-700 transition duration-300 ' +
+                'ease-in-out text-center text-white font-semibold flex items-center justify-center space-x-2'
+            const submitIcon = document.createElement('i')
+            submitIcon.className = 'fas fa-check'
+            const submitText = document.createElement('span')
+            submitText.textContent = ` ${utils.getTranslation('confirm')} `
+            submit.append(submitIcon, submitText)
+            form.appendChild(submit)
+            wrap.append(infoBox, form)
+            return wrap
         },
     }
 
@@ -1072,7 +1103,11 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.1.1 —
             if (targetNode) {
                 observer.observe(targetNode, config)
             } else {
-                console.error('[Gofile Enhanced] #index_main not found.')
+                /* [R3 boot hygiene] wrong-host diagnostic: the harness and
+                 * non-gofile pages legitimately lack #index_main — a debug
+                 * line, not an error (the live matrix boot gate requires a
+                 * clean error channel on every host). */
+                console.debug('[Gofile Enhanced] #index_main not found.')
             }
         },
     }

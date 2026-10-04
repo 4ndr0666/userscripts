@@ -13,7 +13,7 @@ ModelSearch is a covert SimpCity search UI usable from any website — one Alt+S
 | Version | `4.0.1` |
 | Matches | `*://*/*` |
 | Run-at | `document-start` |
-| Size | 20.5 KB · 458 lines |
+| Size | 21.9 KB · 488 lines |
 | Install | [dist/4ndr0tools - ModelSearch.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20ModelSearch.user.js) |
 
 ## Feature Inventory

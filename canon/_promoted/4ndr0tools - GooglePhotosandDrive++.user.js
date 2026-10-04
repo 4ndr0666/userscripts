@@ -777,14 +777,40 @@
             glyphWrapper.style.display = 'flex';
             glyphWrapper.style.justifyContent = 'center';
             glyphWrapper.style.marginBottom = '10px';
-            glyphWrapper.innerHTML = `
-                <svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" style="width: 48px; height: 48px; stroke: var(--accent-cyan);" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M 64,12 A 52,52 0 1 1 63.9,12 Z" stroke-dasharray="21.78 21.78" stroke-width="2" />
-                    <path d="M 64,20 A 44,44 0 1 1 63.9,20 Z" stroke-dasharray="10 10" stroke-width="1.5" opacity="0.7" />
-                    <path d="M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z" style="fill: rgba(10, 19, 26, 0.4);" />
-                    <text x="64" y="67" text-anchor="middle" dominant-baseline="middle" stroke="none" font-size="46" font-weight="700" style="fill: var(--accent-cyan); font-family: var(--font-glyph);">Ψ</text>
-                </svg>
-            `;
+            /* [R3] element-built Ψ glyph (was an innerHTML template). */
+            const SVG_NS = 'http://www.w3.org/2000/svg';
+            const bigGlyph = document.createElementNS(SVG_NS, 'svg');
+            bigGlyph.setAttribute('viewBox', '0 0 128 128');
+            bigGlyph.setAttribute('xmlns', SVG_NS);
+            bigGlyph.setAttribute('style', 'width: 48px; height: 48px; stroke: var(--accent-cyan);');
+            bigGlyph.setAttribute('fill', 'none');
+            bigGlyph.setAttribute('stroke-width', '3');
+            bigGlyph.setAttribute('stroke-linecap', 'round');
+            bigGlyph.setAttribute('stroke-linejoin', 'round');
+            const bg1 = document.createElementNS(SVG_NS, 'path');
+            bg1.setAttribute('d', 'M 64,12 A 52,52 0 1 1 63.9,12 Z');
+            bg1.setAttribute('stroke-dasharray', '21.78 21.78');
+            bg1.setAttribute('stroke-width', '2');
+            const bg2 = document.createElementNS(SVG_NS, 'path');
+            bg2.setAttribute('d', 'M 64,20 A 44,44 0 1 1 63.9,20 Z');
+            bg2.setAttribute('stroke-dasharray', '10 10');
+            bg2.setAttribute('stroke-width', '1.5');
+            bg2.setAttribute('opacity', '0.7');
+            const bg3 = document.createElementNS(SVG_NS, 'path');
+            bg3.setAttribute('d', 'M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z');
+            bg3.setAttribute('style', 'fill: rgba(10, 19, 26, 0.4);');
+            const bgPsi = document.createElementNS(SVG_NS, 'text');
+            bgPsi.setAttribute('x', '64');
+            bgPsi.setAttribute('y', '67');
+            bgPsi.setAttribute('text-anchor', 'middle');
+            bgPsi.setAttribute('dominant-baseline', 'middle');
+            bgPsi.setAttribute('stroke', 'none');
+            bgPsi.setAttribute('font-size', '46');
+            bgPsi.setAttribute('font-weight', '700');
+            bgPsi.setAttribute('style', 'fill: var(--accent-cyan); font-family: var(--font-glyph);');
+            bgPsi.textContent = 'Ψ';
+            bigGlyph.append(bg1, bg2, bg3, bgPsi);
+            glyphWrapper.appendChild(bigGlyph);
             content.appendChild(glyphWrapper);
 
             const divider = document.createElement('div');
@@ -829,13 +855,31 @@
             const notification = document.createElement('div');
             notification.className = 'psi-glass-notification';
             notification.setAttribute('role', 'status');
-            notification.innerHTML = `
-                <svg viewBox="0 0 128 128" style="width: 20px; height: 20px; flex: none; stroke: currentColor;" fill="none" stroke-width="4">
-                    <path d="M 64,12 A 52,52 0 1 1 63.9,12 Z" stroke-dasharray="21.78 21.78" />
-                    <text x="64" y="70" text-anchor="middle" dominant-baseline="middle" fill="currentColor" stroke="none" font-size="60" font-weight="700" style="font-family: var(--font-glyph);">Ψ</text>
-                </svg>
-                <span class="notification-label">[ KERNEL ]: ${message}</span>
-            `;
+            /* [R3] element-built notification (was an innerHTML template). */
+            const notifGlyph = document.createElementNS(SVG_NS, 'svg');
+            notifGlyph.setAttribute('viewBox', '0 0 128 128');
+            notifGlyph.setAttribute('style', 'width: 20px; height: 20px; flex: none; stroke: currentColor;');
+            notifGlyph.setAttribute('fill', 'none');
+            notifGlyph.setAttribute('stroke-width', '4');
+            const ng1 = document.createElementNS(SVG_NS, 'path');
+            ng1.setAttribute('d', 'M 64,12 A 52,52 0 1 1 63.9,12 Z');
+            ng1.setAttribute('stroke-dasharray', '21.78 21.78');
+            const ngPsi = document.createElementNS(SVG_NS, 'text');
+            ngPsi.setAttribute('x', '64');
+            ngPsi.setAttribute('y', '70');
+            ngPsi.setAttribute('text-anchor', 'middle');
+            ngPsi.setAttribute('dominant-baseline', 'middle');
+            ngPsi.setAttribute('fill', 'currentColor');
+            ngPsi.setAttribute('stroke', 'none');
+            ngPsi.setAttribute('font-size', '60');
+            ngPsi.setAttribute('font-weight', '700');
+            ngPsi.setAttribute('style', 'font-family: var(--font-glyph);');
+            ngPsi.textContent = 'Ψ';
+            notifGlyph.append(ng1, ngPsi);
+            const notifLabel = document.createElement('span');
+            notifLabel.className = 'notification-label';
+            notifLabel.textContent = `[ KERNEL ]: ${message}`;
+            notification.append(notifGlyph, notifLabel);
 
             document.body.appendChild(notification);
 

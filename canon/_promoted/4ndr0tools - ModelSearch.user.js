@@ -297,7 +297,7 @@ Changelog:
 
             const closeButton = document.createElement('span');
             closeButton.className = 'close-button';
-            closeButton.innerHTML = '&times;'; // Static HTML entity — no XSS surface.
+            closeButton.textContent = '\u00D7'; // Static multiplication sign — element-built, no string sink.
             closeButton.setAttribute('role', 'button');
             closeButton.setAttribute('aria-label', 'Close uplink');
             closeButton.setAttribute('tabindex', '0');
@@ -306,16 +306,46 @@ Changelog:
             // zero XSS surface. Documented as future watch-point per NOTE-1.
             const title = document.createElement('h2');
             title.id = 'xenforo-modal-title';
-            title.innerHTML = `
-                <span>TARGET</span>
-                <svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="title-glyph" aria-hidden="true">
-                    <path d="M 64,12 A 52,52 0 1 1 63.9,12 Z" stroke-dasharray="21.78 21.78" stroke-width="2" />
-                    <path d="M 64,20 A 44,44 0 1 1 63.9,20 Z" stroke-dasharray="10 10" stroke-width="1.5" opacity="0.7" />
-                    <path d="M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z" />
-                    <text x="64" y="67" text-anchor="middle" dominant-baseline="middle" fill="currentColor" stroke="none" font-size="56" font-weight="700" font-family="'Cinzel Decorative', serif">Ψ</text>
-                </svg>
-                <span>INITIALIZATION</span>
-            `;
+            /* [R3] element-built title (was a static-SVG innerHTML template). */
+            const titleTarget = document.createElement('span');
+            titleTarget.textContent = 'TARGET';
+            const SVG_NS = 'http://www.w3.org/2000/svg';
+            const titleGlyph = document.createElementNS(SVG_NS, 'svg');
+            titleGlyph.setAttribute('viewBox', '0 0 128 128');
+            titleGlyph.setAttribute('xmlns', SVG_NS);
+            titleGlyph.setAttribute('fill', 'none');
+            titleGlyph.setAttribute('stroke', 'currentColor');
+            titleGlyph.setAttribute('stroke-width', '3');
+            titleGlyph.setAttribute('stroke-linecap', 'round');
+            titleGlyph.setAttribute('stroke-linejoin', 'round');
+            titleGlyph.setAttribute('class', 'title-glyph');
+            titleGlyph.setAttribute('aria-hidden', 'true');
+            const tg1 = document.createElementNS(SVG_NS, 'path');
+            tg1.setAttribute('d', 'M 64,12 A 52,52 0 1 1 63.9,12 Z');
+            tg1.setAttribute('stroke-dasharray', '21.78 21.78');
+            tg1.setAttribute('stroke-width', '2');
+            const tg2 = document.createElementNS(SVG_NS, 'path');
+            tg2.setAttribute('d', 'M 64,20 A 44,44 0 1 1 63.9,20 Z');
+            tg2.setAttribute('stroke-dasharray', '10 10');
+            tg2.setAttribute('stroke-width', '1.5');
+            tg2.setAttribute('opacity', '0.7');
+            const tg3 = document.createElementNS(SVG_NS, 'path');
+            tg3.setAttribute('d', 'M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z');
+            const tgPsi = document.createElementNS(SVG_NS, 'text');
+            tgPsi.setAttribute('x', '64');
+            tgPsi.setAttribute('y', '67');
+            tgPsi.setAttribute('text-anchor', 'middle');
+            tgPsi.setAttribute('dominant-baseline', 'middle');
+            tgPsi.setAttribute('fill', 'currentColor');
+            tgPsi.setAttribute('stroke', 'none');
+            tgPsi.setAttribute('font-size', '56');
+            tgPsi.setAttribute('font-weight', '700');
+            tgPsi.setAttribute('font-family', "'Cinzel Decorative', serif");
+            tgPsi.textContent = 'Ψ';
+            titleGlyph.append(tg1, tg2, tg3, tgPsi);
+            const titleInit = document.createElement('span');
+            titleInit.textContent = 'INITIALIZATION';
+            title.append(titleTarget, titleGlyph, titleInit);
 
             const form = document.createElement('form');
             form.id = 'xenforo-search-form';

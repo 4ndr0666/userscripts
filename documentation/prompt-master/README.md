@@ -13,7 +13,7 @@ Prompt Master is a manager's toolkit for AI prompt libraries — originally Goog
 | Version | `28.3.1` |
 | Matches | `*://geminigen.ai/*`, `*://gist.github.com/*`, `*://gemini.google.com/*`, `*://labs.google/fx/*` (+2 more) |
 | Run-at | `document-end` |
-| Size | 1009.6 KB · 21643 lines |
+| Size | 1010.3 KB · 21661 lines |
 | Install | [dist/4ndr0tools - Prompt Master.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Prompt%20Master.user.js) |
 
 ## Feature Inventory

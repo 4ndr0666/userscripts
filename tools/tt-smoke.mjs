@@ -102,6 +102,10 @@ function gmShim() {
     function GM_download(details, cb) { if (typeof cb === 'function') cb(); }
     function GM_openInTab() { return { close() {} }; }
     window.GM_info = { script: { name: 'tt-smoke', version: '0' }, scriptHandler: 'tt-smoke', scriptMetaStr: '' };
+    /* [R3 shim fidelity] Tampermonkey always provides unsafeWindow (the
+     * raw page window). Watermark++ and m3u8++ reference it at boot —
+     * without the alias they die on the harness (live-matrix proof). */
+    window.unsafeWindow = window;
     Object.assign(window, {
         GM_getValue, GM_setValue, GM_deleteValue, GM_listValues,
         GM_addValueChangeListener, GM_removeValueChangeListener,
@@ -117,12 +121,12 @@ function harnessPage(ttMode) {
         : ttMode === "locked"
             ? "require-trusted-types-for 'script'; trusted-types 4ndr0666tools#dom 4ndr0666tools#dom.2 4ndr0666tools#dom.3"
             : "";
-    return (scriptName, probe, autopanel) => `<!doctype html>
+    return (scriptName, probe, autopanel, tabprobe) => `<!doctype html>
 <html><head><meta charset="utf-8">
 <title>tt-smoke — ${scriptName} (${ttMode})</title>
 <script>
 window.__SMOKE__ = { mode: ${JSON.stringify(ttMode)}, script: ${JSON.stringify(scriptName)},
-    errors: [], csp: [], menu: [], notes: [], ready: false };
+    errors: [], csp: [], menu: [], notes: [], tabProbe: null, ready: false };
 window.addEventListener('error', function (e) {
     __SMOKE__.errors.push('pageerror: ' + (e.message || String(e)));
 });
@@ -140,10 +144,16 @@ __SMOKE__.report = function () {
     var hud = document.querySelector('.a4-window');
     var sheet = document.getElementById('a4-glass-stylesheet-v1');
     var netSlot = window.__4NDR0_NET__ || null;
+    var content = document.querySelector('.a4-content') || document.getElementById('hud-content-panel');
+    var vault = document.querySelector('.psi-ig-panel');
+    var lmhud = document.getElementById('hud-panel-root');
     return {
         errors: __SMOKE__.errors, csp: __SMOKE__.csp,
-        hudMounted: !!(hud && hud.isConnected),
+        hudMounted: !!(hud && hud.isConnected) || !!(vault && vault.isConnected && vault.style.display !== 'none')
+            || !!(lmhud && lmhud.isConnected && !lmhud.hidden),
         glassStylesheet: !!sheet,
+        contentRows: content ? content.children.length : (vault && vault.style.display !== 'none' ? vault.children.length : -1),
+        tabProbe: __SMOKE__.tabProbe,
         netSlot: !!(netSlot && typeof netSlot.onBody === 'function'),
         netSubscribers: netSlot ? netSlot.subscriberCount : 0,
         menuCommands: (window.__GM_MENU__ || []).length,
@@ -182,12 +192,50 @@ ${csp ? `<meta http-equiv="Content-Security-Policy" content="${csp}">` : ""}
             __SMOKE__.notes.push('no settings/vault menu command found');
         }
     }
+    /* [R3 interactive console probe — the gate that would have caught the
+     * v1.4.3 $new variadic bug: a console can mount its frame yet have NO
+     * render target, so "hudMounted" alone was a false green. probe=tabs
+     * clicks EVERY tab button and records, per tab: active-class flip,
+     * content rows, and any render errors. A tab with zero content rows
+     * after a successful click is a FAILURE (the operator's live-field
+     * report: "tabs do nothing, body empty"). */
+    function probeTabs() {
+        var results = [];
+        var tabs = Array.from(document.querySelectorAll('.a4-tab, .hud-tabs .hud-button'));
+        results.push({ tab: '(mount)', rows: document.querySelectorAll('.a4-content > *, #hud-content-panel > *').length });
+        var _loop = function (i) {
+            var t = tabs[i];
+            var label = (t.textContent || '').trim();
+            try {
+                t.click();
+                setTimeout(function () {
+                    var content = document.querySelector('.a4-content') || document.getElementById('hud-content-panel');
+                    results.push({
+                        tab: label,
+                        clicked: true,
+                        active: t.classList.contains('a4-tab--active') || t.classList.contains('active'),
+                        rows: content ? content.children.length : -1,
+                    });
+                    if (i + 1 < tabs.length) _loop(i + 1);
+                    else {
+                        __SMOKE__.tabProbe = results;
+                        __SMOKE__.notes.push('tab probe: ' + tabs.length + ' tab(s) clicked');
+                    }
+                }, 60);
+            } catch (e) {
+                results.push({ tab: label, clicked: false, error: String(e && e.message) });
+                __SMOKE__.tabProbe = results;
+            }
+        };
+        if (tabs.length) _loop(0); else __SMOKE__.tabProbe = results;
+    }
     setTimeout(function () {
         var work = ${JSON.stringify(probe)} ? runProbes() : Promise.resolve();
         work.then(function () {
             setTimeout(function () {
                 if (${JSON.stringify(autopanel)}) autoPanel();
-                setTimeout(function () { __SMOKE__.ready = true; }, 400);
+                if (${JSON.stringify(tabprobe)}) probeTabs();
+                setTimeout(function () { __SMOKE__.ready = true; }, 700);
             }, 300);
         });
     }, 250);
@@ -226,7 +274,8 @@ const server = http.createServer((req, res) => {
         if (!match) return send(404, "text/plain", `no dist script matches "${script}"\n`);
         const probe = url.searchParams.has("probe") || url.searchParams.get("probe") === "wire";
         const autopanel = url.searchParams.has("autopanel");
-        return send(200, "text/html; charset=utf-8", harnessPage(ttRoute)(match, probe, autopanel));
+        const tabprobe = url.searchParams.has("tabs");
+        return send(200, "text/html; charset=utf-8", harnessPage(ttRoute)(match, probe, autopanel, tabprobe));
     }
 
     send(404, "text/plain", "routes: /tt/ /tt-locked/ /nott/ ?script=…&probe=wire&autopanel · /gm-shim.js · /api/media.m3u8 · /api/probe.json\n");
@@ -234,8 +283,8 @@ const server = http.createServer((req, res) => {
 
 server.listen(port, "127.0.0.1", () => {
     console.log(`tt-smoke harness — http://127.0.0.1:${port}`);
-    console.log(`  /tt/?script=HostWarp&autopanel        (TT enforced — the console-death regime)`);
-    console.log(`  /tt-locked/?script=PageCraft&autopanel (TT + policy-name allowlist)`);
-    console.log(`  /nott/?script=HostWarp&autopanel       (no TT — parity)`);
+    console.log(`  /tt/?script=HostWarp&autopanel&tabs   (TT enforced — console + interactive tab probe)`);
+    console.log(`  /tt-locked/?script=PageCraft&autopanel&tabs (TT + policy-name allowlist)`);
+    console.log(`  /nott/?script=HostWarp&autopanel&tabs  (no TT — parity)`);
     console.log(`  /tt/?script=Blob2URL&probe=wire&autopanel (NetHook wire capture)`);
 });

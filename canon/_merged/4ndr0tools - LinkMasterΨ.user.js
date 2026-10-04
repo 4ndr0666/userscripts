@@ -822,6 +822,36 @@ const url = src.src.trim();
   // ===========================================================================
   // HUD PANEL SHELL & DOCK
   // ===========================================================================
+
+  /* [R3 createElement migration — suite v1.4.4] Local element builder:
+   * every innerHTML template below is retired. Same contract as the
+   * kernel's Ψ.core.$new (variadic form): style accepts a string OR an
+   * object, data-* / aria-* / role go through setAttribute, on* keys bind
+   * listeners, null children are skipped. Zero HTML-string sinks — the
+   * HUD now renders identically on require-trusted-types-for hosts
+   * (no policy needed, no silent fallback). */
+  function hudEl(tag, attrs, ...rest) {
+    const el = document.createElement(tag);
+    if (attrs) {
+      for (const key of Object.keys(attrs)) {
+        const val = attrs[key];
+        if (val == null) continue;
+        if (key === "style" && typeof val === "object") Object.assign(el.style, val);
+        else if (key.startsWith("data-") || key.startsWith("aria-") || key === "role") el.setAttribute(key, String(val));
+        else if (key.startsWith("on") && typeof val === "function") el.addEventListener(key.slice(2), val);
+        else if (key in el && typeof val !== "string") el[key] = val;
+        else el.setAttribute(key, String(val));
+      }
+    }
+    const kids = [];
+    for (const c of rest) { if (Array.isArray(c)) kids.push(...c); else kids.push(c); }
+    for (const c of kids) {
+      if (c == null) continue;
+      el.append(c instanceof Node ? c : document.createTextNode(String(c)));
+    }
+    return el;
+  }
+
   function createDock() {
     if (document.getElementById("linkmaster-dock")) return;
     const dock = document.createElement('div');
@@ -848,21 +878,21 @@ const url = src.src.trim();
       hudPanel = document.createElement("div");
       hudPanel.id = "hud-panel-root";
       hudPanel.className = "hud-container";
-      hudPanel.innerHTML = `
-        <div class="hud-header">
-          ${getPsiGlyphSVG('glyph')}
-          <span class="title">LinkMaster</span>
-          <button class="hud-close-btn" title="Close HUD" tabindex="0">&times;</button>
-        </div>
-        <nav class="hud-tabs" role="tablist">
-          <button class="hud-button active" data-tab="scrape" role="tab" aria-selected="true" tabindex="0">Scrape</button>
-          <button class="hud-button" data-tab="forum" role="tab" aria-selected="false" tabindex="0">Forum</button>
-          <button class="hud-button" data-tab="check" role="tab" aria-selected="false" tabindex="0">Check</button>
-          ${IS_IG ? `<button class="hud-button" data-tab="ig" role="tab" aria-selected="false" tabindex="0">Instagram</button>` : ""}
-          <button class="hud-button" data-tab="settings" role="tab" aria-selected="false" tabindex="0">Settings</button>
-        </nav>
-        <main class="hud-content" tabindex="0" id="hud-content-panel"></main>
-      `;
+      const hudTab = (tab, label, active) => hudEl("button",
+        { class: "hud-button" + (active ? " active" : ""), "data-tab": tab, role: "tab",
+          "aria-selected": String(active), tabindex: "0" }, label);
+      hudPanel.append(
+        hudEl("div", { class: "hud-header" },
+          buildPsiGlyphEl("glyph"),
+          hudEl("span", { class: "title" }, "LinkMaster"),
+          hudEl("button", { class: "hud-close-btn", title: "Close HUD", tabindex: "0" }, "\u00D7")),
+        hudEl("nav", { class: "hud-tabs", role: "tablist" },
+          hudTab("scrape", "Scrape", true),
+          hudTab("forum", "Forum", false),
+          hudTab("check", "Check", false),
+          IS_IG ? hudTab("ig", "Instagram", false) : null,
+          hudTab("settings", "Settings", false)),
+        hudEl("main", { class: "hud-content", tabindex: "0", id: "hud-content-panel" }));
       (document.body || document.documentElement).appendChild(hudPanel);
       hudPanel.querySelector(".hud-close-btn").onclick = () => {
         hudPanel.setAttribute("hidden", "true");
@@ -885,7 +915,7 @@ const url = src.src.trim();
       btn.setAttribute("aria-selected", String(isActive));
     });
     const contentPanel = hudPanel.querySelector("#hud-content-panel");
-    contentPanel.innerHTML = "";
+    contentPanel.replaceChildren();
     if (tab === "forum")         ForumEngine.renderForumPanel(contentPanel);
     if (tab === "scrape")        renderScrapePanel(contentPanel);
     else if (tab === "check")    renderCheckPanel(contentPanel);
@@ -897,18 +927,18 @@ const url = src.src.trim();
   // SCRAPE PANEL
   // ===========================================================================
   function renderScrapePanel(root) {
-    root.innerHTML = `
-      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-        <button class="hud-btn" id="hud-scan-btn">Scan</button>
-        <button class="hud-btn${extractionMode === "host" ? " active" : ""}" id="hud-host-mode-btn">Host Mode</button>
-        <button class="hud-btn${extractionMode === "media" ? " active" : ""}" id="hud-media-mode-btn">Media Mode</button>
-        <span id="hud-scrape-status" class="hud-status-text" style="color:var(--text-secondary);"></span>
-      </div>
-<div id="hud-media-table-root" style="margin-top:12px;"></div>
-      <div style="color:var(--text-cyan-active); margin-top:12px;" class="hud-status-text">
-        <b>Mode:</b> <span id="hud-current-mode">${extractionMode === "host" ? "External Host Links (decoded, deproxied)" : "All Media (images/videos/audio on page)"}</span>
-      </div>
-    `;
+    root.replaceChildren(
+      hudEl("div", { style: "display:flex;align-items:center;gap:12px;flex-wrap:wrap;" },
+        hudEl("button", { class: "hud-btn", id: "hud-scan-btn" }, "Scan"),
+        hudEl("button", { class: "hud-btn" + (extractionMode === "host" ? " active" : ""), id: "hud-host-mode-btn" }, "Host Mode"),
+        hudEl("button", { class: "hud-btn" + (extractionMode === "media" ? " active" : ""), id: "hud-media-mode-btn" }, "Media Mode"),
+        hudEl("span", { id: "hud-scrape-status", class: "hud-status-text", style: "color:var(--text-secondary);" })),
+      hudEl("div", { id: "hud-media-table-root", style: "margin-top:12px;" }),
+      hudEl("div", { style: "color:var(--text-cyan-active); margin-top:12px;", class: "hud-status-text" },
+        hudEl("b", null, "Mode:"),
+        " ",
+        hudEl("span", { id: "hud-current-mode" },
+          extractionMode === "host" ? "External Host Links (decoded, deproxied)" : "All Media (images/videos/audio on page)")));
     root.querySelector("#hud-scan-btn").onclick = runScrapeAndRender;
     root.querySelector("#hud-host-mode-btn").onclick = function () {
       setExtractionMode("host");
@@ -948,7 +978,8 @@ const url = src.src.trim();
         ? extractExternalHostLinks()
         : extractMediaLinks();
       if (links.length === 0) {
-        tableRoot.innerHTML = `<div class="hud-status-text" style="color:var(--text-secondary);padding:16px 0;">No links found (${extractionMode === "host" ? "External Host Mode" : "Media Mode"}).</div>`;
+        tableRoot.replaceChildren(hudEl("div", { class: "hud-status-text", style: "color:var(--text-secondary);padding:16px 0;" },
+          `No links found (${extractionMode === "host" ? "External Host Mode" : "Media Mode"}).`));
         statusEl.textContent = "No links found.";
         return;
       }
@@ -1012,52 +1043,38 @@ const ext = url.split(".").pop().split("?")[0].toLowerCase();
 
   function renderMediaTable(links, root, epoch) {
     if (!Array.isArray(links) || links.length === 0) {
-      root.innerHTML = `<div class="hud-status-text" style="color:var(--text-secondary);padding:16px 0;">No links found on this page.</div>`;
+      root.replaceChildren(hudEl("div", { class: "hud-status-text", style: "color:var(--text-secondary);padding:16px 0;" }, "No links found on this page."));
       return;
     }
-    let html = `<table style="width:100%;border-collapse:collapse; text-align:left;"><thead>
-      <tr style="border-bottom: 1px solid var(--accent-cyan-border-idle); color:var(--text-cyan-active);">
-        <th style="padding:8px 4px;">Preview</th>
-        <th style="padding:8px 4px;">File</th>
-        <th style="padding:8px 4px;">Host</th>
-        <th style="padding:8px 4px;">Actions</th>
-        <th style="padding:8px 4px;">Status</th>
-      </tr>
-    </thead><tbody>`;
-    links.forEach((url, idx) => {
-      const fileRaw  = url.split("/").pop().split("?")[0].slice(0, 40) || "(index)";
-      const hostRaw  = (() => { try { return new URL(url).hostname; } catch { return ""; } })();
+    const th = (label) => hudEl("th", { style: "padding:8px 4px;" }, label);
+    const table = hudEl("table", { style: "width:100%;border-collapse:collapse; text-align:left;" },
+      hudEl("thead", null, hudEl("tr", { style: "border-bottom: 1px solid var(--accent-cyan-border-idle); color:var(--text-cyan-active);" },
+        th("Preview"), th("File"), th("Host"), th("Actions"), th("Status"))),
+      hudEl("tbody", null, links.map((url, idx) => {
+        const fileRaw  = url.split("/").pop().split("?")[0].slice(0, 40) || "(index)";
+        const hostRaw  = (() => { try { return new URL(url).hostname; } catch { return ""; } })();
+        const heuristics = analyzeThreatHeuristics(url);
+        const isBunkr  = isBunkrUrl(url);
+        const actionBtn = (action, label, title) => hudEl("button", Object.assign(
+          { class: "hud-btn", "data-idx": String(idx), "data-action": action }, title ? { title } : {}), label);
 
-      const fileSafe = escapeHTML(fileRaw);
-      const hostSafe = escapeHTML(hostRaw);
-      const urlSafe  = encodeURIComponent(url);
+        const fileCell = hudEl("td", { style: "max-width:200px;overflow-x:auto;padding:8px 4px;" }, fileRaw);
+        for (const t of heuristics) fileCell.append(" ", hudEl("span", { class: "chip dead" }, t));
 
-      const heuristics = analyzeThreatHeuristics(url);
-      const threatChips = heuristics.length > 0 ? ' ' + heuristics.map(h => `<span class="chip dead">${h}</span>`).join(" ") : "";
-
-      const isBunkr  = isBunkrUrl(url);
-      const streamBtn = isBunkr
-        ? `<button class="hud-btn" data-idx="${idx}" data-action="stream" title="Resolve direct CDN link via DOM-first acquisition">Stream</button>`
-        : "";
-      const mpvUriBtn = `<button class="hud-btn" data-idx="${idx}" data-action="mpv-uri" title="Stream via OS protocol handler">MPV (URI)</button>`;
-      const mpvBridgeBtn = `<button class="hud-btn" data-idx="${idx}" data-action="mpv-bridge" title="Stream via local HTTP bridge">MPV (Brdg)</button>`;
-
-      html += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);" data-url="${urlSafe}">
-        <td id="media-preview-${idx}" style="min-width:72px;max-width:80px;padding:8px 4px;"></td>
-        <td style="max-width:200px;overflow-x:auto;padding:8px 4px;">${fileSafe}${threatChips}</td>
-        <td style="color:var(--text-cyan-active);max-width:140px;overflow-x:auto;padding:8px 4px;">${hostSafe}</td>
-        <td class="hud-action-cell" style="padding:8px 4px;">
-          <button class="hud-btn" data-idx="${idx}" data-action="copy">Copy</button>
-          <button class="hud-btn" data-idx="${idx}" data-action="open">Open</button>
-          ${streamBtn}
-          ${mpvUriBtn}
-          ${mpvBridgeBtn}
-        </td>
-        <td id="media-check-${idx}" style="padding:8px 4px;"><span class="chip unknown">…</span></td>
-      </tr>`;
-    });
-    html += `</tbody></table>`;
-    root.innerHTML = html;
+        return hudEl("tr", { style: "border-bottom: 1px solid rgba(255,255,255,0.05);", "data-url": encodeURIComponent(url) },
+          hudEl("td", { id: "media-preview-" + idx, style: "min-width:72px;max-width:80px;padding:8px 4px;" }),
+          fileCell,
+          hudEl("td", { style: "color:var(--text-cyan-active);max-width:140px;overflow-x:auto;padding:8px 4px;" }, hostRaw),
+          hudEl("td", { class: "hud-action-cell", style: "padding:8px 4px;" },
+            actionBtn("copy", "Copy"),
+            actionBtn("open", "Open"),
+            isBunkr ? actionBtn("stream", "Stream", "Resolve direct CDN link via DOM-first acquisition") : null,
+            actionBtn("mpv-uri", "MPV (URI)", "Stream via OS protocol handler"),
+            actionBtn("mpv-bridge", "MPV (Brdg)", "Stream via local HTTP bridge")),
+          hudEl("td", { id: "media-check-" + idx, style: "padding:8px 4px;" },
+            hudEl("span", { class: "chip unknown" }, "\u2026")));
+      })));
+    root.replaceChildren(table);
 
     links.forEach((url, idx) => {
       const prev   = createMediaPreview(url);
@@ -1257,8 +1274,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
     if (status === "dead")    chip.classList.add("dead");
     if (status === "unknown") chip.classList.add("unknown");
     if (info) chip.title = info;
-    td.innerHTML = "";
-    td.appendChild(chip);
+    td.replaceChildren(chip);
   }
 
   // ===========================================================================
@@ -1266,16 +1282,13 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
   // ===========================================================================
   let bulkEpoch = 0;
   function renderCheckPanel(root) {
-    root.innerHTML = `
-      <div style="margin-bottom:16px;">
-        <textarea id="hud-bulk-links" class="hud-input" placeholder="Paste links to check (one per line)" rows="7"></textarea>
-      </div>
-      <div style="display:flex; align-items:center; gap:12px;">
-        <button class="hud-btn" id="hud-bulk-check-btn">Check Links</button>
-        <span id="hud-bulk-check-status" class="hud-status-text" style="color:var(--text-secondary);"></span>
-      </div>
-      <div id="hud-bulk-table-root" style="margin-top:16px;"></div>
-    `;
+    root.replaceChildren(
+      hudEl("div", { style: "margin-bottom:16px;" },
+        hudEl("textarea", { id: "hud-bulk-links", class: "hud-input", placeholder: "Paste links to check (one per line)", rows: "7" })),
+      hudEl("div", { style: "display:flex; align-items:center; gap:12px;" },
+        hudEl("button", { class: "hud-btn", id: "hud-bulk-check-btn" }, "Check Links"),
+        hudEl("span", { id: "hud-bulk-check-status", class: "hud-status-text", style: "color:var(--text-secondary);" })),
+      hudEl("div", { id: "hud-bulk-table-root", style: "margin-top:16px;" }));
     root.querySelector("#hud-bulk-check-btn").onclick = function () {
       const input = root.querySelector("#hud-bulk-links").value;
       const urls  = input.split(/[\n\r\s]+/).map(x => x.trim()).filter(Boolean);
@@ -1294,38 +1307,30 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
     // AND the final alive/dead/unknown summary once the queue drains.
     const statusEl = document.getElementById("hud-bulk-check-status");
     if (statusEl) statusEl.textContent = `Checking ${urls.length} link${urls.length !== 1 ? "s" : ""}...`;
-    let html = `<table style="width:100%;border-collapse:collapse; text-align:left;"><thead>
-<tr style="border-bottom: 1px solid var(--accent-cyan-border-idle); color:var(--text-cyan-active);">
-        <th style="padding:8px 4px;">Link</th>
-        <th style="padding:8px 4px;">Status</th>
-        <th style="padding:8px 4px;">Actions</th>
-      </tr>
-    </thead><tbody>`;
-    urls.forEach((url, idx) => {
-      const urlSafe  = escapeHTML(url);
-      const isBunkr  = isBunkrUrl(url);
-      const heuristics = analyzeThreatHeuristics(url);
-      const threatChips = heuristics.length > 0 ? ' ' + heuristics.map(h => `<span class="chip dead">${h}</span>`).join(" ") : "";
+    const th = (label) => hudEl("th", { style: "padding:8px 4px;" }, label);
+    const table = hudEl("table", { style: "width:100%;border-collapse:collapse; text-align:left;" },
+      hudEl("thead", null, hudEl("tr", { style: "border-bottom: 1px solid var(--accent-cyan-border-idle); color:var(--text-cyan-active);" },
+        th("Link"), th("Status"), th("Actions"))),
+      hudEl("tbody", null, urls.map((url, idx) => {
+        const isBunkr  = isBunkrUrl(url);
+        const heuristics = analyzeThreatHeuristics(url);
+        const actionBtn = (action, label, title) => hudEl("button", Object.assign(
+          { class: "hud-btn", "data-bulk-idx": String(idx), "data-action": action }, title ? { title } : {}), label);
 
-      const streamBtn = isBunkr
-        ? `<button class="hud-btn" data-bulk-idx="${idx}" data-action="stream">Stream</button>`
-        : "";
-      const mpvUriBtn = `<button class="hud-btn" data-bulk-idx="${idx}" data-action="mpv-uri" title="Stream via OS protocol handler">MPV (URI)</button>`;
-      const mpvBridgeBtn = `<button class="hud-btn" data-bulk-idx="${idx}" data-action="mpv-bridge" title="Stream via local HTTP bridge">MPV (Brdg)</button>`;
+        const urlCell = hudEl("td", { style: "max-width:300px;overflow-x:auto;padding:8px 4px;" }, url);
+        for (const t of heuristics) urlCell.append(" ", hudEl("span", { class: "chip dead" }, t));
 
-      html += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-        <td style="max-width:300px;overflow-x:auto;padding:8px 4px;">${urlSafe}${threatChips}</td>
-        <td id="bulk-check-${idx}" style="padding:8px 4px;"><span class="chip unknown">…</span></td>
-        <td class="hud-action-cell" style="padding:8px 4px;">
-          <button class="hud-btn" data-bulk-idx="${idx}" data-action="copy">Copy</button>
-          ${streamBtn}
-          ${mpvUriBtn}
-          ${mpvBridgeBtn}
-        </td>
-      </tr>`;
-    });
-    html += `</tbody></table>`;
-    root.innerHTML = html;
+        return hudEl("tr", { style: "border-bottom: 1px solid rgba(255,255,255,0.05);" },
+          urlCell,
+          hudEl("td", { id: "bulk-check-" + idx, style: "padding:8px 4px;" },
+            hudEl("span", { class: "chip unknown" }, "\u2026")),
+          hudEl("td", { class: "hud-action-cell", style: "padding:8px 4px;" },
+            actionBtn("copy", "Copy"),
+            isBunkr ? actionBtn("stream", "Stream") : null,
+            actionBtn("mpv-uri", "MPV (URI)", "Stream via OS protocol handler"),
+            actionBtn("mpv-bridge", "MPV (Brdg)", "Stream via local HTTP bridge")));
+      })));
+    root.replaceChildren(table);
 
     root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
       btn.onclick = function () {
@@ -1352,6 +1357,26 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
   // [C1] Ψ IG HARVESTER — proven Blob2URL v6.3 engine, composition-safe renames
   // ===========================================================================
   const MP4_RE = /https:\/\/[^\s"'<>\\]+?\.mp4(?:\?[^\s"'<>\\]*)?/g;
+
+  /* [R3] String entity decoder — replaces the textarea innerHTML decode
+   * idiom in IG.clean() (a TrustedHTML sink under enforcement). Port of
+   * the Blob2URL v7.2.0 decoder: named set covers the entities IG payloads
+   * actually carry; numeric dec/hex covers the rest. */
+  const NAMED_ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: '\u00A0',
+      copy: '\u00A9', reg: '\u00AE', hellip: '\u2026', mdash: '\u2014', ndash: '\u2013',
+      lsquo: '\u2018', rsquo: '\u2019', ldquo: '\u201C', rdquo: '\u201D', deg: '\u00B0',
+      middot: '\u00B7', bull: '\u2022', dagger: '\u2020', permil: '\u2030',
+      lsaquo: '\u2039', rsaquo: '\u203A', euro: '\u20AC', pound: '\u00A3', yen: '\u00A5',
+      cent: '\u00A2', sect: '\u00A7', para: '\u00B6', plusmn: '\u00B1', times: '\u00D7',
+      divide: '\u00F7', frac12: '\u00BD', sup2: '\u00B2', sup3: '\u00B3', micro: '\u00B5' };
+  const decodeEntities = (str) => String(str).replace(/&(#[xX]?[0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*);/g, (m, e) => {
+      if (e[0] === '#') {
+          const code = (e[1] === 'x' || e[1] === 'X') ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
+          if (!Number.isFinite(code) || code <= 0 || code > 0x10FFFF) return m;
+          try { return String.fromCodePoint(code); } catch (_) { return m; }
+      }
+      return NAMED_ENTITIES[e] || m;
+  });
 
   function isIgCdnUrl(url) {
     return typeof url === "string" && /\.mp4(\?|$)/i.test(url) && /(cdninstagram|fbcdn)\./i.test(url);
@@ -1458,11 +1483,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
 
     // Route 2 clean chain: entities → surrogate pairs → \u singles → \/ \"
     clean(text) {
-      try {
-        const ta = document.createElement("textarea");
-        ta.innerHTML = text;
-        text = ta.value;
-      } catch (_) {}
+      text = decodeEntities(text);
       text = text.replace(/\\u(d[89ab][0-9a-f]{2})\\u(d[cdef][0-9a-f]{2})/gi, (m, hi, lo) =>
         String.fromCodePoint(0x10000 + ((parseInt(hi, 16) - 0xD800) << 10) + (parseInt(lo, 16) - 0xDC00)));
       text = text.replace(/\\u([0-9a-fA-F]{4})/g, (m, h) => String.fromCharCode(parseInt(h, 16)));
@@ -1578,14 +1599,13 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
   let igRenderEpoch = 0;
   function renderIGPanel(root) {
     const epoch = ++igRenderEpoch;
-    root.innerHTML = `
-      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-        <button class="hud-btn" id="ig-rescan-btn">Rescan</button>
-        <button class="hud-btn" id="ig-copyall-btn">Copy All</button>
-        <span id="ig-status" class="hud-status-text" style="color:var(--text-secondary);">${IG.entries.length} unique URL(s) — newest first (net-hook + DOM routes, 500 cap).</span>
-      </div>
-      <div id="ig-table-root" style="margin-top:12px;"></div>
-    `;
+    root.replaceChildren(
+      hudEl("div", { style: "display:flex;align-items:center;gap:12px;flex-wrap:wrap;" },
+        hudEl("button", { class: "hud-btn", id: "ig-rescan-btn" }, "Rescan"),
+        hudEl("button", { class: "hud-btn", id: "ig-copyall-btn" }, "Copy All"),
+        hudEl("span", { id: "ig-status", class: "hud-status-text", style: "color:var(--text-secondary);" },
+          `${IG.entries.length} unique URL(s) — newest first (net-hook + DOM routes, 500 cap).`)),
+      hudEl("div", { id: "ig-table-root", style: "margin-top:12px;" }));
     root.querySelector("#ig-rescan-btn").onclick = () => { IG.rescan(); setHudTab("ig"); };
     root.querySelector("#ig-copyall-btn").onclick = () => IG.copyAll();
     renderIGTable(IG.entries.slice(0, 100), root.querySelector("#ig-table-root"), epoch);
@@ -1593,38 +1613,36 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
 
   function renderIGTable(entries, root, epoch) {
     if (!entries.length) {
-      root.innerHTML = `<div class="hud-status-text" style="color:var(--text-secondary);padding:16px 0;">No IG media harvested yet — scroll the feed, open posts/reels, then Rescan. (login wall = empty vault)</div>`;
+      root.replaceChildren(hudEl("div", { class: "hud-status-text", style: "color:var(--text-secondary);padding:16px 0;" },
+        "No IG media harvested yet — scroll the feed, open posts/reels, then Rescan. (login wall = empty vault)"));
       return;
     }
-    let html = `<table style="width:100%;border-collapse:collapse;text-align:left;"><thead>
-      <tr style="border-bottom: 1px solid var(--accent-cyan-border-idle); color:var(--text-cyan-active);">
-        <th style="padding:8px 4px;">Type</th>
-        <th style="padding:8px 4px;">Code</th>
-        <th style="padding:8px 4px;">Link</th>
-        <th style="padding:8px 4px;">Actions</th>
-        <th style="padding:8px 4px;">Status</th>
-      </tr>
-    </thead><tbody>`;
-    entries.forEach((e, idx) => {
-      const tag = e.kind === "progressive" ? `progressive type ${e.type} — video+audio`
-        : e.kind === "dash" ? `dash ${e.label} — video-only`
-        : "fallback net";
-      const short = e.url.length > 96 ? e.url.slice(0, 96) + "..." : e.url;
-      html += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-        <td style="color:var(--text-cyan-active);padding:8px 4px;white-space:nowrap;">${escapeHTML(tag)}</td>
-        <td style="padding:8px 4px;">${e.code ? `<span class="chip">${escapeHTML(e.code)}</span>` : ""}</td>
-        <td style="max-width:260px;overflow-x:auto;padding:8px 4px;" title="${escapeHTML(e.url)}">${escapeHTML(short)}</td>
-        <td class="hud-action-cell" style="padding:8px 4px;">
-          <button class="hud-btn" data-ig-idx="${idx}" data-action="copy">Copy</button>
-          <button class="hud-btn" data-ig-idx="${idx}" data-action="open">Open</button>
-          <button class="hud-btn" data-ig-idx="${idx}" data-action="mpv-uri" title="Stream via OS protocol handler">MPV (URI)</button>
-          <button class="hud-btn" data-ig-idx="${idx}" data-action="mpv-bridge" title="Stream via local HTTP bridge">MPV (Brdg)</button>
-        </td>
-        <td id="ig-check-${idx}" style="padding:8px 4px;"><span class="chip unknown">…</span></td>
-      </tr>`;
-    });
-    html += `</tbody></table>`;
-    root.innerHTML = html;
+    const th = (label) => hudEl("th", { style: "padding:8px 4px;" }, label);
+    const table = hudEl("table", { style: "width:100%;border-collapse:collapse;text-align:left;" },
+      hudEl("thead", null, hudEl("tr", { style: "border-bottom: 1px solid var(--accent-cyan-border-idle); color:var(--text-cyan-active);" },
+        th("Type"), th("Code"), th("Link"), th("Actions"), th("Status"))),
+      hudEl("tbody", null, entries.map((e, idx) => {
+        const tag = e.kind === "progressive" ? `progressive type ${e.type} — video+audio`
+          : e.kind === "dash" ? `dash ${e.label} — video-only`
+          : "fallback net";
+        const short = e.url.length > 96 ? e.url.slice(0, 96) + "..." : e.url;
+        const actionBtn = (action, label, title) => hudEl("button", Object.assign(
+          { class: "hud-btn", "data-ig-idx": String(idx), "data-action": action }, title ? { title } : {}), label);
+
+        return hudEl("tr", { style: "border-bottom: 1px solid rgba(255,255,255,0.05);" },
+          hudEl("td", { style: "color:var(--text-cyan-active);padding:8px 4px;white-space:nowrap;" }, tag),
+          hudEl("td", { style: "padding:8px 4px;" },
+            e.code ? hudEl("span", { class: "chip" }, e.code) : null),
+          hudEl("td", { style: "max-width:260px;overflow-x:auto;padding:8px 4px;", title: e.url }, short),
+          hudEl("td", { class: "hud-action-cell", style: "padding:8px 4px;" },
+            actionBtn("copy", "Copy"),
+            actionBtn("open", "Open"),
+            actionBtn("mpv-uri", "MPV (URI)", "Stream via OS protocol handler"),
+            actionBtn("mpv-bridge", "MPV (Brdg)", "Stream via local HTTP bridge")),
+          hudEl("td", { id: "ig-check-" + idx, style: "padding:8px 4px;" },
+            hudEl("span", { class: "chip unknown" }, "\u2026")));
+      })));
+    root.replaceChildren(table);
 
     root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
       btn.onclick = function () {
@@ -1646,21 +1664,19 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
   // SETTINGS PANEL
   // ===========================================================================
   function renderSettingsPanel(root) {
-    root.innerHTML = `
-      <div style="margin-bottom:16px;display:flex;flex-wrap:wrap;gap:12px;">
-        <button class="hud-btn" id="hud-export-btn">Export Current Links</button>
-        <button class="hud-btn" id="hud-mode-toggle-btn2">Switch to ${extractionMode === "host" ? "Media" : "Host"} Mode</button>
-        <button class="hud-btn" id="hud-hostlist-btn">Show Host Patterns</button>
-        <button class="hud-btn" id="hud-fonts-btn" title="Load display fonts from Google on HUD open (OPSEC: third-party font CDN)">Remote Fonts: ${remoteFonts ? "ON" : "OFF"}</button>
-        <button class="hud-btn" id="hud-clear-prefs-btn" style="border-color:rgba(255, 77, 77, 0.5);color:#ff0055;">Reset Prefs</button>
-      </div>
-<div style="margin-bottom:16px;">
-        <textarea id="hud-export-area" class="hud-input" rows="8" readonly placeholder="Exported links or pattern list will appear here."></textarea>
-      </div>
-      <div class="hud-status-text" style="color:var(--text-secondary);">
-        Current mode: <b style="color:var(--text-cyan-active);">${extractionMode === "host" ? "External Host" : "Media"}</b>${IG.active ? ` · IG harvester: <b style="color:var(--text-cyan-active);">ONLINE (${IG.entries.length} URLs)</b>` : ""}
-      </div>
-    `;
+    root.replaceChildren(
+      hudEl("div", { style: "margin-bottom:16px;display:flex;flex-wrap:wrap;gap:12px;" },
+        hudEl("button", { class: "hud-btn", id: "hud-export-btn" }, "Export Current Links"),
+        hudEl("button", { class: "hud-btn", id: "hud-mode-toggle-btn2" }, `Switch to ${extractionMode === "host" ? "Media" : "Host"} Mode`),
+        hudEl("button", { class: "hud-btn", id: "hud-hostlist-btn" }, "Show Host Patterns"),
+        hudEl("button", { class: "hud-btn", id: "hud-fonts-btn", title: "Load display fonts from Google on HUD open (OPSEC: third-party font CDN)" }, `Remote Fonts: ${remoteFonts ? "ON" : "OFF"}`),
+        hudEl("button", { class: "hud-btn", id: "hud-clear-prefs-btn", style: "border-color:rgba(255, 77, 77, 0.5);color:#ff0055;" }, "Reset Prefs")),
+      hudEl("div", { style: "margin-bottom:16px;" },
+        hudEl("textarea", { id: "hud-export-area", class: "hud-input", rows: "8", readonly: true, placeholder: "Exported links or pattern list will appear here." })),
+      hudEl("div", { class: "hud-status-text", style: "color:var(--text-secondary);" },
+        "Current mode: ",
+        hudEl("b", { style: "color:var(--text-cyan-active);" }, extractionMode === "host" ? "External Host" : "Media"),
+        IG.active ? [" · IG harvester: ", hudEl("b", { style: "color:var(--text-cyan-active);" }, `ONLINE (${IG.entries.length} URLs)`)] : null));
     const modeBtn = root.querySelector("#hud-mode-toggle-btn2");
     root.querySelector("#hud-export-btn").onclick = function () {
       const links = extractionMode === "host" ? extractExternalHostLinks() : extractMediaLinks();
@@ -3353,7 +3369,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
     const { postId, postNumber } = parsedPost;
     const postSettings = getSettingsCB();
 
-    statusContainerElement.innerHTML = '';
+    statusContainerElement.replaceChildren();
     const { el: statusLabel, container } = ui.labels.status.createStatusLabel();
     const filePB = ui.pBars.createFileProgressBar();
     const totalPB = ui.pBars.createTotalProgressBar();
@@ -3514,17 +3530,16 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
 
   function renderForumPanel(contentPanel) {
     if (parsedPosts.length === 0) {
-      contentPanel.innerHTML = `<div class="hud-status-text" style="color:var(--text-secondary);padding:16px 0;">No posts with downloadable content found. Forum mode watches XenForo-style threads; switch to General Mode in Settings for a whole-page host inventory.</div>`;
+      contentPanel.replaceChildren(hudEl("div", { class: "hud-status-text", style: "color:var(--text-secondary);padding:16px 0;" },
+        "No posts with downloadable content found. Forum mode watches XenForo-style threads; switch to General Mode in Settings for a whole-page host inventory."));
       return;
     }
-    const headerHTML = `
-      <div style="display: flex; gap: 1em; align-items: center; margin-bottom: 1em; padding-bottom: 1em; border-bottom: 1.5px solid var(--accent-cyan-border-idle);">
-          <button id="scrape-select-all" class="hud-button">Select All</button>
-          <button id="scrape-select-none" class="hud-button">Select None</button>
-          <button id="scrape-download-selected" class="hud-btn active" style="margin-left: auto;">Download Selected</button>
-      </div>
-      <div id="posts-container"></div>`;
-    contentPanel.innerHTML = headerHTML;
+    contentPanel.replaceChildren(
+      hudEl("div", { style: "display: flex; gap: 1em; align-items: center; margin-bottom: 1em; padding-bottom: 1em; border-bottom: 1.5px solid var(--accent-cyan-border-idle);" },
+        hudEl("button", { id: "scrape-select-all", class: "hud-button" }, "Select All"),
+        hudEl("button", { id: "scrape-select-none", class: "hud-button" }, "Select None"),
+        hudEl("button", { id: "scrape-download-selected", class: "hud-btn active", style: "margin-left: auto;" }, "Download Selected")),
+      hudEl("div", { id: "posts-container" }));
     const postsContainer = contentPanel.querySelector("#posts-container");
 
     parsedPosts.forEach((postData) => {
@@ -3534,20 +3549,20 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
       const postEntryDiv = document.createElement("div");
       postEntryDiv.id = `hud-post-${parsedPost.postId}`;
       postEntryDiv.style.cssText = "border-bottom: 1.5px solid var(--accent-cyan-border-idle); padding: 1em 0.5em; margin-bottom: 1em;";
-      postEntryDiv.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 1em; margin-bottom: 0.8em;">
-          <input type="checkbox" class="scrape-post-select" data-post-id="${parsedPost.postId}" style="transform: scale(1.2);">
-          <label style="font-family: var(--font-hud); font-weight: 700; font-size: 1.1em;">
-              Post <a href="#post-${parsedPost.postId}" style="color: var(--text-cyan-active); text-decoration: none;">#${parsedPost.postNumber}</a>
-          </label>
-          <span class="chip" style="margin-left:auto;">${totalResources} links</span>
-        </div>
-        <div id="status-area-${parsedPost.postId}" style="margin-top: 0.8em;"></div>`;
+      const statusArea = hudEl("div", { id: `status-area-${parsedPost.postId}`, style: "margin-top: 0.8em;" });
+      postEntryDiv.append(
+        hudEl("div", { style: "display: flex; align-items: center; gap: 1em; margin-bottom: 0.8em;" },
+          hudEl("input", { type: "checkbox", class: "scrape-post-select", "data-post-id": String(parsedPost.postId), style: "transform: scale(1.2);" }),
+          hudEl("label", { style: "font-family: var(--font-hud); font-weight: 700; font-size: 1.1em;" },
+            "Post ",
+            hudEl("a", { href: `#post-${parsedPost.postId}`, style: "color: var(--text-cyan-active); text-decoration: none;" }, `#${parsedPost.postNumber}`)),
+          hudEl("span", { class: "chip", style: "margin-left:auto;" }, `${totalResources} links`)),
+        statusArea);
 
       const btnDownloadPost = document.createElement("button");
       btnDownloadPost.className = "hud-btn";
-      btnDownloadPost.innerHTML = `<span>🡳 Configure & Download (${totalDownloadable()}/${totalResources})</span>`;
-      postEntryDiv.insertBefore(btnDownloadPost, postEntryDiv.querySelector(`#status-area-${parsedPost.postId}`));
+      btnDownloadPost.append(hudEl("span", null, `🡳 Configure & Download (${totalDownloadable()}/${totalResources})`));
+      postEntryDiv.insertBefore(btnDownloadPost, statusArea);
 
       postsContainer.appendChild(postEntryDiv);
 
@@ -3581,7 +3596,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
               }
             });
             if (previewContent.children.length === 0) {
-              previewContent.innerHTML = '<span style="color: var(--text-secondary);">No image/video previews available.</span>';
+              previewContent.replaceChildren(hudEl("span", { style: "color: var(--text-secondary);" }, "No image/video previews available."));
             }
           }
           return previewContent;
@@ -3627,21 +3642,25 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
   function renderCheckSection(root) {
     const sec = document.createElement("div");
     sec.style.cssText = "margin-top:20px;padding-top:16px;border-top:1.5px solid var(--accent-cyan-border-idle);";
-    let selectionHTML = `<div style="margin-bottom: 1em; display:flex; gap:1em; align-items:center;"><h4 style="font-family:var(--font-hud);color:var(--text-cyan-active);">Check scraped posts (deep-resolved):</h4><div><button id="check-select-all" class="hud-button">All</button><button id="check-select-none" class="hud-button">None</button></div></div>`;
+    const inner = hudEl("div", null,
+      hudEl("h3", { style: "font-family:var(--font-hud);" }, "Deep-Resolved Link Check"),
+      hudEl("div", { style: "margin-bottom: 1em; display:flex; gap:1em; align-items:center;" },
+        hudEl("h4", { style: "font-family:var(--font-hud);color:var(--text-cyan-active);" }, "Check scraped posts (deep-resolved):"),
+        hudEl("div", null,
+          hudEl("button", { id: "check-select-all", class: "hud-button" }, "All"),
+          hudEl("button", { id: "check-select-none", class: "hud-button" }, "None"))));
     if (parsedPosts.length > 0) {
-      parsedPosts.forEach(p => {
-        selectionHTML += `<label style="display: block; margin-bottom:0.5em;"><input type="checkbox" class="check-post-select" value="${p.parsedPost.postId}"> Post #${p.parsedPost.postNumber}</label>`;
-      });
+      for (const p of parsedPosts) {
+        inner.append(hudEl("label", { style: "display: block; margin-bottom:0.5em;" },
+          hudEl("input", { type: "checkbox", class: "check-post-select", value: String(p.parsedPost.postId) }),
+          ` Post #${p.parsedPost.postNumber}`));
+      }
+      inner.append(hudEl("button", { id: "check-scraped-btn", class: "hud-btn active" }, "Check Scraped Links"));
     } else {
-      selectionHTML += `<p class="hud-status-text" style="color:var(--text-secondary);">No posts scraped from page (Forum mode detects XenForo-style posts).</p>`;
+      inner.append(hudEl("p", { class: "hud-status-text", style: "color:var(--text-secondary);" },
+        "No posts scraped from page (Forum mode detects XenForo-style posts)."));
     }
-    sec.innerHTML = `
-        <div>
-            <h3 style="font-family:var(--font-hud);">Deep-Resolved Link Check</h3>
-            ${selectionHTML}
-            ${parsedPosts.length > 0 ? `<button id="check-scraped-btn" class="hud-btn active">Check Scraped Links</button>` : ""}
-        </div>
-        <div id="check-results" style="margin-top: 1.5em; word-break: break-all;"></div>`;
+    sec.append(inner, hudEl("div", { id: "check-results", style: "margin-top: 1.5em; word-break: break-all;" }));
     root.appendChild(sec);
     if (parsedPosts.length > 0) {
       sec.querySelector('#check-select-all').onclick = () => sec.querySelectorAll('.check-post-select').forEach(cb => cb.checked = true);
@@ -3652,11 +3671,11 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
 
   async function startLinkCheck(event) {
     const resultsPanel = document.getElementById('check-results');
-    resultsPanel.innerHTML = 'Resolving links...';
+    resultsPanel.textContent = 'Resolving links...';
     let linksToCheck = [];
     const selected = [...document.querySelectorAll('.check-post-select:checked')];
     if (selected.length === 0) {
-      resultsPanel.innerHTML = 'Please select at least one post.';
+      resultsPanel.textContent = 'Please select at least one post.';
       return;
     }
     let resolvedLinks = [];
@@ -3667,10 +3686,10 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
     linksToCheck = h.unique(resolvedLinks, 'url').map(l => l.url);
 
     if (linksToCheck.length === 0) {
-      resultsPanel.innerHTML = 'No links to check.';
+      resultsPanel.textContent = 'No links to check.';
       return;
     }
-    resultsPanel.innerHTML = `Checking ${linksToCheck.length} unique links...`;
+    resultsPanel.textContent = `Checking ${linksToCheck.length} unique links...`;
 
     const results = await Promise.all(linksToCheck.map(url => checkLinkStatus(url)));
     renderCheckResults(results);
@@ -3689,45 +3708,46 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
 
   function renderCheckResults(results) {
     const resultsPanel = document.getElementById('check-results');
-    let html = '<h3>Check Complete</h3>';
+    const rows = [hudEl('h3', null, 'Check Complete')];
     results.forEach(res => {
-      let statusChip;
-      if (res.status === 'Error') statusChip = `<span class="chip dead">Error</span>`;
-      else if (res.status >= 200 && res.status < 300) statusChip = `<span class="chip ok">${res.status} OK</span>`;
-      else if (res.status >= 400) statusChip = `<span class="chip dead">${res.status} Error</span>`;
-      else statusChip = `<span class="chip unknown">${res.status}</span>`;
+      let chip;
+      if (res.status === 'Error') chip = hudEl('span', { class: 'chip dead' }, 'Error');
+      else if (res.status >= 200 && res.status < 300) chip = hudEl('span', { class: 'chip ok' }, `${res.status} OK`);
+      else if (res.status >= 400) chip = hudEl('span', { class: 'chip dead' }, `${res.status} Error`);
+      else chip = hudEl('span', { class: 'chip unknown' }, String(res.status));
       const details = res.status !== 'Error' ? ` | ${res.contentType} | ${res.size}` : '';
-      html += `<div style="margin-bottom: 0.5em;">${statusChip} <a href="${res.url}" target="_blank" style="color: var(--text-secondary);">${h.limit(res.url, 80)}</a><span style="font-size: 0.9em; color: var(--text-secondary);">${details}</span></div>`;
+      rows.push(hudEl('div', { style: 'margin-bottom: 0.5em;' },
+        chip, ' ',
+        hudEl('a', { href: res.url, target: '_blank', style: 'color: var(--text-secondary);' }, h.limit(res.url, 80)),
+        hudEl('span', { style: 'font-size: 0.9em; color: var(--text-secondary);' }, details)));
     });
-    resultsPanel.innerHTML = html;
+    resultsPanel.replaceChildren(...rows);
   }
 
   function renderSettingsSection(root) {
     const sec = document.createElement("div");
     sec.style.cssText = "margin-top:20px;padding-top:16px;border-top:1.5px solid var(--accent-cyan-border-idle);";
-    sec.innerHTML = `
-        <h3 style="font-family:var(--font-hud);color:var(--text-cyan-active);margin-bottom:0.8em;">Forum Deep-Scrape Engine (Ψ2 lineage)</h3>
-        <div style="display: flex; flex-direction: column; gap: 1.5em;">
-            <div>
-              <label style="display:block; margin-bottom: 0.5em;">Application Mode</label>
-              <select id="app-mode" style="width: 100%; background: #0A131A; border: 1.5px solid var(--accent-cyan-border-idle); color: var(--text-primary); padding: 0.5em; border-radius: 0.4em;">
-                <option value="forum" ${globalConfig.appMode === 'forum' ? 'selected' : ''}>Forum Mode (Detects posts)</option>
-                <option value="general" ${globalConfig.appMode === 'general' ? 'selected' : ''}>General Mode (Scrapes entire page)</option>
-              </select>
-            </div>
-            <div>
-              <label for="gofile-token" style="display:block; margin-bottom: 0.5em;">GoFile Token (Optional)</label>
-              <input type="password" id="gofile-token" value="${globalConfig.goFileToken}" style="width: 100%; background: #0A131A; border: 1.5px solid var(--accent-cyan-border-idle); color: var(--text-primary); padding: 0.5em; border-radius: 0.4em;">
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1em;">
-                <label><input type="checkbox" id="setting-zipped" ${globalConfig.defaultZipped ? 'checked' : ''}> Default to Zipped</label>
-                <label><input type="checkbox" id="setting-flatten" ${globalConfig.defaultFlatten ? 'checked' : ''}> Default to Flatten</label>
-                <label><input type="checkbox" id="setting-gen-links" ${globalConfig.defaultGenerateLinks ? 'checked' : ''}> Default to Generate links.txt</label>
-                <label><input type="checkbox" id="setting-gen-log" ${globalConfig.defaultGenerateLog ? 'checked' : ''}> Default to Generate log.txt</label>
-                <label><input type="checkbox" id="setting-skip-dupes" ${globalConfig.defaultSkipDuplicates ? 'checked' : ''}> Default to Skip Duplicates</label>
-            </div>
-            <button id="save-settings-btn" class="hud-btn active">Save Forum Settings & Reload</button>
-        </div>`;
+    const passwordInputStyle = "width: 100%; background: #0A131A; border: 1.5px solid var(--accent-cyan-border-idle); color: var(--text-primary); padding: 0.5em; border-radius: 0.4em;";
+    const checkRow = (id, checked, label) => hudEl("label", null,
+      hudEl("input", { type: "checkbox", id, checked }), ` ${label}`);
+    sec.append(
+      hudEl("h3", { style: "font-family:var(--font-hud);color:var(--text-cyan-active);margin-bottom:0.8em;" }, "Forum Deep-Scrape Engine (Ψ2 lineage)"),
+      hudEl("div", { style: "display: flex; flex-direction: column; gap: 1.5em;" },
+        hudEl("div", null,
+          hudEl("label", { style: "display:block; margin-bottom: 0.5em;" }, "Application Mode"),
+          hudEl("select", { id: "app-mode", style: passwordInputStyle },
+            hudEl("option", { value: "forum", selected: globalConfig.appMode === 'forum' }, "Forum Mode (Detects posts)"),
+            hudEl("option", { value: "general", selected: globalConfig.appMode === 'general' }, "General Mode (Scrapes entire page)"))),
+        hudEl("div", null,
+          hudEl("label", { for: "gofile-token", style: "display:block; margin-bottom: 0.5em;" }, "GoFile Token (Optional)"),
+          hudEl("input", { type: "password", id: "gofile-token", value: String(globalConfig.goFileToken), style: passwordInputStyle })),
+        hudEl("div", { style: "display: grid; grid-template-columns: 1fr 1fr; gap: 1em;" },
+          checkRow("setting-zipped", globalConfig.defaultZipped, "Default to Zipped"),
+          checkRow("setting-flatten", globalConfig.defaultFlatten, "Default to Flatten"),
+          checkRow("setting-gen-links", globalConfig.defaultGenerateLinks, "Default to Generate links.txt"),
+          checkRow("setting-gen-log", globalConfig.defaultGenerateLog, "Default to Generate log.txt"),
+          checkRow("setting-skip-dupes", globalConfig.defaultSkipDuplicates, "Default to Skip Duplicates")),
+        hudEl("button", { id: "save-settings-btn", class: "hud-btn active" }, "Save Forum Settings & Reload")));
     root.appendChild(sec);
     sec.querySelector('#save-settings-btn').onclick = () => {
       globalConfig.appMode = sec.querySelector('#app-mode').value;

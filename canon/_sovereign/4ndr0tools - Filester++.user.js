@@ -191,20 +191,20 @@
             // Stream glyph
             const glyph = document.createElement('div');
             glyph.className = 'psi-liberator-glyph';
-            glyph.innerHTML = el.tagName === 'VIDEO' || el.tagName === 'IMG' ? '▶' : '🔗';
+            glyph.textContent = el.tagName === 'VIDEO' || el.tagName === 'IMG' ? '▶' : '🔗';
             glyph.title = 'Extract Stream / Direct URL';
 
             glyph.onclick = async (e) => {
                 e.preventDefault(); e.stopImmediatePropagation();
-                const saved = glyph.innerHTML;
-                glyph.innerHTML = '⟳';
+                const saved = glyph.textContent;
+                glyph.textContent = '⟳';
 
                 const media = await resolveMedia(id, el.parentElement || el);
                 const url = media.streamUrl;
 
                 const ok = await copyText(url);
-                glyph.innerHTML = ok ? '✓' : '✗';
-                setTimeout(() => glyph.innerHTML = saved, 1500);
+                glyph.textContent = ok ? '✓' : '✗';
+                setTimeout(() => glyph.textContent = saved, 1500);
 
                 if (ok) {
                     console.log(`[Ψ-4NDR0666] Media liberated: ${url} (${media.type})`);
@@ -226,7 +226,7 @@
 
             const fg = document.createElement('div');
             fg.className = 'psi-liberator-glyph psi-folder-glyph';
-            fg.innerHTML = '📂';
+            fg.textContent = '📂';
             fg.title = 'Enumerate Folder';
 
             fg.onclick = async (e) => {

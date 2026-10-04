@@ -1234,72 +1234,148 @@
     // ==========================================
     const ui = document.createElement('div');
     ui.id = 'mpc-hud-ui';
-    ui.innerHTML = `
-        <div id="mg-header">
-            <svg id="mg-glyph" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg"
-                 fill="none" stroke="var(--accent-cyan)" stroke-width="3"
-                 stroke-linecap="round" stroke-linejoin="round">
-                <path d="M 64,12 A 52,52 0 1 1 63.9,12 Z" stroke-dasharray="21.78 21.78" stroke-width="2"/>
-                <path d="M 64,20 A 44,44 0 1 1 63.9,20 Z" stroke-dasharray="10 10" stroke-width="1.5" opacity="0.7"/>
-                <path d="M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z"/>
-                <text x="64" y="67" text-anchor="middle" dominant-baseline="middle"
-                      fill="var(--accent-cyan)" stroke="none" font-size="56" font-weight="700"
-                      font-family="'Cinzel Decorative', serif">Ψ</text>
-            </svg>
-            <div id="mg-titlebar-text">
-                <div id="mg-title">MEDIA PLAYER CONTROLLER</div>
-                <div id="mg-subtitle">4ndr0666tools · v8.1.0</div>
-            </div>
-            <button id="mg-help" class="mg-icon-btn" title="Hotkey reference">?</button>
-        </div>
-        <div class="mg-body">
-            <div class="mg-row speed-row">
-                <button data-speed="0.25">0.25</button>
-                <button data-speed="0.50">0.50</button>
-                <button data-speed="0.75">0.75</button>
-                <button data-speed="1.00">1.00</button>
-                <button data-speed="1.50">1.50</button>
-                <button data-speed="2.00">2.00</button>
-                <button data-speed="3.00">3.00</button>
-                <span id="mg-speed-val">1.00x</span>
-            </div>
-            <div class="mg-row">
-                <span class="mg-row-label">ROT</span>
-                <input type="range" id="rotate-slider" min="0" max="360" value="0" step="1">
-                <span id="rotate-val" style="width:30px;text-align:right;">0°</span>
-                <button id="rotate-reset"  class="mg-icon-btn" title="Reset rotation">↺</button>
-                <button id="mg-view-reset" class="mg-icon-btn" title="Reset view (zoom + pan)">↩</button>
-                <button id="mg-maximize"   class="mg-icon-btn" title="Smart maximize / restore (Esc)">⤢</button>
-                <button id="mg-nativefs"   class="mg-icon-btn" title="Native fullscreen (Enter)">⛶</button>
-                <button id="mg-pip"        class="mg-icon-btn" title="Picture in Picture (I)">⧉</button>
-            </div>
-            <div class="mg-actions">
-                <button id="mg-play">PLAY</button>
-                <button id="mg-nav-prev" title="Previous story / prev media (Shift+N)">&lt;</button>
-                <button id="mg-nav-next" title="Next story / next media (N)">&gt;</button>
-                <button id="mg-repeat"   title="Loop / repeat current story">○ REPEAT</button>
-                <button id="mg-mute"     title="Mute toggle (M)">MUTE</button>
-                <button id="mg-adskip"   title="Toggle ad auto-skip">SKIP</button>
-            </div>
-            <div id="mg-help-panel" hidden>
-                <div class="mg-help-row"><span class="mg-key">SPACE</span><span>Play / pause active video</span></div>
-                <div class="mg-help-row"><span class="mg-key">← / →</span><span>Seek −5s / +5s</span></div>
-                <div class="mg-help-row"><span class="mg-key">SHIFT ← / →</span><span>Seek −20s / +20s</span></div>
-                <div class="mg-help-row"><span class="mg-key">↑ / ↓</span><span>Volume +10% / −10%</span></div>
-                <div class="mg-help-row"><span class="mg-key">D / F</span><span>Frame back / forward (pauses)</span></div>
-                <div class="mg-help-row"><span class="mg-key">Z</span><span>Toggle remembered fast speed</span></div>
-                <div class="mg-help-row"><span class="mg-key">X / C</span><span>Playback rate −0.1 / +0.1</span></div>
-                <div class="mg-help-row"><span class="mg-key">M</span><span>Mute toggle</span></div>
-                <div class="mg-help-row"><span class="mg-key">P</span><span>Screenshot frame → PNG</span></div>
-                <div class="mg-help-row"><span class="mg-key">I</span><span>Picture-in-Picture toggle</span></div>
-                <div class="mg-help-row"><span class="mg-key">ENTER</span><span>Native fullscreen toggle</span></div>
-                <div class="mg-help-row"><span class="mg-key">N / SHIFT N</span><span>Next / previous story media</span></div>
-                <div class="mg-help-row"><span class="mg-key">ALT+M</span><span>Hide / show this HUD</span></div>
-                <div class="mg-help-row"><span class="mg-key">ESC</span><span>Restore maximized video</span></div>
-                <div class="mg-help-row"><span class="mg-key">ALT+SHIFT</span><span>+ drag = pan · + wheel = zoom</span></div>
-            </div>
-        </div>
-    `;
+    /* [R3] element-built HUD (was an innerHTML template). IDs,
+     * classes, data-speed keys and help rows preserved 1:1. */
+    const mgcHeader = document.createElement('div');
+    mgcHeader.id = 'mg-header';
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const mgcGlyph = document.createElementNS(SVG_NS, 'svg');
+    mgcGlyph.id = 'mg-glyph';
+    mgcGlyph.setAttribute('viewBox', '0 0 128 128');
+    mgcGlyph.setAttribute('xmlns', SVG_NS);
+    mgcGlyph.setAttribute('fill', 'none');
+    mgcGlyph.setAttribute('stroke', 'var(--accent-cyan)');
+    mgcGlyph.setAttribute('stroke-width', '3');
+    mgcGlyph.setAttribute('stroke-linecap', 'round');
+    mgcGlyph.setAttribute('stroke-linejoin', 'round');
+    const ug1 = document.createElementNS(SVG_NS, 'path');
+    ug1.setAttribute('d', 'M 64,12 A 52,52 0 1 1 63.9,12 Z');
+    ug1.setAttribute('stroke-dasharray', '21.78 21.78');
+    ug1.setAttribute('stroke-width', '2');
+    const ug2 = document.createElementNS(SVG_NS, 'path');
+    ug2.setAttribute('d', 'M 64,20 A 44,44 0 1 1 63.9,20 Z');
+    ug2.setAttribute('stroke-dasharray', '10 10');
+    ug2.setAttribute('stroke-width', '1.5');
+    ug2.setAttribute('opacity', '0.7');
+    const ug3 = document.createElementNS(SVG_NS, 'path');
+    ug3.setAttribute('d', 'M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z');
+    const ugPsi = document.createElementNS(SVG_NS, 'text');
+    ugPsi.setAttribute('x', '64');
+    ugPsi.setAttribute('y', '67');
+    ugPsi.setAttribute('text-anchor', 'middle');
+    ugPsi.setAttribute('dominant-baseline', 'middle');
+    ugPsi.setAttribute('fill', 'var(--accent-cyan)');
+    ugPsi.setAttribute('stroke', 'none');
+    ugPsi.setAttribute('font-size', '56');
+    ugPsi.setAttribute('font-weight', '700');
+    ugPsi.setAttribute('font-family', "'Cinzel Decorative', serif");
+    ugPsi.textContent = 'Ψ';
+    mgcGlyph.append(ug1, ug2, ug3, ugPsi);
+    const mgcTitlebar = document.createElement('div');
+    mgcTitlebar.id = 'mg-titlebar-text';
+    const mgcTitle = document.createElement('div');
+    mgcTitle.id = 'mg-title';
+    mgcTitle.textContent = 'MEDIA PLAYER CONTROLLER';
+    const mgcSubtitle = document.createElement('div');
+    mgcSubtitle.id = 'mg-subtitle';
+    mgcSubtitle.textContent = '4ndr0666tools · v8.1.0';
+    mgcTitlebar.append(mgcTitle, mgcSubtitle);
+    const mgcHelpBtn = document.createElement('button');
+    mgcHelpBtn.id = 'mg-help';
+    mgcHelpBtn.className = 'mg-icon-btn';
+    mgcHelpBtn.title = 'Hotkey reference';
+    mgcHelpBtn.textContent = '?';
+    mgcHeader.append(mgcGlyph, mgcTitlebar, mgcHelpBtn);
+    const mgcBody = document.createElement('div');
+    mgcBody.className = 'mg-body';
+    const mgcSpeedRow = document.createElement('div');
+    mgcSpeedRow.className = 'mg-row speed-row';
+    for (const s of ['0.25', '0.50', '0.75', '1.00', '1.50', '2.00', '3.00']) {
+        const b = document.createElement('button');
+        b.dataset.speed = s;
+        b.textContent = s;
+        mgcSpeedRow.appendChild(b);
+    }
+    const mgcSpeedVal = document.createElement('span');
+    mgcSpeedVal.id = 'mg-speed-val';
+    mgcSpeedVal.textContent = '1.00x';
+    mgcSpeedRow.appendChild(mgcSpeedVal);
+    const mgcRotRow = document.createElement('div');
+    mgcRotRow.className = 'mg-row';
+    const mgcRotLabel = document.createElement('span');
+    mgcRotLabel.className = 'mg-row-label';
+    mgcRotLabel.textContent = 'ROT';
+    const mgcRotSlider = document.createElement('input');
+    mgcRotSlider.type = 'range';
+    mgcRotSlider.id = 'rotate-slider';
+    mgcRotSlider.min = '0'; mgcRotSlider.max = '360'; mgcRotSlider.value = '0'; mgcRotSlider.step = '1';
+    const mgcRotVal = document.createElement('span');
+    mgcRotVal.id = 'rotate-val';
+    mgcRotVal.style.cssText = 'width:30px;text-align:right;';
+    mgcRotVal.textContent = '0°';
+    const iconBtn = (id, title, glyph, extraSpace) => {
+        const b = document.createElement('button');
+        b.id = id;
+        b.className = 'mg-icon-btn';
+        b.title = title;
+        b.textContent = glyph;
+        return b;
+    };
+    mgcRotRow.append(mgcRotLabel, mgcRotSlider, mgcRotVal,
+        iconBtn('rotate-reset', 'Reset rotation', '↺'),
+        iconBtn('mg-view-reset', 'Reset view (zoom + pan)', '↩'),
+        iconBtn('mg-maximize', 'Smart maximize / restore (Esc)', '⤢'),
+        iconBtn('mg-nativefs', 'Native fullscreen (Enter)', '⛶'),
+        iconBtn('mg-pip', 'Picture in Picture (I)', '⧉'));
+    const mgcActionsRow = document.createElement('div');
+    mgcActionsRow.className = 'mg-actions';
+    const actBtn = (id, text, title) => {
+        const b = document.createElement('button');
+        b.id = id;
+        if (title) b.title = title;
+        b.textContent = text;
+        return b;
+    };
+    mgcActionsRow.append(
+        actBtn('mg-play', 'PLAY'),
+        actBtn('mg-nav-prev', '<', 'Previous story / prev media (Shift+N)'),
+        actBtn('mg-nav-next', '>', 'Next story / next media (N)'),
+        actBtn('mg-repeat', '○ REPEAT', 'Loop / repeat current story'),
+        actBtn('mg-mute', 'MUTE', 'Mute toggle (M)'),
+        actBtn('mg-adskip', 'SKIP', 'Toggle ad auto-skip'));
+    const mgcHelpPanel = document.createElement('div');
+    mgcHelpPanel.id = 'mg-help-panel';
+    mgcHelpPanel.hidden = true;
+    const mgcHelpRows = [
+        ['SPACE', 'Play / pause active video'],
+        ['← / →', 'Seek −5s / +5s'],
+        ['SHIFT ← / →', 'Seek −20s / +20s'],
+        ['↑ / ↓', 'Volume +10% / −10%'],
+        ['D / F', 'Frame back / forward (pauses)'],
+        ['Z', 'Toggle remembered fast speed'],
+        ['X / C', 'Playback rate −0.1 / +0.1'],
+        ['M', 'Mute toggle'],
+        ['P', 'Screenshot frame → PNG'],
+        ['I', 'Picture-in-Picture toggle'],
+        ['ENTER', 'Native fullscreen toggle'],
+        ['N / SHIFT N', 'Next / previous story media'],
+        ['ALT+M', 'Hide / show this HUD'],
+        ['ESC', 'Restore maximized video'],
+        ['ALT+SHIFT', '+ drag = pan · + wheel = zoom'],
+    ];
+    for (const [key, desc] of mgcHelpRows) {
+        const row = document.createElement('div');
+        row.className = 'mg-help-row';
+        const keySpan = document.createElement('span');
+        keySpan.className = 'mg-key';
+        keySpan.textContent = key;
+        const descSpan = document.createElement('span');
+        descSpan.textContent = desc;
+        row.append(keySpan, descSpan);
+        mgcHelpPanel.appendChild(row);
+    }
+    mgcBody.append(mgcSpeedRow, mgcRotRow, mgcActionsRow, mgcHelpPanel);
+    ui.append(mgcHeader, mgcBody);
     document.body.appendChild(ui);
 
     // ==========================================
@@ -1625,13 +1701,17 @@
 
     const scrubBar = document.createElement('div');
     scrubBar.className = 'psi-scrub-bar';
-    scrubBar.innerHTML = `
-        <span class="psi-scrub-time">0:00 / 0:00</span>
-        <div class="psi-scrub-track">
-            <div class="psi-scrub-fill"></div>
-            <div class="psi-scrub-handle"></div>
-        </div>
-    `;
+    const scrubTimeEl = document.createElement('span');
+    scrubTimeEl.className = 'psi-scrub-time';
+    scrubTimeEl.textContent = '0:00 / 0:00';
+    const scrubTrackEl = document.createElement('div');
+    scrubTrackEl.className = 'psi-scrub-track';
+    const scrubFillEl = document.createElement('div');
+    scrubFillEl.className = 'psi-scrub-fill';
+    const scrubHandleEl = document.createElement('div');
+    scrubHandleEl.className = 'psi-scrub-handle';
+    scrubTrackEl.append(scrubFillEl, scrubHandleEl);
+    scrubBar.append(scrubTimeEl, scrubTrackEl);
     document.body.appendChild(scrubBar);
 
     const scrubTime   = scrubBar.querySelector('.psi-scrub-time');
@@ -1753,7 +1833,7 @@
     const dlBtn = document.createElement('button');
     dlBtn.className   = 'psi-dl-btn';
     dlBtn.title        = 'Download active media';
-    dlBtn.innerHTML    = '⭳';
+    dlBtn.textContent  = '⭳';
     dlBtn.type         = 'button';
     document.body.appendChild(dlBtn);
 

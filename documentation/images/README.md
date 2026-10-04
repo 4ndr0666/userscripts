@@ -13,7 +13,7 @@ Images++ shows the media behind links: hover a link, see the image or video it p
 | Version | `4.0.3` |
 | Matches | `*://*/*` |
 | Run-at | `document-start` |
-| Size | 134.1 KB · 4598 lines |
+| Size | 134.3 KB · 4602 lines |
 | Install | [dist/4ndr0tools - Images++.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Images%2B%2B.user.js) |
 
 ## Feature Inventory

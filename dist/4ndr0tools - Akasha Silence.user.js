@@ -890,7 +890,7 @@
     const addCss = (css) => {
         const style = document.createElement('style');
         style.type = 'text/css';
-        style.innerHTML = css;
+        style.textContent = css;
         createdStyles.push(style);
         if (document.head != null) {
             document.head.appendChild(style);

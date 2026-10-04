@@ -13,7 +13,7 @@ Instagram++ rebuilds the Instagram web surface for power use: tab-bar + dock int
 | Version | `13.0.1` |
 | Matches | `*://*.instagram.com/*` |
 | Run-at | `document-start` |
-| Size | 57.2 KB · 1252 lines |
+| Size | 59.2 KB · 1300 lines |
 | Install | [dist/4ndr0tools - Instagram++.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Instagram%2B%2B.user.js) |
 
 ## Feature Inventory

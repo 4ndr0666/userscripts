@@ -822,97 +822,150 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.0.1 —
         buildHUD(orchestratorInstance) {
             this.hudContainer = document.createElement('div');
             this.hudContainer.id = 'glass-hud-container';
-            this.hudContainer.innerHTML = `
-                <div class="hud-header" id="hud-drag-handle">
-                    <div class="hud-title">
-                        <svg viewBox="0 0 128 128" style="width:14px; height:14px;" fill="none" stroke="currentColor" stroke-width="6">
-                            <path d="M 64,12 A 52,52 0 1 1 63.9,12 Z" stroke-dasharray="6 6" />
-                            <path d="M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z" />
-                        </svg>
-                        <span>4ndr0tools PRO</span>
-                    </div>
-                    <div class="hud-header-tools">
-                        <div style="font-size: 0.6rem; color: var(--accent-cyan); font-weight: bold;">v${config.scriptVersion}</div>
-                        <button id="hud-collapse-btn" class="hud-collapse-btn" type="button" title="Collapse / expand the HUD panel">–</button>
-                    </div>
-                </div>
-                <div class="telemetry-row">
-                    <span>TRACKED ARCHIVE SIZE:</span>
-                    <span id="telemetry-tracker">0 ASSETS</span>
-                </div>
-                <div id="asset-bay-bar">
-                    <div class="bay-bar-head">
-                        <span class="bay-bar-title">Asset Bay</span>
-                        <button id="bay-toggle-btn" title="Expand / collapse the captured asset gallery">0</button>
-                    </div>
-                    <div class="bay-strip" id="bay-strip"></div>
-                </div>
-                <div class="action-matrix">
-                    <div class="mechanical-switch" id="sw-gen" data-tooltip="Monitors the generation queue slots. Automatically pushes the primary creation click triggers whenever free space opens up."><span>Auto Queue Click</span><div class="switch-indicator"></div></div>
-                    <div class="mechanical-switch" id="sw-dl" data-tooltip="Scans completed media and hooks native site download pipelines where present; assets without a native control (agent chat) are captured into the Asset Bay as clickable thumbnails. The active session window is never navigated away."><span>Auto Fetch Asset</span><div class="switch-indicator"></div></div>
-                    <div class="mechanical-switch" id="sw-notif" data-tooltip="Issues system-level alerts when generation tracking markers cross 90% parameters on inactive browser configurations."><span>Notify Completion</span><div class="switch-indicator"></div></div>
-                    <div class="mechanical-switch" id="sw-del" data-tooltip="Hard-deletes generation instances that have triggered site guidelines or structural processing anomalies instantly via native API simulation vectors."><span>API Hard Purge</span><div class="switch-indicator"></div></div>
-                    <div class="mechanical-switch" id="sw-dom" data-tooltip="Masks failed cards from your layout locally without throwing trace signals, preserving screen estate context."><span>Mask Fail Cards</span><div class="switch-indicator"></div></div>
-                    <div class="mechanical-switch" id="sw-notif-hov" data-tooltip="Injects non-destructive asset address anchor triggers onto processing matrix modules. Hovering handles automatic floating video view cache playback."><span>Interactive Links</span><div class="switch-indicator"></div></div>
-                    <button class="sys-btn help-btn" id="sys-help">Usage Guide (--help)</button>
-                    <button class="sys-btn" id="sys-clear">Purge Database Cache</button>
-                </div>
-                <div id="asset-bay-panel">
-                    <div class="bay-panel-header">
-                        <span class="bay-panel-title">Captured Assets</span>
-                        <div class="bay-panel-tools">
-                            <button id="bay-download-all" class="bay-tool-btn" title="Download every bay asset via the blob pipeline (never navigates this window)">Save All</button>
-                            <button id="bay-clear" class="bay-tool-btn" title="Clear the bay gallery">Clear</button>
-                        </div>
-                    </div>
-                    <div class="bay-grid" id="bay-grid"></div>
-                    <div class="bay-empty-note" id="bay-empty-note">No captures yet. Enable Auto Fetch Asset; completed media will populate here as clickable thumbnails.</div>
-                </div>
-            `;
+            /* [R3] element-built HUD shell (was an innerHTML template). */
+            const hudHeader = document.createElement('div');
+            hudHeader.className = 'hud-header';
+            hudHeader.id = 'hud-drag-handle';
+            const hudTitle = document.createElement('div');
+            hudTitle.className = 'hud-title';
+            const hudSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            hudSvg.setAttribute('viewBox', '0 0 128 128');
+            hudSvg.setAttribute('style', 'width:14px; height:14px;');
+            hudSvg.setAttribute('fill', 'none');
+            hudSvg.setAttribute('stroke', 'currentColor');
+            hudSvg.setAttribute('stroke-width', '6');
+            const hudP1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            hudP1.setAttribute('d', 'M 64,12 A 52,52 0 1 1 63.9,12 Z');
+            hudP1.setAttribute('stroke-dasharray', '6 6');
+            const hudP2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            hudP2.setAttribute('d', 'M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z');
+            hudSvg.append(hudP1, hudP2);
+            const hudTitleText = document.createElement('span');
+            hudTitleText.textContent = '4ndr0tools PRO';
+            hudTitle.append(hudSvg, hudTitleText);
+            const hudTools = document.createElement('div');
+            hudTools.className = 'hud-header-tools';
+            const hudVer = document.createElement('div');
+            hudVer.style.cssText = 'font-size: 0.6rem; color: var(--accent-cyan); font-weight: bold;';
+            hudVer.textContent = 'v' + config.scriptVersion;
+            const hudCollapse = document.createElement('button');
+            hudCollapse.id = 'hud-collapse-btn';
+            hudCollapse.className = 'hud-collapse-btn';
+            hudCollapse.type = 'button';
+            hudCollapse.title = 'Collapse / expand the HUD panel';
+            hudCollapse.textContent = '–';
+            hudTools.append(hudVer, hudCollapse);
+            hudHeader.append(hudTitle, hudTools);
+            const telemetryRow = document.createElement('div');
+            telemetryRow.className = 'telemetry-row';
+            const telemetryLabel = document.createElement('span');
+            telemetryLabel.textContent = 'TRACKED ARCHIVE SIZE:';
+            const telemetryValue = document.createElement('span');
+            telemetryValue.id = 'telemetry-tracker';
+            telemetryValue.textContent = '0 ASSETS';
+            telemetryRow.append(telemetryLabel, telemetryValue);
+            const bayBar = document.createElement('div');
+            bayBar.id = 'asset-bay-bar';
+            const bayBarHead = document.createElement('div');
+            bayBarHead.className = 'bay-bar-head';
+            const bayBarTitle = document.createElement('span');
+            bayBarTitle.className = 'bay-bar-title';
+            bayBarTitle.textContent = 'Asset Bay';
+            const bayToggle = document.createElement('button');
+            bayToggle.id = 'bay-toggle-btn';
+            bayToggle.title = 'Expand / collapse the captured asset gallery';
+            bayToggle.textContent = '0';
+            bayBarHead.append(bayBarTitle, bayToggle);
+            const bayStrip = document.createElement('div');
+            bayStrip.className = 'bay-strip';
+            bayStrip.id = 'bay-strip';
+            bayBar.append(bayBarHead, bayStrip);
+            const actionMatrix = document.createElement('div');
+            actionMatrix.className = 'action-matrix';
+            const mkSwitch = (id, tooltip, label) => {
+                const sw = document.createElement('div');
+                sw.className = 'mechanical-switch';
+                sw.id = id;
+                sw.setAttribute('data-tooltip', tooltip);
+                const swLabel = document.createElement('span');
+                swLabel.textContent = label;
+                const swInd = document.createElement('div');
+                swInd.className = 'switch-indicator';
+                sw.append(swLabel, swInd);
+                return sw;
+            };
+            const sysHelpBtn = document.createElement('button');
+            sysHelpBtn.className = 'sys-btn help-btn';
+            sysHelpBtn.id = 'sys-help';
+            sysHelpBtn.textContent = 'Usage Guide (--help)';
+            const sysClearBtn = document.createElement('button');
+            sysClearBtn.className = 'sys-btn';
+            sysClearBtn.id = 'sys-clear';
+            sysClearBtn.textContent = 'Purge Database Cache';
+            actionMatrix.append(
+                mkSwitch('sw-gen', 'Monitors the generation queue slots. Automatically pushes the primary creation click triggers whenever free space opens up.', 'Auto Queue Click'),
+                mkSwitch('sw-dl', 'Scans completed media and hooks native site download pipelines where present; assets without a native control (agent chat) are captured into the Asset Bay as clickable thumbnails. The active session window is never navigated away.', 'Auto Fetch Asset'),
+                mkSwitch('sw-notif', 'Issues system-level alerts when generation tracking markers cross 90% parameters on inactive browser configurations.', 'Notify Completion'),
+                mkSwitch('sw-del', 'Hard-deletes generation instances that have triggered site guidelines or structural processing anomalies instantly via native API simulation vectors.', 'API Hard Purge'),
+                mkSwitch('sw-dom', 'Masks failed cards from your layout locally without throwing trace signals, preserving screen estate context.', 'Mask Fail Cards'),
+                mkSwitch('sw-notif-hov', 'Injects non-destructive asset address anchor triggers onto processing matrix modules. Hovering handles automatic floating video view cache playback.', 'Interactive Links'),
+                sysHelpBtn,
+                sysClearBtn);
+            const bayPanel = document.createElement('div');
+            bayPanel.id = 'asset-bay-panel';
+            const bayPanelHeader = document.createElement('div');
+            bayPanelHeader.className = 'bay-panel-header';
+            const bayPanelTitle = document.createElement('span');
+            bayPanelTitle.className = 'bay-panel-title';
+            bayPanelTitle.textContent = 'Captured Assets';
+            const bayPanelTools = document.createElement('div');
+            bayPanelTools.className = 'bay-panel-tools';
+            const bayDownloadAll = document.createElement('button');
+            bayDownloadAll.id = 'bay-download-all';
+            bayDownloadAll.className = 'bay-tool-btn';
+            bayDownloadAll.title = 'Download every bay asset via the blob pipeline (never navigates this window)';
+            bayDownloadAll.textContent = 'Save All';
+            const bayClear = document.createElement('button');
+            bayClear.id = 'bay-clear';
+            bayClear.className = 'bay-tool-btn';
+            bayClear.title = 'Clear the bay gallery';
+            bayClear.textContent = 'Clear';
+            bayPanelTools.append(bayDownloadAll, bayClear);
+            bayPanelHeader.append(bayPanelTitle, bayPanelTools);
+            const bayGrid = document.createElement('div');
+            bayGrid.className = 'bay-grid';
+            bayGrid.id = 'bay-grid';
+            const bayEmptyNote = document.createElement('div');
+            bayEmptyNote.className = 'bay-empty-note';
+            bayEmptyNote.id = 'bay-empty-note';
+            bayEmptyNote.textContent = 'No captures yet. Enable Auto Fetch Asset; completed media will populate here as clickable thumbnails.';
+            bayPanel.append(bayPanelHeader, bayGrid, bayEmptyNote);
+            this.hudContainer.append(hudHeader, telemetryRow, bayBar, actionMatrix, bayPanel);
             this.shadow.appendChild(this.hudContainer);
 
             const helpModal = document.createElement('div');
             helpModal.id = 'help-modal-overlay';
-            helpModal.innerHTML = `
-                <div class="help-card">
-                    <h3>Operational Manual (--help)</h3>
-                    <div class="help-content">
-                        <div class="help-item">
-                            <strong>[Auto Queue Click]</strong>
-                            Safely loops and triggers asset creation generation execution paths when tracking metrics confirm vacancy slots.
-                        </div>
-                        <div class="help-item">
-                            <strong>[Auto Fetch Asset]</strong>
-                            Idempotently scans completed media. Where the page exposes a native download control it is clicked directly; otherwise the asset is captured into the Asset Bay as a clickable thumbnail that opens in a new window. The active session window is never navigated away.
-                        </div>
-                        <div class="help-item">
-                            <strong>[Asset Bay]</strong>
-                            In-HUD thumbnail gallery of auto-captured assets; it persists across page reloads. Click a thumbnail to open the asset in a new window; hover for a playable preview; expand the bay for SAVE (blob download, zero navigation), COPY URL, and REMOVE actions, plus SAVE ALL for the whole strip.
-                        </div>
-                        <div class="help-item">
-                            <strong>[Notify Completion]</strong>
-                            Requests background system permissions. Dispatches explicit notification packets once asset processing ticks hit 90%.
-                        </div>
-                        <div class="help-item">
-                            <strong>[API Hard Purge]</strong>
-                            Triggers structural actions to clean failed generation indices entirely from account indexes. The confirmation control is resolved strictly inside the native modal to guarantee the correct button is dispatched.
-                        </div>
-                        <div class="help-item">
-                            <strong>[Mask Fail Cards]</strong>
-                            Hides workspace modules that match failure conditions to preserve layout clarity.
-                        </div>
-                        <div class="help-item">
-                            <strong>[Interactive Links]</strong>
-                            Overlays hover-reactive video data triggers, implementing live viewport preview engines safely. Cards rendered inside editable (Slate) contexts are never mutated; their assets are still captured.
-                        </div>
-                        <div class="help-item">
-                            <strong>[HUD Controls]</strong>
-                            Drag the header to reposition (persisted, viewport-clamped). Use the header "–" button to collapse the panel. Ctrl+Alt+H toggles HUD visibility globally; the same toggles are exposed as userscript-manager menu commands.
-                        </div>
-                    </div>
-                    <button class="close-help-btn" id="close-help">Acknowledge Directive</button>
-                </div>
-            `;
+            /* [R3] element-built help modal (was an innerHTML template). */
+            const helpCard = document.createElement('div');
+            helpCard.className = 'help-card';
+            const helpTitle = document.createElement('h3');
+            helpTitle.textContent = 'Operational Manual (--help)';
+            const helpContent = document.createElement('div');
+            helpContent.className = 'help-content';
+            for (const [label, body] of [["[Auto Queue Click]","Safely loops and triggers asset creation generation execution paths when tracking metrics confirm vacancy slots."],["[Auto Fetch Asset]","Idempotently scans completed media. Where the page exposes a native download control it is clicked directly; otherwise the asset is captured into the Asset Bay as a clickable thumbnail that opens in a new window. The active session window is never navigated away."],["[Asset Bay]","In-HUD thumbnail gallery of auto-captured assets; it persists across page reloads. Click a thumbnail to open the asset in a new window; hover for a playable preview; expand the bay for SAVE (blob download, zero navigation), COPY URL, and REMOVE actions, plus SAVE ALL for the whole strip."],["[Notify Completion]","Requests background system permissions. Dispatches explicit notification packets once asset processing ticks hit 90%."],["[API Hard Purge]","Triggers structural actions to clean failed generation indices entirely from account indexes. The confirmation control is resolved strictly inside the native modal to guarantee the correct button is dispatched."],["[Mask Fail Cards]","Hides workspace modules that match failure conditions to preserve layout clarity."],["[Interactive Links]","Overlays hover-reactive video data triggers, implementing live viewport preview engines safely. Cards rendered inside editable (Slate) contexts are never mutated; their assets are still captured."],["[HUD Controls]","Drag the header to reposition (persisted, viewport-clamped). Use the header \"–\" button to collapse the panel. Ctrl+Alt+H toggles HUD visibility globally; the same toggles are exposed as userscript-manager menu commands."]]) {
+                const item = document.createElement('div');
+                item.className = 'help-item';
+                const strong = document.createElement('strong');
+                strong.textContent = label;
+                item.append(strong, document.createElement('br'), body);
+                helpContent.appendChild(item);
+            }
+            const closeHelp = document.createElement('button');
+            closeHelp.className = 'close-help-btn';
+            closeHelp.id = 'close-help';
+            closeHelp.textContent = 'Acknowledge Directive';
+            helpCard.append(helpTitle, helpContent, closeHelp);
+            helpModal.appendChild(helpCard);
             this.shadow.appendChild(helpModal);
             this.bindInteractiveEvents(orchestratorInstance);
         }
@@ -1126,9 +1179,9 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.0.1 —
             const store = this.assetBayStore;
             bar.style.display = store.size ? 'flex' : 'none';
             if (toggle) toggle.textContent = String(store.size);
-            strip.innerHTML = '';
+            strip.replaceChildren();
             for (const item of store.latest(12)) strip.appendChild(this.createBayThumbNode(item, false));
-            grid.innerHTML = '';
+            grid.replaceChildren();
             for (const item of store.items) grid.appendChild(this.createBayThumbNode(item, true));
             if (emptyNote) emptyNote.style.display = store.size ? 'none' : 'block';
             if (!store.size && panel) panel.classList.remove('open');

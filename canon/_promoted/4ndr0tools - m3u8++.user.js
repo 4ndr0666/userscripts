@@ -59,10 +59,54 @@
 
 (function () {
     'use strict';
+
+    /* [R3 createElement migration — suite v1.4.4] The Ψ glyph is built
+     * through createElementNS (was a string SVG inside the bar template and
+     * the play button). TT-immune by construction. */
+    function buildPsiGlyph() {
+        const NS = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(NS, "svg");
+        svg.setAttribute("viewBox", "0 0 128 128");
+        svg.setAttribute("xmlns", NS);
+        svg.setAttribute("style", "width: 100%; height: 100%;");
+        svg.setAttribute("fill", "none");
+        svg.setAttribute("stroke", "var(--accent-cyan, #00E5FF)");
+        svg.setAttribute("stroke-width", "3");
+        svg.setAttribute("stroke-linecap", "round");
+        svg.setAttribute("stroke-linejoin", "round");
+        const ring1 = document.createElementNS(NS, "path");
+        ring1.setAttribute("class", "glyph-ring-1");
+        ring1.setAttribute("d", "M 64,12 A 52,52 0 1 1 63.9,12 Z");
+        ring1.setAttribute("stroke-dasharray", "21.78 21.78");
+        ring1.setAttribute("stroke-width", "2");
+        const ring2 = document.createElementNS(NS, "path");
+        ring2.setAttribute("class", "glyph-ring-2");
+        ring2.setAttribute("d", "M 64,20 A 44,44 0 1 1 63.9,20 Z");
+        ring2.setAttribute("stroke-dasharray", "10 10");
+        ring2.setAttribute("stroke-width", "1.5");
+        ring2.setAttribute("opacity", "0.7");
+        const hex = document.createElementNS(NS, "path");
+        hex.setAttribute("class", "glyph-hex");
+        hex.setAttribute("d", "M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z");
+        const psi = document.createElementNS(NS, "text");
+        psi.setAttribute("x", "64");
+        psi.setAttribute("y", "67");
+        psi.setAttribute("text-anchor", "middle");
+        psi.setAttribute("dominant-baseline", "middle");
+        psi.setAttribute("fill", "var(--accent-cyan, #00E5FF)");
+        psi.setAttribute("stroke", "none");
+        psi.setAttribute("font-size", "56");
+        psi.setAttribute("font-weight", "700");
+        psi.setAttribute("font-family", "'Cinzel Decorative', serif");
+        psi.textContent = "Ψ";
+        svg.append(ring1, ring2, hex, psi);
+        return svg;
+    }
+
     const mgmapi = {
         addStyle(s) {
             let style = document.createElement("style");
-            style.innerHTML = s;
+            style.textContent = s;
             document.documentElement.appendChild(style);
         },
         async getValue(name, defaultVal) {
@@ -304,56 +348,17 @@
     bar.style = `
         text-align: right;
     `;
-    bar.innerHTML = `
-        <span
-            class="number-indicator"
-            data-number="0"
-            style="
-                display: inline-flex;
-                width: 50px;
-                height: 50px;
-                background: transparent;
-                padding: 0;
-                border-radius: 100px;
-                margin-bottom: 5px;
-                cursor: pointer;
-                border: none;
-            "
-        >
-            <svg
-                viewBox="0 0 128 128"
-                xmlns="http://www.w3.org/2000/svg"
-                style="width: 100%; height: 100%;"
-                fill="none"
-                stroke="var(--accent-cyan, #00E5FF)"
-                stroke-width="3"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-            >
-                <path class="glyph-ring-1" d="M 64,12 A 52,52 0 1 1 63.9,12 Z" stroke-dasharray="21.78 21.78" stroke-width="2" />
-                <path class="glyph-ring-2" d="M 64,20 A 44,44 0 1 1 63.9,20 Z" stroke-dasharray="10 10" stroke-width="1.5" opacity="0.7" />
-                <path class="glyph-hex" d="M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z" />
-                <text
-                    x="64"
-                    y="67"
-                    text-anchor="middle"
-                    dominant-baseline="middle"
-                    fill="var(--accent-cyan, #00E5FF)"
-                    stroke="none"
-                    font-size="56"
-                    font-weight="700"
-                    font-family="'Cinzel Decorative', serif"
-                >
-                    Ψ
-                </text>
-            </svg>
-        </span>
-    `;
+    const barSpan = document.createElement("span");
+    barSpan.className = "number-indicator";
+    barSpan.dataset.number = "0";
+    barSpan.style.cssText = "display:inline-flex;width:50px;height:50px;background:transparent;padding:0;border-radius:100px;margin-bottom:5px;cursor:pointer;border:none;";
+    barSpan.appendChild(buildPsiGlyph());
+    bar.appendChild(barSpan);
 
     wrapper.appendChild(bar);
 
     const style = document.createElement("style");
-    style.innerHTML = `
+    style.textContent = `
         .number-indicator{
             position:relative;
         }
@@ -597,32 +602,21 @@
     }) {
         let div = document.createElement("div");
         div.className = "m3u8-item";
-        div.innerHTML = `
-            <span>${escapeHtml(type)}</span>
-            <span
-                class="copy-link"
-                title="${escapeHtml(url)}"
-                style="
-                    max-width: 200px;
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    margin-left: 10px;
-                "
-            >${escapeHtml(url.pathname)}</span>
-            <span
-                style="
-                    margin-left: 10px;
-                    flex-grow: 1;
-                "
-            >${escapeHtml(duration)}</span>
-            <span
-                class="download-btn"
-                style="
-                    margin-left: 10px;
-                    cursor: pointer;
-            ">[Download]</span>
-        `;
+        const typeSpan = document.createElement("span");
+        typeSpan.textContent = type;
+        const copySpan = document.createElement("span");
+        copySpan.className = "copy-link";
+        copySpan.title = url.href;
+        copySpan.style.cssText = "max-width:200px;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;margin-left:10px;";
+        copySpan.textContent = url.pathname;
+        const durSpan = document.createElement("span");
+        durSpan.style.cssText = "margin-left:10px;flex-grow:1;";
+        durSpan.textContent = duration;
+        const dlSpan = document.createElement("span");
+        dlSpan.className = "download-btn";
+        dlSpan.style.cssText = "margin-left:10px;cursor:pointer;";
+        dlSpan.textContent = "[Download]";
+        div.append(typeSpan, copySpan, durSpan, dlSpan);
 
         div.querySelector(".copy-link").addEventListener("click", () => {
             mgmapi.copyText(url.href);
@@ -725,7 +719,16 @@
         let button = document.createElement("button");
         button.setAttribute('data-wtmzjk-mag-url', url);
         if (isForPlain) button.setAttribute('data-wtmzjk-button-for-plain', '');
-        button.innerHTML = `<span>${T.play}</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Pro 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg>`;
+        const playLabel = document.createElement("span");
+        playLabel.textContent = T.play;
+        const faNS = "http://www.w3.org/2000/svg";
+        const playIcon = document.createElementNS(faNS, "svg");
+        playIcon.setAttribute("xmlns", faNS);
+        playIcon.setAttribute("viewBox", "0 0 384 512");
+        const playPath = document.createElementNS(faNS, "path");
+        playPath.setAttribute("d", "M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z");
+        playIcon.appendChild(playPath);
+        button.append(playLabel, playIcon);
         return button;
     }
 
@@ -803,7 +806,7 @@
 
     function addStyle(s) {
         let style = document.createElement("style");
-        style.innerHTML = s;
+        style.textContent = s;
         document.documentElement.appendChild(style);
     }
 

@@ -63,6 +63,35 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
     // ================================================================
     const VERSION = '7.0.2';
     const NS = 'pdbp';
+
+    /* [R3 createElement migration — suite v1.4.4] Local element builder:
+     * every innerHTML template in this script is retired (settings panel,
+     * modals, toasts, pills, export bodies, popup player). Same contract as
+     * the kernel's Ψ.core.$new: variadic children (Nodes/strings/arrays,
+     * null-skipped), style string-or-object, data-dash/aria-dash/role/class
+     * via setAttribute, on-prefixed keys as listeners. Zero HTML-string
+     * sinks — TT-immune by construction. */
+    function el(tag, attrs, ...rest) {
+        const node = document.createElement(tag);
+        if (attrs) {
+            for (const key of Object.keys(attrs)) {
+                const val = attrs[key];
+                if (val == null) continue;
+                if (key === 'style' && typeof val === 'object') Object.assign(node.style, val);
+                else if (key === 'class' || key.startsWith('data-') || key.startsWith('aria-') || key === 'role') node.setAttribute(key, String(val));
+                else if (key.startsWith('on') && typeof val === 'function') node.addEventListener(key.slice(2), val);
+                else if (key in node && typeof val !== 'string') node[key] = val;
+                else node.setAttribute(key, String(val));
+            }
+        }
+        const kids = [];
+        for (const c of rest) { if (Array.isArray(c)) kids.push(...c); else kids.push(c); }
+        for (const c of kids) {
+            if (c == null) continue;
+            node.append(c instanceof Node ? c : document.createTextNode(String(c)));
+        }
+        return node;
+    }
     const BANDWIDTH_CAP = 6 * 1024 * 1024 * 1024;
     const SPEED_LIMIT_PER_CONN = 1048576; // 1 MB/s server-enforced per connection
     const RATE_LIMIT_MAX = 3000;
@@ -683,7 +712,11 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
                     const url = `https://pixeldrain.com/u/${fileId}`;
                     if (Caps.gmOpenInTab) GM_openInTab(url, { active: true });
                     else window.open(url);
-                    Toast.html(`<strong>&#9888; Solve captcha in opened tab</strong><br><span style="font-size:12px">reCAPTCHA v2<br>After solving, retry download here.</span>`, 'warn', 15000);
+                    Toast.node([
+                        el('strong', null, '\u26A0 Solve captcha in opened tab'),
+                        el('br'),
+                        el('span', { style: 'font-size:12px' }, 'reCAPTCHA v2', el('br'), 'After solving, retry download here.')
+                    ], 'warn', 15000);
                 }
 
                 if (Caps.gmNotification) {
@@ -1248,8 +1281,24 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
             const w = window.open('about:blank', '_blank');
             if (!w) { Toast.error('Popup blocked'); return { ok: false }; }
             const tag = (mime || '').startsWith('audio/') ? 'audio' : 'video';
-            w.document.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><title>${escapeHTML(name)}</title><style>html,body{margin:0;background:#0A131A;height:100%;display:flex;align-items:center;justify-content:center}${tag}{max-width:100vw;max-height:100vh;width:100%}</style></head><body><${tag} src="${url}" controls autoplay playsinline></${tag}></body></html>`);
-            w.document.close();
+            /* [R3] popup player built through the DOM (document.write on the
+             * script-owned popup was the last own-popup string sink). */
+            const d = w.document;
+            d.title = name;
+            const meta = d.createElement('meta');
+            meta.setAttribute('charset', 'utf-8');
+            const refMeta = d.createElement('meta');
+            refMeta.setAttribute('name', 'referrer');
+            refMeta.setAttribute('content', 'no-referrer');
+            const style = d.createElement('style');
+            style.textContent = `html,body{margin:0;background:#0A131A;height:100%;display:flex;align-items:center;justify-content:center}${tag}{max-width:100vw;max-height:100vh;width:100%}`;
+            d.head.append(meta, refMeta, style);
+            const media = d.createElement(tag);
+            media.setAttribute('src', url);
+            media.setAttribute('controls', '');
+            media.setAttribute('autoplay', '');
+            media.setAttribute('playsinline', '');
+            d.body.append(media);
             return { ok: true, mode: 'stream', proxy: proxy.host };
         },
 
@@ -1462,8 +1511,18 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
             const wrap = document.createElement('div');
             wrap.className = `${NS}-toast info`;
             wrap.style.minWidth = '360px';
-            wrap.innerHTML = `<div style="font-weight:600;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:280px" title="${escapeHTML(file.name)}">${escapeHTML(file.name)}</span><button class="${NS}-modal-close" style="font-size:16px;cursor:pointer;background:none;border:none;color:#ff0055">&times;</button></div><div style="font-size:11px;color:#67E8F9;margin-bottom:4px">${formatBytes(file.size || 0)} · ${escapeHTML(file.mime_type || 'unknown')}</div><div class="${NS}-progress"><div class="${NS}-progress-bar"></div></div><div class="${NS}-stat"><span class="${NS}-dl-label">Preparing…</span><span class="${NS}-dl-speed"></span></div>`;
-            wrap.querySelector(`.${NS}-modal-close`).addEventListener('click', () => { onCancel(); wrap.remove(); });
+            const closeBtn = el('button', { class: `${NS}-modal-close`, style: 'font-size:16px;cursor:pointer;background:none;border:none;color:#ff0055' }, '\u00D7');
+            wrap.append(
+                el('div', { style: 'font-weight:600;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center' },
+                    el('span', { style: 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:280px', title: file.name }, file.name),
+                    closeBtn),
+                el('div', { style: 'font-size:11px;color:#67E8F9;margin-bottom:4px' },
+                    `${formatBytes(file.size || 0)} \u00B7 ${file.mime_type || 'unknown'}`),
+                el('div', { class: `${NS}-progress` }, el('div', { class: `${NS}-progress-bar` })),
+                el('div', { class: `${NS}-stat` },
+                    el('span', { class: `${NS}-dl-label` }, 'Preparing\u2026'),
+                    el('span', { class: `${NS}-dl-speed` })));
+            closeBtn.addEventListener('click', () => { onCancel(); wrap.remove(); });
             (Toast.ensure ? Toast.ensure() : document.body).appendChild(wrap);
             return {
                 wrap,
@@ -1499,14 +1558,23 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
                 PowerShell: this.ps(url, name),
                 HTTPie: this.httpie(url, name)
             };
-            let html = `<div style="margin-bottom:12px;padding:8px;background:rgba(10,19,26,0.55);border-radius:6px;font-size:11px;color:#67E8F9"><strong>Mirror:</strong> ${escapeHTML(proxy.host)}<br><strong>URL:</strong> <span style="word-break:break-all">${escapeHTML(url)}</span></div>`;
+            const cmdBlocks = [];
+            cmdBlocks.push(el('div', { style: 'margin-bottom:12px;padding:8px;background:rgba(10,19,26,0.55);border-radius:6px;font-size:11px;color:#67E8F9' },
+                el('strong', null, 'Mirror:'), ` ${proxy.host}`, el('br'),
+                el('strong', null, 'URL:'), ' ',
+                el('span', { style: 'word-break:break-all' }, url)));
             for (const [k, v] of Object.entries(cmds)) {
-                html += `<div style="margin-bottom:10px"><div style="font-size:12px;font-weight:600;color:#00E5FF;margin-bottom:3px">${k}</div><pre style="background:rgba(10,19,26,0.55);padding:8px;border-radius:4px;font-size:11px;white-space:pre-wrap;word-break:break-all;margin:0;color:#67E8F9;cursor:pointer" title="Click to copy" data-cmd="${escapeHTML(v)}">${escapeHTML(v)}</pre></div>`;
+                cmdBlocks.push(el('div', { style: 'margin-bottom:10px' },
+                    el('div', { style: 'font-size:12px;font-weight:600;color:#00E5FF;margin-bottom:3px' }, k),
+                    el('pre', { style: 'background:rgba(10,19,26,0.55);padding:8px;border-radius:4px;font-size:11px;white-space:pre-wrap;word-break:break-all;margin:0;color:#67E8F9;cursor:pointer', title: 'Click to copy', 'data-cmd': v }, v)));
             }
             const m = Modal.open({
-                title: `📤 Export: ${escapeHTML(name)}`,
-                body: html,
-                footer: `<button class="${NS}-btn ${NS}-copy-all">📋 Copy All</button><button class="${NS}-btn ${NS}-cancel">Close</button>`
+                title: `📤 Export: ${name}`,
+                body: cmdBlocks,
+                footer: [
+                    el('button', { class: `${NS}-btn ${NS}-copy-all` }, '📋 Copy All'),
+                    el('button', { class: `${NS}-btn ${NS}-cancel` }, 'Close')
+                ]
             });
             m.body.querySelectorAll('pre[data-cmd]').forEach(el => {
                 el.addEventListener('click', async () => {
@@ -1528,8 +1596,20 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
             const curlLines = files.filter(f => !f.availability).map(f => this.curl(ProxyManager.url(proxy, f.id, { download: true }), f.name));
             const m = Modal.open({
                 title: `📤 Batch Export (${files.length} files)`,
-                body: `<div style="margin-bottom:8px;font-size:12px;color:#00E5FF;font-weight:600">aria2c (recommended - multi-threaded)</div><pre style="background:rgba(10,19,26,0.55);padding:8px;border-radius:4px;font-size:11px;max-height:200px;overflow:auto;color:#67E8F9">${escapeHTML(lines.join('\n'))}</pre><div style="margin:12px 0 8px;font-size:12px;color:#00E5FF;font-weight:600">curl</div><pre style="background:rgba(10,19,26,0.55);padding:8px;border-radius:4px;font-size:11px;max-height:200px;overflow:auto;color:#67E8F9">${escapeHTML(curlLines.join('\n'))}</pre>`,
-                footer: `<button class="${NS}-btn ${NS}-copy-aria">aria2c</button><button class="${NS}-btn ${NS}-copy-curl">curl</button><button class="${NS}-btn ${NS}-copy-urls">URLs</button><button class="${NS}-btn ${NS}-save-sh">💾 .sh</button><button class="${NS}-btn ${NS}-save-bat">💾 .bat</button><button class="${NS}-btn ${NS}-cancel">Close</button>`
+                body: [
+                    el('div', { style: 'margin-bottom:8px;font-size:12px;color:#00E5FF;font-weight:600' }, 'aria2c (recommended - multi-threaded)'),
+                    el('pre', { style: 'background:rgba(10,19,26,0.55);padding:8px;border-radius:4px;font-size:11px;max-height:200px;overflow:auto;color:#67E8F9' }, lines.join('\n')),
+                    el('div', { style: 'margin:12px 0 8px;font-size:12px;color:#00E5FF;font-weight:600' }, 'curl'),
+                    el('pre', { style: 'background:rgba(10,19,26,0.55);padding:8px;border-radius:4px;font-size:11px;max-height:200px;overflow:auto;color:#67E8F9' }, curlLines.join('\n'))
+                ],
+                footer: [
+                    el('button', { class: `${NS}-btn ${NS}-copy-aria` }, 'aria2c'),
+                    el('button', { class: `${NS}-btn ${NS}-copy-curl` }, 'curl'),
+                    el('button', { class: `${NS}-btn ${NS}-copy-urls` }, 'URLs'),
+                    el('button', { class: `${NS}-btn ${NS}-save-sh` }, '💾 .sh'),
+                    el('button', { class: `${NS}-btn ${NS}-save-bat` }, '💾 .bat'),
+                    el('button', { class: `${NS}-btn ${NS}-cancel` }, 'Close')
+                ]
             });
             m.el.querySelector(`.${NS}-copy-aria`).addEventListener('click', async () => { await copyToClipboard(lines.join('\n')); Toast.success('Copied'); });
             m.el.querySelector(`.${NS}-copy-curl`).addEventListener('click', async () => { await copyToClipboard(curlLines.join('\n')); Toast.success('Copied'); });
@@ -1767,6 +1847,8 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
             return { size, modules: best };
         }
 
+        /* [R3] returns a live SVG Element (was an HTML string — the QR
+         * modal then spliced it into an innerHTML template). */
         function svg(text, size = 220) {
             const enc = qrEncode(text);
             if (!enc) return null;
@@ -1775,7 +1857,21 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
             const cs = size / s;
             let path = '';
             for (let r = 0; r < s; r++) for (let c = 0; c < s; c++) if (m[r][c]) path += `M${c * cs},${r * cs}h${cs}v${cs}h-${cs}z`;
-            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}"><rect width="100%" height="100%" fill="white"/><path d="${path}" fill="black"/></svg>`;
+            const NS2 = 'http://www.w3.org/2000/svg';
+            const out = document.createElementNS(NS2, 'svg');
+            out.setAttribute('xmlns', NS2);
+            out.setAttribute('viewBox', `0 0 ${size} ${size}`);
+            out.setAttribute('width', String(size));
+            out.setAttribute('height', String(size));
+            const rect = document.createElementNS(NS2, 'rect');
+            rect.setAttribute('width', '100%');
+            rect.setAttribute('height', '100%');
+            rect.setAttribute('fill', 'white');
+            const p = document.createElementNS(NS2, 'path');
+            p.setAttribute('d', path);
+            p.setAttribute('fill', 'black');
+            out.append(rect, p);
+            return out;
         }
         return {
             show: async (file) => {
@@ -1784,8 +1880,13 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
                 const qrSvg = svg(url, 240);
                 if (!qrSvg) { Toast.error('URL exceeds QR capacity (106 bytes)'); return; }
                 Modal.open({
-                    title: '📱 QR Code',
-                    body: `<div style="text-align:center"><div style="background:white;display:inline-block;padding:16px;border-radius:8px">${qrSvg}</div><p style="font-size:11px;color:#67E8F9;word-break:break-all;margin:12px 0">${escapeHTML(url)}</p><p style="font-size:11px;color:#666;background:rgba(10,19,26,0.55);padding:6px 10px;border-radius:4px">Note: Scanner app needs to send Referer: https://pixeldrain.com/</p><button class="${NS}-btn" style="margin-top:8px" id="${NS}-qr-copy-btn">📋 Copy URL</button></div>`
+                    title: '\uD83D\uDCF1 QR Code',
+                    body: el('div', { style: 'text-align:center' },
+                        el('div', { style: 'background:white;display:inline-block;padding:16px;border-radius:8px' }, qrSvg),
+                        el('p', { style: 'font-size:11px;color:#67E8F9;word-break:break-all;margin:12px 0' }, url),
+                        el('p', { style: 'font-size:11px;color:#666;background:rgba(10,19,26,0.55);padding:6px 10px;border-radius:4px' },
+                            'Note: Scanner app needs to send Referer: https://pixeldrain.com/'),
+                        el('button', { class: `${NS}-btn`, style: 'margin-top:8px', id: `${NS}-qr-copy-btn` }, '\uD83D\uDCCB Copy URL'))
                 });
                 document.getElementById(`${NS}-qr-copy-btn`).addEventListener('click', async () => {
                     const ok = await copyToClipboard(url);
@@ -1925,7 +2026,23 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
             if (!SETTINGS.notificationsEnabled) return;
             const el = document.createElement('div');
             el.className = `${NS}-toast ${kind}`;
-            el.innerHTML = msg;
+            el.textContent = msg;
+            ensure().appendChild(el);
+            if (timeout > 0) setTimeout(() => {
+                el.style.transition = 'opacity .3s, transform .3s';
+                el.style.opacity = '0';
+                el.style.transform = 'translateX(50px)';
+                setTimeout(() => el.remove(), 300);
+            }, timeout);
+            return el;
+        };
+        /* [R3] element-built toast: children is a Node or array of Nodes —
+         * replaces the retired Toast.html string path. */
+        const node = (children, kind = 'info', timeout = 4000) => {
+            if (!SETTINGS.notificationsEnabled) return;
+            const el = document.createElement('div');
+            el.className = `${NS}-toast ${kind}`;
+            el.append(...(Array.isArray(children) ? children : [children]).filter(Boolean));
             ensure().appendChild(el);
             if (timeout > 0) setTimeout(() => {
                 el.style.transition = 'opacity .3s, transform .3s';
@@ -1936,26 +2053,34 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
             return el;
         };
         return {
-            show, ensure,
-            info: (m, t) => show(escapeHTML(m), 'info', t),
-            success: (m, t) => show(escapeHTML(m), 'success', t),
-            warn: (m, t) => show(escapeHTML(m), 'warn', t),
-            error: (m, t) => show(escapeHTML(m), 'error', t || 6000),
-            html: (h, k, t) => show(h, k, t)
+            show, ensure, node,
+            info: (m, t) => show(m, 'info', t),
+            success: (m, t) => show(m, 'success', t),
+            warn: (m, t) => show(m, 'warn', t),
+            error: (m, t) => show(m, 'error', t || 6000)
         };
     })();
 
     const Modal = {
-        open({ title = '', body = '', footer = '', onClose } = {}) {
+        /* [R3] body/footer accept a Node or array of Nodes (strings are
+         * gone — the innerHTML paths are retired). */
+        open({ title = '', body = null, footer = null, onClose } = {}) {
             const bg = document.createElement('div');
             bg.className = `${NS}-modal-bg`;
-            bg.innerHTML = `<div class="${NS}-modal"><div class="${NS}-modal-head"><span class="${NS}-modal-title">${escapeHTML(title)}</span><button class="${NS}-modal-close">&times;</button></div><div class="${NS}-modal-body"></div>${footer ? `<div class="${NS}-modal-foot"></div>` : ''}</div>`;
-            const bodyEl = bg.querySelector(`.${NS}-modal-body`);
+            const closeBtn = el('button', { class: `${NS}-modal-close` }, '\u00D7');
+            const bodyEl = el('div', { class: `${NS}-modal-body` });
+            const modal = el('div', { class: `${NS}-modal` },
+                el('div', { class: `${NS}-modal-head` },
+                    el('span', { class: `${NS}-modal-title` }, title),
+                    closeBtn),
+                bodyEl,
+                footer ? el('div', { class: `${NS}-modal-foot` }) : null);
+            bg.append(modal);
             const footEl = bg.querySelector(`.${NS}-modal-foot`);
-            if (typeof body === 'string') bodyEl.innerHTML = body; else if (body) bodyEl.appendChild(body);
-            if (footEl && footer) { if (typeof footer === 'string') footEl.innerHTML = footer; else footEl.appendChild(footer); }
+            if (body) bodyEl.append(...(Array.isArray(body) ? body : [body]));
+            if (footEl && footer) footEl.append(...(Array.isArray(footer) ? footer : [footer]));
             const close = () => { try { onClose && onClose(); } catch {} bg.remove(); };
-            bg.querySelector(`.${NS}-modal-close`).addEventListener('click', close);
+            closeBtn.addEventListener('click', close);
             bg.addEventListener('click', e => { if (e.target === bg) close(); });
             document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); } });
             (document.body || document.documentElement).appendChild(bg);
@@ -1977,104 +2102,117 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
         const bw = BandwidthTracker.load();
         const body = document.createElement('div');
         const authBadge = SETTINGS.apiKey
-            ? `<span class="${NS}-pill gold">★ premium</span>`
-            : `<span class="${NS}-pill bad">free tier</span>`;
+            ? el('span', { class: `${NS}-pill gold` }, '★ premium')
+            : el('span', { class: `${NS}-pill bad` }, 'free tier');
         const bwPct = BandwidthTracker.getPct();
         const bwColor = bwPct > 80 ? 'bad' : bwPct > 50 ? 'gold' : 'ok';
 
-        body.innerHTML = `
-            <div class="${NS}-banner">
-                <strong>Pixeldrain Bypass Pro v${VERSION}</strong><br>
-                Speed multiplication: ${SETTINGS.maxTotalConnections} parallel connections × 1 MB/s = up to ${SETTINGS.maxTotalConnections} MB/s<br>
-                ${authBadge}
-                <span class="${NS}-pill ${Caps.fsAccess ? 'ok' : 'bad'}">FSA ${Caps.fsAccess ? '✓' : '✗'}</span>
-                <span class="${NS}-pill ${Caps.streams ? 'ok' : 'bad'}">streams ${Caps.streams ? '✓' : '✗'}</span>
-                <span class="${NS}-pill ${Caps.gmDownload ? 'ok' : 'bad'}">GM_dl ${Caps.gmDownload ? '✓' : '✗'}</span>
-                <span class="${NS}-pill ${bwColor}">BW: ${bwPct.toFixed(1)}%</span>
-            </div>
+        /* [R3] settings panel — element-built (was the script's largest
+         * innerHTML template). Structure, classes, data-k keys and styles
+         * preserved 1:1; the data-k hydration loop below is unchanged. */
+        const sectionTitle = (t) => el('div', { class: `${NS}-section-title` }, t);
+        const row = (...kids) => el('div', { class: `${NS}-row` }, kids);
+        const label = (t) => el('label', null, t);
+        const inp = (type, k, extra = {}) => el('input', Object.assign({ type, 'data-k': k, class: `${NS}-input` }, extra));
+        const cbox = (k) => el('input', { type: 'checkbox', 'data-k': k });
+        const num = (k, min, max, style) => el('input', { type: 'number', 'data-k': k, class: `${NS}-input`, style, min, max });
+        const strategyOptions = [
+            ['auto', '⚡ Auto (smartest pick)'],
+            ['premium_direct', '★ Premium direct'],
+            ['speed_multiplied', '⚡ Speed multiplied (N×1MB/s)'],
+            ['multi_proxy_ranged', 'Multi-proxy chunked'],
+            ['single_host_ranged', 'Single-host ranged'],
+            ['gm_stream_fsa', 'GM → FSA stream'],
+            ['native_fetch', 'Native fetch (no-referrer)'],
+            ['gm_blob', 'GM blob (in-RAM)'],
+            ['gm_download', 'GM_download (browser)'],
+        ];
+        body.append(
+            el('div', { class: `${NS}-banner` },
+                el('strong', null, `Pixeldrain Bypass Pro v${VERSION}`), el('br'),
+                `Speed multiplication: ${SETTINGS.maxTotalConnections} parallel connections × 1 MB/s = up to ${SETTINGS.maxTotalConnections} MB/s`, el('br'),
+                authBadge,
+                el('span', { class: `${NS}-pill ${Caps.fsAccess ? 'ok' : 'bad'}` }, `FSA ${Caps.fsAccess ? '✓' : '✗'}`),
+                el('span', { class: `${NS}-pill ${Caps.streams ? 'ok' : 'bad'}` }, `streams ${Caps.streams ? '✓' : '✗'}`),
+                el('span', { class: `${NS}-pill ${Caps.gmDownload ? 'ok' : 'bad'}` }, `GM_dl ${Caps.gmDownload ? '✓' : '✗'}`),
+                el('span', { class: `${NS}-pill ${bwColor}` }, `BW: ${bwPct.toFixed(1)}%`)),
 
-            <div class="${NS}-section-title">★ Premium Auth (Layer A)</div>
-            <div class="${NS}-row"><label>API Key</label><input type="password" data-k="apiKey" class="${NS}-input" placeholder="paste pixeldrain API key" style="max-width:320px"></div>
-            <div class="${NS}-row"><label>Use direct when authenticated</label><input type="checkbox" data-k="useDirectIfAuth"></div>
-            <div class="${NS}-row"><label>Direct threshold (bytes)</label><input type="number" data-k="directThresholdBytes" class="${NS}-input" style="max-width:140px"></div>
-            <div class="${NS}-row"><button class="${NS}-btn ${NS}-test-auth">🔑 Verify</button><span class="${NS}-auth-result" style="font-size:12px;color:#67E8F9;margin-left:8px"></span></div>
+            sectionTitle('★ Premium Auth (Layer A)'),
+            row(label('API Key'), inp('password', 'apiKey', { placeholder: 'paste pixeldrain API key', style: 'max-width:320px' })),
+            row(label('Use direct when authenticated'), cbox('useDirectIfAuth')),
+            row(label('Direct threshold (bytes)'), num('directThresholdBytes', null, null, 'max-width:140px')),
+            row(el('button', { class: `${NS}-btn ${NS}-test-auth` }, '🔑 Verify'),
+                el('span', { class: `${NS}-auth-result`, style: 'font-size:12px;color:#67E8F9;margin-left:8px' })),
 
-            <div class="${NS}-section-title">⚡ Speed Multiplication</div>
-            <div class="${NS}-row"><label>Enable speed multiplier</label><input type="checkbox" data-k="speedMultiplier"></div>
-            <div class="${NS}-row"><label>Connections per mirror</label><input type="number" min="1" max="8" data-k="connectionsPerMirror" class="${NS}-input" style="max-width:80px"></div>
-            <div class="${NS}-row"><label>Max total connections</label><input type="number" min="2" max="64" data-k="maxTotalConnections" class="${NS}-input" style="max-width:80px"></div>
+            sectionTitle('⚡ Speed Multiplication'),
+            row(label('Enable speed multiplier'), cbox('speedMultiplier')),
+            row(label('Connections per mirror'), num('connectionsPerMirror', '1', '8', 'max-width:80px')),
+            row(label('Max total connections'), num('maxTotalConnections', '2', '64', 'max-width:80px')),
 
-            <div class="${NS}-section-title">Strategy</div>
-            <div class="${NS}-row"><label>Primary</label><select class="${NS}-input" data-k="primaryStrategy" style="max-width:320px">
-                <option value="auto">⚡ Auto (smartest pick)</option>
-                <option value="premium_direct">★ Premium direct</option>
-                <option value="speed_multiplied">⚡ Speed multiplied (N×1MB/s)</option>
-                <option value="multi_proxy_ranged">Multi-proxy chunked</option>
-                <option value="single_host_ranged">Single-host ranged</option>
-                <option value="gm_stream_fsa">GM → FSA stream</option>
-                <option value="native_fetch">Native fetch (no-referrer)</option>
-                <option value="gm_blob">GM blob (in-RAM)</option>
-                <option value="gm_download">GM_download (browser)</option>
-            </select></div>
-            <div class="${NS}-row"><label>Auto failover</label><input type="checkbox" data-k="autoFailover"></div>
-            <div class="${NS}-row"><label>Pre-flight check</label><input type="checkbox" data-k="preflightCheck"></div>
-            <div class="${NS}-row"><label>Auto-download on load</label><input type="checkbox" data-k="autoTriggerOnLoad"></div>
+            sectionTitle('Strategy'),
+            row(label('Primary'),
+                el('select', { class: `${NS}-input`, 'data-k': 'primaryStrategy', style: 'max-width:320px' },
+                    strategyOptions.map(([v, t]) => el('option', { value: v }, t)))),
+            row(label('Auto failover'), cbox('autoFailover')),
+            row(label('Pre-flight check'), cbox('preflightCheck')),
+            row(label('Auto-download on load'), cbox('autoTriggerOnLoad')),
 
-            <div class="${NS}-section-title">Chunking</div>
-            <div class="${NS}-row"><label>Max chunks</label><input type="number" min="2" max="64" data-k="multiProxyChunks" class="${NS}-input" style="max-width:80px"></div>
-            <div class="${NS}-row"><label>Concurrency</label><input type="number" min="1" max="64" data-k="chunkConcurrency" class="${NS}-input" style="max-width:80px"></div>
-            <div class="${NS}-row"><label>Retries</label><input type="number" min="0" max="10" data-k="chunkRetry" class="${NS}-input" style="max-width:80px"></div>
-            <div class="${NS}-row"><label>Adaptive chunking</label><input type="checkbox" data-k="adaptiveChunking"></div>
-            <div class="${NS}-row"><label>Resumable</label><input type="checkbox" data-k="resumableEnabled"></div>
+            sectionTitle('Chunking'),
+            row(label('Max chunks'), num('multiProxyChunks', '2', '64', 'max-width:80px')),
+            row(label('Concurrency'), num('chunkConcurrency', '1', '64', 'max-width:80px')),
+            row(label('Retries'), num('chunkRetry', '0', '10', 'max-width:80px')),
+            row(label('Adaptive chunking'), cbox('adaptiveChunking')),
+            row(label('Resumable'), cbox('resumableEnabled')),
 
-            <div class="${NS}-section-title">Bypass & Protection</div>
-            <div class="${NS}-row"><label>Video unlock (logged-in gate)</label><input type="checkbox" data-k="bypassVideoLogged"></div>
-            <div class="${NS}-row"><label>Continuous viewer patch</label><input type="checkbox" data-k="bypassViewerContinuous"></div>
-            <div class="${NS}-row"><label>Hide ads</label><input type="checkbox" data-k="bypassShowAds"></div>
-            <div class="${NS}-row"><label>View-pad (prevent captcha)</label><input type="checkbox" data-k="viewPadEnabled"></div>
-            <div class="${NS}-row"><label>Captcha pre-check</label><input type="checkbox" data-k="captchaPreCheck"></div>
-            <div class="${NS}-row"><label>Captcha auto-open tab</label><input type="checkbox" data-k="captchaAutoOpen"></div>
+            sectionTitle('Bypass & Protection'),
+            row(label('Video unlock (logged-in gate)'), cbox('bypassVideoLogged')),
+            row(label('Continuous viewer patch'), cbox('bypassViewerContinuous')),
+            row(label('Hide ads'), cbox('bypassShowAds')),
+            row(label('View-pad (prevent captcha)'), cbox('viewPadEnabled')),
+            row(label('Captcha pre-check'), cbox('captchaPreCheck')),
+            row(label('Captcha auto-open tab'), cbox('captchaAutoOpen')),
 
-            <div class="${NS}-section-title">Circuit Breaker</div>
-            <div class="${NS}-row"><label>Failure threshold</label><input type="number" min="1" max="10" data-k="circuitBreakerThreshold" class="${NS}-input" style="max-width:80px"></div>
-            <div class="${NS}-row"><label>Cooldown (ms)</label><input type="number" data-k="circuitBreakerCooldown" class="${NS}-input" style="max-width:120px"></div>
+            sectionTitle('Circuit Breaker'),
+            row(label('Failure threshold'), num('circuitBreakerThreshold', '1', '10', 'max-width:80px')),
+            row(label('Cooldown (ms)'), num('circuitBreakerCooldown', null, null, 'max-width:120px')),
 
-            <div class="${NS}-section-title">Proxies (${PROXY_MIRRORS.length} built-in)</div>
-            <div class="${NS}-row"><label>Custom hosts</label><input type="text" data-k="customProxy" class="${NS}-input" placeholder="host1,host2,..." style="max-width:320px"></div>
-            <div class="${NS}-row"><label>Probe file ID</label><input type="text" data-k="healthProbeId" class="${NS}-input" placeholder="optional" style="max-width:200px"></div>
-            <div class="${NS}-row">
-                <button class="${NS}-btn ${NS}-test">🔍 Test All</button>
-                <button class="${NS}-btn ${NS}-unblock">🔓 Unblock</button>
-                <button class="${NS}-btn ${NS}-reset-cb">Reset Circuits</button>
-            </div>
-            <div class="${NS}-results" style="font-size:11px;color:#67E8F9;margin-top:6px;max-height:120px;overflow-y:auto"></div>
+            sectionTitle(`Proxies (${PROXY_MIRRORS.length} built-in)`),
+            row(label('Custom hosts'), inp('text', 'customProxy', { placeholder: 'host1,host2,...', style: 'max-width:320px' })),
+            row(label('Probe file ID'), inp('text', 'healthProbeId', { placeholder: 'optional', style: 'max-width:200px' })),
+            row(
+                el('button', { class: `${NS}-btn ${NS}-test` }, '🔍 Test All'),
+                el('button', { class: `${NS}-btn ${NS}-unblock` }, '🔓 Unblock'),
+                el('button', { class: `${NS}-btn ${NS}-reset-cb` }, 'Reset Circuits')),
+            el('div', { class: `${NS}-results`, style: 'font-size:11px;color:#67E8F9;margin-top:6px;max-height:120px;overflow-y:auto' }),
 
-            <div class="${NS}-section-title">External Downloaders</div>
-            <div class="${NS}-row"><label>JDownloader URL</label><input type="text" data-k="jdownloaderUrl" class="${NS}-input" style="max-width:320px"></div>
-            <div class="${NS}-row"><label>Aria2 RPC URL</label><input type="text" data-k="aria2RpcUrl" class="${NS}-input" style="max-width:320px"></div>
-            <div class="${NS}-row"><label>Aria2 secret</label><input type="text" data-k="aria2Secret" class="${NS}-input" style="max-width:200px"></div>
-            <div class="${NS}-row"><label>Aria2 connections</label><input type="number" min="1" max="64" data-k="aria2MaxConn" class="${NS}-input" style="max-width:80px"></div>
+            sectionTitle('External Downloaders'),
+            row(label('JDownloader URL'), inp('text', 'jdownloaderUrl', { style: 'max-width:320px' })),
+            row(label('Aria2 RPC URL'), inp('text', 'aria2RpcUrl', { style: 'max-width:320px' })),
+            row(label('Aria2 secret'), inp('text', 'aria2Secret', { style: 'max-width:200px' })),
+            row(label('Aria2 connections'), num('aria2MaxConn', '1', '64', 'max-width:80px')),
 
-            <div class="${NS}-section-title">UI</div>
-            <div class="${NS}-row"><label>Notifications</label><input type="checkbox" data-k="notificationsEnabled"></div>
-            <div class="${NS}-row"><label>Debug log</label><input type="checkbox" data-k="debugLog"></div>
+            sectionTitle('UI'),
+            row(label('Notifications'), cbox('notificationsEnabled')),
+            row(label('Debug log'), cbox('debugLog')),
 
-            <div class="${NS}-section-title">Stats & Bandwidth</div>
-            <div class="${NS}-file-info">
-                Downloads: <strong>${stats.count || 0}</strong> · Total: <strong>${formatBytes(stats.bytes || 0)}</strong><br>
-                Saved bandwidth: <strong>${formatBytes(stats.savedBandwidth || 0)}</strong> (via proxy, 0 cost to your cap)<br>
-                Current session BW used: <strong>${formatBytes(bw.used || 0)}</strong> / ${formatBytes(BANDWIDTH_CAP)} (${bwPct.toFixed(1)}%)<br>
-                Remaining: <strong>${formatBytes(BandwidthTracker.getRemaining())}</strong>
-            </div>
-            <div class="${NS}-row" style="margin-top:8px">
-                <button class="${NS}-btn ${NS}-reset-stats">Reset stats</button>
-                <button class="${NS}-btn ${NS}-reset-bw">Reset BW</button>
-                <button class="${NS}-btn ${NS}-cleanup">Cleanup jobs</button>
-                <button class="${NS}-btn ${NS}-show-jobs">📋 Jobs</button>
-            </div>
-            <div style="margin-top:14px;font-size:11px;color:rgba(103,232,249,0.5);text-align:center">v${VERSION} · ${PROXY_MIRRORS.length} mirrors · Circuit breaker · Speed multiplication</div>`;
+            sectionTitle('Stats & Bandwidth'),
+            el('div', { class: `${NS}-file-info` },
+                'Downloads: ', el('strong', null, String(stats.count || 0)), ' · Total: ', el('strong', null, formatBytes(stats.bytes || 0)), el('br'),
+                'Saved bandwidth: ', el('strong', null, formatBytes(stats.savedBandwidth || 0)), ' (via proxy, 0 cost to your cap)', el('br'),
+                'Current session BW used: ', el('strong', null, formatBytes(bw.used || 0)), ` / ${formatBytes(BANDWIDTH_CAP)} (${bwPct.toFixed(1)}%)`, el('br'),
+                'Remaining: ', el('strong', null, formatBytes(BandwidthTracker.getRemaining()))),
+            el('div', { class: `${NS}-row`, style: 'margin-top:8px' },
+                el('button', { class: `${NS}-btn ${NS}-reset-stats` }, 'Reset stats'),
+                el('button', { class: `${NS}-btn ${NS}-reset-bw` }, 'Reset BW'),
+                el('button', { class: `${NS}-btn ${NS}-cleanup` }, 'Cleanup jobs'),
+                el('button', { class: `${NS}-btn ${NS}-show-jobs` }, '📋 Jobs')),
+            el('div', { style: 'margin-top:14px;font-size:11px;color:rgba(103,232,249,0.5);text-align:center' },
+                `v${VERSION} · ${PROXY_MIRRORS.length} mirrors · Circuit breaker · Speed multiplication`));
 
-        const footer = `<button class="${NS}-btn ${NS}-cancel">Cancel</button><button class="${NS}-btn primary ${NS}-save">💾 Save</button>`;
+        const footer = [
+            el('button', { class: `${NS}-btn ${NS}-cancel` }, 'Cancel'),
+            el('button', { class: `${NS}-btn primary ${NS}-save` }, '💾 Save')
+        ];
         const m = Modal.open({ title: `⚙ Pixeldrain Bypass Pro v${VERSION}`, body, footer });
 
         body.querySelectorAll('[data-k]').forEach(el => {
@@ -2093,8 +2231,9 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
             SETTINGS = saveSettings({ apiKey: prev });
             const r = body.querySelector(`.${NS}-auth-result`);
             if (u && (u.username || u.email)) {
-                r.innerHTML = `<span class="${NS}-pill ok">✓ ${escapeHTML(u.username || u.email)}${u.subscription ? ' · ' + escapeHTML(u.subscription.name || u.subscription.type || 'premium') : ''}</span>`;
-            } else r.innerHTML = `<span class="${NS}-pill bad">✗ invalid</span>`;
+                r.replaceChildren(el('span', { class: `${NS}-pill ok` },
+                    `✓ ${u.username || u.email}${u.subscription ? ' · ' + (u.subscription.name || u.subscription.type || 'premium') : ''}`));
+            } else r.replaceChildren(el('span', { class: `${NS}-pill bad` }, '✗ invalid'));
             ev.target.disabled = false;
         });
 
@@ -2102,10 +2241,14 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
             ev.target.disabled = true;
             const probeId = body.querySelector('[data-k="healthProbeId"]').value.trim() || Page.id() || '';
             const r = await ProxyManager.checkAll(true, probeId);
-            body.querySelector(`.${NS}-results`).innerHTML = r
-                .sort((a, b) => (a.ok ? a.ms : 99999) - (b.ok ? b.ms : 99999))
-                .map(x => `<span class="${NS}-pill ${x.ok ? 'ok' : 'bad'}">${escapeHTML(x.proxy.name)}: ${x.ok ? Math.round(x.ms) + 'ms' : '✗' + (x.status ? ' ' + x.status : '')}</span>`).join(' ');
-            ev.target.disabled = false;
+            const sorted = [...r].sort((a, b) => (a.ok ? a.ms : 99999) - (b.ok ? b.ms : 99999));
+            const resultBox = body.querySelector(`.${NS}-results`);
+            resultBox.replaceChildren();
+            sorted.forEach((x, i) => {
+                if (i > 0) resultBox.append(' ');
+                resultBox.append(el('span', { class: `${NS}-pill ${x.ok ? 'ok' : 'bad'}` },
+                    `${x.proxy.name}: ${x.ok ? Math.round(x.ms) + 'ms' : '✗' + (x.status ? ' ' + x.status : '')}`));
+            });
         });
 
         body.querySelector(`.${NS}-unblock`).addEventListener('click', () => { ProxyManager.unblockAll(); Toast.success('Unblocked all'); });
@@ -2211,18 +2354,21 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
             tb.appendChild(mk('ℹ Info', 'File info & preflight', async () => {
                 const pf = await PDApi.preflight(file.id);
                 const proxy = await ProxyManager.best(file.id);
-                let html = `<div class="${NS}-file-info">`;
-                html += `<strong>Name:</strong> ${escapeHTML(pf.name || file.name)}<br>`;
-                html += `<strong>Size:</strong> ${formatBytes(pf.size || file.size)}<br>`;
-                html += `<strong>MIME:</strong> ${escapeHTML(pf.mime || file.mime_type || 'unknown')}<br>`;
-                html += `<strong>Can download:</strong> ${pf.canDownload ? '✓' : '✗'}<br>`;
-                html += `<strong>Captcha needed:</strong> ${pf.needsCaptcha ? '⚠ YES' : '✓ No'}<br>`;
-                if (pf.availability) html += `<strong>Availability:</strong> ${escapeHTML(pf.availability)}<br>`;
-                html += `<strong>Speed limit:</strong> ${formatBytes(pf.speedLimit || SPEED_LIMIT_PER_CONN)}/s per connection<br>`;
-                html += `<strong>Best mirror:</strong> ${escapeHTML(proxy.host)}<br>`;
-                html += `<strong>Proxy URL:</strong> <span style="word-break:break-all">${escapeHTML(ProxyManager.url(proxy, file.id))}</span>`;
-                html += `</div>`;
-                Modal.open({ title: 'File Info', body: html });
+                const infoRow = (k, v) => [el('strong', null, `${k}:`), ' ', v, el('br')];
+                Modal.open({
+                    title: 'File Info',
+                    body: el('div', { class: `${NS}-file-info` },
+                        infoRow('Name', pf.name || file.name),
+                        infoRow('Size', formatBytes(pf.size || file.size)),
+                        infoRow('MIME', pf.mime || file.mime_type || 'unknown'),
+                        infoRow('Can download', pf.canDownload ? '✓' : '✗'),
+                        infoRow('Captcha needed', pf.needsCaptcha ? '⚠ YES' : '✓ No'),
+                        pf.availability ? infoRow('Availability', pf.availability) : null,
+                        infoRow('Speed limit', `${formatBytes(pf.speedLimit || SPEED_LIMIT_PER_CONN)}/s per connection`),
+                        infoRow('Best mirror', proxy.host),
+                        el('strong', null, 'Proxy URL:'), ' ',
+                        el('span', { style: 'word-break:break-all' }, ProxyManager.url(proxy, file.id)))
+                });
             }));
         }
 

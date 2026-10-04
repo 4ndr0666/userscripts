@@ -20,7 +20,7 @@
 | **GoFile++** | `2.1.1` | media & links | [reference](./gofile/) |
 | **GooglePhotosandDrive++** | `8.0.2` | images | [reference](./gphotos-drive/) |
 | **Hailuo++** | `6.0.1` | sovereign platforms | [devlog](./hailuo++/) |
-| **HostWarp** | `1.1.2` | ux utilities | [reference](./hostwarp/) |
+| **HostWarp** | `1.1.3` | ux utilities | [reference](./hostwarp/) |
 | **Images++** | `4.0.3` | images | [reference](./images/) |
 | **Instagram++** | `13.0.1` | sovereign platforms | [reference](./instagram/) |
 | **LinkMasterΨ** | `6.2.4` | media & links | [reference](./linkmaster/) |
@@ -28,17 +28,17 @@
 | **Maximize_Any_Media** | `2.0.1` | video & players | [reference](./maximize-any-media/) |
 | **Media Player Controller** | `8.1.2` | uncategorized | [reference](./media-player-controller/) |
 | **ModelSearch** | `4.0.1` | forums | [reference](./modelsearch/) |
-| **PageCraft** | `1.1.2` | ux utilities | [reference](./pagecraft/) |
+| **PageCraft** | `1.1.3` | ux utilities | [reference](./pagecraft/) |
 | **Pixeldrain++** | `1.1.1` | media & links | [reference](./pixeldrain/) |
 | **Prompt Master** | `28.3.1` | sovereign platforms | [reference](./prompt-master/) |
 | **Recon** | `9.0.1` | privacy & security | [reference](./recon/) |
-| **Redgifs++** | `5.2` | video & players | [reference](./redgifs/) |
+| **Redgifs++** | `5.3` | video & players | [reference](./redgifs/) |
 | **Stream Interceptor** | `3.2.0` | uncategorized | [reference](./stream-interceptor/) |
 | **Watermark++** | `2.0.2` | sovereign platforms | [reference](./watermark/) |
 | **Website Control Panel** | `5.3.0` | ux utilities | [reference](./website-control-panel/) |
 | **YT Filter** | `2.5` | video & players | [reference](./yt-filter/) |
 | **Yandex Image Search++** | `0.4.1` | images | [reference](./yandex-image-search/) |
-| **YouTube Embed Redirect Button** | `1.5` | video & players | [reference](./yt-embed-redirect/) |
+| **YouTube Embed Redirect Button** | `1.6` | video & players | [reference](./yt-embed-redirect/) |
 | **YouTube Playlist Master** | `1.7.0` | video & players | [reference](./youtube-playlist-master/) |
 | **Youtube Removed Video Revealer** | `2.0.1` | video & players | [reference](./yt-removed-video-revealer/) |
 | **m3u8++** | `5.0.1` | media & links | [devlog](./m3u8++/) |

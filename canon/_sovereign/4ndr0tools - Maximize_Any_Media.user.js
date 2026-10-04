@@ -951,34 +951,58 @@
       el.id = "mamConsole"
       el.className = "mam-console"
       const t = gv.btnText
-      const switchRow = (key, label) =>
-        '<div class="mam-row"><span class="mam-label">' +
-        label +
-        '</span><label class="mam-switch"><input type="checkbox" data-mam-key="' +
-        key +
-        '"><span class="mam-slider"></span></label></div>'
-      el.innerHTML = [
-        '<div class="mam-header">',
-        '  <div class="mam-title">Ψ</div>',
-        '  <div><div class="mam-title-text">MAXIMIZE_ANY_MEDIA</div>',
-        '    <div class="mam-subtitle">' + SCRIPT.name + " · v" + SCRIPT.version + " · " + SCRIPT.spec + "</div></div>",
-        '  <div class="mam-close mam-btn" title="close">✕</div>',
-        "</div>",
-        '<div class="mam-body">',
+      /* [R3] element-built console (was the innerHTML string-array join).
+       * Structure, classes, data-mam-key wiring preserved 1:1. */
+      const switchRow = (key, label) => {
+        const row = document.createElement("div"); row.className = "mam-row"
+        const lab = document.createElement("span"); lab.className = "mam-label"; lab.textContent = label
+        const wrap = document.createElement("label"); wrap.className = "mam-switch"
+        const input = document.createElement("input"); input.type = "checkbox"; input.dataset.mamKey = key
+        const slider = document.createElement("span"); slider.className = "mam-slider"
+        wrap.append(input, slider); row.append(lab, wrap)
+        return row
+      }
+      const numRow = (key, label) => {
+        const row = document.createElement("div"); row.className = "mam-row"
+        const lab = document.createElement("span"); lab.className = "mam-label"; lab.textContent = label
+        const input = document.createElement("input"); input.type = "number"; input.className = "mam-num"
+        input.dataset.mamKey = key; input.min = "0"; input.max = "10000"; input.step = "1"
+        row.append(lab, input)
+        return row
+      }
+      const rangeRow = (key, label) => {
+        const row = document.createElement("div"); row.className = "mam-row"
+        const lab = document.createElement("span"); lab.className = "mam-label"; lab.textContent = label
+        const input = document.createElement("input"); input.type = "range"; input.className = "mam-range"
+        input.dataset.mamKey = key; input.min = "0.3"; input.max = "1"; input.step = "0.05"
+        row.append(lab, input)
+        return row
+      }
+      const header = document.createElement("div"); header.className = "mam-header"
+      const glyph = document.createElement("div"); glyph.className = "mam-title"; glyph.textContent = "Ψ"
+      const headText = document.createElement("div")
+      const titleText = document.createElement("div"); titleText.className = "mam-title-text"; titleText.textContent = "MAXIMIZE_ANY_MEDIA"
+      const subtitle = document.createElement("div"); subtitle.className = "mam-subtitle"
+      subtitle.textContent = SCRIPT.name + " · v" + SCRIPT.version + " · " + SCRIPT.spec
+      headText.append(titleText, subtitle)
+      const close = document.createElement("div"); close.className = "mam-close mam-btn"; close.title = "close"; close.textContent = "✕"
+      header.append(glyph, headText, close)
+      const body = document.createElement("div"); body.className = "mam-body"
+      body.append(
         switchRow("hotkeys", t.cHotkeys),
         switchRow("imageMaximize", t.cImgMax),
         switchRow("imagePip", t.cImgPip),
         switchRow("shadowScan", t.cShadow),
-        '  <div class="mam-row"><span class="mam-label">' + t.cMinW + '</span><input type="number" class="mam-num" data-mam-key="minMediaWidth" min="0" max="10000" step="1"></div>',
-        '  <div class="mam-row"><span class="mam-label">' + t.cMinH + '</span><input type="number" class="mam-num" data-mam-key="minMediaHeight" min="0" max="10000" step="1"></div>',
-        '  <div class="mam-row"><span class="mam-label">' + t.cOpacity + '</span><input type="range" class="mam-range" data-mam-key="buttonOpacity" min="0.3" max="1" step="0.05"></div>',
-        '  <div class="mam-status" data-mam-status></div>',
-        "</div>",
-        '<div class="mam-footer">',
-        '  <button class="mam-btn mam-destructive" data-mam-reset>' + t.cReset + "</button>",
-        '  <button class="mam-btn" data-mam-done>' + t.cDone + "</button>",
-        "</div>",
-      ].join("\n")
+        numRow("minMediaWidth", t.cMinW),
+        numRow("minMediaHeight", t.cMinH),
+        rangeRow("buttonOpacity", t.cOpacity))
+      const status = document.createElement("div"); status.className = "mam-status"; status.dataset.mamStatus = ""
+      body.appendChild(status)
+      const footer = document.createElement("div"); footer.className = "mam-footer"
+      const resetBtn = document.createElement("button"); resetBtn.className = "mam-btn mam-destructive"; resetBtn.dataset.mamReset = ""; resetBtn.textContent = t.cReset
+      const doneBtn = document.createElement("button"); doneBtn.className = "mam-btn"; doneBtn.dataset.mamDone = ""; doneBtn.textContent = t.cDone
+      footer.append(resetBtn, doneBtn)
+      el.append(header, body, footer)
       document.body.appendChild(el)
       this.el = el
       this.place(el)

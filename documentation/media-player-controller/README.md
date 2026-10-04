@@ -13,7 +13,7 @@ MPC is the cockpit for any media element on any page: speed with ±0.1 fine rate
 | Version | `8.1.2` |
 | Matches | `*://*/*` |
 | Run-at | `document-end` |
-| Size | 108.8 KB · 2545 lines |
+| Size | 110.7 KB · 2625 lines |
 | Install | [dist/4ndr0tools - Media Player Controller.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Media%20Player%20Controller.user.js) |
 
 ## Feature Inventory

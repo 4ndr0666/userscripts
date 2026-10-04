@@ -275,21 +275,42 @@
         panel.style.bottom = '20px';
     }
 
-    panel.innerHTML = `
-      <div id="psi-cp-header" title="Drag to move — double-click to collapse">
-        <span>Ψ-WCP</span>
-        <button id="psi-cp-collapse" class="cp-mini" title="Collapse panel">–</button>
-        <button id="psi-cp-close" class="cp-mini" title="Hide HUD (Alt+Shift+H to restore)">×</button>
-      </div>
-      <div id="psi-cp-body">
-        <button id="toggle-adblock" class="hud-button">Ad Block</button>
-        <button id="toggle-autoskip" class="hud-button">Auto Skip</button>
-        <button id="toggle-ageskip" class="hud-button">Age Bypass</button>
-        <button id="toggle-deepclean" class="hud-button">Deep Clean</button>
-        <button id="toggle-killnags" class="hud-button">Kill Nags</button>
-        <button id="toggle-zapper" class="hud-button" title="Point & click to obliterate DOM elements.">DOM Zapper</button>
-      </div>
-    `;
+    /* [R3] element-built panel (was an innerHTML template). IDs, classes
+     * and title tooltips preserved 1:1 — the handlers below are unchanged. */
+    const cpHeader = document.createElement('div');
+    cpHeader.id = 'psi-cp-header';
+    cpHeader.title = 'Drag to move — double-click to collapse';
+    const headerLabel = document.createElement('span');
+    headerLabel.textContent = 'Ψ-WCP';
+    const collapseBtn = document.createElement('button');
+    collapseBtn.id = 'psi-cp-collapse';
+    collapseBtn.className = 'cp-mini';
+    collapseBtn.title = 'Collapse panel';
+    collapseBtn.textContent = '–';
+    const closeBtn = document.createElement('button');
+    closeBtn.id = 'psi-cp-close';
+    closeBtn.className = 'cp-mini';
+    closeBtn.title = 'Hide HUD (Alt+Shift+H to restore)';
+    closeBtn.textContent = '×';
+    cpHeader.append(headerLabel, collapseBtn, closeBtn);
+    const cpBody = document.createElement('div');
+    cpBody.id = 'psi-cp-body';
+    const toggleBtn = (id, label, title) => {
+        const b = document.createElement('button');
+        b.id = id;
+        b.className = 'hud-button';
+        if (title) b.title = title;
+        b.textContent = label;
+        return b;
+    };
+    cpBody.append(
+        toggleBtn('toggle-adblock', 'Ad Block'),
+        toggleBtn('toggle-autoskip', 'Auto Skip'),
+        toggleBtn('toggle-ageskip', 'Age Bypass'),
+        toggleBtn('toggle-deepclean', 'Deep Clean'),
+        toggleBtn('toggle-killnags', 'Kill Nags'),
+        toggleBtn('toggle-zapper', 'DOM Zapper', 'Point & click to obliterate DOM elements.'));
+    panel.append(cpHeader, cpBody);
     document.body.appendChild(panel);
     panelEl = panel;
 
