@@ -25,13 +25,25 @@
  *                              ZERO while fetch/XHR/beacon all get phantoms
  *   /api/echo                  POST body echo (identifier-poisoning proof)
  *   /api/hits                  the /api/telemetry hit counter
+ *   /api/album/stats/<id>      bunkr stats-shaped endpoint (hit-counted —
+ *                              the Bunkr observer probe asserts the FAKE
+ *                              body resolves and the counter stays ZERO)
+ *   /api/flow.json             Prompt-Master flow-credit JSON ({left,total})
+ *                              — drives the #pm-flow-credit-chip proof
+ *   /api/v1/feed/timeline     Instagram++ Schema-A feed payload (drives the
+ *                              harvest-engine delivery proof)
+ *   /_/BardChatUi/data/…      gemini batchexecute-shaped endpoint (hit-
+ *                              counted — the Watermark RPC probe asserts
+ *                              clean passthrough, exactly one server hit)
  *
  * The harness page collects diagnostics into window.__SMOKE__ (page errors,
- * console.error calls, CSP violation events, captured GM menu commands) and
- * can auto-invoke a script's settings-console menu command (?autopanel=1),
- * run the wire probes (?probe=wire) for the NetHook consumers, or run the
- * veto probe (?probe=veto) for the NetHook v3 defusers (request cancel /
- * phantom-respond / body-rewrite, live).
+ * console.error calls, CSP violation events, captured GM menu commands,
+ * console.log captures) and can auto-invoke a script's settings-console
+ * menu command (?autopanel=1), run the wire probes (?probe=wire) for the
+ * NetHook consumers, run the veto probe (?probe=veto) for the NetHook v3
+ * defusers (request cancel / phantom-respond / body-rewrite, live), or run
+ * the observer probe (?probe=observer) for the NetHook v4 observer family
+ * (structured-traffic delivery, live).
  *
  * Run:      node tools/tt-smoke.mjs          (serves on 127.0.0.1:8765)
  *           node tools/tt-smoke.mjs --port 9000
@@ -123,18 +135,48 @@ function gmShim() {
 })();`;
 }
 
+function m3u8ParserStub() {
+    /* Minimal stand-in for the m3u8-parser @require library — the real
+     * library ships via the userscript manager's @require channel, which a
+     * plain harness page cannot reproduce. doM3U consumes exactly:
+     * new m3u8Parser.Parser() .push(text) .end() .manifest with
+     * segments[{uri,duration}] and playlists[{uri}] — the stub derives
+     * both from the standard EXTINF/URI line grammar. */
+    return `window.m3u8Parser = { Parser: function () {
+    this._chunks = [];
+    this.push = function (chunk) { this._chunks.push(String(chunk || '')); };
+    this.end = function () {
+        var lines = this._chunks.join('\\n').split(/\\r?\\n/);
+        this.manifest = { segments: [], playlists: [] };
+        var duration = 0;
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i].trim();
+            if (line.indexOf('#EXTINF:') === 0) {
+                duration = parseFloat(line.slice(8)) || 0;
+            } else if (line.indexOf('#EXT-X-STREAM-INF:') === 0) {
+                var next = (lines[i + 1] || '').trim();
+                if (next && next.charAt(0) !== '#') this.manifest.playlists.push({ uri: next });
+            } else if (line && line.charAt(0) !== '#') {
+                this.manifest.segments.push({ uri: line, duration: duration });
+                duration = 0;
+            }
+        }
+    };
+} };`;
+}
+
 function harnessPage(ttMode) {
     const csp = ttMode === "enforced"
         ? "require-trusted-types-for 'script'"
         : ttMode === "locked"
             ? "require-trusted-types-for 'script'; trusted-types 4ndr0666tools#dom 4ndr0666tools#dom.2 4ndr0666tools#dom.3"
             : "";
-    return (scriptName, probe, autopanel, tabprobe, veto) => `<!doctype html>
+    return (scriptName, probe, autopanel, tabprobe, veto, observer) => `<!doctype html>
 <html><head><meta charset="utf-8">
 <title>tt-smoke — ${scriptName} (${ttMode})</title>
 <script>
 window.__SMOKE__ = { mode: ${JSON.stringify(ttMode)}, script: ${JSON.stringify(scriptName)},
-    errors: [], csp: [], menu: [], notes: [], tabProbe: null, vetoProbe: null, ready: false };
+    errors: [], csp: [], menu: [], notes: [], logs: [], tabProbe: null, vetoProbe: null, observerProbe: null, ready: false };
 window.addEventListener('error', function (e) {
     __SMOKE__.errors.push('pageerror: ' + (e.message || String(e)));
 });
@@ -146,6 +188,14 @@ document.addEventListener('securitypolicyviolation', function (e) {
     console.error = function () {
         __SMOKE__.errors.push('console.error: ' + Array.prototype.map.call(arguments, String).join(' '));
         return ce.apply(console, arguments);
+    };
+    /* [v1.4.7 observer probe] console.log capture — the observer family's
+     * capture proofs are console-annotated (Filester's API-hit log, Bunkr's
+     * CDN-capture log); only the first argument is captured, capped. */
+    var cl = console.log;
+    console.log = function () {
+        if (__SMOKE__.logs.length < 200) __SMOKE__.logs.push(String(arguments[0] || ''));
+        return cl.apply(console, arguments);
     };
 })();
 __SMOKE__.report = function () {
@@ -163,6 +213,7 @@ __SMOKE__.report = function () {
         contentRows: content ? content.children.length : (vault && vault.style.display !== 'none' ? vault.children.length : -1),
         tabProbe: __SMOKE__.tabProbe,
         vetoProbe: __SMOKE__.vetoProbe,
+        observerProbe: __SMOKE__.observerProbe,
         netSlot: !!(netSlot && typeof netSlot.onBody === 'function'),
         netVersion: netSlot ? netSlot.version : null,
         netSubscribers: netSlot ? netSlot.subscriberCount : 0,
@@ -179,7 +230,7 @@ ${csp ? `<meta http-equiv="Content-Security-Policy" content="${csp}">` : ""}
 <h3 style="font-family:monospace">tt-smoke harness — ${scriptName} — ${ttMode}</h3>
 <p style="font-family:monospace;font-size:11px">diagnostics in <code>window.__SMOKE__</code> · summary via <code>__SMOKE__.report()</code></p>
 <script src="/gm-shim.js"></script>
-<script src="/dist/${encodeURIComponent(scriptName)}"></script>
+${scriptName.indexOf("m3u8") !== -1 ? `<script src="/m3u8-parser-stub.js"></script>\n` : ""}<script src="/dist/${encodeURIComponent(scriptName)}"></script>
 <script>
 (function () {
     function runProbes() {
@@ -424,9 +475,203 @@ ${csp ? `<meta http-equiv="Content-Security-Policy" content="${csp}">` : ""}
             __SMOKE__.vetoProbe = out;
         });
     }
+    /* [v1.4.7 NetHook observer probe — structured-traffic delivery proof]
+     * Loads a dist observer (the six-script family migrated this round),
+     * fires script-specific traffic through the page realm, and asserts the
+     * observable outcome of the subscriber plus the shared-hub contract:
+     * armed slot, version 4, subscriber counts, clean control passthrough,
+     * zero page errors. Per-script strong proofs: Bunkr fake-stats respond
+     * verdict (body + zero server hits), m3u8 playlist panel mount, PM
+     * flow-credit chip values, Watermark RPC passthrough (exactly one
+     * server hit), Filester API-hit log capture, IG feed delivery. */
+    function runObserverProbe() {
+        var SCRIPT = ${JSON.stringify(scriptName)};
+        var out = {};
+        function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+        function waitFor(fn, ms) {
+            var t0 = Date.now();
+            return new Promise(function (res) {
+                (function p() { if (fn()) return res(true); if (Date.now() - t0 > (ms || 5000)) return res(false); setTimeout(p, 50); })();
+            });
+        }
+        function slotFields() {
+            var slot = window.__4NDR0_NET__ || null;
+            out.netVersion = slot ? slot.version : null;
+            out.netTrafficSubscribers = slot ? (slot.trafficSubscriberCount || 0) : 0;
+            out.netRequestSubscribers = slot ? (slot.requestSubscriberCount || 0) : 0;
+        }
+        function control() {
+            return fetch('/api/probe.json').then(function (r) { return r.json(); })
+                .then(function (j) { out.controlPassthrough = !!(j && j.probe === true); });
+        }
+        function hasLog(needle) {
+            return __SMOKE__.logs.some(function (l) { return l.indexOf(needle) !== -1; });
+        }
+
+        if (SCRIPT.indexOf('Bunkr') !== -1) {
+            return fetch('/api/album/stats/smoke').then(function (r) {
+                return r.text().then(function (t) {
+                    out.statsFetchStatus = r.status;
+                    out.statsBodyMocked = (t.indexOf('"viewCount":0') !== -1 && t.indexOf('"live":1') !== -1);
+                });
+            }).then(function () {
+                return fetch('/api/media-/capture.mp4').then(function () { return wait(400); });
+            }).then(function () {
+                out.cdnCaptureLogged = hasLog('CDN URL captured');
+                return control();
+            }).then(function () {
+                return fetch('/api/hits').then(function (r) { return r.json(); });
+            }).then(function (h) {
+                out.statsServerHits = h.albumStats;
+                out.zeroServerHits = (h.albumStats === 0);
+                slotFields();
+                __SMOKE__.observerProbe = out;
+            }).catch(function (e) {
+                out.fatal = String(e); slotFields(); __SMOKE__.observerProbe = out;
+            });
+        }
+
+        if (SCRIPT.indexOf('m3u8') !== -1) {
+            return fetch('/api/media.m3u8').then(function () { return wait(1200); }).then(function () {
+                /* the m3u8 UI lives inside an open shadow root (rootDiv →
+                 * attachShadow) — document.querySelectorAll cannot pierce
+                 * it; scan every element's shadowRoot instead. */
+                var items = 0;
+                Array.prototype.forEach.call(document.querySelectorAll('*'), function (el) {
+                    if (el.shadowRoot) items += el.shadowRoot.querySelectorAll('.m3u8-item').length;
+                });
+                out.playlistItems = items;
+                out.playlistPanelMounted = items >= 1;
+                return control();
+            }).then(function () {
+                slotFields();
+                __SMOKE__.observerProbe = out;
+            }).catch(function (e) {
+                out.fatal = String(e); slotFields(); __SMOKE__.observerProbe = out;
+            });
+        }
+
+        if (SCRIPT.indexOf('Instagram') !== -1) {
+            /* The ARES wall is user-gated: the script boots, plants the hub
+             * hooks, and listens for the Alt+I hotkey (Strategy 3 — no DOM
+             * dependency; the harness page has no IG tablist/landmarks for
+             * the dock strategies). The probe harvests the feed FIRST
+             * (items buffer in pendingItems), then fires the hotkey and
+             * asserts the buffered harvest drained into the status line. */
+            return fetch('/api/v1/feed/timeline').then(function () { return wait(600); }).then(function () {
+                var fired = false;
+                try {
+                    document.dispatchEvent(new KeyboardEvent('keydown', {
+                        key: 'i', altKey: true, bubbles: true, cancelable: true,
+                    }));
+                    fired = true;
+                } catch (e) { out.hotkeyError = String(e); }
+                out.hotkeyFired = fired;
+                return wait(2400);
+            }).then(function () {
+                var stat = document.getElementById('ares-stat');
+                out.harvestStatusLine = stat ? String(stat.textContent || '') : '';
+                out.aresPanelMounted = !!stat;
+                out.harvestTotalPositive = /TOTAL:[1-9]/.test(out.harvestStatusLine);
+                return control();
+            }).then(function () {
+                slotFields();
+                __SMOKE__.observerProbe = out;
+            }).catch(function (e) {
+                out.fatal = String(e); slotFields(); __SMOKE__.observerProbe = out;
+            });
+        }
+
+        if (SCRIPT.indexOf('Prompt Master') !== -1) {
+            /* PM's observer registers during the platform-dock boot (late —
+             * a 22k-line script builds its UI first). The probe must wait
+             * for the hub + subscriber BEFORE firing the credit fetch, or
+             * the exchange traverses the still-unwrapped fetch and is
+             * invisible to the observer (the first draft raced it). */
+            return waitFor(function () {
+                var slot = window.__4NDR0_NET__;
+                return !!(slot && slot.version === 4 && (slot.trafficSubscriberCount || 0) >= 1);
+            }, 10000).then(function (hubReady) {
+                out.hubReadyBeforeFetch = hubReady;
+                return fetch('/api/flow.json');
+            }).then(function () {
+                return waitFor(function () {
+                    var chip = document.getElementById('pm-flow-credit-chip');
+                    var v = chip && chip.querySelector('.mp-credit-values');
+                    return !!(v && /\d/.test(String(v.textContent || '')));
+                }, 8000);
+            }).then(function () {
+                var chip = document.getElementById('pm-flow-credit-chip');
+                out.flowChipMounted = !!chip;
+                out.flowChipValues = (function () {
+                    var v = chip && chip.querySelector('.mp-credit-values');
+                    return v ? String(v.textContent || '') : '';
+                })();
+                out.flowChipHasValues = /41/.test(out.flowChipValues);
+                return control();
+            }).then(function () {
+                slotFields();
+                __SMOKE__.observerProbe = out;
+            }).catch(function (e) {
+                out.fatal = String(e); slotFields(); __SMOKE__.observerProbe = out;
+            });
+        }
+
+        if (SCRIPT.indexOf('Watermark') !== -1) {
+            /* Wait for the hub + RPC subscriber BEFORE firing the
+             * batchexecute XHR, so the exchange provably traverses the
+             * armed hub (the observer rides its traffic channel). */
+            return waitFor(function () {
+                var slot = window.__4NDR0_NET__;
+                return !!(slot && slot.version === 4 && (slot.trafficSubscriberCount || 0) >= 1);
+            }, 10000).then(function (hubReady) {
+                out.hubReadyBeforeXhr = hubReady;
+                return new Promise(function (resolve) {
+                try {
+                    var x = new XMLHttpRequest();
+                    var settled = false;
+                    x.onreadystatechange = function () {
+                        if (x.readyState === 4 && !settled) { settled = true; resolve({ status: x.status, text: x.responseText }); }
+                    };
+                    x.open('POST', '/_/BardChatUi/data/batchexecute');
+                    x.setRequestHeader('content-type', 'application/x-www-form-urlencoded');
+                    x.send('fReq=[[["wrb","generatecontent"]]]');
+                    setTimeout(function () { if (!settled) { settled = true; resolve({ status: -1, timeout: true }); } }, 1500);
+                } catch (e) { resolve({ status: -1, error: String(e) }); }
+                });
+            }).then(function (r) {
+                out.rpcXhrPassthrough = (r.status === 200 && String(r.text || '').indexOf('googleusercontent.com') !== -1);
+                return control();
+            }).then(function () {
+                return fetch('/api/hits').then(function (r) { return r.json(); });
+            }).then(function (h) {
+                out.rpcServerHits = h.batchexecute;
+                out.exactlyOneServerHit = (h.batchexecute === 1);
+                slotFields();
+                __SMOKE__.observerProbe = out;
+            }).catch(function (e) {
+                out.fatal = String(e); slotFields(); __SMOKE__.observerProbe = out;
+            });
+        }
+
+        /* Filester default */
+        return fetch('/api/v1/list').then(function () { return wait(300); }).then(function () {
+            out.apiHitLogged = hasLog('API hit');
+            return fetch('/api/v1/media/video-987.mp4');
+        }).then(function () {
+            return control();
+        }).then(function () {
+            slotFields();
+            __SMOKE__.observerProbe = out;
+        }).catch(function (e) {
+            out.fatal = String(e); slotFields(); __SMOKE__.observerProbe = out;
+        });
+    }
+
     setTimeout(function () {
         var work = ${JSON.stringify(probe)} ? runProbes()
-            : (${JSON.stringify(veto)} ? runVetoProbe() : Promise.resolve());
+            : (${JSON.stringify(veto)} ? runVetoProbe()
+            : (${JSON.stringify(observer)} ? runObserverProbe() : Promise.resolve()));
         work.then(function () {
             setTimeout(function () {
                 if (${JSON.stringify(autopanel)}) autoPanel();
@@ -442,6 +687,8 @@ ${csp ? `<meta http-equiv="Content-Security-Policy" content="${csp}">` : ""}
 
 let telemetryHits = 0;
 let svgHits = 0;
+let albumStatsHits = 0;
+let batchexecuteHits = 0;
 const server = http.createServer((req, res) => {
     const url = new URL(req.url, `http://127.0.0.1:${port}`);
     const send = (code, type, body) => {
@@ -450,8 +697,47 @@ const server = http.createServer((req, res) => {
     };
 
     if (url.pathname === "/gm-shim.js") return send(200, "application/javascript; charset=utf-8", gmShim());
+    if (url.pathname === "/m3u8-parser-stub.js") return send(200, "application/javascript; charset=utf-8", m3u8ParserStub());
     if (url.pathname === "/api/media.m3u8") return send(200, "application/vnd.apple.mpegurl", M3U8);
     if (url.pathname === "/api/probe.json") return send(200, "application/json", PROBE_JSON);
+    /* [v1.4.7 observer-probe endpoints] bunkr stats (hit-counted — the
+     * Bunkr respond verdict must keep it at ZERO), PM flow-credit JSON,
+     * the IG Schema-A feed, the gemini batchexecute RPC (hit-counted —
+     * the Watermark RPC observer must PASS IT THROUGH, exactly one hit),
+     * and generic /api/v1/* passthroughs for Filester's capture logs. */
+    if (url.pathname.startsWith("/api/album/stats/")) {
+        albumStatsHits++;
+        return send(200, "application/json", JSON.stringify({ real: true, viewCount: 999 }));
+    }
+    if (url.pathname === "/api/flow.json") {
+        /* Credit-scoped shape — PM's walker only classifies left/total
+         * keys inside a credit scope (key path containing "credit"),
+         * which is how Flow's real responses carry them. */
+        return send(200, "application/json", JSON.stringify({ credit: { left: 41, total: 100, used: 59 }, note: "observer probe" }));
+    }
+    if (url.pathname === "/api/v1/feed/timeline") {
+        return send(200, "application/json", JSON.stringify({
+            items: [{
+                user: { pk: 4170, pk_id: 4170, username: "smoke_test" },
+                id: "smoke-2801",
+                media_type: 1,
+                image_versions2: { candidates: [{ url: "https://smoke.test/cdn/ig-asset-2801.jpg", width: 1080, height: 1350 }] },
+                caption: { text: "observer probe" },
+            }],
+            next_max_id: null,
+        }));
+    }
+    if (url.pathname.startsWith("/_/BardChatUi/data/batchexecute")) {
+        batchexecuteHits++;
+        return send(200, "text/plain; charset=utf-8",
+            `)]}'\n[[["wrb","XK1Bxc",null,null,null,null,null,"1","\\u003d",[\"https://lh3.googleusercontent.com/gg/asset/smoke-rc01.jpg\"]]]]`);
+    }
+    if (url.pathname === "/api/v1/list" || url.pathname.startsWith("/api/v1/media/")) {
+        return send(200, "application/json", JSON.stringify({ ok: true, path: url.pathname }));
+    }
+    if (url.pathname === "/api/media-/capture.mp4") {
+        return send(200, "video/mp4", "");
+    }
     if (url.pathname === "/api/telemetry") {
         telemetryHits++; /* the Akasha/Recon veto probes assert this counter stays at zero */
         return send(200, "application/json", JSON.stringify({ real: true }));
@@ -469,7 +755,7 @@ const server = http.createServer((req, res) => {
         const u = url.searchParams.get("u") || "";
         return send(200, "application/json", JSON.stringify({ embed: u, note: "stream source follows", ref: u }));
     }
-    if (url.pathname === "/api/hits") return send(200, "application/json", JSON.stringify({ telemetry: telemetryHits, svg: svgHits }));
+    if (url.pathname === "/api/hits") return send(200, "application/json", JSON.stringify({ telemetry: telemetryHits, svg: svgHits, albumStats: albumStatsHits, batchexecute: batchexecuteHits }));
     if (url.pathname === "/api/echo") {
         const chunks = [];
         req.on("data", (c) => chunks.push(c));
@@ -495,11 +781,12 @@ const server = http.createServer((req, res) => {
             || candidates.find((f) => f.includes(script));
         if (!match) return send(404, "text/plain", `no dist script matches "${script}"\n`);
         const probeParam = url.searchParams.get("probe") || "";
-        const probe = url.searchParams.has("probe") && probeParam !== "veto";
+        const probe = url.searchParams.has("probe") && probeParam !== "veto" && probeParam !== "observer";
         const veto = probeParam === "veto";
+        const observer = probeParam === "observer";
         const autopanel = url.searchParams.has("autopanel");
         const tabprobe = url.searchParams.has("tabs");
-        return send(200, "text/html; charset=utf-8", harnessPage(ttRoute)(match, probe, autopanel, tabprobe, veto));
+        return send(200, "text/html; charset=utf-8", harnessPage(ttRoute)(match, probe, autopanel, tabprobe, veto, observer));
     }
 
     send(404, "text/plain", "routes: /tt/ /tt-locked/ /nott/ ?script=…&probe=wire&autopanel · /gm-shim.js · /api/media.m3u8 · /api/probe.json\n");
@@ -514,4 +801,10 @@ server.listen(port, "127.0.0.1", () => {
     console.log(`  /tt/?script=Akasha%20Silence&probe=veto  (NetHook veto — live defusal proof)`);
     console.log(`  /tt/?script=Recon&probe=veto&autopanel  (NetHook v4 — Recon blocklist + ledger proof)`);
     console.log(`  /tt/?script=Stream%20Interceptor&probe=veto&autopanel  (NetHook v4 — SVG veto + discovery proof)`);
+    console.log(`  /tt/?script=Bunkr%2B%2B&probe=observer  (NetHook v4 — observer: fake-stats respond verdict + CDN capture)`);
+    console.log(`  /tt/?script=m3u8%2B%2B&probe=observer  (observer: playlist panel mount)`);
+    console.log(`  /tt/?script=Instagram%2B%2B&probe=observer  (observer: feed harvest delivery)`);
+    console.log(`  /tt/?script=Prompt%20Master&probe=observer  (observer: flow-credit chip)`);
+    console.log(`  /tt/?script=Watermark%2B%2B&probe=observer  (observer: gemini RPC passthrough)`);
+    console.log(`  /tt/?script=Filester%2B%2B&probe=observer  (observer: API-hit capture)`);
 });

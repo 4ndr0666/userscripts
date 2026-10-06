@@ -94,6 +94,13 @@ const RECONCILED_NAMES = {
     "Akasha Silence": {
         "applyNetworkHooks": "applyLocalHooks (renamed, suite v1.4.5) — the fetch/XHR/beacon defusing migrated to the NetHook v3 veto (__4NDR0_NET_API__.onRequest, kernel-owned wraps); the local installer keeps the WebSocket/WebRTC/worker pacifiers",
     },
+    "Watermark++": {
+        "handleLoadEnd": "armNetworkHub onTraffic xhr subscriber (NetHook v4 adoption, suite v1.4.7 — the RPC loadend handler became the subscriber's response-phase arm; request bodies joined by hub exchange id, same 2xx + text gates)",
+    },
+    "Bunkr++": {
+        "installFetchSniff": "armNetworkHub onTraffic subscriber (NetHook v4 adoption, suite v1.4.7 — the fetch sniffer became the subscriber's request/response arms; the hub's page-realm wrap replaces the per-script proxy)",
+        "installXhrSniff": "armNetworkHub onTraffic subscriber + propagate(sandbox) (NetHook v4 adoption, suite v1.4.7 — the XHR sniffer taps became the same subscriber's arms; sandbox-realm coverage via hub propagation)",
+    },
 };
 
 const failures = [];
@@ -517,6 +524,65 @@ function gateD() {
     } else passes.push(`[D] Stream Interceptor NetHook adoption verified (SVG veto + discovery + deep inspection on the shared hub)`);
     if (/win\.fetch\s*=|pageWindow\.fetch\s*=|XMLHttpRequest\.prototype\.(?:open|send)\s*=|__usiHooked/.test(siCanon)) {
         failures.push(`[D] Stream Interceptor: legacy own-network-wrap remnants still present in canon (must ride NetHook)`);
+    }
+
+    /* v1.4.7 NetHook adoption — the observer family rides the shared hub.
+     * Per script: the canon must carry the hub subscription surface, and
+     * the legacy per-script wrap shapes must be gone. The two surviving
+     * adjudicated wraps (m3u8++'s GM dev-proxy, Watermark++'s intent-gated
+     * processing proxy) are NOT refused — their shapes are scoped to the
+     * exact legacy sites each refusal targets. */
+    const OBSERVER_ADOPTIONS = [
+        {
+            name: "Bunkr++", dir: "_sovereign",
+            need: ["__4NDR0_NET_API__.onRequest", "__4NDR0_NET_API__.onTraffic", "__4NDR0_NET_API__.propagate"],
+            label: "fake-stats respond verdict + URL classifier/body sweeper + sandbox propagation on the shared hub",
+            refuse: [/unsafeWindow\.fetch\s*=/, /target\.fetch\s*=\s*wrapped/, /\bxo\.open\s*=/, /\bxo\.send\s*=/],
+        },
+        {
+            name: "Filester++", dir: "_sovereign",
+            need: ["__4NDR0_NET_API__.onTraffic"],
+            label: "media-URL cache + API-hit log on request-phase events",
+            refuse: [/window\.fetch\s*=/],
+        },
+        {
+            name: "Instagram++", dir: "_sovereign",
+            need: ["__4NDR0_NET_API__.onTraffic"],
+            label: "feed digest on response-phase events",
+            refuse: [/win\.fetch\s*=/, /XMLHttpRequest\.prototype\.open\s*=/, /XMLHttpRequest\.prototype\.send\s*=/],
+        },
+        {
+            name: "Prompt Master", dir: "_sovereign",
+            need: ["__4NDR0_NET_API__.onTraffic"],
+            label: "flow-credit scanner on response-phase events",
+            refuse: [/pageWin\.fetch\s*=/, /XO\.prototype\.open\s*=/, /XO\.prototype\.send\s*=/],
+        },
+        {
+            name: "Watermark++", dir: "_sovereign",
+            need: ["__4NDR0_NET_API__.onTraffic"],
+            label: "gemini RPC observer on xhr events (pending-map join by exchange id)",
+            refuse: [/gwrGeminiRpcOpen/, /gwrGeminiRpcSend/],
+        },
+        {
+            name: "m3u8++", dir: "_promoted",
+            need: ["__4NDR0_NET_API__.onTraffic"],
+            label: "playlist sniffer on response-phase events (fetch + xhr unified)",
+            refuse: [/XMLHttpRequest\.prototype\.open\s*=/, /Response\.prototype\.text\s*=/],
+        },
+    ];
+    for (const spec of OBSERVER_ADOPTIONS) {
+        const p = path.join(ROOT, "canon", spec.dir, `4ndr0tools - ${spec.name}.user.js`);
+        const src = fs.existsSync(p) ? fs.readFileSync(p, "utf8") : "";
+        const missing = spec.need.filter((needle) => !src.includes(needle));
+        if (missing.length > 0) {
+            failures.push(`[D] ${spec.name}: NetHook subscription surface missing (${missing.join(", ")})`);
+        } else {
+            passes.push(`[D] ${spec.name} NetHook adoption verified (${spec.label})`);
+        }
+        const remnant = spec.refuse.find((re) => re.test(src));
+        if (remnant) {
+            failures.push(`[D] ${spec.name}: legacy own-network-wrap remnant still present in canon (${remnant})`);
+        }
     }
 
     /* v1.3.0 interference ledger — the nine documented fixes of this round. */

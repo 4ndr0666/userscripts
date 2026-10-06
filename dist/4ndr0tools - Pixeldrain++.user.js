@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Pixeldrain++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.1.1
+// @version      1.1.2
 // @description  Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.
 // @author       4ndr0666
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -61,7 +61,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
     // ================================================================
     // 0. CONFIG & CONSTANTS
     // ================================================================
-    const VERSION = '7.0.2';
+    const VERSION = '1.1.2';
     const NS = 'pdbp';
 
     /* [R3 createElement migration — suite v1.4.4] Local element builder:

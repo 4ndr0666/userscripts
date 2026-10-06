@@ -226,13 +226,12 @@ const ADJUDICATED = {
     },
     /* Akasha Silence: fetchWrap(1) + xhrWrap(2) burned to zero in v1.4.5 —
      * the request-path defusing rides kernel/net.js (NetHook veto). */
-    "4ndr0tools - Bunkr++.user.js": {
-        fetchWrap: { count: 2, reason: "net-defuser: fake stats Response + album API path (host-gated bunkr.is)" },
-        tapOpenSend: { count: 2, reason: "net-observer: indirect xo.open/xo.send deobfuscation capture (host-gated bunkr.is; NetHook-eligible next round)" },
-    },
-    "4ndr0tools - Filester++.user.js": {
-        fetchWrap: { count: 1, reason: "net-observer: media URL cache tap (host-gated filester.io; NetHook-eligible next round)" },
-    },
+    /* Bunkr++: fetchWrap(2) + tapOpenSend(2) burned to zero in v1.4.7 — the
+     * fake-stats defusing rides the NetHook onRequest respond verdict and
+     * the URL classifier + body sweeper ride onTraffic (with sandbox-realm
+     * propagation preserving the v7.4.0 dual-context fix). */
+    /* Filester: fetchWrap(1) burned to zero in v1.4.7 — the media-URL cache
+     * + API-hit log ride kernel/net.js onTraffic request events. */
     "4ndr0tools - Images++.user.js": {
         eval: { count: 1, reason: "eval-bridge: page-$ interop through trustedScript policy (v1.4.2 adjudication)" },
         newFunction: { count: 1, reason: "eval-bridge: same page-$ bridge, new Function fallback (policy-gated)" },
@@ -240,29 +239,39 @@ const ADJUDICATED = {
     },
     "4ndr0tools - Instagram++.user.js": {
         parseFromString: { count: 1, reason: "page-policy: DASH manifest parse covered by the page 'default' createHTML policy minted at boot" },
-        fetchWrap: { count: 1, reason: "net-observer: feed digest fetch tap (host-gated instagram.com; NetHook-eligible next round)" },
-        xhrWrap: { count: 2, reason: "net-observer: feed digest XHR tap (host-gated instagram.com; NetHook-eligible next round)" },
     },
+    /* Instagram++: fetchWrap(1) + xhrWrap(2) burned to zero in v1.4.7 — the
+     * feed digest rides kernel/net.js onTraffic response events. */
     "4ndr0tools - Pixeldrain++.user.js": {
         tapOpenSend: { count: 3, reason: "accordion-state: panel s.open flags (not network taps)" },
     },
-    "4ndr0tools - Prompt Master.user.js": {
-        fetchWrap: { count: 1, reason: "net-observer: flow-credit net observer, content-type gated (LLM hosts; NetHook-eligible next round)" },
-        xhrWrap: { count: 2, reason: "net-observer: flow-credit XHR twin (LLM hosts; NetHook-eligible next round)" },
-    },
+    /* Prompt Master: fetchWrap(1) + xhrWrap(2) burned to zero in v1.4.7 —
+     * the flow-credit scanner rides kernel/net.js onTraffic response
+     * events. */
     /* Recon: fetchWrap(1) + the xhrProto recorder taps(2) burned to zero
      * in v1.4.6 — blocklist verdicts + structured capture + pacification
      * ride kernel/net.js v4. The WebSocket bridge tap survives below. */
     "4ndr0tools - Recon.user.js": {
         tapOpenSend: { count: 1, reason: "ws-bridge: WebSocket send recorder (recon4 lineage — out of NetHook's fetch/XHR/beacon scope; the page-realm WS facade is Recon's own)" },
     },
+    /* Watermark++: the RPC tapOpenSend(4) burned to zero in v1.4.7 — the
+     * batchexecute observer rides kernel/net.js onTraffic events. The
+     * surviving fetchWrap is the intent-gated image PROCESSING proxy —
+     * an async fetch→process→synthetic-Response rewriter with full header
+     * preservation, beyond the hub's synchronous verdict scope (same
+     * adjudication class as m3u8++'s dev-proxy and Recon's WS bridge). */
     "4ndr0tools - Watermark++.user.js": {
-        fetchWrap: { count: 1, reason: "net-observer: gemini image-capture fetch hook (host-gated gemini hosts; NetHook-eligible next round)" },
-        tapOpenSend: { count: 4, reason: "net-observer: gemini RPC XHR wrap + restore pair written via method shorthand (host-gated gemini; NetHook-eligible next round)" },
+        fetchWrap: { count: 1, reason: "processing-proxy: intent-gated gemini image rewriter (fetch→process→synthetic Response, full header surface) — an async response REPLACER, out of the hub's sync veto/phantom/observe scope; host-gated gemini.google.com" },
     },
+    /* m3u8++: xhrWrap(1) + the (uncounted) Response.text tap burned to zero
+     * in v1.4.7 — the playlist sniffer rides kernel/net.js onTraffic
+     * response events. The surviving fetchWrap is the dev-proxy: a GM
+     * transport re-dispatcher (custom origin/referer headers via
+     * GM_xmlhttpRequest, non-200 re-proxied), not an observer — outside
+     * the hub's sync veto/phantom/observe scope (the Recon ws-bridge
+     * adjudication class), and host-gated to dev-only hosts. */
     "4ndr0tools - m3u8++.user.js": {
-        fetchWrap: { count: 1, reason: "net-host-proxy: thatwind/localhost dev-proxy fetch path (host-gated development tool)" },
-        xhrWrap: { count: 1, reason: "net-observer: m3u8 content sniffer (universal; NetHook-eligible next round)" },
+        fetchWrap: { count: 1, reason: "net-host-proxy: thatwind/localhost dev-proxy fetch path — a GM transport re-dispatcher (custom origin/referer headers, non-200 re-proxy), out of the hub's sync verdict/observe scope; host-gated development tool" },
     },
 };
 

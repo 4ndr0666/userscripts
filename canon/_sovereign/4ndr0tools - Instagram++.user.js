@@ -2,7 +2,7 @@
 // @name         4ndr0tools - Instagram++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666
-// @version      13.0.1
+// @version      13.1.0
 // @description  Tab-Bar + Dock Integration. Hotkey trigger (Alt+I). Ad-Blocking. Deep-Stack Recovery. Resilient cursor-based pagination. Stories support. Image/video download engine.
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Instagram++.user.js
@@ -82,9 +82,20 @@
     }
 
     // =========================================================
-    // [INTERCEPT ENGINE]
+    // [INTERCEPT ENGINE — NetHook shared hub (suite v1.4.7)]
     // Hooks Instagram's own fetch/XHR at document-start so we
-    // ride on their authenticated, signed requests for free.
+    // ride on their authenticated, signed requests for free — via
+    // kernel/net.js onTraffic response events instead of stacked
+    // per-script proxies (one shared page-realm wrap per co-install).
+    //
+    // Superset notes (GUP): the baseline's XHR load listener read
+    // this.responseText unguarded — responseType-locked XHRs (json)
+    // threw uncaught inside the listener and never digested. The hub
+    // delivers json-XHR bodies pre-stringified, so those feed loads now
+    // digest cleanly; fetch bodies arrive from the hub's single bounded
+    // read (same digest, no per-subscriber clone). XHR response events
+    // prefer responseURL with the open-time shape as fallback — for
+    // Instagram's unredirected API endpoints this is the identical URL.
     // =========================================================
     const FEED_RE = [
         /\/api\/v1\/feed\/(timeline|user\/\d+|tag\/[^/]+|usertags\/\d+)/,
@@ -106,30 +117,11 @@
         harvestJSON(json, url);
     }
 
-    // --- Patch fetch ---
-    const _origFetch = win.fetch;
-    win.fetch = function (...args) {
-        const url = typeof args[0] === 'string' ? args[0] : (args[0]?.url || '');
-        const p = _origFetch.apply(this, args);
-        if (isFeedUrl(url)) {
-            p.then(r => r.clone().text().then(t => digestText(url, t))).catch(() => {});
-        }
-        return p;
-    };
-
-    // --- Patch XHR ---
-    const _origOpen = win.XMLHttpRequest.prototype.open;
-    const _origSend = win.XMLHttpRequest.prototype.send;
-    win.XMLHttpRequest.prototype.open = function (m, url, ...rest) {
-        this._aresUrl = url;
-        return _origOpen.call(this, m, url, ...rest);
-    };
-    win.XMLHttpRequest.prototype.send = function (...args) {
-        if (this._aresUrl && isFeedUrl(this._aresUrl)) {
-            this.addEventListener('load', () => digestText(this._aresUrl, this.responseText));
-        }
-        return _origSend.apply(this, args);
-    };
+    __4NDR0_NET_API__.onTraffic((ev) => {
+        if (ev.phase !== 'response') return;
+        if (!ev.url || !ev.body || !isFeedUrl(ev.url)) return;
+        digestText(ev.url, ev.body);
+    });
 
     // =========================================================
     // [HARVEST ENGINE]

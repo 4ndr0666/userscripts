@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Watermark++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      2.0.2
+// @version      2.1.0
 // @description  Security research and alignment testing only.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @author       4ndr0666
@@ -20,7 +20,7 @@
 // @license      UNLICENSED - RED TEAM USE ONLY
 // ==/UserScript==
 // 2.0.2 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.0.2 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.1.0 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 (() => {
   // src/shared/actionContextCompat.js
@@ -12165,8 +12165,6 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.0.2 
   var GEMINI_CONVERSATION_ID_PATTERN = /\bc_[a-z0-9]+\b/i;
   var GEMINI_RESPONSE_BINDING_PATTERN = /(?<conversationId>c_[a-z0-9]+)[\s\S]{0,96}?(?<responseId>r_[a-z0-9]+)[\s\S]{0,96}?(?<draftId>rc_[a-z0-9]+)/gi;
   var GEMINI_DRAFT_URL_BLOCK_PATTERN = /(?<draftId>rc_[a-z0-9]+)(?:(?:\\\\")|")?,\[(?:(?:\\\\")|")http:\/\/googleusercontent\.com\/image_generation_content\/\d+(?:(?:\\\\")|")?\][\s\S]{0,2400}?(?<discoveredUrl>https:(?:(?:\\\\\/)|(?:\\\/)|\/){2}[^\s"'\]]*googleusercontent\.com(?:(?:\\\\\/)|(?:\\\/)|\/)[^\s"'\]]+)/gi;
-  var GEMINI_XHR_HOOK_STATE = Symbol("gwrGeminiRpcXhrState");
-  var GEMINI_XHR_HOOK_LISTENER = Symbol("gwrGeminiRpcXhrListener");
   function normalizeActionLabel(value) {
     return typeof value === "string" ? value.trim() : "";
   }
@@ -12878,59 +12876,62 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.0.2 
     if (typeof XMLHttpRequestCtor !== "function" || !prototype || typeof prototype.open !== "function" || typeof prototype.send !== "function") {
       return null;
     }
-    const originalOpen = prototype.open;
-    const originalSend = prototype.send;
     const resolveActionContextProvider = typeof provideActionContext === "function" ? provideActionContext : createActionContextProvider({ getActionContext });
-    prototype.open = function gwrGeminiRpcOpen(method, url, ...rest) {
-      this[GEMINI_XHR_HOOK_STATE] = {
-        rpcUrl: typeof url === "string" ? url : String(url || ""),
-        requestBody: null
-      };
-      return originalOpen.call(this, method, url, ...rest);
-    };
-    prototype.send = function gwrGeminiRpcSend(body) {
-      const state = this[GEMINI_XHR_HOOK_STATE] || {
-        rpcUrl: "",
-        requestBody: null
-      };
-      state.requestBody = body;
-      this[GEMINI_XHR_HOOK_STATE] = state;
-      if (!this[GEMINI_XHR_HOOK_LISTENER] && typeof this.addEventListener === "function") {
-        const handleLoadEnd = () => {
-          const currentState = this[GEMINI_XHR_HOOK_STATE];
-          const rpcUrl = currentState?.rpcUrl || "";
-          if (!isGeminiBatchExecuteUrl(rpcUrl)) {
-            return;
+    // v2.1.0 (suite v1.4.7): the prototype open/send taps are retired; the
+    // RPC observer rides kernel/net.js onTraffic events — one shared
+    // page-realm wrap per co-install instead of a fourth stacked XHR
+    // proxy on gemini.google.com (gemini co-installs with Prompt Master's
+    // observer and the universal m3u8++ sniffer; the v1.4.3 sink census
+    // measured the stacking).
+    //
+    // Superset notes (GUP): baseline fired on loadend with the same 2xx +
+    // responseType-text gates (error/abort loads carry status 0 and were
+    // filtered there too — the hub's load-event surface is the identical
+    // set). RPC request bodies are stashed from request-phase events,
+    // keyed by hub exchange id and joined to the response by the same id
+    // (bounded FIFO — the Recon pending-map pattern); baseline stashed the
+    // send() argument on the instance, same body shape. rpcUrl keeps the
+    // open-time shape for unredirected batchexecute calls. The reuse
+    // guard (one listener per instance) is structural now — the hub has
+    // exactly one wrap per realm, so a reused XHR object can never
+    // re-stack observers.
+    const RPC_PENDING_LIMIT = 256;
+    const rpcPending = new Map();
+    const off = __4NDR0_NET_API__.onTraffic(function (ev) {
+      try {
+        if (ev.kind !== "xhr") return;
+        if (!isGeminiBatchExecuteUrl(ev.url)) return;
+        if (ev.phase === "request") {
+          rpcPending.set(ev.id, { requestBody: ev.body != null ? ev.body : null });
+          if (rpcPending.size > RPC_PENDING_LIMIT) {
+            rpcPending.delete(rpcPending.keys().next().value);
           }
-          if (typeof this.status === "number" && (this.status < 200 || this.status >= 300)) {
-            return;
-          }
-          if (this.responseType && this.responseType !== "text") {
-            return;
-          }
-          const responseText = typeof this.responseText === "string" ? this.responseText : typeof this.response === "string" ? this.response : "";
-          if (!responseText) {
-            return;
-          }
-          void notifyGeminiOriginalAssetsFromRpcPayload({
-            rpcUrl,
-            requestAssetIds: extractGeminiAssetIdsFromRpcRequestBody(currentState?.requestBody),
-            responseText,
-            provideActionContext: resolveActionContextProvider,
-            onOriginalAssetDiscovered
-          }).catch((error) => {
-            logger?.warn?.("[Gemini Watermark Remover] Download RPC XHR hook processing failed:", error);
-          });
-        };
-        this[GEMINI_XHR_HOOK_LISTENER] = handleLoadEnd;
-        this.addEventListener("loadend", handleLoadEnd);
+          return;
+        }
+        if (ev.phase !== "response") return;
+        if (typeof ev.status === "number" && (ev.status < 200 || ev.status >= 300)) return;
+        if (ev.responseType && ev.responseType !== "text") return;
+        const responseText = typeof ev.body === "string" ? ev.body : "";
+        if (!responseText) return;
+        const pendingEntry = rpcPending.get(ev.id);
+        rpcPending.delete(ev.id);
+        void notifyGeminiOriginalAssetsFromRpcPayload({
+          rpcUrl: ev.url,
+          requestAssetIds: extractGeminiAssetIdsFromRpcRequestBody(pendingEntry ? pendingEntry.requestBody : null),
+          responseText,
+          provideActionContext: resolveActionContextProvider,
+          onOriginalAssetDiscovered
+        }).catch((error) => {
+          logger?.warn?.("[Gemini Watermark Remover] Download RPC XHR hook processing failed:", error);
+        });
+      } catch (error) {
+        logger?.warn?.("[Gemini Watermark Remover] Download RPC hook event skipped:", error);
       }
-      return originalSend.call(this, body);
-    };
+    });
     return {
       dispose() {
-        prototype.open = originalOpen;
-        prototype.send = originalSend;
+        if (typeof off === "function") off();
+        rpcPending.clear();
       }
     };
   }

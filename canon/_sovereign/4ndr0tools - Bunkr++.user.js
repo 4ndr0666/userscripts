@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Bunkr++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      7.5.2
+// @version      7.6.0
 // @author       4ndr0666
 // @description  Direct URL routing, auto-sort, hide visited, bypass dl gateway, bulk download, m3u8/CDN URL aggregation (page-context net-hook + per-item stream glyphs + album-wide STREAMS aggregation), broken-link repair, power-user hotkeys, LinkMaster-grade m3u8 stream resolution with gateway fallback, MPV dispatch (URI/bridge), web-archive dead-CDN resurrection (archive.org / archive.is), captcha-aware transport retry
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -226,7 +226,7 @@
         _sentinelRoot.setAttribute(_SENTINEL_ATTR, String(Date.now()));
     } catch (_) { /* EAFP — proceed; guards below absorb re-runs */ }
 
-    const SCRIPT_VERSION = '7.4.0';
+    const SCRIPT_VERSION = '7.6.0';
     console.log(`%c[4NDR0tools] Bunkr++ v${SCRIPT_VERSION}-Ψ`, 'color:#00E5FF; font-family:monospace; font-weight:bold;');
 
     // =========================================================================
@@ -242,26 +242,39 @@
         unsafeWindow.kxysy    = function(){};
         unsafeWindow.ggihyqfb = function(){};
 
-        const origFetch = unsafeWindow.fetch;
-        unsafeWindow.fetch = async function (...args) {
+        // v7.6.0 (suite v1.4.7): the fake-stats fetch wrap rides the NetHook
+        // shared hub's request-time verdict channel (__4NDR0_NET_API__
+        // .onRequest, kernel-owned wraps) instead of a bespoke
+        // unsafeWindow.fetch proxy — one wrap set per realm shared with the
+        // rest of the suite.
+        //
+        // Superset notes (GUP): the hub's consult covers fetch AND XHR AND
+        // beacons — the baseline wrap only ever saw page fetches, so stats
+        // calls issued over XHR now defuse too (same doctrine, broader
+        // transport cover). The phantom body/status/headers are the exact
+        // baseline Response shape; the hub's synthetic statusText is 'OK'
+        // where the bare constructor default was '' — stats JSON consumers
+        // read the body, not the status line.
+        __4NDR0_NET_API__.onRequest((req) => {
             try {
-                const reqUrl = typeof args[0] === 'string'
-                    ? args[0]
-                    : (args[0] && args[0].url ? args[0].url : '');
+                const reqUrl = req.url || '';
                 if (
                     reqUrl.includes('/api/album/stats/') ||
                     reqUrl.includes('/api/file/stats/')  ||
                     reqUrl.includes('s.bunkr.ru')        ||
                     reqUrl.includes('/api/lv')
                 ) {
-                    return new Response(
-                        JSON.stringify({ status: 'success', viewCount: 0, downloadCount: 0, live: 1 }),
-                        { status: 200, headers: { 'Content-Type': 'application/json' } }
-                    );
+                    return {
+                        respond: {
+                            status: 200,
+                            contentType: 'application/json',
+                            body: JSON.stringify({ status: 'success', viewCount: 0, downloadCount: 0, live: 1 }),
+                        },
+                    };
                 }
             } catch (e) { /* EAFP */ }
-            return origFetch.apply(this, args);
-        };
+            return undefined;
+        });
         console.log('[Ψ-4NDR0666] Synchronous environment isolation deployed.');
     } catch (e) {
         console.warn('[Ψ-4NDR0666] unsafeWindow context inaccessible.', e);
@@ -897,8 +910,6 @@
     let _lastCdnMedia   = null;
     let _lastCdnMediaTs = 0; // v7.3.0 (GAP 26): capture epoch — gates the resolver fast-path
 
-    const _SNIFF_MARK = '__psiBunkrSniff';
-
     function classifyRequestUrl(reqUrl) {
         if (!reqUrl || typeof reqUrl !== 'string') return;
         if (isCdnUrl(reqUrl)) {
@@ -939,88 +950,63 @@
         return /text|json|xml|javascript|mpegurl/.test(c);
     }
 
-    function installFetchSniff(target, label) {
+    // v7.6.0 (suite v1.4.7): installFetchSniff/installXhrSniff are retired;
+    // the request-URL classifier and the response-body sweeper ride the
+    // NetHook shared hub's structured traffic channel
+    // (__4NDR0_NET_API__.onTraffic, kernel-owned wraps) — request-phase
+    // events carry the URL exactly as the baseline's wrap arguments did,
+    // response-phase events carry the single bounded body read (the
+    // baseline's per-wrap clone() calls are gone).
+    //
+    // Dual-context coverage (the v7.4.0 LM-C1 fix above) is preserved
+    // structurally: the hub arms the PAGE realm (unsafeWindow — where
+    // hls.js lives) on subscription, and propagate(window) additionally
+    // arms the userscript sandbox realm when it is a distinct object —
+    // one shared wrap set per realm instead of two stacked per-script
+    // wraps per realm. A no-sandbox manager has window === unsafeWindow
+    // and the propagate is skipped.
+    //
+    // Superset notes (GUP): beacon request URLs are now classified too
+    // (baseline saw fetch/XHR only) — strictly more capture, same ledger.
+    // The fetch-path gates (ok, non-204, sniffable content-type) are kept
+    // for fetch-kind events; XHR-kind events keep the baseline XHR gate
+    // (content-type only, any load status) — the asymmetry is the
+    // baseline's own. Phantom respond bodies (source 'respond', including
+    // this script's own stats verdicts) are swept exactly as the baseline
+    // sniffer saw the defuser's synthetic Responses pass through its
+    // wrap. json-XHR bodies arrive pre-stringified and are swept — the
+    // baseline XHR tap threw on those and skipped.
+    __4NDR0_NET_API__.onTraffic((ev) => {
         try {
-            if (!target || typeof target.fetch !== 'function' || target.fetch[_SNIFF_MARK]) return;
-            const orig = target.fetch;
-            const wrapped = function (...args) {
-                try {
-                    const reqUrl = typeof args[0] === 'string'
-                        ? args[0]
-                        : (args[0] && args[0].url ? args[0].url : '');
-                    classifyRequestUrl(reqUrl);
-                } catch (_) { /* EAFP */ }
-                const p = orig.apply(this, args);
-                try {
-                    if (p && typeof p.then === 'function') {
-                        p.then((res) => {
-                            try {
-                                if (res && res.ok && res.status !== 204 && typeof res.clone === 'function') {
-                                    const ct = (res.headers && typeof res.headers.get === 'function')
-                                        ? res.headers.get('Content-Type')
-                                        : '';
-                                    if (_sniffableContentType(ct)) {
-                                        res.clone().text()
-                                            .then((t) => sniffResponseBodyText(t, res.url || ''))
-                                            .catch(() => {});
-                                    }
-                                }
-                            } catch (_) { /* EAFP */ }
-                        }).catch(() => {});
-                    }
-                } catch (_) { /* EAFP */ }
-                return p;
-            };
-            try { wrapped.toString = function () { return String(orig); }; } catch (_) { /* fingerprint mask */ }
-            try { Object.defineProperty(wrapped, _SNIFF_MARK, { value: true }); } catch (_) { wrapped[_SNIFF_MARK] = true; }
-            target.fetch = wrapped;
-            console.log(`[Ψ-4NDR0666] M3: fetch sniffer installed (${label}).`);
-        } catch (e) {
-            console.warn(`[Ψ-4NDR0666] M3: fetch sniffer install failed (${label}).`, e);
+            if (ev.phase === 'request') {
+                classifyRequestUrl(ev.url);
+                return;
+            }
+            if (ev.phase !== 'response') return;
+            if (ev.kind === 'fetch') {
+                if (typeof ev.status !== 'number' || ev.status < 200 || ev.status >= 300 || ev.status === 204) return;
+            }
+            if (!ev.body || !_sniffableContentType(ev.contentType || '')) return;
+            // fetch response events carry the request URL as given; the
+            // body sweep's relative-URL base must be absolute (the baseline
+            // used res.url / this.responseURL, both absolute) — resolve
+            // against the page location when the event URL is relative.
+            let baseUrl = ev.url || '';
+            if (baseUrl && !/^https?:/i.test(baseUrl)) {
+                try { baseUrl = new URL(baseUrl, location.href).href; } catch (_) { baseUrl = location.href; }
+            }
+            sniffResponseBodyText(ev.body, baseUrl);
+        } catch (_) { /* EAFP */ }
+    });
+    try {
+        const _sandboxRealm = (typeof window !== 'undefined') ? window : null;
+        if (_sandboxRealm && _sandboxRealm !== unsafeWindow) {
+            __4NDR0_NET_API__.propagate(_sandboxRealm);
+            console.log('[Ψ-4NDR0666] M3: sandbox-realm propagation armed (NetHook).');
         }
+    } catch (e) {
+        console.warn('[Ψ-4NDR0666] M3: sandbox-realm propagation skipped.', e);
     }
-
-    function installXhrSniff(target, label) {
-        try {
-            const xo = target && target.XMLHttpRequest && target.XMLHttpRequest.prototype;
-            if (!xo || typeof xo.open !== 'function' || xo[_SNIFF_MARK]) return;
-            const origOpen = xo.open;
-            xo.open = function (method, url, ...rest) {
-                try { classifyRequestUrl(typeof url === 'string' ? url : ''); } catch (_) { /* EAFP */ }
-                return origOpen.apply(this, [method, url, ...rest]);
-            };
-            const origSend = xo.send;
-            xo.send = function (...sendArgs) {
-                try {
-                    this.addEventListener('load', function () {
-                        try {
-                            let t = '';
-                            if (this.responseType === '' || this.responseType === 'text') t = this.responseText;
-                            let ct = '';
-                            try { ct = this.getResponseHeader('Content-Type') || ''; } catch (_) { /* EAFP */ }
-                            if (t && _sniffableContentType(ct)) sniffResponseBodyText(t, this.responseURL || '');
-                        } catch (_) { /* EAFP */ }
-                    });
-                } catch (_) { /* EAFP */ }
-                return origSend.apply(this, sendArgs);
-            };
-            try { xo.open.toString = function () { return String(origOpen); }; } catch (_) { /* fingerprint mask */ }
-            try { xo.send.toString = function () { return String(origSend); }; } catch (_) { /* fingerprint mask */ }
-            try { Object.defineProperty(xo, _SNIFF_MARK, { value: true }); } catch (_) { xo[_SNIFF_MARK] = true; }
-            console.log(`[Ψ-4NDR0666] M3: XHR sniffer installed (${label}).`);
-        } catch (e) {
-            console.warn(`[Ψ-4NDR0666] M3: XHR sniffer install failed (${label}).`, e);
-        }
-    }
-
-    let _pageCtx = null;
-    try { if (typeof unsafeWindow !== 'undefined' && unsafeWindow) _pageCtx = unsafeWindow; } catch (_) { /* EAFP */ }
-    if (_pageCtx) {
-        installFetchSniff(_pageCtx, 'page/unsafeWindow'); // hls.js lives here
-        installXhrSniff(_pageCtx, 'page/unsafeWindow');
-    }
-    installFetchSniff(window, 'sandbox/window');
-    installXhrSniff(window, 'sandbox/window');
 
     // =========================================================================
     // MODULE 3.5: URL LEDGER — m3u8 / CDN AGGREGATION

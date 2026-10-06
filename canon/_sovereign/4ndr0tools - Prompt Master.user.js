@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name                4ndr0tools - Prompt Master
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version             28.3.1
+// @version             28.4.0
 // @author              4ndr0666
 // @icon                data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @license             UNLICENSED - RED TEAM USE ONLY
@@ -11419,82 +11419,39 @@
   function installFlowCreditNetObserver() {
     if (flowCreditNetInstalled) return;
     flowCreditNetInstalled = !0;
-    let pageWin = window;
-    try {
-      if (typeof unsafeWindow !== "undefined" && unsafeWindow) pageWin = unsafeWindow;
-    } catch (e) {}
-    try {
-      const of_ = pageWin.fetch;
-      if (typeof of_ === "function") {
-        pageWin.fetch = function () {
-          const p = of_.apply(this, arguments);
-          try {
-            if (p && typeof p.then === "function")
-              p.then(function (res) {
-                if (!res || !res.ok || typeof res.clone !== "function") return;
-                let ct = "";
-                try {
-                  ct =
-                    (res.headers && res.headers.get && res.headers.get("content-type")) ||
-                    "";
-                } catch (e) {}
-                if (ct && !/json|text|javascript|plain/i.test(ct)) return;
-                res
-                  .clone()
-                  .text()
-                  .then(function (t) {
-                    try {
-                      if (t)
-                        flowCreditNetCount += scanFlowCreditStructured(
-                          t,
-                          String(res.url || "fetch").slice(0, 100),
-                        );
-                    } catch (e) {}
-                  })
-                  .catch(function () {});
-              }).catch(function () {});
-          } catch (e) {}
-          return p;
-        };
-      }
-    } catch (e) {}
-    try {
-      const XO = pageWin.XMLHttpRequest;
-      const oo = XO && XO.prototype && XO.prototype.open;
-      const os_ = XO && XO.prototype && XO.prototype.send;
-      if (typeof oo === "function" && typeof os_ === "function") {
-        XO.prototype.open = function (m, u) {
-          try {
-            this.__pmFlowCreditUrl = String(u).slice(0, 100);
-          } catch (e) {}
-          return oo.apply(this, arguments);
-        };
-        XO.prototype.send = function () {
-          try {
-            // v28.1.0: one-shot listener — a reused XHR object (open/send
-            // cycles are legal) accumulated one scanner per send, so the
-            // Nth response was scanned N times and the diagnostics
-            // counter over-reported.
-            this.addEventListener(
-              "load",
-              function () {
-                try {
-                  if (this.responseType !== "" && this.responseType !== "text") return;
-                  const t = this.responseText;
-                  if (t)
-                    flowCreditNetCount += scanFlowCreditStructured(
-                      t,
-                      this.__pmFlowCreditUrl || "xhr",
-                    );
-                } catch (e) {}
-              },
-              { once: !0 },
-            );
-          } catch (e) {}
-          return os_.apply(this, arguments);
-        };
-      }
-    } catch (e) {}
+    // v28.4.0 (suite v1.4.7): the bespoke pageWin.fetch wrap + XHR
+    // open/send taps are retired; the flow-credit scanner rides
+    // kernel/net.js onTraffic response events — one shared page-realm
+    // wrap per co-install (LLM hosts co-install with the rest of the
+    // suite; the v1.4.3 sink census measured the stacking surface).
+    //
+    // Superset notes (GUP): the baseline's gates are preserved per kind —
+    // fetch was res.ok + textual-content-type gated, XHR was ungated
+    // (any load status, any content type) — so the gates move here
+    // unchanged, split by ev.kind. The baseline XHR listener was
+    // responseType text-only and re-added a one-shot listener per send
+    // (v28.1.0 fix); the hub's single wrap delivers text bodies plus
+    // json bodies pre-stringified — strictly more coverage, and reused
+    // XHR objects can no longer re-stack listeners at all. Own-probe
+    // parity: the hub observes every page exchange, but the script's own
+    // fetches are indistinguishable from the host app's (both are page
+    // traffic) — the scanner is read-only, so re-observation is inert.
+    __4NDR0_NET_API__.onTraffic(function (ev) {
+      try {
+        if (ev.phase !== "response") return;
+        if (ev.kind === "fetch") {
+          if (typeof ev.status === "number" && (ev.status < 200 || ev.status >= 300)) return;
+          const ct = ev.contentType || "";
+          if (ct && !/json|text|javascript|plain/i.test(ct)) return;
+        }
+        const t = ev.body;
+        if (t)
+          flowCreditNetCount += scanFlowCreditStructured(
+            t,
+            String(ev.url || "fetch").slice(0, 100),
+          );
+      } catch (e) {}
+    });
   }
   function sweepFlowCreditStorage() {
     let found = 0;

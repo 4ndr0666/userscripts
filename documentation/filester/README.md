@@ -1,4 +1,4 @@
-# Filester++ · v7.5.1
+# Filester++ · v7.6.0
 
 > Filester stream extraction + folder enumeration — `media & links` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ Filester++ weaponizes the Filester.me hosting surface: it enumerates folder tree
 
 | Dimension | Value |
 |---|---|
-| Version | `7.5.1` |
+| Version | `7.6.0` |
 | Matches | universal (no @match) |
 | Run-at | `document-start` |
-| Size | 13.0 KB · 283 lines |
+| Size | 58.1 KB · 1091 lines |
 | Install | [dist/4ndr0tools - Filester++.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Filester%2B%2B.user.js) |
 
 ## Feature Inventory

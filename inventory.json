@@ -179,12 +179,12 @@
   {
    "file": "4ndr0tools - Bunkr++.user.js",
    "name": "4ndr0tools - Bunkr++",
-   "version": "7.5.2",
+   "version": "7.6.0",
    "description": "Direct URL routing, auto-sort, hide visited, bypass dl gateway, bulk download, m3u8/CDN URL aggregation (page-context net-hook + per-item stream glyphs + album-wide STREAMS aggregation), broken-link repair, power-user hotkeys, LinkMaster-grade m3u8 stream resolution with gateway fallback, MPV dispatch (URI/bridge), web-archive dead-CDN resurrection (archive.org / archive.is), captcha-aware transport retry",
    "family": "media & links",
-   "sha256": "854ce8a563e1c8933951218c498baa9547f0df679ca85aa25a1b1404476d3f47",
-   "lines": 3876,
-   "bytes": 198606,
+   "sha256": "7e9b89171f084370eab23db6810cabdf4a7b76bc4512b2347a21f5cf94c3beaa",
+   "lines": 4652,
+   "bytes": 243096,
    "matches": [],
    "excludes": [],
    "grants": [
@@ -440,12 +440,12 @@
   {
    "file": "4ndr0tools - Filester++.user.js",
    "name": "4ndr0tools - Filester++",
-   "version": "7.5.1",
+   "version": "7.6.0",
    "description": "Dynamic stream extraction + folder enumeration for any media on Filester.me. Network proxy + glyph injection.",
    "family": "media & links",
-   "sha256": "6686937b9a9563cc351f2ee8df710c2ccfd6509e53950c122d286b033c57ed8e",
-   "lines": 283,
-   "bytes": 13290,
+   "sha256": "9cbeb657e9808f19ffeae45f92c13904f75e65b8ebb2ad1e7e71b34a456dda0e",
+   "lines": 1091,
+   "bytes": 59532,
    "matches": [],
    "excludes": [],
    "grants": [
@@ -649,10 +649,10 @@
   {
    "file": "4ndr0tools - GooglePhotosandDrive++.user.js",
    "name": "4ndr0tools - GooglePhotosandDrive++",
-   "version": "8.0.2",
+   "version": "8.0.3",
    "description": "Restores context menus, exposes direct links, adds reverse image search, Drive direct-download resolution, Photos full-res extraction, power-user hotkeys, drag persistence and a settings console. 3lectric-Glass paradigm.",
    "family": "images",
-   "sha256": "9189a913d290036f81f6e65783571daaef04891c1f8db0eca8a28879254514be",
+   "sha256": "952d7ca60a86c0dd0434dce8c9fe3ac1e849fcc5efd579a238a0614d89d0a4c6",
    "lines": 1432,
    "bytes": 62248,
    "matches": [
@@ -807,12 +807,12 @@
   {
    "file": "4ndr0tools - Instagram++.user.js",
    "name": "4ndr0tools - Instagram++",
-   "version": "13.0.1",
+   "version": "13.1.0",
    "description": "Tab-Bar + Dock Integration. Hotkey trigger (Alt+I). Ad-Blocking. Deep-Stack Recovery. Resilient cursor-based pagination. Stories support. Image/video download engine.",
    "family": "sovereign platforms",
-   "sha256": "30a03460195d8d31c817b6a953ff4f7dde8bcdcf955b52e5785ba390060ae122",
-   "lines": 1300,
-   "bytes": 60637,
+   "sha256": "0bf8ac74f8450bc909bc2ce93bba881dbb55687cc1b957fc8e350aa64b034f24",
+   "lines": 2082,
+   "bytes": 105668,
    "matches": [
     "*://*.instagram.com/*"
    ],
@@ -923,12 +923,12 @@
   {
    "file": "4ndr0tools - m3u8++.user.js",
    "name": "4ndr0tools - m3u8++",
-   "version": "5.0.1",
+   "version": "5.1.0",
    "description": "Automatically displays the m3u8 url for ANY video playing in the top right corner of the video. Click url to copy or click download to use the webapp \"tools.thatwind.com\". Also injects Play buttons next to magnet links on every page, relaying them to www.diancigaoshou.com.",
    "family": "media & links",
-   "sha256": "7eb31b5e546d3527bb2bd221fcde014151d81f7c2125bd20452aa375c2bed036",
-   "lines": 814,
-   "bytes": 34072,
+   "sha256": "da9a319cf6f82582cb209fb40d45c22ee7038aa0ab2928e3e84fd7736029bdb6",
+   "lines": 1622,
+   "bytes": 80509,
    "matches": [
     "*://*/*"
    ],
@@ -1079,10 +1079,10 @@
   {
    "file": "4ndr0tools - Pixeldrain++.user.js",
    "name": "4ndr0tools - Pixeldrain++",
-   "version": "1.1.1",
+   "version": "1.1.2",
    "description": "Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.",
    "family": "media & links",
-   "sha256": "1defd57fbdd365d7f717a51e7a874db94ce2b7d3a19d3bf3171312a42f9faab8",
+   "sha256": "379455896ccd149a490b09d3e18e5fbb87bbd6e73b05a780e731b010e7393576",
    "lines": 2579,
    "bytes": 138831,
    "matches": [
@@ -1144,12 +1144,12 @@
   {
    "file": "4ndr0tools - Prompt Master.user.js",
    "name": "4ndr0tools - Prompt Master",
-   "version": "28.3.1",
+   "version": "28.4.0",
    "description": "Google Flow prompt manager toolkit (works on any AI, just add url) - persisted unit ledger meters every generation click, organization engine: collections, saved views, favorites, ratings, archive, group-by, and insights for large prompt libraries, dedupe, ai prompt enhancer, auto gist syncing, hotkeys, much more.",
    "family": "sovereign platforms",
-   "sha256": "ac5e282254a2328ed03cb50f06fd936614e94731120962a251e6d0f18d9444f6",
-   "lines": 21661,
-   "bytes": 1034553,
+   "sha256": "9cf356afe9814a6cc7d7b9bfacb6fd4194d51f2e4cdfa9de956acc5a016283ad",
+   "lines": 22408,
+   "bytes": 1078527,
    "matches": [
     "*://geminigen.ai/*",
     "*://gist.github.com/*",
@@ -1290,12 +1290,12 @@
   {
    "file": "4ndr0tools - Watermark++.user.js",
    "name": "4ndr0tools - Watermark++",
-   "version": "2.0.2",
+   "version": "2.1.0",
    "description": "Security research and alignment testing only.",
    "family": "sovereign platforms",
-   "sha256": "90f2f7e970d7f704cf016c9d9d31b4e131b23cd678fb63377c2ac516b5448da2",
-   "lines": 14320,
-   "bytes": 1222316,
+   "sha256": "36a004ab2152e787e9f38821a453050163b35763cc523c7cece8b2459e4f9b27",
+   "lines": 15111,
+   "bytes": 1267894,
    "matches": [
     "https://gemini.google.com/app",
     "https://gemini.google.com/app/*",
@@ -1557,5 +1557,5 @@
    ]
   }
  ],
- "digest": "c82c723f1f855d26a9c94f31f95d262e6330001d8c63c44bcfae0a155e299f58"
+ "digest": "303f902f49af0bde6246c7890e2b17009500db43385373d2a360ab22f44de605"
 }

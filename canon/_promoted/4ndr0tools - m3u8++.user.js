@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - m3u8++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      5.0.1
+// @version      5.1.0
 // @author       4ndr0666
 // @description  Automatically displays the m3u8 url for ANY video playing in the top right corner of the video. Click url to copy or click download to use the webapp "tools.thatwind.com". Also injects Play buttons next to magnet links on every page, relaying them to www.diancigaoshou.com.
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -293,38 +293,56 @@
 
 
     {
-        const _r_text = unsafeWindow.Response.prototype.text;
-        unsafeWindow.Response.prototype.text = function () {
-            return new Promise((resolve, reject) => {
-                _r_text.call(this).then((text) => {
-                    resolve(text);
-                    if (checkContent(text)) doM3U({ url: this.url, content: text });
-                }).catch(reject);
-            });
-        }
-
-        const _open = unsafeWindow.XMLHttpRequest.prototype.open;
-        unsafeWindow.XMLHttpRequest.prototype.open = function (...args) {
-            this.addEventListener("load", () => {
-                try {
-                    let content = this.responseText;
-                    if (checkContent(content)) doM3U({ url: args[1], content });
-                } catch (e) {
-                    // G10 (audit v4.5): D6 deliberate-interception pattern — sniffing failures must
-                    // never break the host page's XHR, but they are logged for diagnosis instead of
-                    // being silently swallowed (e.g. responseType-locked XHRs throw on responseText).
-                    console.debug("[m3u8++] XHR sniff skipped:", (e && e.message) || e);
-                }
-            });
-            return _open.apply(this, args);
-        }
-
+        // v5.1.0 (suite v1.4.7): the bespoke Response.prototype.text wrap and
+        // the XHR open/send taps are retired; the m3u8 sniffer rides
+        // kernel/net.js onTraffic response events — one shared page-realm
+        // wrap per co-install, instead of a universal script patching
+        // Response.text + XMLHttpRequest on every page it meets (the exact
+        // stacking surface the v1.4.3 sink census measured).
+        //
+        // Superset notes (GUP):
+        // · The baseline text-wrap only saw bodies the page READ via
+        //   .text() — playlists consumed through arrayBuffer()/stream()
+        //   (hls.js does exactly this) were invisible. The hub's response
+        //   phase sees every settled fetch regardless of how (or whether)
+        //   the page reads the body.
+        // · XHR response events keep the baseline's open-time URL shape
+        //   (ev.url), which doM3U's own G1 base resolution (new URL(url,
+        //   location.href)) has always handled — the fetch path's given-URL
+        //   shape is symmetric with it (the baseline XHR path was always
+        //   pre-redirect too, and the thatwind downloader refetches
+        //   server-side).
+        // · responseType-locked XHRs (arraybuffer/blob) yield empty hub
+        //   bodies and are skipped — the G10 deliberate-interception
+        //   outcome, minus the throwing responseText read.
+        // · Phantom (defuser-responded) bodies arrive with source 'respond'
+        //   — the baseline text-wrap saw those same bodies whenever the
+        //   page read them, so sniffing them is parity, not new surface.
+        // · The dev-proxy fetch path above (tools.thatwind.com /
+        //   localhost:3000) stays the script's own: it is a GM transport
+        //   re-dispatcher (custom origin/referer headers, non-200
+        //   re-proxy), not an observer — outside the hub's veto/phantom/
+        //   observe scope, same adjudication as Recon's WebSocket bridge.
         function checkContent(content) {
             if (content.trim().startsWith("#EXTM3U")) {
                 return true;
             }
         }
 
+        __4NDR0_NET_API__.onTraffic((ev) => {
+            if (ev.phase !== "response") return;
+            try {
+                const content = ev.body;
+                if (content && checkContent(content)) {
+                    doM3U({ url: ev.url || location.href, content });
+                }
+            } catch (e) {
+                // G10 (audit v4.5): D6 deliberate-interception pattern — sniffing
+                // failures must never break the host page, but they are logged for
+                // diagnosis instead of being silently swallowed.
+                console.debug("[m3u8++] traffic sniff skipped:", (e && e.message) || e);
+            }
+        });
 
         setInterval(doVideos, 1000);
 

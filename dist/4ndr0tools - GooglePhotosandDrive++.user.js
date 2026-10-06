@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - GooglePhotosandDrive++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      8.0.2
+// @version      8.0.3
 // @description  Restores context menus, exposes direct links, adds reverse image search, Drive direct-download resolution, Photos full-res extraction, power-user hotkeys, drag persistence and a settings console. 3lectric-Glass paradigm.
 // @author       4ndr0666
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -66,7 +66,7 @@
      * MODULE 0 — CONFIG, STATE, TELEMETRY
      * ==================================================================== */
 
-    const SCRIPT_VERSION = '7.0.0-Ψ';
+    const SCRIPT_VERSION = '8.0.3-Ψ';
     const STYLE_ELEMENT_ID = '4ndr0-glass-styles';
     const SETTINGS_KEY = '4ndr0666.gmedia.settings';
     const HUD_STATE_KEY = '4ndr0666.gmedia.hudstate';
