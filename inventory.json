@@ -60,12 +60,12 @@
   {
    "file": "4ndr0tools - Akasha Silence.user.js",
    "name": "4ndr0tools - Akasha Silence",
-   "version": "5.1.0",
+   "version": "5.2.0",
    "description": "Unified counter-surveillance defense layer with a three-stage strictness valve (full / core / off via Ctrl+Alt+Shift+K). Three-way consolidation of Anti-detection + Counter-surveillance + Anti-telemetry (ICC): anti-analysis script neutralization, telemetry sinkholing (fetch/XHR/beacon/WebSocket), WebRTC blinding, session-stable fingerprint spoofing (hardware/canvas/WebGL/audio), identifier poisoning, Google link-tracking sanitization and hostile-UI countermeasures.",
    "family": "uncategorized",
-   "sha256": "fa3453f943c9e7066005ccc5371908aef2a9bb8d5f7ee2b7bc6ec61f452fa956",
-   "lines": 986,
-   "bytes": 48580,
+   "sha256": "af047ccb17663982b818fb3b181ddffd56b01051b13c64d7ad28ac112d79b7a7",
+   "lines": 1439,
+   "bytes": 73812,
    "matches": [
     "*://*/*"
    ],
@@ -147,12 +147,12 @@
   {
    "file": "4ndr0tools - Blob2URL.user.js",
    "name": "4ndr0tools - Blob2URL",
-   "version": "7.2.0",
+   "version": "7.2.1",
    "description": "Universal blob exfiltration, universal media URL sniffer + wire capture + URL vault (Alt+Shift+V), interactive asset sniffing, CSP/CORS bypass.",
    "family": "media & links",
-   "sha256": "1aff417e48c3741060b15cd81a969656b7e6438ae906049259dc1efabe0f69fa",
-   "lines": 1439,
-   "bytes": 82319,
+   "sha256": "764e06c94c19f802e755cf5d7d549abd2d53f8a43eb7eebc66242ba18dca030a",
+   "lines": 1751,
+   "bytes": 99911,
    "matches": [
     "*://*/*"
    ],
@@ -843,12 +843,12 @@
   {
    "file": "4ndr0tools - LinkMasterΨ.user.js",
    "name": "4ndr0tools - LinkMasterΨ",
-   "version": "6.2.4",
+   "version": "6.2.5",
    "description": "Accurately decodes, previews, exports, validates and scrapes all links. (Dual MPV Support + Ψ IG Harvester + sexyforums premium-link unwrap + GitHub raw-URL harvest + Ψ2 forum deep-scrape engine)",
    "family": "media & links",
-   "sha256": "885a78a10d1375ca4b35f794e7a35f9fcb143a8cdd60db58760b77fab0a6609e",
-   "lines": 4059,
-   "bytes": 200563,
+   "sha256": "8971e7410ddd71787fe39945592f5d92b4b114fce46ae1c76dbcfd2baba684d6",
+   "lines": 4371,
+   "bytes": 218155,
    "matches": [
     "*://*/*",
     "*://*.instagram.com/*"
@@ -1557,5 +1557,5 @@
    ]
   }
  ],
- "digest": "49589e03637c04dc71a474fe1b0e20c5c251452b8d345ea0129925bc23029b5c"
+ "digest": "06bf96880920690fd2c8e0b5ab7fddeda8aa5e350be352e21eb8678ff5bdc563"
 }

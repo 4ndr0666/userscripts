@@ -87,6 +87,9 @@ const RECONCILED_NAMES = {
         "injectButton": "kept (AbsorbedGitRaw closure)",
         "tryInject": "kept (AbsorbedGitRaw closure)",
     },
+    "Akasha Silence": {
+        "applyNetworkHooks": "applyLocalHooks (renamed, suite v1.4.5) — the fetch/XHR/beacon defusing migrated to the NetHook v3 veto (__4NDR0_NET_API__.onRequest, kernel-owned wraps); the local installer keeps the WebSocket/WebRTC/worker pacifiers",
+    },
 };
 
 const failures = [];
@@ -435,9 +438,28 @@ function gateD() {
     } else passes.push(`[D] PageCraft modules verified`);
 
     const asil = read("Akasha Silence");
-    if (!asil.includes("defuseScript") || !asil.includes("applyNetworkHooks") || !asil.includes("getRealLinkFromGoogleUrl") || !asil.includes("makePhantomWebSocket")) {
+    if (!asil.includes("defuseScript") || !asil.includes("applyLocalHooks") || !asil.includes("getRealLinkFromGoogleUrl") || !asil.includes("makePhantomWebSocket")) {
         failures.push(`[D] Akasha Silence: absorbed trio modules not present`);
     } else passes.push(`[D] Akasha Silence absorbed trio verified`);
+
+    /* v1.4.5 NetHook veto migration — Akasha's fetch/XHR/beacon defusing
+     * rides the shared hub (kernel/net.js v3): the per-script Proxy
+     * facades are gone, the veto subscription + iframe propagation are
+     * present, and the canon source carries no own-network-wrap
+     * remnants. Canon is the scan surface (dist carries the inlined
+     * kernel, which owns the sanctioned wraps). */
+    const asilCanonPath = path.join(ROOT, "canon", "_merged", "4ndr0tools - Akasha Silence.user.js");
+    const asilCanon = fs.existsSync(asilCanonPath) ? fs.readFileSync(asilCanonPath, "utf8") : "";
+    if (!asilCanon.includes("__4NDR0_NET_API__.onRequest") || !asilCanon.includes("__4NDR0_NET_API__.propagate")) {
+        failures.push(`[D] Akasha Silence: NetHook veto subscription/propagation not present in canon`);
+    } else passes.push(`[D] Akasha Silence NetHook veto adoption verified (fetch/XHR/beacon defusing rides the shared hub)`);
+    if (/targetWindow\.fetch\s*=|XMLHttpRequest\.prototype\.(?:open|send)\s*=|navigator\.sendBeacon\s*=|\.prototype\.(?:open|send)\s*=\s*function/.test(asilCanon)) {
+        failures.push(`[D] Akasha Silence: legacy own-network-wrap remnants still present in canon (must ride NetHook)`);
+    }
+    const netSrcV = fs.readFileSync(path.join(ROOT, "kernel", "net.js"), "utf8");
+    if (!/VERSION\s*=\s*3\s*;/.test(netSrcV) || !/onRequest:\s*function/.test(netSrcV) || !/propagate:\s*function/.test(netSrcV) || !/requestSubscriberCount/.test(netSrcV)) {
+        failures.push(`[D] NetHook kernel: veto api surface incomplete (version 3 + onRequest/propagate/requestSubscriberCount)`);
+    } else passes.push(`[D] NetHook veto semantics verified (hub request-cancel + phantom-respond + body-rewrite; defusers are no longer observer-only)`);
 
     /* v1.3.0 interference ledger — the nine documented fixes of this round. */
     if (!asil.includes("AKASHA_PROFILE") || !asil.includes("Ctrl+Alt+Shift+K") || !asil.includes("akasha_silence_profile")) {

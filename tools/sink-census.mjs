@@ -187,7 +187,9 @@ const CLASSES = {
  *   Class B — page-network taps (co-install stacking surface):
  *     fetchWrap / xhrWrap / tapOpenSend — the defuser/observer family
  *     whose semantic NetHook migration needs veto support (dedicated
- *     rounds, one script per round, live-smoked each time).
+ *     rounds, one script per round, live-smoked each time — Akasha
+ *     Silence migrated to zero in v1.4.5; Recon + Stream Interceptor
+ *     are next).
  *
  *   Class A-semantic — policy-gated interop bridges that are NOT UI
  *     strings: the Images++ page-$ eval bridge and the TT-policy-wrapped
@@ -198,7 +200,11 @@ const CLASSES = {
  *   Bunkr(23) + Pixeldrain(10) + IG(6) + m3u8(6) + Filester(5) +
  *   Forums(5) + Recon(5) + Hailuo(4) + Gofile(3) + MPC(3) + PM(3) +
  *   GPD(2) + ModelSearch(2) + purge/Akasha/MAM/Redgifs/WCP/YTPM/YTERB/
- *   Images(1 each). The burn-down plan is EXECUTED. */
+ *   Images(1 each). The burn-down plan is EXECUTED.
+ * v1.4.5 (NetHook veto round): Akasha Silence fetchWrap(1) + xhrWrap(2)
+ *   → 0 — the fetch/XHR/beacon defusing rides kernel/net.js v3 onRequest
+ *   (one wrap set per realm; the ledger's own entries anticipated this
+ *   round). */
 const ADJUDICATED = {
     /* — fully clean (no surviving sites): FLX, CB, BPW, B2U, purge,
      * Akasha-UI, Bunkr-UI, Filester, Forums, Gofile, GPD, Hailuo,
@@ -211,10 +217,8 @@ const ADJUDICATED = {
     "4ndr0tools - AlwaysNewWindow.user.js": {
         tapOpenSend: { count: 2, reason: "win-open-override: force-open/restore pair — the script's core feature, not an XHR tap" },
     },
-    "4ndr0tools - Akasha Silence.user.js": {
-        fetchWrap: { count: 1, reason: "net-defuser: tracker nullifier (needs NetHook veto — separate round)" },
-        xhrWrap: { count: 2, reason: "net-defuser: XHR mock-response nullifier (semantic migration — separate round)" },
-    },
+    /* Akasha Silence: fetchWrap(1) + xhrWrap(2) burned to zero in v1.4.5 —
+     * the request-path defusing rides kernel/net.js v3 (NetHook veto). */
     "4ndr0tools - Bunkr++.user.js": {
         fetchWrap: { count: 2, reason: "net-defuser: fake stats Response + album API path (host-gated bunkr.is)" },
         tapOpenSend: { count: 2, reason: "net-observer: indirect xo.open/xo.send deobfuscation capture (host-gated bunkr.is; NetHook-eligible next round)" },

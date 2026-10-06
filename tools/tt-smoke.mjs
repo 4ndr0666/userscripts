@@ -19,11 +19,19 @@
  *   /dist/<file>               the built installables
  *   /api/media.m3u8            a fake HLS manifest full of media URLs
  *   /api/probe.json            JSON carrying a direct media URL
+ *   /api/telemetry             a tracker-URL-shaped endpoint (matches the
+ *                              Akasha Silence blocklist) — server-hit
+ *                              counted; the veto probe asserts it stays at
+ *                              ZERO while fetch/XHR/beacon all get phantoms
+ *   /api/echo                  POST body echo (identifier-poisoning proof)
+ *   /api/hits                  the /api/telemetry hit counter
  *
  * The harness page collects diagnostics into window.__SMOKE__ (page errors,
  * console.error calls, CSP violation events, captured GM menu commands) and
- * can auto-invoke a script's settings-console menu command (?autopanel=1)
- * plus run the wire probes (?probe=wire) for the NetHook consumers.
+ * can auto-invoke a script's settings-console menu command (?autopanel=1),
+ * run the wire probes (?probe=wire) for the NetHook consumers, or run the
+ * veto probe (?probe=veto) for the NetHook v3 defusers (request cancel /
+ * phantom-respond / body-rewrite, live).
  *
  * Run:      node tools/tt-smoke.mjs          (serves on 127.0.0.1:8765)
  *           node tools/tt-smoke.mjs --port 9000
@@ -121,12 +129,12 @@ function harnessPage(ttMode) {
         : ttMode === "locked"
             ? "require-trusted-types-for 'script'; trusted-types 4ndr0666tools#dom 4ndr0666tools#dom.2 4ndr0666tools#dom.3"
             : "";
-    return (scriptName, probe, autopanel, tabprobe) => `<!doctype html>
+    return (scriptName, probe, autopanel, tabprobe, veto) => `<!doctype html>
 <html><head><meta charset="utf-8">
 <title>tt-smoke — ${scriptName} (${ttMode})</title>
 <script>
 window.__SMOKE__ = { mode: ${JSON.stringify(ttMode)}, script: ${JSON.stringify(scriptName)},
-    errors: [], csp: [], menu: [], notes: [], tabProbe: null, ready: false };
+    errors: [], csp: [], menu: [], notes: [], tabProbe: null, vetoProbe: null, ready: false };
 window.addEventListener('error', function (e) {
     __SMOKE__.errors.push('pageerror: ' + (e.message || String(e)));
 });
@@ -154,8 +162,11 @@ __SMOKE__.report = function () {
         glassStylesheet: !!sheet,
         contentRows: content ? content.children.length : (vault && vault.style.display !== 'none' ? vault.children.length : -1),
         tabProbe: __SMOKE__.tabProbe,
+        vetoProbe: __SMOKE__.vetoProbe,
         netSlot: !!(netSlot && typeof netSlot.onBody === 'function'),
+        netVersion: netSlot ? netSlot.version : null,
         netSubscribers: netSlot ? netSlot.subscriberCount : 0,
+        netRequestSubscribers: netSlot ? (netSlot.requestSubscriberCount || 0) : 0,
         menuCommands: (window.__GM_MENU__ || []).length,
     };
 };
@@ -229,8 +240,68 @@ ${csp ? `<meta http-equiv="Content-Security-Policy" content="${csp}">` : ""}
         };
         if (tabs.length) _loop(0); else __SMOKE__.tabProbe = results;
     }
+    /* [v1.4.5 NetHook veto probe — live defusal proof] Loads the dist
+     * defuser (AkashA-class: fetch/XHR/beacon ride the hub), then fires
+     * tracker-shaped + clean requests through the page realm. Green
+     * contract: the tracker fetch resolves the MOCKED body (never the
+     * server's), the clean control passes through, the POST body returns
+     * identifier-poisoned (device_id → 0xDEADBEEF-…), the tracker XHR
+     * delivers the mock on the 40 ms cadence, the beacon swallows — and
+     * the server-side hit counter for /api/telemetry stays at ZERO
+     * across every channel. ] */
+    function runVetoProbe() {
+        var out = {};
+        var MOCK = '{"success":true,"code":0}';
+        function getHits() {
+            return fetch('/api/hits').then(function (r) { return r.json(); })
+                .catch(function () { return { telemetry: -1 }; });
+        }
+        return getHits().then(function (h0) {
+            out.telemetryServerHitsBefore = h0.telemetry;
+            return fetch('/api/telemetry').then(function (r) {
+                return r.text().then(function (t) { out.fetchMocked = (r.status === 200 && t === MOCK); });
+            });
+        }).then(function () {
+            return fetch('/api/probe.json').then(function (r) {
+                return r.json().then(function (j) { out.controlPassthrough = !!(j && j.probe === true); });
+            });
+        }).then(function () {
+            return fetch('/api/echo', { method: 'POST', body: JSON.stringify({ device_id: 'legit-device-xyz', note: 'keep' }) })
+                .then(function (r) { return r.text(); })
+                .then(function (t) {
+                    out.bodyPoisoned = (/0xDEADBEEF-/.test(t) && t.indexOf('legit-device-xyz') === -1 && t.indexOf('keep') !== -1);
+                });
+        }).then(function () {
+            return new Promise(function (resolve) {
+                try {
+                    var x = new XMLHttpRequest();
+                    var settled = false;
+                    x.onreadystatechange = function () {
+                        if (x.readyState === 4 && !settled) { settled = true; resolve({ ok: x.status === 200 && x.responseText === MOCK }); }
+                    };
+                    x.open('GET', '/api/telemetry');
+                    x.send();
+                    setTimeout(function () { if (!settled) { settled = true; resolve({ ok: false, timeout: true }); } }, 900);
+                } catch (e) { resolve({ ok: false, error: String(e) }); }
+            }).then(function (r) { out.xhrMocked = r.ok; });
+        }).then(function () {
+            out.beaconReturned = navigator.sendBeacon('/api/telemetry', 'x=1');
+            return new Promise(function (r) { setTimeout(r, 250); }).then(function () { return getHits(); });
+        }).then(function (h1) {
+            out.telemetryServerHitsAfter = h1.telemetry;
+            out.zeroServerHits = (out.telemetryServerHitsBefore === 0 && h1.telemetry === 0 && out.beaconReturned === true);
+            var slot = window.__4NDR0_NET__ || (typeof unsafeWindow !== 'undefined' && unsafeWindow ? unsafeWindow.__4NDR0_NET__ : null);
+            out.netVersion = slot ? slot.version : null;
+            out.netRequestSubscribers = slot ? (slot.requestSubscriberCount || 0) : 0;
+            __SMOKE__.vetoProbe = out;
+        }).catch(function (e) {
+            out.fatal = String(e);
+            __SMOKE__.vetoProbe = out;
+        });
+    }
     setTimeout(function () {
-        var work = ${JSON.stringify(probe)} ? runProbes() : Promise.resolve();
+        var work = ${JSON.stringify(probe)} ? runProbes()
+            : (${JSON.stringify(veto)} ? runVetoProbe() : Promise.resolve());
         work.then(function () {
             setTimeout(function () {
                 if (${JSON.stringify(autopanel)}) autoPanel();
@@ -244,6 +315,7 @@ ${csp ? `<meta http-equiv="Content-Security-Policy" content="${csp}">` : ""}
 </body></html>`;
 }
 
+let telemetryHits = 0;
 const server = http.createServer((req, res) => {
     const url = new URL(req.url, `http://127.0.0.1:${port}`);
     const send = (code, type, body) => {
@@ -254,6 +326,17 @@ const server = http.createServer((req, res) => {
     if (url.pathname === "/gm-shim.js") return send(200, "application/javascript; charset=utf-8", gmShim());
     if (url.pathname === "/api/media.m3u8") return send(200, "application/vnd.apple.mpegurl", M3U8);
     if (url.pathname === "/api/probe.json") return send(200, "application/json", PROBE_JSON);
+    if (url.pathname === "/api/telemetry") {
+        telemetryHits++; /* the veto probe asserts this counter stays at zero */
+        return send(200, "application/json", JSON.stringify({ real: true }));
+    }
+    if (url.pathname === "/api/hits") return send(200, "application/json", JSON.stringify({ telemetry: telemetryHits }));
+    if (url.pathname === "/api/echo") {
+        const chunks = [];
+        req.on("data", (c) => chunks.push(c));
+        req.on("end", () => send(200, "text/plain; charset=utf-8", Buffer.concat(chunks).toString("utf8")));
+        return;
+    }
 
     if (url.pathname.startsWith("/dist/")) {
         const name = decodeURIComponent(url.pathname.slice("/dist/".length));
@@ -272,10 +355,12 @@ const server = http.createServer((req, res) => {
         const match = candidates.find((f) => f.replace(/4ndr0tools - /, "").replace(/\.user\.js$/, "") === script)
             || candidates.find((f) => f.includes(script));
         if (!match) return send(404, "text/plain", `no dist script matches "${script}"\n`);
-        const probe = url.searchParams.has("probe") || url.searchParams.get("probe") === "wire";
+        const probeParam = url.searchParams.get("probe") || "";
+        const probe = url.searchParams.has("probe") && probeParam !== "veto";
+        const veto = probeParam === "veto";
         const autopanel = url.searchParams.has("autopanel");
         const tabprobe = url.searchParams.has("tabs");
-        return send(200, "text/html; charset=utf-8", harnessPage(ttRoute)(match, probe, autopanel, tabprobe));
+        return send(200, "text/html; charset=utf-8", harnessPage(ttRoute)(match, probe, autopanel, tabprobe, veto));
     }
 
     send(404, "text/plain", "routes: /tt/ /tt-locked/ /nott/ ?script=…&probe=wire&autopanel · /gm-shim.js · /api/media.m3u8 · /api/probe.json\n");
@@ -287,4 +372,5 @@ server.listen(port, "127.0.0.1", () => {
     console.log(`  /tt-locked/?script=PageCraft&autopanel&tabs (TT + policy-name allowlist)`);
     console.log(`  /nott/?script=HostWarp&autopanel&tabs  (no TT — parity)`);
     console.log(`  /tt/?script=Blob2URL&probe=wire&autopanel (NetHook wire capture)`);
+    console.log(`  /tt/?script=Akasha%20Silence&probe=veto  (NetHook v3 veto — live defusal proof)`);
 });

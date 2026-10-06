@@ -313,27 +313,48 @@ assert(probeC.createdName === "4ndr0666tools#dom" && probeC.lastParse.v.__truste
 const netSrc = fs.readFileSync(path.join(ROOT, "kernel", "net.js"), "utf8");
 function makeNetContext() {
     let fetchCalls = 0, cloneCalls = 0, nextBody = "FETCHBODY";
+    let lastFetchArgs = null, beaconCalls = 0, lastBeaconArgs = null;
     const nativeFetch = function () {
         fetchCalls++;
+        lastFetchArgs = Array.from(arguments);
         return Promise.resolve({
             ok: true,
             clone() { cloneCalls++; return { text: () => Promise.resolve(nextBody) }; },
         });
     };
+    class MockEvent { constructor(type) { this.type = type; } }
     class MockXHR {
         constructor() { this.listeners = {}; this.responseType = ""; }
         addEventListener(t, f) { (this.listeners[t] ||= []).push(f); }
+        dispatchEvent(ev) { (this.listeners[ev.type] || []).forEach((f) => f.call(this, ev)); return true; }
         open(m, u) { this._m = m; this._u = u; }
         send() { this.responseText = "XHRBODY"; (this.listeners.load || []).forEach((f) => f.call(this)); }
     }
-    const page = { fetch: nativeFetch, XMLHttpRequest: MockXHR };
+    const page = {
+        fetch: nativeFetch,
+        XMLHttpRequest: MockXHR,
+        navigator: {
+            sendBeacon: function () { beaconCalls++; lastBeaconArgs = Array.from(arguments); return true; },
+        },
+    };
     const sb = {
-        console, Date, Math, JSON, Map, Set, Promise, Array, Object, String, Number, Symbol,
+        console, Date, Math, JSON, Map, Set, WeakSet, Promise, Array, Object, String, Number, Symbol,
         setTimeout, clearTimeout,
+        Event: MockEvent,
+        Response: class {
+            constructor(body, init) {
+                this._body = body == null ? "" : String(body);
+                this.status = (init && init.status) || 200;
+                this.statusText = (init && init.statusText) || "";
+                this.ok = this.status >= 200 && this.status < 300;
+            }
+            clone() { cloneCalls++; const self = this; return { text: () => Promise.resolve(self._body) }; }
+            text() { return Promise.resolve(this._body); }
+        },
         unsafeWindow: page, window: page, XMLHttpRequest: MockXHR,
     };
     sb.globalThis = sb;
-    sb.__probe = () => ({ fetchCalls, cloneCalls, page, nativeFetch });
+    sb.__probe = () => ({ fetchCalls, cloneCalls, page, nativeFetch, lastFetchArgs, beaconCalls, lastBeaconArgs });
     sb.__setBody = (s) => { nextBody = s; };
     return sb;
 }
@@ -345,7 +366,7 @@ function runNet(sb, label) {
 (async () => {
     const sbNet = makeNetContext();
     const net = runNet(sbNet, "net-primary.js");
-    assert(net.version === 2 && typeof net.onBody === "function", "net: NetHook v2 api exported");
+    assert(net.version === 3 && typeof net.onBody === "function", "net: NetHook v3 api exported");
 
     /* lazy arm — nothing wraps before the first subscriber */
     const p0 = sbNet.__probe();
@@ -414,6 +435,184 @@ function runNet(sb, label) {
     await new Promise((r) => setTimeout(r, 0));
     assert(huge === null, "net: 4 MB cap drops oversized bodies");
     sbNet.__setBody("FETCHBODY");
+
+    /* ── NetHook v3 veto battery (suite v1.4.5) ───────────────────────────
+     * onRequest verdicts: {veto} cancels, {respond} phantoms, {body}
+     * rewrites; first decisive verdict wins; throwing defusers fail open;
+     * propagate arms iframe realms; second copies delegate. */
+
+    assert(typeof net.onRequest === "function" && typeof net.propagate === "function" && net.requestSubscriberCount === 0,
+        "net: v3 veto api exported (onRequest + propagate, zero at rest)");
+
+    /* fetch veto-cancel — native never called, native-style TypeError */
+    {
+        const sbV = makeNetContext();
+        const netV = runNet(sbV, "net-veto-cancel.js");
+        const offV = netV.onRequest(() => ({ veto: true }));
+        let rejected = false, errType = "";
+        sbV.__probe().page.fetch("https://tracker.test/telemetry").catch((e) => {
+            rejected = true;
+            errType = (e && e.name === "TypeError") ? "TypeError" : String(e && e.message);
+        });
+        await new Promise((r) => setTimeout(r, 0));
+        assert(rejected && errType === "TypeError", "net: veto cancels fetch with a native-style TypeError");
+        assert(sbV.__probe().fetchCalls === 0, "net: vetoed fetch never reaches the network");
+        offV();
+        await sbV.__probe().page.fetch("https://x.test/after-off");
+        assert(sbV.__probe().fetchCalls === 1, "net: unsubscribed veto stops cancelling");
+    }
+
+    /* fetch respond — synthetic Response, off-network, phantom fanned out */
+    {
+        const sbR = makeNetContext();
+        const netR = runNet(sbR, "net-respond.js");
+        let obs = "";
+        netR.onBody((t) => { obs += t; });
+        netR.onRequest((req) => (req.url.includes("tracker") ? { respond: { status: 204, statusText: "NO CONTENT", body: "PHANTOM" } } : undefined));
+        const res = await sbR.__probe().page.fetch("https://tracker.test/x");
+        assert(res.status === 204 && res.statusText === "NO CONTENT" && (await res.text()) === "PHANTOM",
+            "net: respond verdict resolves a synthetic Response (no network)");
+        assert(sbR.__probe().fetchCalls === 0, "net: responded fetch stays off the network");
+        await new Promise((r) => setTimeout(r, 0));
+        assert(obs.includes("PHANTOM"), "net: phantom body fanned to onBody observers (stacked-ordering parity)");
+    }
+
+    /* fetch body rewrite — identifier poisoning as a {body} verdict */
+    {
+        const sbW = makeNetContext();
+        const netW = runNet(sbW, "net-rewrite.js");
+        netW.onRequest((req) => (typeof req.body === "string" && req.body.includes("device_id")
+            ? { body: req.body.replace(/("device_id":")[^"]+/, "$10xDEADBEEF-POISON") }
+            : undefined));
+        await sbW.__probe().page.fetch("https://x.test/echo", { method: "POST", body: '{"device_id":"real"}' });
+        const args = sbW.__probe().lastFetchArgs;
+        assert(args && args[1] && args[1].body.includes("0xDEADBEEF-POISON") && !args[1].body.includes('"real"'),
+            "net: body rewrite reaches the native call (identifier poisoning via hub)");
+    }
+
+    /* XHR respond — 40 ms D6 cadence, full surface, json parse */
+    {
+        const sbX = makeNetContext();
+        const netX = runNet(sbX, "net-xhr-respond.js");
+        netX.onRequest((req) => (req.kind === "xhr" && req.url.includes("tracker")
+            ? { respond: { status: 200, statusText: "OK", body: '{"success":true}' } }
+            : undefined));
+        const xhr = new (sbX.__probe().page.XMLHttpRequest)();
+        let ready = null, loadend = 0;
+        xhr.onreadystatechange = () => { if (xhr.readyState === 4) ready = { status: xhr.status, text: xhr.responseText, url: xhr.responseURL }; };
+        xhr.addEventListener("loadend", () => { loadend++; });
+        xhr.open("GET", "https://tracker.test/api");
+        xhr.send();
+        assert(xhr.readyState !== 4, "net: XHR mock delivers async (D6 cadence, never synchronous)");
+        await new Promise((r) => setTimeout(r, 80));
+        assert(ready && ready.status === 200 && ready.text === '{"success":true}' && ready.url === "https://tracker.test/api",
+            "net: XHR respond delivers the full mocked surface (status/responseText/responseURL)");
+        assert(loadend === 1, "net: XHR mock fires loadend exactly once");
+        const x2 = new (sbX.__probe().page.XMLHttpRequest)();
+        x2.responseType = "json";
+        let j = null;
+        x2.onload = () => { j = x2.response; };
+        x2.open("GET", "https://tracker.test/api");
+        x2.send();
+        await new Promise((r) => setTimeout(r, 80));
+        assert(j && typeof j === "object" && j.success === true,
+            "net: XHR responseType json parses the phantom body");
+    }
+
+    /* XHR veto-cancel — native error surface at status 0 */
+    {
+        const sbE = makeNetContext();
+        const netE = runNet(sbE, "net-xhr-cancel.js");
+        netE.onRequest((req) => (req.kind === "xhr" ? { veto: true } : undefined));
+        const xhr = new (sbE.__probe().page.XMLHttpRequest)();
+        let errored = false, done = false;
+        xhr.onerror = () => { errored = true; };
+        xhr.onloadend = () => { done = true; };
+        xhr.open("GET", "https://x.test/api");
+        xhr.send();
+        await new Promise((r) => setTimeout(r, 20));
+        assert(errored && done && xhr.status === 0 && xhr.readyState === 4,
+            "net: XHR veto fires the native error surface (status 0)");
+    }
+
+    /* beacon — veto swallows and reports success; clean traffic passes */
+    {
+        const sbB = makeNetContext();
+        const netB = runNet(sbB, "net-beacon.js");
+        netB.onRequest((req) => (req.kind === "beacon" && req.url.includes("tracker") ? { veto: true } : undefined));
+        const nav = sbB.__probe().page.navigator;
+        const okT = nav.sendBeacon("https://tracker.test/t", "a=1");
+        assert(okT === true && sbB.__probe().beaconCalls === 0,
+            "net: beacon veto swallows and reports success (no network)");
+        nav.sendBeacon("https://clean.test/c", "a=1");
+        assert(sbB.__probe().beaconCalls === 1,
+            "net: clean beacons pass through");
+    }
+
+    /* request-subscriber isolation — a throwing defuser fails open */
+    {
+        const sbI = makeNetContext();
+        const netI = runNet(sbI, "net-iso.js");
+        netI.onRequest(() => { throw new Error("defuser blows up"); });
+        const res = await sbI.__probe().page.fetch("https://x.test/iso");
+        assert(res.ok === true && sbI.__probe().fetchCalls === 1,
+            "net: throwing request subscriber isolated (fail-open, page unbroken)");
+    }
+
+    /* verdict order — first veto/respond wins */
+    {
+        const sbO = makeNetContext();
+        const netO = runNet(sbO, "net-order.js");
+        netO.onRequest(() => ({ veto: true }));
+        netO.onRequest(() => ({ respond: { status: 200, body: "X" } }));
+        let rej = false;
+        sbO.__probe().page.fetch("https://x.test/o").catch(() => { rej = true; });
+        await new Promise((r) => setTimeout(r, 0));
+        assert(rej && sbO.__probe().fetchCalls === 0,
+            "net: first veto/respond verdict wins (ordered registry)");
+    }
+
+    /* co-install onRequest delegation — the second copy's verdict executes
+     * through the owner's single wrap (no second wrap armed) */
+    {
+        const sbD = makeNetContext();
+        const netD = runNet(sbD, "net-deleg-primary.js");
+        netD.onRequest(() => undefined); /* owner arms; no verdicts */
+        const ownerWrap = sbD.__probe().page.fetch;
+        const sbD2 = makeNetContext();
+        const sharedD = sbD.__probe().page;
+        sbD2.unsafeWindow = sharedD; sbD2.window = sharedD; sbD2.XMLHttpRequest = sharedD.XMLHttpRequest;
+        const netD2 = runNet(sbD2, "net-deleg-secondary.js");
+        assert(netD2 !== netD, "net: delegation test uses two module copies");
+        let delegated = false;
+        netD2.onRequest(() => { delegated = true; return { respond: { status: 200, body: "FROM2" } }; });
+        const resD = await sharedD.fetch("https://x.test/deleg");
+        assert(delegated && (await resD.text()) === "FROM2",
+            "net: second copy's onRequest verdict executes through the realm slot");
+        assert(sharedD.fetch === ownerWrap && sbD.__probe().fetchCalls === 0,
+            "net: no second wrap armed for the delegating copy (off-network phantom)");
+    }
+
+    /* propagate — iframe realm armed once, shared subscriptions */
+    {
+        const sbP = makeNetContext();
+        const netP = runNet(sbP, "net-propagate.js");
+        netP.onRequest((req) => (req.url.includes("tracker") ? { veto: true } : undefined));
+        const iframe = {
+            fetch: function () { return Promise.resolve({ ok: true }); },
+            navigator: {},
+        };
+        const armed1 = netP.propagate(iframe);
+        const armed2 = netP.propagate(iframe);
+        assert(armed1 === true && armed2 === false,
+            "net: propagate arms an iframe realm exactly once (idempotent)");
+        let rejI = false;
+        iframe.fetch("https://tracker.test/i").catch(() => { rejI = true; });
+        await new Promise((r) => setTimeout(r, 0));
+        assert(rejI, "net: veto serves the propagated realm (shared subscriptions)");
+        const okRes = await iframe.fetch("https://clean.test/i");
+        assert(okRes.ok === true, "net: propagated realm passes clean traffic");
+    }
 
     console.log(failures === 0 ? "\nKERNEL SMOKE: ALL PASS" : `\nKERNEL SMOKE: ${failures} FAILURE(S)`);
     process.exit(failures === 0 ? 0 : 1);

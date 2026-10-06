@@ -37,6 +37,7 @@ const KERNEL_ORDER = ["brand", "core", "glass", "store", "hotkeys", "hosts"];
  * (e.g. __4NDR0_NET_API__) is script-scope visible to the consumer's
  * body; validate.mjs machine-checks both wiring directions. */
 const CANON_KERNEL = {
+    "4ndr0tools - Akasha Silence.user.js": ["net"],
     "4ndr0tools - Blob2URL.user.js": ["net"],
     "4ndr0tools - LinkMasterΨ.user.js": ["net"],
 };
@@ -45,23 +46,28 @@ const GLYPH_ICON =
 
 /* ── §1.1-aware lexical scanner (JS: comments, strings, templates, regex) ── */
 
-/** Returns null when balanced, or a descriptive error string. */
+/** Returns null when balanced, or a descriptive error string.
+ * v1.4.5: ported the v1.3.0 lastSig fix from validate.mjs — the old
+ * backward prevSignificant() walk stopped at a block-comment terminator's
+ * slash, so a regex literal directly after a closing comment token was
+ * scanned as division, and a slash inside its first character class
+ * (e.g. Akasha's /(?:^|[?&/._-])track…/ after the ampersand) then opened
+ * a PHANTOM regex that swallowed live parens. lastSig is tracked FORWARD
+ * (last significant CODE character, comments and strings excluded by
+ * construction). */
 function checkLexicalBalance(src, label) {
     let i = 0, line = 1;
     const n = src.length;
     const stack = [];
-    const push = (ch, ln) => stack.push({ ch, ln });
-    const popMatch = (ch, closer) => {
-        if (stack.length === 0) return `unmatched "${closer}" at line ${line}`;
-        const top = stack.pop();
-        const pairs = { "(": ")", "[": "]", "{": "}" };
-        if (pairs[top.ch] !== closer) return `"${closer}" at line ${line} closes "${top.ch}" opened at line ${top.ln}`;
-        return null;
-    };
-    const prevSignificant = () => {
-        let j = i - 1;
-        while (j >= 0 && /\s/.test(src[j])) j--;
-        return j >= 0 ? src[j] : "";
+    let lastSig = "";
+    const skipTemplate = (start) => {
+        let k = start + 1;
+        while (k < n) {
+            if (src[k] === "\\") { k += 2; continue; }
+            if (src[k] === "`") return k + 1;
+            k++;
+        }
+        return -1;
     };
     while (i < n) {
         const c = src[i];
@@ -69,18 +75,18 @@ function checkLexicalBalance(src, label) {
         if (c === "/" && src[i + 1] === "/") { while (i < n && src[i] !== "\n") i++; continue; }
         if (c === "/" && src[i + 1] === "*") {
             const end = src.indexOf("*/", i + 2);
-            const nl = src.slice(i, end === -1 ? n : end).split("\n").length - 1;
-            if (end === -1) return `unterminated block comment at line ${line}`;
-            line += nl; i = end + 2; continue;
+            if (end === -1) return `${label}: unterminated block comment at line ${line}`;
+            line += src.slice(i, end).split("\n").length - 1; i = end + 2; continue;
         }
         if (c === '"' || c === "'") {
             i++;
             while (i < n) {
                 if (src[i] === "\\") { i += 2; continue; }
                 if (src[i] === c) { i++; break; }
-                if (src[i] === "\n") return `unterminated ${c} string at line ${line}`;
+                if (src[i] === "\n") return `${label}: unterminated ${c} string at line ${line}`;
                 i++;
             }
+            lastSig = c;
             continue;
         }
         if (c === "`") {
@@ -96,7 +102,7 @@ function checkLexicalBalance(src, label) {
                         else if (src[i] === "}") depth--;
                         else if (src[i] === "`") { // nested template
                             const r = skipTemplate(src, i);
-                            if (r === -1) return `unterminated nested template at line ${line}`;
+                            if (r === -1) return `${label}: unterminated nested template at line ${line}`;
                             i = r;
                             continue;
                         }
@@ -106,9 +112,10 @@ function checkLexicalBalance(src, label) {
                 }
                 i++;
             }
+            lastSig = c;
             continue;
         }
-        if (c === "/" && /[(,=:[!&|?{};+\-*%<>~^]/.test(prevSignificant() || "(")) {
+        if (c === "/" && /[(,=:[!&|?{};+\-*%<>~^]/.test(lastSig || "(")) {
             // regex literal (heuristic per §1.1: only where a value may start)
             i++;
             let inClass = false;
@@ -120,28 +127,25 @@ function checkLexicalBalance(src, label) {
                 else if (src[i] === "\n") break; // not a regex after all
                 i++;
             }
+            lastSig = "/";
             continue;
         }
-        if (c === "(" || c === "[" || c === "{") push(c, line);
-        else if (c === ")" || c === "]" || c === "}") {
-            const err = popMatch(c, c);
-            if (err) return `${label}: ${err}`;
+        if (c === "(" || c === "[" || c === "{") {
+            stack.push({ ch: c, line });
+            lastSig = c; i++; continue;
         }
+        if (c === ")" || c === "]" || c === "}") {
+            const top = stack.pop();
+            if (!top) return `${label}: unmatched "${c}" at line ${line}`;
+            const pairs = { "(": ")", "[": "]", "{": "}" };
+            if (pairs[top.ch] !== c) return `${label}: "${c}" at line ${line} closes "${top.ch}" opened at line ${top.line}`;
+            lastSig = c; i++; continue;
+        }
+        if (!/\s/.test(c)) lastSig = c;
         i++;
     }
-    if (stack.length > 0) return `${label}: unclosed "${stack[stack.length - 1].ch}" opened at line ${stack[stack.length - 1].ln}`;
+    if (stack.length > 0) return `${label}: unclosed "${stack[stack.length - 1].ch}" opened at line ${stack[stack.length - 1].line}`;
     return null;
-}
-
-function skipTemplate(src, start) {
-    let i = start + 1;
-    const n = src.length;
-    while (i < n) {
-        if (src[i] === "\\") { i += 2; continue; }
-        if (src[i] === "`") return i + 1;
-        i++;
-    }
-    return -1;
 }
 
 /* ── Placeholder scan (GUP §7.3 zero-placeholder rule) ─────────────────── */

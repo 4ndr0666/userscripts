@@ -1,4 +1,4 @@
-# Blob2URL · v7.2.0
+# Blob2URL · v7.2.1
 
 > Universal blob exfiltration + wire capture — `media & links` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ Blob2URL is the suite's universal media extraction engine: it watches the page's
 
 | Dimension | Value |
 |---|---|
-| Version | `7.2.0` |
+| Version | `7.2.1` |
 | Matches | `*://*/*` |
 | Run-at | `document-idle` |
-| Size | 80.4 KB · 1439 lines |
+| Size | 97.6 KB · 1751 lines |
 | Install | [dist/4ndr0tools - Blob2URL.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Blob2URL.user.js) |
 
 ## Feature Inventory

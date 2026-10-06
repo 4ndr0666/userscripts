@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Akasha Silence
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      5.1.0
+// @version      5.2.0
 // @description  Unified counter-surveillance defense layer with a three-stage strictness valve (full / core / off via Ctrl+Alt+Shift+K). Three-way consolidation of Anti-detection + Counter-surveillance + Anti-telemetry (ICC): anti-analysis script neutralization, telemetry sinkholing (fetch/XHR/beacon/WebSocket), WebRTC blinding, session-stable fingerprint spoofing (hardware/canvas/WebGL/audio), identifier poisoning, Google link-tracking sanitization and hostile-UI countermeasures.
 // @author       4ndr0666
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -14,7 +14,7 @@
 // ==/UserScript==
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * 4ndr0tools - Akasha Silence v5.0.0 — unified counter-surveillance layer
+ * 4ndr0tools - Akasha Silence v5.2.0 — unified counter-surveillance layer
  * ─────────────────────────────────────────────────────────────────────────
  * CONSOLIDATION (three → one):
  *   • Anti-detection v1.1            — anti-analysis script neutralizer
@@ -25,11 +25,14 @@
  * ~70% duplicated core (DEADBEEF / MYCELIUM / network hooks) exists once.
  *
  * ENGINEERING UPGRADES over the union of the three predecessors:
- *   D1-STEALTH   All native-function hooks (appendChild / insertBefore /
- *                createElement / fetch / XHR open / pushState / sendBeacon)
- *                are Proxy facades — toString(), name and length stay
- *                native, defeating the hook-detection half of the arms
- *                race that plain reassignment loses.
+ *   D1-STEALTH   All native-function hooks stay fingerprint-native:
+ *                appendChild / insertBefore / createElement /
+ *                pushState and the WebSocket/WebRTC/worker pacifiers are
+ *                Proxy facades, and (v5.2.0) the fetch/XHR/beacon defusing
+ *                rides the NetHook singleton whose wraps mask name,
+ *                length AND toString() to the native source — defeating
+ *                the hook-detection half of the arms race that plain
+ *                reassignment loses.
  *   D2-STABILITY Fingerprint values are session-stable: navigator
  *                properties are memoized (the legacy per-call randomizers
  *                failed `navigator.hardwareConcurrency ===
@@ -79,6 +82,23 @@
  * '/track' now requires a path boundary (music sites' /tracks/<id> APIs
  * were being mocked dead) and the blanket 'g.alicdn.com' CDN entry is
  * narrowed to its known tracker artifacts (awsc/aplus/alidt paths).
+ *
+ * v5.2.0 (suite v1.4.5) — NETHOOK VETO MIGRATION. The fetch/XHR/beacon
+ * tracker nullifiers no longer install their own Proxy facades — they
+ * ride the suite's shared NetHook singleton (kernel/net.js v3, inlined
+ * above by tools/build.mjs): ONE wrap set per realm no matter how many
+ * suite scripts defuse or observe (the co-install stacking the v1.4.3
+ * sink census measured). SPOOF doctrine is unchanged — tracker
+ * fetches/XHRs resolve to the mocked 200 {success:true,code:0} phantom
+ * (XHR delivered on the 40 ms D6 cadence with the full response
+ * surface; responseURL is now truthful), beacons swallow and report
+ * success, and identifier poisoning still rewrites outgoing bodies —
+ * now as a hub {body} verdict. URL-object fetch targets are inspected
+ * too (the facades only read strings and Request.url — a coverage
+ * gap). WebSocket phantoms, WebRTC blinding and the SW/SharedWorker
+ * pacifier stay local (not request-path semantics); §9 iframe
+ * propagation arms the hub into child realms and keeps applying the
+ * local pacifiers.
  * ═══════════════════════════════════════════════════════════════════════ */
 
 (function () {
@@ -139,7 +159,7 @@
     }, true);
 
     if (AKASHA_PROFILE === 'off') {
-        console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: AKASHA_SILENCE v5.1.0 profile=OFF — INERT. Ctrl+Alt+Shift+K cycles the profile. ', 'background: #000; color: #00ff00; font-weight: bold; font-family: monospace; padding: 4px;');
+        console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: AKASHA_SILENCE v5.2.0 profile=OFF — INERT. Ctrl+Alt+Shift+K cycles the profile. ', 'background: #000; color: #00ff00; font-weight: bold; font-family: monospace; padding: 4px;');
         return;
     }
 
@@ -353,7 +373,7 @@
         return data;
     };
 
-    /* ══ §4 NETWORK HOOKS (Proxy-stealth, SPOOF phantoms) ══════════════ */
+    /* ══ §4 NETWORK DEFUSING — NetHook v3 veto (suite v1.4.5) ══════════ */
 
     /* D5 interop: 4ndr0serviceguard owns worker/socket policy when present. */
     const serviceGuardOwnsWorkers = !!(win._4ndr0ghostV7 || win.__4ndr0ghostUserV7);
@@ -409,81 +429,37 @@
         return phantom;
     }
 
-    const applyNetworkHooks = (targetWindow) => {
-        if (!targetWindow || targetWindow._akashaHooked) return;
-        targetWindow._akashaHooked = true;
+    /* v5.2.0 — request-path defusing rides the shared NetHook singleton
+     * (__4NDR0_NET_API__, kernel/net.js v3, inlined above by build). The
+     * hub consults this subscriber at REQUEST time, before the network:
+     * tracker URLs get the SPOOF phantom (mocked 200, the beacons "succeed"
+     * so the app never retries or escalates); everything else gets
+     * outgoing-body identifier poisoning as a {body} verdict. One wrap set
+     * per realm serves every co-installed suite script — the per-window
+     * facades this replaces stacked N deep under co-install. */
+    const AKASHA_MOCK_BODY = JSON.stringify({ success: true, code: 0 });
 
-        /* Fetch — Proxy facade (D1); tracker URLs get a mocked 200 (SPOOF:
-         * the beacon "succeeds", so the app never retries or escalates). */
-        if (targetWindow.fetch) {
-            targetWindow.fetch = facade(targetWindow.fetch, function (target, that, args) {
-                const url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url ? args[0].url : '');
-                if (isTracker(url)) {
-                    console.log(`%c [💀] FETCH NULLIFIED (MOCKED 200 OK): ${url}`, "color: #ff0055;");
-                    return Promise.resolve(new Response(JSON.stringify({ success: true, code: 0 }), { status: 200, statusText: 'OK' }));
-                }
-                if (args[1] && args[1].body) {
-                    args[1].body = poisonData(args[1].body);
-                }
-                return Reflect.apply(target, that, args);
-            });
+    __4NDR0_NET_API__.onRequest(function (req) {
+        if (isTracker(req.url)) {
+            if (req.kind === 'beacon') {
+                console.log(`%c [💀] BEACON NULLIFIED: ${req.url}`, "color: #ff0055;");
+                return { veto: true };
+            }
+            console.log(`%c [💀] ${req.kind === 'xhr' ? 'XHR' : 'FETCH'} NULLIFIED (MOCKED 200 OK): ${req.url}`, "color: #ff0055;");
+            return { respond: { status: 200, statusText: 'OK', body: AKASHA_MOCK_BODY } };
         }
-
-        /* XHR — mock delivered on the 40 ms cadence with the full response
-         * surface (D6), so async call sites behave exactly as designed. */
-        if (targetWindow.XMLHttpRequest) {
-            const originalXhrOpen = targetWindow.XMLHttpRequest.prototype.open;
-            const originalXhrSend = targetWindow.XMLHttpRequest.prototype.send;
-
-            targetWindow.XMLHttpRequest.prototype.open = function (method, url) {
-                this._interceptUrl = url;
-                return originalXhrOpen.apply(this, arguments);
-            };
-
-            targetWindow.XMLHttpRequest.prototype.send = function (body) {
-                const url = this._interceptUrl || '';
-                if (isTracker(url)) {
-                    console.log(`%c [💀] XHR NULLIFIED (MOCKED 200 OK): ${url}`, "color: #ff0055;");
-                    const xhr = this;
-                    const mockResponse = JSON.stringify({ success: true, code: 0 });
-                    setTimeout(() => {
-                        try {
-                            Object.defineProperty(xhr, 'readyState', { value: 4, configurable: true });
-                            Object.defineProperty(xhr, 'status', { value: 200, configurable: true });
-                            Object.defineProperty(xhr, 'statusText', { value: 'OK', configurable: true });
-                            Object.defineProperty(xhr, 'responseText', { value: mockResponse, configurable: true });
-                            Object.defineProperty(xhr, 'response', { value: mockResponse, configurable: true });
-                            Object.defineProperty(xhr, 'responseURL', { value: '', configurable: true });
-                            if (typeof xhr.onreadystatechange === 'function') { try { xhr.onreadystatechange(); } catch (e) {} }
-                            xhr.dispatchEvent(new Event('readystatechange'));
-                            if (typeof xhr.onload === 'function') { try { xhr.onload(); } catch (e) {} }
-                            xhr.dispatchEvent(new Event('load'));
-                            xhr.dispatchEvent(new Event('loadend'));
-                        } catch (e) {}
-                    }, 40);
-                    return;
-                }
-                if (body) {
-                    body = poisonData(body);
-                }
-                return originalXhrSend.call(this, body);
-            };
+        if (req.body != null) {
+            const poisoned = poisonData(req.body);
+            if (poisoned !== req.body) return { body: poisoned };
         }
+        return undefined;
+    });
 
-        /* Beacon — silently succeed for tracker URLs. */
-        if (targetWindow.navigator && targetWindow.navigator.sendBeacon) {
-            const originalBeacon = targetWindow.navigator.sendBeacon;
-            targetWindow.navigator.sendBeacon = facade(originalBeacon, function (target, that, args) {
-                if (isTracker(args[0])) {
-                    console.log(`%c [💀] BEACON NULLIFIED: ${args[0]}`, "color: #ff0055;");
-                    return true;
-                }
-                if (args[1]) {
-                    args[1] = poisonData(args[1]);
-                }
-                return Reflect.apply(target, that, args);
-            });
-        }
+    /* Local (non-request-path) defenses — still Proxy facades (D1).
+     * Applied to the boot realm and to every propagated iframe realm. */
+    const applyLocalHooks = (targetWindow) => {
+        if (!targetWindow || targetWindow._akashaLocalHooked) return;
+        targetWindow._akashaLocalHooked = true;
 
         /* WebSocket — tracker URLs resolve to a pacified phantom (D4).
          * Static CONNECTING/OPEN/CLOSING/CLOSED constants are carried over
@@ -564,7 +540,7 @@
         return Reflect.apply(target, that, args);
     });
 
-    applyNetworkHooks(win);
+    applyLocalHooks(win);
 
     /* ══ §5 ANTI-ANALYSIS NEUTRALIZER (from Anti-detection) — FULL only */
 
@@ -962,11 +938,15 @@
                 if (node.tagName && node.tagName.toLowerCase() === 'iframe') {
                     try {
                         if (node.contentWindow) {
-                            applyNetworkHooks(node.contentWindow);
+                            /* v5.2.0: request-path defusing arms the shared
+                             * hub in the child realm; local pacifiers follow. */
+                            __4NDR0_NET_API__.propagate(node.contentWindow);
+                            applyLocalHooks(node.contentWindow);
                         }
                         node.addEventListener('load', () => {
                             if (node.contentWindow) {
-                                applyNetworkHooks(node.contentWindow);
+                                __4NDR0_NET_API__.propagate(node.contentWindow);
+                                applyLocalHooks(node.contentWindow);
                             }
                         });
                     } catch (e) {}
@@ -980,6 +960,6 @@
 
     /* ══ §10 BOOT ══════════════════════════════════════════════════════ */
 
-    console.log(`%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: AKASHA_SILENCE v5.1.0 ACTIVE — profile=${AKASHA_PROFILE.toUpperCase()}. SURVEILLANCE COUNTERMEASURES DEPLOYED. Ctrl+Alt+Shift+K cycles strictness. `, "background: #000; color: #00ff00; font-weight: bold; font-family: monospace; padding: 4px; border: 1px solid #00ff00;");
+    console.log(`%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: AKASHA_SILENCE v5.2.0 ACTIVE — profile=${AKASHA_PROFILE.toUpperCase()}. SURVEILLANCE COUNTERMEASURES DEPLOYED. Ctrl+Alt+Shift+K cycles strictness. `, "background: #000; color: #00ff00; font-weight: bold; font-family: monospace; padding: 4px; border: 1px solid #00ff00;");
     console.log("%c [4NDR0TOOLS] Initialization complete. Core shielded. ", "background: #000; color: #00ff00; font-weight: bold; padding: 4px; border: 1px solid #00ff00;");
 })();

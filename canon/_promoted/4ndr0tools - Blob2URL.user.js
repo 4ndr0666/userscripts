@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Blob2URL
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      7.2.0
+// @version      7.2.1
 // @author       4ndr0666
 // @description  Universal blob exfiltration, universal media URL sniffer + wire capture + URL vault (Alt+Shift+V), interactive asset sniffing, CSP/CORS bypass.
 // @license      UNLICENSED - RED TEAM USE ONLY
