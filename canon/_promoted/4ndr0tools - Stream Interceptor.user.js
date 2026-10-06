@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         4ndr0tools - Stream Interceptor
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      3.2.0
-// @description  Intercepts, parses, and extracts stream tokens, manifests, and direct video sources via network hooks and DOM inspection. Suite promotion of the v3.1 BETA: ShadowDOM piercing, context-safe Reflect hooks, ReDoS-proof regex, 3lectric-Glass card surface, universal URL registry cap.
+// @version      3.3.0
+// @description  Intercepts, parses, and extracts stream tokens, manifests, and direct video sources via the suite's shared NetHook hub and DOM inspection. Suite v3.3: the v3.1 dual-realm fetch/XHR hooks ride the shared NetHook singleton (malformed-SVG veto, asset discovery, deep text inspection); ShadowDOM piercing, ReDoS-proof regex, 3lectric-Glass card surface, universal URL registry cap.
 // @author       4ndr0666
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Stream%20Interceptor.user.js
@@ -29,7 +29,17 @@
 (function () {
     'use strict';
 
-    /* ═══ v3.2.0 — SUITE PROMOTION (4ndr0tools, suite v1.3.0) ══════════════
+    /* ═══ v3.3.0 — SHARED NETHOOK (4ndr0tools, suite v1.4.6) ═════════════
+     * The dual-realm fetch/XHR Reflect hooks migrate onto the suite's
+     * shared NetHook singleton (kernel/net.js v4, build-inlined as
+     * __4NDR0_NET_API__ — see section 7). One wrap set per realm now
+     * serves every co-installed suite script; the malformed-SVG abort
+     * becomes a request-time veto, discovery and deep inspection ride
+     * the structured traffic channel, and the sandbox realm is armed
+     * through hub propagation instead of a second local wrap. Every
+     * v3.1 discovery behavior is preserved (see section 7 header).
+     *
+     * ═══ v3.2.0 — SUITE PROMOTION (4ndr0tools, suite v1.3.0) ══════════════
      * The operator's Stream Interceptor BETA v3.1.0, promoted into the
      * 4ndr0tools suite (BETA suffix stripped per promotion convention):
      *   P1  Suite metadata + update channel (raw dist/ URLs, Ψ glyph icon).
@@ -67,7 +77,7 @@
         TARGET_DOMAINS: [
             'playmogo.com', 'vidara.to', 'doodcdn.io', 'dood.',
             'doodcdn.com', 'dood.to', 'dood.wf', 'dood.la', 'doodstream.',
-			'viderea.cloud'
+                        'viderea.cloud'
         ],
         // Lazy quantifier [*?] implemented to prevent ReDoS on massive payload chunks
         EXTRACTION_REGEX: /(https?:\\?\/\\?\/[^\s"'<>]*?(?:playmogo\.com|viderea\.cloud|vidara\.to|\.mp4|\.m3u8|\.ts|\\?\/pass_md5\\?\/)[^\s"'<>]*)/gi
@@ -581,166 +591,92 @@
     }
 
     /* =========================================================================
-       7. NETWORK INTERCEPTION (Fetch / XHR)
-       ========================================================================= */
-    async function readStreamCapped(stream, maxBytes) {
-        const reader = stream.getReader();
-        const decoder = new TextDecoder('utf-8', { fatal: false });
-        let received = 0;
-        let text = '';
-        try {
-            while (received < maxBytes) {
-                const chunk = await reader.read();
-                if (chunk.done) break;
-                received += chunk.value.byteLength;
-                text += decoder.decode(chunk.value, { stream: true });
+       7. NETWORK INTERCEPTION — the shared NetHook hub (v3.3.0)
+       =========================================================================
+       The v3.1/v3.2 dual-realm fetch/XHR Reflect hooks rode their own
+       wraps; they now subscribe to the suite's shared NetHook singleton
+       (kernel/net.js, build-inlined as __4NDR0_NET_API__): one wrap set
+       per realm, shared with every co-installed suite script — the
+       stacked-proxy interference the suite's sink census measured is
+       gone. Every v3.1 behavior is preserved, expressed as request
+       verdicts and structured traffic events instead of local proxies:
+       the malformed-SVG request abort (a hub veto — the exchange never
+       leaves the page and the caller sees a native-style TypeError, the
+       doctrine-consistent form of the v3.1 rejection), fetch-time asset
+       discovery, the content-type-gated response deep-inspection, the
+       XHR load twin with responseURL-preferred targets, and the
+       pass_md5 token capture. */
+    const NET_HUB = __4NDR0_NET_API__;   // build-inlined (tools/build.mjs CANON_KERNEL)
+
+    function installNetworkHooks() {
+        // Defusal — malformed-SVG requests die at the hub (all three
+        // channels: fetch, XHR and beacons; the v3.1 fetch-only gate
+        // widens to the same doctrine the rest of the suite runs).
+        NET_HUB.onRequest((req) => {
+            const absoluteReqUrl = inspectUrl(req.url);
+            if (absoluteReqUrl && absoluteReqUrl.includes('image/svg+xml') && !absoluteReqUrl.startsWith('data:')) {
+                log.warn('Intercepted and aborted malformed SVG network request.');
+                return { veto: true };
             }
-        } finally {
-            try { reader.cancel(); } catch (e) { /* already closed */ }
-        }
-        return text + decoder.decode();
-    }
+            return undefined;
+        });
 
-    function inspectResponseBody(response) {
-        try {
-            const contentType = ((response.headers && typeof response.headers.get === 'function')
-                ? response.headers.get('content-type') : '') || '';
-            const ct = contentType.toLowerCase();
-            const isTextual = ct.includes('text') || ct.includes('json') || ct.includes('javascript');
-            if (!isTextual) return;
-
-            const clone = response.clone();
-            if (clone.body && typeof clone.body.getReader === 'function') {
-                readStreamCapped(clone.body, CONFIG.MAX_INSPECT_PAYLOAD_SIZE)
-                    .then((text) => { if (text) deepTextInspect(text); })
-                    .catch(() => { /* stream consumption blocked */ });
+        // Observation — discovery + deep inspection on the structured
+        // traffic channel (phase-correlated, every fetch status).
+        NET_HUB.onTraffic((ev) => {
+            if (ev.phase === 'request') {
+                // Fetch-time asset discovery (the XHR twin discovered at
+                // load time — response phase below; baseline parity).
+                if (ev.kind !== 'fetch') return;
+                const absoluteReqUrl = inspectUrl(ev.url);
+                if (absoluteReqUrl && isTargetMatch(absoluteReqUrl)) {
+                    processDiscoveredAsset(absoluteReqUrl);
+                }
                 return;
             }
-            if (typeof clone.text === 'function') {
-                clone.text().then((textData) => {
-                    deepTextInspect(textData);
-                }).catch(() => { /* Fails silently if stream consumption blocked */ });
-            }
-        } catch (err) {
-        }
-    }
+            if (ev.phase !== 'response') return;
 
-    function installFetchHook(win) {
-        try {
-            if (typeof win.fetch !== 'function') return;
-            if (win.fetch.__usiHooked === true) return;
-
-            const nativeFetch = win.fetch;
-
-            const hookedFetch = async function (...args) {
-                try {
-                    const requestInput = args[0];
-                    let reqUrl = '';
-                    if (typeof requestInput === 'string') {
-                        reqUrl = requestInput;
-                    } else if (requestInput && typeof requestInput.url === 'string') {
-                        reqUrl = requestInput.url;
-                    } else if (requestInput && typeof requestInput.href === 'string') {
-                        reqUrl = requestInput.href;
-                    } else if (requestInput != null) {
-                        try { reqUrl = String(requestInput); } catch (e) { /* opaque input */ }
+            if (ev.kind === 'fetch') {
+                // Content-type-gated deep inspection (text/json/javascript
+                // only — the v3.1 textual gate, unchanged; SI's own 500 KB
+                // inspection cap governs the payload slice).
+                const ct = String(ev.contentType || '').toLowerCase();
+                if (ct.includes('text') || ct.includes('json') || ct.includes('javascript')) {
+                    if (typeof ev.body === 'string' && ev.body) {
+                        deepTextInspect(ev.body.slice(0, CONFIG.MAX_INSPECT_PAYLOAD_SIZE));
                     }
-                    const absoluteReqUrl = inspectUrl(reqUrl);
-
-                    if (absoluteReqUrl && absoluteReqUrl.includes('image/svg+xml') && !absoluteReqUrl.startsWith('data:')) {
-                        log.warn('Intercepted and aborted malformed SVG fetch request.');
-                        return Promise.reject(new TypeError('Failed to fetch: Blocked malformed SVG request.'));
-                    }
-
-                    if (isTargetMatch(absoluteReqUrl)) {
-                        processDiscoveredAsset(absoluteReqUrl);
-                    }
-                } catch (e) {
-                    log.warn('Asynchronous network request intercept parsing bypassed.');
                 }
-
-                // Safely enforce `this` context to prevent strict 'Illegal Invocation' errors
-                const fetchContext = this === undefined ? win : this;
-                const responsePromise = Reflect.apply(nativeFetch, fetchContext, args);
-
-                try {
-                    responsePromise.then((response) => {
-                        if (response && typeof response.clone === 'function') {
-                            inspectResponseBody(response);
-                        }
-                    }).catch(() => { /* request itself failed */ });
-                } catch (e) { /* non-thenable edge from exotic shims */ }
-
-                return responsePromise;
-            };
-
-            hookedFetch.__usiHooked = true;
-            win.fetch = hookedFetch;
-            log.info(`Fetch interception layer installed (${win === pageWindow ? 'page context' : 'local context'}).`);
-        } catch (e) {
-            log.warn('Fetch hook installation bypassed: ' + e.message);
-        }
-    }
-
-    function installXhrHooks(win) {
-        try {
-            const XHR = win.XMLHttpRequest;
-            if (!XHR || !XHR.prototype) return;
-            const originalOpen = XHR.prototype.open;
-            const originalSend = XHR.prototype.send;
-            if (typeof originalOpen !== 'function' || typeof originalSend !== 'function') return;
-            if (originalOpen.__usiHooked === true) return;
-
-            function handleXhrLoad() {
-                try {
-                    const rawEffectiveUrl = this.responseURL || this._xhReqUrl || '';
-                    const effectiveUrl = inspectUrl(rawEffectiveUrl);
-
-                    if (isTargetMatch(effectiveUrl)) {
-                        processDiscoveredAsset(effectiveUrl);
-                    }
-
-                    if (typeof effectiveUrl === 'string' && effectiveUrl.includes('/pass_md5/') &&
-                        (!this.responseType || this.responseType === 'text') &&
-                        typeof this.responseText === 'string' && this.responseText) {
-                        const token = this.responseText.trim();
-                        log.info(`pass_md5 token payload captured (${token.length} chars): ${token.substring(0, 40)}`);
-                    }
-
-                    const isTextType = !this.responseType || this.responseType === 'text';
-                    if (isTextType && typeof this.responseText === 'string') {
-                        deepTextInspect(this.responseText);
-                    }
-                } catch (error) {
-                    log.warn('XHR response stream scanning processing interrupted: ' + error.message);
-                }
+                return;
             }
 
-            const hookedOpen = function (...args) {
-                try { this._xhReqUrl = args[1]; } catch (e) { /* frozen shim instance */ }
-                return Reflect.apply(originalOpen, this, args);
-            };
+            // XHR load twin — responseURL-preferred target match, the
+            // pass_md5 token capture, and the text-gated deep inspect
+            // (the v3.1 handleXhrLoad surface, event-for-event).
+            const effectiveUrl = inspectUrl(ev.url);
+            if (isTargetMatch(effectiveUrl)) {
+                processDiscoveredAsset(effectiveUrl);
+            }
+            if (typeof effectiveUrl === 'string' && effectiveUrl.includes('/pass_md5/') &&
+                (!ev.responseType || ev.responseType === 'text') &&
+                typeof ev.body === 'string' && ev.body) {
+                const token = ev.body.trim();
+                log.info(`pass_md5 token payload captured (${token.length} chars): ${token.substring(0, 40)}`);
+            }
+            const isTextType = !ev.responseType || ev.responseType === 'text';
+            if (isTextType && typeof ev.body === 'string' && ev.body) {
+                deepTextInspect(ev.body.slice(0, CONFIG.MAX_INSPECT_PAYLOAD_SIZE));
+            }
+        });
 
-            const hookedSend = function (...args) {
-                try {
-                    this.addEventListener('load', handleXhrLoad, { once: true });
-                } catch (e) { /* non-compliant XHR shim */ }
-                return Reflect.apply(originalSend, this, args);
-            };
-
-            hookedOpen.__usiHooked = true;
-            XHR.prototype.open = hookedOpen;
-            XHR.prototype.send = hookedSend;
-            log.info(`XHR interception layer installed (${win === pageWindow ? 'page context' : 'local context'}).`);
-        } catch (e) {
-            log.warn('XHR hook installation bypassed: ' + e.message);
+        // Dual-realm parity: the v3.1 hooks wrapped the page window AND
+        // the userscript sandbox window; the hub owns the page realm and
+        // is propagated into the sandbox realm here (guarded, idempotent).
+        if (isSandboxed) {
+            NET_HUB.propagate(window);
         }
+        log.info(`NetHub interception layer installed (shared NetHook; ${isSandboxed ? 'page + sandbox realms' : 'page realm'}).`);
     }
 
-    function installNetworkHooks(win) {
-        installFetchHook(win);
-        installXhrHooks(win);
-    }
 
     /* =========================================================================
        8. EVENT OBSERVERS & LIFECYCLE
@@ -882,11 +818,9 @@
         }
     }
 
-    // Initialize Network Hooks & Lifecycle
-    installNetworkHooks(pageWindow);
-    if (isSandboxed) {
-        installNetworkHooks(window);
-    }
+    // Initialize Network Hooks & Lifecycle (the hub owns the page realm;
+    // the sandbox realm is propagated inside when sandboxed)
+    installNetworkHooks();
 
     initSanitizationObserver();
     registerMenuCommands();

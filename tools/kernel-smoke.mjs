@@ -313,13 +313,40 @@ assert(probeC.createdName === "4ndr0666tools#dom" && probeC.lastParse.v.__truste
 const netSrc = fs.readFileSync(path.join(ROOT, "kernel", "net.js"), "utf8");
 function makeNetContext() {
     let fetchCalls = 0, cloneCalls = 0, nextBody = "FETCHBODY";
+    let nextStatus = 200, nextFail = null, streamMode = false;
     let lastFetchArgs = null, beaconCalls = 0, lastBeaconArgs = null;
+    const encoder = new TextEncoder();
     const nativeFetch = function () {
         fetchCalls++;
         lastFetchArgs = Array.from(arguments);
+        if (nextFail) return Promise.reject(nextFail);
+        const makeClone = () => {
+            cloneCalls++;
+            if (streamMode) {
+                const bytes = encoder.encode(nextBody);
+                let pos = 0;
+                return {
+                    body: {
+                        getReader() {
+                            return {
+                                read() {
+                                    if (pos < bytes.length) { const v = bytes.slice(pos, pos + 10); pos += 10; return Promise.resolve({ value: v, done: false }); }
+                                    return Promise.resolve({ done: true });
+                                },
+                                cancel() { pos = bytes.length; return Promise.resolve(); },
+                            };
+                        },
+                    },
+                    text: () => Promise.resolve(nextBody),
+                };
+            }
+            return { text: () => Promise.resolve(nextBody) };
+        };
         return Promise.resolve({
-            ok: true,
-            clone() { cloneCalls++; return { text: () => Promise.resolve(nextBody) }; },
+            ok: nextStatus >= 200 && nextStatus < 300,
+            status: nextStatus,
+            headers: { get: (h) => (String(h).toLowerCase() === "content-type" ? "application/json" : null) },
+            clone: makeClone,
         });
     };
     class MockEvent { constructor(type) { this.type = type; } }
@@ -328,7 +355,7 @@ function makeNetContext() {
         addEventListener(t, f) { (this.listeners[t] ||= []).push(f); }
         dispatchEvent(ev) { (this.listeners[ev.type] || []).forEach((f) => f.call(this, ev)); return true; }
         open(m, u) { this._m = m; this._u = u; }
-        send() { this.responseText = "XHRBODY"; (this.listeners.load || []).forEach((f) => f.call(this)); }
+        send() { this.responseText = "XHRBODY"; this.status = 200; (this.listeners.load || []).forEach((f) => f.call(this)); }
     }
     const page = {
         fetch: nativeFetch,
@@ -339,12 +366,20 @@ function makeNetContext() {
     };
     const sb = {
         console, Date, Math, JSON, Map, Set, WeakSet, Promise, Array, Object, String, Number, Symbol,
-        setTimeout, clearTimeout,
+        setTimeout, clearTimeout, TextDecoder, TextEncoder,
         Event: MockEvent,
         Response: class {
             constructor(body, init) {
+                const st = (init && init.status) || 200;
+                /* browser-faithful: a null-body status rejects a non-null
+                 * body (the live Recon smoke caught the first synthesize
+                 * draft violating this — the mock now enforces it so the
+                 * battery can never miss it again) */
+                if ((st === 204 || st === 205 || st === 304) && body != null) {
+                    throw new TypeError("Response with null body status cannot have body");
+                }
                 this._body = body == null ? "" : String(body);
-                this.status = (init && init.status) || 200;
+                this.status = st;
                 this.statusText = (init && init.statusText) || "";
                 this.ok = this.status >= 200 && this.status < 300;
             }
@@ -356,6 +391,9 @@ function makeNetContext() {
     sb.globalThis = sb;
     sb.__probe = () => ({ fetchCalls, cloneCalls, page, nativeFetch, lastFetchArgs, beaconCalls, lastBeaconArgs });
     sb.__setBody = (s) => { nextBody = s; };
+    sb.__setStatus = (s) => { nextStatus = s; };
+    sb.__setFail = (e) => { nextFail = e; };
+    sb.__setStream = (on) => { streamMode = !!on; };
     return sb;
 }
 function runNet(sb, label) {
@@ -366,7 +404,7 @@ function runNet(sb, label) {
 (async () => {
     const sbNet = makeNetContext();
     const net = runNet(sbNet, "net-primary.js");
-    assert(net.version === 3 && typeof net.onBody === "function", "net: NetHook v3 api exported");
+    assert(net.version === 4 && typeof net.onBody === "function", "net: NetHook v4 api exported");
 
     /* lazy arm — nothing wraps before the first subscriber */
     const p0 = sbNet.__probe();
@@ -377,7 +415,7 @@ function runNet(sb, label) {
     const off = net.onBody((t) => { a += t; });
     const p1 = sbNet.__probe();
     const firstWrap = p1.page.fetch;
-    assert(p1.page.fetch !== p1.nativeFetch && p1.page.fetch.__4ndro_net === true, "net: first subscribe arms exactly one fetch wrap");
+    assert(p1.page.fetch !== p1.nativeFetch && p1.page.fetch.__4ndro_net === 4, "net: first subscribe arms exactly one fetch wrap (v4 versioned mark)");
 
     await p1.page.fetch("https://x.test/a");
     await new Promise((r) => setTimeout(r, 0));
@@ -462,19 +500,32 @@ function runNet(sb, label) {
         assert(sbV.__probe().fetchCalls === 1, "net: unsubscribed veto stops cancelling");
     }
 
-    /* fetch respond — synthetic Response, off-network, phantom fanned out */
+    /* fetch respond — synthetic Response, off-network, phantom fanned out.
+     * v1.4.6 browser-faithfulness: a 204 is a null-body phantom — the real
+     * Response constructor rejects a body at null-body statuses, so the
+     * original 204+body combo would have degraded to a veto in a real
+     * browser (the live Recon smoke exposed it; the mock now enforces
+     * the contract, and this test asserts the legal shapes). */
     {
         const sbR = makeNetContext();
         const netR = runNet(sbR, "net-respond.js");
         let obs = "";
         netR.onBody((t) => { obs += t; });
-        netR.onRequest((req) => (req.url.includes("tracker") ? { respond: { status: 204, statusText: "NO CONTENT", body: "PHANTOM" } } : undefined));
+        netR.onRequest((req) => (req.url.includes("tracker")
+            ? { respond: { status: 200, statusText: "NO CONTENT", body: "PHANTOM" } }
+            : undefined));
         const res = await sbR.__probe().page.fetch("https://tracker.test/x");
-        assert(res.status === 204 && res.statusText === "NO CONTENT" && (await res.text()) === "PHANTOM",
+        assert(res.status === 200 && res.statusText === "NO CONTENT" && (await res.text()) === "PHANTOM",
             "net: respond verdict resolves a synthetic Response (no network)");
         assert(sbR.__probe().fetchCalls === 0, "net: responded fetch stays off the network");
         await new Promise((r) => setTimeout(r, 0));
         assert(obs.includes("PHANTOM"), "net: phantom body fanned to onBody observers (stacked-ordering parity)");
+        /* null-body phantom — 204 without a body resolves legally (the
+         * URL must not match the first subscriber's tracker rule) */
+        netR.onRequest(() => ({ respond: { status: 204, statusText: "Blocked" } }));
+        const res204 = await sbR.__probe().page.fetch("https://x.test/blocked204");
+        assert(res204.status === 204 && (await res204.text()) === "",
+            "net: 204 respond verdicts resolve a legal null-body phantom");
     }
 
     /* fetch body rewrite — identifier poisoning as a {body} verdict */
@@ -612,6 +663,236 @@ function runNet(sb, label) {
         assert(rejI, "net: veto serves the propagated realm (shared subscriptions)");
         const okRes = await iframe.fetch("https://clean.test/i");
         assert(okRes.ok === true, "net: propagated realm passes clean traffic");
+    }
+
+    /* ── NetHook v4 battery (suite v1.4.6) ───────────────────────────────
+     * onTraffic structured events (request/response/error phases with
+     * correlating ids, every fetch status, phantom parity), onError
+     * recovery (pacify REAL failures, never hub vetoes), bounded
+     * stream reads, and versioned transitional chaining. */
+
+    assert(typeof net.onTraffic === "function" && typeof net.onError === "function" &&
+        net.trafficSubscriberCount === 0 && net.errorSubscriberCount === 0,
+        "net: v4 traffic/error api exported (zero at rest)");
+
+    /* traffic phases + id correlation — one fetch exchange, both events */
+    {
+        const sbT = makeNetContext();
+        const netT = runNet(sbT, "net-traffic.js");
+        const evs = [];
+        const offT = netT.onTraffic((ev) => { evs.push(ev); });
+        await sbT.__probe().page.fetch("https://x.test/t1", { method: "POST", body: "PAYLOAD" });
+        await new Promise((r) => setTimeout(r, 0));
+        const req = evs.find((e) => e.phase === "request");
+        const res = evs.find((e) => e.phase === "response");
+        assert(req && req.url === "https://x.test/t1" && req.method === "POST" && req.kind === "fetch" && req.body === "PAYLOAD",
+            "net: traffic request phase carries url/method/kind/body");
+        assert(res && res.body === "FETCHBODY" && res.status === 200 && res.contentType === "application/json" && res.source === "network",
+            "net: traffic response phase carries body/status/contentType");
+        assert(req && res && req.id === res.id && typeof req.id === "number",
+            "net: request and response phases share the correlation id");
+        const evsBefore = evs.length;
+        assert(typeof offT === "function", "net: onTraffic returns a working unsubscribe");
+        offT();
+        await sbT.__probe().page.fetch("https://x.test/t1-off");
+        await new Promise((r) => setTimeout(r, 0));
+        assert(evs.length === evsBefore, "net: unsubscribed traffic observer stops receiving");
+    }
+
+    /* all-status fetch traffic — the forensic channel sees 4xx/5xx bodies
+     * that the ok-gated onBody contract correctly ignores */
+    {
+        const sbS = makeNetContext();
+        const netS = runNet(sbS, "net-status.js");
+        let bodyGot = null;
+        netS.onBody((t) => { bodyGot = t; });
+        let errEv = null;
+        netS.onTraffic((ev) => { if (ev.phase === "response") errEv = ev; });
+        sbS.__setStatus(404);
+        await sbS.__probe().page.fetch("https://x.test/missing");
+        await new Promise((r) => setTimeout(r, 0));
+        assert(bodyGot === null, "net: onBody stays ok-gated (404 body not vaulted)");
+        assert(errEv && errEv.status === 404 && errEv.body === "FETCHBODY",
+            "net: onTraffic reports every status (404 body visible to observers)");
+    }
+
+    /* onError recovery — pacify REAL failures; never un-defuse a veto */
+    {
+        const sbR = makeNetContext();
+        const netR = runNet(sbR, "net-recovery.js");
+        let consulted = false;
+        netR.onError((ev) => {
+            consulted = true;
+            if (ev.errorName === "TypeError") return { respond: { status: 204, statusText: "Intercepted & Nullified" } };
+            return null;
+        });
+        let vetoTraffic = null, netTraffic = null;
+        netR.onTraffic((ev) => { if (ev.phase === "error") { if (ev.source === "veto") vetoTraffic = ev; else netTraffic = ev; } });
+        sbR.__setFail(new TypeError("net down"));
+        const resR = await sbR.__probe().page.fetch("https://x.test/fail");
+        assert(consulted && resR && resR.status === 204,
+            "net: onError pacification converts a real TypeError into a phantom 204");
+        assert(netTraffic && netTraffic.errorName === "TypeError" && netTraffic.source === "network",
+            "net: real failures surface on traffic with source network");
+        /* non-TypeError failures rethrow (subscriber policy, not hub policy) */
+        sbR.__setFail(new RangeError("bad range"));
+        let threwRange = false;
+        try { await sbR.__probe().page.fetch("https://x.test/range"); } catch (e) { threwRange = e instanceof RangeError; }
+        assert(threwRange, "net: non-pacified failures still reject (policy lives in the subscriber)");
+        /* a hub veto is final — the pacifier must not be consulted */
+        sbR.__setFail(null);
+        let pacifyCalls = 0;
+        netR.onError(() => { pacifyCalls++; return { respond: { status: 204 } }; });
+        netR.onRequest(() => ({ veto: true }));
+        let vetoThrew = false;
+        try { await sbR.__probe().page.fetch("https://x.test/vetoed"); } catch (e) { vetoThrew = !!(e && e.message === "Failed to fetch"); }
+        assert(vetoThrew && pacifyCalls === 0 && vetoTraffic && vetoTraffic.source === "veto",
+            "net: hub vetoes never consult recoverers (a pacifier cannot un-defuse a cancel)");
+    }
+
+    /* XHR traffic — request/response events, veto error surface, responseType */
+    {
+        const sbX = makeNetContext();
+        const netX = runNet(sbX, "net-xhr-traffic.js");
+        const xevs = [];
+        netX.onTraffic((ev) => { xevs.push(ev); });
+        const sharedX = sbX.__probe().page;
+        const xhrT = new sharedX.XMLHttpRequest();
+        xhrT.open("GET", "https://x.test/xt");
+        xhrT.send("XBODY");
+        await new Promise((r) => setTimeout(r, 0));
+        const xreq = xevs.find((e) => e.phase === "request");
+        const xres = xevs.find((e) => e.phase === "response");
+        assert(xreq && xreq.kind === "xhr" && xreq.url === "https://x.test/xt" && xreq.body === "XBODY",
+            "net: XHR traffic request phase fires on send");
+        assert(xres && xres.body === "XHRBODY" && xres.status === 200 && xres.source === "network",
+            "net: XHR traffic response phase fires on load with status");
+        /* vetoed XHR — error traffic with source veto */
+        netX.onRequest((req) => (req.kind === "xhr" && req.url.includes("tracker") ? { veto: true } : undefined));
+        const xhrV = new sharedX.XMLHttpRequest();
+        xhrV.open("GET", "https://tracker.test/x");
+        xhrV.send();
+        await new Promise((r) => setTimeout(r, 10));
+        const xverr = xevs.find((e) => e.phase === "error" && e.source === "veto");
+        assert(xverr && xverr.kind === "xhr" && xverr.url === "https://tracker.test/x",
+            "net: vetoed XHR surfaces an error traffic event (source veto)");
+    }
+
+    /* beacon traffic — passed beacons fire a request event */
+    {
+        const sbBc = makeNetContext();
+        const netBc = runNet(sbBc, "net-beacon-traffic.js");
+        let bEv = null;
+        netBc.onTraffic((ev) => { if (ev.kind === "beacon") bEv = ev; });
+        sbBc.__probe().page.navigator.sendBeacon("https://x.test/beacon", "ping=1");
+        assert(bEv && bEv.phase === "request" && bEv.method === "POST" && bEv.body === "ping=1",
+            "net: passed beacons surface a request traffic event");
+    }
+
+    /* phantom parity — respond verdicts fan to traffic with source respond */
+    {
+        const sbPh = makeNetContext();
+        const netPh = runNet(sbPh, "net-phantom-traffic.js");
+        netPh.onRequest(() => ({ respond: { status: 200, statusText: "OK", body: "PHANTOM", contentType: "application/json" } }));
+        let phEv = null;
+        netPh.onTraffic((ev) => { if (ev.phase === "response") phEv = ev; });
+        await sbPh.__probe().page.fetch("https://x.test/phantom");
+        assert(phEv && phEv.body === "PHANTOM" && phEv.status === 200 && phEv.source === "respond",
+            "net: phantom responses fan to traffic observers (source respond)");
+        /* null-body statuses (204) construct a legal phantom — the live
+         * Recon smoke regression (browser Response rejects a non-null
+         * body at 204; the first draft degraded the pacification to a
+         * veto). */
+        const sbN = makeNetContext();
+        const netN = runNet(sbN, "net-null-body.js");
+        netN.onRequest(() => ({ respond: { status: 204, statusText: "Blocked by ReconEngine Rule" } }));
+        const resN = await sbN.__probe().page.fetch("https://x.test/blocked204");
+        assert(resN && resN.status === 204 && resN.ok === true,
+            "net: 204 respond verdicts resolve a legal null-body phantom (no veto degrade)");
+    }
+
+    /* bounded stream read — the reader path cancels past the 4 MB cap and
+     * flags truncation instead of materializing an unbounded string */
+    {
+        const sbL = makeNetContext();
+        const netL = runNet(sbL, "net-capped.js");
+        let capBody = null, capEv = null;
+        netL.onBody((t) => { capBody = t; });
+        netL.onTraffic((ev) => { if (ev.phase === "response") capEv = ev; });
+        sbL.__setStream(true);
+        sbL.__setBody("X".repeat(4000001));
+        await sbL.__probe().page.fetch("https://x.test/big");
+        await new Promise((r) => setTimeout(r, 20));
+        assert(capBody === null, "net: stream read drops oversized bodies from onBody (4 MB cap)");
+        assert(capEv && capEv.truncated === true && capEv.body.length === 4000000,
+            "net: stream read caps traffic bodies at 4 MB with the truncated flag");
+        sbL.__setBody("SMALLSTREAM");
+        await sbL.__probe().page.fetch("https://x.test/small");
+        await new Promise((r) => setTimeout(r, 20));
+        assert(capBody === "SMALLSTREAM", "net: stream read dispatches in-cap bodies to onBody");
+    }
+
+    /* versioned transitional chaining — a legacy (boolean-mark) wrap is
+     * chained UNDER the v4 hub: v4 subscribers still get served, the old
+     * generation keeps its own; a future-version mark is left alone */
+    {
+        const sbC = makeNetContext();
+        const legacyCalls = [];
+        const probeC = sbC.__probe();
+        const nativeC = probeC.nativeFetch;
+        /* simulate an older-generation hub wrap (boolean mark, v2/v3 era)
+         * installed BEFORE the v4 module copy registers */
+        const legacyWrap = function () { legacyCalls.push(Array.from(arguments)); return nativeC.apply(this, arguments); };
+        legacyWrap.__4ndro_net = true; /* v2/v3-era mark */
+        probeC.page.fetch = legacyWrap;
+        const netC = runNet(sbC, "net-chain-v4.js");
+        let chained = "";
+        netC.onBody((t) => { chained += t; });
+        const afterArm = sbC.__probe().page.fetch;
+        assert(afterArm !== legacyWrap && afterArm.__4ndro_net === 4,
+            "net: v4 wraps ABOVE a legacy-marked wrap (transitional chaining)");
+        await afterArm("https://x.test/chain");
+        await new Promise((r) => setTimeout(r, 0));
+        assert(chained === "FETCHBODY", "net: v4 subscribers served through the chained wrap");
+        assert(legacyCalls.length === 1 && legacyCalls[0][0] === "https://x.test/chain",
+            "net: legacy generation keeps its own dispatch underneath");
+        /* future mark — v4 defers arming */
+        const sbF = makeNetContext();
+        const probeF = sbF.__probe();
+        const futureWrap = function () { return Promise.resolve({ ok: true }); };
+        futureWrap.__4ndro_net = 5;
+        probeF.page.fetch = futureWrap;
+        const netF = runNet(sbF, "net-future.js");
+        netF.onBody(() => {});
+        assert(sbF.__probe().page.fetch === futureWrap,
+            "net: a future-version mark is left alone (no wrap above)");
+    }
+
+    /* onTraffic delegation — the second copy's observer is served by the
+     * realm-slot owner (single wrap set, both fed) */
+    {
+        const sbDg = makeNetContext();
+        const netDg1 = runNet(sbDg, "net-traffic-deleg-1.js");
+        netDg1.onTraffic(() => {});
+        const ownerWrapT = sbDg.__probe().page.fetch;
+        const sbDg2 = makeNetContext();
+        const sharedDg = sbDg.__probe().page;
+        sbDg2.unsafeWindow = sharedDg; sbDg2.window = sharedDg; sbDg2.XMLHttpRequest = sharedDg.XMLHttpRequest;
+        const netDg2 = runNet(sbDg2, "net-traffic-deleg-2.js");
+        let delegatedT = 0;
+        netDg2.onTraffic((ev) => { if (ev.phase === "response") delegatedT++; });
+        await sharedDg.fetch("https://x.test/deleg-traffic");
+        await new Promise((r) => setTimeout(r, 0));
+        assert(delegatedT === 1 && sharedDg.fetch === ownerWrapT,
+            "net: onTraffic delegates through the realm slot (no second wrap)");
+        /* throwing traffic subscriber is isolated */
+        netDg2.onTraffic(() => { throw new Error("traffic observer blows up"); });
+        let siblingT = 0;
+        netDg2.onTraffic((ev) => { if (ev.phase === "response") siblingT++; });
+        await sharedDg.fetch("https://x.test/deleg-isolated");
+        await new Promise((r) => setTimeout(r, 0));
+        assert(siblingT === 1,
+            "net: throwing traffic subscriber isolated (siblings still fed)");
     }
 
     console.log(failures === 0 ? "\nKERNEL SMOKE: ALL PASS" : `\nKERNEL SMOKE: ${failures} FAILURE(S)`);

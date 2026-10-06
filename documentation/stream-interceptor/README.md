@@ -1,4 +1,4 @@
-# Stream Interceptor · v3.2.0
+# Stream Interceptor · v3.3.0
 
 > Network-layer stream intelligence — `uncategorized` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ Stream Interceptor watches the wire for stream tokens, manifests, and direct vid
 
 | Dimension | Value |
 |---|---|
-| Version | `3.2.0` |
+| Version | `3.3.0` |
 | Matches | `*://*/*` |
 | Run-at | `document-start` |
-| Size | 38.9 KB · 897 lines |
+| Size | 81.1 KB · 1621 lines |
 | Install | [dist/4ndr0tools - Stream Interceptor.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Stream%20Interceptor.user.js) |
 
 ## Feature Inventory

@@ -7,10 +7,10 @@
 |---|---|---|---|
 | **4ndr0Purge** | `1.0.2` | privacy & security | [reference](./4ndr0purge/) |
 | **4ndr0serviceguard Companion** | `7.3.0` | privacy & security | [reference](./4ndr0serviceguard-companion/) |
-| **Akasha Silence** | `5.2.0` | uncategorized | [reference](./akasha-silence/) |
+| **Akasha Silence** | `5.2.1` | uncategorized | [reference](./akasha-silence/) |
 | **AlwaysNewWindow** | `1.0.1` | ux utilities | [reference](./alwaysnewwindow/) |
 | **AutoTranslate** | `6.0.0` | ux utilities | [reference](./autotranslate/) |
-| **Blob2URL** | `7.2.1` | media & links | [reference](./blob2url/) |
+| **Blob2URL** | `7.2.2` | media & links | [reference](./blob2url/) |
 | **Bunkr++** | `7.5.2` | media & links | [devlog](./bunkr/) |
 | **Bypass Paywalls** | `0.1.5` | uncategorized | [reference](./bypass-paywalls/) |
 | **Confirmation Bypass** | `4.0.3` | forums | [reference](./confirmation-bypass/) |
@@ -23,7 +23,7 @@
 | **HostWarp** | `1.1.3` | ux utilities | [reference](./hostwarp/) |
 | **Images++** | `4.0.3` | images | [reference](./images/) |
 | **Instagram++** | `13.0.1` | sovereign platforms | [reference](./instagram/) |
-| **LinkMasterΨ** | `6.2.5` | media & links | [reference](./linkmaster/) |
+| **LinkMasterΨ** | `6.2.6` | media & links | [reference](./linkmaster/) |
 | **Login Form Autofiller** | `2.0.2` | ux utilities | [reference](./login-form-autofiller/) |
 | **Maximize_Any_Media** | `2.0.1` | video & players | [reference](./maximize-any-media/) |
 | **Media Player Controller** | `8.1.2` | uncategorized | [reference](./media-player-controller/) |
@@ -31,9 +31,9 @@
 | **PageCraft** | `1.1.3` | ux utilities | [reference](./pagecraft/) |
 | **Pixeldrain++** | `1.1.1` | media & links | [reference](./pixeldrain/) |
 | **Prompt Master** | `28.3.1` | sovereign platforms | [reference](./prompt-master/) |
-| **Recon** | `9.0.1` | privacy & security | [reference](./recon/) |
+| **Recon** | `9.1.0` | privacy & security | [reference](./recon/) |
 | **Redgifs++** | `5.3` | video & players | [reference](./redgifs/) |
-| **Stream Interceptor** | `3.2.0` | uncategorized | [reference](./stream-interceptor/) |
+| **Stream Interceptor** | `3.3.0` | uncategorized | [reference](./stream-interceptor/) |
 | **Watermark++** | `2.0.2` | sovereign platforms | [reference](./watermark/) |
 | **Website Control Panel** | `5.3.0` | ux utilities | [reference](./website-control-panel/) |
 | **YT Filter** | `2.5` | video & players | [reference](./yt-filter/) |

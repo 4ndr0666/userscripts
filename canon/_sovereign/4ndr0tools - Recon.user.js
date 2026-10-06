@@ -2,9 +2,9 @@
 // @name         4ndr0tools - Recon
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666
-// @version      9.0.1
+// @version      9.1.0
 
-// @description  Alt+Shift+R hotkey — unified forensic recon platform: hardened XHR/fetch interception with MITM block & mute rules, console harvesting, WebSocket + postMessage bridge capture, JWT identity harvesting, headless C2 API (reconEngine / chimeraRecon / Hook) and a moveable Shadow-DOM glass dock with full markdown reporting. For security research only.
+// @description  Alt+Shift+R hotkey — unified forensic recon platform: hardened XHR/fetch/beacon interception through the suite's shared NetHook hub with MITM block & mute rules and failure pacification, console harvesting, WebSocket + postMessage bridge capture, JWT identity harvesting, headless C2 API (reconEngine / chimeraRecon / Hook) and a moveable Shadow-DOM glass dock with full markdown reporting. For security research only.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @match        *://*/*
 // @run-at       document-start
@@ -14,13 +14,21 @@
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Recon.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Recon.user.js
 // ==/UserScript==
+// 9.1.0 (suite v1.4.6): NetHook adoption — the fetch/XHR recorders and the reconh
+// MITM blocklist ride the suite's shared hub (kernel/net.js v4: request verdicts,
+// structured traffic events, failure recovery); blocklist doctrine extended to
+// beacons; the reconh TypeError→204 pacification is preserved on the onError channel.
 // 9.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
 
-/* Paradigm (D1): Userscript Interceptor — document-start prototype patching of
- * fetch / XMLHttpRequest / WebSocket / console / postMessage on the page context
- * (unsafeWindow), closure-scoped module state, and a Shadow-DOM-isolated dock UI.
- * Zero frameworks; zero page-global leakage beyond the three documented operator
- * entry points: window.reconEngine, window.chimeraRecon, window.Hook.
+/* Paradigm (D1): Userscript Interceptor — document-start interception of
+ * fetch / XMLHttpRequest / sendBeacon through the suite's shared NetHook
+ * singleton (kernel/net.js, build-inlined; request-time verdicts +
+ * structured traffic events + failure recovery), plus local wraps for the
+ * non-request channels (WebSocket / console / postMessage) on the page
+ * context (unsafeWindow), closure-scoped module state, and a Shadow-DOM-
+ * isolated dock UI. Zero frameworks; zero page-global leakage beyond the
+ * three documented operator entry points: window.reconEngine,
+ * window.chimeraRecon, window.Hook.
  *
  * Unified superset of: recon3 [HUD] v3.0.0, recond [Dock] v8.1.0-Ω,
  * recon4 [Dock] v8.2.02-Ω, reconc [Chimera's Eye] v3.0.0, reconh [Headless] v2.3.7.
@@ -36,7 +44,8 @@
     // 3. Silence   : reconEngine.applyMuteRules('play.google.com/log')
     //                (capture continues; only the console feed is silenced)
     // 4. Block     : reconEngine.applyBlockRules('/_/rpc/PostImage/Annotate')
-    //                (matching fetch/XHR requests are MITM-blocked and pacified with 204)
+    //                (matching fetch/XHR/beacon requests are MITM-blocked and
+    //                pacified with 204 through the shared NetHook hub)
     // 5. Extract   : the REPORT button copies the full forensic markdown report, or use
     //                reconEngine.copySessionData(), then run: copy(reconEngine.sessionData)
     // 6. Fresh run : PURGE button, reconEngine.startNewSession() or
@@ -255,11 +264,10 @@
             if (STATE.hooksInstalled) return;
             STATE.hooksInstalled = true;
             hookConsole();               // recon3 lineage: console harvester (5 types)
-            overrideFetch();             // reconh lineage: hardened fetch interceptor
-            overrideXHR();               // reconh lineage: hardened XHR interceptor
+            armNetworkHub();             // v9.1.0: fetch/XHR/beacon defusal + capture on the shared NetHook
             Hook.hookPostMessage();      // recond + recon4 lineage: postMessage bridge
             Hook.hookWebSocket();        // recon4 lineage: WebSocket bridge (statics preserved)
-            pristineConsole.log('%c[Ψ-RECON-Ω] UNIFIED v9.0.0-Ω — ALL INTERCEPTORS ARMED', 'color:#00E5FF;font-weight:bold');
+            pristineConsole.log('%c[Ψ-RECON-Ω] UNIFIED v9.1.0-Ω — ALL INTERCEPTORS ARMED', 'color:#00E5FF;font-weight:bold');
         },
         record(url, method, data, type) {          // recon4 external contract
             captureNetwork(HELPERS.normalizeUrl(url), method, null, data, type);
@@ -491,116 +499,149 @@
         UI.notifyUI();
     }
 
-    // ─── 8. HARDENED NETWORK INTERCEPTORS (reconh MITM + recon3 rich capture + reconc parsing) ───
+    // ─── 8. NETWORK DEFUSAL & CAPTURE — the shared NetHook hub (v9.1.0) ───
+    // The reconh/recon3/reconc fetch/XHR recorders rode their own wraps
+    // until v9.1.0; they now subscribe to the suite's shared NetHook
+    // singleton (kernel/net.js, build-inlined as __4NDR0_NET_API__): one
+    // wrap set per realm, shared with every co-installed suite script —
+    // the stacked-proxy interference the sink census measured is gone.
+    // Recon keeps its full baseline surface, expressed as hub verdicts
+    // and structured traffic events instead of local proxies:
+    //   - MITM block rules → request-time respond verdicts (the same 204
+    //     pacification; fetch resolves a phantom Response, XHR delivers
+    //     the full mocked load surface on the hub cadence, and the
+    //     blocklist doctrine now extends to beacons);
+    //   - request/response envelopes → traffic events, phase-correlated
+    //     by the hub's exchange id (request parses awaited exactly like
+    //     the loadend await the local facade performed);
+    //   - external-block logging + the reconh TypeError→204 pacification
+    //     → the onError recovery channel (hub vetoes from co-installed
+    //     defusers are final and never un-defused).
+    const NET_HUB = __4NDR0_NET_API__;   // build-inlined (tools/build.mjs CANON_KERNEL)
 
-    function overrideFetch() {
-        const origFetch = _window.fetch;
-        if (typeof origFetch !== 'function' || origFetch.__psiReconHooked) return;
-        const hookedFetch = async function(...args) {
-            const url = HELPERS.normalizeUrl(args[0]);
-            const method = String((args[1] && args[1].method) || 'GET').toUpperCase();
+    // In-flight request parses, keyed by hub exchange id — bounded FIFO
+    // (B.1): beyond 512 concurrent exchanges the oldest entry evicts and
+    // its response records a null request envelope (the exact shape a
+    // bodyless GET always produced).
+    const PENDING_LIMIT = 512;
+    const pendingRequests = new Map();   // id -> { reqUrl, promise }
 
+    function stashPending(id, reqUrl, promise) {
+        pendingRequests.set(id, { reqUrl: reqUrl, promise: promise });
+        if (pendingRequests.size > PENDING_LIMIT) {
+            pendingRequests.delete(pendingRequests.keys().next().value);
+        }
+    }
+
+    function ledgerLabel(kind) {
+        return kind === 'xhr' ? 'XHR' : kind === 'beacon' ? 'BEACON' : 'FETCH';
+    }
+
+    function messageLabel(kind) {
+        return kind === 'xhr' ? 'XHR' : kind === 'beacon' ? 'Beacon' : 'Fetch';
+    }
+
+    function armNetworkHub() {
+        // Defusal — the reconh MITM blocklist as request-time verdicts: a
+        // blocked exchange never leaves the page.
+        NET_HUB.onRequest((req) => {
+            const url = HELPERS.normalizeUrl(req.url);
             if (url && STATE.blockRules.some((rule) => url.includes(rule))) {   // reconh MITM block
-                HELPERS.log('[MITM] BLOCKED Fetch request to: ' + url);
-                const blockedBody = await parseBody(args[1] && args[1].body);
-                logApiResponse('FETCH', url, { body: blockedBody }, 'blocked', method);
-                return new _window.Response(null, { status: 204, statusText: 'Blocked by ReconEngine Rule' });
-            }
-
-            let requestEnvelope = null;
-            if (args[1] && args[1].body) {                                       // reconh/reconc request capture
-                requestEnvelope = await parseBody(args[1].body);
-                logApiResponse('FETCH', url, requestEnvelope, 'request', method);
-            }
-
-            try {
-                const response = await origFetch.apply(this, args);              // regular fn: this = caller's this
-                const clone = response.clone();
-                parseBody(clone, response.headers).then((responseEnvelope) => {  // recon3 rich + reconc headers-aware
-                    captureNetwork(url, method, requestEnvelope, responseEnvelope, 'FETCH');
-                    logApiResponse('FETCH', url, responseEnvelope, 'response', method);
-                }).catch((responseParseError) => {
-                    HELPERS.debug('[interceptor] FETCH response parse failed:', responseParseError);
-                });
-                return response;
-            } catch (fetchError) {
-                if (fetchError instanceof TypeError) {                           // reconh 204 pacification
-                    if (!(url && STATE.muteRules.some((rule) => url.includes(rule)))) {
-                        HELPERS.error('Fetch to ' + url + ' was blocked by an external filter (e.g., ad-blocker).');
-                    }
-                    logApiResponse('FETCH', url, { error: fetchError.message }, 'external_block', method);
-                    return new _window.Response(null, { status: 204, statusText: 'Intercepted & Nullified by ReconEngine' });
-                }
-                HELPERS.error('Fetch failed for ' + method + ' ' + url + ':', fetchError);
-                throw fetchError;                                                // host semantics preserved
-            }
-        };
-        HELPERS.markHooked(hookedFetch);
-        _window.fetch = hookedFetch;
-        HELPERS.log('Hardened FETCH override active (recorder + block/mute + identity rules ARMED).');
-    }
-
-    function overrideXHR() {
-        const xhrProto = _window.XMLHttpRequest && _window.XMLHttpRequest.prototype;
-        if (!xhrProto || xhrProto.__psiReconHooked) return;
-        const origOpen = xhrProto.open;
-        const origSend = xhrProto.send;
-
-        xhrProto.open = function(method, url) {
-            this._psiRecon = { method: String(method || 'GET'), url: HELPERS.normalizeUrl(url) };
-            return origOpen.apply(this, arguments);
-        };
-
-        xhrProto.send = function(body) {
-            const meta = this._psiRecon || { method: 'GET', url: '[unknown]' };
-            const method = String(meta.method || 'GET').toUpperCase();
-
-            if (meta.url && STATE.blockRules.some((rule) => meta.url.includes(rule))) {   // reconh MITM block
-                HELPERS.log('[MITM] BLOCKED XHR request to: ' + meta.url);
-                parseBody(body).then((blockedBody) => {
-                    logApiResponse('XHR', meta.url, { body: blockedBody }, 'blocked', method);
+                const kind = messageLabel(req.kind);
+                const method = String(req.method || 'GET').toUpperCase();
+                HELPERS.log('[MITM] BLOCKED ' + kind + ' request to: ' + url);
+                parseBody(req.body).then((blockedBody) => {
+                    logApiResponse(ledgerLabel(req.kind), url, { body: blockedBody }, 'blocked', method);
                 }).catch((blockedParseError) => {
-                    HELPERS.debug('[interceptor] XHR blocked-body parse failed:', blockedParseError);
+                    HELPERS.debug('[interceptor] blocked-body parse failed:', blockedParseError);
                 });
-                Object.defineProperty(this, 'status', { value: 204, configurable: true });
-                Object.defineProperty(this, 'readyState', { value: 4, configurable: true });
-                this.dispatchEvent(new _window.Event('load'));
-                return;                                                                   // origSend never called
+                return { respond: { status: 204, statusText: 'Blocked by ReconEngine Rule' } };
+            }
+            return undefined;
+        });
+
+        // Observation — the recon3 rich capture + reconc parsing as
+        // structured traffic events (every fetch status, XHR loads,
+        // phantom parity; request bodies awaited, never raced).
+        NET_HUB.onTraffic((ev) => {
+            const url = HELPERS.normalizeUrl(ev.url);
+            const method = String(ev.method || 'GET').toUpperCase();
+
+            if (ev.phase === 'request') {
+                // Baseline parity: fetch logged request envelopes only when
+                // a body was present; XHR always logged (empty envelope for
+                // bodyless sends). Beacons are the v9.1.0 forensic
+                // extension of the same recorder to the third channel.
+                if (ev.kind === 'fetch' && ev.body == null) return;
+                const parse = parseBody(ev.body).catch(() => ({ format: 'error', content: null }));
+                stashPending(ev.id, url, parse);
+                parse.then((requestEnvelope) => {
+                    logApiResponse(ledgerLabel(ev.kind), url, requestEnvelope, 'request', method);
+                });
+                return;
             }
 
-            const requestPromise = (body != null) ? parseBody(body) : Promise.resolve(null);
-            requestPromise.then((requestEnvelope) => {                                    // reconh/reconc request capture
-                logApiResponse('XHR', meta.url, requestEnvelope, 'request', method);
-            }).catch((requestParseError) => {
-                HELPERS.debug('[interceptor] XHR request parse failed:', requestParseError);
-            });
+            if (ev.phase === 'response') {
+                if (ev.kind === 'beacon') return;   // beacons have no response phase on the hub
+                const pending = pendingRequests.get(ev.id);
+                const captureUrl = pending ? pending.reqUrl : url;   // open-time URL (baseline shape)
+                pendingRequests.delete(ev.id);
+                parseBody(ev.body, { 'content-type': ev.contentType || '' })   // recon3 rich + reconc headers-aware
+                    .then((responseEnvelope) => {
+                        return (pending ? pending.promise : Promise.resolve(null)).then((requestEnvelope) => {
+                            captureNetwork(captureUrl, method, requestEnvelope, responseEnvelope, ledgerLabel(ev.kind));
+                            logApiResponse(ledgerLabel(ev.kind), url, responseEnvelope, 'response', method);
+                        });
+                    })
+                    .catch((responseParseError) => {
+                        HELPERS.debug('[interceptor] ' + ledgerLabel(ev.kind) + ' response parse failed:', responseParseError);
+                    });
+                return;
+            }
 
-            this.addEventListener('loadend', async () => {                                 // reconc loadend ⊇ 'load'
-                try {
-                    if (this.readyState !== 4) return;                                     // reconh guard
-                    const contentType = (typeof this.getResponseHeader === 'function') ? this.getResponseHeader('content-type') : null;
-                    const requestEnvelope = await requestPromise.catch(() => null);
-                    const responseEnvelope = await parseBody(this.response, { 'content-type': contentType || '' });
-                    captureNetwork(meta.url, method, requestEnvelope, responseEnvelope, 'XHR');
-                    logApiResponse('XHR', meta.url, responseEnvelope, 'response', method);
-                } catch (loadendError) {
-                    HELPERS.debug('[interceptor] XHR loadend capture failed:', loadendError);
+            // Error phase — XHR external blocks (reconh twin), hub vetoes
+            // from co-installed defusers (forensic observation only — a
+            // veto is final and never un-defused), and real non-TypeError
+            // fetch failures exactly as the local facade logged them
+            // (TypeError-class failures log — and pacify — in the onError
+            // recoverer below, so they do not double-log here).
+            if (ev.kind === 'xhr') {
+                if (!(url && STATE.muteRules.some((rule) => url.includes(rule)))) {
+                    HELPERS.error('XHR Error for ' + method + ' ' + url + '. This may be due to an external filter.');
                 }
-            }, { once: true });
+                logApiResponse('XHR', url, { error: 'XHR failed' }, 'external_block', method);
+                return;
+            }
+            if (ev.source === 'veto') {
+                logApiResponse('FETCH', url, { error: 'Failed to fetch' }, 'external_block', method);
+                return;
+            }
+            if (ev.errorName !== 'TypeError') {
+                HELPERS.error('Fetch failed for ' + method + ' ' + url + ': ' + (ev.errorMessage || 'network error'));
+            }
+        });
 
-            this.addEventListener('error', () => {                                        // reconh external-block path
-                if (!(meta.url && STATE.muteRules.some((rule) => meta.url.includes(rule)))) {
-                    HELPERS.error('XHR Error for ' + method + ' ' + meta.url + '. This may be due to an external filter.');
+        // Recovery — the reconh 204 pacification: an externally-nulled
+        // fetch (ad-blocker / dead endpoint) resolves as a synthetic 204
+        // instead of crashing the host app. TypeError-class only — the
+        // instanceof gate the local facade carried; hub vetoes never
+        // reach this consult (final by kernel contract).
+        NET_HUB.onError((ev) => {
+            const url = HELPERS.normalizeUrl(ev.url);
+            const method = String(ev.method || 'GET').toUpperCase();
+            if (ev.errorName === 'TypeError') {
+                if (!(url && STATE.muteRules.some((rule) => url.includes(rule)))) {
+                    HELPERS.error('Fetch to ' + url + ' was blocked by an external filter (e.g., ad-blocker).');
                 }
-                logApiResponse('XHR', meta.url, { error: 'XHR failed' }, 'external_block', method);
-            }, { once: true });
+                logApiResponse('FETCH', url, { error: ev.errorMessage || 'Failed to fetch' }, 'external_block', method);
+                return { respond: { status: 204, statusText: 'Intercepted & Nullified by ReconEngine' } };
+            }
+            return undefined;
+        });
 
-            return origSend.apply(this, arguments);                                       // arguments passthrough
-        };
-
-        HELPERS.markHooked(xhrProto);
-        HELPERS.log('Hardened XHR override active (recorder + block/mute rules ARMED).');
+        HELPERS.log('NetHub interception active on the shared NetHook (recorder + block/mute + identity rules ARMED).');
     }
+
 
     function hookConsole() {
         CONSOLE_TYPES.forEach((type) => {
@@ -984,7 +1025,7 @@
         window.reconEngine = API;
         window.chimeraRecon = _window.chimeraRecon;
         window.Hook = Hook;
-        HELPERS.log('Ψ-RECON-Ω UNIFIED v9.0.0-Ω initialized. C2 via reconEngine / chimeraRecon / Hook in the console; dock toggles with Alt+R.');
+        HELPERS.log('Ψ-RECON-Ω UNIFIED v9.1.0-Ω initialized. C2 via reconEngine / chimeraRecon / Hook in the console; dock toggles with Alt+Shift+R.');
     }
 
     initialize();   // interceptors armed at document-start (reconh guarantee)

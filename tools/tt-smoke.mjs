@@ -168,6 +168,8 @@ __SMOKE__.report = function () {
         netSubscribers: netSlot ? netSlot.subscriberCount : 0,
         netRequestSubscribers: netSlot ? (netSlot.requestSubscriberCount || 0) : 0,
         menuCommands: (window.__GM_MENU__ || []).length,
+        reconDock: !!document.getElementById('psi-dock-host'),
+        siToasts: (function () { var t = document.getElementById('psi-interceptor-toasts'); return t ? t.children.length : 0; })(),
     };
 };
 </script>
@@ -248,14 +250,139 @@ ${csp ? `<meta http-equiv="Content-Security-Policy" content="${csp}">` : ""}
      * identifier-poisoned (device_id → 0xDEADBEEF-…), the tracker XHR
      * delivers the mock on the 40 ms cadence, the beacon swallows — and
      * the server-side hit counter for /api/telemetry stays at ZERO
-     * across every channel. ] */
+     * across every channel. ]
+     * [v1.4.6 script-aware veto probes] Recon: the blocklist is applied
+     * live through the reconEngine C2 surface, blocked fetch/XHR/beacon
+     * pacify with the ReconEngine 204, clean traffic passes, and the
+     * session ledger records blocked + request + response entries (the
+     * recorder provably rides the hub's traffic channel). Stream
+     * Interceptor: malformed-SVG fetch/XHR/beacon die at the hub (the
+     * caller sees the native-style TypeError / status-0 surface), clean
+     * traffic passes, and a textual body carrying an absolute media URL
+     * produces a discovery card (deep inspection provably rides the
+     * traffic channel). ] */
     function runVetoProbe() {
+        var SCRIPT = ${JSON.stringify(scriptName)};
         var out = {};
         var MOCK = '{"success":true,"code":0}';
         function getHits() {
             return fetch('/api/hits').then(function (r) { return r.json(); })
-                .catch(function () { return { telemetry: -1 }; });
+                .catch(function () { return { telemetry: -1, svg: -1 }; });
         }
+        function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+        function waitFor(fn, ms) {
+            var t0 = Date.now();
+            return new Promise(function (res) {
+                (function p() { if (fn()) return res(true); if (Date.now() - t0 > (ms || 4000)) return res(false); setTimeout(p, 50); })();
+            });
+        }
+        function slotFields() {
+            var slot = window.__4NDR0_NET__ || (typeof unsafeWindow !== 'undefined' && unsafeWindow ? unsafeWindow.__4NDR0_NET__ : null);
+            out.netVersion = slot ? slot.version : null;
+            out.netRequestSubscribers = slot ? (slot.requestSubscriberCount || 0) : 0;
+            out.netTrafficSubscribers = slot ? (slot.trafficSubscriberCount || 0) : 0;
+            out.netErrorSubscribers = slot ? (slot.errorSubscriberCount || 0) : 0;
+        }
+
+        if (SCRIPT.indexOf('Recon') !== -1) {
+            return waitFor(function () { return window.reconEngine && window.Hook && window.chimeraRecon; }).then(function (ok) {
+                out.c2Exposed = !!ok;
+                if (!ok) return out;
+                window.reconEngine.applyBlockRules('/api/telemetry');
+                return getHits().then(function (h0) {
+                    out.hitsBefore = h0.telemetry;
+                    return fetch('/api/telemetry').then(function (r) {
+                        out.fetchBlocked204 = (r.status === 204 && String(r.statusText || '').indexOf('ReconEngine') !== -1);
+                    }).then(function () {
+                        return fetch('/api/echo', { method: 'POST', body: JSON.stringify({ device: 'wire', note: 'keep' }) })
+                            .then(function (r) { return r.text(); });
+                    }).then(function (t) {
+                        out.echoPassthrough = (t.indexOf('wire') !== -1 && t.indexOf('keep') !== -1);
+                        return fetch('/api/probe.json').then(function (r) { return r.json(); });
+                    }).then(function (j) {
+                        out.controlPassthrough = !!(j && j.probe === true);
+                        return new Promise(function (resolve) {
+                            try {
+                                var x = new XMLHttpRequest();
+                                var settled = false;
+                                x.onreadystatechange = function () {
+                                    if (x.readyState === 4 && !settled) { settled = true; resolve({ ok: x.status === 204 }); }
+                                };
+                                x.open('GET', '/api/telemetry');
+                                x.send();
+                                setTimeout(function () { if (!settled) { settled = true; resolve({ ok: false, timeout: true }); } }, 900);
+                            } catch (e) { resolve({ ok: false, error: String(e) }); }
+                        });
+                    }).then(function (r) {
+                        out.xhrBlocked204 = r.ok;
+                        out.beaconSwallowed = navigator.sendBeacon('/api/telemetry', 'x=1');
+                        return wait(500);
+                    }).then(function () {
+                        var sd = (window.chimeraRecon && window.chimeraRecon.sessionData) || [];
+                        out.ledgerBlocked = sd.some(function (e) { return e && e.type === 'blocked' && String(e.url).indexOf('/api/telemetry') !== -1; });
+                        out.ledgerRequest = sd.some(function (e) { return e && e.type === 'request' && String(e.url).indexOf('/api/echo') !== -1; });
+                        out.ledgerResponse = sd.some(function (e) { return e && (e.type === 'response') && (String(e.url).indexOf('/api/echo') !== -1 || String(e.url).indexOf('/api/probe.json') !== -1); });
+                        return getHits();
+                    }).then(function (h1) {
+                        out.zeroServerHits = (out.hitsBefore === 0 && h1.telemetry === 0 && out.beaconSwallowed === true);
+                    });
+                });
+            }).then(function () {
+                slotFields();
+                __SMOKE__.vetoProbe = out;
+            }).catch(function (e) {
+                out.fatal = String(e);
+                __SMOKE__.vetoProbe = out;
+            });
+        }
+
+        if (SCRIPT.indexOf('Stream Interceptor') !== -1) {
+            return getHits().then(function (h0) {
+                out.hitsBefore = h0.svg;
+                return fetch('/api/svg/image/svg+xml,malformed').then(function () {
+                    out.svgVetoed = false; /* a resolved fetch means the veto failed */
+                }).catch(function (e) {
+                    out.svgVetoed = !!(e && e.message === 'Failed to fetch');
+                }).then(function () {
+                    return fetch('/api/probe.json').then(function (r) { return r.json(); });
+                }).then(function (j) {
+                    out.controlPassthrough = !!(j && j.probe === true);
+                    return new Promise(function (resolve) {
+                        try {
+                            var x = new XMLHttpRequest();
+                            var settled = false;
+                            x.onreadystatechange = function () {
+                                if (x.readyState === 4 && !settled) { settled = true; resolve({ ok: x.status === 0 }); }
+                            };
+                            x.open('GET', '/api/svg/image/svg+xml,x');
+                            x.send();
+                            setTimeout(function () { if (!settled) { settled = true; resolve({ ok: false, timeout: true }); } }, 900);
+                        } catch (e) { resolve({ ok: false, error: String(e) }); }
+                    });
+                }).then(function (r) {
+                    out.svgXhrVetoedStatus0 = r.ok;
+                    out.beaconSwallowed = navigator.sendBeacon('/api/svg/image/svg+xml,b', 'x=1');
+                    return fetch('/api/embed.json?u=' + encodeURIComponent(location.origin + '/stream.mp4'))
+                        .then(function (r) { return r.text(); });
+                }).then(function () {
+                    return wait(700);
+                }).then(function () {
+                    var toasts = document.getElementById('psi-interceptor-toasts');
+                    out.discoveryCards = toasts ? toasts.children.length : 0;
+                    return getHits();
+                }).then(function (h1) {
+                    out.zeroServerHits = (out.hitsBefore === 0 && h1.svg === 0 && out.beaconSwallowed === true);
+                });
+            }).then(function () {
+                slotFields();
+                __SMOKE__.vetoProbe = out;
+            }).catch(function (e) {
+                out.fatal = String(e);
+                __SMOKE__.vetoProbe = out;
+            });
+        }
+
+        /* Akasha-class default (v1.4.5 contract, unchanged) */
         return getHits().then(function (h0) {
             out.telemetryServerHitsBefore = h0.telemetry;
             return fetch('/api/telemetry').then(function (r) {
@@ -290,9 +417,7 @@ ${csp ? `<meta http-equiv="Content-Security-Policy" content="${csp}">` : ""}
         }).then(function (h1) {
             out.telemetryServerHitsAfter = h1.telemetry;
             out.zeroServerHits = (out.telemetryServerHitsBefore === 0 && h1.telemetry === 0 && out.beaconReturned === true);
-            var slot = window.__4NDR0_NET__ || (typeof unsafeWindow !== 'undefined' && unsafeWindow ? unsafeWindow.__4NDR0_NET__ : null);
-            out.netVersion = slot ? slot.version : null;
-            out.netRequestSubscribers = slot ? (slot.requestSubscriberCount || 0) : 0;
+            slotFields();
             __SMOKE__.vetoProbe = out;
         }).catch(function (e) {
             out.fatal = String(e);
@@ -316,6 +441,7 @@ ${csp ? `<meta http-equiv="Content-Security-Policy" content="${csp}">` : ""}
 }
 
 let telemetryHits = 0;
+let svgHits = 0;
 const server = http.createServer((req, res) => {
     const url = new URL(req.url, `http://127.0.0.1:${port}`);
     const send = (code, type, body) => {
@@ -327,10 +453,23 @@ const server = http.createServer((req, res) => {
     if (url.pathname === "/api/media.m3u8") return send(200, "application/vnd.apple.mpegurl", M3U8);
     if (url.pathname === "/api/probe.json") return send(200, "application/json", PROBE_JSON);
     if (url.pathname === "/api/telemetry") {
-        telemetryHits++; /* the veto probe asserts this counter stays at zero */
+        telemetryHits++; /* the Akasha/Recon veto probes assert this counter stays at zero */
         return send(200, "application/json", JSON.stringify({ real: true }));
     }
-    if (url.pathname === "/api/hits") return send(200, "application/json", JSON.stringify({ telemetry: telemetryHits }));
+    /* malformed-SVG bait for the Stream Interceptor veto probe — the URL
+     * carries the literal content-type marker SI's gate hunts for; the
+     * counter must stay at zero (the veto fires before the network) */
+    if (url.pathname.startsWith("/api/svg/")) {
+        svgHits++;
+        return send(200, "image/svg+xml", "<svg xmlns='http://www.w3.org/2000/svg'/>");
+    }
+    /* textual body carrying a caller-supplied absolute media URL — SI's
+     * deep text inspection discovers it and mounts a discovery card */
+    if (url.pathname === "/api/embed.json") {
+        const u = url.searchParams.get("u") || "";
+        return send(200, "application/json", JSON.stringify({ embed: u, note: "stream source follows", ref: u }));
+    }
+    if (url.pathname === "/api/hits") return send(200, "application/json", JSON.stringify({ telemetry: telemetryHits, svg: svgHits }));
     if (url.pathname === "/api/echo") {
         const chunks = [];
         req.on("data", (c) => chunks.push(c));
@@ -372,5 +511,7 @@ server.listen(port, "127.0.0.1", () => {
     console.log(`  /tt-locked/?script=PageCraft&autopanel&tabs (TT + policy-name allowlist)`);
     console.log(`  /nott/?script=HostWarp&autopanel&tabs  (no TT — parity)`);
     console.log(`  /tt/?script=Blob2URL&probe=wire&autopanel (NetHook wire capture)`);
-    console.log(`  /tt/?script=Akasha%20Silence&probe=veto  (NetHook v3 veto — live defusal proof)`);
+    console.log(`  /tt/?script=Akasha%20Silence&probe=veto  (NetHook veto — live defusal proof)`);
+    console.log(`  /tt/?script=Recon&probe=veto&autopanel  (NetHook v4 — Recon blocklist + ledger proof)`);
+    console.log(`  /tt/?script=Stream%20Interceptor&probe=veto&autopanel  (NetHook v4 — SVG veto + discovery proof)`);
 });

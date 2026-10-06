@@ -41,6 +41,10 @@ function ledgerKey(baseFile) {
 /* Some baseline unit names are intentionally renamed in the destination;
  * these are reconciled explicitly (GUP bidirectional alignment). */
 const RECONCILED_NAMES = {
+    "Recon": {
+        "overrideFetch": "armNetworkHub onRequest/onTraffic/onError subscribers (NetHook v4 adoption, suite v1.4.6 — the reconh recorder + MITM blocklist + TypeError→204 pacification ride the shared hub; same surface, no local wrap)",
+        "overrideXHR": "armNetworkHub onTraffic response subscriber (NetHook v4 adoption — the XHR recorder twin rides the shared hub)",
+    },
     "PageCraft": {
         "checkElementIfNeeded": "checkElementIfNeeded (kept)",
         "selectAll": "selectAll (kept)",
@@ -347,6 +351,37 @@ function gateC() {
             failures.push(`[C] documentation drift (INDEX.md stale for: ${drift.join(", ")}) — run \`npm run docs\``);
         } else passes.push(`[C] documentation coincides with all ${invScripts.length} dist scripts (INDEX version-stamped)`);
     }
+    /* v1.4.6: README Size-stamp freshness — gen-docs writes `| Size | … |`
+     * from inventory.json; a source change between the docs run and the
+     * final check leaves stale size stamps that INDEX version-stamping
+     * cannot see (the v1.4.6 kit matrix caught exactly this failure
+     * class). The stamps must coincide with the live inventory. */
+    if (files.length && fs.existsSync(docsIndexPath)) {
+        const invScripts2 = JSON.parse(fs.readFileSync(path.join(ROOT, "inventory.json"), "utf8")).scripts;
+        const readmes = {};
+        for (const dir of fs.readdirSync(path.join(ROOT, "documentation"))) {
+            const rp = path.join(ROOT, "documentation", dir, "README.md");
+            if (!fs.existsSync(rp)) continue;
+            const content = fs.readFileSync(rp, "utf8");
+            const head = (content.split("\n", 1)[0] || "");
+            const hm = /^# (.+?) · v(\d[\d.]*)$/.exec(head);
+            if (hm) readmes[hm[1]] = { version: hm[2], content };
+        }
+        const stale = [];
+        for (const s of invScripts2) {
+            const short = s.name.replace(/^4ndr0tools\s*-\s*/, "");
+            const r = readmes[short];
+            if (!r) continue; /* scripts without a generated per-script README are not Size-stamped */
+            if (r.version !== s.version) { stale.push(`${short} version ${r.version}≠${s.version}`); continue; }
+            const want = `| Size | ${(s.bytes / 1024).toFixed(1)} KB · ${s.lines} lines |`;
+            if (!r.content.includes(want)) stale.push(`${short} size stamp`);
+        }
+        if (stale.length) {
+            failures.push(`[C] documentation drift (README stale for: ${stale.join(", ")}) — run \`npm run docs\` AFTER the final \`npm run check\``);
+        } else {
+            passes.push(`[C] README size/version stamps coincide with inventory for all ${Object.keys(readmes).length} documented scripts`);
+        }
+    }
     let n = 0;
     for (const f of files) {
         n++;
@@ -457,9 +492,32 @@ function gateD() {
         failures.push(`[D] Akasha Silence: legacy own-network-wrap remnants still present in canon (must ride NetHook)`);
     }
     const netSrcV = fs.readFileSync(path.join(ROOT, "kernel", "net.js"), "utf8");
-    if (!/VERSION\s*=\s*3\s*;/.test(netSrcV) || !/onRequest:\s*function/.test(netSrcV) || !/propagate:\s*function/.test(netSrcV) || !/requestSubscriberCount/.test(netSrcV)) {
-        failures.push(`[D] NetHook kernel: veto api surface incomplete (version 3 + onRequest/propagate/requestSubscriberCount)`);
-    } else passes.push(`[D] NetHook veto semantics verified (hub request-cancel + phantom-respond + body-rewrite; defusers are no longer observer-only)`);
+    if (!/VERSION\s*=\s*4\s*;/.test(netSrcV) || !/onRequest:\s*function/.test(netSrcV) || !/propagate:\s*function/.test(netSrcV) || !/onTraffic:\s*function/.test(netSrcV) || !/onError:\s*function/.test(netSrcV) || !/requestSubscriberCount/.test(netSrcV) || !/trafficSubscriberCount/.test(netSrcV) || !/errorSubscriberCount/.test(netSrcV)) {
+        failures.push(`[D] NetHook kernel: veto/traffic/error api surface incomplete (version 4 + onRequest/onTraffic/onError/propagate + subscriber counts)`);
+    } else passes.push(`[D] NetHook veto + traffic + recovery semantics verified (request verdicts, structured events, error pacification; defusers and observers ride one hub)`);
+
+    /* v1.4.6 NetHook adoption — Recon + Stream Interceptor ride the shared
+     * hub (kernel/net.js v4): the per-script fetch/XHR recorders and
+     * blockers are gone from canon, the veto/traffic/recovery
+     * subscriptions are present, and no own-network-wrap remnants
+     * survive. Canon is the scan surface (dist carries the inlined
+     * kernel, which owns the sanctioned wraps). */
+    const reconCanonPath = path.join(ROOT, "canon", "_sovereign", "4ndr0tools - Recon.user.js");
+    const reconCanon = fs.existsSync(reconCanonPath) ? fs.readFileSync(reconCanonPath, "utf8") : "";
+    if (!reconCanon.includes("__4NDR0_NET_API__") || !reconCanon.includes("NET_HUB.onRequest") || !reconCanon.includes("NET_HUB.onTraffic") || !reconCanon.includes("NET_HUB.onError")) {
+        failures.push(`[D] Recon: NetHook veto/traffic/recovery subscriptions not present in canon`);
+    } else passes.push(`[D] Recon NetHook adoption verified (blocklist verdicts + structured capture + 204 pacification on the shared hub)`);
+    if (/_window\.fetch\s*=|XMLHttpRequest\.prototype\.(?:open|send)\s*=|navigator\.sendBeacon\s*=|\.prototype\.(?:open|send)\s*=\s*function/.test(reconCanon)) {
+        failures.push(`[D] Recon: legacy own-network-wrap remnants still present in canon (must ride NetHook)`);
+    }
+    const siCanonPath = path.join(ROOT, "canon", "_promoted", "4ndr0tools - Stream Interceptor.user.js");
+    const siCanon = fs.existsSync(siCanonPath) ? fs.readFileSync(siCanonPath, "utf8") : "";
+    if (!siCanon.includes("__4NDR0_NET_API__") || !siCanon.includes("NET_HUB.onRequest") || !siCanon.includes("NET_HUB.onTraffic") || !siCanon.includes("NET_HUB.propagate")) {
+        failures.push(`[D] Stream Interceptor: NetHook veto/traffic/propagate subscriptions not present in canon`);
+    } else passes.push(`[D] Stream Interceptor NetHook adoption verified (SVG veto + discovery + deep inspection on the shared hub)`);
+    if (/win\.fetch\s*=|pageWindow\.fetch\s*=|XMLHttpRequest\.prototype\.(?:open|send)\s*=|__usiHooked/.test(siCanon)) {
+        failures.push(`[D] Stream Interceptor: legacy own-network-wrap remnants still present in canon (must ride NetHook)`);
+    }
 
     /* v1.3.0 interference ledger — the nine documented fixes of this round. */
     if (!asil.includes("AKASHA_PROFILE") || !asil.includes("Ctrl+Alt+Shift+K") || !asil.includes("akasha_silence_profile")) {

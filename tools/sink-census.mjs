@@ -189,7 +189,9 @@ const CLASSES = {
  *     whose semantic NetHook migration needs veto support (dedicated
  *     rounds, one script per round, live-smoked each time — Akasha
  *     Silence migrated to zero in v1.4.5; Recon + Stream Interceptor
- *     are next).
+ *     migrated to zero in v1.4.6; the host-gated observer tail — Bunkr,
+ *     Filester, IG, m3u8, PM, Watermark — follows on the shared hub's
+ *     structured traffic channel).
  *
  *   Class A-semantic — policy-gated interop bridges that are NOT UI
  *     strings: the Images++ page-$ eval bridge and the TT-policy-wrapped
@@ -204,12 +206,17 @@ const CLASSES = {
  * v1.4.5 (NetHook veto round): Akasha Silence fetchWrap(1) + xhrWrap(2)
  *   → 0 — the fetch/XHR/beacon defusing rides kernel/net.js v3 onRequest
  *   (one wrap set per realm; the ledger's own entries anticipated this
- *   round). */
+ *   round).
+ * v1.4.6 (hub maturation round): Recon fetchWrap(1) + xhr-taps(2) → 0
+ *   and Stream Interceptor fetchWrap(1) + xhrWrap(2) → 0 — both ride
+ *   kernel/net.js v4 (onRequest verdicts + onTraffic structured events
+ *   + onError recovery); Recon's WebSocket bridge tap stays (out of the
+ *   hub's fetch/XHR/beacon scope). */
 const ADJUDICATED = {
     /* — fully clean (no surviving sites): FLX, CB, BPW, B2U, purge,
      * Akasha-UI, Bunkr-UI, Filester, Forums, Gofile, GPD, Hailuo,
      * Images-UI, IG-UI, LMΨ-UI, MAM, ModelSearch, Pixeldrain, PM-UI,
-     * Redgifs, Recon-UI, WCP, YTPM, YTERB, m3u8-UI — */
+     * Redgifs, Recon-UI, Stream Interceptor, WCP, YTPM, YTERB, m3u8-UI — */
 
     "4ndr0tools - 4ndr0serviceguard Companion.user.js": {
         tapOpenSend: { count: 1, reason: "own-mock: phantom XHR object's send (script-owned decoy, not a page tap)" },
@@ -218,7 +225,7 @@ const ADJUDICATED = {
         tapOpenSend: { count: 2, reason: "win-open-override: force-open/restore pair — the script's core feature, not an XHR tap" },
     },
     /* Akasha Silence: fetchWrap(1) + xhrWrap(2) burned to zero in v1.4.5 —
-     * the request-path defusing rides kernel/net.js v3 (NetHook veto). */
+     * the request-path defusing rides kernel/net.js (NetHook veto). */
     "4ndr0tools - Bunkr++.user.js": {
         fetchWrap: { count: 2, reason: "net-defuser: fake stats Response + album API path (host-gated bunkr.is)" },
         tapOpenSend: { count: 2, reason: "net-observer: indirect xo.open/xo.send deobfuscation capture (host-gated bunkr.is; NetHook-eligible next round)" },
@@ -243,13 +250,11 @@ const ADJUDICATED = {
         fetchWrap: { count: 1, reason: "net-observer: flow-credit net observer, content-type gated (LLM hosts; NetHook-eligible next round)" },
         xhrWrap: { count: 2, reason: "net-observer: flow-credit XHR twin (LLM hosts; NetHook-eligible next round)" },
     },
+    /* Recon: fetchWrap(1) + the xhrProto recorder taps(2) burned to zero
+     * in v1.4.6 — blocklist verdicts + structured capture + pacification
+     * ride kernel/net.js v4. The WebSocket bridge tap survives below. */
     "4ndr0tools - Recon.user.js": {
-        fetchWrap: { count: 1, reason: "net-defuser: recorder + block/mute + identity rules (semantic migration — separate round)" },
-        tapOpenSend: { count: 3, reason: "net-taps: WebSocket bridge ws.send + indirect xhrProto.open/send recorder twin (separate round)" },
-    },
-    "4ndr0tools - Stream Interceptor.user.js": {
-        fetchWrap: { count: 1, reason: "net-defuser: dual-realm capture + malformed-SVG veto (semantic migration — separate round)" },
-        xhrWrap: { count: 2, reason: "net-defuser: XHR capture twin (separate round)" },
+        tapOpenSend: { count: 1, reason: "ws-bridge: WebSocket send recorder (recon4 lineage — out of NetHook's fetch/XHR/beacon scope; the page-realm WS facade is Recon's own)" },
     },
     "4ndr0tools - Watermark++.user.js": {
         fetchWrap: { count: 1, reason: "net-observer: gemini image-capture fetch hook (host-gated gemini hosts; NetHook-eligible next round)" },

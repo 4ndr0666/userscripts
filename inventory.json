@@ -60,12 +60,12 @@
   {
    "file": "4ndr0tools - Akasha Silence.user.js",
    "name": "4ndr0tools - Akasha Silence",
-   "version": "5.2.0",
+   "version": "5.2.1",
    "description": "Unified counter-surveillance defense layer with a three-stage strictness valve (full / core / off via Ctrl+Alt+Shift+K). Three-way consolidation of Anti-detection + Counter-surveillance + Anti-telemetry (ICC): anti-analysis script neutralization, telemetry sinkholing (fetch/XHR/beacon/WebSocket), WebRTC blinding, session-stable fingerprint spoofing (hardware/canvas/WebGL/audio), identifier poisoning, Google link-tracking sanitization and hostile-UI countermeasures.",
    "family": "uncategorized",
-   "sha256": "af047ccb17663982b818fb3b181ddffd56b01051b13c64d7ad28ac112d79b7a7",
-   "lines": 1439,
-   "bytes": 73812,
+   "sha256": "680f37b85e2ee84bb80bd99829495a4a6b4dd8b1380eb5c601e177b18406eb85",
+   "lines": 1756,
+   "bytes": 92690,
    "matches": [
     "*://*/*"
    ],
@@ -147,12 +147,12 @@
   {
    "file": "4ndr0tools - Blob2URL.user.js",
    "name": "4ndr0tools - Blob2URL",
-   "version": "7.2.1",
+   "version": "7.2.2",
    "description": "Universal blob exfiltration, universal media URL sniffer + wire capture + URL vault (Alt+Shift+V), interactive asset sniffing, CSP/CORS bypass.",
    "family": "media & links",
-   "sha256": "764e06c94c19f802e755cf5d7d549abd2d53f8a43eb7eebc66242ba18dca030a",
-   "lines": 1751,
-   "bytes": 99911,
+   "sha256": "bc7d52a4f7b75e214632ab83d30ed4a173652c2a2b076493ad23493d0f431d4e",
+   "lines": 2068,
+   "bytes": 118789,
    "matches": [
     "*://*/*"
    ],
@@ -843,12 +843,12 @@
   {
    "file": "4ndr0tools - LinkMasterΨ.user.js",
    "name": "4ndr0tools - LinkMasterΨ",
-   "version": "6.2.5",
+   "version": "6.2.6",
    "description": "Accurately decodes, previews, exports, validates and scrapes all links. (Dual MPV Support + Ψ IG Harvester + sexyforums premium-link unwrap + GitHub raw-URL harvest + Ψ2 forum deep-scrape engine)",
    "family": "media & links",
-   "sha256": "8971e7410ddd71787fe39945592f5d92b4b114fce46ae1c76dbcfd2baba684d6",
-   "lines": 4371,
-   "bytes": 218155,
+   "sha256": "8b7c5eee1a9372547e7ec38ecc6a3fdeb3273a842ff446c93425def4eb3447f8",
+   "lines": 4688,
+   "bytes": 237033,
    "matches": [
     "*://*/*",
     "*://*.instagram.com/*"
@@ -1195,12 +1195,12 @@
   {
    "file": "4ndr0tools - Recon.user.js",
    "name": "4ndr0tools - Recon",
-   "version": "9.0.1",
-   "description": "Alt+Shift+R hotkey — unified forensic recon platform: hardened XHR/fetch interception with MITM block & mute rules, console harvesting, WebSocket + postMessage bridge capture, JWT identity harvesting, headless C2 API (reconEngine / chimeraRecon / Hook) and a moveable Shadow-DOM glass dock with full markdown reporting. For security research only.",
+   "version": "9.1.0",
+   "description": "Alt+Shift+R hotkey — unified forensic recon platform: hardened XHR/fetch/beacon interception through the suite's shared NetHook hub with MITM block & mute rules and failure pacification, console harvesting, WebSocket + postMessage bridge capture, JWT identity harvesting, headless C2 API (reconEngine / chimeraRecon / Hook) and a moveable Shadow-DOM glass dock with full markdown reporting. For security research only.",
    "family": "privacy & security",
-   "sha256": "bdefc0cc645a0c0c2a0ba10079d8ea4345613df25c2674082b26cd5d04c0d0d5",
-   "lines": 993,
-   "bytes": 53614,
+   "sha256": "38bbf185787881fd2d900471fa717710f03383f0bf307c6510c2ba47821c7260",
+   "lines": 1824,
+   "bytes": 100530,
    "matches": [
     "*://*/*"
    ],
@@ -1251,12 +1251,12 @@
   {
    "file": "4ndr0tools - Stream Interceptor.user.js",
    "name": "4ndr0tools - Stream Interceptor",
-   "version": "3.2.0",
-   "description": "Intercepts, parses, and extracts stream tokens, manifests, and direct video sources via network hooks and DOM inspection. Suite promotion of the v3.1 BETA: ShadowDOM piercing, context-safe Reflect hooks, ReDoS-proof regex, 3lectric-Glass card surface, universal URL registry cap.",
+   "version": "3.3.0",
+   "description": "Intercepts, parses, and extracts stream tokens, manifests, and direct video sources via the suite's shared NetHook hub and DOM inspection. Suite v3.3: the v3.1 dual-realm fetch/XHR hooks ride the shared NetHook singleton (malformed-SVG veto, asset discovery, deep text inspection); ShadowDOM piercing, ReDoS-proof regex, 3lectric-Glass card surface, universal URL registry cap.",
    "family": "uncategorized",
-   "sha256": "cca7dbadb0257824cba5e94d4d996aab62cf51226fd6b09579024f25a796d526",
-   "lines": 897,
-   "bytes": 39799,
+   "sha256": "654565532cacfbd48805b640b2082774b575359cbcfab7da331925356d67a5f3",
+   "lines": 1621,
+   "bytes": 83087,
    "matches": [
     "*://*/*"
    ],
@@ -1557,5 +1557,5 @@
    ]
   }
  ],
- "digest": "06bf96880920690fd2c8e0b5ab7fddeda8aa5e350be352e21eb8678ff5bdc563"
+ "digest": "c82c723f1f855d26a9c94f31f95d262e6330001d8c63c44bcfae0a155e299f58"
 }
