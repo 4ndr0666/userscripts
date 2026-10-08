@@ -106,7 +106,12 @@ function gmShim() {
     function GM_registerMenuCommand(label, fn) { menu.push({ label: String(label), fn }); }
     function GM_setClipboard(text) { clips.push(String(text)); }
     function GM_xmlhttpRequest(details) {
-        fetch(details.url, {
+        /* [v1.4.8 gmFetch regime] the GPD true-direct probe targets the
+         * REAL uc?export=download URL — remap it onto the harness mock so
+         * the live smoke never leaves 127.0.0.1 (finalUrl keeps the
+         * original, so the resolver's form-mode semantics are exact). */
+        var target = String(details.url || '').replace(/^https:\\/\\/drive\\.google\\.com\\/uc\\?/, '/api/drive-uc?');
+        fetch(target, {
             method: details.method || 'GET',
             headers: details.headers || {},
             body: details.data || null,
@@ -171,7 +176,7 @@ function harnessPage(ttMode) {
         : ttMode === "locked"
             ? "require-trusted-types-for 'script'; trusted-types 4ndr0666tools#dom 4ndr0666tools#dom.2 4ndr0666tools#dom.3"
             : "";
-    return (scriptName, probe, autopanel, tabprobe, veto, observer) => `<!doctype html>
+    return (scriptName, probe, autopanel, tabprobe, veto, observer, fileId, liveform) => `<!doctype html>
 <html><head><meta charset="utf-8">
 <title>tt-smoke — ${scriptName} (${ttMode})</title>
 <script>
@@ -229,6 +234,8 @@ ${csp ? `<meta http-equiv="Content-Security-Policy" content="${csp}">` : ""}
 <body>
 <h3 style="font-family:monospace">tt-smoke harness — ${scriptName} — ${ttMode}</h3>
 <p style="font-family:monospace;font-size:11px">diagnostics in <code>window.__SMOKE__</code> · summary via <code>__SMOKE__.report()</code></p>
+${scriptName.indexOf("GooglePhotosandDrive") !== -1 && liveform ? `<form id="uc-form" action="https://drive.usercontent.google.com/download" method="post"><input type="hidden" name="id" value="${fileId}"><input type="hidden" name="export" value="download"><input type="hidden" name="uuid" value="smoke-uuid-8148"><input type="hidden" name="confirm" value="t"><input type="submit" value="Download anyway"></form>` : ""}
+${scriptName.indexOf("Prompt Master") !== -1 && observer ? `<img src="/api/pixel.png" alt="smoke-a" style="width:420px;height:300px"><img src="/api/pixel2.png" alt="smoke-b" style="width:420px;height:300px">` : ""}
 <script src="/gm-shim.js"></script>
 ${scriptName.indexOf("m3u8") !== -1 ? `<script src="/m3u8-parser-stub.js"></script>\n` : ""}<script src="/dist/${encodeURIComponent(scriptName)}"></script>
 <script>
@@ -587,10 +594,14 @@ ${scriptName.indexOf("m3u8") !== -1 ? `<script src="/m3u8-parser-stub.js"></scri
              * a 22k-line script builds its UI first). The probe must wait
              * for the hub + subscriber BEFORE firing the credit fetch, or
              * the exchange traverses the still-unwrapped fetch and is
-             * invisible to the observer (the first draft raced it). */
+             * invisible to the observer (the first draft raced it).
+             * v1.4.8: the hub wait is version 5 (kernel gmFetch round), and
+             * the probe gains the MEDIA SLIDESHOW contract after the chip:
+             * Alt+T opens the deck over the harness media, the counter
+             * reads, ArrowRight advances, Escape tears the deck down. */
             return waitFor(function () {
                 var slot = window.__4NDR0_NET__;
-                return !!(slot && slot.version === 4 && (slot.trafficSubscriberCount || 0) >= 1);
+                return !!(slot && slot.version === 5 && (slot.trafficSubscriberCount || 0) >= 1);
             }, 10000).then(function (hubReady) {
                 out.hubReadyBeforeFetch = hubReady;
                 return fetch('/api/flow.json');
@@ -598,7 +609,7 @@ ${scriptName.indexOf("m3u8") !== -1 ? `<script src="/m3u8-parser-stub.js"></scri
                 return waitFor(function () {
                     var chip = document.getElementById('pm-flow-credit-chip');
                     var v = chip && chip.querySelector('.mp-credit-values');
-                    return !!(v && /\d/.test(String(v.textContent || '')));
+                    return !!(v && /\\d/.test(String(v.textContent || '')));
                 }, 8000);
             }).then(function () {
                 var chip = document.getElementById('pm-flow-credit-chip');
@@ -608,6 +619,41 @@ ${scriptName.indexOf("m3u8") !== -1 ? `<script src="/m3u8-parser-stub.js"></scri
                     return v ? String(v.textContent || '') : '';
                 })();
                 out.flowChipHasValues = /41/.test(out.flowChipValues);
+                /* v1.4.8 Media Slideshow contract */
+                var fired = false;
+                try {
+                    document.dispatchEvent(new KeyboardEvent('keydown', {
+                        key: 't', altKey: true, bubbles: true, cancelable: true,
+                    }));
+                    fired = true;
+                } catch (e) { out.slideshowHotkeyError = String(e); }
+                out.slideshowHotkeyFired = fired;
+                return waitFor(function () {
+                    return !!document.getElementById('mp-media-slideshow');
+                }, 6000);
+            }).then(function (deckOpen) {
+                out.slideshowDeckOpened = !!deckOpen;
+                if (!deckOpen) return null;
+                var counter = document.querySelector('#mp-media-slideshow .mp-ss-counter');
+                out.slideshowCounter = counter ? String(counter.textContent || '') : '';
+                out.slideshowStyleMounted = !!document.getElementById('pm-slideshow-style');
+                out.bodyPresentationClass = document.body.classList.contains('mp-slideshow-open');
+                document.dispatchEvent(new KeyboardEvent('keydown', {
+                    key: 'ArrowRight', bubbles: true, cancelable: true,
+                }));
+                return wait(450).then(function () {
+                    var c2 = document.querySelector('#mp-media-slideshow .mp-ss-counter');
+                    out.slideshowAdvanced = c2 ? String(c2.textContent || '') : '';
+                    out.slideshowAdvanceMoved = (out.slideshowAdvanced !== out.slideshowCounter) ||
+                        /1\\s*\\/\\s*1$/.test(out.slideshowCounter);
+                    document.dispatchEvent(new KeyboardEvent('keydown', {
+                        key: 'Escape', bubbles: true, cancelable: true,
+                    }));
+                    return wait(450);
+                });
+            }).then(function () {
+                out.slideshowClosed = !document.getElementById('mp-media-slideshow');
+                out.slideshowBodyClassCleared = !document.body.classList.contains('mp-slideshow-open');
                 return control();
             }).then(function () {
                 slotFields();
@@ -620,10 +666,11 @@ ${scriptName.indexOf("m3u8") !== -1 ? `<script src="/m3u8-parser-stub.js"></scri
         if (SCRIPT.indexOf('Watermark') !== -1) {
             /* Wait for the hub + RPC subscriber BEFORE firing the
              * batchexecute XHR, so the exchange provably traverses the
-             * armed hub (the observer rides its traffic channel). */
+             * armed hub (the observer rides its traffic channel). v1.4.8:
+             * hub wait is version 5 (kernel gmFetch round). */
             return waitFor(function () {
                 var slot = window.__4NDR0_NET__;
-                return !!(slot && slot.version === 4 && (slot.trafficSubscriberCount || 0) >= 1);
+                return !!(slot && slot.version === 5 && (slot.trafficSubscriberCount || 0) >= 1);
             }, 10000).then(function (hubReady) {
                 out.hubReadyBeforeXhr = hubReady;
                 return new Promise(function (resolve) {
@@ -647,6 +694,60 @@ ${scriptName.indexOf("m3u8") !== -1 ? `<script src="/m3u8-parser-stub.js"></scri
             }).then(function (h) {
                 out.rpcServerHits = h.batchexecute;
                 out.exactlyOneServerHit = (h.batchexecute === 1);
+                slotFields();
+                __SMOKE__.observerProbe = out;
+            }).catch(function (e) {
+                out.fatal = String(e); slotFields(); __SMOKE__.observerProbe = out;
+            });
+        }
+
+        if (SCRIPT.indexOf('GooglePhotosandDrive') !== -1) {
+            /* [v1.4.8 GPD true-direct regimes] Two probes share this block:
+             * the BUTTON path (no form in the page — the resolve button's
+             * gmFetch probe traverses the kernel v5 transport through the
+             * shim's uc→mock remap, the interstitial HTML parses, the HUD
+             * re-renders with the session-resolved TRUE DIRECT label, and
+             * the mock endpoint saw EXACTLY ONE hit) and the LIVEFORM path
+             * (the confirm form IS the document — zero-fetch DOM
+             * resolution; the endpoint counter must stay at ZERO). */
+            return waitFor(function () { return !!document.getElementById('4ndr0-drive-hud'); }, 10000).then(function (hudMounted) {
+                out.hudMounted = !!hudMounted;
+                out.bootVersion810 = hasLog('8.1.0');
+                if (!hudMounted) return null;
+                if (${JSON.stringify(liveform)}) {
+                    var hudLf = document.getElementById('4ndr0-drive-hud');
+                    var lbl = hudLf ? hudLf.querySelector('.psi-glass-label') : null;
+                    out.liveFormLabel = lbl ? String(lbl.textContent || '') : '';
+                    out.zeroFetchResolved = /CONFIRM FORM IN THIS PAGE/.test(out.liveFormLabel);
+                    return fetch('/api/hits').then(function (r) { return r.json(); }).then(function (h) {
+                        out.driveUcHits = h.driveUc;
+                        out.zeroFetchConfirmed = (h.driveUc === 0);
+                        return null;
+                    });
+                }
+                var hudBt = document.getElementById('4ndr0-drive-hud');
+                var btn = hudBt ? Array.prototype.slice.call(hudBt.querySelectorAll('button')).find(function (b) {
+                    return /Resolve True Direct/.test(String(b.textContent || ''));
+                }) : null;
+                out.resolveButtonPresent = !!btn;
+                if (!btn) return null;
+                btn.click();
+                return waitFor(function () {
+                    var h2 = document.getElementById('4ndr0-drive-hud');
+                    var l2 = h2 ? h2.querySelector('.psi-glass-label') : null;
+                    return !!(l2 && /RESOLVED THIS SESSION/.test(String(l2.textContent || '')));
+                }, 12000).then(function (resolved) {
+                    out.trueDirectResolved = resolved === true;
+                    var h3 = document.getElementById('4ndr0-drive-hud');
+                    var l3 = h3 ? h3.querySelector('.psi-glass-label') : null;
+                    out.resolvedLabel = l3 ? String(l3.textContent || '') : '';
+                    return fetch('/api/hits').then(function (r) { return r.json(); });
+                }).then(function (h) {
+                    out.driveUcHits = h.driveUc;
+                    out.exactlyOneProbe = (h.driveUc === 1);
+                    return null;
+                });
+            }).then(function () {
                 slotFields();
                 __SMOKE__.observerProbe = out;
             }).catch(function (e) {
@@ -689,6 +790,11 @@ let telemetryHits = 0;
 let svgHits = 0;
 let albumStatsHits = 0;
 let batchexecuteHits = 0;
+/* [v1.4.8] per-referer accounting for the GPD true-direct mock: the
+ * zero-fetch (liveform) regime must prove ITSELF gmFetch-free even when
+ * the resolve regime hit the same server instance earlier — a global
+ * counter conflates probes. */
+const driveUcHitsByRef = new Map();
 const server = http.createServer((req, res) => {
     const url = new URL(req.url, `http://127.0.0.1:${port}`);
     const send = (code, type, body) => {
@@ -735,6 +841,26 @@ const server = http.createServer((req, res) => {
     if (url.pathname === "/api/v1/list" || url.pathname.startsWith("/api/v1/media/")) {
         return send(200, "application/json", JSON.stringify({ ok: true, path: url.pathname }));
     }
+    /* [v1.4.8 GPD true-direct endpoints] the interstitial mock the gmFetch
+     * probe is remapped onto (hit-counted — the BUTTON path must see
+     * exactly one hit, the LIVEFORM path zero), and the two pixel stand-ins
+     * the PM slideshow harvests (geometry-gated, distinct URLs → two
+     * slides). */
+    if (url.pathname === "/api/drive-uc") {
+        const ref = String(req.headers.referer || "");
+        driveUcHitsByRef.set(ref, (driveUcHitsByRef.get(ref) || 0) + 1);
+        return send(200, "text/html; charset=utf-8",
+            `<!doctype html><html><head><title>(*) Google Drive — virus scan warning</title></head><body>` +
+            `<form id="uc-form" action="https://drive.usercontent.google.com/download" method="post">` +
+            `<input type="hidden" name="id" value="${url.searchParams.get("id") || ""}">` +
+            `<input type="hidden" name="export" value="download">` +
+            `<input type="hidden" name="uuid" value="smoke-uuid-8148">` +
+            `<input type="hidden" name="confirm" value="t">` +
+            `<input type="submit" value="Download anyway"></form></body></html>`);
+    }
+    if (url.pathname === "/api/pixel.png" || url.pathname === "/api/pixel2.png") {
+        return send(200, "image/png", Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64"));
+    }
     if (url.pathname === "/api/media-/capture.mp4") {
         return send(200, "video/mp4", "");
     }
@@ -755,7 +881,7 @@ const server = http.createServer((req, res) => {
         const u = url.searchParams.get("u") || "";
         return send(200, "application/json", JSON.stringify({ embed: u, note: "stream source follows", ref: u }));
     }
-    if (url.pathname === "/api/hits") return send(200, "application/json", JSON.stringify({ telemetry: telemetryHits, svg: svgHits, albumStats: albumStatsHits, batchexecute: batchexecuteHits }));
+    if (url.pathname === "/api/hits") return send(200, "application/json", JSON.stringify({ telemetry: telemetryHits, svg: svgHits, albumStats: albumStatsHits, batchexecute: batchexecuteHits, driveUc: (driveUcHitsByRef.get(String(req.headers.referer || "")) || 0) }));
     if (url.pathname === "/api/echo") {
         const chunks = [];
         req.on("data", (c) => chunks.push(c));
@@ -786,7 +912,9 @@ const server = http.createServer((req, res) => {
         const observer = probeParam === "observer";
         const autopanel = url.searchParams.has("autopanel");
         const tabprobe = url.searchParams.has("tabs");
-        return send(200, "text/html; charset=utf-8", harnessPage(ttRoute)(match, probe, autopanel, tabprobe, veto, observer));
+        const fileId = url.searchParams.get("id") || "SMOKEFILEID123";
+        const liveform = url.searchParams.has("liveform");
+        return send(200, "text/html; charset=utf-8", harnessPage(ttRoute)(match, probe, autopanel, tabprobe, veto, observer, fileId, liveform));
     }
 
     send(404, "text/plain", "routes: /tt/ /tt-locked/ /nott/ ?script=…&probe=wire&autopanel · /gm-shim.js · /api/media.m3u8 · /api/probe.json\n");
@@ -807,4 +935,6 @@ server.listen(port, "127.0.0.1", () => {
     console.log(`  /tt/?script=Prompt%20Master&probe=observer  (observer: flow-credit chip)`);
     console.log(`  /tt/?script=Watermark%2B%2B&probe=observer  (observer: gemini RPC passthrough)`);
     console.log(`  /tt/?script=Filester%2B%2B&probe=observer  (observer: API-hit capture)`);
+  console.log(`  /tt/?script=GooglePhotosandDrive%2B%2B&probe=observer&id=SMOKEFILEID123  (v1.4.8 gmFetch: true-direct resolve button → interstitial parse)`);
+  console.log(`  /nott/?script=GooglePhotosandDrive%2B%2B&probe=observer&liveform  (v1.4.8 zero-fetch: confirm form in the document)`);
 });

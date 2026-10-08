@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name                4ndr0tools - Prompt Master
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version             28.4.0
+// @version             28.5.0
 // @author              4ndr0666
 // @icon                data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @license             UNLICENSED - RED TEAM USE ONLY
-// @description         Google Flow prompt manager toolkit (works on any AI, just add url) - persisted unit ledger meters every generation click, organization engine: collections, saved views, favorites, ratings, archive, group-by, and insights for large prompt libraries, dedupe, ai prompt enhancer, auto gist syncing, hotkeys, much more. 
+// @description         Google Flow prompt manager toolkit (works on any AI, just add url) - persisted unit ledger meters every generation click, organization engine: collections, saved views, favorites, ratings, archive, group-by, and insights for large prompt libraries, dedupe, media slideshow, ai prompt enhancer, auto gist syncing, hotkeys, much more.
 // @match               *://geminigen.ai/*
 // @match               *://gist.github.com/*
 // @match               *://gemini.google.com/*
@@ -158,6 +158,28 @@
  *     replaced by a newer full-channel hub (older wraps remain chained
  *     underneath for that transitional co-install generation).
  *
+ *
+ * v5 (suite v1.4.8) — PRIVILEGED TRANSPORT. gmFetch joins the api: a
+ *   Promise-wrapped GM_xmlhttpRequest with a hard timeout (default 15 s),
+ *   transient-only bounded retry (timeouts and transport faults re-fire
+ *   with linear backoff; HTTP status verdicts never do — they are logic
+ *   answers, not transient faults), settle-once semantics (a manager that
+ *   fires two callbacks cannot double-resolve), and the typed NetError
+ *   taxonomy (kinds: timeout | http | transport | abort | gm-unavailable).
+ *   Restored from the v1.0.0-era kernel, which carried it with zero
+ *   consumers until the v1.4.3 dead-code sweep removed it; GooglePhotosandDrive++'s
+ *   Drive true-direct resolution (suite v1.4.8) is the first v5 consumer.
+ *   The transport is FEATURE-DETECTED (GM_xmlhttpRequest, then GM.xmlHttpRequest):
+ *   a consumer without the grant gets a typed gm-unavailable rejection —
+ *   never a ReferenceError — so the eleven existing consumers that grant
+ *   nothing of the sort are unaffected. gmFetch is served by each copy's
+ *   own module closure (it owns no realm state and wraps nothing), so a
+ *   co-installed hub owner change never re-routes it; isFullHub grows the
+ *   gmFetch surface so a v5 copy only delegates subscriptions to a v5
+ *   slot owner (a v4 owner keeps serving its own subscribers through the
+ *   chain while the v5 copy arms above it — the established transitional
+ *   co-install progression).
+ *
  * Consumed via build-time injection into the canon scripts that declare it
  * (tools/build.mjs CANON_KERNEL) — the identifier `__4NDR0_NET_API__` below
  * is script-scope visible to the consumer's IIFE.
@@ -166,13 +188,124 @@ const __4NDR0_NET_API__ = (function () {
     'use strict';
 
     const SLOT = '__4NDR0_NET__';
-    const VERSION = 4;
+    const VERSION = 5;
     const MAX_SUBS = 32;            /* bounded registry (GUP B.1) */
     const MAX_BODY = 4000000;       /* 4 MB read cap (Blob2URL's wire limit) */
     const XHR_MOCK_DELAY = 40;      /* D6 cadence — mocked XHR responses deliver
                                      * on 40 ms timers so async call sites behave
                                      * exactly as they would against the real
                                      * (hostile) endpoint */
+
+    /* ── v5: typed transport errors ─────────────────────────────────────
+     * gmFetch rejects with these — never a bare string, never a generic
+     * Error. `kind` is the machine-branchable axis (timeout | http |
+     * transport | abort | gm-unavailable); `url` and, for http, `status`
+     * ride along so a consumer can log the full verdict. */
+    class NetError extends Error {
+        constructor(message, meta) {
+            super(message);
+            this.name = 'NetError';
+            try {
+                this.url = meta && meta.url;
+                this.status = meta && meta.status;
+                this.kind = (meta && meta.kind) || 'transport';
+            } catch (e) { /* exotic meta — defaults stand */ }
+        }
+    }
+    class NetTimeoutError extends NetError {
+        constructor(url, ms) {
+            super('gmFetch timeout after ' + ms + 'ms: ' + url, { url: url, kind: 'timeout' });
+            this.name = 'NetTimeoutError';
+        }
+    }
+    class NetHttpError extends NetError {
+        constructor(url, status, statusText) {
+            super('HTTP ' + status + ' ' + (statusText || '') + ' — ' + url,
+                { url: url, status: status, kind: 'http' });
+            this.name = 'NetHttpError';
+        }
+    }
+
+    /* The privileged transport — GM_xmlhttpRequest in managers that expose
+     * the grant, GM.xmlHttpRequest in the GM.* world, null where neither
+     * is granted (the typed gm-unavailable rejection answers that case). */
+    function gmTransport() {
+        try { if (typeof GM_xmlhttpRequest === 'function') return GM_xmlhttpRequest; }
+        catch (e) { /* grant absent — ReferenceError caught, not thrown */ }
+        try {
+            if (typeof GM === 'object' && GM && typeof GM.xmlHttpRequest === 'function')
+                return GM.xmlHttpRequest;
+        } catch (e2) { /* sandbox sealed GM away */ }
+        return null;
+    }
+
+    function gmSleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+    /* ── v5: gmFetch — privileged GET/POST with a hard timeout and
+     * transient-only bounded retry. Settle-once: a manager firing two
+     * callbacks (onload AND onerror, a known Violentmonkey-on-CORS shape)
+     * resolves exactly once. checkStatus (default true) turns non-2xx
+     * into NetHttpError rejections; opts.checkStatus === false hands the
+     * raw response to the caller for verdict-by-status use (the Drive
+     * resolver walks both a 200 interstitial and redirect-final URLs).
+     * responseType is normalized to the portable set ('text' default). */
+    function gmFetch(url, opts) {
+        opts = opts || {};
+        const method = opts.method || 'GET';
+        const headers = opts.headers || {};
+        const data = opts.data != null ? opts.data : null;
+        const timeout = Math.max(1, opts.timeout || 15000);
+        const retries = Math.max(0, Math.min(opts.retries || 0, 3));
+        const responseType = (opts.responseType === 'json' || opts.responseType === 'arraybuffer' ||
+            opts.responseType === 'blob') ? opts.responseType : 'text';
+        const checkStatus = opts.checkStatus !== false;
+
+        const transport = gmTransport();
+        if (!transport) {
+            /* The grant name lives in the header comment (comment text is
+             * inert); the message stays free of bare manager identifiers
+             * so the inventory grant scanner sees only the two sanctioned
+             * detection shapes in this module. */
+            return Promise.reject(new NetError(
+                'gmFetch unavailable: no privileged transport granted in this consumer',
+                { url: url, kind: 'gm-unavailable' }));
+        }
+
+        function attempt() {
+            return new Promise(function (resolve, reject) {
+                let settled = false;
+                const done = function (fn, arg) { if (!settled) { settled = true; fn(arg); } };
+                const req = {
+                    method: method, url: url, headers: headers, data: data,
+                    timeout: timeout, responseType: responseType,
+                    onload: function (r) {
+                        if (checkStatus && (r.status < 200 || r.status >= 400))
+                            done(reject, new NetHttpError(url, r.status, r.statusText));
+                        else done(resolve, r);
+                    },
+                    onerror: function () { done(reject, new NetError('network error', { url: url, kind: 'transport' })); },
+                    ontimeout: function () { done(reject, new NetTimeoutError(url, timeout)); },
+                    onabort: function () { done(reject, new NetError('aborted', { url: url, kind: 'abort' })); },
+                };
+                try { transport(req); }
+                catch (e) { done(reject, new NetError('dispatch failed: ' + ((e && e.message) || e), { url: url, kind: 'transport' })); }
+            });
+        }
+
+        return (async function () {
+            let lastErr = null;
+            for (let n = 0; n <= retries; n++) {
+                try { return await attempt(); }
+                catch (e) {
+                    lastErr = e;
+                    const transient = e instanceof NetTimeoutError || (e && e.kind === 'transport');
+                    if (!transient || n >= retries) throw e;
+                    await gmSleep(300 * (n + 1));
+                }
+            }
+            throw lastErr;
+        })();
+    }
 
     function realm() {
         try { if (typeof unsafeWindow !== 'undefined' && unsafeWindow) return unsafeWindow; } catch (e) { /* sandboxed away */ }
@@ -661,10 +794,12 @@ const __4NDR0_NET_API__ = (function () {
     }
 
     /* Full-channel surface check — a hub this copy may delegate to (or
-     * leave owning the slot) must expose every v4 channel. */
+     * leave owning the slot) must expose every v4 channel AND the v5
+     * privileged transport (gmFetch). */
     function isFullHub(h) {
         return !!(h && typeof h.onBody === 'function' && typeof h.onRequest === 'function' &&
-            typeof h.onTraffic === 'function' && typeof h.onError === 'function');
+            typeof h.onTraffic === 'function' && typeof h.onError === 'function' &&
+            typeof h.gmFetch === 'function');
     }
 
     /* Slot install — a strictly newer full-channel hub replaces the
@@ -683,6 +818,17 @@ const __4NDR0_NET_API__ = (function () {
 
     const api = {
         version: VERSION,
+        /* gmFetch(url, opts) -> Promise<{status, statusText, responseText,
+         * responseHeaders, finalUrl, ...}>. Privileged GM transport with
+         * hard timeout + transient-only bounded retry — see the v5 block
+         * in the file header. Rejects with the typed NetError taxonomy
+         * below (branch on .kind: timeout | http | transport | abort |
+         * gm-unavailable). Served by this copy's own closure: never
+         * re-routed to a co-installed hub owner (no realm state). */
+        gmFetch: gmFetch,
+        NetError: NetError,
+        NetTimeoutError: NetTimeoutError,
+        NetHttpError: NetHttpError,
         /* onBody(fn) -> unsubscribe. fn(text) receives every textual
          * response body captured in the page realm (ok fetch responses +
          * XHR text/json loads, real AND phantom), read once per response,
@@ -833,6 +979,28 @@ const __4NDR0_NET_API__ = (function () {
     return api;
 })();
 
+// 28.5.0 (suite v1.4.8): Media Slideshow — the operator's
+// v28.4.0 candidate integrated: presentation layer over the
+// page's media (videos, images, background images): one-shot
+// DOM harvest, paginated deck with auto-advance (autoscroll)
+// that loops the entire collection and repeats, video-aware
+// dwell (ended-driven with a bounded safety cap), Alt+T
+// hotkey + manager-menu entry, 3lectric-Glass spec. The
+// candidate's Alt+S was re-lettered by the suite-wide
+// co-install census (ModelSearch owns bare Alt+S on
+// *://*/*; the recorder can re-bind it per host). The token
+// chip counter (Flow credit tracker) is audited FINAL this
+// round: display ladder, official unit ledger, day rolling,
+// wall reconciliation, reset preservation and the onTraffic
+// scanner verified end to end — no defect found, no code
+// change needed.
+// 28.4.0 (suite v1.4.7): the flow-credit observer rides
+// kernel/net.js onTraffic — the shared structured-traffic
+// hub — with the baseline's per-kind gates preserved
+// (fetch 2xx + textual content-type, XHR ungated); the
+// bespoke pageWin fetch wrap + XHR open/send taps retired
+// (the co-install stacking surface the suite census
+// measured).
 // 28.3.1 (suite v1.4.0): OPSEC — remote Google-Fonts @import purged (IP-leak / fingerprint vector on every page load); local spec font stack retained. 3lectric-Glass universality round.
 
 (function () {
@@ -3098,6 +3266,22 @@ const __4NDR0_NET_API__ = (function () {
       // DEFAULT_ICONS is cloned, so it resets/overrides cleanly with themes.
       settings:
         '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>',
+      // v28.4.0: media-slideshow chrome icons (play-frame / pause /
+      // single-step chevrons / speaker states), same stroke-currentColor
+      // convention as the rest of the set; registered before DEFAULT_ICONS
+      // is cloned so themes reset them cleanly alongside every other glyph.
+      slideshow:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="m10 7 5 3-5 3z" fill="currentColor" stroke="none"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
+      pause:
+        '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>',
+      prev:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m14 6-6 6 6 6"/></svg>',
+      next:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m10 6 6 6-6 6"/></svg>',
+      volume:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z" fill="currentColor" stroke="none"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>',
+      volumeOff:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z" fill="currentColor" stroke="none"/><line x1="16" y1="9" x2="22" y2="15"/><line x1="22" y1="9" x2="16" y2="15"/></svg>',
     },
     DEFAULT_ICONS = { ...ICONS };
   function createPromptButton(e = "top") {
@@ -10713,6 +10897,20 @@ const __4NDR0_NET_API__ = (function () {
         keys: "Ctrl+Alt+P",
         desc: "Opens the Prompt List in Expanded Mode",
       },
+      // v28.5.0: media-slideshow toggle — Alt+T for theater (the candidate's
+      // Alt+S was re-lettered by the suite-wide co-install census, domain
+      // granularity: ModelSearch owns bare Alt+S universally on *://*/*,
+      // and GPD's Alt+D lives on the shared google.com registrable domain
+      // — the same discipline that moved Blob2URL Alt+S→Alt+B in v7.1.1;
+      // Alt+T is free suite-wide and carries the theater-mode mnemonic).
+      // Existing users get the default via the DEFAULT_SHORTCUTS merge
+      // in loadShortcuts; recorder + settings-list support are automatic
+      // because both iterate currentShortcuts; a host without
+      // ModelSearch can re-bind Alt+S through the recorder.
+      mediaSlideshow: {
+        keys: "Alt+T",
+        desc: "Opens/closes the media slideshow over the current page",
+      },
     };
   let currentShortcuts = JSON.parse(JSON.stringify(DEFAULT_SHORTCUTS));
   async function loadShortcuts() {
@@ -17887,6 +18085,605 @@ const __4NDR0_NET_API__ = (function () {
         t.style.transform = "translateX(" + o + "px)";
       }
   }
+
+  // ════════════════════════════════════════════════════════════════
+  // v28.4.0: MEDIA SLIDESHOW — present an entire media collection on
+  // screen and repeat. One paradigm, per the directive: plain pagination
+  // (one slide at a time; prev/next/counter) plus autoscroll-style
+  // auto-advance on a timer. No libraries, no lightbox machinery, no
+  // dedicated stylesheets beyond one idempotent <style> block in the
+  // 3lectric-Glass spec (10,19,26 glass base, #00E5FF/#67E8F9 accents,
+  // 0px control radii, 150ms transitions) carrying the Ψ glyph brand.
+  //
+  // Lifecycle discipline (D4): a single re-armed setTimeout — never an
+  // interval — one keydown capture listener, one visibilitychange and
+  // one fullscreenchange listener, and a body class hiding the dock and
+  // credit chip during presentation; closeSlideshow() reclaims every
+  // one of them unconditionally and is safe to call from any state.
+  //
+  // Media discipline: the harvest is one-shot and explicit-refresh only
+  // (no MutationObserver — the overlay's own DOM churn can never feed
+  // back into it), walks the document in order via a single comma
+  // selector, size-gates and dedupes through a FIFO-capped Set, and
+  // reuses the exclusion families the credit tracker's media
+  // fingerprinting already proved against Flow's chrome.
+  // ════════════════════════════════════════════════════════════════
+  const SLIDESHOW_STORAGE_KEY = "SlideshowConfig",
+    SLIDESHOW_MAX_ITEMS = 900,
+    SLIDESHOW_VIDEO_CAP_MS = 30000,
+    SLIDESHOW_MIN_INTERVAL_MS = 2000,
+    SLIDESHOW_MAX_INTERVAL_MS = 15000,
+    SLIDESHOW_INTERVAL_STEP_MS = 500;
+  let slideshowConfig = { intervalMs: 5000, muted: true },
+    slideshowOverlay = null,
+    slideshowDeck = [],
+    slideshowIdx = 0,
+    slideshowPlaying = false,
+    slideshowTimer = null,
+    slideshowVisHandler = null,
+    slideshowFsHandler = null;
+  // v28.4.0: persisted preferences (dwell interval + video mute). Merges
+  // over defaults so a store written by a future version can never drop
+  // keys this build still reads; the interval is clamped on load because
+  // the +/- buttons clamp on every change and a hand-edited or legacy
+  // value must not arm a 0ms runaway timer.
+  async function loadSlideshowConfig() {
+    try {
+      const stored = await GM_getValue(SLIDESHOW_STORAGE_KEY, null);
+      if (stored && typeof stored === "object") {
+        slideshowConfig = { ...slideshowConfig, ...stored };
+        const n = Number(slideshowConfig.intervalMs);
+        slideshowConfig.intervalMs =
+          !isFinite(n)
+            ? 5000
+            : Math.max(
+                SLIDESHOW_MIN_INTERVAL_MS,
+                Math.min(SLIDESHOW_MAX_INTERVAL_MS, Math.round(n)),
+              );
+        slideshowConfig.muted = !!slideshowConfig.muted;
+      }
+    } catch (e) {
+      console.debug("[slideshow] config load failed, defaults kept:", e);
+    }
+  }
+  async function saveSlideshowConfig() {
+    try {
+      await GM_setValue(SLIDESHOW_STORAGE_KEY, slideshowConfig);
+    } catch (e) {
+      console.debug("[slideshow] config save failed:", e);
+    }
+  }
+  // The deck source: one DOM pass, document order, three media families
+  // (video / img / background-image), size-gated like the tracker's
+  // fingerprints (>=100x80 rendered or intrinsic) so avatars, icons and
+  // sprite tiles never enter the deck. Videos without a playable source
+  // but with a poster degrade to image slides on the poster. Dedupe is
+  // Set-based (O(1)) with a hard FIFO ceiling of 900 entries.
+  function harvestSlideshowMedia() {
+    const out = [];
+    if (!document.body) return out;
+    const seen = new Set();
+    const excl =
+      '#pm-media-slideshow, #pm-flow-dock, #pm-flow-credit-chip, #mp-notification-container, #mp-pinned-carousel-wrapper, #prompt-menu-container, .mp-overlay, .mp-modal-box, .mp-dialogo-overlay, .mp-tooltip, .mp-inline-menu, [role="menu"], [role="listbox"], [role="dialog"], .cdk-overlay-container';
+    const gate = (w, h) => w >= 100 && h >= 80;
+    const nodes = document.body.querySelectorAll(
+      'video, img, [style*="background-image"]',
+    );
+    for (const el of nodes) {
+      if (out.length >= SLIDESHOW_MAX_ITEMS) break;
+      try {
+        if (el.closest(excl)) continue;
+        const r = el.getBoundingClientRect();
+        if (el.tagName === "VIDEO") {
+          const src =
+            el.currentSrc ||
+            el.src ||
+            (el.querySelector("source") && el.querySelector("source").src) ||
+            "";
+          if (src) {
+            if (
+              !gate(r.width, r.height) &&
+              !(el.videoWidth >= 100 && el.videoHeight >= 80)
+            )
+              continue;
+            pushSlide(out, seen, "video", src, el.poster || "");
+            continue;
+          }
+          // No playable source yet: a poster still presents a frame.
+          if (el.poster && gate(r.width, r.height))
+            pushSlide(out, seen, "image", el.poster, "");
+          continue;
+        }
+        if (el.tagName === "IMG") {
+          const src = el.currentSrc || el.src || "";
+          // Inline SVG data URIs are the icon/sprite family, never media.
+          if (!src || src.startsWith("data:image/svg")) continue;
+          const intrinsic =
+            (el.naturalWidth || 0) >= 100 && (el.naturalHeight || 0) >= 80;
+          if (!intrinsic && !gate(r.width, r.height)) continue;
+          pushSlide(out, seen, "image", src, "");
+          continue;
+        }
+        if (!gate(r.width, r.height)) continue;
+        const m = /url\(["']?([^"')]+)["']?\)/i.exec(
+          el.getAttribute("style") || "",
+        );
+        if (m) pushSlide(out, seen, "image", m[1], "");
+      } catch (e) {
+        console.debug("[slideshow] skipped a media node:", e);
+      }
+    }
+    return out;
+  }
+  function pushSlide(out, seen, kind, src, poster) {
+    if (!src || seen.has(src) || out.length >= SLIDESHOW_MAX_ITEMS) return;
+    seen.add(src);
+    out.push({ kind: kind, src: src, poster: poster || "" });
+  }
+  // 3lectric-Glass presentation chrome. One idempotent <style> block,
+  // same injection pattern as pm-flow-dock-style / pm-flow-credit-style;
+  // all colors ride the --mp-* token system so imported themes restyle
+  // the deck for free.
+  const SLIDESHOW_CSS =
+    "#mp-media-slideshow{position:fixed;inset:0;z-index:2147483646;display:flex;flex-direction:column;background:linear-gradient(160deg,rgba(10,19,26,.94) 0%,rgba(10,19,26,.90) 55%,rgba(10,19,26,.95) 100%);backdrop-filter:blur(14px) saturate(1.3);-webkit-backdrop-filter:blur(14px) saturate(1.3);font-family:var(--mp-font-family-base);}" +
+    "#mp-media-slideshow *{box-sizing:border-box;}" +
+    "#mp-media-slideshow .mp-ss-stage{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:24px;}" +
+    "#mp-media-slideshow .mp-ss-frame{position:relative;display:flex;align-items:center;justify-content:center;max-width:100%;max-height:100%;animation:mp-ss-fade 150ms ease-in-out;}" +
+    "#mp-media-slideshow .mp-ss-slide{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block;background:rgba(10,19,26,.55);border:1px solid rgba(0,229,255,.3);box-shadow:0 0 24px rgba(0,229,255,.14),0 0 72px rgba(0,229,255,.07),-6px 10px 36px rgba(0,0,0,.5);}" +
+    "#mp-media-slideshow video.mp-ss-slide{min-width:280px;min-height:160px;}" +
+    "#mp-media-slideshow .mp-ss-badge{position:absolute;top:10px;left:10px;padding:3px 9px;font:600 10px/1.4 var(--mp-font-family-editor);letter-spacing:.14em;color:#00E5FF;background:rgba(10,19,26,.72);border:1px solid rgba(0,229,255,.3);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}" +
+    "#mp-media-slideshow .mp-ss-progress{position:absolute;left:0;right:0;bottom:-8px;height:2px;transform-origin:left center;background:linear-gradient(90deg,#00E5FF,#67E8F9);box-shadow:0 0 8px rgba(0,229,255,.5);animation:mp-ss-progress var(--mp-ss-dwell,5s) linear forwards;}" +
+    "#mp-media-slideshow.is-paused .mp-ss-progress{animation-play-state:paused;}" +
+    "#mp-media-slideshow .mp-ss-frame.is-video .mp-ss-progress{display:none;}" +
+    "@keyframes mp-ss-progress{from{transform:scaleX(0);}to{transform:scaleX(1);}}" +
+    "@keyframes mp-ss-fade{from{opacity:0;transform:scale(.985);}to{opacity:1;transform:scale(1);}}" +
+    "#mp-media-slideshow .mp-ss-chrome{flex:0 0 auto;display:flex;flex-wrap:wrap;row-gap:4px;align-items:center;gap:4px;padding:8px 12px;border-top:1px solid rgba(0,229,255,.3);background:linear-gradient(160deg,rgba(10,19,26,.66) 0%,rgba(10,19,26,.60) 55%,rgba(10,19,26,.68) 100%);backdrop-filter:blur(18px) saturate(1.5);-webkit-backdrop-filter:blur(18px) saturate(1.5);box-shadow:inset 0 1px 0 rgba(103,232,249,.18);}" +
+    "#mp-media-slideshow .mp-ss-brand{width:20px;height:20px;flex:0 0 auto;color:#67E8F9;opacity:.9;}" +
+    "#mp-media-slideshow .mp-ss-brand svg{width:100%;height:100%;display:block;}" +
+    "#mp-media-slideshow .mp-ss-counter{font:600 12.5px/1 var(--mp-font-family-editor);letter-spacing:.06em;color:#67E8F9;white-space:nowrap;margin:0 6px;}" +
+    "#mp-media-slideshow .mp-ss-spacer{flex:1 1 auto;}" +
+    "#mp-media-slideshow .mp-ss-ctrl{width:34px;height:34px;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;border:none;background:transparent;color:rgba(0,229,255,.7);cursor:pointer;transition:background 150ms ease-in-out,color 150ms ease-in-out;}" +
+    "#mp-media-slideshow .mp-ss-ctrl svg{width:18px;height:18px;display:block;}" +
+    "#mp-media-slideshow .mp-ss-ctrl:hover{background:rgba(0,229,255,.08);color:#67E8F9;}" +
+    "#mp-media-slideshow .mp-ss-ctrl:active{background:rgba(0,229,255,.2);}" +
+    "#mp-media-slideshow .mp-ss-ctrl.mp-ss-close{color:rgba(255,0,85,.85);}" +
+    "#mp-media-slideshow .mp-ss-ctrl.mp-ss-close:hover{background:rgba(255,0,85,.12);color:#ff0055;}" +
+    "#mp-media-slideshow .mp-ss-interval{display:inline-flex;align-items:center;gap:2px;color:#67E8F9;}" +
+    "#mp-media-slideshow .mp-ss-interval-val{font:600 12px/1 var(--mp-font-family-editor);min-width:44px;text-align:center;letter-spacing:.04em;}" +
+    "#mp-media-slideshow .mp-ss-sep{width:1px;height:22px;flex:0 0 auto;background:rgba(0,229,255,.28);margin:0 6px;}" +
+    "body.mp-slideshow-open #pm-flow-dock,body.mp-slideshow-open #pm-flow-credit-chip{display:none !important;}" +
+    "@media (prefers-reduced-motion:reduce){#mp-media-slideshow .mp-ss-frame{animation:none;}#mp-media-slideshow .mp-ss-progress{animation:none;}}";
+  function ensureSlideshowStyle() {
+    if (document.getElementById("pm-slideshow-style")) return;
+    const s = document.createElement("style");
+    s.id = "pm-slideshow-style";
+    s.textContent = SLIDESHOW_CSS;
+    document.head.appendChild(s);
+  }
+  // Single-owner timer discipline: every arm clears first, every clear
+  // nulls the handle, and close/pause/advance all route through here so
+  // at most one timer is ever live.
+  function slideshowClearTimer() {
+    if (slideshowTimer) {
+      clearTimeout(slideshowTimer);
+      slideshowTimer = null;
+    }
+  }
+  // Per-slide dwell: images ride the configured interval; videos wait
+  // for their own ended event under a 30s safety cap so a stalled or
+  // broken source can never freeze the deck. The cap re-arms on every
+  // video play, and a user-paused video clears it — they own the timing
+  // while inspecting the frame.
+  function slideshowScheduleSlide() {
+    slideshowClearTimer();
+    if (!slideshowPlaying || slideshowDeck.length < 2) return;
+    const item = slideshowDeck[slideshowIdx];
+    const dwell =
+      item && item.kind === "video"
+        ? SLIDESHOW_VIDEO_CAP_MS
+        : slideshowConfig.intervalMs;
+    slideshowTimer = setTimeout(function () {
+      slideshowTimer = null;
+      slideshowAdvance(1);
+    }, dwell);
+  }
+  // Pagination with wraparound — the "repeat" in the vision: the deck
+  // loops the entire collection indefinitely.
+  function slideshowAdvance(dir) {
+    const n = slideshowDeck.length;
+    if (!n) return;
+    slideshowIdx = (slideshowIdx + dir + n) % n;
+    renderSlideshowSlide();
+  }
+  function slideshowSetPlaying(playing) {
+    slideshowPlaying = !!playing;
+    if (slideshowOverlay)
+      slideshowOverlay.classList.toggle("is-paused", !slideshowPlaying);
+    const toggle = slideshowOverlay
+      ? slideshowOverlay.querySelector(".mp-ss-toggle")
+      : null;
+    if (toggle)
+      setSafeInnerHTML(toggle, slideshowPlaying ? ICONS.pause : ICONS.slideshow);
+    if (slideshowPlaying) slideshowScheduleSlide();
+    else slideshowClearTimer();
+  }
+  function slideshowUpdateInterval(deltaMs) {
+    const n = slideshowConfig.intervalMs + deltaMs;
+    slideshowConfig.intervalMs = Math.max(
+      SLIDESHOW_MIN_INTERVAL_MS,
+      Math.min(SLIDESHOW_MAX_INTERVAL_MS, n),
+    );
+    saveSlideshowConfig();
+    const label = slideshowOverlay
+      ? slideshowOverlay.querySelector(".mp-ss-interval-val")
+      : null;
+    if (label)
+      label.textContent = (slideshowConfig.intervalMs / 1000).toFixed(1) + "s";
+    // Re-arm only when the current slide actually uses the interval.
+    if (slideshowPlaying) {
+      const item = slideshowDeck[slideshowIdx];
+      if (!item || item.kind !== "video") slideshowScheduleSlide();
+    }
+  }
+  function slideshowToggleMute() {
+    slideshowConfig.muted = !slideshowConfig.muted;
+    saveSlideshowConfig();
+    slideshowApplyMute();
+  }
+  function slideshowApplyMute() {
+    const vid = slideshowOverlay
+      ? slideshowOverlay.querySelector("video.mp-ss-slide")
+      : null;
+    if (vid) vid.muted = slideshowConfig.muted;
+    const btn = slideshowOverlay
+      ? slideshowOverlay.querySelector(".mp-ss-mute")
+      : null;
+    if (!btn) return;
+    // Idempotence guard: the render path calls this on every slide, and
+    // re-writing an identical icon SVG per slide is waste — only touch
+    // the DOM when the mute state actually moved.
+    const state = slideshowConfig.muted ? "1" : "0";
+    if (btn.dataset.muted === state) return;
+    btn.dataset.muted = state;
+    setSafeInnerHTML(btn, slideshowConfig.muted ? ICONS.volumeOff : ICONS.volume);
+  }
+  function slideshowToggleFullscreen() {
+    try {
+      if (document.fullscreenElement) {
+        const p = document.exitFullscreen();
+        if (p && p.catch) p.catch(function () {});
+      } else if (slideshowOverlay) {
+        const p = slideshowOverlay.requestFullscreen();
+        if (p && p.catch) p.catch(function () {});
+      }
+    } catch (e) {
+      console.debug("[slideshow] fullscreen failed:", e);
+    }
+  }
+  // Re-harvest on demand (the refresh button): keeps the user's place by
+  // URL when the new deck still holds the current slide, clamps
+  // otherwise. An empty re-harvest means the page stopped exposing
+  // media — the honest response is to say so and keep the deck as-is.
+  function slideshowRefreshDeck() {
+    const fresh = harvestSlideshowMedia();
+    if (!fresh.length) {
+      showNotification("No media found on this page to present.", "info");
+      return;
+    }
+    const cur = slideshowDeck[slideshowIdx];
+    let next = cur
+      ? fresh.findIndex(function (s) {
+          return s.src === cur.src;
+        })
+      : -1;
+    if (next < 0) next = Math.min(slideshowIdx, fresh.length - 1);
+    slideshowDeck = fresh;
+    slideshowIdx = next;
+    renderSlideshowSlide();
+    showNotification("Deck refreshed — " + fresh.length + " media.", "success");
+  }
+  // The slide renderer: builds the frame node fresh each time (the old
+  // video's listeners die with its node — no accumulation), restarts the
+  // CSS progress bar by node replacement (deterministic restart, no
+  // reflow tricks), and re-arms the dwell timer.
+  function renderSlideshowSlide() {
+    const stage = slideshowOverlay
+      ? slideshowOverlay.querySelector(".mp-ss-stage")
+      : null;
+    if (!stage) return;
+    setSafeInnerHTML(stage, "");
+    const item = slideshowDeck[slideshowIdx];
+    if (!item) return;
+    const frame = document.createElement("div");
+    frame.className = "mp-ss-frame";
+    if (item.kind === "video") {
+      frame.classList.add("is-video");
+      const vid = document.createElement("video");
+      vid.className = "mp-ss-slide";
+      vid.controls = true;
+      vid.playsInline = true;
+      vid.preload = "metadata";
+      vid.muted = slideshowConfig.muted;
+      if (item.poster) vid.poster = item.poster;
+      vid.src = item.src;
+      // ended advances a playing deck; error skips broken media fast;
+      // user pause/play owns the timing (cap clears while paused).
+      vid.addEventListener("ended", function () {
+        if (slideshowPlaying) slideshowAdvance(1);
+        else slideshowClearTimer();
+      });
+      vid.addEventListener("error", function () {
+        if (slideshowPlaying) slideshowAdvance(1);
+      });
+      vid.addEventListener("pause", function () {
+        slideshowClearTimer();
+      });
+      vid.addEventListener("play", function () {
+        if (slideshowPlaying) slideshowScheduleSlide();
+      });
+      frame.appendChild(vid);
+      const badge = document.createElement("div");
+      badge.className = "mp-ss-badge";
+      badge.textContent = "VIDEO";
+      frame.appendChild(badge);
+    } else {
+      const img = document.createElement("img");
+      img.className = "mp-ss-slide";
+      img.alt = "Slide " + (slideshowIdx + 1);
+      img.src = item.src;
+      frame.appendChild(img);
+    }
+    const prog = document.createElement("div");
+    prog.className = "mp-ss-progress";
+    prog.style.setProperty(
+      "--mp-ss-dwell",
+      (item.kind === "video"
+        ? SLIDESHOW_VIDEO_CAP_MS
+        : slideshowConfig.intervalMs) + "ms",
+    );
+    frame.appendChild(prog);
+    stage.appendChild(frame);
+    const counter = slideshowOverlay.querySelector(".mp-ss-counter");
+    if (counter)
+      counter.textContent = slideshowIdx + 1 + " / " + slideshowDeck.length;
+    slideshowApplyMute();
+    slideshowScheduleSlide();
+  }
+  function buildSlideshowOverlay() {
+    const root = document.createElement("div");
+    root.id = "mp-media-slideshow";
+    root.setAttribute("data-testid", "pm-media-slideshow");
+    root.tabIndex = -1;
+    const stage = document.createElement("div");
+    stage.className = "mp-ss-stage";
+    root.appendChild(stage);
+    const chrome = document.createElement("div");
+    chrome.className = "mp-ss-chrome";
+    const brand = document.createElement("div");
+    brand.className = "mp-ss-brand";
+    setSafeInnerHTML(brand, FLOW_DOCK_GLYPH);
+    chrome.appendChild(brand);
+    const counter = document.createElement("div");
+    counter.className = "mp-ss-counter";
+    counter.textContent = "1 / " + slideshowDeck.length;
+    chrome.appendChild(counter);
+    const spacer = document.createElement("div");
+    spacer.className = "mp-ss-spacer";
+    chrome.appendChild(spacer);
+    const mkCtrl = function (cls, icon, tip, fn) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "mp-ss-ctrl" + (cls ? " " + cls : "");
+      setSafeInnerHTML(b, icon);
+      createCustomTooltip(b, tip, "top");
+      b.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        fn();
+      });
+      chrome.appendChild(b);
+      return b;
+    };
+    mkCtrl("mp-ss-prev", ICONS.prev, "Previous (←)", function () {
+      slideshowAdvance(-1);
+    });
+    mkCtrl("mp-ss-toggle", ICONS.pause, "Play/Pause (Space)", function () {
+      slideshowSetPlaying(!slideshowPlaying);
+    });
+    mkCtrl("mp-ss-next", ICONS.next, "Next (→)", function () {
+      slideshowAdvance(1);
+    });
+    const sep1 = document.createElement("div");
+    sep1.className = "mp-ss-sep";
+    chrome.appendChild(sep1);
+    const intervalBox = document.createElement("div");
+    intervalBox.className = "mp-ss-interval";
+    const minus = document.createElement("button");
+    minus.type = "button";
+    minus.className = "mp-ss-ctrl";
+    setSafeInnerHTML(minus, ICONS.prev);
+    createCustomTooltip(minus, "Slower (-0.5s)", "top");
+    minus.addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      slideshowUpdateInterval(-SLIDESHOW_INTERVAL_STEP_MS);
+    });
+    const ivLabel = document.createElement("span");
+    ivLabel.className = "mp-ss-interval-val";
+    ivLabel.textContent = (slideshowConfig.intervalMs / 1000).toFixed(1) + "s";
+    const plus = document.createElement("button");
+    plus.type = "button";
+    plus.className = "mp-ss-ctrl";
+    setSafeInnerHTML(plus, ICONS.next);
+    createCustomTooltip(plus, "Faster (+0.5s)", "top");
+    plus.addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      slideshowUpdateInterval(SLIDESHOW_INTERVAL_STEP_MS);
+    });
+    intervalBox.appendChild(minus);
+    intervalBox.appendChild(ivLabel);
+    intervalBox.appendChild(plus);
+    chrome.appendChild(intervalBox);
+    const sep2 = document.createElement("div");
+    sep2.className = "mp-ss-sep";
+    chrome.appendChild(sep2);
+    const muteBtn = mkCtrl(
+      "mp-ss-mute",
+      slideshowConfig.muted ? ICONS.volumeOff : ICONS.volume,
+      "Mute/Unmute videos (M)",
+      slideshowToggleMute,
+    );
+    // Seed the idempotence guard so the first render never rewrites the
+    // icon the builder just placed (see slideshowApplyMute).
+    muteBtn.dataset.muted = slideshowConfig.muted ? "1" : "0";
+    mkCtrl("", ICONS.expand, "Fullscreen (F)", slideshowToggleFullscreen);
+    mkCtrl("", ICONS.restore, "Re-scan page media", slideshowRefreshDeck);
+    mkCtrl("mp-ss-close", ICONS.close, "Close (Esc)", closeSlideshow);
+    root.appendChild(chrome);
+    return root;
+  }
+  // Presentation key routing. Capture phase on document so the deck
+  // speaks first while open; every handled key is stopped so nothing
+  // leaks into the host page or the script's own global shortcut map.
+  // Arrows/Space pass through when the target is the slide's own video
+  // (keyboard seek + space play on the focused media are native
+  // controls and must keep working — the chrome buttons stay reachable
+  // via Enter).
+  function slideshowOnKey(ev) {
+    if (!slideshowOverlay) return;
+    const vid = slideshowOverlay.querySelector("video.mp-ss-slide");
+    if (
+      vid &&
+      (ev.target === vid || vid.contains(ev.target)) &&
+      (ev.key === "ArrowLeft" || ev.key === "ArrowRight" || ev.key === " ")
+    )
+      return;
+    switch (ev.key) {
+      case "ArrowLeft":
+        ev.preventDefault();
+        ev.stopPropagation();
+        slideshowAdvance(-1);
+        return;
+      case "ArrowRight":
+        ev.preventDefault();
+        ev.stopPropagation();
+        slideshowAdvance(1);
+        return;
+      case " ":
+      case "Spacebar":
+        ev.preventDefault();
+        ev.stopPropagation();
+        slideshowSetPlaying(!slideshowPlaying);
+        return;
+      case "Escape":
+        ev.preventDefault();
+        ev.stopPropagation();
+        closeSlideshow();
+        return;
+      case "Home":
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (slideshowDeck.length) {
+          slideshowIdx = 0;
+          renderSlideshowSlide();
+        }
+        return;
+      case "End":
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (slideshowDeck.length) {
+          slideshowIdx = slideshowDeck.length - 1;
+          renderSlideshowSlide();
+        }
+        return;
+      case "f":
+      case "F":
+        ev.preventDefault();
+        ev.stopPropagation();
+        slideshowToggleFullscreen();
+        return;
+      case "m":
+      case "M":
+        ev.preventDefault();
+        ev.stopPropagation();
+        slideshowToggleMute();
+        return;
+    }
+  }
+  function openSlideshow() {
+    if (slideshowOverlay) return;
+    const deck = harvestSlideshowMedia();
+    if (!deck.length) {
+      showNotification("No media found on this page to present.", "info");
+      return;
+    }
+    // A presentation opens clean: the prompt menu and the settings
+    // modal both paint ABOVE the deck (dialog layering is by design),
+    // so either one being open would leave the deck running under a
+    // stale pane. Dismiss both the way their own Esc paths do.
+    try {
+      if (currentMenu && currentMenu.classList.contains("visible"))
+        closeMenu();
+      if (settingsModal && settingsModal.classList.contains("visible"))
+        hideModal(settingsModal);
+    } catch (e) {
+      console.debug("[slideshow] pre-open dismissal failed:", e);
+    }
+    ensureSlideshowStyle();
+    slideshowDeck = deck;
+    slideshowIdx = 0;
+    slideshowOverlay = buildSlideshowOverlay();
+    document.body.classList.add("mp-slideshow-open");
+    document.body.appendChild(slideshowOverlay);
+    document.addEventListener("keydown", slideshowOnKey, true);
+    slideshowVisHandler = function () {
+      if (document.hidden) slideshowClearTimer();
+      else if (slideshowPlaying) slideshowScheduleSlide();
+    };
+    document.addEventListener("visibilitychange", slideshowVisHandler);
+    slideshowFsHandler = function () {
+      // Re-arm timing after fullscreen transitions settle: the element
+      // re-layout can pause video playback, and a playing deck must
+      // resume its dwell exactly once. No-op for image slides.
+      const vid = slideshowOverlay
+        ? slideshowOverlay.querySelector("video.mp-ss-slide")
+        : null;
+      if (vid && slideshowPlaying && !vid.paused) slideshowScheduleSlide();
+    };
+    document.addEventListener("fullscreenchange", slideshowFsHandler);
+    slideshowSetPlaying(true);
+    renderSlideshowSlide();
+    try {
+      slideshowOverlay.focus();
+    } catch (e) {}
+  }
+  function closeSlideshow() {
+    if (!slideshowOverlay) return;
+    slideshowClearTimer();
+    document.removeEventListener("keydown", slideshowOnKey, true);
+    if (slideshowVisHandler)
+      document.removeEventListener("visibilitychange", slideshowVisHandler);
+    if (slideshowFsHandler)
+      document.removeEventListener("fullscreenchange", slideshowFsHandler);
+    slideshowVisHandler = null;
+    slideshowFsHandler = null;
+    document.body.classList.remove("mp-slideshow-open");
+    try {
+      if (document.fullscreenElement) {
+        const p = document.exitFullscreen();
+        if (p && p.catch) p.catch(function () {});
+      }
+    } catch (e) {}
+    slideshowOverlay.remove();
+    slideshowOverlay = null;
+    slideshowDeck = [];
+    slideshowIdx = 0;
+    slideshowPlaying = false;
+  }
+  function toggleSlideshow() {
+    if (slideshowOverlay) closeSlideshow();
+    else openSlideshow();
+  }
+
+
   const AUTO_BACKUP_KEY = "AutoBackup";
   const AUTO_BACKUP_KEYS = [
     "Prompts",
@@ -17907,6 +18704,10 @@ const __4NDR0_NET_API__ = (function () {
     "PromptCollections",
     "PromptViews",
     "OrgPrefs",
+    // v28.4.0: slideshow preferences (dwell interval, video mute) are user
+    // data, not secrets — they ride every auto-backup and gist sync like
+    // the org preferences above them.
+    "SlideshowConfig",
   ];
   // v27.0.12: single source of truth for the running version, read from
   // the userscript manager (GM_info) so the Gist backup payload and the
@@ -17920,7 +18721,7 @@ const __4NDR0_NET_API__ = (function () {
     GM_info.script &&
     GM_info.script.version
       ? GM_info.script.version
-      : "28.3.0-Ψ";
+      : "28.5.0-Ψ";
   // v27.0.12: canonical backup snapshot helper. The beta's Gist push
   // called snapshotKeys() before it existed anywhere, so every "Sync Now"
   // threw a ReferenceError; takeAutoBackup() now shares this one helper
@@ -22306,6 +23107,16 @@ const __4NDR0_NET_API__ = (function () {
         closeMenu();
         openExpandedPromptMenu();
       }
+      // v28.5.0: the media-slideshow toggle rides the standard
+      // shortcut pipeline (recorder + settings list come free).
+      // While the deck is open its capture-phase handler speaks
+      // first; Alt+T falls through to here in both states and
+      // toggles cleanly either way.
+      if (isShortcutPressed(ev, "mediaSlideshow")) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        toggleSlideshow();
+      }
     });
     window.addEventListener(
       "resize",
@@ -22345,6 +23156,9 @@ const __4NDR0_NET_API__ = (function () {
     await loadPredictionConfig();
     await loadNavConfig();
     await loadPreviewPromptConfig();
+    // v28.4.0: slideshow preferences (dwell interval, video mute) load
+    // with the rest of the persisted config family.
+    await loadSlideshowConfig();
     await loadTagsConfig();
     // v28.0.0: organization-engine state loads alongside the tag config
     // it extends (collections -> views -> prefs order is irrelevant; all
@@ -22363,6 +23177,12 @@ const __4NDR0_NET_API__ = (function () {
       }
       if (settingsModal.resetToCurrent) settingsModal.resetToCurrent();
       showModal(settingsModal);
+    });
+    // v28.4.0: the media-slideshow entry — platform-agnostic on purpose
+    // (the harvest is a generic DOM sweep); on a page with no media the
+    // open path answers with a toast instead of a dead menu item.
+    GM_registerMenuCommand(`▶️ ${"Media Slideshow"}`, () => {
+      toggleSlideshow();
     });
     if (detectPlatform() === "flow") {
       // v27.3.0: wipes the persisted per-model credit state (see

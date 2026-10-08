@@ -499,9 +499,9 @@ function gateD() {
         failures.push(`[D] Akasha Silence: legacy own-network-wrap remnants still present in canon (must ride NetHook)`);
     }
     const netSrcV = fs.readFileSync(path.join(ROOT, "kernel", "net.js"), "utf8");
-    if (!/VERSION\s*=\s*4\s*;/.test(netSrcV) || !/onRequest:\s*function/.test(netSrcV) || !/propagate:\s*function/.test(netSrcV) || !/onTraffic:\s*function/.test(netSrcV) || !/onError:\s*function/.test(netSrcV) || !/requestSubscriberCount/.test(netSrcV) || !/trafficSubscriberCount/.test(netSrcV) || !/errorSubscriberCount/.test(netSrcV)) {
-        failures.push(`[D] NetHook kernel: veto/traffic/error api surface incomplete (version 4 + onRequest/onTraffic/onError/propagate + subscriber counts)`);
-    } else passes.push(`[D] NetHook veto + traffic + recovery semantics verified (request verdicts, structured events, error pacification; defusers and observers ride one hub)`);
+    if (!/VERSION\s*=\s*5\s*;/.test(netSrcV) || !/onRequest:\s*function/.test(netSrcV) || !/propagate:\s*function/.test(netSrcV) || !/onTraffic:\s*function/.test(netSrcV) || !/onError:\s*function/.test(netSrcV) || !/gmFetch:\s*gmFetch/.test(netSrcV) || !/requestSubscriberCount/.test(netSrcV) || !/trafficSubscriberCount/.test(netSrcV) || !/errorSubscriberCount/.test(netSrcV)) {
+        failures.push(`[D] NetHook kernel: veto/traffic/error/transport api surface incomplete (version 5 + onRequest/onTraffic/onError/propagate/gmFetch + subscriber counts)`);
+    } else passes.push(`[D] NetHook veto + traffic + recovery + transport semantics verified (request verdicts, structured events, error pacification, gmFetch privileged transport; defusers and observers ride one hub)`);
 
     /* v1.4.6 NetHook adoption — Recon + Stream Interceptor ride the shared
      * hub (kernel/net.js v4): the per-script fetch/XHR recorders and
@@ -583,6 +583,46 @@ function gateD() {
         if (remnant) {
             failures.push(`[D] ${spec.name}: legacy own-network-wrap remnant still present in canon (${remnant})`);
         }
+    }
+
+    /* v1.4.8 PM Media Slideshow (operator candidate integration) — the
+     * surface gate: the mediaSlideshow shortcut entry with the
+     * census-safe Alt+T combo (the candidate's Alt+S was re-lettered —
+     * ModelSearch owns it universally), the full open/close/toggle
+     * lifecycle, the persisted config riding the backup family, and the
+     * manager-menu entry. The candidate's slideshowKeyHandler indirection
+     * was simplified to the named handler (census-resolvable). */
+    const pmCanonPath2 = path.join(ROOT, "canon", "_sovereign", "4ndr0tools - Prompt Master.user.js");
+    const pmCanon2 = fs.existsSync(pmCanonPath2) ? fs.readFileSync(pmCanonPath2, "utf8") : "";
+    if (!pmCanon2.includes('mediaSlideshow: {') || !pmCanon2.includes('keys: "Alt+T"') ||
+        !pmCanon2.includes("function toggleSlideshow()") || !pmCanon2.includes("function closeSlideshow()") ||
+        !pmCanon2.includes("function openSlideshow()") || !pmCanon2.includes("function harvestSlideshowMedia()") ||
+        !pmCanon2.includes('"SlideshowConfig",') || !pmCanon2.includes("Media Slideshow")) {
+        failures.push(`[D] Prompt Master: Media Slideshow surface incomplete (mediaSlideshow Alt+T + lifecycle + config + menu entry)`);
+    } else passes.push(`[D] Prompt Master Media Slideshow verified (operator candidate integrated; Alt+T census re-letter, config rides the backup family)`);
+    if (/keys: "Alt\+[SD]",\s*\n\s*desc: "Opens\/closes the media slideshow/.test(pmCanon2) || /mediaSlideshow[\s\S]{0,120}keys: "Alt\+S"/.test(pmCanon2)) {
+        failures.push(`[D] Prompt Master: media slideshow combo regressed to a census-owned letter (Alt+S ModelSearch / Alt+D GPD domain)`);
+    }
+
+    /* v1.4.8 GPD gmFetch adoption — GooglePhotosandDrive++ rides the
+     * kernel's v5 privileged transport for Drive true-direct resolution:
+     * the canon calls the hub's gmFetch (never a bare manager call), the
+     * transport grant + its @connect targets are declared (alignment:
+     * declared use ⇒ declared grant), and the confirm-form parser stays
+     * DOMParser-based (D8 — regex over HTML is a hard fail shape). */
+    const gpdCanonPath = path.join(ROOT, "canon", "_promoted", "4ndr0tools - GooglePhotosandDrive++.user.js");
+    const gpdCanon = fs.existsSync(gpdCanonPath) ? fs.readFileSync(gpdCanonPath, "utf8") : "";
+    if (!gpdCanon.includes("__4NDR0_NET_API__.gmFetch") || !gpdCanon.includes("resolveDriveTrueDirect") || !gpdCanon.includes("buildDirectFromForm")) {
+        failures.push(`[D] GooglePhotosandDrive++: kernel gmFetch adoption surface missing (resolveDriveTrueDirect via __4NDR0_NET_API__.gmFetch)`);
+    } else passes.push(`[D] GooglePhotosandDrive++ gmFetch adoption verified (Drive true-direct resolution rides the kernel v5 transport)`);
+    if (/GM_xmlhttpRequest\s*\(/.test(gpdCanon)) {
+        failures.push(`[D] GooglePhotosandDrive++: bare GM transport call in canon (must ride __4NDR0_NET_API__.gmFetch)`);
+    }
+    if (!/@grant\s+GM_xmlhttpRequest/.test(gpdCanon) || !/@connect\s+drive\.usercontent\.google\.com/.test(gpdCanon) || !/@connect\s+drive\.google\.com/.test(gpdCanon)) {
+        failures.push(`[D] GooglePhotosandDrive++: transport grant/@connect declarations incomplete for the privileged probe`);
+    } else passes.push(`[D] GooglePhotosandDrive++ transport declarations verified (grant + connect targets align with the probe's endpoints)`);
+    if (/drive\.(?:google|usercontent\.google)[^'"`\n]*\\?\s*\)|form\.innerHTML\s*=/.test(gpdCanon) && /responseText\.match\(\s*<form/.test(gpdCanon)) {
+        failures.push(`[D] GooglePhotosandDrive++: regex-over-HTML parsing shape present (must use DOMParser)`);
     }
 
     /* v1.3.0 interference ledger — the nine documented fixes of this round. */

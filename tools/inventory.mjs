@@ -114,7 +114,18 @@ function inventory() {
          * without granting them. Comment text is stripped first (changelog
          * prose mentioning GM_* must not trigger); GM_info is always
          * available and never requires a grant; local aliases that merely
-         * START with GM_ but are not manager APIs are ignored. */
+         * START with GM_ but are not manager APIs are ignored.
+         * v1.4.8: the kernel/net.js v5 gmFetch transport is injected into
+         * every NetHook consumer, and its capability detection names the
+         * bare manager identifiers WITHOUT the consumer granting them —
+         * by design. Two per-OCCURRENCE detection shapes are sanctioned
+         * (an identifier is whitelisted ONLY where the shape appears,
+         * never blanket): (a) a typeof expression, and (b) the guarded
+         * pickup idiom that immediately returns the identifier inside a
+         * typeof-function guard — the dereference there executes only
+         * when the grant exists, so an ungranted consumer can never
+         * raise a ReferenceError. Any other occurrence is use and still
+         * requires the grant. */
         const body = src.replace(/==UserScript==[\s\S]*?==\/UserScript==/, "")
             .replace(/\/\*[\s\S]*?\*\//g, "")
             .replace(/\/\/[^\n]*/g, "");
@@ -126,7 +137,12 @@ function inventory() {
             "GM_addValueChangeListener", "GM_removeValueChangeListener",
             "GM_notification", "GM_closeCurrentTab", "GM_getTab",
         ]);
-        const gmUsed = new Set([...body.matchAll(/\b(GM_\w+)\b/g)].map((m) => m[1]));
+        /* strip the sanctioned detection shapes, per occurrence (idiom
+         * first — the typeof strip would eat its guard text) */
+        const bodyUses = body
+            .replace(/\bif\s*\(\s*typeof\s+(GM_\w+)\s*===?\s*(['"])function\2\s*\)\s*return\s+\1\s*;/g, "")
+            .replace(/\btypeof\s+GM_\w+\b/g, "");
+        const gmUsed = new Set([...bodyUses.matchAll(/\b(GM_\w+)\b/g)].map((m) => m[1]));
         const gmGranted = new Set([...(meta.grant || [])]);
         for (const g of gmUsed) {
             if (!CANONICAL_GM.has(g)) continue;        // local alias, not an API

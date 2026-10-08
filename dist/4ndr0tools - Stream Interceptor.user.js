@@ -140,6 +140,28 @@
  *     replaced by a newer full-channel hub (older wraps remain chained
  *     underneath for that transitional co-install generation).
  *
+ *
+ * v5 (suite v1.4.8) — PRIVILEGED TRANSPORT. gmFetch joins the api: a
+ *   Promise-wrapped GM_xmlhttpRequest with a hard timeout (default 15 s),
+ *   transient-only bounded retry (timeouts and transport faults re-fire
+ *   with linear backoff; HTTP status verdicts never do — they are logic
+ *   answers, not transient faults), settle-once semantics (a manager that
+ *   fires two callbacks cannot double-resolve), and the typed NetError
+ *   taxonomy (kinds: timeout | http | transport | abort | gm-unavailable).
+ *   Restored from the v1.0.0-era kernel, which carried it with zero
+ *   consumers until the v1.4.3 dead-code sweep removed it; GooglePhotosandDrive++'s
+ *   Drive true-direct resolution (suite v1.4.8) is the first v5 consumer.
+ *   The transport is FEATURE-DETECTED (GM_xmlhttpRequest, then GM.xmlHttpRequest):
+ *   a consumer without the grant gets a typed gm-unavailable rejection —
+ *   never a ReferenceError — so the eleven existing consumers that grant
+ *   nothing of the sort are unaffected. gmFetch is served by each copy's
+ *   own module closure (it owns no realm state and wraps nothing), so a
+ *   co-installed hub owner change never re-routes it; isFullHub grows the
+ *   gmFetch surface so a v5 copy only delegates subscriptions to a v5
+ *   slot owner (a v4 owner keeps serving its own subscribers through the
+ *   chain while the v5 copy arms above it — the established transitional
+ *   co-install progression).
+ *
  * Consumed via build-time injection into the canon scripts that declare it
  * (tools/build.mjs CANON_KERNEL) — the identifier `__4NDR0_NET_API__` below
  * is script-scope visible to the consumer's IIFE.
@@ -148,13 +170,124 @@ const __4NDR0_NET_API__ = (function () {
     'use strict';
 
     const SLOT = '__4NDR0_NET__';
-    const VERSION = 4;
+    const VERSION = 5;
     const MAX_SUBS = 32;            /* bounded registry (GUP B.1) */
     const MAX_BODY = 4000000;       /* 4 MB read cap (Blob2URL's wire limit) */
     const XHR_MOCK_DELAY = 40;      /* D6 cadence — mocked XHR responses deliver
                                      * on 40 ms timers so async call sites behave
                                      * exactly as they would against the real
                                      * (hostile) endpoint */
+
+    /* ── v5: typed transport errors ─────────────────────────────────────
+     * gmFetch rejects with these — never a bare string, never a generic
+     * Error. `kind` is the machine-branchable axis (timeout | http |
+     * transport | abort | gm-unavailable); `url` and, for http, `status`
+     * ride along so a consumer can log the full verdict. */
+    class NetError extends Error {
+        constructor(message, meta) {
+            super(message);
+            this.name = 'NetError';
+            try {
+                this.url = meta && meta.url;
+                this.status = meta && meta.status;
+                this.kind = (meta && meta.kind) || 'transport';
+            } catch (e) { /* exotic meta — defaults stand */ }
+        }
+    }
+    class NetTimeoutError extends NetError {
+        constructor(url, ms) {
+            super('gmFetch timeout after ' + ms + 'ms: ' + url, { url: url, kind: 'timeout' });
+            this.name = 'NetTimeoutError';
+        }
+    }
+    class NetHttpError extends NetError {
+        constructor(url, status, statusText) {
+            super('HTTP ' + status + ' ' + (statusText || '') + ' — ' + url,
+                { url: url, status: status, kind: 'http' });
+            this.name = 'NetHttpError';
+        }
+    }
+
+    /* The privileged transport — GM_xmlhttpRequest in managers that expose
+     * the grant, GM.xmlHttpRequest in the GM.* world, null where neither
+     * is granted (the typed gm-unavailable rejection answers that case). */
+    function gmTransport() {
+        try { if (typeof GM_xmlhttpRequest === 'function') return GM_xmlhttpRequest; }
+        catch (e) { /* grant absent — ReferenceError caught, not thrown */ }
+        try {
+            if (typeof GM === 'object' && GM && typeof GM.xmlHttpRequest === 'function')
+                return GM.xmlHttpRequest;
+        } catch (e2) { /* sandbox sealed GM away */ }
+        return null;
+    }
+
+    function gmSleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+    /* ── v5: gmFetch — privileged GET/POST with a hard timeout and
+     * transient-only bounded retry. Settle-once: a manager firing two
+     * callbacks (onload AND onerror, a known Violentmonkey-on-CORS shape)
+     * resolves exactly once. checkStatus (default true) turns non-2xx
+     * into NetHttpError rejections; opts.checkStatus === false hands the
+     * raw response to the caller for verdict-by-status use (the Drive
+     * resolver walks both a 200 interstitial and redirect-final URLs).
+     * responseType is normalized to the portable set ('text' default). */
+    function gmFetch(url, opts) {
+        opts = opts || {};
+        const method = opts.method || 'GET';
+        const headers = opts.headers || {};
+        const data = opts.data != null ? opts.data : null;
+        const timeout = Math.max(1, opts.timeout || 15000);
+        const retries = Math.max(0, Math.min(opts.retries || 0, 3));
+        const responseType = (opts.responseType === 'json' || opts.responseType === 'arraybuffer' ||
+            opts.responseType === 'blob') ? opts.responseType : 'text';
+        const checkStatus = opts.checkStatus !== false;
+
+        const transport = gmTransport();
+        if (!transport) {
+            /* The grant name lives in the header comment (comment text is
+             * inert); the message stays free of bare manager identifiers
+             * so the inventory grant scanner sees only the two sanctioned
+             * detection shapes in this module. */
+            return Promise.reject(new NetError(
+                'gmFetch unavailable: no privileged transport granted in this consumer',
+                { url: url, kind: 'gm-unavailable' }));
+        }
+
+        function attempt() {
+            return new Promise(function (resolve, reject) {
+                let settled = false;
+                const done = function (fn, arg) { if (!settled) { settled = true; fn(arg); } };
+                const req = {
+                    method: method, url: url, headers: headers, data: data,
+                    timeout: timeout, responseType: responseType,
+                    onload: function (r) {
+                        if (checkStatus && (r.status < 200 || r.status >= 400))
+                            done(reject, new NetHttpError(url, r.status, r.statusText));
+                        else done(resolve, r);
+                    },
+                    onerror: function () { done(reject, new NetError('network error', { url: url, kind: 'transport' })); },
+                    ontimeout: function () { done(reject, new NetTimeoutError(url, timeout)); },
+                    onabort: function () { done(reject, new NetError('aborted', { url: url, kind: 'abort' })); },
+                };
+                try { transport(req); }
+                catch (e) { done(reject, new NetError('dispatch failed: ' + ((e && e.message) || e), { url: url, kind: 'transport' })); }
+            });
+        }
+
+        return (async function () {
+            let lastErr = null;
+            for (let n = 0; n <= retries; n++) {
+                try { return await attempt(); }
+                catch (e) {
+                    lastErr = e;
+                    const transient = e instanceof NetTimeoutError || (e && e.kind === 'transport');
+                    if (!transient || n >= retries) throw e;
+                    await gmSleep(300 * (n + 1));
+                }
+            }
+            throw lastErr;
+        })();
+    }
 
     function realm() {
         try { if (typeof unsafeWindow !== 'undefined' && unsafeWindow) return unsafeWindow; } catch (e) { /* sandboxed away */ }
@@ -643,10 +776,12 @@ const __4NDR0_NET_API__ = (function () {
     }
 
     /* Full-channel surface check — a hub this copy may delegate to (or
-     * leave owning the slot) must expose every v4 channel. */
+     * leave owning the slot) must expose every v4 channel AND the v5
+     * privileged transport (gmFetch). */
     function isFullHub(h) {
         return !!(h && typeof h.onBody === 'function' && typeof h.onRequest === 'function' &&
-            typeof h.onTraffic === 'function' && typeof h.onError === 'function');
+            typeof h.onTraffic === 'function' && typeof h.onError === 'function' &&
+            typeof h.gmFetch === 'function');
     }
 
     /* Slot install — a strictly newer full-channel hub replaces the
@@ -665,6 +800,17 @@ const __4NDR0_NET_API__ = (function () {
 
     const api = {
         version: VERSION,
+        /* gmFetch(url, opts) -> Promise<{status, statusText, responseText,
+         * responseHeaders, finalUrl, ...}>. Privileged GM transport with
+         * hard timeout + transient-only bounded retry — see the v5 block
+         * in the file header. Rejects with the typed NetError taxonomy
+         * below (branch on .kind: timeout | http | transport | abort |
+         * gm-unavailable). Served by this copy's own closure: never
+         * re-routed to a co-installed hub owner (no realm state). */
+        gmFetch: gmFetch,
+        NetError: NetError,
+        NetTimeoutError: NetTimeoutError,
+        NetHttpError: NetHttpError,
         /* onBody(fn) -> unsubscribe. fn(text) receives every textual
          * response body captured in the page realm (ok fetch responses +
          * XHR text/json loads, real AND phantom), read once per response,

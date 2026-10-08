@@ -404,7 +404,7 @@ function runNet(sb, label) {
 (async () => {
     const sbNet = makeNetContext();
     const net = runNet(sbNet, "net-primary.js");
-    assert(net.version === 4 && typeof net.onBody === "function", "net: NetHook v4 api exported");
+    assert(net.version === 5 && typeof net.onBody === "function", "net: NetHook v5 api exported");
 
     /* lazy arm — nothing wraps before the first subscriber */
     const p0 = sbNet.__probe();
@@ -415,7 +415,7 @@ function runNet(sb, label) {
     const off = net.onBody((t) => { a += t; });
     const p1 = sbNet.__probe();
     const firstWrap = p1.page.fetch;
-    assert(p1.page.fetch !== p1.nativeFetch && p1.page.fetch.__4ndro_net === 4, "net: first subscribe arms exactly one fetch wrap (v4 versioned mark)");
+    assert(p1.page.fetch !== p1.nativeFetch && p1.page.fetch.__4ndro_net === 5, "net: first subscribe arms exactly one fetch wrap (v5 versioned mark)");
 
     await p1.page.fetch("https://x.test/a");
     await new Promise((r) => setTimeout(r, 0));
@@ -849,18 +849,18 @@ function runNet(sb, label) {
         let chained = "";
         netC.onBody((t) => { chained += t; });
         const afterArm = sbC.__probe().page.fetch;
-        assert(afterArm !== legacyWrap && afterArm.__4ndro_net === 4,
-            "net: v4 wraps ABOVE a legacy-marked wrap (transitional chaining)");
+        assert(afterArm !== legacyWrap && afterArm.__4ndro_net === 5,
+            "net: v5 wraps ABOVE a legacy-marked wrap (transitional chaining)");
         await afterArm("https://x.test/chain");
         await new Promise((r) => setTimeout(r, 0));
         assert(chained === "FETCHBODY", "net: v4 subscribers served through the chained wrap");
         assert(legacyCalls.length === 1 && legacyCalls[0][0] === "https://x.test/chain",
             "net: legacy generation keeps its own dispatch underneath");
-        /* future mark — v4 defers arming */
+        /* future mark — v5 defers arming */
         const sbF = makeNetContext();
         const probeF = sbF.__probe();
         const futureWrap = function () { return Promise.resolve({ ok: true }); };
-        futureWrap.__4ndro_net = 5;
+        futureWrap.__4ndro_net = 6;
         probeF.page.fetch = futureWrap;
         const netF = runNet(sbF, "net-future.js");
         netF.onBody(() => {});
@@ -893,6 +893,119 @@ function runNet(sb, label) {
         await new Promise((r) => setTimeout(r, 0));
         assert(siblingT === 1,
             "net: throwing traffic subscriber isolated (siblings still fed)");
+    }
+
+    /* ── NetHook v5 battery (suite v1.4.8) ───────────────────────────────
+     * gmFetch — the privileged transport: surface export, typed
+     * gm-unavailable rejection when the grant is absent, success
+     * pass-through, http-error verdicts (and the checkStatus:false
+     * override), timeout taxonomy, transient-only bounded retry (retries
+     * re-fire; HTTP verdicts never do), settle-once against a manager
+     * that fires two callbacks, and a synchronous dispatch throw. */
+    {
+        const sbG = makeNetContext();
+        const netG = runNet(sbG, "net-gmfetch.js");
+        assert(typeof netG.gmFetch === "function" && typeof netG.NetError === "function" &&
+            typeof netG.NetTimeoutError === "function" && typeof netG.NetHttpError === "function",
+            "net: v5 api exports gmFetch + the NetError taxonomy");
+
+        /* no grant in this context — typed rejection, never a ReferenceError */
+        let noGrantErr = null;
+        try { await netG.gmFetch("https://x.test/privileged"); }
+        catch (e) { noGrantErr = e; }
+        assert(noGrantErr && noGrantErr.kind === "gm-unavailable" &&
+            noGrantErr instanceof netG.NetError,
+            "net: gmFetch without a grant rejects typed gm-unavailable (no ReferenceError)");
+
+        /* mock transport — success pass-through */
+        const seen = [];
+        sbG.GM_xmlhttpRequest = (req) => {
+            seen.push({ method: req.method, url: req.url, timeout: req.timeout });
+            req.onload({ status: 200, statusText: "OK", responseText: "GMBODY", finalUrl: "https://final.test/x" });
+        };
+        const r1 = await netG.gmFetch("https://x.test/gm");
+        assert(r1.status === 200 && r1.responseText === "GMBODY" && r1.finalUrl === "https://final.test/x",
+            "net: gmFetch success passes the full response through");
+        assert(seen.length === 1 && seen[0].method === "GET" && seen[0].timeout === 15000,
+            "net: gmFetch dispatch carries method + hard timeout defaults");
+
+        /* http-error verdict + checkStatus:false override */
+        sbG.GM_xmlhttpRequest = (req) => req.onload({ status: 404, statusText: "Not Found", responseText: "" });
+        let httpErr = null;
+        try { await netG.gmFetch("https://x.test/404"); }
+        catch (e) { httpErr = e; }
+        assert(httpErr && httpErr instanceof netG.NetHttpError && httpErr.kind === "http" &&
+            httpErr.status === 404,
+            "net: gmFetch non-2xx rejects with NetHttpError (kind http, status rides along)");
+        const rRaw = await netG.gmFetch("https://x.test/404-raw", { checkStatus: false });
+        assert(rRaw.status === 404 && rRaw.responseText === "",
+            "net: gmFetch checkStatus:false hands the raw response to the caller");
+
+        /* timeout taxonomy */
+        sbG.GM_xmlhttpRequest = (req) => req.ontimeout();
+        let tErr = null;
+        try { await netG.gmFetch("https://x.test/slow", { timeout: 50 }); }
+        catch (e) { tErr = e; }
+        assert(tErr && tErr instanceof netG.NetTimeoutError && tErr.kind === "timeout",
+            "net: gmFetch timeout rejects with NetTimeoutError (kind timeout)");
+
+        /* transient-only bounded retry — transport fault then success */
+        let tries = 0;
+        sbG.GM_xmlhttpRequest = (req) => {
+            tries++;
+            if (tries === 1) { req.onerror(); return; }
+            req.onload({ status: 200, statusText: "OK", responseText: "SECOND", finalUrl: "https://x.test/" });
+        };
+        const rRetry = await netG.gmFetch("https://x.test/retry", { retries: 1 });
+        assert(tries === 2 && rRetry.responseText === "SECOND",
+            "net: gmFetch retries a transient transport fault and resolves on the retry");
+
+        /* HTTP verdicts never re-fire — one dispatch, immediate rejection */
+        let dispatches = 0;
+        sbG.GM_xmlhttpRequest = (req) => { dispatches++; req.onload({ status: 500, statusText: "ISE", responseText: "" }); };
+        let noRetryErr = null;
+        try { await netG.gmFetch("https://x.test/500", { retries: 3 }); }
+        catch (e) { noRetryErr = e; }
+        assert(dispatches === 1 && noRetryErr && noRetryErr.kind === "http",
+            "net: gmFetch never retries an HTTP verdict (one dispatch despite retries:3)");
+
+        /* settle-once — a manager firing onload AND onerror resolves exactly once */
+        sbG.GM_xmlhttpRequest = (req) => {
+            req.onload({ status: 200, statusText: "OK", responseText: "ONCE", finalUrl: "https://x.test/" });
+            req.onerror();
+        };
+        let settled = 0;
+        await netG.gmFetch("https://x.test/double").then(() => { settled++; });
+        await new Promise((r) => setTimeout(r, 20));
+        assert(settled === 1,
+            "net: gmFetch settle-once (double-callback manager cannot double-resolve)");
+
+        /* synchronous dispatch throw — typed transport rejection */
+        sbG.GM_xmlhttpRequest = () => { throw new Error("manager broke"); };
+        let throwErr = null;
+        try { await netG.gmFetch("https://x.test/throwy"); }
+        catch (e) { throwErr = e; }
+        assert(throwErr && throwErr.kind === "transport" && /manager broke/.test(throwErr.message),
+            "net: gmFetch synchronous dispatch throw rejects typed transport");
+
+        /* delegation coexistence — gmFetch stays local when the realm slot
+         * is owned by another hub: the second copy's gmFetch works even
+         * though its subscriptions delegate to the first copy. */
+        const sbCo = makeNetContext();
+        sbCo.GM_xmlhttpRequest = (req) => req.onload({ status: 200, statusText: "OK", responseText: "LOCAL", finalUrl: "https://x.test/" });
+        const netCo1 = runNet(sbCo, "net-gm-co1.js");
+        netCo1.onBody(() => {});
+        const sharedCo = sbCo.__probe().page;
+        const sbCo2 = makeNetContext();
+        sbCo2.unsafeWindow = sharedCo; sbCo2.window = sharedCo; sbCo2.XMLHttpRequest = sharedCo.XMLHttpRequest;
+        sbCo2.GM_xmlhttpRequest = sbCo.GM_xmlhttpRequest;
+        const netCo2 = runNet(sbCo2, "net-gm-co2.js");
+        netCo2.onBody(() => {});
+        assert(sharedCo.fetch.__4ndro_net === 5,
+            "net: second v5 copy delegates through the realm slot (single wrap set)");
+        const rCo = await netCo2.gmFetch("https://x.test/co");
+        assert(rCo.responseText === "LOCAL",
+            "net: gmFetch served by the copy's own closure under co-install delegation");
     }
 
     console.log(failures === 0 ? "\nKERNEL SMOKE: ALL PASS" : `\nKERNEL SMOKE: ${failures} FAILURE(S)`);

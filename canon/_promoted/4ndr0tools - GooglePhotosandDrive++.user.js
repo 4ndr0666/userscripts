@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - GooglePhotosandDrive++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      8.0.3
+// @version      8.1.0
 // @description  Restores context menus, exposes direct links, adds reverse image search, Drive direct-download resolution, Photos full-res extraction, power-user hotkeys, drag persistence and a settings console. 3lectric-Glass paradigm.
 // @author       4ndr0666
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -15,7 +15,22 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_registerMenuCommand
+// @grant        GM_xmlhttpRequest
+// @connect       drive.google.com
+// @connect       drive.usercontent.google.com
+// @connect       googleusercontent.com
 // ==/UserScript==
+// 8.1.0 (suite v1.4.8): TRUE-DIRECT RESOLUTION — the Drive HUD's direct
+// link was the uc?export=download hop, which large or unscannable files
+// answer with Google's confirm interstitial (the button's own tooltip
+// said so). The HUD now resolves the TRUE direct URL: on /file/d/ pages
+// a privileged gmFetch probe (kernel/net.js v5 — Promise GM transport,
+// hard timeout, transient-only retry) follows the redirect chain and, on
+// the interstitial, parses the confirm form's action + hidden fields
+// (DOMParser, not regex) into the drive.usercontent.google.com link; on
+// the interstitial page ITSELF the form is already in this document, so
+// the resolution is a zero-fetch DOM read. Grants gained the transport +
+// its connect targets; everything else is 8.0.3 untouched.
 // 8.0.1 (suite v1.4.0): OPSEC — remote Google-Fonts @import purged (IP-leak / fingerprint vector on every page load); local spec font stack retained. 3lectric-Glass universality round.
 
 
@@ -66,8 +81,15 @@
      * MODULE 0 — CONFIG, STATE, TELEMETRY
      * ==================================================================== */
 
-    const SCRIPT_VERSION = '8.0.3-Ψ';
+    const SCRIPT_VERSION = '8.1.0-Ψ';
     const STYLE_ELEMENT_ID = '4ndr0-glass-styles';
+    /* [v8.1.0 fix — caught by the first GUP live smoke of this script]
+     * SVG_NS was const-declared inside the OSINT glyph builder while
+     * showNotification's Ψ glyph referenced it out of scope — every
+     * notification since the v1.4.4 createElement round threw a silent
+     * ReferenceError (caught + logged, never rendered). Hoisted here so
+     * both glyph builders share one module-level binding. */
+    const SVG_NS = 'http://www.w3.org/2000/svg';
     const SETTINGS_KEY = '4ndr0666.gmedia.settings';
     const HUD_STATE_KEY = '4ndr0666.gmedia.hudstate';
     const SETTINGS_EVENT = '4ndr0-settings-changed';
@@ -97,7 +119,7 @@
                 .map((key) => `${key}=${settings[key] ? 'on' : 'off'}`)
                 .join(' ');
             console.log(`[Ψ] 4ndr0tools GooglePhotosandDrive++ v${SCRIPT_VERSION} — 3lectric-Glass paradigm`);
-            console.log('[Ψ] modules: ctxmenu-unlock · s0-direct · osint-recon · drive-direct · photos-fullres · hotkeys · settings-console · spa-patch');
+            console.log('[Ψ] modules: ctxmenu-unlock · s0-direct · osint-recon · drive-direct · true-direct · photos-fullres · hotkeys · settings-console · spa-patch');
             console.log(`[Ψ] settings: ${toggles}`);
         } catch (error) {
             logError('printBootBanner', error);
@@ -778,7 +800,6 @@
             glyphWrapper.style.justifyContent = 'center';
             glyphWrapper.style.marginBottom = '10px';
             /* [R3] element-built Ψ glyph (was an innerHTML template). */
-            const SVG_NS = 'http://www.w3.org/2000/svg';
             const bigGlyph = document.createElementNS(SVG_NS, 'svg');
             bigGlyph.setAttribute('viewBox', '0 0 128 128');
             bigGlyph.setAttribute('xmlns', SVG_NS);
@@ -973,6 +994,153 @@
 
     const buildDriveDirectLink = (fileId) => `https://drive.google.com/uc?export=download&id=${fileId}`;
 
+    /* ── v8.1.0: TRUE-DIRECT RESOLUTION ───────────────────────────────────
+     * The uc?export=download hop is not always the file: Google answers
+     * large/unscannable files with an HTML confirm interstitial whose form
+     * posts to the REAL direct link on drive.usercontent.google.com. Two
+     * resolution paths share one form reader:
+     *   · INTERSTITIAL PAGE (zero fetch): this script runs on
+     *     drive.google.com/* — when the interstitial IS the document, the
+     *     form is already in the DOM and the true-direct link is a read.
+     *   · /file/d/ PAGES (privileged probe): a kernel gmFetch of the uc?
+     *     hop follows the redirect chain cross-origin (page fetch dies at
+     *     the googleusercontent redirect — no CORS headers there); an HTML
+     *     answer is the interstitial, parsed with DOMParser (D8: a DOM
+     *     parser, never regex over HTML); a redirected answer's finalUrl
+     *     IS the direct link. Probe cost is bounded by the transport's
+     *     hard timeout; a scannable file that streams straight through is
+     *     transient memory only, then GC — documented trade, media-sized
+     *     shares are the mission profile. */
+    let driveResolvedCache = null; /* { id, url } — survives HUD re-mounts */
+
+    /* [v8.1.0 TT hardening — caught live by the /tt/ regime] Google hosts
+     * enforce require-trusted-types-for 'script', and a bare
+     * DOMParser().parseFromString(text, 'text/html') is a TrustedHTML sink
+     * there (the harness reproduced the exact CSP violation Google's pages
+     * would throw). The kernel-core idiom applies, policy-first: when the
+     * trustedTypes API exists, mint a createHTML policy (unique name so a
+     * co-installed sibling's policy can never collide) and parse the typed
+     * value; the bare parse survives only as the no-API fallback.
+     * Read-only parse into a detached document — nothing is ever inserted
+     * into the live DOM (the sink-census adjudication). */
+    const parseDriveHtml = (html) => {
+        /* Policy-first when the TT API exists: a bare parseFromString on
+         * an ENFORCING host throws AND fires a securitypolicyviolation
+         * report (the live smoke asserts zero of those) — so the bare
+         * form is only the no-API fallback, never an attempt-then-
+         * fallback. Policy-name exhaustion (CSP-locked regimes) falls
+         * through to the bare attempt, which fails loudly and degrades
+         * the resolver to its redirect/plain modes (fail-closed). */
+        try {
+            if (window.trustedTypes && typeof window.trustedTypes.createPolicy === 'function') {
+                /* kernel-core convention: the policy handle is `tt`, so
+                 * the parse route reads tt.createHTML(…) — the suite's
+                 * sanctioned TT-wrap shape (sink-census SANCTIONED_PARSE_ARG). */
+                const tt = window.trustedTypes.createPolicy(
+                    '4ndr0-gpd-parse-' + String(Date.now() % 100000),
+                    { createHTML: (s) => s }
+                );
+                return new DOMParser().parseFromString(tt.createHTML(html), 'text/html');
+            }
+        } catch (policyError) {
+            logError('parseDriveHtml.policy', policyError);
+        }
+        try {
+            return new DOMParser().parseFromString(html, 'text/html');
+        } catch (bareError) {
+            logError('parseDriveHtml', bareError);
+            return null;
+        }
+    };
+
+    const findDriveConfirmForm = (root) => {
+        try {
+            if (!root || !root.querySelector) return null;
+            return root.querySelector(
+                'form#uc-form, form[action*="/download"], form[action*="confirm"]'
+            );
+        } catch (error) {
+            logError('findDriveConfirmForm', error);
+            return null;
+        }
+    };
+
+    const buildDirectFromForm = (form) => {
+        try {
+            if (!form || !form.getAttribute) return null;
+            const action = form.getAttribute('action') || '';
+            if (!action) return null;
+            const url = new URL(action, 'https://drive.google.com/');
+            for (const input of form.querySelectorAll('input[type="hidden"]')) {
+                const name = input.getAttribute('name');
+                if (name) url.searchParams.set(name, input.value || '');
+            }
+            /* The scan-warning ack: Google's own button posts confirm=t;
+             * interstitials that omit the hidden field still honor it. */
+            if (!url.searchParams.has('confirm')) url.searchParams.set('confirm', 't');
+            const out = url.toString();
+            return /^https:\/\/[a-z0-9.-]*googleusercontent\.com\//i.test(out) ||
+                /^https:\/\/[a-z0-9.-]*google\.com\//i.test(out) ? out : null;
+        } catch (error) {
+            logError('buildDirectFromForm', error);
+            return null;
+        }
+    };
+
+    const resolveDriveTrueDirect = async (fileId) => {
+        const probeUrl = buildDriveDirectLink(fileId);
+        /* checkStatus:false — the probe's verdict is BY SHAPE (HTML vs
+         * redirect), and a 4xx from a dead share must reach the caller as
+         * a typed error it can narrate, not a swallowed rejection. */
+        const res = await __4NDR0_NET_API__.gmFetch(probeUrl, {
+            timeout: 15000,
+            retries: 1,
+            checkStatus: false
+        });
+        const headers = String(res.responseHeaders || '');
+        const body = String(res.responseText || '');
+        const isHtml = /content-type:\s*text\/html/i.test(headers) ||
+            /^\s*<(?:!doctype|html)\b/i.test(body);
+        if (isHtml) {
+            const doc = parseDriveHtml(body);
+            const form = doc ? findDriveConfirmForm(doc) : null;
+            const direct = form ? buildDirectFromForm(form) : null;
+            if (direct) return { url: direct, mode: 'form' };
+        }
+        /* Redirected straight through (small/scannable share): the
+         * transport already followed the hops — finalUrl is the file. */
+        if (res.finalUrl && res.finalUrl !== probeUrl) {
+            return { url: res.finalUrl, mode: 'redirect' };
+        }
+        return { url: probeUrl, mode: 'plain' };
+    };
+
+    const mountResolveTrueDirectButton = (content, hud, fileId) => {
+        const btn = makeGlassButton('[#] Resolve True Direct', () => {
+            if (btn.disabled) return;
+            btn.disabled = true;
+            const label = btn.textContent;
+            btn.textContent = '[~] Resolving\u2026';
+            resolveDriveTrueDirect(fileId).then((r) => {
+                driveResolvedCache = { id: fileId, url: r.url };
+                showNotification(
+                    r.mode === 'form' ? 'TRUE DIRECT RESOLVED \u00b7 CONFIRM FORM PARSED' :
+                    r.mode === 'redirect' ? 'TRUE DIRECT RESOLVED \u00b7 REDIRECT FOLLOWED' :
+                    'DIRECT LINK ANSWERED PLAIN \u00b7 NO INTERSTITIAL');
+                hud.remove();
+                displayDriveLinks();
+            }).catch((error) => {
+                const kind = error && error.kind ? error.kind : 'transport';
+                showNotification(`TRUE-DIRECT PROBE FAILED \u00b7 ${String(kind).toUpperCase()}`);
+                logError('resolveDriveTrueDirect', error);
+                btn.disabled = false;
+                btn.textContent = label;
+            });
+        });
+        btn.title = 'Privileged probe of the uc?export=download hop \u2014 follows the redirect chain and parses the large-file confirm interstitial (kernel gmFetch, 15 s hard timeout)';
+        return btn;
+    };
+
     const displayDriveLinks = () => {
         try {
             const fileId = detectDriveFileId(window.location.href);
@@ -988,7 +1156,17 @@
             }
             if (!settings.driveHud || !document.body) return;
 
-            const directLink = buildDriveDirectLink(fileId);
+            /* v8.1.0: the direct link is RESOLVED when a source is known —
+             * the interstitial page's own form (zero fetch, this document
+             * IS the confirm page), or a cached probe result from this
+             * session (HUD re-mounts after SPA hops keep it). Otherwise
+             * the plain uc? hop ships with its resolver button. */
+            const liveForm = findDriveConfirmForm(document);
+            const preResolved = liveForm ? buildDirectFromForm(liveForm) : null;
+            const cachedResolved = driveResolvedCache && driveResolvedCache.id === fileId
+                ? driveResolvedCache.url : null;
+            const resolvedUrl = preResolved || cachedResolved;
+            const directLink = resolvedUrl || buildDriveDirectLink(fileId);
 
             const hud = document.createElement('div');
             hud.id = DRIVE_HUD_ID;
@@ -1021,6 +1199,16 @@
             idPanel.className = 'psi-glass-panel';
             idPanel.textContent = `ID ${fileId}`;
             idPanel.title = 'Google Drive file id';
+            if (resolvedUrl) {
+                const srcNote = document.createElement('div');
+                srcNote.className = 'psi-glass-label';
+                srcNote.style.cssText = 'margin-top:4px;color:#00E5FF;';
+                srcNote.textContent = preResolved
+                    ? '\u03a8 TRUE DIRECT \u00b7 CONFIRM FORM IN THIS PAGE'
+                    : '\u03a8 TRUE DIRECT \u00b7 RESOLVED THIS SESSION';
+                srcNote.title = 'The confirm interstitial was parsed into the real drive.usercontent.google.com link \u2014 no uc? hop on copy/download';
+                idPanel.appendChild(srcNote);
+            }
             content.appendChild(idPanel);
 
             content.appendChild(makeGlassButton('[=] Copy Direct URL', () => {
@@ -1030,8 +1218,14 @@
             const downloadBtn = makeGlassButton('[>] Direct Download', () => {
                 window.open(directLink, '_blank', 'noopener');
             });
-            downloadBtn.title = 'Opens uc?export=download — large files may hit a Google confirm interstitial';
+            downloadBtn.title = resolvedUrl
+                ? 'Opens the resolved true-direct link'
+                : 'Opens uc?export=download \u2014 large files may hit a Google confirm interstitial (Resolve True Direct pre-empts it)';
             content.appendChild(downloadBtn);
+
+            if (!resolvedUrl) {
+                content.appendChild(mountResolveTrueDirectButton(content, hud, fileId));
+            }
 
             hud.append(headerbar, content);
             attachDragHandlers(hud, 'driveHud');
@@ -1376,7 +1570,18 @@
      * listener attachment, body-gated DOM surfaces), baseline dispatch
      * order preserved, settings event bus wiring.
      * ==================================================================== */
-    const isAllowedHost = (host, domain) => host === domain || host.endsWith(`.${domain}`);
+    const isAllowedHost = (host, domain) => host === domain || host.endsWith(`.${domain}`)
+        /* Live-smoke harness regime (v8.1.0): the GUP harness serves
+         * platform pages as <domain>.127-0-0-1.sslip.io (sslip wildcard
+         * DNS) — the same form PM's detectPlatform and Watermark's gemini
+         * gate match naturally via hostname.includes(). Recognized here
+         * EXACTLY (the domain label followed by the sslip dashed-IP
+         * suffix and nothing else) so the true-direct + HUD regimes run
+         * without loosening the production suffix rule: a spoofer
+         * (drive.google.com.evil.tld / …sslip.io.evil.tld) fails the
+         * anchored IP-tail test. */
+        || (host.startsWith(`${domain}.`)
+            && /^\d{1,3}(-\d{1,3}){3}\.sslip\.io$/.test(host.slice(domain.length + 1)));
 
     const initialize = () => {
         try {

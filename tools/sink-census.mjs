@@ -214,9 +214,11 @@ const CLASSES = {
  *   hub's fetch/XHR/beacon scope). */
 const ADJUDICATED = {
     /* — fully clean (no surviving sites): FLX, CB, BPW, B2U, purge,
-     * Akasha-UI, Bunkr-UI, Filester, Forums, Gofile, GPD, Hailuo,
+     * Akasha-UI, Bunkr-UI, Filester, Forums, Gofile, Hailuo,
      * Images-UI, IG-UI, LMΨ-UI, MAM, ModelSearch, Pixeldrain, PM-UI,
-     * Redgifs, Recon-UI, Stream Interceptor, WCP, YTPM, YTERB, m3u8-UI — */
+     * Redgifs, Recon-UI, Stream Interceptor, WCP, YTPM, YTERB, m3u8-UI —
+     * (GPD left this list in v1.4.8: one detached parseFromString — see
+     * its entry below.) */
 
     "4ndr0tools - 4ndr0serviceguard Companion.user.js": {
         tapOpenSend: { count: 1, reason: "own-mock: phantom XHR object's send (script-owned decoy, not a page tap)" },
@@ -232,6 +234,14 @@ const ADJUDICATED = {
      * propagation preserving the v7.4.0 dual-context fix). */
     /* Filester: fetchWrap(1) burned to zero in v1.4.7 — the media-URL cache
      * + API-hit log ride kernel/net.js onTraffic request events. */
+    /* GooglePhotosandDrive++: v8.1.0 (suite v1.4.8) true-direct resolution
+     * parses the gmFetch-fetched Drive confirm interstitial — a DETACHED
+     * DOMParser document, querySelector reads only, nothing ever inserted
+     * into the live DOM (XSS-inert by construction; NOT the TT-wrapped
+     * page-parse class above). */
+    "4ndr0tools - GooglePhotosandDrive++.user.js": {
+        parseFromString: { count: 1, reason: "detached-parse: Drive confirm-interstitial HTML parsed into a detached DOMParser document (gmFetch probe body) — querySelector reads only, zero live-DOM insertion, XSS-inert by construction (v1.4.8 true-direct resolution)" },
+    },
     "4ndr0tools - Images++.user.js": {
         eval: { count: 1, reason: "eval-bridge: page-$ interop through trustedScript policy (v1.4.2 adjudication)" },
         newFunction: { count: 1, reason: "eval-bridge: same page-$ bridge, new Function fallback (policy-gated)" },

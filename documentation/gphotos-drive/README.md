@@ -1,4 +1,4 @@
-# GooglePhotosandDrive++ · v8.0.3
+# GooglePhotosandDrive++ · v8.1.0
 
 > Google media sovereignty — `images` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ GPhotos/Drive++ restores the controls Google removed from its media surfaces: co
 
 | Dimension | Value |
 |---|---|
-| Version | `8.0.3` |
+| Version | `8.1.0` |
 | Matches | `*://*.googleusercontent.com/*`, `*://photos.google.com/*`, `*://drive.google.com/*` |
 | Run-at | `document-start` |
-| Size | 60.8 KB · 1432 lines |
+| Size | 123.5 KB · 2573 lines |
 | Install | [dist/4ndr0tools - GooglePhotosandDrive++.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20GooglePhotosandDrive%2B%2B.user.js) |
 
 ## Feature Inventory
@@ -52,7 +52,8 @@ Full settings console (toggle set + hotkey remap) persisted through GM storage.
 
 ## Permissions (OPSEC)
 
-GM grants: `GM_getValue`, `GM_setValue`, `GM_registerMenuCommand`.
+GM grants: `GM_getValue`, `GM_setValue`, `GM_registerMenuCommand`, `GM_xmlhttpRequest`.
+Cross-origin connects: `drive.google.com`, `drive.usercontent.google.com`, `googleusercontent.com`.
 
 > v8.0.2: hotkey re-lettering per the suite-wide co-install census (v1.4.1).
 
