@@ -13,7 +13,7 @@ Stream Interceptor watches the wire for stream tokens, manifests, and direct vid
 | Version | `3.3.0` |
 | Matches | `*://*/*` |
 | Run-at | `document-start` |
-| Size | 88.7 KB · 1767 lines |
+| Size | 92.1 KB · 1826 lines |
 | Install | [dist/4ndr0tools - Stream Interceptor.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Stream%20Interceptor.user.js) |
 
 ## Feature Inventory

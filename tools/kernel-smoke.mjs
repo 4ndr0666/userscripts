@@ -1008,6 +1008,139 @@ function runNet(sb, label) {
             "net: gmFetch served by the copy's own closure under co-install delegation");
     }
 
+    /* ── NetHook v5.1 battery (suite v1.4.9) ────────────────────────────
+     * gmFetch transport opts: onprogress/onloadstart passthrough,
+     * anonymous forwarding, default-shape regression guard, AbortSignal
+     * semantics (pre-abort rejection, mid-flight force-settle + handle
+     * abort + settle-once under a double-firing manager, retry-chain
+     * break, lazy-manager abort, listener detachment). */
+    {
+        const sbP = makeNetContext();
+        const netP = runNet(sbP, "net-gmfetch-opts.js");
+
+        /* onprogress + onloadstart + anonymous passthrough (one dispatch) */
+        const progressEvents = [];
+        let started = 0;
+        let seenOpts = null;
+        sbP.GM_xmlhttpRequest = (req) => {
+            seenOpts = req;
+            req.onloadstart({ loaded: 0, total: 10 });
+            req.onprogress({ loaded: 5, total: 10, lengthComputable: true });
+            req.onload({ status: 200, statusText: "OK", responseText: "PROG", finalUrl: "https://x.test/" });
+        };
+        const rP = await netP.gmFetch("https://x.test/progress", {
+            onprogress: (e) => progressEvents.push(e),
+            onloadstart: () => { started++; },
+            anonymous: true,
+        });
+        assert(rP.responseText === "PROG" && progressEvents.length === 1 && progressEvents[0].loaded === 5 && started === 1,
+            "net: gmFetch passes onprogress + onloadstart through to the manager callbacks");
+        assert(seenOpts && seenOpts.anonymous === true,
+            "net: gmFetch forwards anonymous:true onto the privileged dispatch");
+
+        /* default-shape regression guard — no progress/anonymous fields
+         * when the opts are absent (the v5.0 dispatch shape is law for
+         * every existing consumer) */
+        const sbD = makeNetContext();
+        const netD = runNet(sbD, "net-gmfetch-defaults.js");
+        let defaultReq = null;
+        sbD.GM_xmlhttpRequest = (req) => { defaultReq = req; req.onload({ status: 200, statusText: "OK", responseText: "D", finalUrl: "https://x.test/" }); };
+        await netD.gmFetch("https://x.test/plain");
+        assert(defaultReq && !("onprogress" in defaultReq) && !("onloadstart" in defaultReq) &&
+            !("anonymous" in defaultReq) && !("signal" in defaultReq) && defaultReq.method === "GET" &&
+            defaultReq.timeout === 15000 && defaultReq.responseType === "text",
+            "net: gmFetch v5.0 default dispatch shape unchanged (no passthrough fields, GET/15s/text)");
+
+        /* pre-aborted signal — typed abort rejection, zero dispatches */
+        const sbA = makeNetContext();
+        const netA = runNet(sbA, "net-gmfetch-abort.js");
+        let dispatchCount = 0;
+        sbA.GM_xmlhttpRequest = (req) => { dispatchCount++; req.onload({ status: 200, statusText: "OK", responseText: "X", finalUrl: "https://x.test/" }); };
+        const preCtl = new AbortController();
+        preCtl.abort();
+        let preErr = null;
+        try { await netA.gmFetch("https://x.test/pre", { signal: preCtl.signal }); }
+        catch (e) { preErr = e; }
+        assert(preErr && preErr.kind === "abort" && preErr instanceof netA.NetError && dispatchCount === 0,
+            "net: gmFetch pre-aborted signal rejects typed abort without dispatching");
+
+        /* mid-flight abort — handle.abort() called, typed rejection,
+         * settle-once holds even when the manager ALSO fires onabort */
+        let handleAborted = 0;
+        sbA.GM_xmlhttpRequest = (req) => {
+            return {
+                abort: () => { handleAborted++; req.onabort(); },
+            };
+        };
+        const midCtl = new AbortController();
+        let midErr = null;
+        const midPromise = netA.gmFetch("https://x.test/mid", { signal: midCtl.signal, timeout: 5000 });
+        midPromise.catch((e) => { midErr = e; });
+        await new Promise((r) => setTimeout(r, 10));
+        midCtl.abort();
+        await new Promise((r) => setTimeout(r, 10));
+        assert(midErr && midErr.kind === "abort" && handleAborted === 1,
+            "net: gmFetch signal abort calls handle.abort() and rejects typed abort exactly once");
+
+        /* lazy manager — handle.abort() without firing onabort: the
+         * force-settle path must own the verdict (no hang to timeout) */
+        sbA.GM_xmlhttpRequest = (req) => {
+            return { abort: () => { /* lazy manager: no onabort callback */ } };
+        };
+        const lazyCtl = new AbortController();
+        let lazyErr = null;
+        const lazyPromise = netA.gmFetch("https://x.test/lazy", { signal: lazyCtl.signal, timeout: 5000 });
+        lazyPromise.catch((e) => { lazyErr = e; });
+        await new Promise((r) => setTimeout(r, 10));
+        lazyCtl.abort();
+        await new Promise((r) => setTimeout(r, 10));
+        assert(lazyErr && lazyErr.kind === "abort",
+            "net: gmFetch force-settles a lazy manager's abort (typed verdict, never hangs)");
+
+        /* abort during the retry backoff — the chain must not re-dispatch */
+        let tries2 = 0;
+        sbA.GM_xmlhttpRequest = (req) => {
+            tries2++;
+            req.ontimeout();
+            return { abort: () => {} };
+        };
+        const retryCtl = new AbortController();
+        let retryErr = null;
+        const retryPromise = netA.gmFetch("https://x.test/retry-abort", { retries: 3, timeout: 50, signal: retryCtl.signal });
+        retryPromise.catch((e) => { retryErr = e; });
+        await new Promise((r) => setTimeout(r, 10));
+        retryCtl.abort();
+        await new Promise((r) => setTimeout(r, 800));
+        assert(retryErr && retryErr.kind === "abort" && tries2 === 1,
+            "net: gmFetch abort during retry backoff breaks the chain (one dispatch despite retries:3)");
+
+        /* listener detachment — a duck-typed spy signal proves the abort
+         * listener is removed after settle (reused controllers stay clean,
+         * and a manually fired stale listener is a no-op) */
+        const sbL = makeNetContext();
+        const netL = runNet(sbL, "net-gmfetch-listener.js");
+        sbL.GM_xmlhttpRequest = (req) => req.onload({ status: 200, statusText: "OK", responseText: "L", finalUrl: "https://x.test/" });
+        const spyListeners = new Map();
+        const addedFns = [];
+        const spySignal = {
+            aborted: false,
+            addEventListener: (t, fn) => { addedFns.push(fn); spyListeners.set(t, fn); },
+            removeEventListener: (t, fn) => { if (spyListeners.get(t) === fn) spyListeners.delete(t); },
+        };
+        await netL.gmFetch("https://x.test/listener", { signal: spySignal });
+        assert(spyListeners.size === 0,
+            "net: gmFetch detaches the signal listener on settle (no dangling abort hooks)");
+        /* stale listener fired after settle — inert (settle-once guards) */
+        let staleNoop = true;
+        try {
+            for (const stale of addedFns) stale();
+        } catch (e) { staleNoop = false; }
+        assert(staleNoop, "net: gmFetch post-settle signal fire is inert (settle-once holds)");
+        const rAgain = await netL.gmFetch("https://x.test/listener2");
+        assert(rAgain.responseText === "L",
+            "net: gmFetch unaffected by a stale abort fire (transport still serves)");
+    }
+
     console.log(failures === 0 ? "\nKERNEL SMOKE: ALL PASS" : `\nKERNEL SMOKE: ${failures} FAILURE(S)`);
     process.exit(failures === 0 ? 0 : 1);
 })();

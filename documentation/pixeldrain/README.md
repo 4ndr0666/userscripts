@@ -1,4 +1,4 @@
-# Pixeldrain++ · v1.1.2
+# Pixeldrain++ · v1.2.0
 
 > Pixeldrain acquisition, parallelized — `media & links` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ Pixeldrain++ multiplies pixeldrain downloads: multi-proxy parallel transport, st
 
 | Dimension | Value |
 |---|---|
-| Version | `1.1.2` |
+| Version | `1.2.0` |
 | Matches | `https://pixeldrain.com/*`, `https://pixeldrain.net/*`, `https://pixeldrain.dev/*`, `https://pixeldra.in/*` |
 | Run-at | `document-start` |
-| Size | 135.6 KB · 2579 lines |
+| Size | 190.8 KB · 3568 lines |
 | Install | [dist/4ndr0tools - Pixeldrain++.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Pixeldrain%2B%2B.user.js) |
 
 ## Feature Inventory

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Pixeldrain++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.1.2
+// @version      1.2.0
 // @description  Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.
 // @author       4ndr0666
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -261,39 +261,33 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
     };
 
     // ================================================================
-    // 4. GM_xmlhttpRequest WRAPPER (Referer-spoofed)
+    // 4. GM TRANSPORT FACADE (kernel-routed since v1.2.0, suite v1.4.9)
     // ================================================================
+    // Transport mechanics live in the kernel now: this is a thin POLICY
+    // facade over __4NDR0_NET_API__.gmFetch (kernel/net.js v5.1) — one
+    // suite-wide implementation of settle-once, grant feature-detection,
+    // the typed NetError taxonomy (kind: timeout|http|transport|abort|
+    // gm-unavailable), AbortSignal wiring (pre-abort rejection, mid-flight
+    // force-settle, retry-chain break, listener detachment), and
+    // progress/onloadstart passthrough. Facade policy kept verbatim:
+    // SPOOF_HEADERS merge (spoof === false opts out), the anonymous
+    // default (credential-free unless explicitly false — premium_direct
+    // passes credentials), the 60 s default timeout, and the raw-response
+    // contract (every status resolves; callers gate — checkStatus:false).
+    // Abort-branching call sites now test e.kind === 'abort' OR the legacy
+    // 'aborted' message (both forms recognized — superset).
     function gmXHR(opts) {
-        return new Promise((resolve, reject) => {
-            const xhr = typeof GM_xmlhttpRequest === 'function'
-                ? GM_xmlhttpRequest
-                : (typeof GM !== 'undefined' && GM.xmlHttpRequest);
-            if (!xhr) { reject(new Error('GM_xmlhttpRequest unavailable')); return; }
-
-            let aborted = false;
-            const headers = Object.assign({}, opts.spoof === false ? {} : SPOOF_HEADERS, opts.headers || {});
-
-            const handle = xhr({
-                method: opts.method || 'GET',
-                url: opts.url,
-                headers,
-                data: opts.data,
-                responseType: opts.responseType,
-                timeout: opts.timeout || 60000,
-                anonymous: opts.anonymous !== false,
-                onload: (r) => { if (!aborted) resolve(r); },
-                onerror: (e) => { if (!aborted) reject(new Error(`network: ${(e && (e.error || e.statusText)) || 'unknown'}`)); },
-                ontimeout: () => { if (!aborted) reject(new Error('timeout')); },
-                onprogress: opts.onprogress,
-                onloadstart: opts.onloadstart
-            });
-            if (opts.signal) {
-                opts.signal.addEventListener('abort', () => {
-                    aborted = true;
-                    try { handle && handle.abort && handle.abort(); } catch {}
-                    reject(new Error('aborted'));
-                });
-            }
+        return __4NDR0_NET_API__.gmFetch(opts.url, {
+            method:       opts.method,
+            headers:      Object.assign({}, opts.spoof === false ? {} : SPOOF_HEADERS, opts.headers || {}),
+            data:         opts.data != null ? opts.data : null,
+            responseType: opts.responseType,
+            timeout:      opts.timeout != null ? opts.timeout : 60000,
+            checkStatus:  false,
+            anonymous:    opts.anonymous !== false,
+            signal:       opts.signal,
+            onprogress:   opts.onprogress,
+            onloadstart:  opts.onloadstart,
         });
     }
 
@@ -896,7 +890,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
                     } catch (e) {
                         lastErr = e;
                         CircuitBreaker.record(mirror.host, false);
-                        if (e.message === 'aborted') throw e;
+                        if (e.kind === 'abort' || e.message === 'aborted') throw e;
                         if (e.code === 'CAPTCHA') throw e;
                         const backoff = SETTINGS.retryBackoffMs * Math.pow(SETTINGS.retryBackoffMultiplier, attempt);
                         if (attempt < maxAttempts - 1) await sleep(backoff);
@@ -1011,7 +1005,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
                         return;
                     } catch (e) {
                         lastErr = e;
-                        if (e.message === 'aborted') throw e;
+                        if (e.kind === 'abort' || e.message === 'aborted') throw e;
                         if (e.code === 'CAPTCHA') throw e;
                         CircuitBreaker.record(proxy.host, false);
                         if (attempt < SETTINGS.chunkRetry) await sleep(SETTINGS.retryBackoffMs * Math.pow(SETTINGS.retryBackoffMultiplier, attempt));
@@ -1151,7 +1145,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
                         return;
                     } catch (e) {
                         lastErr = e;
-                        if (e.message === 'aborted') throw e;
+                        if (e.kind === 'abort' || e.message === 'aborted') throw e;
                         if (attempt < SETTINGS.chunkRetry) await sleep(SETTINGS.retryBackoffMs * Math.pow(SETTINGS.retryBackoffMultiplier, attempt));
                     }
                 }
@@ -1202,7 +1196,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
                         BandwidthTracker.add(loaded, true);
                         return { ok: true, mode: 'native_fetch', proxy: mirror.host, size: loaded };
                     } catch (e) { try { await writable.abort(); } catch {} throw e; }
-                } catch (e) { lastErr = e; if (e.message === 'aborted') throw e; }
+                } catch (e) { lastErr = e; if (e.kind === 'abort' || e.message === 'aborted') throw e; }
             }
             throw lastErr || new Error('All mirrors failed');
         },
@@ -1233,7 +1227,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
                     CircuitBreaker.record(mirror.host, true);
                     BandwidthTracker.add(r.response.size, true);
                     return { ok: true, mode: 'gm_blob', proxy: mirror.host, size: r.response.size };
-                } catch (e) { lastErr = e; if (e.message === 'aborted') throw e; CircuitBreaker.record(mirror.host, false); }
+                } catch (e) { lastErr = e; if (e.kind === 'abort' || e.message === 'aborted') throw e; CircuitBreaker.record(mirror.host, false); }
             }
             throw lastErr || new Error('All mirrors failed');
         },

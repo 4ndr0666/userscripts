@@ -13,7 +13,7 @@ GPhotos/Drive++ restores the controls Google removed from its media surfaces: co
 | Version | `8.1.0` |
 | Matches | `*://*.googleusercontent.com/*`, `*://photos.google.com/*`, `*://drive.google.com/*` |
 | Run-at | `document-start` |
-| Size | 123.5 KB · 2573 lines |
+| Size | 126.9 KB · 2632 lines |
 | Install | [dist/4ndr0tools - GooglePhotosandDrive++.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20GooglePhotosandDrive%2B%2B.user.js) |
 
 ## Feature Inventory

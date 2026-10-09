@@ -2,7 +2,7 @@
 // @name         4ndr0tools - Instagram++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666
-// @version      13.1.0
+// @version      13.2.0
 // @description  Tab-Bar + Dock Integration. Hotkey trigger (Alt+I). Ad-Blocking. Deep-Stack Recovery. Resilient cursor-based pagination. Stories support. Image/video download engine.
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Instagram++.user.js
@@ -362,24 +362,23 @@
     // XMLHttpRequest.prototype, so no other userscript's monkey-patching of
     // those (privacy blockers, anti-tracking shields, etc.) can see or
     // interfere with it, and it isn't subject to the page's CORS policy.
+    // v13.2.0 (suite v1.4.9): the privileged blob hop rides the kernel's
+    // gmFetch (__4NDR0_NET_API__, kernel/net.js v5.1) — settle-once, the
+    // typed NetError taxonomy (kind: timeout|http|transport|abort|
+    // gm-unavailable), and grant feature-detection all live in the ONE
+    // suite-wide transport implementation. This function keeps only its
+    // POLICY: the 2xx+body gate and blob resolution, verbatim (the
+    // download tier's catch logs err.message; the old untyped
+    // 'GM_xmlhttpRequest timed out' strings were never branched on —
+    // verified by census).
     function gmFetchBlob(url, timeoutMs) {
-        return new Promise((resolve, reject) => {
-            if (typeof GM_xmlhttpRequest !== 'function') {
-                reject(new Error('GM_xmlhttpRequest unavailable'));
-                return;
-            }
-            GM_xmlhttpRequest({
-                method: 'GET',
-                url,
-                responseType: 'blob',
-                timeout: timeoutMs,
-                onload: (res) => {
-                    if (res.status >= 200 && res.status < 300 && res.response) resolve(res.response);
-                    else reject(new Error(`GM_xmlhttpRequest HTTP ${res.status}`));
-                },
-                onerror:   () => reject(new Error('GM_xmlhttpRequest network error')),
-                ontimeout: () => reject(new Error('GM_xmlhttpRequest timed out')),
-            });
+        return __4NDR0_NET_API__.gmFetch(url, {
+            responseType: 'blob',
+            timeout: timeoutMs,
+            checkStatus: false,
+        }).then((res) => {
+            if (res.status >= 200 && res.status < 300 && res.response) return res.response;
+            throw new Error(`GM_xmlhttpRequest HTTP ${res.status}`);
         });
     }
 

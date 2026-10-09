@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Blob2URL
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      7.2.2
+// @version      7.3.0
 // @author       4ndr0666
 // @description  Universal blob exfiltration, universal media URL sniffer + wire capture + URL vault (Alt+Shift+V), interactive asset sniffing, CSP/CORS bypass.
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -347,31 +347,29 @@
     };
 
     // ──[02] Transports: privileged first (CSP/CORS bypass), page-context fallback second ──
-    const gmFetch = (url) => new Promise((resolve, reject) => {
-        if (typeof GM_xmlhttpRequest !== 'function') { reject(new Error('GM_xmlhttpRequest unavailable')); return; }
-        let settled = false;
-        const fail = (msg) => { if (!settled) { settled = true; reject(new Error(msg)); } };
-        try {
-            GM_xmlhttpRequest({
-                method: "GET",
-                url: url,
-                responseType: "blob",
-                timeout: 45000,
-                onload: (res) => {
-                    if (settled) return;
-                    const status = res && typeof res.status === 'number' ? res.status : -1;
-                    const body = res && res.response;
-                    const statusOk = (status >= 200 && status < 300) || status === 0; // 0 = opaque blob:/file: on some managers
-                    if (statusOk && body) { settled = true; resolve(body); }
-                    else if (status >= 400) fail(`HTTP ${status} via privileged transport`);
-                    else if (!body) fail(`empty response body (HTTP ${status})`);
-                    else fail(`unexpected HTTP status ${status}`);
-                },
-                onerror: (err) => fail(`network error${err && err.error ? ': ' + err.error : ''}`),
-                ontimeout: () => fail('privileged transport timeout (45s)'),
-                onabort: () => fail('privileged transport aborted')
-            });
-        } catch (err) { fail('GM_xmlhttpRequest threw: ' + (err && err.message ? err.message : err)); }
+    // v7.3.0 (suite v1.4.9): the privileged blob hop rides the kernel's
+    // gmFetch (__4NDR0_NET_API__, kernel/net.js v5.1) — settle-once, grant
+    // feature-detection, the typed NetError taxonomy (kind: timeout|http|
+    // transport|abort|gm-unavailable), and the 45 s hard timeout all live
+    // in the ONE suite-wide transport implementation. This facade keeps
+    // its POLICY verbatim: blob resolution, the status-0 opaque tolerance
+    // (blob:/file: URLs on some managers), the empty-body and
+    // unexpected-status failure classifications, and the exact diagnostic
+    // messages hardenedFetch reports through its fallback chain (the
+    // 'GM_xmlhttpRequest unavailable' pre-check is now the kernel's typed
+    // gm-unavailable rejection — no ReferenceError, same fallback tier).
+    const gmFetch = (url) => __4NDR0_NET_API__.gmFetch(url, {
+        responseType: 'blob',
+        timeout: 45000,
+        checkStatus: false,
+    }).then((res) => {
+        const status = res && typeof res.status === 'number' ? res.status : -1;
+        const body = res && res.response;
+        const statusOk = (status >= 200 && status < 300) || status === 0; // 0 = opaque blob:/file: on some managers
+        if (statusOk && body) return body;
+        else if (status >= 400) throw new Error(`HTTP ${status} via privileged transport`);
+        else if (!body) throw new Error(`empty response body (HTTP ${status})`);
+        else throw new Error(`unexpected HTTP status ${status}`);
     });
     const pageFetch = (url) => new Promise((resolve, reject) => {
         if (typeof fetch !== 'function') { reject(new Error('page transport unavailable')); return; }

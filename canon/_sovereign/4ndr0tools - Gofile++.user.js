@@ -2,7 +2,7 @@
 // @name        4ndr0tools - GoFile++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     2.1.1
+// @version     2.2.0
 // @description Directly batch-download GoFiles with a robust UI. Supports recursive folder scans, direct links, and download managers (Aria2, IDM). Fixing SPA persistence and Sandbox access.
 // @match       *://gofile.io/*
 // @icon        data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -413,30 +413,34 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.1.1 —
             GM_setValue(name, value)
         },
         gmFetch(url, options = {}) {
-            return new Promise((resolve, reject) => {
-                GM_xmlhttpRequest({
-                    method: options.method || 'GET',
-                    url,
-                    headers: options.headers || {},
-                    data: options.body || null,
-                    responseType: options.responseType || 'text',
-                    onload: (response) => {
-                        resolve({
-                            ok: response.status >= 200 && response.status < 300,
-                            status: response.status,
-                            statusText: response.statusText,
-                            url: response.finalUrl,
-                            text: () => Promise.resolve(response.responseText),
-                            json: () => Promise.resolve(JSON.parse(response.responseText)),
-                            xml: () => Promise.resolve(response.responseXML),
-                            raw: response,
-                        })
-                    },
-                    onerror: (err) => reject(err),
-                    ontimeout: () => reject(new Error(utils.getTranslation('request_timed_out'))),
-                    onabort: () => reject(new Error(utils.getTranslation('request_aborted'))),
-                })
-            })
+            // v2.2.0 (suite v1.4.9): transport mechanics ride the kernel's
+            // privileged gmFetch (__4NDR0_NET_API__, kernel/net.js v5.1) —
+            // settle-once, grant feature-detection, the typed NetError
+            // taxonomy, and a 20 s hard timeout (the baseline dispatched
+            // with no timeout at all: a dead endpoint could hang the
+            // recursive scan forever — GUP hard-timeout compliance; the
+            // gofile API, the ADBM bridge, and aria2 RPC are all fast
+            // localhost/LAN answers where 20 s is generous). Every status
+            // still resolves; the fetch-Response facade below is preserved
+            // byte-for-byte for callers (ok/status/statusText/url/text/
+            // json/xml/raw).
+            return __4NDR0_NET_API__.gmFetch(url, {
+                method: options.method,
+                headers: options.headers,
+                data: options.body != null ? options.body : null,
+                responseType: options.responseType,
+                timeout: options.timeout != null ? options.timeout : 20000,
+                checkStatus: false,
+            }).then((response) => ({
+                ok: response.status >= 200 && response.status < 300,
+                status: response.status,
+                statusText: response.statusText,
+                url: response.finalUrl,
+                text: () => Promise.resolve(response.responseText),
+                json: () => Promise.resolve(JSON.parse(response.responseText)),
+                xml: () => Promise.resolve(response.responseXML),
+                raw: response,
+            }))
         },
         getSettings(category, settingKey) {
             const setting = GE_CONFIG[category].settings[settingKey]

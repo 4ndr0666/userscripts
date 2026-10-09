@@ -625,6 +625,106 @@ function gateD() {
         failures.push(`[D] GooglePhotosandDrive++: regex-over-HTML parsing shape present (must use DOMParser)`);
     }
 
+    /* v1.4.9 gmFetch consolidation — the five census-surviving local wrapped
+     * transports retire onto kernel/net.js v5.1 (one suite-wide transport
+     * implementation). Per script: the canon's facade must route through
+     * __4NDR0_NET_API__.gmFetch, the legacy bare-dispatch body shape must
+     * be gone (adjudicated one-off GM sites are NOT refused — the refusal
+     * targets the retired copy's exact dispatch shape), and the transport
+     * grant + connect surface stays declared (bidirectional alignment:
+     * the inlined kernel's capability detection consumes the grant). */
+    const canonOf = (dir, name) => {
+        const p = path.join(ROOT, "canon", dir, `4ndr0tools - ${name}.user.js`);
+        return fs.existsSync(p) ? fs.readFileSync(p, "utf8") : "";
+    };
+
+    /* Bunkr++ 7.7.0 — GAP 9 abort registry now holds AbortControllers fed to
+     * the kernel's opts.signal; typed NetError replaces the untyped
+     * 'Network error: '/'Timeout: '/'Aborted: ' rejections (no caller ever
+     * branched on those strings — verified). */
+    const bkrCanonG = canonOf("_sovereign", "Bunkr++");
+    if (!bkrCanonG.includes("__4NDR0_NET_API__.gmFetch") || !bkrCanonG.includes("checkStatus:  false") || !/_activeRequests\.add\(ctl\)/.test(bkrCanonG)) {
+        failures.push(`[D] Bunkr++: kernel gmFetch adoption surface missing (kernel-routed adapter + AbortController in the GAP 9 registry + checkStatus:false raw resolution)`);
+    } else passes.push(`[D] Bunkr++ kernel gmFetch adoption verified (transport rides kernel v5.1; GAP 9 STOP aborts via AbortController, typed NetError taxonomy)`);
+    if (/const control = GM_xmlhttpRequest\(\{\s*\n\s*timeout:\s*_API_TIMEOUT_MS,\s*\n\s*\.\.\.opts,/.test(bkrCanonG)) {
+        failures.push(`[D] Bunkr++: legacy local gmFetch dispatch shape still present (must ride __4NDR0_NET_API__.gmFetch)`);
+    }
+    if (!/@grant\s+GM_xmlhttpRequest/.test(bkrCanonG) || !/@connect\s+\*/.test(bkrCanonG) || !/@connect\s+127\.0\.0\.1/.test(bkrCanonG)) {
+        failures.push(`[D] Bunkr++: transport grant/@connect declarations incomplete after consolidation`);
+    } else passes.push(`[D] Bunkr++ transport declarations preserved (GM_xmlhttpRequest grant + wildcard/localhost connects intact)`);
+
+    /* Gofile++ 2.2.0 — the Response-facade utils.gmFetch routes through the
+     * kernel (every status resolves raw; ok computed facade-side); the
+     * baseline dispatched with NO timeout, so the 20 s hard bound is a
+     * superset hardening, and the fetch-Response facade is preserved
+     * byte-for-byte for its five call sites (gofile API + ADBM + aria2). */
+    const gfCanonG = canonOf("_sovereign", "Gofile++");
+    if (!gfCanonG.includes("__4NDR0_NET_API__.gmFetch") || !gfCanonG.includes("checkStatus: false") ||
+        !/json: \(\) => Promise\.resolve\(JSON\.parse\(response\.responseText\)\)/.test(gfCanonG)) {
+        failures.push(`[D] Gofile++: kernel gmFetch adoption surface missing (kernel-routed facade + checkStatus:false + preserved Response facade)`);
+    } else passes.push(`[D] Gofile++ kernel gmFetch adoption verified (fetch-Response facade rides the kernel v5.1 transport; 20 s hard timeout added)`);
+    if (/GM_xmlhttpRequest\(\{\s*\n\s*method: options\.method \|\| 'GET',/.test(gfCanonG)) {
+        failures.push(`[D] Gofile++: legacy local gmFetch dispatch shape still present (must ride __4NDR0_NET_API__.gmFetch)`);
+    }
+    if (!/@grant\s+GM_xmlhttpRequest/.test(gfCanonG) || !/@connect\s+api\.gofile\.io/.test(gfCanonG) || !/@connect\s+localhost/.test(gfCanonG)) {
+        failures.push(`[D] Gofile++: transport grant/@connect declarations incomplete after consolidation`);
+    } else passes.push(`[D] Gofile++ transport declarations preserved (GM_xmlhttpRequest grant + api.gofile.io/localhost connects intact)`);
+
+    /* Instagram++ 13.2.0 — gmFetchBlob keeps only its POLICY (the 2xx+body
+     * blob gate) on top of the kernel transport; the download tier's
+     * GM_xmlhttpRequest typeof guard stays (sanctioned detection shape,
+     * avoids the pointless typed rejection round-trip before Tier 3). */
+    const igCanonG = canonOf("_sovereign", "Instagram++");
+    if (!igCanonG.includes("__4NDR0_NET_API__.gmFetch") || !/responseType: 'blob'/.test(igCanonG) ||
+        !/res\.status >= 200 && res\.status < 300 && res\.response/.test(igCanonG)) {
+        failures.push(`[D] Instagram++: kernel gmFetch adoption surface missing (blob gate policy over the kernel transport)`);
+    } else passes.push(`[D] Instagram++ kernel gmFetch adoption verified (gmFetchBlob policy gate rides the kernel v5.1 transport)`);
+    if (/GM_xmlhttpRequest\(\{\s*\n\s*method: 'GET',\s*\n\s*url,\s*\n\s*responseType: 'blob',/.test(igCanonG)) {
+        failures.push(`[D] Instagram++: legacy local gmFetchBlob dispatch shape still present (must ride __4NDR0_NET_API__.gmFetch)`);
+    }
+    if (!/@grant\s+GM_xmlhttpRequest/.test(igCanonG) || !/@connect\s+cdninstagram\.com/.test(igCanonG) || !/@connect\s+instagram\.com/.test(igCanonG)) {
+        failures.push(`[D] Instagram++: transport grant/@connect declarations incomplete after consolidation`);
+    } else passes.push(`[D] Instagram++ transport declarations preserved (GM_xmlhttpRequest grant + cdn/instagram connects intact)`);
+
+    /* Pixeldrain++ 1.2.0 — the rich gmXHR facade keeps SPOOF_HEADERS +
+     * anonymous-default + 60s timeout + raw-response policy over the
+     * kernel transport; progress/onloadstart/signal ride the v5.1 opts;
+     * the five gmXHR abort branches recognize BOTH the typed
+     * (e.kind === 'abort') and legacy ('aborted') forms; the fsa inline
+     * stream one-off (adjudicated, custom settle semantics) and the
+     * fetch AbortError branch are untouched. */
+    const pdCanonG = canonOf("_sovereign", "Pixeldrain++");
+    if (!pdCanonG.includes("__4NDR0_NET_API__.gmFetch") || !/opts\.spoof === false \? \{\} : SPOOF_HEADERS/.test(pdCanonG) ||
+        !/anonymous:\s*opts\.anonymous !== false/.test(pdCanonG) || !/onprogress:\s*opts\.onprogress/.test(pdCanonG) ||
+        !/signal:\s*opts\.signal/.test(pdCanonG)) {
+        failures.push(`[D] Pixeldrain++: kernel gmFetch adoption surface missing (spoof/anonymous/progress/signal policy over the kernel transport)`);
+    } else passes.push(`[D] Pixeldrain++ kernel gmFetch adoption verified (gmXHR facade rides the kernel v5.1 transport with progress + signal)`);
+    if (/const xhr = typeof GM_xmlhttpRequest === 'function'\s*\n\s*\? GM_xmlhttpRequest\s*\n\s*: \(typeof GM !== 'undefined' && GM\.xmlHttpRequest\);/.test(pdCanonG)) {
+        failures.push(`[D] Pixeldrain++: legacy local gmXHR dispatch shape still present (must ride __4NDR0_NET_API__.gmFetch)`);
+    }
+    if (!/e\.kind === 'abort' \|\| e\.message === 'aborted'/.test(pdCanonG)) {
+        failures.push(`[D] Pixeldrain++: abort branches not widened to the typed taxonomy (e.kind === 'abort')`);
+    } else passes.push(`[D] Pixeldrain++ abort branches verified (typed abort + legacy message both recognized — superset)`);
+    if (!/@grant\s+GM_xmlhttpRequest/.test(pdCanonG) || !/@grant\s+GM\.xmlHttpRequest/.test(pdCanonG) || !/@connect\s+pixeldrain\.com/.test(pdCanonG)) {
+        failures.push(`[D] Pixeldrain++: transport grant/@connect declarations incomplete after consolidation`);
+    } else passes.push(`[D] Pixeldrain++ transport declarations preserved (GM_xmlhttpRequest + GM.xmlHttpRequest grants + pixeldrain.com connects intact)`);
+
+    /* Blob2URL 7.3.0 — the privileged blob hop rides the kernel; the
+     * status-0 opaque tolerance, empty-body classification, and exact
+     * fallback-chain diagnostics stay facade-side (hardenedFetch chain
+     * untouched). */
+    const b2uCanonG = canonOf("_promoted", "Blob2URL");
+    if (!b2uCanonG.includes("__4NDR0_NET_API__.gmFetch") || !/responseType: 'blob'/.test(b2uCanonG) ||
+        !/\(status >= 200 && status < 300\) \|\| status === 0/.test(b2uCanonG) || !/hardenedFetch/.test(b2uCanonG)) {
+        failures.push(`[D] Blob2URL: kernel gmFetch adoption surface missing (blob policy + status-0 tolerance + hardenedFetch chain over the kernel transport)`);
+    } else passes.push(`[D] Blob2URL kernel gmFetch adoption verified (privileged blob hop + hardenedFetch fallback chain ride the kernel v5.1 transport)`);
+    if (/const gmFetch = \(url\) => new Promise\(\(resolve, reject\) => \{\s*\n\s*if \(typeof GM_xmlhttpRequest !== 'function'\)/.test(b2uCanonG)) {
+        failures.push(`[D] Blob2URL: legacy local gmFetch dispatch shape still present (must ride __4NDR0_NET_API__.gmFetch)`);
+    }
+    if (!/@grant\s+GM_xmlhttpRequest/.test(b2uCanonG) || !/@connect\s+\*/.test(b2uCanonG)) {
+        failures.push(`[D] Blob2URL: transport grant/@connect declarations incomplete after consolidation`);
+    } else passes.push(`[D] Blob2URL transport declarations preserved (GM_xmlhttpRequest grant + wildcard connects intact)`);
+
     /* v1.3.0 interference ledger — the nine documented fixes of this round. */
     if (!asil.includes("AKASHA_PROFILE") || !asil.includes("Ctrl+Alt+Shift+K") || !asil.includes("akasha_silence_profile")) {
         failures.push(`[D] Akasha Silence: strictness relief valve not present`);

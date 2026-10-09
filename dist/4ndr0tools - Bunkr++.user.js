@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Bunkr++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      7.6.0
+// @version      7.7.0
 // @author       4ndr0666
 // @description  Direct URL routing, auto-sort, hide visited, bypass dl gateway, bulk download, m3u8/CDN URL aggregation (page-context net-hook + per-item stream glyphs + album-wide STREAMS aggregation), broken-link repair, power-user hotkeys, LinkMaster-grade m3u8 stream resolution with gateway fallback, MPV dispatch (URI/bridge), web-archive dead-CDN resurrection (archive.org / archive.is), captcha-aware transport retry
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -232,7 +232,24 @@ const __4NDR0_NET_API__ = (function () {
      * into NetHttpError rejections; opts.checkStatus === false hands the
      * raw response to the caller for verdict-by-status use (the Drive
      * resolver walks both a 200 interstitial and redirect-final URLs).
-     * responseType is normalized to the portable set ('text' default). */
+     * responseType is normalized to the portable set ('text' default).
+     *
+     * v5.1 (suite v1.4.9) — TRANSPORT OPTS EXTENSION, closure-local and
+     * fully backward compatible (VERSION stays 5: gmFetch owns no realm
+     * state and is never re-routed, so a co-installed v5/v5.1 pair keeps
+     * the established subscription delegation and each copy serves its
+     * own transport): opts.onprogress / opts.onloadstart pass the
+     * manager's progress callbacks straight through (download UIs);
+     * opts.signal (AbortSignal or duck-typed {aborted, addEventListener})
+     * aborts the in-flight handle AND force-settles the attempt typed
+     * kind 'abort' (a manager that fails to fire onabort after
+     * handle.abort() can never hang the call to its hard timeout),
+     * breaks the retry chain (abort is not transient), and detaches its
+     * listener on settle; opts.anonymous === true is forwarded so
+     * credential-free privileged requests stay credential-free. The
+     * five census-surviving local gmFetch copies (Bunkr++, Gofile++,
+     * Instagram++, Pixeldrain++, Blob2URL) ride this surface as thin
+     * policy adapters — one transport implementation suite-wide. */
     function gmFetch(url, opts) {
         opts = opts || {};
         const method = opts.method || 'GET';
@@ -243,6 +260,11 @@ const __4NDR0_NET_API__ = (function () {
         const responseType = (opts.responseType === 'json' || opts.responseType === 'arraybuffer' ||
             opts.responseType === 'blob') ? opts.responseType : 'text';
         const checkStatus = opts.checkStatus !== false;
+        const onprogress = typeof opts.onprogress === 'function' ? opts.onprogress : null;
+        const onloadstart = typeof opts.onloadstart === 'function' ? opts.onloadstart : null;
+        const anonymous = opts.anonymous === true;
+        const signal = (opts.signal && typeof opts.signal.addEventListener === 'function')
+            ? opts.signal : null;
 
         const transport = gmTransport();
         if (!transport) {
@@ -254,11 +276,34 @@ const __4NDR0_NET_API__ = (function () {
                 'gmFetch unavailable: no privileged transport granted in this consumer',
                 { url: url, kind: 'gm-unavailable' }));
         }
+        if (signal && signal.aborted) {
+            /* Pre-aborted signal — reject typed before any dispatch (an
+             * abandoned download must never spend a request slot). */
+            return Promise.reject(new NetError('aborted before dispatch', { url: url, kind: 'abort' }));
+        }
+
+        let currentHandle = null;
+        let signalAborted = false;
+        let forceSettle = null; /* current attempt's settle-once reject hook */
+        const onSignalAbort = function () {
+            signalAborted = true;
+            try {
+                if (currentHandle && typeof currentHandle.abort === 'function') currentHandle.abort();
+            } catch (e) { /* manager handle inert — force-settle below owns the verdict */ }
+            try {
+                if (forceSettle) forceSettle(new NetError('aborted via signal', { url: url, kind: 'abort' }));
+            } catch (e) { /* settle-once already closed — nothing to do */ }
+        };
+        if (signal) {
+            try { signal.addEventListener('abort', onSignalAbort); }
+            catch (e) { /* inert signal — proceed unabortable, hard timeout still bounds the call */ }
+        }
 
         function attempt() {
             return new Promise(function (resolve, reject) {
                 let settled = false;
                 const done = function (fn, arg) { if (!settled) { settled = true; fn(arg); } };
+                forceSettle = function (err) { done(reject, err); };
                 const req = {
                     method: method, url: url, headers: headers, data: data,
                     timeout: timeout, responseType: responseType,
@@ -271,23 +316,37 @@ const __4NDR0_NET_API__ = (function () {
                     ontimeout: function () { done(reject, new NetTimeoutError(url, timeout)); },
                     onabort: function () { done(reject, new NetError('aborted', { url: url, kind: 'abort' })); },
                 };
-                try { transport(req); }
+                if (onprogress) req.onprogress = onprogress;
+                if (onloadstart) req.onloadstart = onloadstart;
+                if (anonymous) req.anonymous = true;
+                try { currentHandle = transport(req); }
                 catch (e) { done(reject, new NetError('dispatch failed: ' + ((e && e.message) || e), { url: url, kind: 'transport' })); }
             });
         }
 
         return (async function () {
-            let lastErr = null;
-            for (let n = 0; n <= retries; n++) {
-                try { return await attempt(); }
-                catch (e) {
-                    lastErr = e;
-                    const transient = e instanceof NetTimeoutError || (e && e.kind === 'transport');
-                    if (!transient || n >= retries) throw e;
-                    await gmSleep(300 * (n + 1));
+            try {
+                let lastErr = null;
+                for (let n = 0; n <= retries; n++) {
+                    if (signalAborted) throw new NetError('aborted via signal', { url: url, kind: 'abort' });
+                    try { return await attempt(); }
+                    catch (e) {
+                        lastErr = e;
+                        const transient = e instanceof NetTimeoutError || (e && e.kind === 'transport');
+                        if (!transient || n >= retries) throw e;
+                        await gmSleep(300 * (n + 1));
+                    }
+                }
+                throw lastErr;
+            } finally {
+                /* Listener detachment on every settle path — a reused
+                 * controller must not accumulate dead gmFetch listeners
+                 * (GUP D4: ruthless reclamation). */
+                if (signal) {
+                    try { signal.removeEventListener('abort', onSignalAbort); }
+                    catch (e) { /* inert signal */ }
                 }
             }
-            throw lastErr;
         })();
     }
 
@@ -1162,7 +1221,7 @@ const __4NDR0_NET_API__ = (function () {
         _sentinelRoot.setAttribute(_SENTINEL_ATTR, String(Date.now()));
     } catch (_) { /* EAFP — proceed; guards below absorb re-runs */ }
 
-    const SCRIPT_VERSION = '7.6.0';
+    const SCRIPT_VERSION = '7.7.0';
     console.log(`%c[4NDR0tools] Bunkr++ v${SCRIPT_VERSION}-Ψ`, 'color:#00E5FF; font-family:monospace; font-weight:bold;');
 
     // =========================================================================
@@ -2819,7 +2878,12 @@ const __4NDR0_NET_API__ = (function () {
     // registry, panel-independent logging, armed at eval time. The bulk
     // engine (Module 11) consumes it unchanged.
     const _API_TIMEOUT_MS = 20000;
-    const _activeRequests = new Set(); // live GM_* handles — bulk STOP aborts them (GAP 9)
+    // v7.7.0 (suite v1.4.9): the registry holds AbortController instances
+    // for kernel-routed transports (gmFetch below) alongside the raw GM
+    // handles of the adjudicated one-off sites (download handles, MPV
+    // bridge, archive probes, page hops) — bulk STOP calls .abort() on
+    // every entry, and both shapes abort identically (GAP 9 preserved).
+    const _activeRequests = new Set(); // live abort controls — bulk STOP aborts them (GAP 9)
 
     // v7.4.0: the dl-gateway host derives from the operator's canonical
     // domain (dl.<canonical>) instead of the frozen bunkr.cr literal — the
@@ -2858,23 +2922,37 @@ const __4NDR0_NET_API__ = (function () {
         console.log(`[Ψ-BULK] ${msg}`);
     }
 
-    // ── GM_xmlhttpRequest wrapper ─────────────────────────────────────────
+    // ── GM transport (kernel-routed since v7.7.0, suite v1.4.9) ──────────
+    // The transport MECHANICS live in the kernel now: this is a thin policy
+    // adapter over __4NDR0_NET_API__.gmFetch (kernel/net.js v5.1) — one
+    // suite-wide implementation of settle-once, the hard timeout, grant
+    // feature-detection, and the typed NetError taxonomy (branch on .kind:
+    // timeout | http | transport | abort | gm-unavailable; the old
+    // 'Network error: '/'Timeout: '/'Aborted: ' string rejections were
+    // untyped — typed rejections are the superset, and no caller ever
+    // branched on those strings, verified by census).
+    // Local policy kept verbatim: every status resolves RAW (callers gate
+    // on res.status — checkStatus:false), opts.timeout may override the
+    // 20 s default, and the GAP 9 abort surface is preserved — one
+    // AbortController per request, registered in the shared set, aborted
+    // by the bulk STOP surface, deregistered on every terminal path
+    // (finally-equivalent; the kernel detaches its listener on settle).
     function gmFetch(opts) {
-        return new Promise((resolve, reject) => {
-            // GAP 9 fix: capture the control handle so an in-flight
-            // request can be abort()-ed from the STOP button, and
-            // deregister on every terminal path (finally-equivalent —
-            // GM_xmlhttpRequest has no promise/finally of its own).
-            const control = GM_xmlhttpRequest({
-                timeout:   _API_TIMEOUT_MS,
-                ...opts,
-                onload:    r  => { _activeRequests.delete(control); resolve(r); },
-                onerror:   () => { _activeRequests.delete(control); reject(new Error('Network error: ' + opts.url)); },
-                ontimeout: () => { _activeRequests.delete(control); reject(new Error('Timeout: '       + opts.url)); },
-                onabort:   () => { _activeRequests.delete(control); reject(new Error('Aborted: '       + opts.url)); },
-            });
-            _activeRequests.add(control);
-        });
+        const ctl = (typeof AbortController === 'function') ? new AbortController() : null;
+        if (ctl) _activeRequests.add(ctl);
+        const cleanup = () => { if (ctl) _activeRequests.delete(ctl); };
+        return __4NDR0_NET_API__.gmFetch(opts.url, {
+            method:       opts.method,
+            headers:      opts.headers,
+            data:         opts.data != null ? opts.data : null,
+            responseType: opts.responseType,
+            timeout:      opts.timeout != null ? opts.timeout : _API_TIMEOUT_MS,
+            checkStatus:  false,
+            signal:       ctl ? ctl.signal : undefined,
+        }).then(
+            (r) => { cleanup(); return r; },
+            (e) => { cleanup(); throw e; }
+        );
     }
 
     // ── findFileObj (deep __NEXT_DATA__ traversal) ────────────────────────

@@ -63,9 +63,9 @@
    "version": "5.2.1",
    "description": "Unified counter-surveillance defense layer with a three-stage strictness valve (full / core / off via Ctrl+Alt+Shift+K). Three-way consolidation of Anti-detection + Counter-surveillance + Anti-telemetry (ICC): anti-analysis script neutralization, telemetry sinkholing (fetch/XHR/beacon/WebSocket), WebRTC blinding, session-stable fingerprint spoofing (hardware/canvas/WebGL/audio), identifier poisoning, Google link-tracking sanitization and hostile-UI countermeasures.",
    "family": "uncategorized",
-   "sha256": "e14da1b58a6e31782d5d9d15e98a933faa85ef2402c12bb730a5498fc5c1d1e3",
-   "lines": 1902,
-   "bytes": 100422,
+   "sha256": "b04ac372bf1e021ad25d901e495c704182558927d6eea75ffcd618352f63ee74",
+   "lines": 1961,
+   "bytes": 103939,
    "matches": [
     "*://*/*"
    ],
@@ -147,12 +147,12 @@
   {
    "file": "4ndr0tools - Blob2URL.user.js",
    "name": "4ndr0tools - Blob2URL",
-   "version": "7.2.2",
+   "version": "7.3.0",
    "description": "Universal blob exfiltration, universal media URL sniffer + wire capture + URL vault (Alt+Shift+V), interactive asset sniffing, CSP/CORS bypass.",
    "family": "media & links",
-   "sha256": "6bb16701cf676717281b760361df6c1785b5787c20b5d4d75e9e8bf569762072",
-   "lines": 2214,
-   "bytes": 126521,
+   "sha256": "1b0387eba64ac3ff7622921a354b3f8892d45849f3aad175d1a805c6b2429ffd",
+   "lines": 2271,
+   "bytes": 130004,
    "matches": [
     "*://*/*"
    ],
@@ -179,12 +179,12 @@
   {
    "file": "4ndr0tools - Bunkr++.user.js",
    "name": "4ndr0tools - Bunkr++",
-   "version": "7.6.0",
+   "version": "7.7.0",
    "description": "Direct URL routing, auto-sort, hide visited, bypass dl gateway, bulk download, m3u8/CDN URL aggregation (page-context net-hook + per-item stream glyphs + album-wide STREAMS aggregation), broken-link repair, power-user hotkeys, LinkMaster-grade m3u8 stream resolution with gateway fallback, MPV dispatch (URI/bridge), web-archive dead-CDN resurrection (archive.org / archive.is), captcha-aware transport retry",
    "family": "media & links",
-   "sha256": "459c7298034117262800d28647577db772ca0f72758fa689fe89ef78f2c25f17",
-   "lines": 4798,
-   "bytes": 250828,
+   "sha256": "f6cb0c71b12e2a7ad7afbd17d7cb21bd11f4bab9cacc0951f5773dc48e837504",
+   "lines": 4876,
+   "bytes": 255432,
    "matches": [],
    "excludes": [],
    "grants": [
@@ -443,9 +443,9 @@
    "version": "7.6.0",
    "description": "Dynamic stream extraction + folder enumeration for any media on Filester.me. Network proxy + glyph injection.",
    "family": "media & links",
-   "sha256": "f03e62442763f9539a9af46b3acf0d27681c94c2632133ea7c5b40beb00be58c",
-   "lines": 1237,
-   "bytes": 67264,
+   "sha256": "845332aaf19504e49f4d53ea50be08d1906383f0f32d778ea0eb54dab3c094eb",
+   "lines": 1296,
+   "bytes": 70781,
    "matches": [],
    "excludes": [],
    "grants": [
@@ -618,12 +618,12 @@
   {
    "file": "4ndr0tools - Gofile++.user.js",
    "name": "4ndr0tools - GoFile++",
-   "version": "2.1.1",
+   "version": "2.2.0",
    "description": "Directly batch-download GoFiles with a robust UI. Supports recursive folder scans, direct links, and download managers (Aria2, IDM). Fixing SPA persistence and Sandbox access.",
    "family": "media & links",
-   "sha256": "7d6c3fc75a8ae824217960339ee0e9d772415b6ec5a52dbe90a301d0e9176dce",
-   "lines": 1118,
-   "bytes": 52142,
+   "sha256": "57e7ae44243b7f2a5bc9c08537aaf48d5a32dca64e223102079353c921629052",
+   "lines": 2117,
+   "bytes": 108773,
    "matches": [
     "*://gofile.io/*"
    ],
@@ -652,9 +652,9 @@
    "version": "8.1.0",
    "description": "Restores context menus, exposes direct links, adds reverse image search, Drive direct-download resolution, Photos full-res extraction, power-user hotkeys, drag persistence and a settings console. 3lectric-Glass paradigm.",
    "family": "images",
-   "sha256": "d3205fb21a2416d522d7b26cf773fe4687629ac514935473b94949936464965b",
-   "lines": 2573,
-   "bytes": 126475,
+   "sha256": "79f484737d930c7485da21218134822da233afaa648be1f360115c7b3b1be8af",
+   "lines": 2632,
+   "bytes": 129992,
    "matches": [
     "*://*.googleusercontent.com/*",
     "*://photos.google.com/*",
@@ -812,12 +812,12 @@
   {
    "file": "4ndr0tools - Instagram++.user.js",
    "name": "4ndr0tools - Instagram++",
-   "version": "13.1.0",
+   "version": "13.2.0",
    "description": "Tab-Bar + Dock Integration. Hotkey trigger (Alt+I). Ad-Blocking. Deep-Stack Recovery. Resilient cursor-based pagination. Stories support. Image/video download engine.",
    "family": "sovereign platforms",
-   "sha256": "105a00bc96c192a2a131c6afdd7ec6af915f125c558eeb67c140b03c29a44a5f",
-   "lines": 2228,
-   "bytes": 113400,
+   "sha256": "af899fe0aac882ca40716c7199209a1581ada72897e8e1160f47dd96f0785317",
+   "lines": 2286,
+   "bytes": 117046,
    "matches": [
     "*://*.instagram.com/*"
    ],
@@ -851,9 +851,9 @@
    "version": "6.2.6",
    "description": "Accurately decodes, previews, exports, validates and scrapes all links. (Dual MPV Support + Ψ IG Harvester + sexyforums premium-link unwrap + GitHub raw-URL harvest + Ψ2 forum deep-scrape engine)",
    "family": "media & links",
-   "sha256": "5a767e1cdac403b44b8542851dcf710ee1125160f92d3b05efcbe899ba5ba2d4",
-   "lines": 4834,
-   "bytes": 244765,
+   "sha256": "b0428439f47c0f3d143b48c8a44f171f1431882757aed1a3e9c9e56c1e02a08b",
+   "lines": 4893,
+   "bytes": 248282,
    "matches": [
     "*://*/*",
     "*://*.instagram.com/*"
@@ -931,9 +931,9 @@
    "version": "5.1.0",
    "description": "Automatically displays the m3u8 url for ANY video playing in the top right corner of the video. Click url to copy or click download to use the webapp \"tools.thatwind.com\". Also injects Play buttons next to magnet links on every page, relaying them to www.diancigaoshou.com.",
    "family": "media & links",
-   "sha256": "1a9c33d8d294780d8a2eee788572fe9c211dff8da4bca5f1b54f42939f707636",
-   "lines": 1768,
-   "bytes": 88241,
+   "sha256": "04fceaaa729b27c7e7b5af8577b9efc5c4acb14aaa893894c52d89951928ed11",
+   "lines": 1827,
+   "bytes": 91758,
    "matches": [
     "*://*/*"
    ],
@@ -1084,12 +1084,12 @@
   {
    "file": "4ndr0tools - Pixeldrain++.user.js",
    "name": "4ndr0tools - Pixeldrain++",
-   "version": "1.1.2",
+   "version": "1.2.0",
    "description": "Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.",
    "family": "media & links",
-   "sha256": "379455896ccd149a490b09d3e18e5fbb87bbd6e73b05a780e731b010e7393576",
-   "lines": 2579,
-   "bytes": 138831,
+   "sha256": "712222e3f6797baac316fd08e2076f21786018d470d15d39d58b6ca7b6e82528",
+   "lines": 3568,
+   "bytes": 195331,
    "matches": [
     "https://pixeldrain.com/*",
     "https://pixeldrain.net/*",
@@ -1152,9 +1152,9 @@
    "version": "28.5.0",
    "description": "Google Flow prompt manager toolkit (works on any AI, just add url) - persisted unit ledger meters every generation click, organization engine: collections, saved views, favorites, ratings, archive, group-by, and insights for large prompt libraries, dedupe, media slideshow, ai prompt enhancer, auto gist syncing, hotkeys, much more.",
    "family": "sovereign platforms",
-   "sha256": "368c0363d002df77f0b02a905d0e44f6e20a3bb8e0d3a333eac0dd04a894ed82",
-   "lines": 23228,
-   "bytes": 1118030,
+   "sha256": "dc19babbf67bb23d1f15c5407712af948d73b1c75792d1a1e9e0a5acfc4d6ea3",
+   "lines": 23287,
+   "bytes": 1121547,
    "matches": [
     "*://geminigen.ai/*",
     "*://gist.github.com/*",
@@ -1203,9 +1203,9 @@
    "version": "9.1.0",
    "description": "Alt+Shift+R hotkey — unified forensic recon platform: hardened XHR/fetch/beacon interception through the suite's shared NetHook hub with MITM block & mute rules and failure pacification, console harvesting, WebSocket + postMessage bridge capture, JWT identity harvesting, headless C2 API (reconEngine / chimeraRecon / Hook) and a moveable Shadow-DOM glass dock with full markdown reporting. For security research only.",
    "family": "privacy & security",
-   "sha256": "7208f49b8552f1900557ab256ac8eedafdd3b205168b1149608bc8ae2ce60a47",
-   "lines": 1970,
-   "bytes": 108262,
+   "sha256": "689e340afce0dc1b2a8e089f71f6d2ae44c3683d8990716bdbae4d0e9984f546",
+   "lines": 2029,
+   "bytes": 111779,
    "matches": [
     "*://*/*"
    ],
@@ -1259,9 +1259,9 @@
    "version": "3.3.0",
    "description": "Intercepts, parses, and extracts stream tokens, manifests, and direct video sources via the suite's shared NetHook hub and DOM inspection. Suite v3.3: the v3.1 dual-realm fetch/XHR hooks ride the shared NetHook singleton (malformed-SVG veto, asset discovery, deep text inspection); ShadowDOM piercing, ReDoS-proof regex, 3lectric-Glass card surface, universal URL registry cap.",
    "family": "uncategorized",
-   "sha256": "1b0408b08df0ed7f016a868c9ddb4bf0effdec048471fcfc10c18d6c143f9321",
-   "lines": 1767,
-   "bytes": 90819,
+   "sha256": "d29482ea7b533a9cf048ce0dc1f9781749288f6be074abd1860a44b86f3c7801",
+   "lines": 1826,
+   "bytes": 94336,
    "matches": [
     "*://*/*"
    ],
@@ -1298,9 +1298,9 @@
    "version": "2.1.0",
    "description": "Security research and alignment testing only.",
    "family": "sovereign platforms",
-   "sha256": "740de84ad64057a1ea154506ada995023f4e556ee8e36ea8c51da2b00e2125a3",
-   "lines": 15257,
-   "bytes": 1275626,
+   "sha256": "ce84ecdf1d88592d77b241cc935105e0a2f8b1332b5c9555eb118aaaa20efdb6",
+   "lines": 15316,
+   "bytes": 1279143,
    "matches": [
     "https://gemini.google.com/app",
     "https://gemini.google.com/app/*",
@@ -1562,5 +1562,5 @@
    ]
   }
  ],
- "digest": "550af7cf42dfc9fee2807d81a16fd50ee48b50db8631973c24263ea2facb709c"
+ "digest": "27514610cf4950b8fbda5ef12e1c36e4353e56568fdf7ed3b9ba84308b2bf9ea"
 }

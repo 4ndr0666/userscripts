@@ -231,7 +231,24 @@ const __4NDR0_NET_API__ = (function () {
      * into NetHttpError rejections; opts.checkStatus === false hands the
      * raw response to the caller for verdict-by-status use (the Drive
      * resolver walks both a 200 interstitial and redirect-final URLs).
-     * responseType is normalized to the portable set ('text' default). */
+     * responseType is normalized to the portable set ('text' default).
+     *
+     * v5.1 (suite v1.4.9) — TRANSPORT OPTS EXTENSION, closure-local and
+     * fully backward compatible (VERSION stays 5: gmFetch owns no realm
+     * state and is never re-routed, so a co-installed v5/v5.1 pair keeps
+     * the established subscription delegation and each copy serves its
+     * own transport): opts.onprogress / opts.onloadstart pass the
+     * manager's progress callbacks straight through (download UIs);
+     * opts.signal (AbortSignal or duck-typed {aborted, addEventListener})
+     * aborts the in-flight handle AND force-settles the attempt typed
+     * kind 'abort' (a manager that fails to fire onabort after
+     * handle.abort() can never hang the call to its hard timeout),
+     * breaks the retry chain (abort is not transient), and detaches its
+     * listener on settle; opts.anonymous === true is forwarded so
+     * credential-free privileged requests stay credential-free. The
+     * five census-surviving local gmFetch copies (Bunkr++, Gofile++,
+     * Instagram++, Pixeldrain++, Blob2URL) ride this surface as thin
+     * policy adapters — one transport implementation suite-wide. */
     function gmFetch(url, opts) {
         opts = opts || {};
         const method = opts.method || 'GET';
@@ -242,6 +259,11 @@ const __4NDR0_NET_API__ = (function () {
         const responseType = (opts.responseType === 'json' || opts.responseType === 'arraybuffer' ||
             opts.responseType === 'blob') ? opts.responseType : 'text';
         const checkStatus = opts.checkStatus !== false;
+        const onprogress = typeof opts.onprogress === 'function' ? opts.onprogress : null;
+        const onloadstart = typeof opts.onloadstart === 'function' ? opts.onloadstart : null;
+        const anonymous = opts.anonymous === true;
+        const signal = (opts.signal && typeof opts.signal.addEventListener === 'function')
+            ? opts.signal : null;
 
         const transport = gmTransport();
         if (!transport) {
@@ -253,11 +275,34 @@ const __4NDR0_NET_API__ = (function () {
                 'gmFetch unavailable: no privileged transport granted in this consumer',
                 { url: url, kind: 'gm-unavailable' }));
         }
+        if (signal && signal.aborted) {
+            /* Pre-aborted signal — reject typed before any dispatch (an
+             * abandoned download must never spend a request slot). */
+            return Promise.reject(new NetError('aborted before dispatch', { url: url, kind: 'abort' }));
+        }
+
+        let currentHandle = null;
+        let signalAborted = false;
+        let forceSettle = null; /* current attempt's settle-once reject hook */
+        const onSignalAbort = function () {
+            signalAborted = true;
+            try {
+                if (currentHandle && typeof currentHandle.abort === 'function') currentHandle.abort();
+            } catch (e) { /* manager handle inert — force-settle below owns the verdict */ }
+            try {
+                if (forceSettle) forceSettle(new NetError('aborted via signal', { url: url, kind: 'abort' }));
+            } catch (e) { /* settle-once already closed — nothing to do */ }
+        };
+        if (signal) {
+            try { signal.addEventListener('abort', onSignalAbort); }
+            catch (e) { /* inert signal — proceed unabortable, hard timeout still bounds the call */ }
+        }
 
         function attempt() {
             return new Promise(function (resolve, reject) {
                 let settled = false;
                 const done = function (fn, arg) { if (!settled) { settled = true; fn(arg); } };
+                forceSettle = function (err) { done(reject, err); };
                 const req = {
                     method: method, url: url, headers: headers, data: data,
                     timeout: timeout, responseType: responseType,
@@ -270,23 +315,37 @@ const __4NDR0_NET_API__ = (function () {
                     ontimeout: function () { done(reject, new NetTimeoutError(url, timeout)); },
                     onabort: function () { done(reject, new NetError('aborted', { url: url, kind: 'abort' })); },
                 };
-                try { transport(req); }
+                if (onprogress) req.onprogress = onprogress;
+                if (onloadstart) req.onloadstart = onloadstart;
+                if (anonymous) req.anonymous = true;
+                try { currentHandle = transport(req); }
                 catch (e) { done(reject, new NetError('dispatch failed: ' + ((e && e.message) || e), { url: url, kind: 'transport' })); }
             });
         }
 
         return (async function () {
-            let lastErr = null;
-            for (let n = 0; n <= retries; n++) {
-                try { return await attempt(); }
-                catch (e) {
-                    lastErr = e;
-                    const transient = e instanceof NetTimeoutError || (e && e.kind === 'transport');
-                    if (!transient || n >= retries) throw e;
-                    await gmSleep(300 * (n + 1));
+            try {
+                let lastErr = null;
+                for (let n = 0; n <= retries; n++) {
+                    if (signalAborted) throw new NetError('aborted via signal', { url: url, kind: 'abort' });
+                    try { return await attempt(); }
+                    catch (e) {
+                        lastErr = e;
+                        const transient = e instanceof NetTimeoutError || (e && e.kind === 'transport');
+                        if (!transient || n >= retries) throw e;
+                        await gmSleep(300 * (n + 1));
+                    }
+                }
+                throw lastErr;
+            } finally {
+                /* Listener detachment on every settle path — a reused
+                 * controller must not accumulate dead gmFetch listeners
+                 * (GUP D4: ruthless reclamation). */
+                if (signal) {
+                    try { signal.removeEventListener('abort', onSignalAbort); }
+                    catch (e) { /* inert signal */ }
                 }
             }
-            throw lastErr;
         })();
     }
 
