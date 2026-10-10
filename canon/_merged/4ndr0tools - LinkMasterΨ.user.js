@@ -2,7 +2,7 @@
 // @name           4ndr0tools - LinkMasterΨ
 // @namespace      https://github.com/4ndr0666/userscripts
 // @author         4ndr0666
-// @version      6.2.6
+// @version      6.3.0
 // @description    Accurately decodes, previews, exports, validates and scrapes all links. (Dual MPV Support + Ψ IG Harvester + sexyforums premium-link unwrap + GitHub raw-URL harvest + Ψ2 forum deep-scrape engine)
 // @downloadURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
 // @updateURL      https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
@@ -2159,7 +2159,9 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
     },
     http: {
       gm_promise: (args) => new Promise((resolve, reject) => {
-        GM_xmlhttpRequest({ ...args, onload: resolve, onerror: reject, ontimeout: reject });
+        // v6.3.0: hard 20 s default bound — no caller ever passed a timeout,
+        // so the whole promise family was unbounded before.
+        GM_xmlhttpRequest({ ...args, timeout: args.timeout || 20000, onload: resolve, onerror: reject, ontimeout: reject });
       }),
       base: (method, url, callbacks = {}, headers = {}, data = {}, responseType = "document") => h.promise((resolve, reject) => {
         let responseHeaders = null;
@@ -2168,6 +2170,9 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
           method,
           responseType,
           data,
+          // v6.3.0: hard 20 s default bound — the core document transport used
+          // to be unbounded (a stalled host could hang the resolver forever).
+          timeout: 20000,
           headers: { Referer: url, ...headers },
           onreadystatechange: (response) => {
             if (response.readyState === 2) {
@@ -2189,7 +2194,8 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
           onerror: (error) => {
             if (callbacks.onError) callbacks.onError(error);
             reject(error);
-          }
+          },
+          ontimeout: () => reject(new Error("Request timed out (20s)"))
         });
       }),
       get: (url, callbacks = {}, headers = {}, responseType = "document") => h.http.base("GET", url, callbacks, headers, null, responseType),

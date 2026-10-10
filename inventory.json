@@ -504,12 +504,12 @@
   {
    "file": "4ndr0tools - Forums++.user.js",
    "name": "4ndr0tools - Forums++",
-   "version": "1.9.2",
+   "version": "1.10.0",
    "description": "Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.",
    "family": "forums",
-   "sha256": "1ae53b38233b7778f6970353ec844209cf9538f3300a77b5ecaa757bcdfec56c",
-   "lines": 3631,
-   "bytes": 160794,
+   "sha256": "f1a81ae751b7fe36b6f1b35448184444f157825a96378a2fe779ebf155eba7e1",
+   "lines": 4650,
+   "bytes": 218687,
    "matches": [
     "https://simpcity.su/threads/*",
     "https://simpcity.cr/threads/*"
@@ -848,12 +848,12 @@
   {
    "file": "4ndr0tools - LinkMasterΨ.user.js",
    "name": "4ndr0tools - LinkMasterΨ",
-   "version": "6.2.6",
+   "version": "6.3.0",
    "description": "Accurately decodes, previews, exports, validates and scrapes all links. (Dual MPV Support + Ψ IG Harvester + sexyforums premium-link unwrap + GitHub raw-URL harvest + Ψ2 forum deep-scrape engine)",
    "family": "media & links",
-   "sha256": "b0428439f47c0f3d143b48c8a44f171f1431882757aed1a3e9c9e56c1e02a08b",
-   "lines": 4893,
-   "bytes": 248282,
+   "sha256": "3d510314f0cc41619de55a76003ecfafc4b26577ef4c4a5bbb95f87f990d00ed",
+   "lines": 4899,
+   "bytes": 248715,
    "matches": [
     "*://*/*",
     "*://*.instagram.com/*"
@@ -893,12 +893,12 @@
   {
    "file": "4ndr0tools - Login Form Autofiller.user.js",
    "name": "4ndr0tools - Login Form Autofiller",
-   "version": "2.0.2",
+   "version": "2.0.3",
    "description": "It integrates BugMeNot into any login form (it retrieves all matching logins from bugmenot.com and autofills the login form)",
    "family": "ux utilities",
-   "sha256": "43001ecd68529b9be5c3c6e2f1bd8e8d1b01fbf4ce4789a73524a7ded62165ad",
-   "lines": 998,
-   "bytes": 43419,
+   "sha256": "1243c566c4123b9a40b793c9442a56c0c50822b53679e4eac9f553b0094dd424",
+   "lines": 1013,
+   "bytes": 44183,
    "matches": [],
    "excludes": [
     "http://bugmenot.com/*",
@@ -1149,12 +1149,12 @@
   {
    "file": "4ndr0tools - Prompt Master.user.js",
    "name": "4ndr0tools - Prompt Master",
-   "version": "28.5.0",
+   "version": "28.6.0",
    "description": "Google Flow prompt manager toolkit (works on any AI, just add url) - persisted unit ledger meters every generation click, organization engine: collections, saved views, favorites, ratings, archive, group-by, and insights for large prompt libraries, dedupe, media slideshow, ai prompt enhancer, auto gist syncing, hotkeys, much more.",
    "family": "sovereign platforms",
-   "sha256": "dc19babbf67bb23d1f15c5407712af948d73b1c75792d1a1e9e0a5acfc4d6ea3",
-   "lines": 23287,
-   "bytes": 1121547,
+   "sha256": "20f73db8224bae2174d5aa0d52ff61279fa3587a7418ec281679cde293a0df64",
+   "lines": 23310,
+   "bytes": 1122838,
    "matches": [
     "*://geminigen.ai/*",
     "*://gist.github.com/*",
@@ -1413,12 +1413,12 @@
   {
    "file": "4ndr0tools - Youtube Removed Video Revealer.user.js",
    "name": "4ndr0tools - Youtube Removed Video Revealer",
-   "version": "2.0.1",
+   "version": "2.0.2",
    "description": "Restores titles for removed or private videos in YouTube playlists",
    "family": "video & players",
-   "sha256": "4eca825c05302b53891d9a46eb79f345b57d9694080906c9a7d60a58728ddb4b",
-   "lines": 599,
-   "bytes": 29029,
+   "sha256": "f158c3e3f80e93db4133e65707060446afe4f436d2c4948dda20a7ec40c0a53f",
+   "lines": 605,
+   "bytes": 29429,
    "matches": [
     "*://*.youtube.com/*"
    ],
@@ -1562,5 +1562,5 @@
    ]
   }
  ],
- "digest": "27514610cf4950b8fbda5ef12e1c36e4353e56568fdf7ed3b9ba84308b2bf9ea"
+ "digest": "c83a087d4aa21670a279c184a39934f5aa3283df80e1f8b6035891970f7c8718"
 }

@@ -3,7 +3,7 @@
 // @name        4ndr0tools - Forums++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     1.9.2
+// @version     1.10.0
 // @description Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @match       https://simpcity.su/threads/*
@@ -468,6 +468,9 @@ const h = {
                     url,
                     responseType,
                     data,
+                    // v1.10.0: hard 20 s bound — the document transport used
+                    // to be unbounded (a stalled host hung the resolver).
+                    timeout: 20000,
                     headers: { Referer: url, ...headers },
                     onreadystatechange: response => {
                         if (response.readyState === 2) {
@@ -493,6 +496,7 @@ const h = {
                         callbacks?.onError?.(error);
                         reject(error);
                     },
+                    ontimeout: () => reject(new Error('Request timed out (20s)')),
                 });
             });
         },
@@ -2262,12 +2266,18 @@ const resolvers = [
                 const fileId = parts.pop() || parts.pop(); // Get last segment, or second to last if trailing slash
                 if (fileId) {
                     const apiUrl = `${apiHost}/${fileId}`;
-                    const response = await h.promise(resolve => GM_xmlhttpRequest({
+                    // v1.10.0: bounded + typed — kernel gmFetch (15 s). Any
+                    // HTTP status resolves so the caller's gates are
+                    // unchanged; transport faults map to status 0 with the
+                    // typed NetError kind logged.
+                    const response = await __4NDR0_NET_API__.gmFetch(apiUrl, {
                         method: "GET",
-                        url: apiUrl,
-                        onload: (res) => resolve(res),
-                        onerror: (res) => resolve(res) // Resolve on error too to handle it
-                    }));
+                        timeout: 15000,
+                        checkStatus: false
+                    }).catch(err => {
+                        console.warn(`Cyberdrop (direct): transport failure for ${apiUrl} (${err && err.kind})`);
+                        return { status: 0, responseText: '' };
+                    });
 
                     if (response.status === 200) {
                         const webData = JSON.parse(response.responseText);
@@ -2302,13 +2312,18 @@ const resolvers = [
                 for (const fileApiUrl of files) {
                     try {
                         let dl_url = '';
-                        // Using GM_xmlhttpRequest directly for better control over async/await with GM
-                        const response = await h.promise(resolve => GM_xmlhttpRequest({
+                        // v1.10.0: bounded + typed — kernel gmFetch (15 s).
+                        // Transport faults map to status 0 so the non-200 path
+                        // (warn + cyberdrop_helper fallback) is preserved;
+                        // the typed NetError kind is logged.
+                        const response = await __4NDR0_NET_API__.gmFetch(fileApiUrl, {
                             method: "GET",
-                            url: fileApiUrl,
-                            onload: (res) => resolve(res),
-                            onerror: (res) => resolve(res)
-                        }));
+                            timeout: 15000,
+                            checkStatus: false
+                        }).catch(err => {
+                            console.warn(`Cyberdrop (album): transport failure for ${fileApiUrl} (${err && err.kind})`);
+                            return { status: 0, responseText: '' };
+                        });
 
                         if (response.status === 200) {
                             const webData = JSON.parse(response.responseText);
@@ -2596,12 +2611,17 @@ async function cyberdrop_helper(fileUrl, retries = 3, delay = 3500) {
     for (let i = 0; i < retries; i++) {
         await h.delayedResolve(delay); // Wait before retrying
         try {
-            const response = await h.promise(resolve => GM_xmlhttpRequest({
+            // v1.10.0: bounded + typed — kernel gmFetch (15 s). Transport
+            // faults map to status 0 so the retry loop is preserved; the
+            // typed NetError kind is logged.
+            const response = await __4NDR0_NET_API__.gmFetch(fileUrl, {
                 method: "GET",
-                url: fileUrl,
-                onload: (res) => resolve(res),
-                onerror: (res) => resolve(res)
-            }));
+                timeout: 15000,
+                checkStatus: false
+            }).catch(err => {
+                console.warn(`Cyberdrop retry: transport failure for ${fileUrl} (${err && err.kind})`);
+                return { status: 0, responseText: '' };
+            });
 
             if (response.status === 200) {
                 const webData = JSON.parse(response.responseText);
@@ -3029,6 +3049,10 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                             url: resource.url,
                             headers: { Referer: reflink },
                             responseType: 'blob',
+                            // v1.10.0: hard 60 s bound (Pixeldrain++ download
+                            // precedent) — the ontimeout handler below existed
+                            // but could never fire without this bound.
+                            timeout: 60000,
                             onreadystatechange: response => {
                                 if (response.readyState === 2) {
                                     // Extract filename from headers early

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name                4ndr0tools - Prompt Master
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version             28.5.0
+// @version             28.6.0
 // @author              4ndr0666
 // @icon                data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @license             UNLICENSED - RED TEAM USE ONLY
@@ -5093,29 +5093,31 @@ const __4NDR0_NET_API__ = (function () {
       : "";
   }
   function fetchImageBlob(e) {
-    return new Promise((t, n) => {
-      let a = e;
-      try {
-        const t = new URL(e);
-        (t.searchParams.set("_t", Date.now()), (a = t.toString()));
-      } catch (e) {}
-      GM_xmlhttpRequest({
-        method: "GET",
-        url: a,
-        responseType: "blob",
-        nocache: !0,
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          Pragma: "no-cache",
-        },
-        onload: (e) => {
-          e.status >= 200 && e.status < 300 && e.response
-            ? t(e.response)
-            : n(new Error(""));
-        },
-        onerror: () => n(new Error("")),
-      });
-    });
+    let a = e;
+    try {
+      const t = new URL(e);
+      (t.searchParams.set("_t", Date.now()), (a = t.toString()));
+    } catch (e) {}
+    // v28.6.0: bounded + typed transport — rides the kernel gmFetch inlined
+    // by tools/build.mjs instead of a bare GM_xmlhttpRequest: 20 s hard
+    // bound, failures reject through the typed NetError taxonomy. The _t
+    // cache-buster stays; the GM-only nocache flag was redundant next to it.
+    return __4NDR0_NET_API__.gmFetch(a, {
+      method: "GET",
+      responseType: "blob",
+      timeout: 20000,
+      checkStatus: !1,
+      headers: {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        Pragma: "no-cache",
+      },
+    }).then(
+      (e) =>
+        e.status >= 200 && e.status < 300 && e.response
+          ? e.response
+          : Promise.reject(new Error("")),
+      () => Promise.reject(new Error("")),
+    );
   }
   async function simpleMarkdownToHtml(e) {
     if (!e) return "";
@@ -5227,31 +5229,32 @@ const __4NDR0_NET_API__ = (function () {
     );
   }
   function fetchWithGM(e) {
-    return new Promise((t, n) => {
-      let a = e;
-      try {
-        const t = new URL(e);
-        (t.searchParams.set("_t", Date.now()), (a = t.toString()));
-      } catch (e) {}
-      GM_xmlhttpRequest({
-        method: "GET",
-        url: a,
-        nocache: !0,
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          Pragma: "no-cache",
-          Expires: "0",
-        },
-        onload: (e) => {
-          e.status >= 200 && e.status < 300
-            ? t(e.responseText)
-            : n(new Error(`${"Failed to fetch metadata: "}${e.status}`));
-        },
-        onerror: () => {
-          n(new Error("Failed to fetch metadata: "));
-        },
-      });
-    });
+    let a = e;
+    try {
+      const t = new URL(e);
+      (t.searchParams.set("_t", Date.now()), (a = t.toString()));
+    } catch (e) {}
+    // v28.6.0: bounded + typed transport — kernel gmFetch, 20 s hard bound.
+    // Legacy rejection messages are preserved verbatim for callers; the
+    // typed cause (NetError.kind) stays inspectable on the transport layer.
+    return __4NDR0_NET_API__.gmFetch(a, {
+      method: "GET",
+      timeout: 20000,
+      checkStatus: !1,
+      headers: {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    }).then(
+      (e) =>
+        e.status >= 200 && e.status < 300
+          ? e.responseText
+          : Promise.reject(
+              new Error(`${"Failed to fetch metadata: "}${e.status}`),
+            ),
+      () => Promise.reject(new Error("Failed to fetch metadata: ")),
+    );
   }
   function sanitizeJSONString(e) {
     let t = e.replace(
@@ -11119,15 +11122,23 @@ const __4NDR0_NET_API__ = (function () {
     return new Promise(
       "gemini" === a
         ? (t, a) => {
-            GM_xmlhttpRequest({
-              method: "POST",
-              url: `https://generativelanguage.googleapis.com/v1beta/models/${n}:generateContent?key=${o}`,
-              headers: { "Content-Type": "application/json" },
-              data: JSON.stringify({
-                contents: [{ parts: [{ text: e }] }],
-                systemInstruction: { parts: [{ text: r }] },
-              }),
-              onload: (e) => {
+            // v28.6.0: bounded + typed — kernel gmFetch, 60 s hard bound
+            // (generation legitimately runs long). Typed rejections map onto
+            // the legacy user-facing message; e.kind is logged for triage.
+            __4NDR0_NET_API__.gmFetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/${n}:generateContent?key=${o}`,
+              {
+                method: "POST",
+                timeout: 60000,
+                checkStatus: !1,
+                headers: { "Content-Type": "application/json" },
+                data: JSON.stringify({
+                  contents: [{ parts: [{ text: e }] }],
+                  systemInstruction: { parts: [{ text: r }] },
+                }),
+              },
+            ).then(
+              (e) => {
                 try {
                   const n = JSON.parse(e.responseText);
                   n.candidates && n.candidates[0] && n.candidates[0].content
@@ -11141,8 +11152,15 @@ const __4NDR0_NET_API__ = (function () {
                   a(new Error("Error processing response."));
                 }
               },
-              onerror: () => a(new Error("Connection error with API.")),
-            });
+              (err) => {
+                console.warn(
+                  "[Prompt Master] gemini transport failed:",
+                  err && err.kind,
+                  err && err.message,
+                );
+                a(new Error("Connection error with API."));
+              },
+            );
           }
         : (t, s) => {
             const i = getOpenAIEndpoint(a);
@@ -11155,9 +11173,13 @@ const __4NDR0_NET_API__ = (function () {
               Authorization: `Bearer ${o}`,
             };
             ("openrouter" === a && (c["HTTP-Referer"] = window.location.origin),
-              GM_xmlhttpRequest({
+              // v28.6.0: bounded + typed — kernel gmFetch, 60 s hard bound.
+              // Status gating and every rejection message are preserved
+              // verbatim; transport failures log e.kind for triage.
+              __4NDR0_NET_API__.gmFetch(i, {
                 method: "POST",
-                url: i,
+                timeout: 60000,
+                checkStatus: !1,
                 headers: c,
                 data: JSON.stringify({
                   model: l,
@@ -11167,7 +11189,8 @@ const __4NDR0_NET_API__ = (function () {
                   ],
                   temperature: 0.7,
                 }),
-                onload: (e) => {
+              }).then(
+                (e) => {
                   if (200 === e.status)
                     try {
                       const n = JSON.parse(e.responseText);
@@ -11190,11 +11213,11 @@ const __4NDR0_NET_API__ = (function () {
                       s(new Error(`Error ${a} (${e.status})`));
                     }
                 },
-                onerror: (e) => {
-                  (console.error(e),
+                (err) => {
+                  (console.error(err),
                     s(new Error("Connection error with API.")));
                 },
-              }));
+              ));
           },
     );
   }

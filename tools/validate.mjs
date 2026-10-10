@@ -24,6 +24,7 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { runCensus, stripComments } from "./hotkey-census.mjs";
 import { runSinkCensus } from "./sink-census.mjs";
+import { runTransportCensus } from "./transport-census.mjs";
 import { computeInventory, serialize } from "./inventory.mjs";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -860,6 +861,22 @@ function gateD() {
         for (const sk of sinks.problems) failures.push(`[D] sink census: ${sk}`);
     } else {
         passes.push(`[D] sink census verified (${sinks.totalSites} HTML-string/net-tap sites across ${sinks.fileCount} dist files, all adjudicated; FLX/CB/BPW at zero, NetHook owns the ψ-family wraps)`);
+    }
+
+    // Transport boundedness census (suite v1.4.10, round mandate): every
+    // GM_xmlhttpRequest / GM.xmlHttpRequest dispatch in the review sources
+    // (canon + modules + kernel) must be hard-bounded — a literal call
+    // object without `timeout:` is the exact defect class that shipped in
+    // v1.4.9 (11 sites / 5 scripts, found by manual audit because no gate
+    // measured it). Indirect dispatches are adjudicated in the census
+    // ledger; the kernel's own bound is asserted on its req literal. This
+    // gate is the class-closure: the suite can never ship an unbounded
+    // privileged transport again.
+    const transport = runTransportCensus();
+    if (transport.problems.length) {
+        for (const tp of transport.problems) failures.push(`[D] transport census: ${tp}`);
+    } else {
+        passes.push(`[D] transport census verified (${transport.boundedSites} bounded dispatch(es) + ${transport.adjudicatedSites} adjudicated indirect dispatch(es) across ${transport.filesScanned} source files, 0 unbounded; kernel req-literal timeout asserted)`);
     }
 
     // Inventory regeneration determinism (suite v1.4.3): the legacy

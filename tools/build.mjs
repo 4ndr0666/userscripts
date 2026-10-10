@@ -41,6 +41,7 @@ const CANON_KERNEL = {
     "4ndr0tools - Blob2URL.user.js": ["net"],
     "4ndr0tools - Bunkr++.user.js": ["net"],
     "4ndr0tools - Filester++.user.js": ["net"],
+    "4ndr0tools - Forums++.user.js": ["net"],
     "4ndr0tools - Gofile++.user.js": ["net"],
     "4ndr0tools - GooglePhotosandDrive++.user.js": ["net"],
     "4ndr0tools - Instagram++.user.js": ["net"],

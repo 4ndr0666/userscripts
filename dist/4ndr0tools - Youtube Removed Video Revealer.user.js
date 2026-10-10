@@ -2,7 +2,7 @@
 // @name         4ndr0tools - Youtube Removed Video Revealer
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666
-// @version      2.0.1
+// @version      2.0.2
 // @description  Restores titles for removed or private videos in YouTube playlists
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Youtube%20Removed%20Video%20Revealer.user.js
@@ -47,9 +47,13 @@ function waybackTimestampToDateString(timestamp) {
 // Prevents callback hell and allows for standardized try/catch blocks.
 function fetchWaybackData(url) {
     return new Promise((resolve, reject) => {
+        // v2.0.2: hard 20 s bound — the Wayback transport used to be
+        // unbounded (a stalled archive.org left the availability check
+        // hanging forever; both callers already catch and surface it).
         GM_xmlhttpRequest({
             method: "GET",
             url: url,
+            timeout: 20000,
             onload: (response) => {
                 try {
                     if (response.status >= 200 && response.status < 300) {
@@ -61,7 +65,9 @@ function fetchWaybackData(url) {
                     reject(new Error(`Parsing Error: ${err.message}`));
                 }
             },
-            onerror: (err) => reject(err)
+            onerror: (err) => reject(err),
+            ontimeout: () => reject(new Error("Wayback request timed out (20s)")),
+            onabort: () => reject(new Error("Wayback request aborted"))
         });
     });
 }
