@@ -1,4 +1,4 @@
-# 4ndr0serviceguard Companion · v7.3.0
+# 4ndr0serviceguard Companion · v7.4.0
 
 > Default-deny worker firewall (extension companion) — `privacy & security` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ The Companion is the userscript wing of the 4ndr0serviceguard extension: a steal
 
 | Dimension | Value |
 |---|---|
-| Version | `7.3.0` |
+| Version | `7.4.0` |
 | Matches | `*://*/*` |
 | Run-at | `document-start` |
-| Size | 51.3 KB · 1254 lines |
+| Size | 53.3 KB · 1288 lines |
 | Install | [dist/4ndr0tools - 4ndr0serviceguard Companion.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%204ndr0serviceguard%20Companion.user.js) |
 
 ## Feature Inventory

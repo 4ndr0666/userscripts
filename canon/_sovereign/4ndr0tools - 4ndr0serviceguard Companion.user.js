@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         4ndr0tools - 4ndr0serviceguard Companion
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      7.3.0
+// @version      7.4.0
 // @author       4ndr0666
-// @description  Stealth Service Worker / WebSocket / SharedWorker firewall companion for the 4ndr0serviceguard extension. Default-deny with a three-way action model: AUTHORIZE (real), SPOOF (pacified live-looking socket) or DENY (native-faithful failure). Whitelist authorizes, spooflist auto-spoofs silently, the blacklist is an absolute prohibition. Defers to the extension's Gatekeeper whenever the extension is present — and routes list edits to it through the extension's confirm bar.
+// @description  Stealth Service Worker / WebSocket / SharedWorker firewall companion for the 4ndr0serviceguard extension. Default-deny with a three-way action model: AUTHORIZE (real), SPOOF (pacified live-looking socket) or DENY (native-faithful failure). Whitelist authorizes, spooflist auto-spoofs silently, the blacklist is an absolute prohibition. Defers to the extension's Gatekeeper whenever the extension is present — and routes list edits to it through the extension's confirm bar. v7.4.0: survives sandboxed frames (opaque origins) — privileged APIs are captured defensively and the WebSocket gate still arms there.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @match        *://*/*
@@ -17,7 +17,7 @@
 // @grant        GM_notification
 // ==/UserScript==
 
-// 4ndr0tools - 4ndr0serviceguarder v7.3.0 — completed helper userscript.
+// 4ndr0tools - 4ndr0serviceguarder v7.4.0 — sandbox-resilient helper userscript.
 //
 // Paradigm (D1): Proxy-based interception facade in the page (MAIN) context,
 // mirroring ghost_core_v7.js — single paradigm, zero chimera.
@@ -57,6 +57,18 @@
 // denied WebSockets resolve into buffered phantom sockets that surface
 // native-faithful error/close events at the 40 ms cadence instead of
 // rejecting (rejections are trivially detectable and break pages harder).
+//
+// v7.4.0 — sandboxed-frame resilience (console debrief 2026-10-09): a
+// document inside <iframe sandbox> without allow-same-origin has an OPAQUE
+// origin, and privileged property reads there THROW SecurityError
+// (navigator.serviceWorker, caches, document.cookie, localStorage…). The
+// v7.3 capture block read them bare, so the whole IIFE died at its first
+// capture — the WebSocket gate never installed in ANY sandboxed frame and
+// the console carried an uncaught error. Every privileged capture now
+// routes through safeGet(): a sandboxed frame yields null references, the
+// SW surface is skipped (the sandbox itself already forbids SW registration
+// natively — nothing to pacify), and the WebSocket/SharedWorker gates still
+// install, so default-deny holds even in frames the embedder hides.
 //
 // Storage keys: the baseline whitelist key ('4ndr0guard_whitelist_v6') is
 // preserved verbatim so existing user data survives the upgrade; blacklist,
@@ -250,12 +262,34 @@
   }
 
   // === CAPTURED REAL REFERENCES (page context, immune to later shadowing) ===
+  //
+  // v7.4.0: every privileged read is defensive — sandboxed documents THROW
+  // SecurityError on these getters (see header). safeGet() yields null on
+  // refusal; the existing !realSW / !realCaches guards then skip exactly the
+  // surfaces the sandbox already forbids natively, while the WebSocket and
+  // SharedWorker gates below still install and enforce default-deny.
 
-  const realNav = win.navigator || null;
-  const realSW = (realNav && realNav.serviceWorker) || null; // undefined on insecure origins
-  const realShared = win.SharedWorker || null;
-  const OrigWebSocket = win.WebSocket || null;
-  const realCaches = win.caches || null;
+  function safeGet(obj, prop) {
+    try { const v = obj[prop]; return v === undefined ? null : v; }
+    catch (e) { return null; } // sandboxed document / insecure context — fail safe
+  }
+
+  let sandboxedFrame = false;
+  try { void document.cookie; } catch (e) { sandboxedFrame = true; }
+
+  const realNav = safeGet(win, 'navigator');
+  const realSW = realNav ? safeGet(realNav, 'serviceWorker') : null; // null on insecure origins AND sandboxed frames
+  const realShared = safeGet(win, 'SharedWorker');
+  const OrigWebSocket = safeGet(win, 'WebSocket');
+  const realCaches = safeGet(win, 'caches');
+
+  if (sandboxedFrame) {
+    // One condensed debug-level notice (invisible at the default console
+    // filter — stealth doctrine) replaces the v7.3 uncaught SecurityError:
+    // the frame is sandboxed, its SW APIs are natively unavailable, and the
+    // WebSocket gate is still armed with default-deny.
+    console.debug('[Ψ-Ghost] sandboxed frame (opaque origin) — SW API natively unavailable; WebSocket gate active, default-deny.');
+  }
 
   // === FUNCTIONAL EVENT TARGET (from ghost_core_v7.js) ===
 
@@ -1003,7 +1037,7 @@
       '.row .k { color: rgba(0, 229, 255, 0.7); text-transform: uppercase; letter-spacing: 1px; font-size: 10px; }',
       '.row .v { color: #67E8F9; text-align: right; word-break: break-all; }',
       '.row .v.destructive { color: #ff0055; }',
-      '.row .v.spoof { color: #67E8F9; }',
+      '.row .v.spoof { color: #ffaa00; }',
       '.note { margin: 8px 0 0 0; font-size: 10px; line-height: 1.5;',
       '  color: rgba(0, 229, 255, 0.7); }',
       '.actions { display: flex; gap: 6px; padding: 12px 12px 0 12px; }',
@@ -1017,9 +1051,9 @@
       '.actions button.destructive { border-color: #ff0055; color: #ff0055; }',
       '.actions button.destructive:hover { background: rgba(255, 0, 85, 0.3);',
       '  box-shadow: 0 0 25px #ff0055; color: #ffffff; }',
-      '.actions button.spoof { border-color: rgba(255, 170, 0, 0.55); color: #67E8F9; }',
+      '.actions button.spoof { border-color: rgba(255, 170, 0, 0.55); color: #ffaa00; }',
       '.actions button.spoof:hover { background: rgba(255, 170, 0, 0.2);',
-      '  box-shadow: 0 0 20px rgba(255, 170, 0, 0.45); color: #67E8F9; }',
+      '  box-shadow: 0 0 20px rgba(255, 170, 0, 0.45); color: #ffd27a; }',
       '.actions button:disabled { opacity: 0.45; cursor: default; box-shadow: none; }'
     ].join('\n');
     return style;
@@ -1079,7 +1113,7 @@
     title.textContent = 'GHOST PROTOCOL';
     const subtitle = document.createElement('div');
     subtitle.className = 'subtitle';
-    subtitle.textContent = governed ? 'EXTENSION-LINKED v7.3' : 'STANDALONE v7.3';
+    subtitle.textContent = governed ? 'EXTENSION-LINKED v7.4' : 'STANDALONE v7.4';
     headerText.appendChild(title);
     headerText.appendChild(subtitle);
     header.appendChild(headerText);

@@ -31,12 +31,12 @@
   {
    "file": "4ndr0tools - 4ndr0serviceguard Companion.user.js",
    "name": "4ndr0tools - 4ndr0serviceguard Companion",
-   "version": "7.3.0",
-   "description": "Stealth Service Worker / WebSocket / SharedWorker firewall companion for the 4ndr0serviceguard extension. Default-deny with a three-way action model: AUTHORIZE (real), SPOOF (pacified live-looking socket) or DENY (native-faithful failure). Whitelist authorizes, spooflist auto-spoofs silently, the blacklist is an absolute prohibition. Defers to the extension's Gatekeeper whenever the extension is present — and routes list edits to it through the extension's confirm bar.",
+   "version": "7.4.0",
+   "description": "Stealth Service Worker / WebSocket / SharedWorker firewall companion for the 4ndr0serviceguard extension. Default-deny with a three-way action model: AUTHORIZE (real), SPOOF (pacified live-looking socket) or DENY (native-faithful failure). Whitelist authorizes, spooflist auto-spoofs silently, the blacklist is an absolute prohibition. Defers to the extension's Gatekeeper whenever the extension is present — and routes list edits to it through the extension's confirm bar. v7.4.0: survives sandboxed frames (opaque origins) — privileged APIs are captured defensively and the WebSocket gate still arms there.",
    "family": "privacy & security",
-   "sha256": "ad7da8c63ad40f6c9bb38453292ea9af7b75e89a3c04546b2f234f09b47905b8",
-   "lines": 1254,
-   "bytes": 52495,
+   "sha256": "4f41dc48265106e3e8c5efab7338ded3a5974a46e4b30f29984483eacfca5ce9",
+   "lines": 1288,
+   "bytes": 54619,
    "matches": [
     "*://*/*"
    ],
@@ -1562,5 +1562,5 @@
    ]
   }
  ],
- "digest": "c83a087d4aa21670a279c184a39934f5aa3283df80e1f8b6035891970f7c8718"
+ "digest": "9c5b2fd8853e5c2f229959f9e6cf1c4f144571f84cfbf2779c6a1a5f0124af64"
 }
