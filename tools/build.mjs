@@ -52,6 +52,7 @@ const CANON_KERNEL = {
     "4ndr0tools - Recon.user.js": ["net"],
     "4ndr0tools - Stream Interceptor.user.js": ["net"],
     "4ndr0tools - Watermark++.user.js": ["net"],
+    "4ndr0tools - YouTube Playlist Master.user.js": ["net"],
 };
 const GLYPH_ICON =
     "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E";
@@ -327,6 +328,7 @@ function main() {
     // 2) Canon carries (verbatim) — except CANON_KERNEL consumers, which
     //    are carried with their declared kernel modules inlined.
     let carried = 0;
+    let kernelCarried = 0; /* v1.6.2: counted separately — the summary must sum to the dist total (an unaccounted ledger line reads as a missing script) */
     if (fs.existsSync(CANON_DIR)) {
         for (const entry of fs.readdirSync(CANON_DIR, { withFileTypes: true })) {
             if (!entry.isDirectory()) continue;
@@ -358,6 +360,7 @@ function main() {
                 failures.push(...scanPlaceholders(out, f));
                 fs.writeFileSync(path.join(DIST_DIR, f), out);
                 outputs.add(f);
+                kernelCarried++;
             }
         }
     }
@@ -381,12 +384,21 @@ function main() {
     }
     for (const f of stale) console.log(`  − pruned  ${f} (no canon source)`);
 
+    /* v1.6.2: the build ledger must account for every dist installable —
+     * built + verbatim carries + kernel-inlined carries == outputs. The
+     * v1.6.1 summary said only "2 built, 20 carried" and left the 16
+     * kernel-inlined carries out of the arithmetic, which reads as a
+     * missing script against a 38-file inventory. */
+    if (built.length + carried + kernelCarried !== outputs.size) {
+        failures.push(`build ledger does not sum: ${built.length} built + ${carried} verbatim + ${kernelCarried} kernel-inlined ≠ ${outputs.size} dist outputs`);
+    }
+
     if (failures.length > 0) {
         console.error("\nBUILD FAILURES:");
         for (const f of failures) console.error(`  ✗ ${f}`);
         process.exit(failures.some((f) => !f.includes("placeholder")) ? 1 : 2);
     }
-    console.log(`\nSuite build complete: ${built.length} built, ${carried} carried.`);
+    console.log(`\nSuite build complete: ${built.length} built, ${carried} carried verbatim, ${kernelCarried} kernel-inlined (${built.length + carried + kernelCarried} total).`);
     return 0;
 }
 

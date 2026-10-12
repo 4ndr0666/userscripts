@@ -143,9 +143,10 @@
  *   - PAGE REALM FIRST: the slot + wraps live on unsafeWindow when
  *     available (that is where host page fetches live — the same realm
  *     choice the per-script wraps already made), window otherwise.
- *   - LAZY ARM: zero wraps until the first subscriber registers (onBody,
- *     onRequest, onTraffic OR onError) — a co-installed script that only
- *     subscribes on its own host costs nothing anywhere else.
+ *   - LAZY ARM: zero network wraps until the first subscriber registers
+ *     (onBody, onRequest, onTraffic OR onError); the v6 DOM observer arms
+ *     separately, only on the first onNode subscriber (zero observers
+ *     anywhere until a defuser registers).
  *   - SINGLE BODY READ: one clone per response, dispatched to every
  *     subscriber — the two-vault double-read on instagram is the exact
  *     failure this replaces. 4 MB read cap (Blob2URL's wire limit).
@@ -183,6 +184,42 @@
  *   chain while the v5 copy arms above it — the established transitional
  *   co-install progression).
  *
+ * v6 (suite v1.6.0) — THE DOM DEFEASE CHANNEL (onNode). The v1.5.1
+ *   observer census left the defuse class ledgered (TIMING entries:
+ *   microtask races a private per-script observer was winning) because
+ *   structurally bounding them meant weakening them. The hub takes the
+ *   channel instead — same consolidation the network wraps got in v1.4.3:
+ *   N co-installed document-level observers become ONE kernel-owned
+ *   observer per realm document, fanning raw record batches to isolated
+ *   subscribers.
+ *   - onNode(fn) -> unsubscribe. fn(mutations) receives a per-subscriber
+ *     copy of the raw MutationRecord batch — childList + subtree over
+ *     documentElement, plus attributes filtered to `src` (the union of
+ *     the migrated sites' observe configs) — in the SAME synchronous
+ *     microtask slot a private observer would have delivered it. The
+ *     defuse race is preserved exactly: the fan happens inside the
+ *     observer callback, before the next task, so a hostile script
+ *     inserted this batch is still neutralized before it executes.
+ *   - LAZY ARM, SYMMETRIC DISARM: zero observers until the first onNode
+ *     subscriber registers; the observer disconnects the moment the last
+ *     subscriber unsubscribes. Armed lifetime == subscription lifetime.
+ *   - ISOLATION: a throwing subscriber is scoped console.debug (GUP D6)
+ *     and treated as no-opinion — a broken defuser must never break the
+ *     page or its siblings. Each subscriber gets its own array copy, so
+ *     a hostile subscriber cannot splice its siblings' batch.
+ *   - AUTO-PROPAGATE: inserted iframes with a reachable contentWindow
+ *     get the network wrap set propagated by the hub itself — the same
+ *     idempotent, slot-aware, cross-origin-safe call the Akashan v5.2.0
+ *     iframe observer made per-site. Realm propagation is hub
+ *     infrastructure, not script surface; script-side propagators keep
+ *     working (idempotent double-arm is a no-op).
+ *   - Bounded registry (MAX_SUBS), versioned slot: isFullHub now requires
+ *     the onNode surface, so a v5-or-older slot owner is wrapped above by
+ *     a v6 copy (transitional chaining, as before).
+ *   - The kernel observer itself is self-asserted by the smoke battery
+ *     and the observer census (tools/observer-census.mjs verifies the
+ *     lazy-arm/disconnect/bounded/isolation markers on this file).
+ *
  * Consumed via build-time injection into the canon scripts that declare it
  * (tools/build.mjs CANON_KERNEL) — the identifier `__4NDR0_NET_API__` below
  * is script-scope visible to the consumer's IIFE.
@@ -191,7 +228,7 @@ const __4NDR0_NET_API__ = (function () {
     'use strict';
 
     const SLOT = '__4NDR0_NET__';
-    const VERSION = 5;
+    const VERSION = 6;
     const MAX_SUBS = 32;            /* bounded registry (GUP B.1) */
     const MAX_BODY = 4000000;       /* 4 MB read cap (Blob2URL's wire limit) */
     const XHR_MOCK_DELAY = 40;      /* D6 cadence — mocked XHR responses deliver
@@ -379,6 +416,9 @@ const __4NDR0_NET_API__ = (function () {
     const reqSubs = new Map();      /* onRequest defusers: key -> fn(req) */
     const trafficSubs = new Map();  /* onTraffic observers: key -> fn(ev) */
     const errSubs = new Map();      /* onError recoverers: key -> fn(ev) */
+    const nodeSubs = new Map();     /* v6 onNode defusers: key -> fn(mutations) */
+    let nseq = 0;
+    let nodeObserver = null;        /* v6: the kernel-owned DOM observer */
     const served = (typeof WeakSet === 'function') ? new WeakSet() : null; /* propagate-armed realms */
     let seq = 0;
     let rseq = 0;
@@ -861,7 +901,7 @@ const __4NDR0_NET_API__ = (function () {
     function isFullHub(h) {
         return !!(h && typeof h.onBody === 'function' && typeof h.onRequest === 'function' &&
             typeof h.onTraffic === 'function' && typeof h.onError === 'function' &&
-            typeof h.gmFetch === 'function');
+            typeof h.gmFetch === 'function' && typeof h.onNode === 'function');
     }
 
     /* Slot install — a strictly newer full-channel hub replaces the
@@ -876,6 +916,52 @@ const __4NDR0_NET_API__ = (function () {
                 value: api, writable: false, enumerable: false, configurable: true,
             });
         } catch (e) { /* slot collision with a foreign script — local hub only */ }
+    }
+
+    /* ── v6: the DOM defuse channel ────────────────────────────────────
+     * ONE kernel-owned MutationObserver per realm document; lazy arm on
+     * the first onNode subscriber, disconnect when the last one leaves.
+     * The fan is synchronous inside the callback — subscribers observe
+     * in the SAME microtask a private observer would have delivered (the
+     * defuse race is preserved, not debounced). The observer census
+     * self-asserts the lazy-arm / disconnect / bounded / isolation
+     * markers below; the smoke battery executes them. */
+    function fanNode(mutations) {
+        try {
+            /* auto-propagate: inserted iframes receive the network wrap
+             * set (idempotent, slot-aware; script-side propagators keep
+             * working — double-arm is a no-op) */
+            for (let i = 0; i < mutations.length; i++) {
+                const added = mutations[i] && mutations[i].addedNodes;
+                if (!added || !added.length) continue;
+                for (let j = 0; j < added.length; j++) {
+                    const n = added[j];
+                    if (n && n.tagName === 'IFRAME' && n.contentWindow) {
+                        try { api.propagate(n.contentWindow); } catch (e) { /* cross-origin or dead frame */ }
+                    }
+                }
+            }
+        } catch (e) { /* propagation must never break the fan */ }
+        for (const [, fn] of nodeSubs) {
+            try { fn(mutations.slice()); }
+            catch (e) { console.debug('[a4/net] node subscriber failed:', (e && e.message) || e); }
+        }
+    }
+    function armNodeObserver(target) {
+        if (nodeObserver || !target || !target.document) return;
+        try {
+            const root = target.document.documentElement;
+            if (!root || typeof MutationObserver !== 'function') return;
+            nodeObserver = new MutationObserver(fanNode);
+            nodeObserver.observe(root, {
+                childList: true, subtree: true, attributes: true, attributeFilter: ['src'],
+            });
+        } catch (e) { console.debug('[a4/net] node observer arm skipped:', (e && e.message) || e); nodeObserver = null; }
+    }
+    function disarmNodeObserver() {
+        if (!nodeObserver) return;
+        try { nodeObserver.disconnect(); } catch (e) { /* already dead */ }
+        nodeObserver = null;
     }
 
     const api = {
@@ -997,6 +1083,35 @@ const __4NDR0_NET_API__ = (function () {
             }
             return function () { errSubs.delete(key); };
         },
+        /* onNode(fn) -> unsubscribe. The DOM defuse channel — see the v6
+         * contract in the file header: one kernel-owned observer per realm
+         * document, lazy arm, synchronous fan in the insertion microtask,
+         * per-subscriber record copies, throwing subscribers isolated.
+         * The callback IS the script's defuse policy (the hub is plumbing);
+         * observe-config widening is the hub's union, not the script's. */
+        onNode: function (fn) {
+            if (typeof fn !== 'function') return function () {};
+            const target = realm();
+            if (target) {
+                try {
+                    const hub = target[SLOT];
+                    if (hub && hub !== api && hub.version >= VERSION && isFullHub(hub)) {
+                        return hub.onNode(fn);
+                    }
+                } catch (e) { /* unreadable slot — fall through to local hub */ }
+            }
+            if (nodeSubs.size >= MAX_SUBS) return function () {};
+            const key = 'nd' + (++nseq);
+            nodeSubs.set(key, fn);
+            if (target) {
+                armNodeObserver(target);
+                installSlot(target);
+            }
+            return function () {
+                nodeSubs.delete(key);
+                if (nodeSubs.size === 0) disarmNodeObserver();
+            };
+        },
         /* propagate(target) -> armed. Arm the wrap set into an additional
          * realm (iframe propagation, or the userscript sandbox realm for
          * scripts that historically hooked both contexts). Idempotent
@@ -1037,6 +1152,7 @@ const __4NDR0_NET_API__ = (function () {
         get requestSubscriberCount() { return reqSubs.size; },
         get trafficSubscriberCount() { return trafficSubs.size; },
         get errorSubscriberCount() { return errSubs.size; },
+        get nodeSubscriberCount() { return nodeSubs.size; },
     };
     return api;
 })();
@@ -1177,7 +1293,7 @@ const __4NDR0_NET_API__ = (function () {
   const SENTINEL = "data-lm-psi-instance";
   const rootEl = document.documentElement;
   if (!rootEl || (rootEl.hasAttribute && rootEl.hasAttribute(SENTINEL))) return;
-  try { rootEl.setAttribute(SENTINEL, String(Date.now())); } catch (_) {}
+  try { rootEl.setAttribute(SENTINEL, String(Date.now())); } catch (_) { console.debug("LMPsi interceptor:", _);}
 
   // ──[A2] Frame policy: harvest IG anywhere; render UI in the top frame only ──
   const isTopFrame = (() => { try { return window.top === window.self; } catch (_) { return false; } })();
@@ -1187,23 +1303,23 @@ const __4NDR0_NET_API__ = (function () {
   // ──[B4] Manager portability layer (graceful degradation, never a boot crash) ──
   const GMapi = {
     setValue(key, val) {
-      try { if (typeof GM_setValue === "function") { GM_setValue(key, val); return; } } catch (_) {}
-      try { localStorage.setItem("lm-psi-" + key, JSON.stringify(val)); } catch (_) {}
+      try { if (typeof GM_setValue === "function") { GM_setValue(key, val); return; } } catch (_) { console.debug("LMPsi interceptor:", _);}
+      try { localStorage.setItem("lm-psi-" + key, JSON.stringify(val)); } catch (_) { console.debug("LMPsi interceptor:", _);}
     },
     getValue(key, def) {
       try {
         if (typeof GM_getValue === "function") { const v = GM_getValue(key, null); return v == null ? def : v; }
-      } catch (_) {}
+      } catch (_) { console.debug("LMPsi interceptor:", _);}
       try { const raw = localStorage.getItem("lm-psi-" + key); return raw == null ? def : JSON.parse(raw); } catch (_) { return def; }
     },
     deleteValue(key) {
-      try { if (typeof GM_deleteValue === "function") GM_deleteValue(key); } catch (_) {}
-      try { localStorage.removeItem("lm-psi-" + key); } catch (_) {}
+      try { if (typeof GM_deleteValue === "function") GM_deleteValue(key); } catch (_) { console.debug("LMPsi interceptor:", _);}
+      try { localStorage.removeItem("lm-psi-" + key); } catch (_) { console.debug("LMPsi interceptor:", _);}
     },
     xhrSupported() { try { return typeof GM_xmlhttpRequest === "function"; } catch (_) { return false; } },
     xhr(opts) { try { return GM_xmlhttpRequest(opts); } catch (_) { return null; } },
     menu(label, fn) {
-      try { if (typeof GM_registerMenuCommand === "function") { GM_registerMenuCommand(label, fn); return true; } } catch (_) {}
+      try { if (typeof GM_registerMenuCommand === "function") { GM_registerMenuCommand(label, fn); return true; } } catch (_) { console.debug("LMPsi interceptor:", _);}
       return false;
     },
   };
@@ -1224,7 +1340,7 @@ const __4NDR0_NET_API__ = (function () {
           const TT = window.trustedTypes;
           if (TT && typeof TT.createPolicy === "function") {
             for (const name of ["4ndr0666tools#lm", "4ndr0666tools#lm.2", "4ndr0666tools#lm.3"]) {
-              try { policy = TT.createPolicy(name, { createHTML: (v) => v }); break; } catch (_) {}
+              try { policy = TT.createPolicy(name, { createHTML: (v) => v }); break; } catch (_) { console.debug("LMPsi interceptor:", _);}
             }
           }
         } catch (_) { policy = null; }
@@ -1237,7 +1353,7 @@ const __4NDR0_NET_API__ = (function () {
     };
   })();
 
-  const dbg = (m) => { try { console.debug(`%c[LinkMasterΨ] %c${m}`, "color:#00E5FF; font-weight:bold;", "color:#67E8F9;"); } catch (_) {} };
+  const dbg = (m) => { try { console.debug(`%c[LinkMasterΨ] %c${m}`, "color:#00E5FF; font-weight:bold;", "color:#67E8F9;"); } catch (_) { console.debug("LMPsi interceptor:", _);} };
 
   function setUserPref(key, val) { GMapi.setValue(key, val); }
   function getUserPref(key, def) { return GMapi.getValue(key, def); }
@@ -1262,11 +1378,11 @@ const __4NDR0_NET_API__ = (function () {
         gf.href = "https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Orbitron:wght@500;700&family=Roboto+Mono:wght@500&display=swap";
         (document.head || document.documentElement).appendChild(gf);
       }
-    } catch (_) {}
+    } catch (_) { console.debug("LMPsi interceptor:", _);}
   }
   function unloadHudFonts() {
     fontsInjected = false;
-    try { const el = document.getElementById("lm-psi-fonts"); if (el) el.remove(); } catch (_) {}
+    try { const el = document.getElementById("lm-psi-fonts"); if (el) el.remove(); } catch (_) { console.debug("LMPsi interceptor:", _);}
   }
 
   // ===========================================================================
@@ -1513,7 +1629,7 @@ const __4NDR0_NET_API__ = (function () {
       style.id = "eglass-hud-css";
       style.textContent = hudStyle;
       (document.head || document.documentElement).appendChild(style);
-    } catch (_) {}
+    } catch (_) { console.debug("LMPsi interceptor:", _);}
   }
 
   const HOSTER_PATTERNS = [
@@ -1629,7 +1745,7 @@ const escape = { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&qu
       t.textContent = msg;
       (document.body || document.documentElement).appendChild(t);
       setTimeout(() => { t.style.opacity = "0.1"; setTimeout(() => t.remove(), 600); }, timeout);
-    } catch (_) {}
+    } catch (_) { console.debug("LMPsi interceptor:", _);}
   }
 
   // [A6] Confirmation-href decoder — only http(s) candidates are ever returned.
@@ -1639,9 +1755,9 @@ const escape = { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&qu
       if (!/\/goto\/link-confirmation/.test(u.pathname) || !u.searchParams.has('url')) return null;
       const raw = u.searchParams.get('url');
       const candidates = [];
-      try { candidates.push(decodeURIComponent(raw)); } catch { /* ignore */ }
-      try { candidates.push(atob(raw)); } catch { /* ignore */ }
-      try { candidates.push(atob(decodeURIComponent(raw))); } catch { /* ignore */ }
+      try { candidates.push(decodeURIComponent(raw)); } catch { console.debug("LMPsi interceptor: unbound"); /* ignore */ }
+      try { candidates.push(atob(raw)); } catch { console.debug("LMPsi interceptor: unbound"); /* ignore */ }
+      try { candidates.push(atob(decodeURIComponent(raw))); } catch { console.debug("LMPsi interceptor: unbound"); /* ignore */ }
       for (const c of candidates) {
         const cc = String(c).trim();
         if (/^https?:\/\//i.test(cc)) return cc;
@@ -1697,7 +1813,7 @@ const escape = { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&qu
       ta.select();
       document.execCommand("copy");
       ta.remove();
-    } catch (_) {}
+    } catch (_) { console.debug("LMPsi interceptor:", _);}
   }
 
   // [A5] MPV protocol dispatch via a hidden iframe — the host page is no longer
@@ -1709,7 +1825,7 @@ const escape = { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&qu
       f.style.cssText = "position:fixed;width:0;height:0;border:0;visibility:hidden;";
       f.src = uri;
       (document.body || document.documentElement).appendChild(f);
-      setTimeout(() => { try { f.remove(); } catch (_) {} }, 4000);
+      setTimeout(() => { try { f.remove(); } catch (_) { console.debug("LMPsi interceptor:", _);} }, 4000);
     } catch (_) {
       window.location.href = uri; // last-resort transport
     }
@@ -2012,7 +2128,7 @@ const url = src.src.trim();
           Object.assign(img.style, { width: "20px", height: "20px", borderRadius: "4px" });
           return img;
         }
-      } catch { /* ignore */ }
+      } catch { console.debug("LMPsi interceptor: unbound"); /* ignore */ }
     }
 const ext = url.split(".").pop().split("?")[0].toLowerCase();
     if (["jpg","jpeg","png","webp","gif","bmp","svg"].includes(ext)) {
@@ -2393,7 +2509,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
       this.installObserver();
       // One-shot Route 2 over the full DOM once the initial render settles.
       setTimeout(() => {
-        try { this.route2(document.documentElement.outerHTML || ""); } catch (_) {}
+        try { this.route2(document.documentElement.outerHTML || ""); } catch (_) { console.debug("LMPsi interceptor:", _);}
         this.videoSweep();
       }, 1500);
     },
@@ -2428,7 +2544,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
           }, 300);
         });
         this.observer.observe(document.documentElement, { childList: true, subtree: true });
-      } catch (_) {}
+      } catch (_) { console.debug("LMPsi interceptor:", _);}
     },
 
     // Route 1 walk (video_versions progressive + video_dash_manifest DASH).
@@ -2458,10 +2574,10 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
                 if (url) dash.push([label, url]);
               }
             }
-          } catch (_) {}
+          } catch (_) { console.debug("LMPsi interceptor:", _);}
         }
         for (const key in node) this.walk(node[key], prog, dash);
-      } catch (_) {}
+      } catch (_) { console.debug("LMPsi interceptor:", _);}
     },
 
     // Shortcode hunt for human-friendly identifiers (additive).
@@ -2472,7 +2588,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
         const c = node.shortcode || node.code;
         if (typeof c === "string" && /^[A-Za-z0-9_-]{4,32}$/.test(c)) return c;
         for (const key in node) { const r = this.findCode(node[key]); if (r) return r; }
-      } catch (_) {}
+      } catch (_) { console.debug("LMPsi interceptor:", _);}
       return "";
     },
 
@@ -2493,7 +2609,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
         const prog = new Map();
         const dash = [];
         let parsed = null, code = "";
-        try { parsed = JSON.parse(text); } catch (_) {}
+        try { parsed = JSON.parse(text); } catch (_) { console.debug("LMPsi interceptor:", _);}
         if (parsed != null) {
           this.walk(parsed, prog, dash);
           code = this.findCode(parsed);
@@ -2517,7 +2633,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
         for (const [label, url] of dash) batch.push({ kind: "dash", type: 999, label, url, code });
         for (const url of extra) batch.push({ kind: "extra", type: 999, label: "", url, code: "" });
         this.merge(batch);
-      } catch (_) {}
+      } catch (_) { console.debug("LMPsi interceptor:", _);}
     },
 
     merge(batch) {
@@ -2548,7 +2664,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
 
     rescan() {
       this.scanNewScripts(true);
-      try { this.route2(document.documentElement.outerHTML || ""); } catch (_) {}
+      try { this.route2(document.documentElement.outerHTML || ""); } catch (_) { console.debug("LMPsi interceptor:", _);}
       this.videoSweep();
       showToast(`IG re-scan → ${this.entries.length} unique URL(s).`);
     },
@@ -2557,7 +2673,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
     scanNewScripts(force) {
       document.querySelectorAll('script[type="application/json"]').forEach((s) => {
         if (!force && s.hasAttribute("data-lm-ig-scanned")) return;
-        try { s.setAttribute("data-lm-ig-scanned", "true"); } catch (_) {}
+        try { s.setAttribute("data-lm-ig-scanned", "true"); } catch (_) { console.debug("LMPsi interceptor:", _);}
         const t = s.textContent;
         if (t) this.ingest(t);
       });
@@ -2584,7 +2700,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
             this.merge([{ kind: "extra", type: 999, label: "", url: raw, code: "" }]);
           }
         });
-      } catch (_) {}
+      } catch (_) { console.debug("LMPsi interceptor:", _);}
     },
   };
 
@@ -2869,13 +2985,15 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
     return {
       init() {
         rewriteRedirectLinks();
+        let redirectRewriteTimer;
         const observer = new MutationObserver(muts => {
-          for (const mut of muts) {
-            for (const node of mut.addedNodes) {
-              if (node.nodeType !== 1) continue;
-              if (hasRedirectLink(node)) rewriteRedirectLinks(node);
-            }
-          }
+          // v1.5.1 observer discipline: coalesced re-write — rewriteRedirectLinks()
+          // (no-arg full pass) covers every added subtree, idempotent, bounded
+          // to one pass per 200 ms of DOM churn.
+          const structural = muts.some(mut => mut.addedNodes && mut.addedNodes.length);
+          if (!structural) return;
+          clearTimeout(redirectRewriteTimer);
+          redirectRewriteTimer = setTimeout(() => rewriteRedirectLinks(), 200);
         });
         const start = () => {
           rewriteRedirectLinks();
@@ -4811,29 +4929,42 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
     init.injectCustomStyles();
     const begin = () => {
       if (globalConfig.appMode === 'forum') {
+        // v1.5.1 observer discipline: buffered tranche — the same per-node
+        // processPost dispatch (identical node set, same HUD side effect),
+        // coalesced to one flush per 250 ms of DOM churn. splice-empty keeps
+        // the buffer O(1) between flushes.
+        const pendingPostNodes = [];
+        let newPostsTimer = null;
         const observer = new MutationObserver((mutations) => {
-          let newPostsProcessed = false;
+          let queued = false;
           mutations.forEach((mutation) => {
             if (mutation.addedNodes.length) {
               mutation.addedNodes.forEach((node) => {
-                if (node.nodeType === 1) {
-                  const posts = node.querySelectorAll(".message-attribution-opposite");
-                  posts.forEach((p) => {
-                    if (processPost(p)) newPostsProcessed = true;
-                  });
-                  if (node.matches && node.matches(".message-attribution-opposite")) {
-                    if (processPost(node)) newPostsProcessed = true;
-                  }
-                }
+                if (node.nodeType === 1) { pendingPostNodes.push(node); queued = true; }
               });
             }
           });
-          if (newPostsProcessed) {
-            const hudPanel = document.getElementById("hud-panel-root");
-            if (hudPanel && !hudPanel.hidden) {
-              setHudTab(currentTab);
+          if (!queued) return;
+          clearTimeout(newPostsTimer);
+          newPostsTimer = setTimeout(() => {
+            const nodes = pendingPostNodes.splice(0, pendingPostNodes.length);
+            let newPostsProcessed = false;
+            nodes.forEach((node) => {
+              const posts = node.querySelectorAll(".message-attribution-opposite");
+              posts.forEach((p) => {
+                if (processPost(p)) newPostsProcessed = true;
+              });
+              if (node.matches && node.matches(".message-attribution-opposite")) {
+                if (processPost(node)) newPostsProcessed = true;
+              }
+            });
+            if (newPostsProcessed) {
+              const hudPanel = document.getElementById("hud-panel-root");
+              if (hudPanel && !hudPanel.hidden) {
+                setHudTab(currentTab);
+              }
             }
-          }
+          }, 250);
         });
         observer.observe(document.body, { childList: true, subtree: true });
         let initialPostsFound = 0;

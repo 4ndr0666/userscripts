@@ -54,11 +54,13 @@ const ADJUDICATED_VAR_PASSED = [
         file: "canon/_merged/4ndr0tools - LinkMasterΨ.user.js",
         callText: "GM_xmlhttpRequest(opts)",
         reason: "GMapi.xhr util passthrough body (returns the raw control handle) — every GMapi.xhr call site is itself literal-scanned with its own timeout (5/10/12 s)",
+        expiry: "v1.7.0",
     },
     {
         file: "canon/_merged/4ndr0tools - LinkMasterΨ.user.js",
         callText: "xhr(opts)",
         reason: "GMapi.xhr util DEF site (the wrapper name is dispatch-shaped) — the body's own GM_xmlhttpRequest(opts) is the adjacent adjudicated entry; all call sites are literal-bounded",
+        expiry: "v1.7.0",
     },
 ];
 
@@ -233,11 +235,28 @@ export function runTransportCensus(root = DEFAULT_ROOT) {
         }
     }
 
-    /* drift: ledger entries whose site no longer exists */
+    /* drift: ledger entries whose site no longer exists, or whose expiry
+     * round has passed without re-adjudication (G9 ledger hygiene, v1.5.1) */
+    const CURRENT_ROUND = "v1.6.3";
+    const roundLt = (a, b) => {
+        const pa = a.replace(/^v/, "").split(".").map(Number);
+        const pb = b.replace(/^v/, "").split(".").map(Number);
+        for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+            const x = pa[i] || 0, y = pb[i] || 0;
+            if (x !== y) return x < y;
+        }
+        return false;
+    };
     for (const e of ADJUDICATED_VAR_PASSED) {
         const key = `${e.file}::${e.callText}`;
         if (!seenAdjudications.has(key)) {
             problems.push(`stale adjudication: ${e.file} :: ${e.callText} — site not found (remove or update the ledger entry)`);
+        }
+        if (!e.expiry) {
+            problems.push(`adjudication without expiry: ${e.file} :: ${e.callText} — every ledger entry must carry its re-adjudication round (G9 ledger hygiene)`);
+        }
+        if (e.expiry && !roundLt(CURRENT_ROUND, e.expiry)) {
+            problems.push(`expired adjudication: ${e.file} :: ${e.callText} — expiry ${e.expiry} has passed round ${CURRENT_ROUND} without re-adjudication`);
         }
     }
 

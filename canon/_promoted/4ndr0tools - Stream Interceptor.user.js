@@ -196,13 +196,13 @@
                 if (!value) return;
                 let candidate = value;
                 if (/%2F/i.test(candidate) || /%3A/i.test(candidate) || /%25/.test(candidate)) {
-                    try { candidate = decodeURIComponent(candidate); } catch (e) { /* keep raw */ }
+                    try { candidate = decodeURIComponent(candidate); } catch (e) { console.debug('SI interceptor:', e); /* keep raw */ }
                 }
                 candidate = decodeUrlEscapes(candidate);
                 const resolved = resolveUrl(candidate);
                 if (resolved) results.push(resolved);
             });
-        } catch (e) {
+        } catch (e) { console.debug('SI interceptor:', e);
             // URL parse failure on embedded params, safe to bypass
         }
         return results;
@@ -247,7 +247,7 @@
                 GM_setClipboard(text);
                 log.success('Copied to clipboard via GM_setClipboard.');
                 return true;
-            } catch (e) { /* fall through to page APIs */ }
+            } catch (e) { console.debug('SI interceptor:', e); /* fall through to page APIs */ }
         }
         try {
             if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
@@ -255,7 +255,7 @@
                 log.success('Copied to clipboard via Clipboard API.');
                 return true;
             }
-        } catch (e) { /* fall through to legacy path */ }
+        } catch (e) { console.debug('SI interceptor:', e); /* fall through to legacy path */ }
         log.warn('Primary Clipboard API blocked or sandboxed. Using legacy element selection abstraction.');
         return legacyCopy(text);
     }
@@ -528,7 +528,7 @@
                 if (decoded && decoded !== textPayload) {
                     scanPayloadForUrls(decoded);
                 }
-            } catch (e) {
+            } catch (e) { console.debug('SI interceptor:', e);
                 // Malformed percent sequences safely ignored; raw scan already completed
             }
         }
@@ -714,7 +714,13 @@
                 document.addEventListener('DOMContentLoaded', initSanitizationObserver, { once: true });
                 return;
             }
-            const sanitizationObserver = new MutationObserver((mutations) => {
+            /* v1.6.0: the sanitization observer rides the NetHook DOM defuse
+             * channel — one kernel-owned observer per realm (childList +
+             * subtree + attributes filtered to src, the exact config this
+             * site declared) fans the raw batch in the insertion microtask;
+             * the sanitize policy stays here. root was documentElement —
+             * the hub's observer target is documentElement. */
+            __4NDR0_NET_API__.onNode((mutations) => {
                 for (const mutation of mutations) {
                     if (mutation.type === 'childList') {
                         mutation.addedNodes.forEach(sanitizeNode);
@@ -722,12 +728,6 @@
                         sanitizeNode(mutation.target);
                     }
                 }
-            });
-            sanitizationObserver.observe(root, {
-                childList: true,
-                subtree: true,
-                attributes: true,
-                attributeFilter: ['src']
             });
         } catch (e) {
             log.warn('Early sanitization initialization bypassed: ' + e.message);

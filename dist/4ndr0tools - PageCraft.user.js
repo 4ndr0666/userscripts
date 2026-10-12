@@ -1464,7 +1464,7 @@ const enabled = (key) => store.get(`mod:${key}`, MODULES.find((m) => m.key === k
         if (img.complete && img.naturalWidth === 0) return true;
         if (MOZ_BROKEN_SUPPORTED) {
             try { if (img.matches('[src]:-moz-broken')) return true; }
-            catch (e) { /* feature-detect false positive — suppressed */ }
+            catch (e) { console.debug('PBJ interceptor:', e); /* feature-detect false positive — suppressed */ }
         }
         return false;
     }

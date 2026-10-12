@@ -1085,20 +1085,26 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.1.1 —
             utils.initSettings()
 
             // Observe changes in the DOM
+            let sidebarSyncTimer
             const observer = new MutationObserver((_mutations, _obs) => {
-                // Check if the target node is available
-                const container = document.getElementById(GE_CONTAINER_ID)
+                // v1.5.1 observer discipline: coalesced sidebar sync — the same
+                // idempotent add/remove check, bounded to one pass per 150 ms.
+                clearTimeout(sidebarSyncTimer)
+                sidebarSyncTimer = setTimeout(() => {
+                    // Check if the target node is available
+                    const container = document.getElementById(GE_CONTAINER_ID)
 
-                // Check if the mainContent is available
-                if (pageApp()?.fileManager?.mainContent?.data) {
-                    // Add buttons to sidebar
-                    !container && operations.addContainerToSidebar()
-                    // Stop observing
-                    // obs.disconnect()
-                } else {
-                    // remove GofileEnhanced_Container
-                    container && container.remove()
-                }
+                    // Check if the mainContent is available
+                    if (pageApp()?.fileManager?.mainContent?.data) {
+                        // Add buttons to sidebar
+                        !container && operations.addContainerToSidebar()
+                        // Stop observing
+                        // obs.disconnect()
+                    } else {
+                        // remove GofileEnhanced_Container
+                        container && container.remove()
+                    }
+                }, 150)
             })
 
             // Observe the target node "#index_main", which is in the DOM initially.

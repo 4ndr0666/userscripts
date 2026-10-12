@@ -34,9 +34,9 @@
    "version": "7.4.0",
    "description": "Stealth Service Worker / WebSocket / SharedWorker firewall companion for the 4ndr0serviceguard extension. Default-deny with a three-way action model: AUTHORIZE (real), SPOOF (pacified live-looking socket) or DENY (native-faithful failure). Whitelist authorizes, spooflist auto-spoofs silently, the blacklist is an absolute prohibition. Defers to the extension's Gatekeeper whenever the extension is present — and routes list edits to it through the extension's confirm bar. v7.4.0: survives sandboxed frames (opaque origins) — privileged APIs are captured defensively and the WebSocket gate still arms there.",
    "family": "privacy & security",
-   "sha256": "4f41dc48265106e3e8c5efab7338ded3a5974a46e4b30f29984483eacfca5ce9",
+   "sha256": "03c366827e91cc6b2926381aa0413e69bc415fed035ba5753393ef12858c7f12",
    "lines": 1288,
-   "bytes": 54619,
+   "bytes": 54695,
    "matches": [
     "*://*/*"
    ],
@@ -63,9 +63,9 @@
    "version": "5.2.1",
    "description": "Unified counter-surveillance defense layer with a three-stage strictness valve (full / core / off via Ctrl+Alt+Shift+K). Three-way consolidation of Anti-detection + Counter-surveillance + Anti-telemetry (ICC): anti-analysis script neutralization, telemetry sinkholing (fetch/XHR/beacon/WebSocket), WebRTC blinding, session-stable fingerprint spoofing (hardware/canvas/WebGL/audio), identifier poisoning, Google link-tracking sanitization and hostile-UI countermeasures.",
    "family": "uncategorized",
-   "sha256": "b04ac372bf1e021ad25d901e495c704182558927d6eea75ffcd618352f63ee74",
-   "lines": 1961,
-   "bytes": 103939,
+   "sha256": "7781dfd813b9955d39a4dcfbb17019862538521a81c06a197aa9feb6a1eb2d00",
+   "lines": 2090,
+   "bytes": 112038,
    "matches": [
     "*://*/*"
    ],
@@ -88,9 +88,9 @@
    "version": "1.0.1",
    "description": "Open all links into new windows (optional force mode), auto-expand collapsed content, hide banners and consent overlays, neon-glow overlay scrollbar, and right-click scroll-to-top/bottom.",
    "family": "ux utilities",
-   "sha256": "85e893e5a746bbb4607e1a0005fed53d7171a55bd988a17e49fa5752fd54e923",
-   "lines": 1555,
-   "bytes": 69933,
+   "sha256": "7cb96d701a227191f044ec2d68526d99bc2855afdf82cd8f0003edc7f2cfaa34",
+   "lines": 1567,
+   "bytes": 70585,
    "matches": [
     "*://*/*"
    ],
@@ -150,9 +150,9 @@
    "version": "7.3.0",
    "description": "Universal blob exfiltration, universal media URL sniffer + wire capture + URL vault (Alt+Shift+V), interactive asset sniffing, CSP/CORS bypass.",
    "family": "media & links",
-   "sha256": "1b0387eba64ac3ff7622921a354b3f8892d45849f3aad175d1a805c6b2429ffd",
-   "lines": 2271,
-   "bytes": 130004,
+   "sha256": "20f0114a11c5d0459df4734fdebb78e40fe364404eef86cace6c614b6063153d",
+   "lines": 2387,
+   "bytes": 137443,
    "matches": [
     "*://*/*"
    ],
@@ -182,9 +182,9 @@
    "version": "7.7.0",
    "description": "Direct URL routing, auto-sort, hide visited, bypass dl gateway, bulk download, m3u8/CDN URL aggregation (page-context net-hook + per-item stream glyphs + album-wide STREAMS aggregation), broken-link repair, power-user hotkeys, LinkMaster-grade m3u8 stream resolution with gateway fallback, MPV dispatch (URI/bridge), web-archive dead-CDN resurrection (archive.org / archive.is), captcha-aware transport retry",
    "family": "media & links",
-   "sha256": "f6cb0c71b12e2a7ad7afbd17d7cb21bd11f4bab9cacc0951f5773dc48e837504",
-   "lines": 4876,
-   "bytes": 255432,
+   "sha256": "13d015a8b88ab5fd1849cc025796892e18b377bbf7a782f33a98f9778b1d070a",
+   "lines": 4996,
+   "bytes": 263149,
    "matches": [],
    "excludes": [],
    "grants": [
@@ -407,9 +407,9 @@
    "version": "4.0.3",
    "description": "Reveals forum invisi-text, view all replies, rewrite redirect links. Download Gate: bypass all confirmation pages on all sites, glass overlay copy/download URL (incl. vidara embeds on xcandid), auto-solve Altcha, auto-click download. Turbo: embed routing, upload injector. Util: external link safety, right-click scrollbar to top.",
    "family": "forums",
-   "sha256": "40a8bf0577d3a8a609409c6d334a91ac827013021af36250480adba2b4b9c991",
-   "lines": 1181,
-   "bytes": 62270,
+   "sha256": "0ef8229e9cc342f8adb600098783e6ff2647eee8f2ac4597657cc9c986dd67af",
+   "lines": 1187,
+   "bytes": 62610,
    "matches": [
     "*://forums.socialmediagirls.com/*",
     "*://forums.socialmediagirls.com/goto/link-confirmation*",
@@ -443,9 +443,9 @@
    "version": "7.6.0",
    "description": "Dynamic stream extraction + folder enumeration for any media on Filester.me. Network proxy + glyph injection.",
    "family": "media & links",
-   "sha256": "845332aaf19504e49f4d53ea50be08d1906383f0f32d778ea0eb54dab3c094eb",
-   "lines": 1296,
-   "bytes": 70781,
+   "sha256": "36479d918be20586270f6049e958e9918f22d5853061f34eb9361742037a7516",
+   "lines": 1412,
+   "bytes": 77437,
    "matches": [],
    "excludes": [],
    "grants": [
@@ -470,9 +470,9 @@
    "version": "3.2.3",
    "description": "Link xtractor, Invisitext revealer, and inline post reply viewer.",
    "family": "forums",
-   "sha256": "6b8f2095f8ed040b3e94183038a81f337b954c7b214ffc05f893e331d20398db",
+   "sha256": "ee7311596c5ab57df9aa9fc62582b80210f615cbcc0bade0e4ac3f72e00ba0c9",
    "lines": 821,
-   "bytes": 41929,
+   "bytes": 41972,
    "matches": [
     "*://forums.socialmediagirls.com/*",
     "*://simpcity.su/*",
@@ -507,9 +507,9 @@
    "version": "1.10.0",
    "description": "Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.",
    "family": "forums",
-   "sha256": "f1a81ae751b7fe36b6f1b35448184444f157825a96378a2fe779ebf155eba7e1",
-   "lines": 4650,
-   "bytes": 218687,
+   "sha256": "4e66ca3b083c23fc7b9597bb3f6ab9adf0c3ddcd94ec93835804a1ad02e92225",
+   "lines": 4766,
+   "bytes": 225133,
    "matches": [
     "https://simpcity.su/threads/*",
     "https://simpcity.cr/threads/*"
@@ -621,9 +621,9 @@
    "version": "2.2.0",
    "description": "Directly batch-download GoFiles with a robust UI. Supports recursive folder scans, direct links, and download managers (Aria2, IDM). Fixing SPA persistence and Sandbox access.",
    "family": "media & links",
-   "sha256": "57e7ae44243b7f2a5bc9c08537aaf48d5a32dca64e223102079353c921629052",
-   "lines": 2117,
-   "bytes": 108773,
+   "sha256": "42ca4f98541fbfca0834ff3e167b9d66288906bcf55ec5896039c52733e39482",
+   "lines": 2239,
+   "bytes": 115669,
    "matches": [
     "*://gofile.io/*"
    ],
@@ -652,9 +652,9 @@
    "version": "8.1.0",
    "description": "Restores context menus, exposes direct links, adds reverse image search, Drive direct-download resolution, Photos full-res extraction, power-user hotkeys, drag persistence and a settings console. 3lectric-Glass paradigm.",
    "family": "images",
-   "sha256": "79f484737d930c7485da21218134822da233afaa648be1f360115c7b3b1be8af",
-   "lines": 2632,
-   "bytes": 129992,
+   "sha256": "e85662c78c26b140659677ed0c36ca3b812f8932e52063780ddf0c68438ce21a",
+   "lines": 2755,
+   "bytes": 137037,
    "matches": [
     "*://*.googleusercontent.com/*",
     "*://photos.google.com/*",
@@ -686,9 +686,9 @@
    "version": "6.0.1",
    "description": "Enterprise-grade, idempotent automation engine for HailuoAI featuring automated queue management, asset fetching with tracked-download deduplication, an in-HUD Asset Bay thumbnail gallery (click-to-new-window, hover-playable previews, blob downloads that never navigate the session window) with cross-reload persistence, completion notifications, failure-card masking, API hard purge, and interactive asset links — hardened for the 2026-09 MiniMax H3 site generation and the hailuoai.video/agent chat surface. v5.4: editable-context (Slate) DOM guards, self-healing HUD watchdog, HUD collapse + Ctrl+Alt+H toggle, frame isolation, webp-aware blob transport with retry, and non-destructive title telemetry.",
    "family": "sovereign platforms",
-   "sha256": "cf82c58b64612bae189d9058ef14b4da86461efd203aa2ee5c6b4bf834bbab11",
+   "sha256": "1571e45d1b822791f2ed331a28340075a5c44b7cfa75596b0caa28a41874fd0d",
    "lines": 1905,
-   "bytes": 96541,
+   "bytes": 96582,
    "matches": [
     "https://hailuoai.com/video*",
     "https://hailuoai.video/*",
@@ -754,9 +754,9 @@
    "version": "4.0.3",
    "description": "Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. Collapse-mode hotkey is configurable.",
    "family": "images",
-   "sha256": "8149a8038e548fbb245dd625a4a409057cc1993441a19adc1f7521776c573646",
-   "lines": 4602,
-   "bytes": 137503,
+   "sha256": "b9087aa7dcdcee21b6760316cc29e5ce2619c1e1e20599a910a565a4bf7d035e",
+   "lines": 4617,
+   "bytes": 137969,
    "matches": [
     "*://*/*"
    ],
@@ -815,9 +815,9 @@
    "version": "13.2.0",
    "description": "Tab-Bar + Dock Integration. Hotkey trigger (Alt+I). Ad-Blocking. Deep-Stack Recovery. Resilient cursor-based pagination. Stories support. Image/video download engine.",
    "family": "sovereign platforms",
-   "sha256": "af899fe0aac882ca40716c7199209a1581ada72897e8e1160f47dd96f0785317",
-   "lines": 2286,
-   "bytes": 117046,
+   "sha256": "418268562a17654b857dc317661440088803cfb44fda2ae8e1d6f14373ecbaa5",
+   "lines": 2429,
+   "bytes": 125226,
    "matches": [
     "*://*.instagram.com/*"
    ],
@@ -851,9 +851,9 @@
    "version": "6.3.0",
    "description": "Accurately decodes, previews, exports, validates and scrapes all links. (Dual MPV Support + Ψ IG Harvester + sexyforums premium-link unwrap + GitHub raw-URL harvest + Ψ2 forum deep-scrape engine)",
    "family": "media & links",
-   "sha256": "3d510314f0cc41619de55a76003ecfafc4b26577ef4c4a5bbb95f87f990d00ed",
-   "lines": 4899,
-   "bytes": 248715,
+   "sha256": "04ee2bb5a9a1ff1f042f37bf60aee9015011658e7bebd695669d1da82b49a78c",
+   "lines": 5030,
+   "bytes": 257351,
    "matches": [
     "*://*/*",
     "*://*.instagram.com/*"
@@ -896,9 +896,9 @@
    "version": "2.0.3",
    "description": "It integrates BugMeNot into any login form (it retrieves all matching logins from bugmenot.com and autofills the login form)",
    "family": "ux utilities",
-   "sha256": "1243c566c4123b9a40b793c9442a56c0c50822b53679e4eac9f553b0094dd424",
+   "sha256": "8b020e4fa82bfe57e367eaa1ed487e591b1cbb98fb35d26b5b04f24197d0c63b",
    "lines": 1013,
-   "bytes": 44183,
+   "bytes": 44221,
    "matches": [],
    "excludes": [
     "http://bugmenot.com/*",
@@ -931,9 +931,9 @@
    "version": "5.1.0",
    "description": "Automatically displays the m3u8 url for ANY video playing in the top right corner of the video. Click url to copy or click download to use the webapp \"tools.thatwind.com\". Also injects Play buttons next to magnet links on every page, relaying them to www.diancigaoshou.com.",
    "family": "media & links",
-   "sha256": "04fceaaa729b27c7e7b5af8577b9efc5c4acb14aaa893894c52d89951928ed11",
-   "lines": 1827,
-   "bytes": 91758,
+   "sha256": "ca7bb523bdd3dc7a612fe8da88b7a46e084afbc20a922856687e6d0a941b8388",
+   "lines": 1963,
+   "bytes": 99229,
    "matches": [
     "*://*/*"
    ],
@@ -973,9 +973,9 @@
    "version": "2.0.1",
    "description": "Maximize + Pip controls to any media anywhere - video, images, embedded and shadow-DOM players, on any site. 3lectric-Glass spec. Ψ",
    "family": "video & players",
-   "sha256": "80d4091e8d477336f513de3fcaf9489845b2b02b2819b46e7656de895a4f551d",
-   "lines": 1220,
-   "bytes": 49361,
+   "sha256": "1b855794e6f044558d6133d8f6caa7342622806e6e16ccec52e39eef930ceb24",
+   "lines": 1223,
+   "bytes": 49590,
    "matches": [],
    "excludes": [
     "*www.w3school.com.*",
@@ -1001,9 +1001,9 @@
    "version": "8.1.2",
    "description": "Speed • Fine Rate ±0.1 • Alt+Shift rAF Zoom/Pan • Rotation • Smart Maximize • Native Fullscreen • PiP • Play • DblClick • Pause-on-Acquire • Virtual DOM Nodes • Shadow-DOM Discovery • Cyan-Glass Scrub Bar • Download Button (fetch + blob capture) • Screenshot • Volume/Mute • Frame Step • Seek Hotkeys • IG Story Nav (3-Layer) • Story Repeat (3-Layer) • Active-Media Observer • YouTube Ad Auto-Skip • Toast Feedback • Draggable HUD • Full Hotkey Suite",
    "family": "uncategorized",
-   "sha256": "cff169f6eeda43d8199579e41c5832f3b8a64087db79056935f375d2dbc328e5",
-   "lines": 2625,
-   "bytes": 113375,
+   "sha256": "4acfbee888a59c270b2a006ff9b3a5e1847c595f1ced82f859fb05bfac9da9e5",
+   "lines": 2696,
+   "bytes": 116886,
    "matches": [
     "*://*/*"
    ],
@@ -1056,9 +1056,9 @@
    "version": "1.1.3",
    "description": "All-sites page utility belt: bulk checkbox control with range/alt-hover selection (de-jQueryed), broken-image auto-repair with cache-busting + frame broadcast, hover-collapse image I/O governor, and Brave infinite scroll — one engine, glass settings console, zero runtime dependencies.",
    "family": "ux utilities",
-   "sha256": "b93e243d2d2122a607ad933d7b9508fe2750f7600f7836f0bd2259f23aa2f969",
+   "sha256": "9c30c2c82b86c694141ad6d06bf2ed9fc76636234fbdd9d1bebadb4bc94a1d7a",
    "lines": 1692,
-   "bytes": 83586,
+   "bytes": 83624,
    "matches": [
     "*://*/*"
    ],
@@ -1087,9 +1087,9 @@
    "version": "1.2.0",
    "description": "Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.",
    "family": "media & links",
-   "sha256": "712222e3f6797baac316fd08e2076f21786018d470d15d39d58b6ca7b6e82528",
-   "lines": 3568,
-   "bytes": 195331,
+   "sha256": "dbc0d309d46c22060f38e01a69b5b3ef4199da5924337c89660d4165e4ff9235",
+   "lines": 3684,
+   "bytes": 202908,
    "matches": [
     "https://pixeldrain.com/*",
     "https://pixeldrain.net/*",
@@ -1152,9 +1152,9 @@
    "version": "28.6.0",
    "description": "Google Flow prompt manager toolkit (works on any AI, just add url) - persisted unit ledger meters every generation click, organization engine: collections, saved views, favorites, ratings, archive, group-by, and insights for large prompt libraries, dedupe, media slideshow, ai prompt enhancer, auto gist syncing, hotkeys, much more.",
    "family": "sovereign platforms",
-   "sha256": "20f73db8224bae2174d5aa0d52ff61279fa3587a7418ec281679cde293a0df64",
-   "lines": 23310,
-   "bytes": 1122838,
+   "sha256": "6d3dce6c5c0e7ed5c270c584abdb2727d688199d27d1c1843f27843188ad4ffd",
+   "lines": 23473,
+   "bytes": 1133676,
    "matches": [
     "*://geminigen.ai/*",
     "*://gist.github.com/*",
@@ -1203,9 +1203,9 @@
    "version": "9.1.0",
    "description": "Alt+Shift+R hotkey — unified forensic recon platform: hardened XHR/fetch/beacon interception through the suite's shared NetHook hub with MITM block & mute rules and failure pacification, console harvesting, WebSocket + postMessage bridge capture, JWT identity harvesting, headless C2 API (reconEngine / chimeraRecon / Hook) and a moveable Shadow-DOM glass dock with full markdown reporting. For security research only.",
    "family": "privacy & security",
-   "sha256": "689e340afce0dc1b2a8e089f71f6d2ae44c3683d8990716bdbae4d0e9984f546",
-   "lines": 2029,
-   "bytes": 111779,
+   "sha256": "504f614efcd10324ff4c7aa0ee5f12de46d277c565b9bd75331a729437c517c0",
+   "lines": 2145,
+   "bytes": 118306,
    "matches": [
     "*://*/*"
    ],
@@ -1259,9 +1259,9 @@
    "version": "3.3.0",
    "description": "Intercepts, parses, and extracts stream tokens, manifests, and direct video sources via the suite's shared NetHook hub and DOM inspection. Suite v3.3: the v3.1 dual-realm fetch/XHR hooks ride the shared NetHook singleton (malformed-SVG veto, asset discovery, deep text inspection); ShadowDOM piercing, ReDoS-proof regex, 3lectric-Glass card surface, universal URL registry cap.",
    "family": "uncategorized",
-   "sha256": "d29482ea7b533a9cf048ce0dc1f9781749288f6be074abd1860a44b86f3c7801",
-   "lines": 1826,
-   "bytes": 94336,
+   "sha256": "af3a36050ac394b0ac44e332b1be834326c94cf3a8ccc6762564e22829841908",
+   "lines": 1942,
+   "bytes": 101265,
    "matches": [
     "*://*/*"
    ],
@@ -1298,9 +1298,9 @@
    "version": "2.1.0",
    "description": "Security research and alignment testing only.",
    "family": "sovereign platforms",
-   "sha256": "ce84ecdf1d88592d77b241cc935105e0a2f8b1332b5c9555eb118aaaa20efdb6",
-   "lines": 15316,
-   "bytes": 1279143,
+   "sha256": "2afa5fdf158a26be68c5f955c5b53d8628fc4eade2c82f226654bc8737ea3af9",
+   "lines": 15442,
+   "bytes": 1286606,
    "matches": [
     "https://gemini.google.com/app",
     "https://gemini.google.com/app/*",
@@ -1331,9 +1331,9 @@
    "version": "5.3.0",
    "description": "Draggable Cyberdeck HUD, DOM Zapper, Ad suppression, validated-selector compiled deep-cleaning, per-site HUD suppression + Alt+Shift+H hotkey.",
    "family": "ux utilities",
-   "sha256": "f5b34a9127a08227e388b885ca1c6fedfddf552de9e4f556c5136cd27ad6bfb5",
+   "sha256": "ce25ca1ce6ae5655d877743d9629aaa2ee577654c05090a3b5022bf0efd1ae83",
    "lines": 585,
-   "bytes": 27594,
+   "bytes": 27708,
    "matches": [
     "*://*/*"
    ],
@@ -1359,9 +1359,9 @@
    "version": "0.4.1",
    "description": "Robust, event-driven slideshow, fullscreen preview, and on-screen status for Yandex reverse-image search.",
    "family": "images",
-   "sha256": "159edc9b6163b20d89f47d5ab42077236c1ceac2e7ea2f5b9031d4c1bb6bda6e",
-   "lines": 263,
-   "bytes": 10980,
+   "sha256": "38954a7d436835ef5a053be9ada9fbf9b0be13b9bf1c6a7cc52bbd4ff976824b",
+   "lines": 277,
+   "bytes": 11638,
    "matches": [
     "http*://yandex.com/images/*",
     "http*://yandex.ru/images/*"
@@ -1385,9 +1385,9 @@
    "version": "1.7.0",
    "description": "Channel playlist buttons (All / Popular / Videos / Shorts / Streams / Members-only), Random play (prefer newest/oldest), reverse autoplay order, playlist autoplay toggle, duration sort, bulk copy/move/delete, JSON + plaintext export/import, snapshots with deleted-video detection, quick watch_videos playlists, queue & watch-later overlays, playlist close button, date/view metadata, episode auto-expand, huge-playlist browser, live settings (no reload), always-available Ψ deck, playlist row filter, duplicate finder & purge, global hotkeys (Alt+Shift+U/S/X), failsafe deck rescue, 404-proof navigation guards, Trusted-Types-immune rendering, fully-visible fit-content modal dialogs.",
    "family": "video & players",
-   "sha256": "6ee2b7cd834aeff005fcb7564c73519704ae063be3830a123165037abcad8b06",
-   "lines": 5402,
-   "bytes": 273648,
+   "sha256": "bc6bc2a0876611eac19a46203ad766efff0897fb19be1bfa4b071d09ce33662b",
+   "lines": 6576,
+   "bytes": 340157,
    "matches": [
     "https://*.youtube.com/*",
     "https://youtube.com/*"
@@ -1416,9 +1416,9 @@
    "version": "2.0.2",
    "description": "Restores titles for removed or private videos in YouTube playlists",
    "family": "video & players",
-   "sha256": "f158c3e3f80e93db4133e65707060446afe4f436d2c4948dda20a7ec40c0a53f",
-   "lines": 605,
-   "bytes": 29429,
+   "sha256": "bc5d76be1793f1a1ae5714919962e1cd1a3e4be11cda43da227d1924a90df2bc",
+   "lines": 609,
+   "bytes": 29531,
    "matches": [
     "*://*.youtube.com/*"
    ],
@@ -1470,9 +1470,9 @@
    "version": "2.5",
    "description": "Electric-Glass YouTube video filter — views, date, duration",
    "family": "video & players",
-   "sha256": "079c2974f01cc627f0af491a99ce68c3a65839a6df9c01c09b3b8166c1f300c6",
+   "sha256": "39ad0114257ed9badf1a15e5b0797699a9288bf68cd746d4ee2d40efb32126ce",
    "lines": 850,
-   "bytes": 32594,
+   "bytes": 32637,
    "matches": [
     "*://*.youtube.com/*"
    ],
@@ -1487,6 +1487,36 @@
    "urls": {
     "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YT%20Filter.user.js",
     "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YT%20Filter.user.js"
+   }
+  },
+  {
+   "file": "4ndr0tools - Zai Exporter.user.js",
+   "name": "4ndr0tools - Zai Exporter",
+   "version": "1.0.0",
+   "description": "One-click conversation exfiltration for the Z.ai GLM web chat — scrapes the live thread (multi-strategy, no network, no timers) and exports it as Markdown, JSON, or plain text, with metadata and Ψ glass console. Runs entirely page-side: zero privileged transports, zero observers, zero polling.",
+   "family": "uncategorized",
+   "sha256": "a3943bb12af8cb7cbdab4ddfd30ede86fa69f2f3cb5e902e1d81f9cf0f9600f1",
+   "lines": 1110,
+   "bytes": 45796,
+   "matches": [
+    "https://chat.z.ai/*",
+    "https://z.ai/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_getValue",
+    "GM_setValue",
+    "GM_addStyle",
+    "GM_setClipboard",
+    "GM_registerMenuCommand"
+   ],
+   "requires": [],
+   "connects": [],
+   "runAt": "document-end",
+   "noframes": true,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Zai%20Exporter.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Zai%20Exporter.user.js"
    }
   }
  ],
@@ -1562,5 +1592,5 @@
    ]
   }
  ],
- "digest": "9c5b2fd8853e5c2f229959f9e6cf1c4f144571f84cfbf2779c6a1a5f0124af64"
+ "digest": "8db86a6cbecdf81d471ac5d202afadf5cb9f5fa393601a293618d18ec68b56ea"
 }

@@ -357,9 +357,23 @@ function makeNetContext() {
         open(m, u) { this._m = m; this._u = u; }
         send() { this.responseText = "XHRBODY"; this.status = 200; (this.listeners.load || []).forEach((f) => f.call(this)); }
     }
+    /* v1.6.0: DOM mock for the onNode channel — a controllable
+     * MutationObserver class + a document with a documentElement. The
+     * kernel arms the observer on realm().document; tests fire batches by
+     * invoking the recorded instance callbacks. */
+    const moInstances = [];
+    class MockMutationObserver {
+        constructor(fn) { this.cb = fn; this.observed = null; this.config = null; this.disconnected = 0; moInstances.push(this); }
+        observe(target, config) { this.observed = target; this.config = config; }
+        disconnect() { this.disconnected++; }
+    }
+    const mkDocEl = () => ({ tagName: "HTML", nodeName: "#document-element", isConnected: true });
+    const docMock = { documentElement: mkDocEl(), readyState: "complete", body: mkDocEl() };
     const page = {
         fetch: nativeFetch,
         XMLHttpRequest: MockXHR,
+        document: docMock,
+        MutationObserver: MockMutationObserver,
         navigator: {
             sendBeacon: function () { beaconCalls++; lastBeaconArgs = Array.from(arguments); return true; },
         },
@@ -367,6 +381,7 @@ function makeNetContext() {
     const sb = {
         console, Date, Math, JSON, Map, Set, WeakSet, Promise, Array, Object, String, Number, Symbol,
         setTimeout, clearTimeout, TextDecoder, TextEncoder,
+        MutationObserver: MockMutationObserver,
         Event: MockEvent,
         Response: class {
             constructor(body, init) {
@@ -389,7 +404,7 @@ function makeNetContext() {
         unsafeWindow: page, window: page, XMLHttpRequest: MockXHR,
     };
     sb.globalThis = sb;
-    sb.__probe = () => ({ fetchCalls, cloneCalls, page, nativeFetch, lastFetchArgs, beaconCalls, lastBeaconArgs });
+    sb.__probe = () => ({ fetchCalls, cloneCalls, page, nativeFetch, lastFetchArgs, beaconCalls, lastBeaconArgs, moInstances, docMock, MockMutationObserver });
     sb.__setBody = (s) => { nextBody = s; };
     sb.__setStatus = (s) => { nextStatus = s; };
     sb.__setFail = (e) => { nextFail = e; };
@@ -404,7 +419,7 @@ function runNet(sb, label) {
 (async () => {
     const sbNet = makeNetContext();
     const net = runNet(sbNet, "net-primary.js");
-    assert(net.version === 5 && typeof net.onBody === "function", "net: NetHook v5 api exported");
+    assert(net.version === 6 && typeof net.onBody === "function" && typeof net.onNode === "function", "net: NetHook v6 api exported (incl. onNode)");
 
     /* lazy arm — nothing wraps before the first subscriber */
     const p0 = sbNet.__probe();
@@ -415,7 +430,7 @@ function runNet(sb, label) {
     const off = net.onBody((t) => { a += t; });
     const p1 = sbNet.__probe();
     const firstWrap = p1.page.fetch;
-    assert(p1.page.fetch !== p1.nativeFetch && p1.page.fetch.__4ndro_net === 5, "net: first subscribe arms exactly one fetch wrap (v5 versioned mark)");
+    assert(p1.page.fetch !== p1.nativeFetch && p1.page.fetch.__4ndro_net === 6, "net: first subscribe arms exactly one fetch wrap (v6 versioned mark)");
 
     await p1.page.fetch("https://x.test/a");
     await new Promise((r) => setTimeout(r, 0));
@@ -849,8 +864,8 @@ function runNet(sb, label) {
         let chained = "";
         netC.onBody((t) => { chained += t; });
         const afterArm = sbC.__probe().page.fetch;
-        assert(afterArm !== legacyWrap && afterArm.__4ndro_net === 5,
-            "net: v5 wraps ABOVE a legacy-marked wrap (transitional chaining)");
+        assert(afterArm !== legacyWrap && afterArm.__4ndro_net === 6,
+            "net: v6 wraps ABOVE a legacy-marked wrap (transitional chaining)");
         await afterArm("https://x.test/chain");
         await new Promise((r) => setTimeout(r, 0));
         assert(chained === "FETCHBODY", "net: v4 subscribers served through the chained wrap");
@@ -1001,8 +1016,8 @@ function runNet(sb, label) {
         sbCo2.GM_xmlhttpRequest = sbCo.GM_xmlhttpRequest;
         const netCo2 = runNet(sbCo2, "net-gm-co2.js");
         netCo2.onBody(() => {});
-        assert(sharedCo.fetch.__4ndro_net === 5,
-            "net: second v5 copy delegates through the realm slot (single wrap set)");
+        assert(sharedCo.fetch.__4ndro_net === 6,
+            "net: second v6 copy delegates through the realm slot (single wrap set)");
         const rCo = await netCo2.gmFetch("https://x.test/co");
         assert(rCo.responseText === "LOCAL",
             "net: gmFetch served by the copy's own closure under co-install delegation");
@@ -1139,6 +1154,82 @@ function runNet(sb, label) {
         const rAgain = await netL.gmFetch("https://x.test/listener2");
         assert(rAgain.responseText === "L",
             "net: gmFetch unaffected by a stale abort fire (transport still serves)");
+    }
+
+    /* ── NetHook v6 battery (suite v1.6.0) — the DOM defuse channel ────
+     * onNode: lazy arm (zero observers before the first subscriber),
+     * observe config (documentElement + childList/subtree/attributes
+     * filtered to src), synchronous per-subscriber fan with batch copies,
+     * throwing-subscriber isolation, symmetric disarm on last
+     * unsubscribe + re-arm, bounded registry (MAX_SUBS), auto-propagate
+     * of inserted iframes, and zero network-wrap arming from the DOM
+     * channel alone. */
+    {
+        const sbV = makeNetContext();
+        const netV = runNet(sbV, "net-v6-onnode.js");
+        const probe = sbV.__probe();
+
+        /* lazy arm — no observer exists before any onNode subscriber */
+        assert(probe.moInstances.length === 0 && netV.nodeSubscriberCount === 0,
+            "net v6: lazy arm — zero MutationObservers before the first onNode subscriber");
+
+        /* arm on subscribe — documentElement target, union config */
+        const seen1 = [], seen2 = [];
+        const un1 = netV.onNode((m) => { seen1.push(m); m.length = 0; }); /* splices its copy */
+        assert(netV.nodeSubscriberCount === 1 && probe.moInstances.length === 1,
+            "net v6: first onNode subscriber arms exactly one kernel-owned observer");
+        const inst = probe.moInstances[0];
+        assert(inst.observed === probe.page.document.documentElement,
+            "net v6: observer target is the realm document's documentElement");
+        assert(inst.config && inst.config.childList === true && inst.config.subtree === true &&
+            inst.config.attributes === true && Array.isArray(inst.config.attributeFilter) && inst.config.attributeFilter[0] === "src",
+            "net v6: union observe config (childList+subtree+attributes filtered to src)");
+
+        /* synchronous fan with per-subscriber batch copies (a splicing
+         * subscriber cannot corrupt its siblings' batch) */
+        const un2 = netV.onNode((m) => { seen2.push(m.length); });
+        const batch = [{ type: "childList", addedNodes: [{ tagName: "SCRIPT" }] }, { type: "attributes", target: { tagName: "IMG" } }];
+        inst.cb(batch);
+        assert(seen1.length === 1 && seen2.length === 1 && seen2[0] === 2,
+            "net v6: fan delivers the batch to every subscriber synchronously");
+        assert(batch.length === 2,
+            "net v6: a splicing subscriber cannot corrupt the source batch (per-subscriber copies)");
+
+        /* throwing-subscriber isolation — a broken defuser is a no-opinion */
+        const before = seen2.length;
+        const un3 = netV.onNode(() => { throw new Error("broken defuser"); });
+        inst.cb(batch);
+        assert(seen2.length === before + 1 && batch.length === 2,
+            "net v6: a throwing subscriber is isolated (siblings still served)");
+
+        /* auto-propagate — an inserted iframe with a reachable contentWindow
+         * gets the network wrap set armed by the hub itself: the child
+         * realm's fetch is wrapped and carries the generation mark */
+        const childPage = { fetch: () => Promise.resolve({ ok: true, status: 200 }), document: probe.docMock, MutationObserver: probe.MockMutationObserver };
+        const origChildFetch = childPage.fetch;
+        inst.cb([{ type: "childList", addedNodes: [{ tagName: "IFRAME", contentWindow: childPage }] }]);
+        assert(childPage.fetch !== origChildFetch && childPage.fetch.__4ndro_net === 6,
+            "net v6: inserted iframes are auto-propagated (child realm fetch wrapped + generation-marked)");
+
+        /* symmetric disarm — last unsubscribe disconnects; re-subscribe re-arms */
+        un1(); un2(); un3();
+        assert(netV.nodeSubscriberCount === 0 && probe.moInstances[0].disconnected >= 1,
+            "net v6: last unsubscribe disconnects the kernel observer (armed lifetime == subscription lifetime)");
+        netV.onNode((m) => { seen1.push(m); });
+        assert(probe.moInstances.length === 2,
+            "net v6: re-subscribe re-arms a fresh kernel observer");
+
+        /* bounded registry — MAX_SUBS ceiling returns a no-op handle */
+        const sbM = makeNetContext();
+        const netM = runNet(sbM, "net-v6-maxsubs.js");
+        const handles = [];
+        for (let i = 0; i < 40; i++) handles.push(netM.onNode(() => {}));
+        assert(netM.nodeSubscriberCount === 32,
+            "net v6: onNode registry bounded at MAX_SUBS=32 (excess registrations are inert no-ops)");
+
+        /* DOM channel alone arms ZERO network wraps (lazy network arm holds) */
+        assert(probe.page.fetch === probe.nativeFetch,
+            "net v6: onNode arming installs zero network wraps (the two lazy-arm contracts are independent)");
     }
 
     console.log(failures === 0 ? "\nKERNEL SMOKE: ALL PASS" : `\nKERNEL SMOKE: ${failures} FAILURE(S)`);

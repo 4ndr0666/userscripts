@@ -590,13 +590,20 @@
             window.addEventListener('contextmenu', enforceContext, true);
             document.addEventListener('contextmenu', enforceContext, true);
 
+            let ctxMenuStripTimer;
             const observer = new MutationObserver(mutations => {
                 if (!settings.contextMenuUnlock) return;
-                for (const mutation of mutations) {
-                    if (mutation.type === 'attributes' && mutation.attributeName === 'oncontextmenu') {
-                        mutation.target.removeAttribute('oncontextmenu');
-                    }
-                }
+                if (!mutations.some(m => m.type === 'attributes' && m.attributeName === 'oncontextmenu')) return;
+                // v1.5.1 observer discipline: coalesced idempotent re-strip —
+                // full-subtree coverage (same as the per-mutation strip on any
+                // target), bounded to one pass per 150 ms of attribute churn.
+                clearTimeout(ctxMenuStripTimer);
+                ctxMenuStripTimer = setTimeout(() => {
+                    const root = document.documentElement;
+                    if (!root) return;
+                    root.removeAttribute('oncontextmenu');
+                    root.querySelectorAll('[oncontextmenu]').forEach(el => el.removeAttribute('oncontextmenu'));
+                }, 150);
             });
 
             if (document.documentElement) {

@@ -307,9 +307,24 @@ checkProgress({start} = {}) {
 
 const p = ai.popup;
 
-if (!p)
+// v1.5.0 (suite, B.1): the progress watcher is idle-parked — 30 s with the
+// popup gone parks it; the {start:true} re-arm (called when a new popup
+// opens) brings it back.
+if (!p) {
+
+if ((ai.progressIdleTries = (ai.progressIdleTries || 0) + 1) > 200) {
+
+clearInterval(ai.timerProgress);
+
+ai.timerProgress = null;
+
+}
 
 return;
+
+}
+
+ai.progressIdleTries = 0;
 
 const w = ai.nwidth = p.naturalWidth || p.videoWidth || ai.popupLoaded && innerWidth / 2;
 
@@ -672,7 +687,7 @@ const Bar = {
       try {
         ai.bar.replaceChildren(...$parseHtml(text).body.childNodes);
         return;
-      } catch (_) { /* plain-text fallback below */ }
+      } catch (_) { console.debug('IMAGES interceptor:', _); /* plain-text fallback below */ }
     }
     ai.bar.textContent = text;
   },
@@ -1484,7 +1499,7 @@ const Gallery = {
         const img = qEntry ? $(qImage, entry) : entry;
         item.url = fix(Req.findImageUrl(img, docUrl), true);
         item.desc = qCaption.map(processCaption, entry).filter(Boolean).join(' - ');
-      } catch (e) {}
+      } catch (e) { console.debug('IMAGES interceptor:', e);}
       return item.url && item;
     }
     function processCaption(sel) {
@@ -4472,7 +4487,7 @@ const sumProps = (...props) => {
 const tryCatch = (fn, ...args) => {
   try {
     return fn(...args);
-  } catch (e) {}
+  } catch (e) { console.debug('IMAGES interceptor:', e);}
 };
 
 const tryJSON = str =>

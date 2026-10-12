@@ -13,7 +13,7 @@ Forum Link Xtractor digs through forum threads the way an archivist digs through
 | Version | `3.2.3` |
 | Matches | `*://forums.socialmediagirls.com/*`, `*://simpcity.su/*`, `*://*.simpcity.su/*`, `*://simpcity.cr/*` (+4 more) |
 | Run-at | `document-idle` |
-| Size | 40.9 KB · 821 lines |
+| Size | 41.0 KB · 821 lines |
 | Install | [dist/4ndr0tools - Forum Link Xtractor.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Forum%20Link%20Xtractor.user.js) |
 
 ## Feature Inventory

@@ -78,7 +78,7 @@
     // =========================================================
     if (win.trustedTypes && win.trustedTypes.createPolicy) {
         try { win.trustedTypes.createPolicy('default', { createHTML: s => s }); }
-        catch (_) {}
+        catch (_) { console.debug('IG interceptor:', _);}
     }
 
     // =========================================================
@@ -310,7 +310,7 @@
         document.querySelectorAll('script[type="application/json"]').forEach(s => {
             try {
                 harvestJSON(JSON.parse(s.textContent), 'inline-scan');
-            } catch (_) { /* most script tags on the page aren't media JSON at all */ }
+            } catch (_) { console.debug('IG interceptor:', _); /* most script tags on the page aren't media JSON at all */ }
         });
     }
 
@@ -539,7 +539,7 @@
                         log(`Downloaded: ${filename}`);
                     } catch (err) {
                         log(`Download failed for ${filename}: ${err.message}`);
-                        try { window.open(url, '_blank'); } catch (_) {}
+                        try { window.open(url, '_blank'); } catch (_) { console.debug('IG interceptor:', _);}
                     }
                     await new Promise(r => setTimeout(r, CFG.DOWNLOAD_STAGGER_MS));
                 }
@@ -1049,22 +1049,39 @@
 
         NeuralDOM.observe(gui);
 
-        setInterval(() => {
-            const el = document.getElementById('ares-stat');
-            if (!el) return;
-            const active = STATE.domNodes.filter(n => !n.isPruned).length;
-            const parts = [
-                `ACTIVE:${active}`,
-                `TOTAL:${STATE.totalLoaded}`,
-                `UID:${STATE.userId || '…'}`,
-                `MODE:${STATE.MODE.toUpperCase()}`,
-                `BUFFERED:${STATE.pendingItems.length}`,
-            ];
-            if (STATE.isFetching) parts.push('FETCHING…');
-            if (DownloadEngine.queue.length || DownloadEngine.active) parts.push(`DL:${DownloadEngine.queue.length}`);
-            if (STATE.lastError) parts.push(`ERR:${STATE.lastError}`);
-            el.textContent = parts.join(' | ');
-        }, 1000);
+        // B.1 (suite v1.5.0): the stat updater parks after 30 min with the
+        // header gone (nothing left to update); any user click or tab
+        // return re-arms it — the updater only matters while the ARES GUI
+        // is alive and being used.
+        let aresStatTimer = null;
+        let aresStatIdle = 0;
+        const armAresStatUpdate = () => {
+            if (aresStatTimer) return;
+            aresStatIdle = 0;
+            aresStatTimer = setInterval(() => {
+                const el = document.getElementById('ares-stat');
+                if (!el) {
+                    if (++aresStatIdle > 1800) { clearInterval(aresStatTimer); aresStatTimer = null; }
+                    return;
+                }
+                aresStatIdle = 0;
+                const active = STATE.domNodes.filter(n => !n.isPruned).length;
+                const parts = [
+                    `ACTIVE:${active}`,
+                    `TOTAL:${STATE.totalLoaded}`,
+                    `UID:${STATE.userId || '…'}`,
+                    `MODE:${STATE.MODE.toUpperCase()}`,
+                    `BUFFERED:${STATE.pendingItems.length}`,
+                ];
+                if (STATE.isFetching) parts.push('FETCHING…');
+                if (DownloadEngine.queue.length || DownloadEngine.active) parts.push(`DL:${DownloadEngine.queue.length}`);
+                if (STATE.lastError) parts.push(`ERR:${STATE.lastError}`);
+                el.textContent = parts.join(' | ');
+            }, 1000);
+        };
+        document.addEventListener('click', armAresStatUpdate, true);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) armAresStatUpdate(); });
+        armAresStatUpdate();
 
         STATE.uiReady = true;
 
@@ -1216,14 +1233,15 @@
         start() {
             harvestInlineJSON();
             this.scan(document);
+            let mediaScanTimer;
             new MutationObserver(muts => {
-                for (const m of muts) {
-                    m.addedNodes.forEach(n => {
-                        if (n.nodeType !== 1) return;
-                        if (n.matches && n.matches('img,video')) this.inject(n);
-                        if (n.querySelectorAll) this.scan(n);
-                    });
-                }
+                // v1.5.1 observer discipline: coalesced re-scan — scan(document)
+                // covers every added subtree (queryselectorAll('img, video') with
+                // the `seen` idempotency guard), bounded to one pass per 250 ms.
+                const structural = muts.some(m => m.addedNodes && m.addedNodes.length);
+                if (!structural) return;
+                clearTimeout(mediaScanTimer);
+                mediaScanTimer = setTimeout(() => this.scan(document), 250);
             }).observe(document.body, { childList: true, subtree: true });
         },
     };
@@ -1255,10 +1273,19 @@
         // always present, independent of recon
         MediaOverlay.start();
 
-        // DOM injection loop — tries every 1.5 s until it lands
+        // DOM injection loop — tries every 1.5 s until it lands.
+        // B.1 (suite v1.5.0): attempt ceiling — an injection point that
+        // never appears (layout change) parks the daemon after 10 min
+        // instead of polling forever.
+        let daemonTries = 0;
         const daemon = setInterval(() => {
             if (document.getElementById('igBigContainer')) {
                 clearInterval(daemon); // UI is open, stop polling
+                return;
+            }
+            if (++daemonTries > 400) {
+                clearInterval(daemon);
+                log('UI injection point never appeared — daemon parked (reload to retry).');
                 return;
             }
             injectTrigger();

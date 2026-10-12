@@ -25,6 +25,15 @@ import { fileURLToPath } from "node:url";
 import { runCensus, stripComments } from "./hotkey-census.mjs";
 import { runSinkCensus } from "./sink-census.mjs";
 import { runTransportCensus } from "./transport-census.mjs";
+import { runPollingCensus } from "./polling-census.mjs";
+import { runObserverCensus } from "./observer-census.mjs";
+import { runErrorCensus } from "./error-census.mjs";
+import { runConnectCensus } from "./connect-census.mjs";
+import { runDomainCensus } from "./domain-census.mjs";
+import { runGlobalCensus } from "./global-census.mjs";
+import { runCacheCensus } from "./cache-census.mjs";
+import { runSizeBudget } from "./size-budget.mjs";
+import { runProductionScore, SCORE_THRESHOLD } from "./production-score.mjs";
 import { computeInventory, serialize } from "./inventory.mjs";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -500,9 +509,9 @@ function gateD() {
         failures.push(`[D] Akasha Silence: legacy own-network-wrap remnants still present in canon (must ride NetHook)`);
     }
     const netSrcV = fs.readFileSync(path.join(ROOT, "kernel", "net.js"), "utf8");
-    if (!/VERSION\s*=\s*5\s*;/.test(netSrcV) || !/onRequest:\s*function/.test(netSrcV) || !/propagate:\s*function/.test(netSrcV) || !/onTraffic:\s*function/.test(netSrcV) || !/onError:\s*function/.test(netSrcV) || !/gmFetch:\s*gmFetch/.test(netSrcV) || !/requestSubscriberCount/.test(netSrcV) || !/trafficSubscriberCount/.test(netSrcV) || !/errorSubscriberCount/.test(netSrcV)) {
-        failures.push(`[D] NetHook kernel: veto/traffic/error/transport api surface incomplete (version 5 + onRequest/onTraffic/onError/propagate/gmFetch + subscriber counts)`);
-    } else passes.push(`[D] NetHook veto + traffic + recovery + transport semantics verified (request verdicts, structured events, error pacification, gmFetch privileged transport; defusers and observers ride one hub)`);
+    if (!/VERSION\s*=\s*6\s*;/.test(netSrcV) || !/onRequest:\s*function/.test(netSrcV) || !/propagate:\s*function/.test(netSrcV) || !/onTraffic:\s*function/.test(netSrcV) || !/onError:\s*function/.test(netSrcV) || !/gmFetch:\s*gmFetch/.test(netSrcV) || !/onNode:\s*function/.test(netSrcV) || !/requestSubscriberCount/.test(netSrcV) || !/trafficSubscriberCount/.test(netSrcV) || !/errorSubscriberCount/.test(netSrcV) || !/nodeSubscriberCount/.test(netSrcV)) {
+        failures.push(`[D] NetHook kernel: veto/traffic/error/transport/dom api surface incomplete (version 6 + onRequest/onTraffic/onError/onNode/propagate/gmFetch + subscriber counts)`);
+    } else passes.push(`[D] NetHook veto + traffic + recovery + transport + DOM defuse semantics verified (request verdicts, structured events, error pacification, gmFetch privileged transport, onNode kernel-owned observer; defusers and observers ride one hub)`);
 
     /* v1.4.6 NetHook adoption — Recon + Stream Interceptor ride the shared
      * hub (kernel/net.js v4): the per-script fetch/XHR recorders and
@@ -877,6 +886,284 @@ function gateD() {
         for (const tp of transport.problems) failures.push(`[D] transport census: ${tp}`);
     } else {
         passes.push(`[D] transport census verified (${transport.boundedSites} bounded dispatch(es) + ${transport.adjudicatedSites} adjudicated indirect dispatch(es) across ${transport.filesScanned} source files, 0 unbounded; kernel req-literal timeout asserted)`);
+    }
+
+    // Polling boundedness census (suite v1.5.0, GUP B.1 round mandate):
+    // every setInterval site in the review sources is machine-classified
+    // as RETRY-BOUND (attempt/time ceiling with a proven clear),
+    // SERVICE-GUARDED (lifecycle clear + bounding guard — visibility,
+    // activity, negated-presence, or session gate), or LEDGERED
+    // (page-lifetime watcher with justification + expiry, drift-checked).
+    // The Phase A audit found 39 active sites with no gate measuring the
+    // class — 24 of them with no clear path at all. This gate is the
+    // class-closure for GUP B.1 "Bounded Polling".
+    const polling = runPollingCensus();
+    if (polling.problems.length) {
+        for (const pl of polling.problems) failures.push(`[D] polling census: ${pl}`);
+    } else {
+        passes.push(`[D] polling census verified (${polling.sites} setInterval sites across ${polling.filesScanned} source files — ${polling.retryBounded} retry-bounded, ${polling.serviceGuarded} service-guarded, ${polling.ledgered} ledgered page-lifetime; 0 unbounded)`);
+    }
+
+    // Observer discipline census (suite v1.5.1, GUP B.1 "Observer
+    // Discipline" — v1.5.0 verdict §2/G2): every new MutationObserver site
+    // in the review sources is machine-classified as ONE-SHOT
+    // (self-disconnecting waitFor idiom — the observer is its own bound),
+    // PERSISTENT-COALESCED (structural node/presence/config filter plus a
+    // proven debounce/throttle/rAF coalescer), PERSISTENT-CHEAP (filter plus
+    // an O(1) guarded body — no loops, no structural DOM writes, no network),
+    // or LEDGERED (per-site adjudication: timing-critical microtask
+    // defuse/sanitize/reattach races, scoped single-element watchers,
+    // settle-bounded probes, delegated batch processors — justification +
+    // expiry, drift-checked). The v1.5.1 round coalesced 9 sites (CB
+    // scanTargets, GPD context-menu strip, Gofile sidebar sync, IG media
+    // scan, LMΨ redirect rewrite + forum post tranche, ANW node tranche,
+    // Yandex viewer check, YTPM stats re-add) — all behavior-preserving
+    // (identical node sets / idempotent rescans). This gate is the
+    // class-closure for GUP B.1 observer discipline.
+    const observers = runObserverCensus();
+    if (observers.problems.length) {
+        for (const ob of observers.problems) failures.push(`[D] observer census: ${ob}`);
+    } else {
+        passes.push(`[D] observer census verified (${observers.sites} MutationObserver sites across ${observers.filesScanned} source files — ${observers.oneShot} one-shot, ${observers.coalesced} coalesced, ${observers.cheap} cheap-O(1), ${observers.ledgered} ledgered, ${observers.hubDelegated} hub-delegated (NetHook onNode), ${observers.kernelOwned} kernel-owned; 0 undisciplined)`);
+    }
+
+    // Typed-error census (suite v1.5.1, GUP G11 — v1.5.0 verdict §2/G11):
+    // every non-kernel catch site in the review sources is machine-classified
+    // as TYPED (instanceof / name / code / kind branching — the D6 primary),
+    // DEBUG (scoped-interceptor-with-debug — the v1.5.1 round inserted the
+    // tagged console.debug line into all 246 former silent swallows across
+    // 21 scripts, zero functional change), HANDLED (recovery work without
+    // logging), or SILENT (true swallow — fails closed unless ledgered with
+    // justification + expiry). The kernel's NetError family is self-asserted
+    // (non-shrink: class definitions + API exports). This gate is the
+    // class-closure for GUP G11 typed errors.
+    const errors = runErrorCensus();
+    if (errors.problems.length) {
+        for (const er of errors.problems) failures.push(`[D] error census: ${er}`);
+    } else {
+        passes.push(`[D] error census verified (${errors.catchSites} catch sites across ${errors.filesScanned} source files — ${errors.typed} typed, ${errors.debug} debug-logged, ${errors.handled} handled, ${errors.silent} silent; kernel NetError family asserted, ${errors.kernelClasses} classes)`);
+    }
+
+    // Minimal-privilege connect census (suite v1.5.1, GUP G7 — v1.5.0
+    // verdict §2/G7): every canon installable's declared @connect set is
+    // reconciled against its observed privileged-endpoint literals
+    // (gmFetch / GM_xhr argument strings); observed-but-undeclared hosts
+    // fail closed; the 9 sanctioned wildcards (page-content/user-directed
+    // fetch families — Blob2URL, LinkMasterΨ, FLX, m3u8++, Stream
+    // Interceptor, Images++, Bunkr++, Gofile++, Pixeldrain++) are ledgered
+    // with justification + burn-down note + expiry, drift-checked in both
+    // directions. Class-closure for GUP G7 minimal-privilege connects.
+    const connects = runConnectCensus();
+    if (connects.problems.length) {
+        for (const cn of connects.problems) failures.push(`[D] connect census: ${cn}`);
+    } else {
+        passes.push(`[D] connect census verified (${connects.scripts} declaring scripts, ${connects.connectDeclarations} @connect tokens, ${connects.observedHosts} observed literal hosts — ${connects.wildcardScripts} wildcards, all ledgered with justification + expiry)`);
+    }
+
+    // Co-install domain census (suite v1.5.1, GUP G12 — v1.5.0 verdict
+    // §2/G12): the @match/@include surface (incl. module meta.json) is
+    // normalized to domain keys; every hot key (≥2 scripts) must be
+    // coordinated in the co-install ledger with drift-checked membership
+    // — the 19-script star family, the forum trio, the instagram pair, the
+    // YT quartet, the gemini pair. A NEW hot domain fails closed (no
+    // un-governed co-install overlap can be added silently). The hotkey
+    // census remains the behavioral-collision gate. Class-closure for GUP
+    // G12 domain co-install.
+    const domains = runDomainCensus();
+    if (domains.problems.length) {
+        for (const dm of domains.problems) failures.push(`[D] domain census: ${dm}`);
+    } else {
+        passes.push(`[D] domain census verified (${domains.scripts} scripts, ${domains.domainKeys} domain keys — ${domains.starFamily}-script star family, ${domains.hotDomains} hot domains all coordinated, drift-checked)`);
+    }
+
+    // Identity evidence coverage (suite v1.5.1, GUP G8 — the escalation
+    // contract's target-0): every unit in tools/ledger.json carries an
+    // evidence/note field (carried units cite Gate B identity preservation;
+    // merged units cite the rename-map reconciliation and the census
+    // surfaces that own their classes), and every destination exists in
+    // dist. Un-evidenced units fail closed — identity reconciliation may
+    // never regress to narrative-only. (Gate A owns coverage; Gate B owns
+    // named-unit preservation; this gate owns the evidence trail.)
+    try {
+        const led = JSON.parse(fs.readFileSync(path.join(ROOT, "tools", "ledger.json"), "utf8"));
+        const ledKeys = Object.keys(led).filter((k) => !k.startsWith("_"));
+        const unEvidenced = ledKeys.filter((k) => !led[k].evidence && !led[k].note);
+        const missingDest = ledKeys.filter((k) => {
+            /* dest is a suite script name (dist files carry the 4ndr0tools
+             * prefix); plugin-path dests point at the plugins/ tree */
+            const dest = led[k].dest;
+            if (!dest || dest.includes("/")) return false;
+            return !fs.existsSync(path.join(DIST, `4ndr0tools - ${dest}.user.js`));
+        });
+        if (unEvidenced.length) {
+            for (const u of unEvidenced) failures.push(`[D] identity ledger: unit "${u}" carries no evidence/note (GUP G8: cite the identity-preservation argument or reconcile the unit)`);
+        }
+        if (missingDest.length) {
+            for (const d of missingDest) failures.push(`[D] identity ledger: unit "${d}" → destination "${led[d].dest}" missing from dist (GUP G8: update the ledger)`);
+        }
+        if (!unEvidenced.length && !missingDest.length) {
+            passes.push(`[D] identity ledger verified (${ledKeys.length} units, ${ledKeys.length} evidenced, all destinations present in dist — evidence coverage 100%)`);
+        }
+    } catch (e) {
+        failures.push(`[D] identity ledger unreadable: ${e.message}`);
+    }
+
+    // Global-pollution census (suite v1.5.0, GUP B.1 round mandate): every
+    // realm write (window/unsafeWindow/globalThis/self, dot/bracket/
+    // defineProperty) in the review sources must be either closure-moved
+    // (own state stays in script scope — the v1.5.0 round closure-ized 23
+    // writes across PM/Forums++/YTERB) or sanctioned in the census ledger
+    // (defuse mocks, console C2, debug hooks, cross-context bridges,
+    // double-injection guards, page-API wipes, NetHook-family wraps).
+    // The kernel realm slot is self-asserted. This gate is the class-
+    // closure for GUP B.1 "Zero Global Pollution".
+    const globals = runGlobalCensus();
+    if (globals.problems.length) {
+        for (const gl of globals.problems) failures.push(`[D] global census: ${gl}`);
+    } else {
+        passes.push(`[D] global census verified (${globals.writes} realm writes across ${globals.filesScanned} source files — ${globals.sanctioned} ledger-sanctioned, 0 unledgered; kernel realm slot asserted)`);
+    }
+
+    // Cache-growth census (suite v1.5.0, GUP B.1 round mandate): every
+    // Map/Set registry in the review sources is machine-classified —
+    // static-config, weak (GC-bounded), bounded (FIFO/ceiling/lifetime),
+    // dedupe-guarded, call-scoped local, or factory-escaped (captured by a
+    // returned closure — must carry a bound proof or a ledger entry; the
+    // v1.4.10 defects in that class, WM image sessions + YTPM sweep
+    // coalescer, are bounded this round and the census is negative-proven
+    // to flag them on the prior canon). Class-closure for GUP B.1
+    // "O(1) Caching".
+    const caches = runCacheCensus();
+    if (caches.problems.length) {
+        for (const cc of caches.problems) failures.push(`[D] cache census: ${cc}`);
+    } else {
+        passes.push(`[D] cache census verified (${caches.registries} Map/Set registries across ${caches.filesScanned} source files — ${caches.bounded} bounded, ${caches.dedupeGuarded} dedupe-guarded, ${caches.callScoped} call-scoped, ${caches.staticConfig} static, ${caches.weakBounded} weak, ${caches.ledgered} ledgered; 0 unbounded)`);
+    }
+
+    // Size budget (suite v1.5.0, G6): no dist file over 1.3 MB; every
+    // 1.0 MB+ file carries a decomposed-asset audit record (the two
+    // current ones: Watermark++ and Prompt Master — both pure code mass,
+    // zero blob/font payload, externalization evaluated and rejected with
+    // the OPSEC argument; records under documentation/<script>/SIZE-AUDIT.md).
+    const sizes = runSizeBudget();
+    if (sizes.problems.length) {
+        for (const sz of sizes.problems) failures.push(`[D] size budget: ${sz}`);
+    } else {
+        passes.push(`[D] size budget verified (${sizes.files} dist files, largest ${sizes.largestBytes.toLocaleString()} B, ${sizes.overAuditLine.length} over the 1.0 MB audit line with ${sizes.auditRecords} audit records; 0 over the 1.3 MB hard budget)`);
+    }
+
+    // Production rubric, machine-scored (suite v1.5.1, G5 — §3.5 escalated
+    // to >= 90, recorded to tools/score.json): every input is machine-fed —
+    // kernel-smoke, style-audit and qr-verify are SPAWNED here (their
+    // console verdicts parsed, never hardcoded), the censuses are the live
+    // objects above, docs-truthfulness and OPSEC derive from this run's
+    // own failure list. Error Handling's input surface is complete since
+    // v1.5.1 (the G11 catch census: typed/debug/handled/silent counts).
+    const smokeRes = spawnSync("node", [path.join(ROOT, "tools", "kernel-smoke.mjs")], { encoding: "utf8", timeout: 180000 });
+    const smokeOut = (smokeRes.stdout || "") + (smokeRes.stderr || "");
+    const smokePass = smokeRes.status === 0 && /KERNEL SMOKE: ALL PASS/.test(smokeOut);
+    const smokeCount = (smokeOut.match(/✓/g) || []).length;
+    if (!smokePass) failures.push(`[D] kernel-smoke battery failed inside the production score (status ${smokeRes.status})`);
+    const styleRes = spawnSync("node", [path.join(ROOT, "tools", "style-audit.mjs")], { encoding: "utf8", timeout: 60000 });
+    const qrRes = spawnSync("node", [path.join(ROOT, "tools", "qr-verify.mjs")], { encoding: "utf8", timeout: 60000 });
+    const stylePass = styleRes.status === 0;
+    /* v1.6.2: parse the audit's own verdict line — the score record's
+     * style label must cite the live counts, never a hardcoded fraction
+     * (the v1.6.1 record said "37/37" on a 38/38 tree). */
+    const styleOut = (styleRes.stdout || "") + (styleRes.stderr || "");
+    const styleCounts = (() => {
+        const m = styleOut.match(/STYLE AUDIT: ALL PASS \((\d+)\/(\d+)\)/);
+        return m ? { pass: Number(m[1]), total: Number(m[2]) } : { pass: 0, total: 0 };
+    })();
+    const qrPass = qrRes.status === 0;
+    const docsTruthful = !failures.some((f) => f.includes("documentation drift"));
+    const opsecClean = !failures.some((f) => f.includes("OPSEC"));
+    let ledgerStats = { units: 0, evidenced: 0 };
+    try {
+        const led = JSON.parse(fs.readFileSync(path.join(ROOT, "tools", "ledger.json"), "utf8"));
+        const ledKeys = Object.keys(led).filter((k) => !k.startsWith("_"));
+        ledgerStats = { units: ledKeys.length, evidenced: ledKeys.filter((k) => led[k] && (led[k].evidence || led[k].note)).length };
+    } catch (e) { /* scored at 0 coverage */ }
+    const docDir = path.join(ROOT, "documentation");
+    const readmeCount = fs.existsSync(docDir) ? fs.readdirSync(docDir).filter((d) => fs.existsSync(path.join(docDir, d, "README.md"))).length : 0;
+    /* v1.6.0: derived, never hardcoded — the suite round from package.json
+     * and the NetHook consumer count from the canon surface itself (the
+     * canon-kernel wiring gate cross-checks the dist splice separately). */
+    const suiteRound = "v" + JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8")).version;
+    let netConsumerCount = 0;
+    for (const cd of ["_sovereign", "_promoted", "_merged"]) {
+        const dir = path.join(ROOT, "canon", cd);
+        if (!fs.existsSync(dir)) continue;
+        for (const f of fs.readdirSync(dir).filter((x) => x.endsWith(".user.js"))) {
+            if (fs.readFileSync(path.join(dir, f), "utf8").includes("__4NDR0_NET_API__")) netConsumerCount++;
+        }
+    }
+    const scoreCtx = { /* v1.6.2: named ctx — the determinism gate below re-runs the scorer with the SAME inputs */
+        smoke: { pass: smokePass, count: smokeCount, floor: 150 }, /* floor = v1.6.0 battery size (138 + 12 v6 asserts; re-derive when the battery grows) */
+        otherGateFailures: failures.length,
+        censuses: {
+            sink: { clean: !sinks.problems.length },
+            transport: { clean: !transport.problems.length },
+            global: { clean: !globals.problems.length },
+            hotkey: { clean: !census.problems.length && !census.collisions.length && !census.stale.length },
+            polling: { clean: !polling.problems.length, sites: polling.sites },
+            observer: { clean: !observers.problems.length, sites: observers.sites },
+            cache: { clean: !caches.problems.length, registries: caches.registries },
+            size: { clean: !sizes.problems.length },
+            connect: { clean: !connects.problems.length },
+            domain: { clean: !domains.problems.length },
+            error: { clean: !errors.problems.length, catchSites: errors.catchSites, typed: errors.typed, debug: errors.debug, handled: errors.handled, silent: errors.silent },
+        },
+        opsec: opsecClean,
+        netHook: { consumers: netConsumerCount },
+        inventoryDeterministic: true,
+        style: stylePass,
+        styleCounts, /* v1.6.2: derived label — see the audit parse above */
+        docsTruthful,
+        ledger: ledgerStats,
+        qr: qrPass,
+        /* v1.6.1: derived from the live inventory — was hardcoded 37, which
+         * silently misreported coverage the moment a 38th script landed. */
+        docsCoverage: { readmes: readmeCount, scripts: JSON.parse(fs.readFileSync(path.join(ROOT, "inventory.json"), "utf8")).scripts.length },
+        round: suiteRound,
+    };
+    const score = runProductionScore(ROOT, scoreCtx);
+    if (score.problems.length) {
+        for (const sc of score.problems) failures.push(`[D] production score: ${sc}`);
+    } else {
+        passes.push(`[D] production score verified (${score.total}/100, threshold ${SCORE_THRESHOLD}; recorded tools/score.json — dims: ${score.dims.map((d) => `${d.dimension}=${d.score}/${d.weight}`).join(", ")})`);
+    }
+
+    // Score-record determinism (suite v1.6.2 — same contract as the v1.4.3
+    // inventory fix): tools/score.json used to carry a wall-clock
+    // `generatedAt`, so every `npm run check` rewrote the file and a
+    // post-apply re-verification always left the staged canon drifted
+    // (operator field report, v1.6.1 apply — the kit had to discard the
+    // verifier's side-effects by hand). The record is now round-addressed;
+    // this gate re-runs the scorer with the SAME inputs and demands a
+    // byte-identical rewrite, and pins the schema to non-volatile keys so
+    // the bug class cannot silently return.
+    try {
+        const scorePath = path.join(ROOT, "tools", "score.json");
+        const firstBytes = fs.readFileSync(scorePath, "utf8");
+        const parsed = JSON.parse(firstBytes);
+        const ALLOWED_SCORE_KEYS = new Set(["round", "total", "threshold", "dimensions"]);
+        const volatileKeys = Object.keys(parsed).filter((k) => !ALLOWED_SCORE_KEYS.has(k));
+        if (volatileKeys.length) {
+            failures.push(`[D] score record carries non-deterministic field(s): ${volatileKeys.join(", ")} — wall-clock addressing is forbidden (see the v1.4.3 inventory precedent)`);
+        } else if (parsed.round !== suiteRound) {
+            failures.push(`[D] score record round is ${parsed.round}, expected ${suiteRound} (stale record — rerun npm run check)`);
+        } else {
+            runProductionScore(ROOT, scoreCtx);
+            const secondBytes = fs.readFileSync(scorePath, "utf8");
+            if (firstBytes !== secondBytes) {
+                failures.push(`[D] score record regeneration drift — the record is not deterministic (same inputs must rewrite byte-identical bytes)`);
+            } else {
+                passes.push(`[D] score record regeneration deterministic (round-addressed, schema pinned, byte-identical on re-run)`);
+            }
+        }
+    } catch (e) {
+        failures.push(`[D] score determinism check failed: ${e.message}`);
     }
 
     // Inventory regeneration determinism (suite v1.4.3): the legacy

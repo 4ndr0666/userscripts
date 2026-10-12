@@ -1,0 +1,236 @@
+#!/usr/bin/env node
+/* ═══════════════════════════════════════════════════════════════════════════
+ * tools/error-census.mjs — typed-error / silent-swallow census (suite v1.5.1)
+ * ----------------------------------------------------------------------------
+ * Round mandate (v1.5.0 verdict §2/G11, completed in v1.5.1): the Phase A
+ * machine audit found 722 non-kernel catch sites — 144 typed (20%), 390
+ * raw empty-body — and NO gate measuring the class. The kernel proves its
+ * own typed family (NetError/NetTimeoutError/NetHttpError, smoke battery);
+ * everything outside it was unmeasured. This census is that gate.
+ * (Precedent: tools/transport-census.mjs v1.4.10.)
+ *
+ * What it scans: the REVIEW SOURCES — every canon/<tier> .user.js and every
+ * modules/<name>/body.js, on the codeOnly view (string contents, comments,
+ * template prose and regex bodies blanked; line numbers preserved). The
+ * kernel itself is excluded (its typed family is battery-proven and
+ * self-asserted below). dist is a machine-verified splice of these files.
+ *
+ * Per `catch (e) { … }` site, the census brace-matches the handler body and
+ * classifies:
+ *
+ *   TYPED — instanceof branching (NetError family or Error), err.name/code
+ *     switching, or a typed re-throw: the D6 primary pattern.
+ *
+ *   DEBUG — a console.* call (debug/warn/error/log/info) in the handler
+ *     body: the D6 scoped-interceptor-with-debug pattern (v1.5.1 inserted
+ *     these into the 390 former empty bodies — one scoped, tagged,
+ *     level-gated debug line per site, zero functional change).
+ *
+ *   HANDLED — a non-empty body that does recovery work (fallback return,
+ *     flag set, state restore) without logging: legitimate handling, not a
+ *     swallow; counted and reported.
+ *
+ *   SILENT — empty (or comment-only) body, no debug: a true swallow.
+ *     silent-count > 0 without a ledger entry for that file → FAIL.
+ *
+ * Kernel self-assertion (class-closure, non-shrink): kernel/net.js must
+ * define the full family (class NetError extends Error, NetTimeoutError,
+ * NetHttpError) and export all three through the API object — a shrunk or
+ * renamed family fails closed.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { codeOnly } from "./sink-census.mjs";
+
+const DEFAULT_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const CURRENT_ROUND = "v1.6.3";
+
+/* ── Adjudication ledger: files whose deliberate silences are sanctioned ──
+ * Each entry: file, count (the sanctioned silent-catch count — drift-checked
+ * in BOTH directions), reason, expiry. */
+const ADJUDICATED = [];
+
+const ledgerKey = (e) => `${e.file}::${e.count}`;
+
+/* ── helpers ─────────────────────────────────────────────────────────────── */
+
+function lineStartsOf(view) {
+    const s = [0];
+    for (let i = 0; i < view.length; i++) if (view[i] === "\n") s.push(i + 1);
+    return s;
+}
+
+function lineOf(starts, off) {
+    let lo = 0, hi = starts.length - 1;
+    while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (starts[mid] <= off) lo = mid; else hi = mid - 1; }
+    return lo + 1;
+}
+
+/* Balanced-brace span from the first { at/after from. */
+function braceSpan(view, from) {
+    let i = from;
+    while (i < view.length && view[i] !== "{") {
+        if (view[i] === ";" || view[i] === ")") return null;
+        i++;
+    }
+    let depth = 0;
+    for (let j = i; j < view.length; j++) {
+        if (view[j] === "{") depth++;
+        else if (view[j] === "}") { depth--; if (depth === 0) return [i, j]; }
+        if (depth < 0) return null;
+    }
+    return null;
+}
+
+/* body with comments blanked (codeOnly already blanked strings/templates) */
+function stripBodyComments(body) {
+    return body.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+}
+
+const TYPED_RE = /instanceof\s+(?:Net\w*Error|Error\b)|(?:\.\s*name\s*(?:===|!==)\s*["' ]*Net)|(?:\.\s*code\s*(?:===|!==|switch))|\.kind\s*(?:===|!==)|instanceof\s+DOMException/;
+const DEBUG_RE = /console\s*\.\s*(?:debug|warn|error|log|info|trace)\s*\(/;
+
+/* ── kernel self-assertion: the typed family must not shrink ─────────────── */
+function assertKernelFamily(root, problems) {
+    const netPath = path.join(root, "kernel", "net.js");
+    if (!fs.existsSync(netPath)) {
+        problems.push("kernel self-assertion: kernel/net.js missing — the NetError family cannot be verified");
+        return { classes: 0 };
+    }
+    const net = fs.readFileSync(netPath, "utf8");
+    const classes = [];
+    const classRe = /class\s+(Net\w*Error)\s+extends\s+(Error|Net\w*Error)\b/g;
+    let m;
+    while ((m = classRe.exec(net)) !== null) classes.push(m[1]);
+    const required = ["NetError", "NetTimeoutError", "NetHttpError"];
+    for (const req of required) {
+        if (!classes.includes(req)) {
+            problems.push(`kernel self-assertion: class ${req} missing from kernel/net.js — the typed family shrunk (G11 class-closure)`);
+        }
+    }
+    for (const c of classes) {
+        const exportRe = new RegExp("\\b" + c + "\\s*:\\s*" + c + "\\b");
+        if (!exportRe.test(net)) {
+            problems.push(`kernel self-assertion: ${c} defined but not exported through the kernel API object`);
+        }
+    }
+    return { classes: classes.length };
+}
+
+/* ── the census ──────────────────────────────────────────────────────────── */
+
+export function runErrorCensus(root = DEFAULT_ROOT) {
+    const problems = [];
+    const stats = { catchSites: 0, typed: 0, debug: 0, handled: 0, silent: 0, filesScanned: 0, silentFiles: 0 };
+    const seenLedger = new Set();
+    const perFile = {};
+
+    const targets = [];
+    const canonDir = path.join(root, "canon");
+    if (fs.existsSync(canonDir)) {
+        for (const tier of fs.readdirSync(canonDir).sort()) {
+            const dir = path.join(canonDir, tier);
+            if (!fs.statSync(dir).isDirectory()) continue;
+            for (const f of fs.readdirSync(dir).sort()) {
+                if (f.endsWith(".user.js")) targets.push([`canon/${tier}/${f}`, path.join(dir, f)]);
+            }
+        }
+    }
+    const modulesDir = path.join(root, "modules");
+    if (fs.existsSync(modulesDir)) {
+        for (const d of fs.readdirSync(modulesDir).sort()) {
+            const body = path.join(modulesDir, d, "body.js");
+            if (fs.existsSync(body)) targets.push([`modules/${d}/body.js`, body]);
+        }
+    }
+
+    for (const [rel, abs] of targets) {
+        if (!fs.existsSync(abs)) continue;
+        stats.filesScanned++;
+        const view = codeOnly(fs.readFileSync(abs, "utf8"));
+        const starts = lineStartsOf(view);
+        const fileStats = { catches: 0, typed: 0, debug: 0, handled: 0, silent: 0, silentSites: [] };
+
+        /* catch sites: `catch (e) {` or bare `catch {` */
+        const siteRe = /(^|[^\w$.])catch\s*(\(|\{)/g;
+        let m;
+        while ((m = siteRe.exec(view)) !== null) {
+            fileStats.catches++;
+            stats.catchSites++;
+            const braceAt = view.indexOf("{", m.index + m[0].length - 1);
+            const sp = braceSpan(view, braceAt);
+            if (!sp) continue;
+            const body = stripBodyComments(view.slice(sp[0] + 1, sp[1]));
+            const line = lineOf(starts, m.index);
+            if (TYPED_RE.test(body)) {
+                fileStats.typed++; stats.typed++;
+            } else if (DEBUG_RE.test(body)) {
+                fileStats.debug++; stats.debug++;
+            } else if (body.trim().length > 0) {
+                fileStats.handled++; stats.handled++;
+            } else {
+                fileStats.silent++; stats.silent++;
+                fileStats.silentSites.push(line);
+            }
+        }
+        perFile[rel] = fileStats;
+    }
+
+    /* silent files without a ledger entry fail closed */
+    for (const [rel, fs2] of Object.entries(perFile)) {
+        if (fs2.silent === 0) continue;
+        const entry = ADJUDICATED.find((e) => e.file === rel);
+        if (entry && entry.count === fs2.silent) {
+            seenLedger.add(ledgerKey(entry));
+            continue;
+        }
+        if (entry && entry.count !== fs2.silent) {
+            problems.push(`${rel}: silent-catch drift — ledger sanctions ${entry.count}, machine count is ${fs2.silent} (update the ledger or fix the swallows)`);
+            continue;
+        }
+        stats.silentFiles++;
+        problems.push(
+            `${rel}: ${fs2.silent} SILENT catch site(s) — empty body, no debug (lines ${fs2.silentSites.slice(0, 8).join(", ")}${fs2.silentSites.length > 8 ? "…" : ""}) (GUP G11: typed errors; add the scoped-interceptor debug line, typed branching, or a ledger entry with justification + expiry)`
+        );
+    }
+
+    /* ledger drift: entries whose file no longer carries the sanctioned count */
+    for (const e of ADJUDICATED) {
+        if (!seenLedger.has(ledgerKey(e))) {
+            problems.push(`stale error-census ledger entry: ${e.file} :: count ${e.count} — no file at that silent count (remove or update)`);
+        }
+        if (e.expiry && roundLt(CURRENT_ROUND, e.expiry) === false) {
+            problems.push(`expired error-census ledger entry: ${e.file} — expiry ${e.expiry} has passed round ${CURRENT_ROUND} without re-adjudication`);
+        }
+    }
+
+    /* kernel self-assertion (the typed family the consumers branch on) */
+    const kernel = assertKernelFamily(root, problems);
+
+    return { problems, ...stats, kernelClasses: kernel.classes, perFile };
+}
+
+/* v1.5.1 < v1.6.0 (string-aware compare, tolerant of missing segments) */
+function roundLt(a, b) {
+    const pa = a.replace(/^v/, "").split(".").map(Number);
+    const pb = b.replace(/^v/, "").split(".").map(Number);
+    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+        const x = pa[i] || 0, y = pb[i] || 0;
+        if (x !== y) return x < y;
+    }
+    return false;
+}
+
+/* CLI: node tools/error-census.mjs [root] */
+if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {
+    const root = process.argv[2] ? path.resolve(process.argv[2]) : DEFAULT_ROOT;
+    const r = runErrorCensus(root);
+    console.log(`error census: ${r.filesScanned} source files, ${r.catchSites} catch sites — ${r.typed} typed, ${r.debug} debug-logged, ${r.handled} handled, ${r.silent} silent`);
+    if (r.problems.length) {
+        for (const p of r.problems) console.log(`  ✗ ${p}`);
+        process.exit(1);
+    }
+    console.log(`  ✓ every catch site is typed, debug-logged, handled, or ledgered; kernel NetError family asserted (${r.kernelClasses} classes)`);
+}

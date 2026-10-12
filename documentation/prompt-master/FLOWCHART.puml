@@ -1,0 +1,53 @@
+@startuml
+skinparam monochrome true
+title Prompt Master — boot → observer family → flow-credit pipeline (v1.5.0)
+
+start
+:Platform detection (currentPlatform);
+if (Platform = "flow"?) then (yes)
+  :startFlowCreditTracker();
+  :load persisted credit store (v1/v2);
+  :install FlowCreditNetObserver (NetHook onTraffic);
+  :install generation-click hook;
+  :sweepFlowCreditStorage() — page storage scan;
+  note right
+    v1.5.0 (B.1): the 30 s storage
+    sweep idle-parks after 30 min
+    of empty sweeps; DOM churn
+    re-arms it.
+  end note
+  :armFlowCreditPoll() — 1 s tick;
+  note right
+    v1.5.0 (B.1): the 1 s poll
+    idle-parks after 30 min hidden;
+    visibilitychange re-arms.
+    The tick itself keeps the
+    engineActive + hidden guards.
+  end note
+  :MutationObserver(body) → flowCreditScheduleTick
+  (250 ms debounce);
+  :visibilitychange → re-arm + tick;
+else (no)
+  :tracker not armed (Flow-only);
+endif
+
+:Manager UI boot (collections / views / ratings);
+:loadTagsConfig + saved views;
+:hotkey registry (census-lettered combos);
+:__mpSortMode state (closure, v1.5.0 B.1);
+
+partition "steady state" {
+  :chat-id watcher (1 s, ledgered page-lifetime);
+  :globalDomWatcher (nav container, config-gated);
+  :auto-scroll animator (B: speed re-arm / R: stop, ledgered);
+  :media slideshow (Alt+T) — ended-driven dwell
+  with bounded safety cap;
+}
+
+:generation click → enhancer → gist sync;
+:flow-credit readings merge (net + storage + clicks)
+→ persistFlowCreditState;
+:render + position credit chip;
+
+stop
+@enduml

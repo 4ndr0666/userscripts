@@ -148,9 +148,10 @@
  *   - PAGE REALM FIRST: the slot + wraps live on unsafeWindow when
  *     available (that is where host page fetches live — the same realm
  *     choice the per-script wraps already made), window otherwise.
- *   - LAZY ARM: zero wraps until the first subscriber registers (onBody,
- *     onRequest, onTraffic OR onError) — a co-installed script that only
- *     subscribes on its own host costs nothing anywhere else.
+ *   - LAZY ARM: zero network wraps until the first subscriber registers
+ *     (onBody, onRequest, onTraffic OR onError); the v6 DOM observer arms
+ *     separately, only on the first onNode subscriber (zero observers
+ *     anywhere until a defuser registers).
  *   - SINGLE BODY READ: one clone per response, dispatched to every
  *     subscriber — the two-vault double-read on instagram is the exact
  *     failure this replaces. 4 MB read cap (Blob2URL's wire limit).
@@ -188,6 +189,42 @@
  *   chain while the v5 copy arms above it — the established transitional
  *   co-install progression).
  *
+ * v6 (suite v1.6.0) — THE DOM DEFEASE CHANNEL (onNode). The v1.5.1
+ *   observer census left the defuse class ledgered (TIMING entries:
+ *   microtask races a private per-script observer was winning) because
+ *   structurally bounding them meant weakening them. The hub takes the
+ *   channel instead — same consolidation the network wraps got in v1.4.3:
+ *   N co-installed document-level observers become ONE kernel-owned
+ *   observer per realm document, fanning raw record batches to isolated
+ *   subscribers.
+ *   - onNode(fn) -> unsubscribe. fn(mutations) receives a per-subscriber
+ *     copy of the raw MutationRecord batch — childList + subtree over
+ *     documentElement, plus attributes filtered to `src` (the union of
+ *     the migrated sites' observe configs) — in the SAME synchronous
+ *     microtask slot a private observer would have delivered it. The
+ *     defuse race is preserved exactly: the fan happens inside the
+ *     observer callback, before the next task, so a hostile script
+ *     inserted this batch is still neutralized before it executes.
+ *   - LAZY ARM, SYMMETRIC DISARM: zero observers until the first onNode
+ *     subscriber registers; the observer disconnects the moment the last
+ *     subscriber unsubscribes. Armed lifetime == subscription lifetime.
+ *   - ISOLATION: a throwing subscriber is scoped console.debug (GUP D6)
+ *     and treated as no-opinion — a broken defuser must never break the
+ *     page or its siblings. Each subscriber gets its own array copy, so
+ *     a hostile subscriber cannot splice its siblings' batch.
+ *   - AUTO-PROPAGATE: inserted iframes with a reachable contentWindow
+ *     get the network wrap set propagated by the hub itself — the same
+ *     idempotent, slot-aware, cross-origin-safe call the Akashan v5.2.0
+ *     iframe observer made per-site. Realm propagation is hub
+ *     infrastructure, not script surface; script-side propagators keep
+ *     working (idempotent double-arm is a no-op).
+ *   - Bounded registry (MAX_SUBS), versioned slot: isFullHub now requires
+ *     the onNode surface, so a v5-or-older slot owner is wrapped above by
+ *     a v6 copy (transitional chaining, as before).
+ *   - The kernel observer itself is self-asserted by the smoke battery
+ *     and the observer census (tools/observer-census.mjs verifies the
+ *     lazy-arm/disconnect/bounded/isolation markers on this file).
+ *
  * Consumed via build-time injection into the canon scripts that declare it
  * (tools/build.mjs CANON_KERNEL) — the identifier `__4NDR0_NET_API__` below
  * is script-scope visible to the consumer's IIFE.
@@ -196,7 +233,7 @@ const __4NDR0_NET_API__ = (function () {
     'use strict';
 
     const SLOT = '__4NDR0_NET__';
-    const VERSION = 5;
+    const VERSION = 6;
     const MAX_SUBS = 32;            /* bounded registry (GUP B.1) */
     const MAX_BODY = 4000000;       /* 4 MB read cap (Blob2URL's wire limit) */
     const XHR_MOCK_DELAY = 40;      /* D6 cadence — mocked XHR responses deliver
@@ -384,6 +421,9 @@ const __4NDR0_NET_API__ = (function () {
     const reqSubs = new Map();      /* onRequest defusers: key -> fn(req) */
     const trafficSubs = new Map();  /* onTraffic observers: key -> fn(ev) */
     const errSubs = new Map();      /* onError recoverers: key -> fn(ev) */
+    const nodeSubs = new Map();     /* v6 onNode defusers: key -> fn(mutations) */
+    let nseq = 0;
+    let nodeObserver = null;        /* v6: the kernel-owned DOM observer */
     const served = (typeof WeakSet === 'function') ? new WeakSet() : null; /* propagate-armed realms */
     let seq = 0;
     let rseq = 0;
@@ -866,7 +906,7 @@ const __4NDR0_NET_API__ = (function () {
     function isFullHub(h) {
         return !!(h && typeof h.onBody === 'function' && typeof h.onRequest === 'function' &&
             typeof h.onTraffic === 'function' && typeof h.onError === 'function' &&
-            typeof h.gmFetch === 'function');
+            typeof h.gmFetch === 'function' && typeof h.onNode === 'function');
     }
 
     /* Slot install — a strictly newer full-channel hub replaces the
@@ -881,6 +921,52 @@ const __4NDR0_NET_API__ = (function () {
                 value: api, writable: false, enumerable: false, configurable: true,
             });
         } catch (e) { /* slot collision with a foreign script — local hub only */ }
+    }
+
+    /* ── v6: the DOM defuse channel ────────────────────────────────────
+     * ONE kernel-owned MutationObserver per realm document; lazy arm on
+     * the first onNode subscriber, disconnect when the last one leaves.
+     * The fan is synchronous inside the callback — subscribers observe
+     * in the SAME microtask a private observer would have delivered (the
+     * defuse race is preserved, not debounced). The observer census
+     * self-asserts the lazy-arm / disconnect / bounded / isolation
+     * markers below; the smoke battery executes them. */
+    function fanNode(mutations) {
+        try {
+            /* auto-propagate: inserted iframes receive the network wrap
+             * set (idempotent, slot-aware; script-side propagators keep
+             * working — double-arm is a no-op) */
+            for (let i = 0; i < mutations.length; i++) {
+                const added = mutations[i] && mutations[i].addedNodes;
+                if (!added || !added.length) continue;
+                for (let j = 0; j < added.length; j++) {
+                    const n = added[j];
+                    if (n && n.tagName === 'IFRAME' && n.contentWindow) {
+                        try { api.propagate(n.contentWindow); } catch (e) { /* cross-origin or dead frame */ }
+                    }
+                }
+            }
+        } catch (e) { /* propagation must never break the fan */ }
+        for (const [, fn] of nodeSubs) {
+            try { fn(mutations.slice()); }
+            catch (e) { console.debug('[a4/net] node subscriber failed:', (e && e.message) || e); }
+        }
+    }
+    function armNodeObserver(target) {
+        if (nodeObserver || !target || !target.document) return;
+        try {
+            const root = target.document.documentElement;
+            if (!root || typeof MutationObserver !== 'function') return;
+            nodeObserver = new MutationObserver(fanNode);
+            nodeObserver.observe(root, {
+                childList: true, subtree: true, attributes: true, attributeFilter: ['src'],
+            });
+        } catch (e) { console.debug('[a4/net] node observer arm skipped:', (e && e.message) || e); nodeObserver = null; }
+    }
+    function disarmNodeObserver() {
+        if (!nodeObserver) return;
+        try { nodeObserver.disconnect(); } catch (e) { /* already dead */ }
+        nodeObserver = null;
     }
 
     const api = {
@@ -1002,6 +1088,35 @@ const __4NDR0_NET_API__ = (function () {
             }
             return function () { errSubs.delete(key); };
         },
+        /* onNode(fn) -> unsubscribe. The DOM defuse channel — see the v6
+         * contract in the file header: one kernel-owned observer per realm
+         * document, lazy arm, synchronous fan in the insertion microtask,
+         * per-subscriber record copies, throwing subscribers isolated.
+         * The callback IS the script's defuse policy (the hub is plumbing);
+         * observe-config widening is the hub's union, not the script's. */
+        onNode: function (fn) {
+            if (typeof fn !== 'function') return function () {};
+            const target = realm();
+            if (target) {
+                try {
+                    const hub = target[SLOT];
+                    if (hub && hub !== api && hub.version >= VERSION && isFullHub(hub)) {
+                        return hub.onNode(fn);
+                    }
+                } catch (e) { /* unreadable slot — fall through to local hub */ }
+            }
+            if (nodeSubs.size >= MAX_SUBS) return function () {};
+            const key = 'nd' + (++nseq);
+            nodeSubs.set(key, fn);
+            if (target) {
+                armNodeObserver(target);
+                installSlot(target);
+            }
+            return function () {
+                nodeSubs.delete(key);
+                if (nodeSubs.size === 0) disarmNodeObserver();
+            };
+        },
         /* propagate(target) -> armed. Arm the wrap set into an additional
          * realm (iframe propagation, or the userscript sandbox realm for
          * scripts that historically hooked both contexts). Idempotent
@@ -1042,6 +1157,7 @@ const __4NDR0_NET_API__ = (function () {
         get requestSubscriberCount() { return reqSubs.size; },
         get trafficSubscriberCount() { return trafficSubs.size; },
         get errorSubscriberCount() { return errSubs.size; },
+        get nodeSubscriberCount() { return nodeSubs.size; },
     };
     return api;
 })();
@@ -1209,7 +1325,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
         return {
             get: (k, def) => { try { if (hasGM) return GM_getValue(k, def); const raw = localStorage.getItem(k); return raw == null ? def : JSON.parse(raw); } catch { return def; } },
             set: (k, v) => { try { if (hasGM) return GM_setValue(k, v); localStorage.setItem(k, JSON.stringify(v)); } catch (e) { console.error(`[${NS}]`, e); } },
-            del: (k) => { try { if (hasGM && typeof GM_deleteValue === 'function') return GM_deleteValue(k); localStorage.removeItem(k); } catch {} }
+            del: (k) => { try { if (hasGM && typeof GM_deleteValue === 'function') return GM_deleteValue(k); localStorage.removeItem(k); } catch { console.debug('PD interceptor: unbound');} }
         };
     })();
     function loadSettings() { return Object.assign({}, DEFAULTS, Store.get(STORAGE_KEY, {}) || {}); }
@@ -1363,7 +1479,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
             try {
                 const r = await this._gmFetch('https://pixeldrain.com/api/user', { responseType: 'json', timeout: 10000 });
                 if (r.status >= 200 && r.status < 300) return r.response || JSON.parse(r.responseText);
-            } catch {}
+            } catch { console.debug('PD interceptor: unbound');}
             return null;
         },
         directURL(id, { download = false } = {}) {
@@ -1406,7 +1522,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
                         headers: { 'Accept': 'text/html' },
                         redirect: 'follow'
                     });
-                } catch {}
+                } catch { console.debug('PD interceptor: unbound');}
                 if (i < count - 1) await sleep(200);
             }
             Log.info(`view-pad: +${count} views for ${id}`);
@@ -1764,7 +1880,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
                     await writable.close();
                     BandwidthTracker.add(loaded, false);
                     return { ok: true, mode: 'premium_direct', size: loaded };
-                } catch (e) { try { await writable.abort(); } catch {} throw e; }
+                } catch (e) { try { await writable.abort(); } catch { console.debug('PD interceptor: unbound');} throw e; }
             }
 
             const start = performance.now();
@@ -1787,13 +1903,13 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
 
         async speed_multiplied({ id, name, size, onProgress, signal }) {
             if (!Caps.fsAccess) throw new Error('File System Access API required');
-            if (!size) { try { size = (await PDApi.fileInfo(id)).size; } catch {} }
+            if (!size) { try { size = (await PDApi.fileInfo(id)).size; } catch { console.debug('PD interceptor: unbound');} }
             if (!size) {
                 const proxy = await ProxyManager.best(id);
                 try {
                     const h = await gmXHR({ method: 'HEAD', url: ProxyManager.url(proxy, id), timeout: 10000 });
                     size = parseInt((h.responseHeaders || '').match(/content-length:\s*(\d+)/i)?.[1] || '0', 10);
-                } catch {}
+                } catch { console.debug('PD interceptor: unbound');}
             }
             if (!size) throw new Error('Cannot determine file size');
 
@@ -1911,18 +2027,18 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
                 BandwidthTracker.add(size, true);
                 const avgSpeed = size / (elapsed / 1000);
                 return { ok: true, mode: 'speed_multiplied', size, connections: totalConns, mirrors: mirrors.length, time: elapsed, speed: avgSpeed };
-            } catch (e) { try { await writable.abort(); } catch {} throw e; }
+            } catch (e) { try { await writable.abort(); } catch { console.debug('PD interceptor: unbound');} throw e; }
         },
 
         async multi_proxy_ranged({ id, name, size, onProgress, signal }) {
             if (!Caps.fsAccess) throw new Error('File System Access API required');
-            if (!size) { try { size = (await PDApi.fileInfo(id)).size; } catch {} }
+            if (!size) { try { size = (await PDApi.fileInfo(id)).size; } catch { console.debug('PD interceptor: unbound');} }
             if (!size) {
                 const proxy = await ProxyManager.best(id);
                 try {
                     const h = await gmXHR({ method: 'HEAD', url: ProxyManager.url(proxy, id), timeout: 10000 });
                     size = parseInt((h.responseHeaders || '').match(/content-length:\s*(\d+)/i)?.[1] || '0', 10);
-                } catch {}
+                } catch { console.debug('PD interceptor: unbound');}
             }
             if (!size) throw new Error('Cannot determine file size');
 
@@ -2018,7 +2134,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
                 if (resumeJobId) ResumeManager.markComplete(resumeJobId, elapsed);
                 BandwidthTracker.add(size, true);
                 return { ok: true, mode: 'multi_proxy_ranged', size, chunks: chunkCount, time: elapsed };
-            } catch (e) { try { await writable.abort(); } catch {} throw e; }
+            } catch (e) { try { await writable.abort(); } catch { console.debug('PD interceptor: unbound');} throw e; }
         },
 
         async gm_stream_fsa({ id, name, size, onProgress, signal }) {
@@ -2027,7 +2143,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
             const url = ProxyManager.url(proxy, id, { download: true });
             Log.info(`gm_stream_fsa via ${proxy.host}`);
 
-            if (!size) { try { size = (await PDApi.fileInfo(id)).size; } catch {} }
+            if (!size) { try { size = (await PDApi.fileInfo(id)).size; } catch { console.debug('PD interceptor: unbound');} }
 
             const handle = await window.showSaveFilePicker({
                 suggestedName: sanitizeFilename(name),
@@ -2065,7 +2181,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
                         onerror: (e) => reject(new Error(`network: ${(e && (e.error || e.statusText)) || 'unknown'}`)),
                         ontimeout: () => reject(new Error('timeout'))
                     });
-                    if (signal) signal.addEventListener('abort', () => { aborted = true; try { h && h.abort && h.abort(); } catch {} reject(new Error('aborted')); });
+                    if (signal) signal.addEventListener('abort', () => { aborted = true; try { h && h.abort && h.abort(); } catch { console.debug('PD interceptor: unbound');} reject(new Error('aborted')); });
                 });
                 if (streamed && loaded > 0) {
                     await writable.close();
@@ -2074,7 +2190,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
                     return { ok: true, mode: 'gm_stream_fsa', proxy: proxy.host, size: loaded };
                 }
             } catch (e) {
-                if (e.message === 'aborted') { try { await writable.abort(); } catch {} throw e; }
+                if (e.message === 'aborted') { try { await writable.abort(); } catch { console.debug('PD interceptor: unbound');} throw e; }
                 Log.warn('stream fallback to buffered:', e.message);
             }
 
@@ -2097,12 +2213,12 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
                 CircuitBreaker.record(proxy.host, true);
                 BandwidthTracker.add(r.response.byteLength, true);
                 return { ok: true, mode: 'gm_stream_fsa', proxy: proxy.host, size: r.response.byteLength };
-            } catch (e) { try { await writable.abort(); } catch {} throw e; }
+            } catch (e) { try { await writable.abort(); } catch { console.debug('PD interceptor: unbound');} throw e; }
         },
 
         async single_host_ranged({ id, name, size, onProgress, signal }) {
             if (!Caps.fsAccess) throw new Error('FSA required');
-            if (!size) { try { size = (await PDApi.fileInfo(id)).size; } catch {} }
+            if (!size) { try { size = (await PDApi.fileInfo(id)).size; } catch { console.debug('PD interceptor: unbound');} }
             if (!size) throw new Error('Cannot determine size');
             const proxy = await ProxyManager.best(id);
             const url = ProxyManager.url(proxy, id);
@@ -2155,7 +2271,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
                 CircuitBreaker.record(proxy.host, true);
                 BandwidthTracker.add(size, true);
                 return { ok: true, mode: 'single_host_ranged', size, proxy: proxy.host, connections: conns };
-            } catch (e) { try { await writable.abort(); } catch {} throw e; }
+            } catch (e) { try { await writable.abort(); } catch { console.debug('PD interceptor: unbound');} throw e; }
         },
 
         async native_fetch({ id, name, size, onProgress, signal }) {
@@ -2190,7 +2306,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
                         CircuitBreaker.record(mirror.host, true);
                         BandwidthTracker.add(loaded, true);
                         return { ok: true, mode: 'native_fetch', proxy: mirror.host, size: loaded };
-                    } catch (e) { try { await writable.abort(); } catch {} throw e; }
+                    } catch (e) { try { await writable.abort(); } catch { console.debug('PD interceptor: unbound');} throw e; }
                 } catch (e) { lastErr = e; if (e.kind === 'abort' || e.message === 'aborted') throw e; }
             }
             throw lastErr || new Error('All mirrors failed');
@@ -2492,7 +2608,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
         },
 
         cancelAll() {
-            for (const [, job] of this._activeJobs) { try { job.ac.abort(); } catch {} }
+            for (const [, job] of this._activeJobs) { try { job.ac.abort(); } catch { console.debug('PD interceptor: unbound');} }
             this._activeJobs.clear();
         },
 
@@ -2902,9 +3018,9 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
     };
 
     function getViewerData() {
-        try { if (typeof unsafeWindow !== 'undefined' && unsafeWindow.viewer_data) return unsafeWindow.viewer_data; } catch {}
-        try { const el = document.querySelector('#viewer_data,[data-viewer],script[type="application/json"]'); if (el) return JSON.parse(el.textContent); } catch {}
-        try { if (window.viewer_data) return window.viewer_data; } catch {}
+        try { if (typeof unsafeWindow !== 'undefined' && unsafeWindow.viewer_data) return unsafeWindow.viewer_data; } catch { console.debug('PD interceptor: unbound');}
+        try { const el = document.querySelector('#viewer_data,[data-viewer],script[type="application/json"]'); if (el) return JSON.parse(el.textContent); } catch { console.debug('PD interceptor: unbound');}
+        try { if (window.viewer_data) return window.viewer_data; } catch { console.debug('PD interceptor: unbound');}
         return null;
     }
 
@@ -3068,7 +3184,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
             const footEl = bg.querySelector(`.${NS}-modal-foot`);
             if (body) bodyEl.append(...(Array.isArray(body) ? body : [body]));
             if (footEl && footer) footEl.append(...(Array.isArray(footer) ? footer : [footer]));
-            const close = () => { try { onClose && onClose(); } catch {} bg.remove(); };
+            const close = () => { try { onClose && onClose(); } catch { console.debug('PD interceptor: unbound');} bg.remove(); };
             closeBtn.addEventListener('click', close);
             bg.addEventListener('click', e => { if (e.target === bg) close(); });
             document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); } });
@@ -3078,7 +3194,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
     };
 
     function copyToClipboard(text) {
-        if (Caps.gmClipboard) { try { GM_setClipboard(text); return Promise.resolve(true); } catch {} }
+        if (Caps.gmClipboard) { try { GM_setClipboard(text); return Promise.resolve(true); } catch { console.debug('PD interceptor: unbound');} }
         if (navigator.clipboard) return navigator.clipboard.writeText(text).then(() => true).catch(() => false);
         return Promise.resolve(false);
     }
@@ -3498,7 +3614,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
         ResumeManager.cleanup();
 
         const onReady = () => {
-            try { injectStyles(); } catch {}
+            try { injectStyles(); } catch { console.debug('PD interceptor: unbound');}
 
             const obs = new MutationObserver(() => {
                 const el = findToolbar();
@@ -3515,7 +3631,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
                         document.querySelectorAll('[data-pdbp="1"]').forEach(e => e.remove());
                         document.querySelectorAll('[data-pdbp-injected]').forEach(e => delete e.dataset.pdbpInjected);
                         document.querySelectorAll(`[data-pdbp-injected]`).forEach(e => e.removeAttribute('data-pdbp-injected'));
-                        try { patchVideoLoggedRestriction(); } catch {}
+                        try { patchVideoLoggedRestriction(); } catch { console.debug('PD interceptor: unbound');}
                         tryInject();
                     }, 600);
                 }

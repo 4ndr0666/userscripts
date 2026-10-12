@@ -528,6 +528,12 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.1.0 
     now = () => Date.now()
   } = {}) {
     const sessions = /* @__PURE__ */ new Map();
+    // v1.5.0 (suite, B.1): FIFO cap — the store accumulates one record per
+    // distinct image session for the page lifetime; past 16 sessions the
+    // oldest record is evicted (a re-encounter recreates it through
+    // getOrCreateByAssetIds; element bindings ride the WeakMap and GC
+    // independently, so eviction cannot dangle a live surface).
+    const MAX_IMAGE_SESSIONS = 16;
     const elementBindings = /* @__PURE__ */ new WeakMap();
     function getSession(sessionKey = "") {
       if (!sessionKey) {
@@ -543,6 +549,10 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.1.0 
       }
       let session = sessions.get(sessionKey);
       if (!session) {
+        if (sessions.size >= MAX_IMAGE_SESSIONS) {
+          const oldestSessionKey = sessions.keys().next().value;
+          sessions.delete(oldestSessionKey);
+        }
         session = createSessionRecord(sessionKey, normalizedAssetIds, now());
         sessions.set(sessionKey, session);
         return sessionKey;
@@ -10103,7 +10113,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.1.0 
           if (brand === "heic" || brand === "heix") return "image/heic";
         }
       }
-    } catch (_) {
+    } catch (_) { console.debug("WM interceptor:", _);
     }
     return claimed || "image/png";
   }
@@ -10213,7 +10223,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.1.0 
     if (typeof imageElement?.decode === "function") {
       try {
         await imageElement.decode();
-      } catch {
+      } catch { console.debug("WM interceptor: unbound");
       }
       size = getRenderableImageSize(imageElement);
       if (size.width > 0 && size.height > 0) {
@@ -10471,7 +10481,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.1.0 
             preferRenderedCaptureForPreview: false,
             rejectPreviewAspectMismatch: true
           });
-        } catch {
+        } catch { console.debug("WM interceptor: unbound");
         }
       }
       return processPreviewPageImageSource({
@@ -11656,7 +11666,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.1.0 
     }
     try {
       await onActionCriticalFailure(payload);
-    } catch {
+    } catch { console.debug("WM interceptor: unbound");
     }
   }
   async function createBlobFromObjectUrlImage(objectUrl, imageElement, targetWindow = globalThis) {
@@ -12148,7 +12158,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.1.0 
     }
     try {
       await onActionCriticalFailure(payload);
-    } catch {
+    } catch { console.debug("WM interceptor: unbound");
     }
   }
   var DOWNLOAD_ACTION_LABEL_PATTERN = /(download|copy|下载|复制)/i;
@@ -12373,7 +12383,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.1.0 
         if (requestPayload) {
           candidateTexts.push(requestPayload);
         }
-      } catch {
+      } catch { console.debug("WM interceptor: unbound");
       }
     } else if (body instanceof URLSearchParams) {
       candidateTexts.push(body.toString());
@@ -12469,7 +12479,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.1.0 
           if (Array.isArray(innerPayload)) {
             payloads.push(innerPayload);
           }
-        } catch {
+        } catch { console.debug("WM interceptor: unbound");
         }
       }
     }
@@ -13236,13 +13246,13 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.1.0 
       if (eventSource.window === targetWindow || eventSource.self === targetWindow) {
         return true;
       }
-    } catch {
+    } catch { console.debug("WM interceptor: unbound");
     }
     try {
       if (targetWindow.window === eventSource || targetWindow.self === eventSource) {
         return true;
       }
-    } catch {
+    } catch { console.debug("WM interceptor: unbound");
     }
     return false;
   }

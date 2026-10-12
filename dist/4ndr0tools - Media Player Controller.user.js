@@ -155,7 +155,7 @@
         };
         try {
             localStorage.setItem(VNODE_PREFIX + id, JSON.stringify(record));
-        } catch (_) { /* quota: silently skip */ }
+        } catch (_) { console.debug('MPC interceptor:', _); /* quota: silently skip */ }
     }
 
     /** Load a persisted vnode record by stable id. Returns null if missing. */
@@ -168,7 +168,7 @@
 
     /** Remove a vnode record from localStorage. */
     function purgeVNode(id) {
-        try { localStorage.removeItem(VNODE_PREFIX + id); } catch (_) {}
+        try { localStorage.removeItem(VNODE_PREFIX + id); } catch (_) { console.debug('MPC interceptor:', _);}
     }
 
     /**
@@ -194,7 +194,7 @@
                 const id = k.slice(VNODE_PREFIX.length);
                 if (!liveIds.has(id)) purgeVNode(id);
             });
-        } catch (_) { /* storage unavailable — nothing to purge */ }
+        } catch (_) { console.debug('MPC interceptor:', _); /* storage unavailable — nothing to purge */ }
     }
 
     /**
@@ -350,9 +350,9 @@
     /** Registry query: document + every discovered shadow root. */
     function queryAll(selector) {
         const out = [];
-        try { out.push(...document.querySelectorAll(selector)); } catch (_) { /* detached document */ }
+        try { out.push(...document.querySelectorAll(selector)); } catch (_) { console.debug('MPC interceptor:', _); /* detached document */ }
         for (const root of shadowRoots) {
-            try { out.push(...root.querySelectorAll(selector)); } catch (_) { /* dead root */ }
+            try { out.push(...root.querySelectorAll(selector)); } catch (_) { console.debug('MPC interceptor:', _); /* dead root */ }
         }
         return out;
     }
@@ -378,7 +378,7 @@
             try {
                 shadowRoots.add(root);
                 scheduleDiscoverySoon();
-            } catch (_) { /* discovery-only: never break host attachShadow */ }
+            } catch (_) { console.debug('MPC interceptor:', _); /* discovery-only: never break host attachShadow */ }
             return root;
         }
         patchedAttachShadow.psiHooked = true;
@@ -513,19 +513,39 @@
     // v8.1.0: when no live target is held (initial load, SPA teardown), the
     // tick also runs the fallback acquirer so the HUD's PLAY/Space/scrub are
     // wired to the page's dominant video without waiting for a site 'play'.
+    // v1.5.0 (suite, B.1): idle-parked — 1 h of visible no-video ticks parks
+    // the sweep; media events (play/playing/loadeddata/durationchange,
+    // capture-phase) re-arm it, so late-arriving media is still discovered.
     let discoveryTick = 0;
-    setInterval(() => {
-        if (document.hidden) return;
-        discoveryTick++;
-        allVideos().forEach(trackVideo);
-        pruneDiscoveryRegistries();
-        if (discoveryTick % 5 === 0) deepShadowWalk();
-        if (IS_TOP && activeTargetStale()) {
-            const candidate = acquireBestCandidate();
-            if (candidate) acquireTarget(candidate, false);
-        }
-        applyMediaState(); // drift correction (sites reset playbackRate on ad insert, etc.)
-    }, 1500);
+    let discoveryTimer = null;
+    let discoveryIdle = 0;
+    const armDiscovery = () => {
+        if (discoveryTimer) return;
+        discoveryIdle = 0;
+        discoveryTimer = setInterval(() => {
+            if (document.hidden) return;
+            discoveryTick++;
+            const vids = allVideos();
+            if (vids.length) {
+                discoveryIdle = 0;
+                vids.forEach(trackVideo);
+            } else if (++discoveryIdle > 2400) {
+                clearInterval(discoveryTimer);
+                discoveryTimer = null;
+                return;
+            }
+            pruneDiscoveryRegistries();
+            if (discoveryTick % 5 === 0) deepShadowWalk();
+            if (IS_TOP && activeTargetStale()) {
+                const candidate = acquireBestCandidate();
+                if (candidate) acquireTarget(candidate, false);
+            }
+            applyMediaState(); // drift correction (sites reset playbackRate on ad insert, etc.)
+        }, 1500);
+    };
+    ['play', 'playing', 'loadeddata', 'durationchange'].forEach((ev) =>
+        document.addEventListener(ev, armDiscovery, true));
+    armDiscovery();
 
     // ==========================================
     // SYSTEM STYLING & ISOLATION (GM_addStyle)
@@ -1185,7 +1205,7 @@
             '.ytp-ad-skip-button, .ytp-skip-ad-button, .ytp-ad-skip-button-modern'
         );
         if (skipBtn) {
-            try { skipBtn.click(); } catch (_) { /* button detached mid-sweep */ }
+            try { skipBtn.click(); } catch (_) { console.debug('MPC interceptor:', _); /* button detached mid-sweep */ }
             return;
         }
 
@@ -1195,10 +1215,30 @@
             try {
                 adVideo.currentTime = adVideo.duration;
                 adVideo.playbackRate = 16.0;
-            } catch (_) { /* ad element mid-teardown — next sweep retries */ }
+            } catch (_) { console.debug('MPC interceptor:', _); /* ad element mid-teardown — next sweep retries */ }
         }
     }
-    setInterval(runAdSkipSweep, 400);
+    // v1.5.0 (suite, B.1): the ad-skip sweep is idle-parked — 12 min with no
+    // video element on the page parks it; media events (capture-phase) re-arm
+    // it. While videos are present the sweep keeps its exact baseline cadence
+    // (ads can start mid-video).
+    let adSkipTimer = null;
+    let adSkipIdle = 0;
+    const armAdSkipSweep = () => {
+        if (adSkipTimer) return;
+        adSkipIdle = 0;
+        adSkipTimer = setInterval(() => {
+            if (!document.querySelector('video')) {
+                if (++adSkipIdle > 1800) { clearInterval(adSkipTimer); adSkipTimer = null; }
+                return;
+            }
+            adSkipIdle = 0;
+            runAdSkipSweep();
+        }, 400);
+    };
+    ['play', 'playing', 'loadeddata', 'durationchange'].forEach((ev) =>
+        document.addEventListener(ev, armAdSkipSweep, true));
+    armAdSkipSweep();
 
     // ==========================================
     // TOP-FRAME UI BOUNDARY
@@ -1844,7 +1884,7 @@
             const seg = u.pathname.split('/').filter(Boolean).pop() || '';
             if (seg && seg.includes('.')) return decodeURIComponent(seg);
             if (seg) return decodeURIComponent(seg) + '.' + fallbackExt;
-        } catch (_) { /* fall through to generic name */ }
+        } catch (_) { console.debug('MPC interceptor:', _); /* fall through to generic name */ }
         return 'media_' + Date.now() + '.' + fallbackExt;
     }
 
@@ -1917,11 +1957,11 @@
             recorder.start(250);
             const stopMs = Math.min(1000 * (isFinite(video.duration) && video.duration > 0 ? video.duration : 10), 30000);
             const stopTimer = setTimeout(() => {
-                try { if (recorder.state !== 'inactive') recorder.stop(); } catch (_) { /* already stopped */ }
+                try { if (recorder.state !== 'inactive') recorder.stop(); } catch (_) { console.debug('MPC interceptor:', _); /* already stopped */ }
             }, stopMs);
             video.addEventListener('ended', () => {
                 clearTimeout(stopTimer);
-                try { if (recorder.state !== 'inactive') recorder.stop(); } catch (_) { /* already stopped */ }
+                try { if (recorder.state !== 'inactive') recorder.stop(); } catch (_) { console.debug('MPC interceptor:', _); /* already stopped */ }
             }, { once: true });
         } catch (err) {
             console.error('[4NDR0666OS] stream capture error:', err);
@@ -2012,11 +2052,27 @@
     // Consolidated UI cadence: keeps the scrub bar and download button glued
     // to the active media between events. Supersedes the baseline's two
     // separate 400ms intervals; hidden tabs skip the work entirely.
-    setInterval(() => {
-        if (document.hidden) return;
-        positionScrubBar();
-        positionDownloadButton();
-    }, 400);
+    // v1.5.0 (suite, B.1): idle-parked — 12 min with neither an active video
+    // nor an overlay element to position parks it; media events re-arm it.
+    let uiCadenceTimer = null;
+    let uiCadenceIdle = 0;
+    const armUiCadence = () => {
+        if (uiCadenceTimer) return;
+        uiCadenceIdle = 0;
+        uiCadenceTimer = setInterval(() => {
+            if (document.hidden) return;
+            if (!activeVideo && !scrubBar.isConnected && !dlBtn.isConnected) {
+                if (++uiCadenceIdle > 1800) { clearInterval(uiCadenceTimer); uiCadenceTimer = null; }
+                return;
+            }
+            uiCadenceIdle = 0;
+            positionScrubBar();
+            positionDownloadButton();
+        }, 400);
+    };
+    ['play', 'playing', 'loadeddata', 'durationchange'].forEach((ev) =>
+        document.addEventListener(ev, armUiCadence, true));
+    armUiCadence();
 
     // ==========================================
     // SCREENSHOT (salvaged from html5videoplayingtools actList P)
@@ -2596,9 +2652,24 @@
     // ==========================================
     // Persist active video's currentTime so an accidental refresh can restore
     // playhead position via the vnode record.
-    setInterval(() => {
-        if (activeVideo) persistVNode(activeVideo);
-    }, 5000);
+    // v1.5.0 (suite, B.1): idle-parked — 1 h with no active video parks it;
+    // media events re-arm it (a reactivated video resumes persistence).
+    let persistTimer = null;
+    let persistIdle = 0;
+    const armPersist = () => {
+        if (persistTimer) return;
+        persistIdle = 0;
+        persistTimer = setInterval(() => {
+            if (!activeVideo) {
+                if (++persistIdle > 720) { clearInterval(persistTimer); persistTimer = null; }
+                return;
+            }
+            persistIdle = 0;
+            persistVNode(activeVideo);
+        }, 5000);
+    };
+    ['play', 'playing'].forEach((ev) => document.addEventListener(ev, armPersist, true));
+    armPersist();
 
     // ==========================================
     // PLACEHOLDER CLICK-TO-REHYDRATE

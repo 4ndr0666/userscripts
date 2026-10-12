@@ -13,7 +13,7 @@ Confirmation Bypass removes every friction layer forums put between the operator
 | Version | `4.0.3` |
 | Matches | `*://forums.socialmediagirls.com/*`, `*://forums.socialmediagirls.com/goto/link-confirmation*`, `*://simpcity.cr/*`, `*://simpcity.cr/redirect/*` (+4 more) |
 | Run-at | `document-idle` |
-| Size | 60.8 KB · 1181 lines |
+| Size | 61.1 KB · 1187 lines |
 | Install | [dist/4ndr0tools - Confirmation Bypass.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Confirmation%20Bypass.user.js) |
 
 ## Feature Inventory

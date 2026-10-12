@@ -221,33 +221,47 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: YandexImageSearch++.user
         injectCSS();
         let activeController = null;
 
-        const observer = new MutationObserver((mutations) => {
-            for (const mutation of mutations) {
-                for (const node of mutation.addedNodes) {
-                    // When the viewer container is added to the DOM, create a new
-                    // controller. v0.4: also probe INSIDE the added node — the
-                    // viewer may arrive wrapped in a portal container, which the
-                    // direct-children-only observer never saw.
-                    if (node.nodeType === Node.ELEMENT_NODE &&
-                        (node.matches(CONFIG.viewerContainerSelector) || node.querySelector?.(CONFIG.viewerContainerSelector))) {
-                        if (!activeController) {
-                            activeController = new SlideshowController();
-                        }
-                        return; // Exit after finding the container.
-                    }
-                }
-                for (const node of mutation.removedNodes) {
-                    // When the viewer container is removed, destroy the active controller to clean up.
-                    if (node.nodeType === Node.ELEMENT_NODE &&
-                        (node.matches(CONFIG.viewerContainerSelector) || node.querySelector?.(CONFIG.viewerContainerSelector))) {
-                        if (activeController) {
-                            activeController.destroy();
-                            activeController = null;
-                        }
-                        return; // Exit after finding the container.
+        // v1.5.1 observer discipline: buffered tranche — the same viewer
+        // mount/unmount checks over the identical node set, coalesced to one
+        // flush per 200 ms of DOM churn (mount/unmount are idempotent via the
+        // activeController guard).
+        const pendingAdded = [];
+        const pendingRemoved = [];
+        let viewerCheckTimer = null;
+        const checkViewer = () => {
+            const added = pendingAdded.splice(0, pendingAdded.length);
+            const removed = pendingRemoved.splice(0, pendingRemoved.length);
+            for (const node of added) {
+                // When the viewer container is added to the DOM, create a new
+                // controller. v0.4: also probe INSIDE the added node — the
+                // viewer may arrive wrapped in a portal container, which the
+                // direct-children-only observer never saw.
+                if (node.nodeType === Node.ELEMENT_NODE &&
+                    (node.matches(CONFIG.viewerContainerSelector) || node.querySelector?.(CONFIG.viewerContainerSelector))) {
+                    if (!activeController) {
+                        activeController = new SlideshowController();
                     }
                 }
             }
+            for (const node of removed) {
+                // When the viewer container is removed, destroy the active controller to clean up.
+                if (node.nodeType === Node.ELEMENT_NODE &&
+                    (node.matches(CONFIG.viewerContainerSelector) || node.querySelector?.(CONFIG.viewerContainerSelector))) {
+                    if (activeController) {
+                        activeController.destroy();
+                        activeController = null;
+                    }
+                }
+            }
+        };
+        const observer = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+                for (const node of mutation.addedNodes) pendingAdded.push(node);
+                for (const node of mutation.removedNodes) pendingRemoved.push(node);
+            }
+            if (!pendingAdded.length && !pendingRemoved.length) return;
+            clearTimeout(viewerCheckTimer);
+            viewerCheckTimer = setTimeout(checkViewer, 200);
         });
 
         observer.observe(document.body, {

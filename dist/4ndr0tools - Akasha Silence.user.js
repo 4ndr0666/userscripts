@@ -109,9 +109,10 @@
  *   - PAGE REALM FIRST: the slot + wraps live on unsafeWindow when
  *     available (that is where host page fetches live — the same realm
  *     choice the per-script wraps already made), window otherwise.
- *   - LAZY ARM: zero wraps until the first subscriber registers (onBody,
- *     onRequest, onTraffic OR onError) — a co-installed script that only
- *     subscribes on its own host costs nothing anywhere else.
+ *   - LAZY ARM: zero network wraps until the first subscriber registers
+ *     (onBody, onRequest, onTraffic OR onError); the v6 DOM observer arms
+ *     separately, only on the first onNode subscriber (zero observers
+ *     anywhere until a defuser registers).
  *   - SINGLE BODY READ: one clone per response, dispatched to every
  *     subscriber — the two-vault double-read on instagram is the exact
  *     failure this replaces. 4 MB read cap (Blob2URL's wire limit).
@@ -149,6 +150,42 @@
  *   chain while the v5 copy arms above it — the established transitional
  *   co-install progression).
  *
+ * v6 (suite v1.6.0) — THE DOM DEFEASE CHANNEL (onNode). The v1.5.1
+ *   observer census left the defuse class ledgered (TIMING entries:
+ *   microtask races a private per-script observer was winning) because
+ *   structurally bounding them meant weakening them. The hub takes the
+ *   channel instead — same consolidation the network wraps got in v1.4.3:
+ *   N co-installed document-level observers become ONE kernel-owned
+ *   observer per realm document, fanning raw record batches to isolated
+ *   subscribers.
+ *   - onNode(fn) -> unsubscribe. fn(mutations) receives a per-subscriber
+ *     copy of the raw MutationRecord batch — childList + subtree over
+ *     documentElement, plus attributes filtered to `src` (the union of
+ *     the migrated sites' observe configs) — in the SAME synchronous
+ *     microtask slot a private observer would have delivered it. The
+ *     defuse race is preserved exactly: the fan happens inside the
+ *     observer callback, before the next task, so a hostile script
+ *     inserted this batch is still neutralized before it executes.
+ *   - LAZY ARM, SYMMETRIC DISARM: zero observers until the first onNode
+ *     subscriber registers; the observer disconnects the moment the last
+ *     subscriber unsubscribes. Armed lifetime == subscription lifetime.
+ *   - ISOLATION: a throwing subscriber is scoped console.debug (GUP D6)
+ *     and treated as no-opinion — a broken defuser must never break the
+ *     page or its siblings. Each subscriber gets its own array copy, so
+ *     a hostile subscriber cannot splice its siblings' batch.
+ *   - AUTO-PROPAGATE: inserted iframes with a reachable contentWindow
+ *     get the network wrap set propagated by the hub itself — the same
+ *     idempotent, slot-aware, cross-origin-safe call the Akashan v5.2.0
+ *     iframe observer made per-site. Realm propagation is hub
+ *     infrastructure, not script surface; script-side propagators keep
+ *     working (idempotent double-arm is a no-op).
+ *   - Bounded registry (MAX_SUBS), versioned slot: isFullHub now requires
+ *     the onNode surface, so a v5-or-older slot owner is wrapped above by
+ *     a v6 copy (transitional chaining, as before).
+ *   - The kernel observer itself is self-asserted by the smoke battery
+ *     and the observer census (tools/observer-census.mjs verifies the
+ *     lazy-arm/disconnect/bounded/isolation markers on this file).
+ *
  * Consumed via build-time injection into the canon scripts that declare it
  * (tools/build.mjs CANON_KERNEL) — the identifier `__4NDR0_NET_API__` below
  * is script-scope visible to the consumer's IIFE.
@@ -157,7 +194,7 @@ const __4NDR0_NET_API__ = (function () {
     'use strict';
 
     const SLOT = '__4NDR0_NET__';
-    const VERSION = 5;
+    const VERSION = 6;
     const MAX_SUBS = 32;            /* bounded registry (GUP B.1) */
     const MAX_BODY = 4000000;       /* 4 MB read cap (Blob2URL's wire limit) */
     const XHR_MOCK_DELAY = 40;      /* D6 cadence — mocked XHR responses deliver
@@ -345,6 +382,9 @@ const __4NDR0_NET_API__ = (function () {
     const reqSubs = new Map();      /* onRequest defusers: key -> fn(req) */
     const trafficSubs = new Map();  /* onTraffic observers: key -> fn(ev) */
     const errSubs = new Map();      /* onError recoverers: key -> fn(ev) */
+    const nodeSubs = new Map();     /* v6 onNode defusers: key -> fn(mutations) */
+    let nseq = 0;
+    let nodeObserver = null;        /* v6: the kernel-owned DOM observer */
     const served = (typeof WeakSet === 'function') ? new WeakSet() : null; /* propagate-armed realms */
     let seq = 0;
     let rseq = 0;
@@ -827,7 +867,7 @@ const __4NDR0_NET_API__ = (function () {
     function isFullHub(h) {
         return !!(h && typeof h.onBody === 'function' && typeof h.onRequest === 'function' &&
             typeof h.onTraffic === 'function' && typeof h.onError === 'function' &&
-            typeof h.gmFetch === 'function');
+            typeof h.gmFetch === 'function' && typeof h.onNode === 'function');
     }
 
     /* Slot install — a strictly newer full-channel hub replaces the
@@ -842,6 +882,52 @@ const __4NDR0_NET_API__ = (function () {
                 value: api, writable: false, enumerable: false, configurable: true,
             });
         } catch (e) { /* slot collision with a foreign script — local hub only */ }
+    }
+
+    /* ── v6: the DOM defuse channel ────────────────────────────────────
+     * ONE kernel-owned MutationObserver per realm document; lazy arm on
+     * the first onNode subscriber, disconnect when the last one leaves.
+     * The fan is synchronous inside the callback — subscribers observe
+     * in the SAME microtask a private observer would have delivered (the
+     * defuse race is preserved, not debounced). The observer census
+     * self-asserts the lazy-arm / disconnect / bounded / isolation
+     * markers below; the smoke battery executes them. */
+    function fanNode(mutations) {
+        try {
+            /* auto-propagate: inserted iframes receive the network wrap
+             * set (idempotent, slot-aware; script-side propagators keep
+             * working — double-arm is a no-op) */
+            for (let i = 0; i < mutations.length; i++) {
+                const added = mutations[i] && mutations[i].addedNodes;
+                if (!added || !added.length) continue;
+                for (let j = 0; j < added.length; j++) {
+                    const n = added[j];
+                    if (n && n.tagName === 'IFRAME' && n.contentWindow) {
+                        try { api.propagate(n.contentWindow); } catch (e) { /* cross-origin or dead frame */ }
+                    }
+                }
+            }
+        } catch (e) { /* propagation must never break the fan */ }
+        for (const [, fn] of nodeSubs) {
+            try { fn(mutations.slice()); }
+            catch (e) { console.debug('[a4/net] node subscriber failed:', (e && e.message) || e); }
+        }
+    }
+    function armNodeObserver(target) {
+        if (nodeObserver || !target || !target.document) return;
+        try {
+            const root = target.document.documentElement;
+            if (!root || typeof MutationObserver !== 'function') return;
+            nodeObserver = new MutationObserver(fanNode);
+            nodeObserver.observe(root, {
+                childList: true, subtree: true, attributes: true, attributeFilter: ['src'],
+            });
+        } catch (e) { console.debug('[a4/net] node observer arm skipped:', (e && e.message) || e); nodeObserver = null; }
+    }
+    function disarmNodeObserver() {
+        if (!nodeObserver) return;
+        try { nodeObserver.disconnect(); } catch (e) { /* already dead */ }
+        nodeObserver = null;
     }
 
     const api = {
@@ -963,6 +1049,35 @@ const __4NDR0_NET_API__ = (function () {
             }
             return function () { errSubs.delete(key); };
         },
+        /* onNode(fn) -> unsubscribe. The DOM defuse channel — see the v6
+         * contract in the file header: one kernel-owned observer per realm
+         * document, lazy arm, synchronous fan in the insertion microtask,
+         * per-subscriber record copies, throwing subscribers isolated.
+         * The callback IS the script's defuse policy (the hub is plumbing);
+         * observe-config widening is the hub's union, not the script's. */
+        onNode: function (fn) {
+            if (typeof fn !== 'function') return function () {};
+            const target = realm();
+            if (target) {
+                try {
+                    const hub = target[SLOT];
+                    if (hub && hub !== api && hub.version >= VERSION && isFullHub(hub)) {
+                        return hub.onNode(fn);
+                    }
+                } catch (e) { /* unreadable slot — fall through to local hub */ }
+            }
+            if (nodeSubs.size >= MAX_SUBS) return function () {};
+            const key = 'nd' + (++nseq);
+            nodeSubs.set(key, fn);
+            if (target) {
+                armNodeObserver(target);
+                installSlot(target);
+            }
+            return function () {
+                nodeSubs.delete(key);
+                if (nodeSubs.size === 0) disarmNodeObserver();
+            };
+        },
         /* propagate(target) -> armed. Arm the wrap set into an additional
          * realm (iframe propagation, or the userscript sandbox realm for
          * scripts that historically hooked both contexts). Idempotent
@@ -1003,6 +1118,7 @@ const __4NDR0_NET_API__ = (function () {
         get requestSubscriberCount() { return reqSubs.size; },
         get trafficSubscriberCount() { return trafficSubs.size; },
         get errorSubscriberCount() { return errSubs.size; },
+        get nodeSubscriberCount() { return nodeSubs.size; },
     };
     return api;
 })();
@@ -1110,7 +1226,7 @@ const __4NDR0_NET_API__ = (function () {
     try {
         const stored = localStorage.getItem(PROFILE_KEY);
         if (stored === 'full' || stored === 'core' || stored === 'off') AKASHA_PROFILE = stored;
-    } catch (e) { /* private mode — 'full' default stands */ }
+    } catch (e) { console.debug('AKASHA interceptor:', e); /* private mode — 'full' default stands */ }
     const P_FULL = (AKASHA_PROFILE === 'full');
     const P_CORE = P_FULL || (AKASHA_PROFILE === 'core'); // core defenses on
 
@@ -1133,7 +1249,7 @@ const __4NDR0_NET_API__ = (function () {
             host.appendChild(el);
             setTimeout(() => {
                 el.style.opacity = '0';
-                setTimeout(() => { try { el.remove(); } catch (_) {} }, 200);
+                setTimeout(() => { try { el.remove(); } catch (_) { console.debug('AKASHA interceptor:', _);} }, 200);
             }, 1600);
         } catch (e) { console.log('[Ψ Akasha]', text); }
     }
@@ -1147,9 +1263,9 @@ const __4NDR0_NET_API__ = (function () {
             e.preventDefault();
             e.stopPropagation();
             const next = PROFILES[(PROFILES.indexOf(AKASHA_PROFILE) + 1) % PROFILES.length];
-            try { localStorage.setItem(PROFILE_KEY, next); } catch (err) { /* non-fatal */ }
+            try { localStorage.setItem(PROFILE_KEY, next); } catch (err) { console.debug('AKASHA interceptor:', err); /* non-fatal */ }
             akashaToast(`Ψ AKASHA SILENCE — profile: ${AKASHA_PROFILE} → ${next}. Reloading…`);
-            setTimeout(() => { try { location.reload(); } catch (_) {} }, 900);
+            setTimeout(() => { try { location.reload(); } catch (_) { console.debug('AKASHA interceptor:', _);} }, 900);
         }
     }, true);
 
@@ -1173,7 +1289,7 @@ const __4NDR0_NET_API__ = (function () {
                         configurable: true,
                         enumerable: true
                     });
-                } catch (e) {}
+                } catch (e) { console.debug('AKASHA interceptor:', e);}
             }
         }
     };
@@ -1229,7 +1345,7 @@ const __4NDR0_NET_API__ = (function () {
     const originalGetImageData = CanvasRenderingContext2D.prototype.getImageData;
     CanvasRenderingContext2D.prototype.getImageData = function () {
         const data = originalGetImageData.apply(this, arguments);
-        try { perturbImageData(this.canvas, data.data); } catch (e) {}
+        try { perturbImageData(this.canvas, data.data); } catch (e) { console.debug('AKASHA interceptor:', e);}
         return data;
     };
 
@@ -1259,7 +1375,7 @@ const __4NDR0_NET_API__ = (function () {
         try {
             const scratch = blindedScratch(this);
             if (scratch) return originalToDataURL.apply(scratch, arguments);
-        } catch (e) {}
+        } catch (e) { console.debug('AKASHA interceptor:', e);}
         return originalToDataURL.apply(this, arguments);
     };
 
@@ -1267,7 +1383,7 @@ const __4NDR0_NET_API__ = (function () {
         try {
             const scratch = blindedScratch(this);
             if (scratch) return originalToBlob.apply(scratch, arguments);
-        } catch (e) {}
+        } catch (e) { console.debug('AKASHA interceptor:', e);}
         return originalToBlob.apply(this, arguments);
     };
 
@@ -1290,12 +1406,12 @@ const __4NDR0_NET_API__ = (function () {
                     if (param === ext.UNMASKED_VENDOR_WEBGL) return GPU_PROFILE[0];
                     if (param === ext.UNMASKED_RENDERER_WEBGL) return GPU_PROFILE[1];
                 }
-            } catch (e) {}
+            } catch (e) { console.debug('AKASHA interceptor:', e);}
             return originalGetParameter.call(this, param);
         };
     }
-    try { if (win.WebGLRenderingContext) blindWebGL(win.WebGLRenderingContext.prototype); } catch (e) {}
-    try { if (win.WebGL2RenderingContext) blindWebGL(win.WebGL2RenderingContext.prototype); } catch (e) {}
+    try { if (win.WebGLRenderingContext) blindWebGL(win.WebGLRenderingContext.prototype); } catch (e) { console.debug('AKASHA interceptor:', e);}
+    try { if (win.WebGL2RenderingContext) blindWebGL(win.WebGL2RenderingContext.prototype); } catch (e) { console.debug('AKASHA interceptor:', e);}
 
     /* AudioContext fingerprint — sub-16-bit LSB noise, applied once per
      * buffer (marked via WeakSet so repeat reads stay deterministic). */
@@ -1310,10 +1426,10 @@ const __4NDR0_NET_API__ = (function () {
                     const rnd = mulberry32((Math.random() * 0xFFFFFFFF) >>> 0);
                     for (let i = 0; i < data.length; i++) data[i] += (rnd() - 0.5) * 1e-7;
                 }
-            } catch (e) {}
+            } catch (e) { console.debug('AKASHA interceptor:', e);}
             return data;
         };
-    } catch (e) {}
+    } catch (e) { console.debug('AKASHA interceptor:', e);}
     } /* end P_FULL fingerprint nullification */
 
     /* ══ §3 TELEMETRY ROUTING (union blocklist) ═════════════════════════ */
@@ -1383,9 +1499,9 @@ const __4NDR0_NET_API__ = (function () {
         const fire = (type, ev) => {
             ev = ev || { type: type };
             const handler = phantom['on' + type];
-            if (typeof handler === 'function') { try { handler(ev); } catch (e) {} }
+            if (typeof handler === 'function') { try { handler(ev); } catch (e) { console.debug('AKASHA interceptor:', e);} }
             const arr = listeners.get(type);
-            if (arr) for (const fn of arr.slice()) { try { fn(ev); } catch (e) {} }
+            if (arr) for (const fn of arr.slice()) { try { fn(ev); } catch (e) { console.debug('AKASHA interceptor:', e);} }
         };
         const phantom = {
             url: String(url),
@@ -1600,8 +1716,12 @@ const __4NDR0_NET_API__ = (function () {
     });
 
     /* 3. Fast synchronous observer for statically parsed inline scripts
-     *    and any other injection path (innerHTML, adoption, etc.). */
-    new MutationObserver((mutations) => {
+     *    and any other injection path (innerHTML, adoption, etc.).
+     *    v1.6.0: rides the NetHook DOM defuse channel — one kernel-owned
+     *    observer per realm fans the raw batch in the SAME insertion
+     *    microtask (the anti-bot race contract is unchanged); the defuse
+     *    policy (neutralizeNode + subtree script sweep) stays here. */
+    __4NDR0_NET_API__.onNode((mutations) => {
         for (const mutation of mutations) {
             for (const node of mutation.addedNodes) {
                 neutralizeNode(node);
@@ -1610,7 +1730,7 @@ const __4NDR0_NET_API__ = (function () {
                 }
             }
         }
-    }).observe(document.documentElement, { childList: true, subtree: true });
+    });
     } /* end P_FULL anti-analysis neutralizer */
 
     /* ══ §6 DOM SINKHOLE (dynamic script interception) ═════════════════ */
@@ -1798,7 +1918,7 @@ const __4NDR0_NET_API__ = (function () {
                         try {
                             v = getRealLinkFromGoogleUrl(this);
                             if (v) hrefSet(this, v);
-                        } catch (e) {}
+                        } catch (e) { console.debug('AKASHA interceptor:', e);}
 
                         try {
                             const rpProp = Object.getOwnPropertyDescriptor(proto, 'referrerPolicy');
@@ -1808,7 +1928,7 @@ const __4NDR0_NET_API__ = (function () {
                                    rpProp.set.call(this, currentScript.referrerPolicy);
                                 }
                             }
-                        } catch (e) {}
+                        } catch (e) { console.debug('AKASHA interceptor:', e);}
                     },
                 });
 
@@ -1902,11 +2022,17 @@ const __4NDR0_NET_API__ = (function () {
                     e.preventDefault();
                     e.stopPropagation();
                     window.location.href = link.getAttribute('href');
+                    // B.1 (suite v1.5.0): the 1 ms popup poll now carries an
+                    // attempt ceiling — a CTA popup that never appears can no
+                    // longer burn the timer forever.
+                    let popupTries = 0;
                     const popupCheck = setInterval(() => {
                         const popup = document.querySelector('.RnEpo');
                         if (popup) {
                             setTimeout(() => { document.body.style.overflow = 'auto'; }, 50);
                             popup.remove();
+                            clearInterval(popupCheck);
+                        } else if (++popupTries > 5000) {
                             clearInterval(popupCheck);
                         }
                     }, 1);
@@ -1927,7 +2053,12 @@ const __4NDR0_NET_API__ = (function () {
     /* ══ §9 CONTEXT ESCAPE PREVENTION (iframe propagation) ═════════════ */
 
     if (P_CORE) {
-    const iframeObserver = new MutationObserver((mutations) => {
+    /* v1.6.0: the iframe watcher rides the NetHook DOM channel (kernel-
+     * owned observer, synchronous fan). The hub itself auto-propagates the
+     * network wrap set into inserted iframes; this subscriber keeps the
+     * Akashan local-pacifier arming + re-arm-on-load surface (policy), and
+     * its propagate calls remain as idempotent belt-and-suspenders. */
+    __4NDR0_NET_API__.onNode((mutations) => {
         mutations.forEach((mutation) => {
             mutation.addedNodes.forEach((node) => {
                 if (node.tagName && node.tagName.toLowerCase() === 'iframe') {
@@ -1944,13 +2075,11 @@ const __4NDR0_NET_API__ = (function () {
                                 applyLocalHooks(node.contentWindow);
                             }
                         });
-                    } catch (e) {}
+                    } catch (e) { console.debug('AKASHA interceptor:', e);}
                 }
             });
         });
     });
-
-    iframeObserver.observe(document.documentElement || document.body, { childList: true, subtree: true });
     } /* end P_CORE iframe propagation */
 
     /* ══ §10 BOOT ══════════════════════════════════════════════════════ */

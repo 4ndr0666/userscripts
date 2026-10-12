@@ -1,6 +1,6 @@
 # 4ndr0666tools — Script Documentation Index
 
-> 37 installables · every script in [`dist/`](../dist/) has coinciding docs here.
+> 38 installables · every script in [`dist/`](../dist/) has coinciding docs here.
 > Regenerate after any bump: `npm run docs` (versions, keymaps, scopes and lineage are read live from the repo).
 
 | Script | Version | Family | Docs |
@@ -41,6 +41,7 @@
 | **YouTube Embed Redirect Button** | `1.6` | video & players | [reference](./yt-embed-redirect/) |
 | **YouTube Playlist Master** | `1.7.0` | video & players | [reference](./youtube-playlist-master/) |
 | **Youtube Removed Video Revealer** | `2.0.2` | video & players | [reference](./yt-removed-video-revealer/) |
+| **Zai Exporter** | `1.0.0` | uncategorized | [reference](./zai-exporter/) |
 | **m3u8++** | `5.1.0` | media & links | [devlog](./m3u8++/) |
 
 Hand-written deep devlogs: **Bunkr++**, **Hailuo++**, **m3u8++** carry full engineering devlogs with field intelligence;

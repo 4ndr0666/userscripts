@@ -108,15 +108,15 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Forums++.user v1.9.2 —
 const JSZipGlobal = window.JSZip;
 const tippyGlobal = window.tippy;
 const http = window.GM_xmlhttpRequest;
-window.isFF = typeof InstallTrigger !== 'undefined';
-window.logs = [];
+const isFF = typeof InstallTrigger !== 'undefined';
+let logs = [];
 
 const log = {
     /**
      * @param {string} postId
      * @returns {number}
      */
-    separator: postId => window.logs.push({ postId, message: '-'.repeat(175) }),
+    separator: postId => logs.push({ postId, message: '-'.repeat(175) }),
     /**
      * @param {string} postId
      * @param {string} str
@@ -128,7 +128,7 @@ const log = {
         const message = `[${date.toDateString()} ${date.toLocaleTimeString()}] [${type}] ${str}`
             .replace(/(::.*?::)/gi, (match, g) => g.toUpperCase())
             .replace(/::/g, '');
-        window.logs.push({ postId, message });
+        logs.push({ postId, message });
         if (toConsole) {
             const lowerType = type.toLowerCase();
             if (lowerType === 'info') {
@@ -1123,9 +1123,9 @@ const ui = {
 
                     // Filter out nulls for FF compatibility and settings toggles
                     const formHtml = [
-                        window.isFF ? ui.forms.config.post.createFilenameInput(customFilename, postId, color, defaultFilename) : null,
+                        isFF ? ui.forms.config.post.createFilenameInput(customFilename, postId, color, defaultFilename) : null,
                         settingsHeading,
-                        !window.isFF ? ui.forms.config.post.createZippedCheckbox(postId, currentSettings.zipped) : null,
+                        !isFF ? ui.forms.config.post.createZippedCheckbox(postId, currentSettings.zipped) : null,
                         ui.forms.config.post.createFlattenCheckbox(postId, currentSettings.flatten),
                         ui.forms.config.post.createSkipDuplicatesCheckbox(postId, currentSettings.skipDuplicates),
                         ui.forms.config.post.createGenerateLinksCheckbox(postId, currentSettings.generateLinks),
@@ -1203,7 +1203,7 @@ const ui = {
                                 currentSettings.verifyBunkrLinks = e.target.checked;
                             });
 
-                            if (!window.isFF) {
+                            if (!isFF) {
                                 h.element(`#settings-${postId}-zipped`)?.addEventListener('change', e => {
                                     currentSettings.zipped = e.target.checked;
                                 });
@@ -2831,7 +2831,7 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
     const enabledHosts = enabledHostsCB(parsedHosts);
 
     // Filter out previous logs for this post
-    window.logs = window.logs.filter(l => l.postId !== postId);
+    logs = logs.filter(l => l.postId !== postId);
 
     log.separator(postId);
     log.post.info(postId, `::Using ${enabledHosts.length} host(s)::: ${enabledHosts.map(h => h.name).join(', ')}`, postNumber);
@@ -3011,7 +3011,7 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
     }
 
 
-    const isFF = window.isFF;
+    const isFF = isFF;
 
     if (!postSettings.skipDownload) {
         const resourcesToDownload = resolved.filter(r => r.url);
@@ -3237,7 +3237,7 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
             log.post.info(postId, `::Generating log file::`, postNumber);
             zip.file(
                 isFF ? 'generated/log.txt' : 'log.txt',
-                window.logs
+                logs
                     .filter(l => l.postId === postId)
                     .map(l => l.message)
                     .join('\n'),
@@ -3295,7 +3295,7 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
     }
 
     // Clear logs for this post after completion
-    window.logs = window.logs.filter(l => l.postId !== postId);
+    logs = logs.filter(l => l.postId !== postId);
 };
 
 /**

@@ -361,7 +361,7 @@
                     const encodedUrl = urlObj.searchParams.get('url');
                     const decoded = decodeBase64Url(encodedUrl);
                     if (decoded) href = decoded;
-                } catch { /* Ignore malformed */ }
+                } catch { console.debug('FLX interceptor: unbound'); /* Ignore malformed */ }
             }
             if (href.startsWith('http')) {
                 // === THIS IS THE LUCASD FIX (v2 — real-URL aggregation) ===

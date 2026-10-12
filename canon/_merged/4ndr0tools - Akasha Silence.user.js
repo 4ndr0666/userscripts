@@ -115,7 +115,7 @@
     try {
         const stored = localStorage.getItem(PROFILE_KEY);
         if (stored === 'full' || stored === 'core' || stored === 'off') AKASHA_PROFILE = stored;
-    } catch (e) { /* private mode — 'full' default stands */ }
+    } catch (e) { console.debug('AKASHA interceptor:', e); /* private mode — 'full' default stands */ }
     const P_FULL = (AKASHA_PROFILE === 'full');
     const P_CORE = P_FULL || (AKASHA_PROFILE === 'core'); // core defenses on
 
@@ -138,7 +138,7 @@
             host.appendChild(el);
             setTimeout(() => {
                 el.style.opacity = '0';
-                setTimeout(() => { try { el.remove(); } catch (_) {} }, 200);
+                setTimeout(() => { try { el.remove(); } catch (_) { console.debug('AKASHA interceptor:', _);} }, 200);
             }, 1600);
         } catch (e) { console.log('[Ψ Akasha]', text); }
     }
@@ -152,9 +152,9 @@
             e.preventDefault();
             e.stopPropagation();
             const next = PROFILES[(PROFILES.indexOf(AKASHA_PROFILE) + 1) % PROFILES.length];
-            try { localStorage.setItem(PROFILE_KEY, next); } catch (err) { /* non-fatal */ }
+            try { localStorage.setItem(PROFILE_KEY, next); } catch (err) { console.debug('AKASHA interceptor:', err); /* non-fatal */ }
             akashaToast(`Ψ AKASHA SILENCE — profile: ${AKASHA_PROFILE} → ${next}. Reloading…`);
-            setTimeout(() => { try { location.reload(); } catch (_) {} }, 900);
+            setTimeout(() => { try { location.reload(); } catch (_) { console.debug('AKASHA interceptor:', _);} }, 900);
         }
     }, true);
 
@@ -178,7 +178,7 @@
                         configurable: true,
                         enumerable: true
                     });
-                } catch (e) {}
+                } catch (e) { console.debug('AKASHA interceptor:', e);}
             }
         }
     };
@@ -234,7 +234,7 @@
     const originalGetImageData = CanvasRenderingContext2D.prototype.getImageData;
     CanvasRenderingContext2D.prototype.getImageData = function () {
         const data = originalGetImageData.apply(this, arguments);
-        try { perturbImageData(this.canvas, data.data); } catch (e) {}
+        try { perturbImageData(this.canvas, data.data); } catch (e) { console.debug('AKASHA interceptor:', e);}
         return data;
     };
 
@@ -264,7 +264,7 @@
         try {
             const scratch = blindedScratch(this);
             if (scratch) return originalToDataURL.apply(scratch, arguments);
-        } catch (e) {}
+        } catch (e) { console.debug('AKASHA interceptor:', e);}
         return originalToDataURL.apply(this, arguments);
     };
 
@@ -272,7 +272,7 @@
         try {
             const scratch = blindedScratch(this);
             if (scratch) return originalToBlob.apply(scratch, arguments);
-        } catch (e) {}
+        } catch (e) { console.debug('AKASHA interceptor:', e);}
         return originalToBlob.apply(this, arguments);
     };
 
@@ -295,12 +295,12 @@
                     if (param === ext.UNMASKED_VENDOR_WEBGL) return GPU_PROFILE[0];
                     if (param === ext.UNMASKED_RENDERER_WEBGL) return GPU_PROFILE[1];
                 }
-            } catch (e) {}
+            } catch (e) { console.debug('AKASHA interceptor:', e);}
             return originalGetParameter.call(this, param);
         };
     }
-    try { if (win.WebGLRenderingContext) blindWebGL(win.WebGLRenderingContext.prototype); } catch (e) {}
-    try { if (win.WebGL2RenderingContext) blindWebGL(win.WebGL2RenderingContext.prototype); } catch (e) {}
+    try { if (win.WebGLRenderingContext) blindWebGL(win.WebGLRenderingContext.prototype); } catch (e) { console.debug('AKASHA interceptor:', e);}
+    try { if (win.WebGL2RenderingContext) blindWebGL(win.WebGL2RenderingContext.prototype); } catch (e) { console.debug('AKASHA interceptor:', e);}
 
     /* AudioContext fingerprint — sub-16-bit LSB noise, applied once per
      * buffer (marked via WeakSet so repeat reads stay deterministic). */
@@ -315,10 +315,10 @@
                     const rnd = mulberry32((Math.random() * 0xFFFFFFFF) >>> 0);
                     for (let i = 0; i < data.length; i++) data[i] += (rnd() - 0.5) * 1e-7;
                 }
-            } catch (e) {}
+            } catch (e) { console.debug('AKASHA interceptor:', e);}
             return data;
         };
-    } catch (e) {}
+    } catch (e) { console.debug('AKASHA interceptor:', e);}
     } /* end P_FULL fingerprint nullification */
 
     /* ══ §3 TELEMETRY ROUTING (union blocklist) ═════════════════════════ */
@@ -388,9 +388,9 @@
         const fire = (type, ev) => {
             ev = ev || { type: type };
             const handler = phantom['on' + type];
-            if (typeof handler === 'function') { try { handler(ev); } catch (e) {} }
+            if (typeof handler === 'function') { try { handler(ev); } catch (e) { console.debug('AKASHA interceptor:', e);} }
             const arr = listeners.get(type);
-            if (arr) for (const fn of arr.slice()) { try { fn(ev); } catch (e) {} }
+            if (arr) for (const fn of arr.slice()) { try { fn(ev); } catch (e) { console.debug('AKASHA interceptor:', e);} }
         };
         const phantom = {
             url: String(url),
@@ -605,8 +605,12 @@
     });
 
     /* 3. Fast synchronous observer for statically parsed inline scripts
-     *    and any other injection path (innerHTML, adoption, etc.). */
-    new MutationObserver((mutations) => {
+     *    and any other injection path (innerHTML, adoption, etc.).
+     *    v1.6.0: rides the NetHook DOM defuse channel — one kernel-owned
+     *    observer per realm fans the raw batch in the SAME insertion
+     *    microtask (the anti-bot race contract is unchanged); the defuse
+     *    policy (neutralizeNode + subtree script sweep) stays here. */
+    __4NDR0_NET_API__.onNode((mutations) => {
         for (const mutation of mutations) {
             for (const node of mutation.addedNodes) {
                 neutralizeNode(node);
@@ -615,7 +619,7 @@
                 }
             }
         }
-    }).observe(document.documentElement, { childList: true, subtree: true });
+    });
     } /* end P_FULL anti-analysis neutralizer */
 
     /* ══ §6 DOM SINKHOLE (dynamic script interception) ═════════════════ */
@@ -803,7 +807,7 @@
                         try {
                             v = getRealLinkFromGoogleUrl(this);
                             if (v) hrefSet(this, v);
-                        } catch (e) {}
+                        } catch (e) { console.debug('AKASHA interceptor:', e);}
 
                         try {
                             const rpProp = Object.getOwnPropertyDescriptor(proto, 'referrerPolicy');
@@ -813,7 +817,7 @@
                                    rpProp.set.call(this, currentScript.referrerPolicy);
                                 }
                             }
-                        } catch (e) {}
+                        } catch (e) { console.debug('AKASHA interceptor:', e);}
                     },
                 });
 
@@ -907,11 +911,17 @@
                     e.preventDefault();
                     e.stopPropagation();
                     window.location.href = link.getAttribute('href');
+                    // B.1 (suite v1.5.0): the 1 ms popup poll now carries an
+                    // attempt ceiling — a CTA popup that never appears can no
+                    // longer burn the timer forever.
+                    let popupTries = 0;
                     const popupCheck = setInterval(() => {
                         const popup = document.querySelector('.RnEpo');
                         if (popup) {
                             setTimeout(() => { document.body.style.overflow = 'auto'; }, 50);
                             popup.remove();
+                            clearInterval(popupCheck);
+                        } else if (++popupTries > 5000) {
                             clearInterval(popupCheck);
                         }
                     }, 1);
@@ -932,7 +942,12 @@
     /* ══ §9 CONTEXT ESCAPE PREVENTION (iframe propagation) ═════════════ */
 
     if (P_CORE) {
-    const iframeObserver = new MutationObserver((mutations) => {
+    /* v1.6.0: the iframe watcher rides the NetHook DOM channel (kernel-
+     * owned observer, synchronous fan). The hub itself auto-propagates the
+     * network wrap set into inserted iframes; this subscriber keeps the
+     * Akashan local-pacifier arming + re-arm-on-load surface (policy), and
+     * its propagate calls remain as idempotent belt-and-suspenders. */
+    __4NDR0_NET_API__.onNode((mutations) => {
         mutations.forEach((mutation) => {
             mutation.addedNodes.forEach((node) => {
                 if (node.tagName && node.tagName.toLowerCase() === 'iframe') {
@@ -949,13 +964,11 @@
                                 applyLocalHooks(node.contentWindow);
                             }
                         });
-                    } catch (e) {}
+                    } catch (e) { console.debug('AKASHA interceptor:', e);}
                 }
             });
         });
     });
-
-    iframeObserver.observe(document.documentElement || document.body, { childList: true, subtree: true });
     } /* end P_CORE iframe propagation */
 
     /* ══ §10 BOOT ══════════════════════════════════════════════════════ */

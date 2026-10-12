@@ -576,7 +576,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: YT Filter.user v2.5 — 
       filters.minDuration = d.minDuration ?? 0;
       filters.maxDuration = d.maxDuration ?? Infinity;
       filters.enabled     = !!d.enabled;
-    } catch { /* keep defaults */ }
+    } catch { console.debug('YTF interceptor: unbound'); /* keep defaults */ }
   };
 
   // ---------- Validation ----------

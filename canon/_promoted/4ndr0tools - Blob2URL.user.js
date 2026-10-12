@@ -195,7 +195,7 @@
     const SENTINEL = 'data-psi-blob2url-instance';
     const root = document.documentElement;
     if (!root || (root.hasAttribute && root.hasAttribute(SENTINEL))) return;
-    try { root.setAttribute(SENTINEL, String(Date.now())); } catch (_) {}
+    try { root.setAttribute(SENTINEL, String(Date.now())); } catch (_) { console.debug('B2U interceptor:', _);}
 
     const SCRIPT_ID = 'Ψ-blob2url';
     const log = (m) => console.log(`%c[${SCRIPT_ID}] %c${m}`, "color: #00E5FF; font-weight: bold;", "color: #67E8F9;");
@@ -266,12 +266,12 @@
     const injectStyles = (css) => {
         try {
             if (typeof GM_addStyle === 'function') { GM_addStyle(css); return; }
-        } catch (_) {}
+        } catch (_) { console.debug('B2U interceptor:', _);}
         try {
             const s = document.createElement('style');
             s.textContent = css;
             (document.head || document.documentElement).appendChild(s);
-        } catch (_) {}
+        } catch (_) { console.debug('B2U interceptor:', _);}
     };
     injectStyles(CONFIG.styles);
 
@@ -292,7 +292,7 @@
     const copyText = (text) => new Promise((resolve) => {
         try {
             if (typeof GM_setClipboard === 'function') { GM_setClipboard(String(text)); resolve(true); return; }
-        } catch (_) {}
+        } catch (_) { console.debug('B2U interceptor:', _);}
         if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
             navigator.clipboard.writeText(String(text)).then(() => resolve(true), () => resolve(fallbackCopy(text)));
             return;
@@ -342,7 +342,7 @@
                 const m = bg.match(/url\(["']?(.*?)["']?\)/);
                 if (m && m[1]) return m[1];
             }
-        } catch (_) {}
+        } catch (_) { console.debug('B2U interceptor:', _);}
         return '';
     };
 
@@ -376,7 +376,7 @@
         // [G1] Hard timeout on the fallback transport too — v6.4 could hang forever here,
         // permanently locking the extract button (busy) and every IG inFlight entry.
         const ctl = (typeof AbortController === 'function') ? new AbortController() : null;
-        const timer = ctl ? setTimeout(() => { try { ctl.abort(); } catch (_) {} }, 45000) : null;
+        const timer = ctl ? setTimeout(() => { try { ctl.abort(); } catch (_) { console.debug('B2U interceptor:', _);} }, 45000) : null;
         let settled = false;
         const settle = (fn, val) => { if (settled) return; settled = true; if (timer !== null) clearTimeout(timer); fn(val); };
         fetch(url, ctl ? { signal: ctl.signal } : undefined).then((r) => {
@@ -453,7 +453,7 @@
             if (done) return;
             done = true;
             // Grace period lets the downloader drain the URL, then it is always reclaimed.
-            setTimeout(() => { try { URL.revokeObjectURL(dlUrl); } catch (_) {} }, 10000);
+            setTimeout(() => { try { URL.revokeObjectURL(dlUrl); } catch (_) { console.debug('B2U interceptor:', _);} }, 10000);
             if (ok) resolve();
             else reject(new Error(msg || 'download failed'));
         };
@@ -471,7 +471,7 @@
                 a.style.display = 'none';
                 (document.body || document.documentElement).appendChild(a);
                 a.click();
-                setTimeout(() => { try { a.remove(); } catch (_) {} }, 0);
+                setTimeout(() => { try { a.remove(); } catch (_) { console.debug('B2U interceptor:', _);} }, 0);
                 return true; // anchor transport is fire-and-forget: no synchronous error channel
             } catch (err) { return false; }
         };
@@ -492,7 +492,7 @@
                     }
                 });
                 return;
-            } catch (_) { /* fall through to anchor transport */ }
+            } catch (_) { console.debug('B2U interceptor:', _); /* fall through to anchor transport */ }
         }
         if (anchorTransport()) finish(true);
         else finish(false, 'anchor fallback failed');
@@ -537,7 +537,7 @@
         // [06] <source> lives inside <video|audio|picture> where sibling buttons never
         // render — mount the control after the host media element instead.
         const host = (el.tagName === 'SOURCE') ? (el.closest('video, audio, picture') || el) : el;
-        const lock = (node) => { try { node.setAttribute('data-psi-locked', 'true'); } catch (_) {} };
+        const lock = (node) => { try { node.setAttribute('data-psi-locked', 'true'); } catch (_) { console.debug('B2U interceptor:', _);} };
         if (host.hasAttribute('data-psi-locked')) { lock(el); return; } // one control per hook target
         lock(host);
         if (el !== host) lock(el);
@@ -612,7 +612,7 @@
     try {
         observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['src', 'href', 'data', 'srcset', 'poster'] });
     } catch (_) {
-        try { observer.observe(document.documentElement, { childList: true, subtree: true }); } catch (_) {}
+        try { observer.observe(document.documentElement, { childList: true, subtree: true }); } catch (_) { console.debug('B2U interceptor:', _);}
     }
 
     // Interactive sniffer (v6.1 engine, hardened)
@@ -628,7 +628,7 @@
         ensureMask() {
             // [09] Host pages that rewrite <body> can orphan the mask — self-heal on demand.
             if (!this.mask.isConnected) {
-                try { (document.body || document.documentElement).appendChild(this.mask); } catch (_) {}
+                try { (document.body || document.documentElement).appendChild(this.mask); } catch (_) { console.debug('B2U interceptor:', _);}
             }
             return this.mask;
         },
@@ -764,7 +764,7 @@
             log('IG module ONLINE — vault-fed net route + DOM routes armed (Alt+J vault)');
             this.scanNewScripts();
             // One-shot Route 2 over the full DOM (deferred until the initial render settles).
-            setTimeout(() => { try { this.route2(document.documentElement.outerHTML || ''); } catch (_) {} }, 1500);
+            setTimeout(() => { try { this.route2(document.documentElement.outerHTML || ''); } catch (_) { console.debug('B2U interceptor:', _);} }, 1500);
         },
 
         // ──[13] Route 1 walk (video_versions progressive + video_dash_manifest DASH) ──
@@ -794,10 +794,10 @@
                                 if (url) dash.push([label, url]);
                             }
                         }
-                    } catch (_) {}
+                    } catch (_) { console.debug('B2U interceptor:', _);}
                 }
                 for (const key in node) this.walk(node[key], prog, dash);
-            } catch (_) {}
+            } catch (_) { console.debug('B2U interceptor:', _);}
         },
 
         // Shortcode hunt for human-friendly filenames (additive, no effect on extraction).
@@ -808,7 +808,7 @@
                 const c = node.shortcode || node.code;
                 if (typeof c === 'string' && /^[A-Za-z0-9_-]{4,32}$/.test(c)) return c;
                 for (const key in node) { const r = this.findCode(node[key]); if (r) return r; }
-            } catch (_) {}
+            } catch (_) { console.debug('B2U interceptor:', _);}
             return '';
         },
 
@@ -818,7 +818,7 @@
             // was a TrustedHTML sink under enforcement (tt-smoke live proof).
             try {
                 text = decodeEntities(text);
-            } catch (_) {}
+            } catch (_) { console.debug('B2U interceptor:', _);}
             text = text.replace(/\\u(d[89ab][0-9a-f]{2})\\u(d[cdef][0-9a-f]{2})/gi, (m, hi, lo) =>
                 String.fromCodePoint(0x10000 + ((parseInt(hi, 16) - 0xD800) << 10) + (parseInt(lo, 16) - 0xDC00)));
             text = text.replace(/\\u([0-9a-fA-F]{4})/g, (m, h) => String.fromCharCode(parseInt(h, 16)));
@@ -833,7 +833,7 @@
                 const prog = new Map();
                 const dash = [];
                 let parsed = null, code = '';
-                try { parsed = JSON.parse(text); } catch (_) {}
+                try { parsed = JSON.parse(text); } catch (_) { console.debug('B2U interceptor:', _);}
                 if (parsed != null) {
                     this.walk(parsed, prog, dash);
                     code = this.findCode(parsed);
@@ -857,7 +857,7 @@
                 for (const [label, url] of dash) batch.push({ kind: 'dash', type: 999, label, url, code });
                 for (const url of extra) batch.push({ kind: 'extra', type: 999, label: '', url, code: '' });
                 this.merge(batch);
-            } catch (_) {}
+            } catch (_) { console.debug('B2U interceptor:', _);}
         },
 
         merge(batch) {
@@ -881,7 +881,7 @@
         togglePanel() {
             if (!this.active) { log('IG module idle — instagram.com only'); return; }
             if (!this.panel) this.buildPanel();
-            if (!this.panel.isConnected) { try { (document.body || document.documentElement).appendChild(this.panel); } catch (_) {} }
+            if (!this.panel.isConnected) { try { (document.body || document.documentElement).appendChild(this.panel); } catch (_) { console.debug('B2U interceptor:', _);} }
             const show = this.panel.style.display === 'none';
             this.panel.style.display = show ? 'block' : 'none';
             if (show) this.render();
@@ -905,7 +905,7 @@
                 }
                 if (act === 'rescan') {
                     this.scanNewScripts(true);
-                    try { this.route2(document.documentElement.outerHTML || ''); } catch (_) {}
+                    try { this.route2(document.documentElement.outerHTML || ''); } catch (_) { console.debug('B2U interceptor:', _);}
                     this.render();
                     log(`IG re-scan → ${this.entries.length} unique URL(s)`);
                     return;
@@ -997,7 +997,7 @@
         scanNewScripts(force) {
             document.querySelectorAll('script[type="application/json"]').forEach((s) => {
                 if (!force && s.hasAttribute('data-psi-ig-scanned')) return;
-                try { s.setAttribute('data-psi-ig-scanned', 'true'); } catch (_) {}
+                try { s.setAttribute('data-psi-ig-scanned', 'true'); } catch (_) { console.debug('B2U interceptor:', _);}
                 const t = s.textContent;
                 if (t) this.ingest(t);
             });
@@ -1101,7 +1101,7 @@
         // [U1] the panel — 3lectric-Glass, same class family as the IG vault.
         togglePanel() {
             if (!this.panel) this.buildPanel();
-            if (!this.panel.isConnected) { try { (document.body || document.documentElement).appendChild(this.panel); } catch (_) {} }
+            if (!this.panel.isConnected) { try { (document.body || document.documentElement).appendChild(this.panel); } catch (_) { console.debug('B2U interceptor:', _);} }
             const show = this.panel.style.display === 'none';
             this.panel.style.display = show ? 'block' : 'none';
             if (show) { this.scrapeDom(); this.render(); }
@@ -1125,7 +1125,7 @@
                 }
                 if (act === 'rescan') {
                     this.scrapeDom();
-                    try { this.ingestText(document.documentElement.outerHTML || ''); } catch (_) {}
+                    try { this.ingestText(document.documentElement.outerHTML || ''); } catch (_) { console.debug('B2U interceptor:', _);}
                     this.render();
                     log(`Re-scan → ${this.entries.length} unique URL(s)`);
                     return;

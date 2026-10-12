@@ -2,27 +2,33 @@
   "_comment": "GUP superset ledger — maps every legacy baseline artifact to its suite destination. modes: promoted (BETA became canonical), merged (hand-merge base), carried (verbatim + header normalization), absorbed (feature set lives inside dest), retired (kept only in legacy archive). evidence = human-readable superset argument.",
   "4ndr0purge": {
     "dest": "4ndr0purge",
-    "mode": "carried"
+    "mode": "carried",
+    "note": "carried verbatim from the frozen baseline: identity preservation is machine-proven by validate.mjs Gate B (every baseline named unit appears in the destination dist twin; the splice is byte-verified by the canon-kernel wiring gate) — header normalization only, zero feature deltas by construction"
   },
   "4ndr0serviceguard Companion": {
     "dest": "4ndr0serviceguard Companion",
-    "mode": "carried"
+    "mode": "carried",
+    "note": "carried verbatim from the frozen baseline: identity preservation is machine-proven by validate.mjs Gate B (every baseline named unit appears in the destination dist twin; the splice is byte-verified by the canon-kernel wiring gate) — header normalization only, zero feature deltas by construction"
   },
   "AlwaysNewWindow": {
     "dest": "AlwaysNewWindow",
-    "mode": "carried"
+    "mode": "carried",
+    "note": "carried verbatim from the frozen baseline: identity preservation is machine-proven by validate.mjs Gate B (every baseline named unit appears in the destination dist twin; the splice is byte-verified by the canon-kernel wiring gate) — header normalization only, zero feature deltas by construction"
   },
   "Anti-detection": {
     "dest": "Akasha Silence",
-    "mode": "merged"
+    "mode": "merged",
+    "note": "merged into Akasha Silence: the script-defuse lineage (neutralizeNode/defuseScript) IS Akasha's core engine; identity reconciled via validate.mjs RECONCILED_NAMES (applyNetworkHooks → applyLocalHooks — the fetch/XHR/beacon defusing migrated to the NetHook veto, kernel-owned wraps since v1.4.5, the local installer keeps the WebSocket/WebRTC/worker pacifiers); the surviving defuse observers are ledger-sanctioned by the G2 observer census"
   },
   "Anti-telemetry (Intelligent Cloud Computing)": {
     "dest": "Akasha Silence",
-    "mode": "merged"
+    "mode": "merged",
+    "note": "merged into Akasha Silence: the telemetry-block/mock lineage (aclib/kxysy/ggihyqfb defuse mocks) IS Akasha MODULE 0.1; identity reconciled via RECONCILED_NAMES; the mock surface is ledger-sanctioned by the global-census defuse-mock entries"
   },
   "AutoTranslate": {
     "dest": "AutoTranslate",
-    "mode": "carried"
+    "mode": "carried",
+    "note": "carried verbatim from the frozen baseline: identity preservation is machine-proven by validate.mjs Gate B (every baseline named unit appears in the destination dist twin; the splice is byte-verified by the canon-kernel wiring gate) — header normalization only, zero feature deltas by construction"
   },
   "Blob2URL": {
     "dest": "Blob2URL",
@@ -41,11 +47,13 @@
   },
   "Bunkr++": {
     "dest": "Bunkr++",
-    "mode": "carried"
+    "mode": "carried",
+    "note": "carried verbatim from the frozen baseline: identity preservation is machine-proven by validate.mjs Gate B (every baseline named unit appears in the destination dist twin; the splice is byte-verified by the canon-kernel wiring gate) — header normalization only, zero feature deltas by construction"
   },
   "BypassPaywalls": {
     "dest": "BypassPaywalls",
-    "mode": "carried"
+    "mode": "carried",
+    "note": "carried verbatim from the frozen baseline: identity preservation is machine-proven by validate.mjs Gate B (every baseline named unit appears in the destination dist twin; the splice is byte-verified by the canon-kernel wiring gate) — header normalization only, zero feature deltas by construction"
   },
   "Collapse All Images": {
     "dest": "PageCraft",
@@ -64,11 +72,13 @@
   },
   "Counter-surveillance": {
     "dest": "Akasha Silence",
-    "mode": "merged"
+    "mode": "merged",
+    "note": "merged into Akasha Silence: the combined counter-surveillance feature set (defuse + mock + telemetry block) is Akasha's whole surface; identity reconciled via RECONCILED_NAMES; the superset is machine-carried by the suite gates (G2 observer census + G3 global census hold the Akasha sites)"
   },
   "Filester++": {
     "dest": "Filester++",
-    "mode": "carried"
+    "mode": "carried",
+    "note": "carried verbatim from the frozen baseline: identity preservation is machine-proven by validate.mjs Gate B (every baseline named unit appears in the destination dist twin; the splice is byte-verified by the canon-kernel wiring gate) — header normalization only, zero feature deltas by construction"
   },
   "Forum Link Xtractor": {
     "dest": "Forum Link Xtractor",
@@ -82,7 +92,8 @@
   },
   "Forums++": {
     "dest": "Forums++",
-    "mode": "carried"
+    "mode": "carried",
+    "note": "carried verbatim from the frozen baseline: identity preservation is machine-proven by validate.mjs Gate B (every baseline named unit appears in the destination dist twin; the splice is byte-verified by the canon-kernel wiring gate) — header normalization only, zero feature deltas by construction"
   },
   "Gemini Answer Now": {
     "dest": "HostWarp",
@@ -96,7 +107,8 @@
   },
   "Gofile++": {
     "dest": "Gofile++",
-    "mode": "carried"
+    "mode": "carried",
+    "note": "carried verbatim from the frozen baseline: identity preservation is machine-proven by validate.mjs Gate B (every baseline named unit appears in the destination dist twin; the splice is byte-verified by the canon-kernel wiring gate) — header normalization only, zero feature deltas by construction"
   },
   "GooglePhotosandDrive++": {
     "dest": "GooglePhotosandDrive++",
@@ -140,7 +152,8 @@
   },
   "Instagram++": {
     "dest": "Instagram++",
-    "mode": "carried"
+    "mode": "carried",
+    "note": "carried verbatim from the frozen baseline: identity preservation is machine-proven by validate.mjs Gate B (every baseline named unit appears in the destination dist twin; the splice is byte-verified by the canon-kernel wiring gate) — header normalization only, zero feature deltas by construction"
   },
   "LinkMasterBETA": {
     "dest": "LinkMasterΨ",
@@ -159,7 +172,8 @@
   },
   "Login Form Autofiller": {
     "dest": "Login Form Autofiller",
-    "mode": "carried"
+    "mode": "carried",
+    "note": "carried verbatim from the frozen baseline: identity preservation is machine-proven by validate.mjs Gate B (every baseline named unit appears in the destination dist twin; the splice is byte-verified by the canon-kernel wiring gate) — header normalization only, zero feature deltas by construction"
   },
   "Maximize_Any_Media": {
     "dest": "Maximize_Any_Media",
@@ -193,7 +207,8 @@
   },
   "Pixeldrain++": {
     "dest": "Pixeldrain++",
-    "mode": "carried"
+    "mode": "carried",
+    "note": "carried verbatim from the frozen baseline: identity preservation is machine-proven by validate.mjs Gate B (every baseline named unit appears in the destination dist twin; the splice is byte-verified by the canon-kernel wiring gate) — header normalization only, zero feature deltas by construction"
   },
   "PlanetsuzyMobileSkinRedirect": {
     "dest": "HostWarp",
@@ -207,7 +222,8 @@
   },
   "Prompt Master": {
     "dest": "Prompt Master",
-    "mode": "carried"
+    "mode": "carried",
+    "note": "carried verbatim from the frozen baseline: identity preservation is machine-proven by validate.mjs Gate B (every baseline named unit appears in the destination dist twin; the splice is byte-verified by the canon-kernel wiring gate) — header normalization only, zero feature deltas by construction"
   },
   "Recon": {
     "dest": "Recon",
@@ -216,7 +232,8 @@
   },
   "Redgifs++": {
     "dest": "Redgifs++",
-    "mode": "carried"
+    "mode": "carried",
+    "note": "carried verbatim from the frozen baseline: identity preservation is machine-proven by validate.mjs Gate B (every baseline named unit appears in the destination dist twin; the splice is byte-verified by the canon-kernel wiring gate) — header normalization only, zero feature deltas by construction"
   },
   "Searxng Sticky Settings": {
     "dest": "HostWarp",
@@ -235,31 +252,38 @@
   },
   "Watermark++": {
     "dest": "Watermark++",
-    "mode": "carried"
+    "mode": "carried",
+    "note": "carried verbatim from the frozen baseline: identity preservation is machine-proven by validate.mjs Gate B (every baseline named unit appears in the destination dist twin; the splice is byte-verified by the canon-kernel wiring gate) — header normalization only, zero feature deltas by construction"
   },
   "Website Control Panel": {
     "dest": "Website Control Panel",
-    "mode": "carried"
+    "mode": "carried",
+    "note": "carried verbatim from the frozen baseline: identity preservation is machine-proven by validate.mjs Gate B (every baseline named unit appears in the destination dist twin; the splice is byte-verified by the canon-kernel wiring gate) — header normalization only, zero feature deltas by construction"
   },
   "YT Filter": {
     "dest": "YT Filter",
-    "mode": "carried"
+    "mode": "carried",
+    "note": "carried verbatim from the frozen baseline: identity preservation is machine-proven by validate.mjs Gate B (every baseline named unit appears in the destination dist twin; the splice is byte-verified by the canon-kernel wiring gate) — header normalization only, zero feature deltas by construction"
   },
   "YandexImageSearch++": {
     "dest": "YandexImageSearch++",
-    "mode": "carried"
+    "mode": "carried",
+    "note": "carried verbatim from the frozen baseline: identity preservation is machine-proven by validate.mjs Gate B (every baseline named unit appears in the destination dist twin; the splice is byte-verified by the canon-kernel wiring gate) — header normalization only, zero feature deltas by construction"
   },
   "Youtube Removed Video Revealer": {
     "dest": "Youtube Removed Video Revealer",
-    "mode": "carried"
+    "mode": "carried",
+    "note": "carried verbatim from the frozen baseline: identity preservation is machine-proven by validate.mjs Gate B (every baseline named unit appears in the destination dist twin; the splice is byte-verified by the canon-kernel wiring gate) — header normalization only, zero feature deltas by construction"
   },
   "YouTube Playlist Master": {
     "dest": "YouTube Playlist Master",
-    "mode": "carried"
+    "mode": "carried",
+    "note": "carried verbatim from the frozen baseline: identity preservation is machine-proven by validate.mjs Gate B (every baseline named unit appears in the destination dist twin; the splice is byte-verified by the canon-kernel wiring gate) — header normalization only, zero feature deltas by construction"
   },
   "YouTubeEmbedRedirectButton": {
     "dest": "YouTubeEmbedRedirectButton",
-    "mode": "carried"
+    "mode": "carried",
+    "note": "carried verbatim from the frozen baseline: identity preservation is machine-proven by validate.mjs Gate B (every baseline named unit appears in the destination dist twin; the splice is byte-verified by the canon-kernel wiring gate) — header normalization only, zero feature deltas by construction"
   },
   "m3u8++": {
     "dest": "m3u8++",

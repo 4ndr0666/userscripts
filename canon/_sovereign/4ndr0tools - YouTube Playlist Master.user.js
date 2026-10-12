@@ -558,8 +558,15 @@
                         const rerun = state.pending;
                         state.pending = null;
                         rerun();
-                    } else if (onDone) {
-                        try { onDone(); } catch (e) { LOG.error(`SCHED[${key}] onDone failed:`, e); }
+                    } else {
+                        // v1.5.0 (suite, B.1): the sweep registry is
+                        // lifetime-emptied — an idle entry is reclaimed so
+                        // the coalescing map never accumulates across the
+                        // page session (the next invocation re-creates it).
+                        sweeps.delete(key);
+                        if (onDone) {
+                            try { onDone(); } catch (e) { LOG.error(`SCHED[${key}] onDone failed:`, e); }
+                        }
                     }
                 }
             })();
@@ -616,7 +623,7 @@
         function vetUrl(target, label) {
             let u = null;
             try { u = new URL(target, location.origin); }
-            catch (e) { /* fall through to the reject below */ }
+            catch (e) { console.debug('YTPM interceptor:', e); /* fall through to the reject below */ }
             if (!u || (u.protocol !== 'https:' && u.protocol !== 'http:')) {
                 LOG.warn(`navigation blocked (${label}): not an http(s) URL — ${String(target).slice(0, 120)}`);
                 return null;
@@ -2399,7 +2406,7 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
         }
 
         function parsePlaylistId(s) {
-            try { const l = new URL(s, location.origin).searchParams.get('list'); if (l) return l; } catch (e) { /* fall through */ }
+            try { const l = new URL(s, location.origin).searchParams.get('list'); if (l) return l; } catch (e) { console.debug('YTPM interceptor:', e); /* fall through */ }
             const m = String(s).match(/[A-Za-z0-9_-]{13,}/);
             return m ? m[0] : null;
         }
@@ -3117,7 +3124,7 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
             if (anchorElement === null) return;
             const tabs = document.querySelectorAll(tabTagName);
             if (!tabs.length) return; // tab strip raced empty — retry via observers
-            try { anchorElement.parentNode.removeChild(button); } catch (e) { /* first run: nothing to remove */ }
+            try { anchorElement.parentNode.removeChild(button); } catch (e) { console.debug('YTPM interceptor:', e); /* first run: nothing to remove */ }
 
             const newNode = tabs[0].cloneNode(true);
             newNode.removeAttribute('aria-selected');
@@ -3200,6 +3207,7 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
         let miniplayerFlag = false;
         let playerListenersAdded = false;
         let statsObserver = null;
+        let statsDebounceTimer = null;
 
         function isMiniplayerActive() {
             const app = ytdApp();
@@ -3350,22 +3358,42 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
                     ensureStatsObserver();
                 }
             });
-            BUS.on('reset', () => updateButtonState());
+            BUS.on('reset', () => { updateButtonState(); armReverseFailsafe(); });
             // Failsafe re-add loop while watching a playlist (self-guarding:
             // classify() is cheap and the flag check short-circuits first).
-            setInterval(() => {
-                if (STORE.data().reverseOrder.enabled && NAV.classify().isWatchWithList) {
+            // v1.5.0 (suite, B.1): idle-parked — 1 h with the feature off or
+            // off-watch parks it; BUS 'reset' (navigation, and the settings
+            // toggle emits the same event) re-arms it.
+            let reverseFailsafeTimer = null;
+            let reverseFailsafeIdle = 0;
+            const armReverseFailsafe = () => {
+                if (reverseFailsafeTimer) return;
+                reverseFailsafeIdle = 0;
+                reverseFailsafeTimer = setInterval(() => {
+                    if (!STORE.data().reverseOrder.enabled || !NAV.classify().isWatchWithList) {
+                        if (++reverseFailsafeIdle > 1440) { clearInterval(reverseFailsafeTimer); reverseFailsafeTimer = null; }
+                        return;
+                    }
+                    reverseFailsafeIdle = 0;
                     addButton();
                     ensurePlayerListeners();
-                }
-            }, 2500);
+                }, 2500);
+            };
+            armReverseFailsafe();
         }
 
         function ensureStatsObserver() {
             if (statsObserver) return;
             // The button must be re-added whenever the playlist churns
             // (video loads / removals).
-            statsObserver = new MutationObserver(SAFETY.safeWrap(addButton));
+            statsObserver = new MutationObserver(() => {
+                // v1.5.1 observer discipline: coalesced re-add — the same
+                // idempotent addButton pass (per-host #ytpu-rev-btn guard),
+                // bounded to one pass per 150 ms of playlist churn (the DOMU
+                // migration precedent from v1.6.0 comments, same cadence class).
+                clearTimeout(statsDebounceTimer);
+                statsDebounceTimer = setTimeout(SAFETY.safeWrap(addButton), 150);
+            });
             const targets = [
                 document.querySelector(selectors.playlistVideos),
                 document.querySelector(selectors.playlistVideosMiniplayer),
@@ -3386,7 +3414,29 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
         let navigateStatus = -1;
         let fCounter = 0;
         let transition = false;
-        let reattachObserver = null;
+        /* v1.6.0: the menu-reattach watcher rides the NetHook DOM channel —
+         * ONE kernel-owned document observer (childList + subtree) replaces
+         * the per-menu private observer. The target filter below (entry.target
+         * === reattachMenu) reproduces the menu-scoped childList/subtree:false
+         * delivery contract EXACTLY: only direct-child mutations of the
+         * current menu are processed, same insertion microtask, same re-insert
+         * position semantics. reattachMenu reassignment retires the old menu
+         * (its records no longer match the filter) — the disconnect/re-create
+         * cycle is gone. */
+        let reattachMenu = null;
+        __4NDR0_NET_API__.onNode((entries) => {
+            for (const entry of entries) {
+                if (entry.target !== reattachMenu) continue;
+                const { target, previousSibling, removedNodes } = entry;
+                if (removedNodes.length >= 1 && target.isConnected === true && previousSibling && previousSibling.isConnected === true) {
+                    for (const elem of removedNodes) {
+                        if (elem.classList && elem.classList.contains('ytpu-tt') && elem.isConnected === false) {
+                            target.insertBefore(elem, previousSibling.nextSibling);
+                        }
+                    }
+                }
+            }
+        });
 
         function getManager() {
             return document.querySelector('yt-playlist-manager');
@@ -3454,22 +3504,11 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
         }
 
         /** Upstream moButtonAttachment: YouTube removes our switch when the
-         *  playlist header re-renders — re-insert it at its old position. */
+         *  playlist header re-renders — re-insert it at its old position.
+         *  v1.6.0: scoping is the subscription's target filter — reassigning
+         *  reattachMenu atomically swaps the watched menu. */
         function watchForRemoval(menu) {
-            if (reattachObserver) reattachObserver.disconnect();
-            reattachObserver = new MutationObserver((entries) => {
-                for (const entry of entries) {
-                    const { target, previousSibling, removedNodes } = entry;
-                    if (removedNodes.length >= 1 && target.isConnected === true && previousSibling && previousSibling.isConnected === true) {
-                        for (const elem of removedNodes) {
-                            if (elem.classList && elem.classList.contains('ytpu-tt') && elem.isConnected === false) {
-                                target.insertBefore(elem, previousSibling.nextSibling);
-                            }
-                        }
-                    }
-                }
-            });
-            reattachObserver.observe(menu, { childList: true, subtree: false });
+            reattachMenu = menu;
         }
 
         function scanAndSetup() {
@@ -5110,6 +5149,25 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
         let mode = 'random';
         let initial = null;
         let activeShutdown = null; // v1.1.0: retire the previous random session on SPA re-entry
+        let randomApplyTimer = null; // v1.5.0 (suite, B.1): owned apply poll
+        let randomApplyIdle = 0;
+        const armRandomApply = () => {
+            if (randomApplyTimer) return;
+            randomApplyIdle = 0;
+            randomApplyTimer = setInterval(SAFETY.safeWrap(() => {
+                const onRandom = location.pathname === '/watch' &&
+                    new URLSearchParams(location.search).has('ytpa-random');
+                if (!onRandom) {
+                    // 1 h with no random session anywhere → park the poll;
+                    // any SPA route change (NAV.onRoute) re-arms it, and an
+                    // address-bar entry is a full reload (start()).
+                    if (++randomApplyIdle > 3600) { clearInterval(randomApplyTimer); randomApplyTimer = null; }
+                    return;
+                }
+                randomApplyIdle = 0;
+                applyRandomPlay();
+            }), 1000);
+        };
 
         function start() {
             if (ENV.isMobile()) return; // random play is desktop-only
@@ -5122,9 +5180,14 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
             try {
                 const value = readStorage(true);
                 if (Array.isArray(value)) localStorage.removeItem(getStorageKey());
-            } catch (e) { /* already handled inside readStorage */ }
+            } catch (e) { console.debug('YTPM interceptor:', e); /* already handled inside readStorage */ }
 
-            setInterval(SAFETY.safeWrap(applyRandomPlay), 1000);
+            // v1.5.0 (suite, B.1): the apply poll is now an owned,
+            // idle-parked timer — route changes re-arm it, so random-mode
+            // re-entry via SPA works exactly as before (and address-bar
+            // entry is a reload → start()).
+            armRandomApply();
+            NAV.onRoute(armRandomApply);
             applyRandomPlay();
         }
 

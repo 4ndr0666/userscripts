@@ -213,7 +213,7 @@
           timeout: 4000
         });
       }
-    } catch (e) { /* notification channel is best-effort; never break the page */ }
+    } catch (e) { console.debug('SGC interceptor:', e); /* notification channel is best-effort; never break the page */ }
   }
 
   function notifyUser(text) {
@@ -221,7 +221,7 @@
       if (typeof GM_notification === 'function') {
         GM_notification({ title: 'Ψ Ghost Protocol', text: String(text).slice(0, 120), timeout: 3000 });
       }
-    } catch (e) { /* best-effort */ }
+    } catch (e) { console.debug('SGC interceptor:', e); /* best-effort */ }
   }
 
   // === POLICY BRIDGE (v7.3.0 split-brain fix) ===

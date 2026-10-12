@@ -114,9 +114,10 @@
  *   - PAGE REALM FIRST: the slot + wraps live on unsafeWindow when
  *     available (that is where host page fetches live — the same realm
  *     choice the per-script wraps already made), window otherwise.
- *   - LAZY ARM: zero wraps until the first subscriber registers (onBody,
- *     onRequest, onTraffic OR onError) — a co-installed script that only
- *     subscribes on its own host costs nothing anywhere else.
+ *   - LAZY ARM: zero network wraps until the first subscriber registers
+ *     (onBody, onRequest, onTraffic OR onError); the v6 DOM observer arms
+ *     separately, only on the first onNode subscriber (zero observers
+ *     anywhere until a defuser registers).
  *   - SINGLE BODY READ: one clone per response, dispatched to every
  *     subscriber — the two-vault double-read on instagram is the exact
  *     failure this replaces. 4 MB read cap (Blob2URL's wire limit).
@@ -154,6 +155,42 @@
  *   chain while the v5 copy arms above it — the established transitional
  *   co-install progression).
  *
+ * v6 (suite v1.6.0) — THE DOM DEFEASE CHANNEL (onNode). The v1.5.1
+ *   observer census left the defuse class ledgered (TIMING entries:
+ *   microtask races a private per-script observer was winning) because
+ *   structurally bounding them meant weakening them. The hub takes the
+ *   channel instead — same consolidation the network wraps got in v1.4.3:
+ *   N co-installed document-level observers become ONE kernel-owned
+ *   observer per realm document, fanning raw record batches to isolated
+ *   subscribers.
+ *   - onNode(fn) -> unsubscribe. fn(mutations) receives a per-subscriber
+ *     copy of the raw MutationRecord batch — childList + subtree over
+ *     documentElement, plus attributes filtered to `src` (the union of
+ *     the migrated sites' observe configs) — in the SAME synchronous
+ *     microtask slot a private observer would have delivered it. The
+ *     defuse race is preserved exactly: the fan happens inside the
+ *     observer callback, before the next task, so a hostile script
+ *     inserted this batch is still neutralized before it executes.
+ *   - LAZY ARM, SYMMETRIC DISARM: zero observers until the first onNode
+ *     subscriber registers; the observer disconnects the moment the last
+ *     subscriber unsubscribes. Armed lifetime == subscription lifetime.
+ *   - ISOLATION: a throwing subscriber is scoped console.debug (GUP D6)
+ *     and treated as no-opinion — a broken defuser must never break the
+ *     page or its siblings. Each subscriber gets its own array copy, so
+ *     a hostile subscriber cannot splice its siblings' batch.
+ *   - AUTO-PROPAGATE: inserted iframes with a reachable contentWindow
+ *     get the network wrap set propagated by the hub itself — the same
+ *     idempotent, slot-aware, cross-origin-safe call the Akashan v5.2.0
+ *     iframe observer made per-site. Realm propagation is hub
+ *     infrastructure, not script surface; script-side propagators keep
+ *     working (idempotent double-arm is a no-op).
+ *   - Bounded registry (MAX_SUBS), versioned slot: isFullHub now requires
+ *     the onNode surface, so a v5-or-older slot owner is wrapped above by
+ *     a v6 copy (transitional chaining, as before).
+ *   - The kernel observer itself is self-asserted by the smoke battery
+ *     and the observer census (tools/observer-census.mjs verifies the
+ *     lazy-arm/disconnect/bounded/isolation markers on this file).
+ *
  * Consumed via build-time injection into the canon scripts that declare it
  * (tools/build.mjs CANON_KERNEL) — the identifier `__4NDR0_NET_API__` below
  * is script-scope visible to the consumer's IIFE.
@@ -162,7 +199,7 @@ const __4NDR0_NET_API__ = (function () {
     'use strict';
 
     const SLOT = '__4NDR0_NET__';
-    const VERSION = 5;
+    const VERSION = 6;
     const MAX_SUBS = 32;            /* bounded registry (GUP B.1) */
     const MAX_BODY = 4000000;       /* 4 MB read cap (Blob2URL's wire limit) */
     const XHR_MOCK_DELAY = 40;      /* D6 cadence — mocked XHR responses deliver
@@ -350,6 +387,9 @@ const __4NDR0_NET_API__ = (function () {
     const reqSubs = new Map();      /* onRequest defusers: key -> fn(req) */
     const trafficSubs = new Map();  /* onTraffic observers: key -> fn(ev) */
     const errSubs = new Map();      /* onError recoverers: key -> fn(ev) */
+    const nodeSubs = new Map();     /* v6 onNode defusers: key -> fn(mutations) */
+    let nseq = 0;
+    let nodeObserver = null;        /* v6: the kernel-owned DOM observer */
     const served = (typeof WeakSet === 'function') ? new WeakSet() : null; /* propagate-armed realms */
     let seq = 0;
     let rseq = 0;
@@ -832,7 +872,7 @@ const __4NDR0_NET_API__ = (function () {
     function isFullHub(h) {
         return !!(h && typeof h.onBody === 'function' && typeof h.onRequest === 'function' &&
             typeof h.onTraffic === 'function' && typeof h.onError === 'function' &&
-            typeof h.gmFetch === 'function');
+            typeof h.gmFetch === 'function' && typeof h.onNode === 'function');
     }
 
     /* Slot install — a strictly newer full-channel hub replaces the
@@ -847,6 +887,52 @@ const __4NDR0_NET_API__ = (function () {
                 value: api, writable: false, enumerable: false, configurable: true,
             });
         } catch (e) { /* slot collision with a foreign script — local hub only */ }
+    }
+
+    /* ── v6: the DOM defuse channel ────────────────────────────────────
+     * ONE kernel-owned MutationObserver per realm document; lazy arm on
+     * the first onNode subscriber, disconnect when the last one leaves.
+     * The fan is synchronous inside the callback — subscribers observe
+     * in the SAME microtask a private observer would have delivered (the
+     * defuse race is preserved, not debounced). The observer census
+     * self-asserts the lazy-arm / disconnect / bounded / isolation
+     * markers below; the smoke battery executes them. */
+    function fanNode(mutations) {
+        try {
+            /* auto-propagate: inserted iframes receive the network wrap
+             * set (idempotent, slot-aware; script-side propagators keep
+             * working — double-arm is a no-op) */
+            for (let i = 0; i < mutations.length; i++) {
+                const added = mutations[i] && mutations[i].addedNodes;
+                if (!added || !added.length) continue;
+                for (let j = 0; j < added.length; j++) {
+                    const n = added[j];
+                    if (n && n.tagName === 'IFRAME' && n.contentWindow) {
+                        try { api.propagate(n.contentWindow); } catch (e) { /* cross-origin or dead frame */ }
+                    }
+                }
+            }
+        } catch (e) { /* propagation must never break the fan */ }
+        for (const [, fn] of nodeSubs) {
+            try { fn(mutations.slice()); }
+            catch (e) { console.debug('[a4/net] node subscriber failed:', (e && e.message) || e); }
+        }
+    }
+    function armNodeObserver(target) {
+        if (nodeObserver || !target || !target.document) return;
+        try {
+            const root = target.document.documentElement;
+            if (!root || typeof MutationObserver !== 'function') return;
+            nodeObserver = new MutationObserver(fanNode);
+            nodeObserver.observe(root, {
+                childList: true, subtree: true, attributes: true, attributeFilter: ['src'],
+            });
+        } catch (e) { console.debug('[a4/net] node observer arm skipped:', (e && e.message) || e); nodeObserver = null; }
+    }
+    function disarmNodeObserver() {
+        if (!nodeObserver) return;
+        try { nodeObserver.disconnect(); } catch (e) { /* already dead */ }
+        nodeObserver = null;
     }
 
     const api = {
@@ -968,6 +1054,35 @@ const __4NDR0_NET_API__ = (function () {
             }
             return function () { errSubs.delete(key); };
         },
+        /* onNode(fn) -> unsubscribe. The DOM defuse channel — see the v6
+         * contract in the file header: one kernel-owned observer per realm
+         * document, lazy arm, synchronous fan in the insertion microtask,
+         * per-subscriber record copies, throwing subscribers isolated.
+         * The callback IS the script's defuse policy (the hub is plumbing);
+         * observe-config widening is the hub's union, not the script's. */
+        onNode: function (fn) {
+            if (typeof fn !== 'function') return function () {};
+            const target = realm();
+            if (target) {
+                try {
+                    const hub = target[SLOT];
+                    if (hub && hub !== api && hub.version >= VERSION && isFullHub(hub)) {
+                        return hub.onNode(fn);
+                    }
+                } catch (e) { /* unreadable slot — fall through to local hub */ }
+            }
+            if (nodeSubs.size >= MAX_SUBS) return function () {};
+            const key = 'nd' + (++nseq);
+            nodeSubs.set(key, fn);
+            if (target) {
+                armNodeObserver(target);
+                installSlot(target);
+            }
+            return function () {
+                nodeSubs.delete(key);
+                if (nodeSubs.size === 0) disarmNodeObserver();
+            };
+        },
         /* propagate(target) -> armed. Arm the wrap set into an additional
          * realm (iframe propagation, or the userscript sandbox realm for
          * scripts that historically hooked both contexts). Idempotent
@@ -1008,6 +1123,7 @@ const __4NDR0_NET_API__ = (function () {
         get requestSubscriberCount() { return reqSubs.size; },
         get trafficSubscriberCount() { return trafficSubs.size; },
         get errorSubscriberCount() { return errSubs.size; },
+        get nodeSubscriberCount() { return nodeSubs.size; },
     };
     return api;
 })();
@@ -1190,7 +1306,7 @@ const __4NDR0_NET_API__ = (function () {
     const SENTINEL = 'data-psi-blob2url-instance';
     const root = document.documentElement;
     if (!root || (root.hasAttribute && root.hasAttribute(SENTINEL))) return;
-    try { root.setAttribute(SENTINEL, String(Date.now())); } catch (_) {}
+    try { root.setAttribute(SENTINEL, String(Date.now())); } catch (_) { console.debug('B2U interceptor:', _);}
 
     const SCRIPT_ID = 'Ψ-blob2url';
     const log = (m) => console.log(`%c[${SCRIPT_ID}] %c${m}`, "color: #00E5FF; font-weight: bold;", "color: #67E8F9;");
@@ -1261,12 +1377,12 @@ const __4NDR0_NET_API__ = (function () {
     const injectStyles = (css) => {
         try {
             if (typeof GM_addStyle === 'function') { GM_addStyle(css); return; }
-        } catch (_) {}
+        } catch (_) { console.debug('B2U interceptor:', _);}
         try {
             const s = document.createElement('style');
             s.textContent = css;
             (document.head || document.documentElement).appendChild(s);
-        } catch (_) {}
+        } catch (_) { console.debug('B2U interceptor:', _);}
     };
     injectStyles(CONFIG.styles);
 
@@ -1287,7 +1403,7 @@ const __4NDR0_NET_API__ = (function () {
     const copyText = (text) => new Promise((resolve) => {
         try {
             if (typeof GM_setClipboard === 'function') { GM_setClipboard(String(text)); resolve(true); return; }
-        } catch (_) {}
+        } catch (_) { console.debug('B2U interceptor:', _);}
         if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
             navigator.clipboard.writeText(String(text)).then(() => resolve(true), () => resolve(fallbackCopy(text)));
             return;
@@ -1337,7 +1453,7 @@ const __4NDR0_NET_API__ = (function () {
                 const m = bg.match(/url\(["']?(.*?)["']?\)/);
                 if (m && m[1]) return m[1];
             }
-        } catch (_) {}
+        } catch (_) { console.debug('B2U interceptor:', _);}
         return '';
     };
 
@@ -1371,7 +1487,7 @@ const __4NDR0_NET_API__ = (function () {
         // [G1] Hard timeout on the fallback transport too — v6.4 could hang forever here,
         // permanently locking the extract button (busy) and every IG inFlight entry.
         const ctl = (typeof AbortController === 'function') ? new AbortController() : null;
-        const timer = ctl ? setTimeout(() => { try { ctl.abort(); } catch (_) {} }, 45000) : null;
+        const timer = ctl ? setTimeout(() => { try { ctl.abort(); } catch (_) { console.debug('B2U interceptor:', _);} }, 45000) : null;
         let settled = false;
         const settle = (fn, val) => { if (settled) return; settled = true; if (timer !== null) clearTimeout(timer); fn(val); };
         fetch(url, ctl ? { signal: ctl.signal } : undefined).then((r) => {
@@ -1448,7 +1564,7 @@ const __4NDR0_NET_API__ = (function () {
             if (done) return;
             done = true;
             // Grace period lets the downloader drain the URL, then it is always reclaimed.
-            setTimeout(() => { try { URL.revokeObjectURL(dlUrl); } catch (_) {} }, 10000);
+            setTimeout(() => { try { URL.revokeObjectURL(dlUrl); } catch (_) { console.debug('B2U interceptor:', _);} }, 10000);
             if (ok) resolve();
             else reject(new Error(msg || 'download failed'));
         };
@@ -1466,7 +1582,7 @@ const __4NDR0_NET_API__ = (function () {
                 a.style.display = 'none';
                 (document.body || document.documentElement).appendChild(a);
                 a.click();
-                setTimeout(() => { try { a.remove(); } catch (_) {} }, 0);
+                setTimeout(() => { try { a.remove(); } catch (_) { console.debug('B2U interceptor:', _);} }, 0);
                 return true; // anchor transport is fire-and-forget: no synchronous error channel
             } catch (err) { return false; }
         };
@@ -1487,7 +1603,7 @@ const __4NDR0_NET_API__ = (function () {
                     }
                 });
                 return;
-            } catch (_) { /* fall through to anchor transport */ }
+            } catch (_) { console.debug('B2U interceptor:', _); /* fall through to anchor transport */ }
         }
         if (anchorTransport()) finish(true);
         else finish(false, 'anchor fallback failed');
@@ -1532,7 +1648,7 @@ const __4NDR0_NET_API__ = (function () {
         // [06] <source> lives inside <video|audio|picture> where sibling buttons never
         // render — mount the control after the host media element instead.
         const host = (el.tagName === 'SOURCE') ? (el.closest('video, audio, picture') || el) : el;
-        const lock = (node) => { try { node.setAttribute('data-psi-locked', 'true'); } catch (_) {} };
+        const lock = (node) => { try { node.setAttribute('data-psi-locked', 'true'); } catch (_) { console.debug('B2U interceptor:', _);} };
         if (host.hasAttribute('data-psi-locked')) { lock(el); return; } // one control per hook target
         lock(host);
         if (el !== host) lock(el);
@@ -1607,7 +1723,7 @@ const __4NDR0_NET_API__ = (function () {
     try {
         observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['src', 'href', 'data', 'srcset', 'poster'] });
     } catch (_) {
-        try { observer.observe(document.documentElement, { childList: true, subtree: true }); } catch (_) {}
+        try { observer.observe(document.documentElement, { childList: true, subtree: true }); } catch (_) { console.debug('B2U interceptor:', _);}
     }
 
     // Interactive sniffer (v6.1 engine, hardened)
@@ -1623,7 +1739,7 @@ const __4NDR0_NET_API__ = (function () {
         ensureMask() {
             // [09] Host pages that rewrite <body> can orphan the mask — self-heal on demand.
             if (!this.mask.isConnected) {
-                try { (document.body || document.documentElement).appendChild(this.mask); } catch (_) {}
+                try { (document.body || document.documentElement).appendChild(this.mask); } catch (_) { console.debug('B2U interceptor:', _);}
             }
             return this.mask;
         },
@@ -1759,7 +1875,7 @@ const __4NDR0_NET_API__ = (function () {
             log('IG module ONLINE — vault-fed net route + DOM routes armed (Alt+J vault)');
             this.scanNewScripts();
             // One-shot Route 2 over the full DOM (deferred until the initial render settles).
-            setTimeout(() => { try { this.route2(document.documentElement.outerHTML || ''); } catch (_) {} }, 1500);
+            setTimeout(() => { try { this.route2(document.documentElement.outerHTML || ''); } catch (_) { console.debug('B2U interceptor:', _);} }, 1500);
         },
 
         // ──[13] Route 1 walk (video_versions progressive + video_dash_manifest DASH) ──
@@ -1789,10 +1905,10 @@ const __4NDR0_NET_API__ = (function () {
                                 if (url) dash.push([label, url]);
                             }
                         }
-                    } catch (_) {}
+                    } catch (_) { console.debug('B2U interceptor:', _);}
                 }
                 for (const key in node) this.walk(node[key], prog, dash);
-            } catch (_) {}
+            } catch (_) { console.debug('B2U interceptor:', _);}
         },
 
         // Shortcode hunt for human-friendly filenames (additive, no effect on extraction).
@@ -1803,7 +1919,7 @@ const __4NDR0_NET_API__ = (function () {
                 const c = node.shortcode || node.code;
                 if (typeof c === 'string' && /^[A-Za-z0-9_-]{4,32}$/.test(c)) return c;
                 for (const key in node) { const r = this.findCode(node[key]); if (r) return r; }
-            } catch (_) {}
+            } catch (_) { console.debug('B2U interceptor:', _);}
             return '';
         },
 
@@ -1813,7 +1929,7 @@ const __4NDR0_NET_API__ = (function () {
             // was a TrustedHTML sink under enforcement (tt-smoke live proof).
             try {
                 text = decodeEntities(text);
-            } catch (_) {}
+            } catch (_) { console.debug('B2U interceptor:', _);}
             text = text.replace(/\\u(d[89ab][0-9a-f]{2})\\u(d[cdef][0-9a-f]{2})/gi, (m, hi, lo) =>
                 String.fromCodePoint(0x10000 + ((parseInt(hi, 16) - 0xD800) << 10) + (parseInt(lo, 16) - 0xDC00)));
             text = text.replace(/\\u([0-9a-fA-F]{4})/g, (m, h) => String.fromCharCode(parseInt(h, 16)));
@@ -1828,7 +1944,7 @@ const __4NDR0_NET_API__ = (function () {
                 const prog = new Map();
                 const dash = [];
                 let parsed = null, code = '';
-                try { parsed = JSON.parse(text); } catch (_) {}
+                try { parsed = JSON.parse(text); } catch (_) { console.debug('B2U interceptor:', _);}
                 if (parsed != null) {
                     this.walk(parsed, prog, dash);
                     code = this.findCode(parsed);
@@ -1852,7 +1968,7 @@ const __4NDR0_NET_API__ = (function () {
                 for (const [label, url] of dash) batch.push({ kind: 'dash', type: 999, label, url, code });
                 for (const url of extra) batch.push({ kind: 'extra', type: 999, label: '', url, code: '' });
                 this.merge(batch);
-            } catch (_) {}
+            } catch (_) { console.debug('B2U interceptor:', _);}
         },
 
         merge(batch) {
@@ -1876,7 +1992,7 @@ const __4NDR0_NET_API__ = (function () {
         togglePanel() {
             if (!this.active) { log('IG module idle — instagram.com only'); return; }
             if (!this.panel) this.buildPanel();
-            if (!this.panel.isConnected) { try { (document.body || document.documentElement).appendChild(this.panel); } catch (_) {} }
+            if (!this.panel.isConnected) { try { (document.body || document.documentElement).appendChild(this.panel); } catch (_) { console.debug('B2U interceptor:', _);} }
             const show = this.panel.style.display === 'none';
             this.panel.style.display = show ? 'block' : 'none';
             if (show) this.render();
@@ -1900,7 +2016,7 @@ const __4NDR0_NET_API__ = (function () {
                 }
                 if (act === 'rescan') {
                     this.scanNewScripts(true);
-                    try { this.route2(document.documentElement.outerHTML || ''); } catch (_) {}
+                    try { this.route2(document.documentElement.outerHTML || ''); } catch (_) { console.debug('B2U interceptor:', _);}
                     this.render();
                     log(`IG re-scan → ${this.entries.length} unique URL(s)`);
                     return;
@@ -1992,7 +2108,7 @@ const __4NDR0_NET_API__ = (function () {
         scanNewScripts(force) {
             document.querySelectorAll('script[type="application/json"]').forEach((s) => {
                 if (!force && s.hasAttribute('data-psi-ig-scanned')) return;
-                try { s.setAttribute('data-psi-ig-scanned', 'true'); } catch (_) {}
+                try { s.setAttribute('data-psi-ig-scanned', 'true'); } catch (_) { console.debug('B2U interceptor:', _);}
                 const t = s.textContent;
                 if (t) this.ingest(t);
             });
@@ -2096,7 +2212,7 @@ const __4NDR0_NET_API__ = (function () {
         // [U1] the panel — 3lectric-Glass, same class family as the IG vault.
         togglePanel() {
             if (!this.panel) this.buildPanel();
-            if (!this.panel.isConnected) { try { (document.body || document.documentElement).appendChild(this.panel); } catch (_) {} }
+            if (!this.panel.isConnected) { try { (document.body || document.documentElement).appendChild(this.panel); } catch (_) { console.debug('B2U interceptor:', _);} }
             const show = this.panel.style.display === 'none';
             this.panel.style.display = show ? 'block' : 'none';
             if (show) { this.scrapeDom(); this.render(); }
@@ -2120,7 +2236,7 @@ const __4NDR0_NET_API__ = (function () {
                 }
                 if (act === 'rescan') {
                     this.scrapeDom();
-                    try { this.ingestText(document.documentElement.outerHTML || ''); } catch (_) {}
+                    try { this.ingestText(document.documentElement.outerHTML || ''); } catch (_) { console.debug('B2U interceptor:', _);}
                     this.render();
                     log(`Re-scan → ${this.entries.length} unique URL(s)`);
                     return;

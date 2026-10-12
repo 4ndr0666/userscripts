@@ -13,7 +13,7 @@ The Companion is the userscript wing of the 4ndr0serviceguard extension: a steal
 | Version | `7.4.0` |
 | Matches | `*://*/*` |
 | Run-at | `document-start` |
-| Size | 53.3 KB · 1288 lines |
+| Size | 53.4 KB · 1288 lines |
 | Install | [dist/4ndr0tools - 4ndr0serviceguard Companion.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%204ndr0serviceguard%20Companion.user.js) |
 
 ## Feature Inventory
@@ -23,6 +23,7 @@ The Companion is the userscript wing of the 4ndr0serviceguard extension: a steal
 - Whitelist (authorize), spooflist (silent pacification), blacklist (absolute prohibition)
 - Gatekeeper deferral — the extension wins whenever it is present
 - Notification surface for adjudication events
+- v7.4.0: sandboxed-frame resilience — privileged API captures route through safeGet() so opaque-origin documents never kill the gate
 
 ## Settings & Persistence
 
@@ -31,6 +32,8 @@ Whitelist / spooflist / blacklist are persisted through GM storage and editable 
 ## Permissions (OPSEC)
 
 GM grants: `unsafeWindow`, `GM_setValue`, `GM_getValue`, `GM_registerMenuCommand`, `GM_notification`.
+
+> v7.4.0 (operator round): a document inside <iframe sandbox> without allow-same-origin has an opaque origin and its privileged property reads throw SecurityError — the v7.3 capture block died at its first read and the WebSocket gate never installed in any sandboxed frame. Every capture is now defensive: the SW surface is skipped where the sandbox already forbids it natively, while the WebSocket/SharedWorker gates still arm, so default-deny holds even in frames the embedder hides. The spoof-list surfaces also shifted to the amber data accent (#ffaa00).
 
 ## Lineage
 
