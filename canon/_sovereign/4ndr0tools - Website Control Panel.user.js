@@ -213,7 +213,7 @@
     } catch (e) { return fallback; }
   };
   const writeJson = (key, value) => {
-    try { GM_setValue(key, JSON.stringify(value)); } catch (e) { /* quota — non-fatal */ }
+    try { GM_setValue(key, JSON.stringify(value)); } catch (e) { console.debug('WCP interceptor:', e); /* quota — non-fatal */ }
   };
 
   const siteSuppressed = () => {
@@ -370,7 +370,7 @@
       panel.style.left = `${initialX}px`;
       panel.style.top = `${initialY}px`;
       e.preventDefault(); // prevent text selection / touch scroll
-      try { header.setPointerCapture(e.pointerId); } catch (_) { /* non-compliant host */ }
+      try { header.setPointerCapture(e.pointerId); } catch (_) { console.debug('WCP interceptor:', _); /* non-compliant host */ }
     });
 
     header.addEventListener('pointermove', (e) => {
@@ -575,7 +575,7 @@
       });
     GM_registerMenuCommand('Ψ WCP — toggle debug logging', () => {
       const next = !DEBUG;
-      try { localStorage.setItem('psi_wcp_debug', next ? '1' : '0'); } catch (e) {}
+      try { localStorage.setItem('psi_wcp_debug', next ? '1' : '0'); } catch (e) { console.debug('WCP interceptor:', e);}
       console.log(`[Ψ-4NDR0666] WCP debug logging ${next ? 'ON (reload to apply)' : 'OFF'}`);
     });
   }

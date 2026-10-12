@@ -182,7 +182,7 @@
   const SENTINEL = "data-lm-psi-instance";
   const rootEl = document.documentElement;
   if (!rootEl || (rootEl.hasAttribute && rootEl.hasAttribute(SENTINEL))) return;
-  try { rootEl.setAttribute(SENTINEL, String(Date.now())); } catch (_) {}
+  try { rootEl.setAttribute(SENTINEL, String(Date.now())); } catch (_) { console.debug("LMPsi interceptor:", _);}
 
   // ──[A2] Frame policy: harvest IG anywhere; render UI in the top frame only ──
   const isTopFrame = (() => { try { return window.top === window.self; } catch (_) { return false; } })();
@@ -192,23 +192,23 @@
   // ──[B4] Manager portability layer (graceful degradation, never a boot crash) ──
   const GMapi = {
     setValue(key, val) {
-      try { if (typeof GM_setValue === "function") { GM_setValue(key, val); return; } } catch (_) {}
-      try { localStorage.setItem("lm-psi-" + key, JSON.stringify(val)); } catch (_) {}
+      try { if (typeof GM_setValue === "function") { GM_setValue(key, val); return; } } catch (_) { console.debug("LMPsi interceptor:", _);}
+      try { localStorage.setItem("lm-psi-" + key, JSON.stringify(val)); } catch (_) { console.debug("LMPsi interceptor:", _);}
     },
     getValue(key, def) {
       try {
         if (typeof GM_getValue === "function") { const v = GM_getValue(key, null); return v == null ? def : v; }
-      } catch (_) {}
+      } catch (_) { console.debug("LMPsi interceptor:", _);}
       try { const raw = localStorage.getItem("lm-psi-" + key); return raw == null ? def : JSON.parse(raw); } catch (_) { return def; }
     },
     deleteValue(key) {
-      try { if (typeof GM_deleteValue === "function") GM_deleteValue(key); } catch (_) {}
-      try { localStorage.removeItem("lm-psi-" + key); } catch (_) {}
+      try { if (typeof GM_deleteValue === "function") GM_deleteValue(key); } catch (_) { console.debug("LMPsi interceptor:", _);}
+      try { localStorage.removeItem("lm-psi-" + key); } catch (_) { console.debug("LMPsi interceptor:", _);}
     },
     xhrSupported() { try { return typeof GM_xmlhttpRequest === "function"; } catch (_) { return false; } },
     xhr(opts) { try { return GM_xmlhttpRequest(opts); } catch (_) { return null; } },
     menu(label, fn) {
-      try { if (typeof GM_registerMenuCommand === "function") { GM_registerMenuCommand(label, fn); return true; } } catch (_) {}
+      try { if (typeof GM_registerMenuCommand === "function") { GM_registerMenuCommand(label, fn); return true; } } catch (_) { console.debug("LMPsi interceptor:", _);}
       return false;
     },
   };
@@ -229,7 +229,7 @@
           const TT = window.trustedTypes;
           if (TT && typeof TT.createPolicy === "function") {
             for (const name of ["4ndr0666tools#lm", "4ndr0666tools#lm.2", "4ndr0666tools#lm.3"]) {
-              try { policy = TT.createPolicy(name, { createHTML: (v) => v }); break; } catch (_) {}
+              try { policy = TT.createPolicy(name, { createHTML: (v) => v }); break; } catch (_) { console.debug("LMPsi interceptor:", _);}
             }
           }
         } catch (_) { policy = null; }
@@ -242,7 +242,7 @@
     };
   })();
 
-  const dbg = (m) => { try { console.debug(`%c[LinkMasterΨ] %c${m}`, "color:#00E5FF; font-weight:bold;", "color:#67E8F9;"); } catch (_) {} };
+  const dbg = (m) => { try { console.debug(`%c[LinkMasterΨ] %c${m}`, "color:#00E5FF; font-weight:bold;", "color:#67E8F9;"); } catch (_) { console.debug("LMPsi interceptor:", _);} };
 
   function setUserPref(key, val) { GMapi.setValue(key, val); }
   function getUserPref(key, def) { return GMapi.getValue(key, def); }
@@ -267,11 +267,11 @@
         gf.href = "https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Orbitron:wght@500;700&family=Roboto+Mono:wght@500&display=swap";
         (document.head || document.documentElement).appendChild(gf);
       }
-    } catch (_) {}
+    } catch (_) { console.debug("LMPsi interceptor:", _);}
   }
   function unloadHudFonts() {
     fontsInjected = false;
-    try { const el = document.getElementById("lm-psi-fonts"); if (el) el.remove(); } catch (_) {}
+    try { const el = document.getElementById("lm-psi-fonts"); if (el) el.remove(); } catch (_) { console.debug("LMPsi interceptor:", _);}
   }
 
   // ===========================================================================
@@ -518,7 +518,7 @@
       style.id = "eglass-hud-css";
       style.textContent = hudStyle;
       (document.head || document.documentElement).appendChild(style);
-    } catch (_) {}
+    } catch (_) { console.debug("LMPsi interceptor:", _);}
   }
 
   const HOSTER_PATTERNS = [
@@ -634,7 +634,7 @@ const escape = { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&qu
       t.textContent = msg;
       (document.body || document.documentElement).appendChild(t);
       setTimeout(() => { t.style.opacity = "0.1"; setTimeout(() => t.remove(), 600); }, timeout);
-    } catch (_) {}
+    } catch (_) { console.debug("LMPsi interceptor:", _);}
   }
 
   // [A6] Confirmation-href decoder — only http(s) candidates are ever returned.
@@ -644,9 +644,9 @@ const escape = { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&qu
       if (!/\/goto\/link-confirmation/.test(u.pathname) || !u.searchParams.has('url')) return null;
       const raw = u.searchParams.get('url');
       const candidates = [];
-      try { candidates.push(decodeURIComponent(raw)); } catch { /* ignore */ }
-      try { candidates.push(atob(raw)); } catch { /* ignore */ }
-      try { candidates.push(atob(decodeURIComponent(raw))); } catch { /* ignore */ }
+      try { candidates.push(decodeURIComponent(raw)); } catch { console.debug("LMPsi interceptor: unbound"); /* ignore */ }
+      try { candidates.push(atob(raw)); } catch { console.debug("LMPsi interceptor: unbound"); /* ignore */ }
+      try { candidates.push(atob(decodeURIComponent(raw))); } catch { console.debug("LMPsi interceptor: unbound"); /* ignore */ }
       for (const c of candidates) {
         const cc = String(c).trim();
         if (/^https?:\/\//i.test(cc)) return cc;
@@ -702,7 +702,7 @@ const escape = { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&qu
       ta.select();
       document.execCommand("copy");
       ta.remove();
-    } catch (_) {}
+    } catch (_) { console.debug("LMPsi interceptor:", _);}
   }
 
   // [A5] MPV protocol dispatch via a hidden iframe — the host page is no longer
@@ -714,7 +714,7 @@ const escape = { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&qu
       f.style.cssText = "position:fixed;width:0;height:0;border:0;visibility:hidden;";
       f.src = uri;
       (document.body || document.documentElement).appendChild(f);
-      setTimeout(() => { try { f.remove(); } catch (_) {} }, 4000);
+      setTimeout(() => { try { f.remove(); } catch (_) { console.debug("LMPsi interceptor:", _);} }, 4000);
     } catch (_) {
       window.location.href = uri; // last-resort transport
     }
@@ -1017,7 +1017,7 @@ const url = src.src.trim();
           Object.assign(img.style, { width: "20px", height: "20px", borderRadius: "4px" });
           return img;
         }
-      } catch { /* ignore */ }
+      } catch { console.debug("LMPsi interceptor: unbound"); /* ignore */ }
     }
 const ext = url.split(".").pop().split("?")[0].toLowerCase();
     if (["jpg","jpeg","png","webp","gif","bmp","svg"].includes(ext)) {
@@ -1398,7 +1398,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
       this.installObserver();
       // One-shot Route 2 over the full DOM once the initial render settles.
       setTimeout(() => {
-        try { this.route2(document.documentElement.outerHTML || ""); } catch (_) {}
+        try { this.route2(document.documentElement.outerHTML || ""); } catch (_) { console.debug("LMPsi interceptor:", _);}
         this.videoSweep();
       }, 1500);
     },
@@ -1433,7 +1433,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
           }, 300);
         });
         this.observer.observe(document.documentElement, { childList: true, subtree: true });
-      } catch (_) {}
+      } catch (_) { console.debug("LMPsi interceptor:", _);}
     },
 
     // Route 1 walk (video_versions progressive + video_dash_manifest DASH).
@@ -1463,10 +1463,10 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
                 if (url) dash.push([label, url]);
               }
             }
-          } catch (_) {}
+          } catch (_) { console.debug("LMPsi interceptor:", _);}
         }
         for (const key in node) this.walk(node[key], prog, dash);
-      } catch (_) {}
+      } catch (_) { console.debug("LMPsi interceptor:", _);}
     },
 
     // Shortcode hunt for human-friendly identifiers (additive).
@@ -1477,7 +1477,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
         const c = node.shortcode || node.code;
         if (typeof c === "string" && /^[A-Za-z0-9_-]{4,32}$/.test(c)) return c;
         for (const key in node) { const r = this.findCode(node[key]); if (r) return r; }
-      } catch (_) {}
+      } catch (_) { console.debug("LMPsi interceptor:", _);}
       return "";
     },
 
@@ -1498,7 +1498,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
         const prog = new Map();
         const dash = [];
         let parsed = null, code = "";
-        try { parsed = JSON.parse(text); } catch (_) {}
+        try { parsed = JSON.parse(text); } catch (_) { console.debug("LMPsi interceptor:", _);}
         if (parsed != null) {
           this.walk(parsed, prog, dash);
           code = this.findCode(parsed);
@@ -1522,7 +1522,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
         for (const [label, url] of dash) batch.push({ kind: "dash", type: 999, label, url, code });
         for (const url of extra) batch.push({ kind: "extra", type: 999, label: "", url, code: "" });
         this.merge(batch);
-      } catch (_) {}
+      } catch (_) { console.debug("LMPsi interceptor:", _);}
     },
 
     merge(batch) {
@@ -1553,7 +1553,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
 
     rescan() {
       this.scanNewScripts(true);
-      try { this.route2(document.documentElement.outerHTML || ""); } catch (_) {}
+      try { this.route2(document.documentElement.outerHTML || ""); } catch (_) { console.debug("LMPsi interceptor:", _);}
       this.videoSweep();
       showToast(`IG re-scan → ${this.entries.length} unique URL(s).`);
     },
@@ -1562,7 +1562,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
     scanNewScripts(force) {
       document.querySelectorAll('script[type="application/json"]').forEach((s) => {
         if (!force && s.hasAttribute("data-lm-ig-scanned")) return;
-        try { s.setAttribute("data-lm-ig-scanned", "true"); } catch (_) {}
+        try { s.setAttribute("data-lm-ig-scanned", "true"); } catch (_) { console.debug("LMPsi interceptor:", _);}
         const t = s.textContent;
         if (t) this.ingest(t);
       });
@@ -1589,7 +1589,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
             this.merge([{ kind: "extra", type: 999, label: "", url: raw, code: "" }]);
           }
         });
-      } catch (_) {}
+      } catch (_) { console.debug("LMPsi interceptor:", _);}
     },
   };
 
@@ -1874,13 +1874,15 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
     return {
       init() {
         rewriteRedirectLinks();
+        let redirectRewriteTimer;
         const observer = new MutationObserver(muts => {
-          for (const mut of muts) {
-            for (const node of mut.addedNodes) {
-              if (node.nodeType !== 1) continue;
-              if (hasRedirectLink(node)) rewriteRedirectLinks(node);
-            }
-          }
+          // v1.5.1 observer discipline: coalesced re-write — rewriteRedirectLinks()
+          // (no-arg full pass) covers every added subtree, idempotent, bounded
+          // to one pass per 200 ms of DOM churn.
+          const structural = muts.some(mut => mut.addedNodes && mut.addedNodes.length);
+          if (!structural) return;
+          clearTimeout(redirectRewriteTimer);
+          redirectRewriteTimer = setTimeout(() => rewriteRedirectLinks(), 200);
         });
         const start = () => {
           rewriteRedirectLinks();
@@ -3816,29 +3818,42 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
     init.injectCustomStyles();
     const begin = () => {
       if (globalConfig.appMode === 'forum') {
+        // v1.5.1 observer discipline: buffered tranche — the same per-node
+        // processPost dispatch (identical node set, same HUD side effect),
+        // coalesced to one flush per 250 ms of DOM churn. splice-empty keeps
+        // the buffer O(1) between flushes.
+        const pendingPostNodes = [];
+        let newPostsTimer = null;
         const observer = new MutationObserver((mutations) => {
-          let newPostsProcessed = false;
+          let queued = false;
           mutations.forEach((mutation) => {
             if (mutation.addedNodes.length) {
               mutation.addedNodes.forEach((node) => {
-                if (node.nodeType === 1) {
-                  const posts = node.querySelectorAll(".message-attribution-opposite");
-                  posts.forEach((p) => {
-                    if (processPost(p)) newPostsProcessed = true;
-                  });
-                  if (node.matches && node.matches(".message-attribution-opposite")) {
-                    if (processPost(node)) newPostsProcessed = true;
-                  }
-                }
+                if (node.nodeType === 1) { pendingPostNodes.push(node); queued = true; }
               });
             }
           });
-          if (newPostsProcessed) {
-            const hudPanel = document.getElementById("hud-panel-root");
-            if (hudPanel && !hudPanel.hidden) {
-              setHudTab(currentTab);
+          if (!queued) return;
+          clearTimeout(newPostsTimer);
+          newPostsTimer = setTimeout(() => {
+            const nodes = pendingPostNodes.splice(0, pendingPostNodes.length);
+            let newPostsProcessed = false;
+            nodes.forEach((node) => {
+              const posts = node.querySelectorAll(".message-attribution-opposite");
+              posts.forEach((p) => {
+                if (processPost(p)) newPostsProcessed = true;
+              });
+              if (node.matches && node.matches(".message-attribution-opposite")) {
+                if (processPost(node)) newPostsProcessed = true;
+              }
+            });
+            if (newPostsProcessed) {
+              const hudPanel = document.getElementById("hud-panel-root");
+              if (hudPanel && !hudPanel.hidden) {
+                setHudTab(currentTab);
+              }
             }
-          }
+          }, 250);
         });
         observer.observe(document.body, { childList: true, subtree: true });
         let initialPostsFound = 0;

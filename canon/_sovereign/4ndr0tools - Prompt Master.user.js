@@ -43,6 +43,12 @@
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Prompt%20Master.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Prompt%20Master.user.js
 // ==/UserScript==
+  // v1.5.0 (suite, B.1): zero global pollution — the sort-mode state,
+  // custom-shortcut map, and tooltip sweeper moved off window into this
+  // closure (they were never page-realm API, only __-convention state).
+  let __mpSortMode;
+  let __apCustomShortcutsMap;
+
 // 28.5.0 (suite v1.4.8): Media Slideshow — the operator's
 // v28.4.0 candidate integrated: presentation layer over the
 // page's media (videos, images, background images): one-shot
@@ -87,7 +93,7 @@
           createHTML: (e) => e,
         });
         break;
-      } catch (e) {}
+      } catch (e) { console.debug("PM interceptor:", e);}
   /* [R3] TTwrap — sanctioned policy wrapper for the parse route (the
    * census SANCTIONED_PARSE_ARG family). */
   function TTwrap(t) {
@@ -570,7 +576,7 @@
       favoritesOnly: !!currentOrgPrefs.facets.favoritesOnly,
       ratingMin: currentOrgPrefs.facets.ratingMin || 0,
       archived: currentOrgPrefs.facets.archived || "exclude",
-      sortMode: window.__mpSortMode || currentTagsConfig.sortMode || "manual",
+      sortMode: __mpSortMode || currentTagsConfig.sortMode || "manual",
       groupMode: currentOrgPrefs.groupMode || "none",
       search: searchText || "",
     };
@@ -619,7 +625,7 @@
       ? ((currentTagsConfig.activeFilters = (view.tags || []).slice()),
         (currentTagsConfig.sortMode = view.sortMode || "manual"),
         await saveTagsConfig(),
-        (window.__mpSortMode = view.sortMode || "manual"),
+        (__mpSortMode = view.sortMode || "manual"),
         (currentOrgPrefs.facets = {
           collectionId: view.collectionId || "",
           favoritesOnly: !!view.favoritesOnly,
@@ -768,7 +774,7 @@
           );
     });
   }
-  window.__apCustomShortcutsMap = [];
+  __apCustomShortcutsMap = [];
   const debounce = (e, t) => {
     let n;
     return (...a) => {
@@ -791,7 +797,7 @@
     return (
       t.sort((e, t) => (e.position || 0) - (t.position || 0)),
       normalizePositions(t),
-      (window.__apCustomShortcutsMap = t
+      (__apCustomShortcutsMap = t
         .filter((e) => e.shortcut)
         .map((e) => ({ shortcut: e.shortcut, prompt: e }))),
       t
@@ -924,7 +930,7 @@
         ? mediaQueryList.addEventListener("change", onSchemeChange)
         : mediaQueryList.addListener &&
           mediaQueryList.addListener(onSchemeChange);
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
   })();
   const themeDefinitions = {
     "electric-glass": {
@@ -1705,7 +1711,7 @@
               (link.href = String(url)),
               link.setAttribute("data-mp-theme-import", ""),
               document.head.appendChild(link));
-          } catch (e) {}
+          } catch (e) { console.debug("PM interceptor:", e);}
         });
       })(),
       // v28.1.0: a theme switch re-highlights any attached editor — the
@@ -1825,7 +1831,7 @@
                   (el) =>
                     el.getAttribute("href") === String(url) && el.remove(),
                 );
-            } catch (err) {}
+            } catch (err) { console.debug("PM interceptor:", err);}
           }));
       }
       (delete importedThemes[e],
@@ -1914,7 +1920,7 @@
       l = (i.actions && i.actions.length > 0) || i.previewMode,
       c = () => {
         if ((clearTimeout(r), !document.body.contains(e))) return;
-        if ((window.clearAllCustomTooltips(), o)) return;
+        if ((clearAllCustomTooltips(), o)) return;
         ((o = document.createElement("div")),
           (o.className = `mp-tooltip mp-tooltip-${n}`),
           l && o.classList.add("mp-tooltip-interactive"),
@@ -2029,7 +2035,7 @@
       g = () => d(!0),
       f = () => setTimeout(() => d(!0), 10),
       h = () => {
-        a && window.clearAllCustomTooltips();
+        a && clearAllCustomTooltips();
       };
     (e.addEventListener("mouseenter", p),
       e.addEventListener("mouseleave", m),
@@ -2053,7 +2059,7 @@
           d(!0));
       }));
   }
-  window.clearAllCustomTooltips = () => {
+  function clearAllCustomTooltips() {
     document.querySelectorAll(".mp-tooltip").forEach((e) => {
       document.body.contains(e) && document.body.removeChild(e);
     });
@@ -2070,7 +2076,7 @@
     try {
       const t = await GM_getValue("DontShowAgain", {});
       ((t[e] = !0), await GM_setValue("DontShowAgain", t));
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
   }
   async function createDialogo(e) {
     const t = "string" == typeof e ? { type: "alert", message: e } : { ...e };
@@ -2401,11 +2407,11 @@
           } catch (t) {
             try {
               e = await navigator.clipboard.readText();
-            } catch (e) {}
+            } catch (e) { console.debug("PM interceptor:", e);}
           }
           (e || t.length > 0) &&
             (await insertPrompt({ text: e, dynamicFiles: t }, !0, !0));
-        } catch (e) {}
+        } catch (e) { console.debug("PM interceptor:", e);}
       }));
     const s = document.createElement("button");
     return (
@@ -2661,7 +2667,7 @@
               for (let r = 0; r < a.length; r += 0x8000)
                 o += String.fromCharCode.apply(null, a.subarray(r, r + 0x8000));
               t(btoa(o));
-            } catch (e) {}
+            } catch (e) { console.debug("PM interceptor:", e);}
           },
           onerror: () => {},
           ontimeout: () => {},
@@ -3787,7 +3793,7 @@
               h.dispatchEvent(new Event("input", { bubbles: !0 })),
               h.focus());
           }
-        } catch (e) {}
+        } catch (e) { console.debug("PM interceptor:", e);}
       }));
     // v27.1.0: the "shopping bag" header button (#__ap_shop_btn — tooltip
     // "Get More Prompts", whose only action opened the Gist community prompt
@@ -4102,7 +4108,7 @@
     try {
       const t = new URL(e);
       (t.searchParams.set("_t", Date.now()), (a = t.toString()));
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
     // v28.6.0: bounded + typed transport — rides the kernel gmFetch inlined
     // by tools/build.mjs instead of a bare GM_xmlhttpRequest: 20 s hard
     // bound, failures reject through the typed NetError taxonomy. The _t
@@ -4211,7 +4217,7 @@
           try {
             const o = new URL(n, "https://raw.githubusercontent.com");
             a = "http:" === o.protocol || "https:" === o.protocol;
-          } catch (e) {}
+          } catch (e) { console.debug("PM interceptor:", e);}
           return a
             ? `<a href="${n}" target="_blank" rel="noopener noreferrer" style="color:var(--mp-accent-primary); text-decoration:underline;">${t}</a>`
             : t;
@@ -4238,7 +4244,7 @@
     try {
       const t = new URL(e);
       (t.searchParams.set("_t", Date.now()), (a = t.toString()));
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
     // v28.6.0: bounded + typed transport — kernel gmFetch, 20 s hard bound.
     // Legacy rejection messages are preserved verbatim for callers; the
     // typed cause (NetError.kind) stays inspectable on the transport layer.
@@ -4310,7 +4316,7 @@
     )
       try {
         r = await fetchWithGM(t.changelog);
-      } catch (e) {}
+      } catch (e) { console.debug("PM interceptor:", e);}
     return {
       title: t.title,
       version: t.version,
@@ -4659,7 +4665,7 @@
                     ))
                 : await updateById(n.id, { lastUpdateCheck: t });
             } else await updateById(n.id, { lastUpdateCheck: t });
-          } catch (e) {}
+          } catch (e) { console.debug("PM interceptor:", e);}
       }
   }
   function showAIDiffModal(e, t, n) {
@@ -5528,7 +5534,7 @@
           ...DEFAULT_PREVIEW_PROMPT_CONFIG,
           ...JSON.parse(e),
         });
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
   }
   function applyGlobalSortMode(e, t) {
     return t && "manual" !== t
@@ -5641,7 +5647,7 @@
           // the org facets (collection scope / favorites / rating /
           // archived visibility) exactly as it resets the tag filters.
           await resetOrgFacets(),
-          (window.__mpSortMode = "manual"),
+          (__mpSortMode = "manual"),
           o.rebuild(),
           n());
       }),
@@ -5891,9 +5897,9 @@
               btn
             );
           };
-        (window.__mpSortMode ||
-          (window.__mpSortMode = currentTagsConfig.sortMode || "manual"),
-          (c.value = window.__mpSortMode),
+        (__mpSortMode ||
+          (__mpSortMode = currentTagsConfig.sortMode || "manual"),
+          (c.value = __mpSortMode),
           refreshOrgControls(),
           setSafeInnerHTML(d, ""));
         const e = getAllTags();
@@ -5944,7 +5950,7 @@
         d.scrollTop = scrollPos;
       }),
       (c.onchange = (e) => {
-        ((window.__mpSortMode = e.target.value),
+        ((__mpSortMode = e.target.value),
           (currentTagsConfig.sortMode = e.target.value),
           saveTagsConfig(),
           n());
@@ -6026,13 +6032,13 @@
             (currentTagsConfig &&
               currentTagsConfig.activeFilters &&
               currentTagsConfig.activeFilters.length > 0) ||
-            (window.__mpSortMode && "manual" !== window.__mpSortMode);
+            (__mpSortMode && "manual" !== __mpSortMode);
           if (hadFilter) {
             // v28.1.0: arm the flag BEFORE the re-render consumes it —
             // the old ordering set it after await refreshMenu(), so this
             // click never opened the search overlay and some LATER
             // unrelated refresh slid it open out of nowhere instead.
-            ((window.__mpSortMode = "manual"),
+            ((__mpSortMode = "manual"),
               await clearTagFilters(),
               (_abrirPesquisaComAtalho = !0),
               await refreshMenu());
@@ -6056,7 +6062,7 @@
             void 0 !== currentTagsConfig &&
             currentTagsConfig.activeFilters &&
             currentTagsConfig.activeFilters.length > 0,
-          t = window.__mpSortMode && "manual" !== window.__mpSortMode;
+          t = __mpSortMode && "manual" !== __mpSortMode;
         e || t
           ? (u.classList.add("active"),
             setSafeInnerHTML(u, ICONS.filterAct || ICONS.filter))
@@ -6265,7 +6271,7 @@
         // tag predicate; applyOrgSort delegates legacy modes verbatim to
         // applyGlobalSortMode and adds Recently Used / Top Rated.
         let t = r.filter((e) => promptMatchesFilter(e) && orgPromptMatches(e));
-        t = applyOrgSort(t, window.__mpSortMode || "manual");
+        t = applyOrgSort(t, __mpSortMode || "manual");
         const n = c.value.toLowerCase();
         if (0 === t.length) {
           const e =
@@ -6864,7 +6870,7 @@
         icon: ICONS.bookmark,
         isActive: () =>
           "recently_used" ===
-          (window.__mpSortMode || currentTagsConfig.sortMode || "manual"),
+          (__mpSortMode || currentTagsConfig.sortMode || "manual"),
         count: (ps) =>
           ps.filter((p) => !p.archived && (p.lastUsedAt || 0) > 0).length,
         apply: async () => {
@@ -6875,7 +6881,7 @@
             archived: "exclude",
           };
           await saveOrgPrefs();
-          (window.__mpSortMode = "recently_used"),
+          (__mpSortMode = "recently_used"),
             (currentTagsConfig.sortMode = "recently_used"),
             await saveTagsConfig();
         },
@@ -7835,7 +7841,7 @@
             void 0 !== currentTagsConfig &&
             currentTagsConfig.activeFilters &&
             currentTagsConfig.activeFilters.length > 0,
-          t = window.__mpSortMode && "manual" !== window.__mpSortMode;
+          t = __mpSortMode && "manual" !== __mpSortMode;
         e || t
           ? (A.classList.add("active"),
             setSafeInnerHTML(A, ICONS.filterAct || ICONS.filter))
@@ -8226,7 +8232,7 @@
         // derives the group layout (null when grouping is off — the v27
         // flat rendering path runs exactly as before).
         let e = t.filter((e) => promptMatchesFilter(e) && orgPromptMatches(e));
-        e = applyOrgSort(e, window.__mpSortMode || "manual");
+        e = applyOrgSort(e, __mpSortMode || "manual");
         const i = f.value.toLowerCase(),
           grouped = buildGroupedPairs(e, currentOrgPrefs.groupMode || "none"),
           lastUsedTxt = (ts) => {
@@ -8701,9 +8707,9 @@
         )
         .forEach((e) => e.remove()),
       wasVisible &&
-        (window.__mpSortMode &&
-          "manual" !== window.__mpSortMode &&
-          ((window.__mpSortMode = "manual"),
+        (__mpSortMode &&
+          "manual" !== __mpSortMode &&
+          ((__mpSortMode = "manual"),
           // v28.1.0: the stored sort follows the session reset — the dock
           // used to display "Manual Order" after close while the persisted
           // sortMode silently resurrected the old sort on the next page
@@ -8948,7 +8954,7 @@
                     c.dispatchEvent(new Event("input", { bubbles: !0 })),
                     c.focus());
                 }
-              } catch (e) {}
+              } catch (e) { console.debug("PM interceptor:", e);}
             }),
             u.appendChild(f),
             d.appendChild(u),
@@ -9224,7 +9230,7 @@
                             ),
                             l.focus());
                         }
-                      } catch (e) {}
+                      } catch (e) { console.debug("PM interceptor:", e);}
                     }),
                     l.addEventListener("keydown", (e) => {
                       if (!e.isComposing && 229 !== e.keyCode) {
@@ -9473,7 +9479,7 @@
               node: t.startContainer,
               offset: t.startOffset,
             };
-          } catch (e) {}
+          } catch (e) { console.debug("PM interceptor:", e);}
         }
       }
     }
@@ -10911,10 +10917,10 @@
           try {
             const r = img.getBoundingClientRect();
             if (r.width >= 24 && r.height >= 24) return !0;
-          } catch (e) {}
+          } catch (e) { console.debug("PM interceptor:", e);}
         }
       }
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
     return !1;
   }
   // The wall reconciliation, fired from the limit-notice watcher:
@@ -11476,7 +11482,7 @@
       let data = null;
       try {
         data = JSON.parse(body);
-      } catch (e) {}
+      } catch (e) { console.debug("PM interceptor:", e);}
       if (data != null)
         return walkFlowCreditJson(data, sourceTag, 0, !1, !1, { n: 6000 });
     }
@@ -11525,7 +11531,7 @@
             t,
             String(ev.url || "fetch").slice(0, 100),
           );
-      } catch (e) {}
+      } catch (e) { console.debug("PM interceptor:", e);}
     });
   }
   function sweepFlowCreditStorage() {
@@ -11533,10 +11539,10 @@
     const stores = [];
     try {
       stores.push(window.localStorage);
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
     try {
       stores.push(window.sessionStorage);
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
     for (const store of stores) {
       if (!store) continue;
       let len = 0;
@@ -11662,7 +11668,7 @@
               : " [enabled]"),
         );
       }
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
     return out;
   }
 
@@ -11850,7 +11856,7 @@
             },
           });
           t.dispatchEvent(ev);
-        } catch (e) {}
+        } catch (e) { console.debug("PM interceptor:", e);}
       }
     }
   }
@@ -11894,10 +11900,10 @@
                 "[Prompt Master] credit tracker: post-generation wallet re-pull — " +
                   flowCreditPullInfo,
               );
-            } catch (e) {}
+            } catch (e) { console.debug("PM interceptor:", e);}
           renderFlowCreditChip();
         });
-      } catch (e) {}
+      } catch (e) { console.debug("PM interceptor:", e);}
     }, 155000);
   }
   async function pullFlowCreditWallet(reason) {
@@ -11915,7 +11921,7 @@
       if (dlg) {
         try {
           flowCreditTick();
-        } catch (e) {}
+        } catch (e) { console.debug("PM interceptor:", e);}
         flowCreditPullRaw = (dlg.textContent || "").replace(/\s+/g, " ").trim().slice(0, 300);
         flowCreditPullInfo = "profile menu already open — harvested it without closing";
         return { ran: !0, opened: "already open", closed: "left open" };
@@ -11961,11 +11967,11 @@
       // D. harvest while it is open — twice, for late numbers.
       try {
         flowCreditTick();
-      } catch (e) {}
+      } catch (e) { console.debug("PM interceptor:", e);}
       await flowCreditSleep(450);
       try {
         flowCreditTick();
-      } catch (e) {}
+      } catch (e) { console.debug("PM interceptor:", e);}
       if (dlg)
         flowCreditPullRaw = (dlg.textContent || "").replace(/\s+/g, " ").trim().slice(0, 300);
       // E. close what WE opened — v27.3.5 cascade, strongest first:
@@ -11985,7 +11991,7 @@
         if (xBtn) {
           try {
             xBtn.click();
-          } catch (e) {}
+          } catch (e) { console.debug("PM interceptor:", e);}
           await flowCreditSleep(480);
         }
         if (flowCreditAnyDialog()) {
@@ -11994,7 +12000,7 @@
           if (flowCreditAnyDialog() && btn.isConnected) {
             try {
               btn.click();
-            } catch (e) {}
+            } catch (e) { console.debug("PM interceptor:", e);}
             await flowCreditSleep(480);
           }
           if (flowCreditAnyDialog()) {
@@ -12006,7 +12012,7 @@
                     new MouseEvent(type, { bubbles: !0, cancelable: !0, view: window }),
                   );
                 }
-            } catch (e) {}
+            } catch (e) { console.debug("PM interceptor:", e);}
             await flowCreditSleep(480);
           }
         }
@@ -12291,7 +12297,7 @@
             JSON.parse(JSON.stringify(flowCreditState)),
           ),
         ).catch(function () {});
-      } catch (e) {}
+      } catch (e) { console.debug("PM interceptor:", e);}
     }, 150);
   }
 
@@ -12327,7 +12333,7 @@
           if (r.width < 100 || r.height < 80) continue;
           if (r.bottom < 0 || r.top > window.innerHeight) continue;
           add(img.currentSrc || img.src || "");
-        } catch (e) {}
+        } catch (e) { console.debug("PM interceptor:", e);}
       }
       const bgs = document.body.querySelectorAll('[style*="background-image"]');
       for (const el of bgs) {
@@ -12338,7 +12344,7 @@
           if (r.bottom < 0 || r.top > window.innerHeight) continue;
           const m = /url\(["']?([^"')]+)["']?\)/i.exec(el.getAttribute("style") || "");
           if (m) add(m[1]);
-        } catch (e) {}
+        } catch (e) { console.debug("PM interceptor:", e);}
       }
     }
     return out;
@@ -12717,7 +12723,7 @@
                   wallUnits +
                   " units of unmetered pool spend reconciled at the limit notice (chat and code executions are invisible to the client meter).",
               );
-            } catch (e2) {}
+            } catch (e2) { console.debug("PM interceptor:", e2);}
           }
           // v27.3.12: roll the day counters first — a notice seen
           // before the day's first click must not read yesterday's
@@ -12761,12 +12767,12 @@
                   " turns for this model today — " +
                   t.slice(0, 120),
               );
-            } catch (e2) {}
+            } catch (e2) { console.debug("PM interceptor:", e2);}
           }
         }
         return;
       }
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
   }
   // v28.0.0: flowCreditMediaElFingerprint removed with the callback it
   // served — it existed solely to fingerprint media elements for the
@@ -12813,7 +12819,7 @@
             })
             .join(" ")
             .trim();
-        } catch (e) {}
+        } catch (e) { console.debug("PM interceptor:", e);}
       }
     }
     if (!name)
@@ -12879,7 +12885,7 @@
             return parseInt(bm[1], 10);
         }
       }
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
     return null;
   }
   function flowCreditArmGeneration(btn) {
@@ -12973,7 +12979,7 @@
         walletMutating
       )
         scheduleFlowCreditWalletRepull();
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
   }
   function installFlowCreditGenClickHook() {
     if (flowCreditGenHookInstalled) return;
@@ -12988,7 +12994,7 @@
             target && target.closest ? target.closest("button") : null;
           if (!btn || !flowCreditGenButtonOK(btn)) return;
           flowCreditArmGeneration(btn);
-        } catch (e) {}
+        } catch (e) { console.debug("PM interceptor:", e);}
       },
       !0,
     );
@@ -13757,11 +13763,48 @@
     renderFlowCreditChip();
     positionFlowCreditChip();
   }
+  // v1.5.0 (suite, B.1): both flow-credit timers are idle-parked — the
+  // 30 s storage sweep parks after 30 min of empty sweeps (DOM churn
+  // re-arms it via flowCreditScheduleTick), the 1 s poll parks after 30 min
+  // hidden (the visibilitychange handler re-arms it on return).
+  let flowCreditSweepIdle = 0;
+  let flowCreditPollIdle = 0;
+  function armFlowCreditStorageSweep() {
+    if (flowCreditStorageTimer) return;
+    flowCreditSweepIdle = 0;
+    flowCreditStorageTimer = setInterval(function () {
+      const found = sweepFlowCreditStorage();
+      if (found > 0) {
+        flowCreditSweepIdle = 0;
+        return;
+      }
+      if (++flowCreditSweepIdle > 60) {
+        clearInterval(flowCreditStorageTimer);
+        flowCreditStorageTimer = null;
+      }
+    }, 30000);
+  }
+  function armFlowCreditPoll() {
+    if (flowCreditPollTimer) return;
+    flowCreditPollIdle = 0;
+    flowCreditPollTimer = setInterval(function () {
+      if (document.hidden) {
+        if (++flowCreditPollIdle > 1800) {
+          clearInterval(flowCreditPollTimer);
+          flowCreditPollTimer = null;
+        }
+        return;
+      }
+      flowCreditPollIdle = 0;
+      flowCreditTick();
+    }, 1000);
+  }
   function flowCreditScheduleTick() {
     if (flowCreditMutationTimer) clearTimeout(flowCreditMutationTimer);
     flowCreditMutationTimer = setTimeout(function () {
       flowCreditMutationTimer = null;
       flowCreditTick();
+      armFlowCreditStorageSweep(); // v1.5.0: DOM churn keeps the sweep armed while the page is alive
     }, 250);
   }
   function startFlowCreditTracker() {
@@ -13871,7 +13914,7 @@
       if (storeTouched) {
         try {
           persistFlowCreditState();
-        } catch (e2) {}
+        } catch (e2) { console.debug("PM interceptor:", e2);}
       }
       if (!document.getElementById("pm-flow-credit-style")) {
         const s = document.createElement("style");
@@ -13886,9 +13929,9 @@
       installFlowCreditNetObserver();
       installFlowCreditGenClickHook();
       sweepFlowCreditStorage();
-      flowCreditStorageTimer = setInterval(sweepFlowCreditStorage, 30000);
+      armFlowCreditStorageSweep();
       flowCreditTick();
-      flowCreditPollTimer = setInterval(flowCreditTick, 1000);
+      armFlowCreditPoll();
       flowCreditObserver = new MutationObserver(flowCreditScheduleTick);
       flowCreditObserver.observe(document.body, {
         childList: !0,
@@ -13911,7 +13954,11 @@
         { capture: !0, passive: !0 },
       );
       document.addEventListener("visibilitychange", function () {
-        if (!document.hidden) flowCreditTick();
+        if (!document.hidden) {
+          armFlowCreditPoll(); // v1.5.0 (B.1): re-arm the parked poll on return
+          armFlowCreditStorageSweep();
+          flowCreditTick();
+        }
       });
       // v27.3.2: settled status line (replaces v27.3.1's first-tick
       // line, which raced Flow's SPA boot and always read
@@ -13941,7 +13988,7 @@
               : " · no credit text visible on the page";
           }
           console.info(line);
-        } catch (e) {}
+        } catch (e) { console.debug("PM interceptor:", e);}
       }, 8000);
       // v27.3.1: one-shot late warn — if after 15s no anchor ever
       // resolved, say so in the console instead of failing silently
@@ -13952,7 +13999,7 @@
             console.warn(
               "[Prompt Master] credit tracker: no prompt field, composer, or model chip found on this page — the chip will appear once Flow renders its prompt bar.",
             );
-          } catch (e) {}
+          } catch (e) { console.debug("PM interceptor:", e);}
         }
       }, 15000);
       // v27.3.4: wallet pull attempt, once per load. v28.1.1: this is
@@ -13980,7 +14027,7 @@
               console.info(
                 "[Prompt Master] credit tracker: wallet pull — " + flowCreditPullInfo,
               );
-            } catch (e) {}
+            } catch (e) { console.debug("PM interceptor:", e);}
         });
       }, 9000);
       setTimeout(function () {
@@ -14111,7 +14158,7 @@
         FLOW_CREDIT_STORAGE_KEY,
         JSON.parse(JSON.stringify(flowCreditState)),
       );
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
     renderFlowCreditChip();
   }
   // v27.3.15 FIX: this script runs with explicit @grant entries, so
@@ -14185,7 +14232,7 @@
               flowCreditEntryUnits(en) +
               " units — test only).",
           );
-        } catch (e2) {}
+        } catch (e2) { console.debug("PM interceptor:", e2);}
         return en ? JSON.parse(JSON.stringify(en)) : null;
       };
       // v27.3.17: the self-test rides the same gate — Flow-only,
@@ -14193,7 +14240,7 @@
       // Self-Test" menu command (which needs no console at all).
       unsafeWindow.__flowCreditDebugSelfTest = flowCreditDebugSelfTestImpl;
     }
-  } catch (e) {}
+  } catch (e) { console.debug("PM interceptor:", e);}
 
   // v27.3.17: the self-test — the tracker verifies its own state
   // machine so no human ever has to walk a manual multi-step
@@ -14798,7 +14845,7 @@
           had = localStorage.getItem(echoKey);
           localStorage.setItem(echoKey, "Leaving 4/182 turns left");
           probeSet = !0;
-        } catch (e9) {}
+        } catch (e9) { console.debug("PM interceptor:", e9);}
         if (probeSet) {
           const beforeNet = flowCreditPendingNet.length;
           sweepFlowCreditStorage();
@@ -14815,7 +14862,7 @@
           try {
             if (had == null) localStorage.removeItem(echoKey);
             else localStorage.setItem(echoKey, had);
-          } catch (e9) {}
+          } catch (e9) { console.debug("PM interceptor:", e9);}
         }
       }
       // v28.3.0: the v28.2.2 known-caps pins were REMOVED with the
@@ -14877,7 +14924,7 @@
           " passed\n" +
           body,
       );
-    } catch (e2) {}
+    } catch (e2) { console.debug("PM interceptor:", e2);}
     return results;
   }
 
@@ -14910,11 +14957,11 @@
       if (!flowCreditWalletKnown() || !flowCreditWalletFresh()) {
         try {
           await pullFlowCreditWallet("manual");
-        } catch (e2) {}
+        } catch (e2) { console.debug("PM interceptor:", e2);}
       }
       try {
         flowCreditTick();
-      } catch (e2) {}
+      } catch (e2) { console.debug("PM interceptor:", e2);}
       const fmtV = function (v) {
         return v == null ? "—" : String(v);
       };
@@ -15273,24 +15320,24 @@
     const text = lines.join("\n");
     try {
       console.info(text);
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
     try {
       if (typeof GM_setClipboard === "function") {
         GM_setClipboard(text, "text");
         copied = !0;
       }
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
     if (!copied)
       try {
         await navigator.clipboard.writeText(text);
         copied = !0;
-      } catch (e) {}
+      } catch (e) { console.debug("PM interceptor:", e);}
     try {
       console.info(
         "[Prompt Master] credit report " +
           (copied ? "copied to your clipboard" : "printed above — copy it manually"),
       );
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
   }
 
   function pickVisibleEditable(list, requireVisible = false) {
@@ -15364,7 +15411,7 @@
     if (!editor) return false;
     try {
       editor.focus();
-    } catch (err) {}
+    } catch (err) { console.debug("PM interceptor:", err);}
 
     // TEXTAREA / INPUT: native value setter keeps Angular's control in sync.
     if ("TEXTAREA" === editor.tagName || "INPUT" === editor.tagName) {
@@ -15395,7 +15442,7 @@
         sel.addRange(range);
       }
       document.execCommand("insertText", false, text);
-    } catch (err) {}
+    } catch (err) { console.debug("PM interceptor:", err);}
     if (editorContainsText(editor, text)) return true;
 
     // Strategy 2: synthetic beforeinput + paste (legacy Slate-compatible path).
@@ -15418,7 +15465,7 @@
         }),
       );
       editor.dispatchEvent(new Event("input", { bubbles: true }));
-    } catch (err) {}
+    } catch (err) { console.debug("PM interceptor:", err);}
     if (editorContainsText(editor, text)) return true;
 
     // Strategy 3: direct DOM insertion + input event (last resort).
@@ -15440,7 +15487,7 @@
       editor.dispatchEvent(
         new Event("input", { bubbles: true, composed: true }),
       );
-    } catch (err) {}
+    } catch (err) { console.debug("PM interceptor:", err);}
     return editorContainsText(editor, text);
   }
   function hasApiKeyForProvider(e) {
@@ -15884,7 +15931,7 @@
           (-1 === e && cachedMessages[n.index] && (e = n.index),
             -1 !== e && (currentNavIndex = e));
         }
-      } catch (e) {}
+      } catch (e) { console.debug("PM interceptor:", e);}
   }
   function getMessageSelectors() {
     switch (currentPlatform) {
@@ -17740,7 +17787,7 @@
     renderSlideshowSlide();
     try {
       slideshowOverlay.focus();
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
   }
   function closeSlideshow() {
     if (!slideshowOverlay) return;
@@ -17758,7 +17805,7 @@
         const p = document.exitFullscreen();
         if (p && p.catch) p.catch(function () {});
       }
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
     slideshowOverlay.remove();
     slideshowOverlay = null;
     slideshowDeck = [];
@@ -17828,7 +17875,7 @@
       if (Object.keys(snapshot).length > 0) {
         await GM_setValue(AUTO_BACKUP_KEY, JSON.stringify(snapshot));
       }
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
   }
   function scheduleAutoBackup() {
     if (_autoBackupTimer) clearTimeout(_autoBackupTimer);
@@ -17928,7 +17975,7 @@
               try {
                 const r = JSON.parse(e.responseText);
                 if (r.message) msg += `: ${r.message}`;
-              } catch (_) {}
+              } catch (_) { console.debug("PM interceptor:", _);}
               return void reject(new Error(msg));
             }
             try {
@@ -18021,7 +18068,7 @@
             try {
               const r = JSON.parse(e.responseText);
               if (r.message) msg += `: ${r.message}`;
-            } catch (_) {}
+            } catch (_) { console.debug("PM interceptor:", _);}
             reject(new Error(msg));
           }
         },
@@ -18113,7 +18160,7 @@
             try {
               const r = JSON.parse(e.responseText);
               if (r.message) msg += `: ${r.message}`;
-            } catch (_) {}
+            } catch (_) { console.debug("PM interceptor:", _);}
             reject(new Error(msg));
           }
         },
@@ -18162,7 +18209,7 @@
       if (!hasPrompts && !gistCfg) {
         setTimeout(showFirstRunBanner, 1500);
       }
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
   }
   function installAutoBackupProxy() {
     const _orig = GM_setValue;
@@ -18897,7 +18944,7 @@
               cancelable: !0,
             });
             e.dispatchEvent(t);
-          } catch (e) {}
+          } catch (e) { console.debug("PM interceptor:", e);}
       }, 800);
   }
   async function insertPrompt(e, t = !1, n = !1) {
@@ -18999,7 +19046,7 @@
                 (t.files = e.files),
                 t.dispatchEvent(new Event("change", { bubbles: !0 })),
                 t.dispatchEvent(new Event("input", { bubbles: !0 })));
-            } catch (e) {}
+            } catch (e) { console.debug("PM interceptor:", e);}
           else
             ["dragenter", "dragover", "drop"].forEach((t) => {
               const n = new DragEvent(t, {
@@ -19332,7 +19379,7 @@
                           "true" === t.getAttribute("aria-disabled") ||
                           (t.click(), (e = !0));
                       }
-                    } catch (e) {}
+                    } catch (e) { console.debug("PM interceptor:", e);}
                     if (!e)
                       try {
                         const e = new KeyboardEvent("keydown", {
@@ -19344,7 +19391,7 @@
                           cancelable: !0,
                         });
                         a.dispatchEvent(e);
-                      } catch (e) {}
+                      } catch (e) { console.debug("PM interceptor:", e);}
                   }, 150)));
         // v28.1.0: the text-insertion delay finally CONSUMES the
         // size-scaled upload wait computed above (1500ms + ~1ms/KB) —
@@ -22047,7 +22094,7 @@
                   sel.removeAllRanges();
                   sel.addRange(range);
                 }
-              } catch (err) {}
+              } catch (err) { console.debug("PM interceptor:", err);}
             }
           }
           const finalPrompt = {
@@ -22125,8 +22172,8 @@
           hideModal(currentPlaceholderModal);
       }
       if (
-        window.__apCustomShortcutsMap &&
-        window.__apCustomShortcutsMap.length > 0
+        __apCustomShortcutsMap &&
+        __apCustomShortcutsMap.length > 0
       ) {
         const partsMatch = (ev, shortcutStr) => {
           if (!shortcutStr) return false;
@@ -22146,7 +22193,7 @@
           if (evKey === " ") evKey = "Space";
           return evKey === mainKey;
         };
-        const matchedItem = window.__apCustomShortcutsMap.find((item) =>
+        const matchedItem = __apCustomShortcutsMap.find((item) =>
           partsMatch(ev, item.shortcut),
         );
         if (matchedItem) {

@@ -344,7 +344,27 @@
             }
         });
 
-        setInterval(doVideos, 1000);
+        // v1.5.0 (suite, B.1): the media sweep is idle-parked — 1 h with no
+        // new media URL parks it; media events (capture-phase) re-arm it,
+        // so a video appearing after a long quiet stretch is still captured.
+        let videoSweepTimer = null;
+        let videoSweepIdle = 0;
+        const armVideoSweep = () => {
+            if (videoSweepTimer) return;
+            videoSweepIdle = 0;
+            videoSweepTimer = setInterval(() => {
+                const before = shownUrls.length;
+                doVideos();
+                videoSweepIdle = shownUrls.length > before ? 0 : videoSweepIdle + 1;
+                if (videoSweepIdle > 3600) {
+                    clearInterval(videoSweepTimer);
+                    videoSweepTimer = null;
+                }
+            }, 1000);
+        };
+        ["play", "playing", "loadeddata", "durationchange"].forEach((ev) =>
+            document.addEventListener(ev, armVideoSweep, true));
+        armVideoSweep();
 
     }
 

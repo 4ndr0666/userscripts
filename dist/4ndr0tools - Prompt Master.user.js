@@ -140,9 +140,10 @@
  *   - PAGE REALM FIRST: the slot + wraps live on unsafeWindow when
  *     available (that is where host page fetches live — the same realm
  *     choice the per-script wraps already made), window otherwise.
- *   - LAZY ARM: zero wraps until the first subscriber registers (onBody,
- *     onRequest, onTraffic OR onError) — a co-installed script that only
- *     subscribes on its own host costs nothing anywhere else.
+ *   - LAZY ARM: zero network wraps until the first subscriber registers
+ *     (onBody, onRequest, onTraffic OR onError); the v6 DOM observer arms
+ *     separately, only on the first onNode subscriber (zero observers
+ *     anywhere until a defuser registers).
  *   - SINGLE BODY READ: one clone per response, dispatched to every
  *     subscriber — the two-vault double-read on instagram is the exact
  *     failure this replaces. 4 MB read cap (Blob2URL's wire limit).
@@ -180,6 +181,42 @@
  *   chain while the v5 copy arms above it — the established transitional
  *   co-install progression).
  *
+ * v6 (suite v1.6.0) — THE DOM DEFEASE CHANNEL (onNode). The v1.5.1
+ *   observer census left the defuse class ledgered (TIMING entries:
+ *   microtask races a private per-script observer was winning) because
+ *   structurally bounding them meant weakening them. The hub takes the
+ *   channel instead — same consolidation the network wraps got in v1.4.3:
+ *   N co-installed document-level observers become ONE kernel-owned
+ *   observer per realm document, fanning raw record batches to isolated
+ *   subscribers.
+ *   - onNode(fn) -> unsubscribe. fn(mutations) receives a per-subscriber
+ *     copy of the raw MutationRecord batch — childList + subtree over
+ *     documentElement, plus attributes filtered to `src` (the union of
+ *     the migrated sites' observe configs) — in the SAME synchronous
+ *     microtask slot a private observer would have delivered it. The
+ *     defuse race is preserved exactly: the fan happens inside the
+ *     observer callback, before the next task, so a hostile script
+ *     inserted this batch is still neutralized before it executes.
+ *   - LAZY ARM, SYMMETRIC DISARM: zero observers until the first onNode
+ *     subscriber registers; the observer disconnects the moment the last
+ *     subscriber unsubscribes. Armed lifetime == subscription lifetime.
+ *   - ISOLATION: a throwing subscriber is scoped console.debug (GUP D6)
+ *     and treated as no-opinion — a broken defuser must never break the
+ *     page or its siblings. Each subscriber gets its own array copy, so
+ *     a hostile subscriber cannot splice its siblings' batch.
+ *   - AUTO-PROPAGATE: inserted iframes with a reachable contentWindow
+ *     get the network wrap set propagated by the hub itself — the same
+ *     idempotent, slot-aware, cross-origin-safe call the Akashan v5.2.0
+ *     iframe observer made per-site. Realm propagation is hub
+ *     infrastructure, not script surface; script-side propagators keep
+ *     working (idempotent double-arm is a no-op).
+ *   - Bounded registry (MAX_SUBS), versioned slot: isFullHub now requires
+ *     the onNode surface, so a v5-or-older slot owner is wrapped above by
+ *     a v6 copy (transitional chaining, as before).
+ *   - The kernel observer itself is self-asserted by the smoke battery
+ *     and the observer census (tools/observer-census.mjs verifies the
+ *     lazy-arm/disconnect/bounded/isolation markers on this file).
+ *
  * Consumed via build-time injection into the canon scripts that declare it
  * (tools/build.mjs CANON_KERNEL) — the identifier `__4NDR0_NET_API__` below
  * is script-scope visible to the consumer's IIFE.
@@ -188,7 +225,7 @@ const __4NDR0_NET_API__ = (function () {
     'use strict';
 
     const SLOT = '__4NDR0_NET__';
-    const VERSION = 5;
+    const VERSION = 6;
     const MAX_SUBS = 32;            /* bounded registry (GUP B.1) */
     const MAX_BODY = 4000000;       /* 4 MB read cap (Blob2URL's wire limit) */
     const XHR_MOCK_DELAY = 40;      /* D6 cadence — mocked XHR responses deliver
@@ -376,6 +413,9 @@ const __4NDR0_NET_API__ = (function () {
     const reqSubs = new Map();      /* onRequest defusers: key -> fn(req) */
     const trafficSubs = new Map();  /* onTraffic observers: key -> fn(ev) */
     const errSubs = new Map();      /* onError recoverers: key -> fn(ev) */
+    const nodeSubs = new Map();     /* v6 onNode defusers: key -> fn(mutations) */
+    let nseq = 0;
+    let nodeObserver = null;        /* v6: the kernel-owned DOM observer */
     const served = (typeof WeakSet === 'function') ? new WeakSet() : null; /* propagate-armed realms */
     let seq = 0;
     let rseq = 0;
@@ -858,7 +898,7 @@ const __4NDR0_NET_API__ = (function () {
     function isFullHub(h) {
         return !!(h && typeof h.onBody === 'function' && typeof h.onRequest === 'function' &&
             typeof h.onTraffic === 'function' && typeof h.onError === 'function' &&
-            typeof h.gmFetch === 'function');
+            typeof h.gmFetch === 'function' && typeof h.onNode === 'function');
     }
 
     /* Slot install — a strictly newer full-channel hub replaces the
@@ -873,6 +913,52 @@ const __4NDR0_NET_API__ = (function () {
                 value: api, writable: false, enumerable: false, configurable: true,
             });
         } catch (e) { /* slot collision with a foreign script — local hub only */ }
+    }
+
+    /* ── v6: the DOM defuse channel ────────────────────────────────────
+     * ONE kernel-owned MutationObserver per realm document; lazy arm on
+     * the first onNode subscriber, disconnect when the last one leaves.
+     * The fan is synchronous inside the callback — subscribers observe
+     * in the SAME microtask a private observer would have delivered (the
+     * defuse race is preserved, not debounced). The observer census
+     * self-asserts the lazy-arm / disconnect / bounded / isolation
+     * markers below; the smoke battery executes them. */
+    function fanNode(mutations) {
+        try {
+            /* auto-propagate: inserted iframes receive the network wrap
+             * set (idempotent, slot-aware; script-side propagators keep
+             * working — double-arm is a no-op) */
+            for (let i = 0; i < mutations.length; i++) {
+                const added = mutations[i] && mutations[i].addedNodes;
+                if (!added || !added.length) continue;
+                for (let j = 0; j < added.length; j++) {
+                    const n = added[j];
+                    if (n && n.tagName === 'IFRAME' && n.contentWindow) {
+                        try { api.propagate(n.contentWindow); } catch (e) { /* cross-origin or dead frame */ }
+                    }
+                }
+            }
+        } catch (e) { /* propagation must never break the fan */ }
+        for (const [, fn] of nodeSubs) {
+            try { fn(mutations.slice()); }
+            catch (e) { console.debug('[a4/net] node subscriber failed:', (e && e.message) || e); }
+        }
+    }
+    function armNodeObserver(target) {
+        if (nodeObserver || !target || !target.document) return;
+        try {
+            const root = target.document.documentElement;
+            if (!root || typeof MutationObserver !== 'function') return;
+            nodeObserver = new MutationObserver(fanNode);
+            nodeObserver.observe(root, {
+                childList: true, subtree: true, attributes: true, attributeFilter: ['src'],
+            });
+        } catch (e) { console.debug('[a4/net] node observer arm skipped:', (e && e.message) || e); nodeObserver = null; }
+    }
+    function disarmNodeObserver() {
+        if (!nodeObserver) return;
+        try { nodeObserver.disconnect(); } catch (e) { /* already dead */ }
+        nodeObserver = null;
     }
 
     const api = {
@@ -994,6 +1080,35 @@ const __4NDR0_NET_API__ = (function () {
             }
             return function () { errSubs.delete(key); };
         },
+        /* onNode(fn) -> unsubscribe. The DOM defuse channel — see the v6
+         * contract in the file header: one kernel-owned observer per realm
+         * document, lazy arm, synchronous fan in the insertion microtask,
+         * per-subscriber record copies, throwing subscribers isolated.
+         * The callback IS the script's defuse policy (the hub is plumbing);
+         * observe-config widening is the hub's union, not the script's. */
+        onNode: function (fn) {
+            if (typeof fn !== 'function') return function () {};
+            const target = realm();
+            if (target) {
+                try {
+                    const hub = target[SLOT];
+                    if (hub && hub !== api && hub.version >= VERSION && isFullHub(hub)) {
+                        return hub.onNode(fn);
+                    }
+                } catch (e) { /* unreadable slot — fall through to local hub */ }
+            }
+            if (nodeSubs.size >= MAX_SUBS) return function () {};
+            const key = 'nd' + (++nseq);
+            nodeSubs.set(key, fn);
+            if (target) {
+                armNodeObserver(target);
+                installSlot(target);
+            }
+            return function () {
+                nodeSubs.delete(key);
+                if (nodeSubs.size === 0) disarmNodeObserver();
+            };
+        },
         /* propagate(target) -> armed. Arm the wrap set into an additional
          * realm (iframe propagation, or the userscript sandbox realm for
          * scripts that historically hooked both contexts). Idempotent
@@ -1034,9 +1149,16 @@ const __4NDR0_NET_API__ = (function () {
         get requestSubscriberCount() { return reqSubs.size; },
         get trafficSubscriberCount() { return trafficSubs.size; },
         get errorSubscriberCount() { return errSubs.size; },
+        get nodeSubscriberCount() { return nodeSubs.size; },
     };
     return api;
 })();
+
+  // v1.5.0 (suite, B.1): zero global pollution — the sort-mode state,
+  // custom-shortcut map, and tooltip sweeper moved off window into this
+  // closure (they were never page-realm API, only __-convention state).
+  let __mpSortMode;
+  let __apCustomShortcutsMap;
 
 // 28.5.0 (suite v1.4.8): Media Slideshow — the operator's
 // v28.4.0 candidate integrated: presentation layer over the
@@ -1082,7 +1204,7 @@ const __4NDR0_NET_API__ = (function () {
           createHTML: (e) => e,
         });
         break;
-      } catch (e) {}
+      } catch (e) { console.debug("PM interceptor:", e);}
   /* [R3] TTwrap — sanctioned policy wrapper for the parse route (the
    * census SANCTIONED_PARSE_ARG family). */
   function TTwrap(t) {
@@ -1565,7 +1687,7 @@ const __4NDR0_NET_API__ = (function () {
       favoritesOnly: !!currentOrgPrefs.facets.favoritesOnly,
       ratingMin: currentOrgPrefs.facets.ratingMin || 0,
       archived: currentOrgPrefs.facets.archived || "exclude",
-      sortMode: window.__mpSortMode || currentTagsConfig.sortMode || "manual",
+      sortMode: __mpSortMode || currentTagsConfig.sortMode || "manual",
       groupMode: currentOrgPrefs.groupMode || "none",
       search: searchText || "",
     };
@@ -1614,7 +1736,7 @@ const __4NDR0_NET_API__ = (function () {
       ? ((currentTagsConfig.activeFilters = (view.tags || []).slice()),
         (currentTagsConfig.sortMode = view.sortMode || "manual"),
         await saveTagsConfig(),
-        (window.__mpSortMode = view.sortMode || "manual"),
+        (__mpSortMode = view.sortMode || "manual"),
         (currentOrgPrefs.facets = {
           collectionId: view.collectionId || "",
           favoritesOnly: !!view.favoritesOnly,
@@ -1763,7 +1885,7 @@ const __4NDR0_NET_API__ = (function () {
           );
     });
   }
-  window.__apCustomShortcutsMap = [];
+  __apCustomShortcutsMap = [];
   const debounce = (e, t) => {
     let n;
     return (...a) => {
@@ -1786,7 +1908,7 @@ const __4NDR0_NET_API__ = (function () {
     return (
       t.sort((e, t) => (e.position || 0) - (t.position || 0)),
       normalizePositions(t),
-      (window.__apCustomShortcutsMap = t
+      (__apCustomShortcutsMap = t
         .filter((e) => e.shortcut)
         .map((e) => ({ shortcut: e.shortcut, prompt: e }))),
       t
@@ -1919,7 +2041,7 @@ const __4NDR0_NET_API__ = (function () {
         ? mediaQueryList.addEventListener("change", onSchemeChange)
         : mediaQueryList.addListener &&
           mediaQueryList.addListener(onSchemeChange);
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
   })();
   const themeDefinitions = {
     "electric-glass": {
@@ -2700,7 +2822,7 @@ const __4NDR0_NET_API__ = (function () {
               (link.href = String(url)),
               link.setAttribute("data-mp-theme-import", ""),
               document.head.appendChild(link));
-          } catch (e) {}
+          } catch (e) { console.debug("PM interceptor:", e);}
         });
       })(),
       // v28.1.0: a theme switch re-highlights any attached editor — the
@@ -2820,7 +2942,7 @@ const __4NDR0_NET_API__ = (function () {
                   (el) =>
                     el.getAttribute("href") === String(url) && el.remove(),
                 );
-            } catch (err) {}
+            } catch (err) { console.debug("PM interceptor:", err);}
           }));
       }
       (delete importedThemes[e],
@@ -2909,7 +3031,7 @@ const __4NDR0_NET_API__ = (function () {
       l = (i.actions && i.actions.length > 0) || i.previewMode,
       c = () => {
         if ((clearTimeout(r), !document.body.contains(e))) return;
-        if ((window.clearAllCustomTooltips(), o)) return;
+        if ((clearAllCustomTooltips(), o)) return;
         ((o = document.createElement("div")),
           (o.className = `mp-tooltip mp-tooltip-${n}`),
           l && o.classList.add("mp-tooltip-interactive"),
@@ -3024,7 +3146,7 @@ const __4NDR0_NET_API__ = (function () {
       g = () => d(!0),
       f = () => setTimeout(() => d(!0), 10),
       h = () => {
-        a && window.clearAllCustomTooltips();
+        a && clearAllCustomTooltips();
       };
     (e.addEventListener("mouseenter", p),
       e.addEventListener("mouseleave", m),
@@ -3048,7 +3170,7 @@ const __4NDR0_NET_API__ = (function () {
           d(!0));
       }));
   }
-  window.clearAllCustomTooltips = () => {
+  function clearAllCustomTooltips() {
     document.querySelectorAll(".mp-tooltip").forEach((e) => {
       document.body.contains(e) && document.body.removeChild(e);
     });
@@ -3065,7 +3187,7 @@ const __4NDR0_NET_API__ = (function () {
     try {
       const t = await GM_getValue("DontShowAgain", {});
       ((t[e] = !0), await GM_setValue("DontShowAgain", t));
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
   }
   async function createDialogo(e) {
     const t = "string" == typeof e ? { type: "alert", message: e } : { ...e };
@@ -3396,11 +3518,11 @@ const __4NDR0_NET_API__ = (function () {
           } catch (t) {
             try {
               e = await navigator.clipboard.readText();
-            } catch (e) {}
+            } catch (e) { console.debug("PM interceptor:", e);}
           }
           (e || t.length > 0) &&
             (await insertPrompt({ text: e, dynamicFiles: t }, !0, !0));
-        } catch (e) {}
+        } catch (e) { console.debug("PM interceptor:", e);}
       }));
     const s = document.createElement("button");
     return (
@@ -3656,7 +3778,7 @@ const __4NDR0_NET_API__ = (function () {
               for (let r = 0; r < a.length; r += 0x8000)
                 o += String.fromCharCode.apply(null, a.subarray(r, r + 0x8000));
               t(btoa(o));
-            } catch (e) {}
+            } catch (e) { console.debug("PM interceptor:", e);}
           },
           onerror: () => {},
           ontimeout: () => {},
@@ -4782,7 +4904,7 @@ const __4NDR0_NET_API__ = (function () {
               h.dispatchEvent(new Event("input", { bubbles: !0 })),
               h.focus());
           }
-        } catch (e) {}
+        } catch (e) { console.debug("PM interceptor:", e);}
       }));
     // v27.1.0: the "shopping bag" header button (#__ap_shop_btn — tooltip
     // "Get More Prompts", whose only action opened the Gist community prompt
@@ -5097,7 +5219,7 @@ const __4NDR0_NET_API__ = (function () {
     try {
       const t = new URL(e);
       (t.searchParams.set("_t", Date.now()), (a = t.toString()));
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
     // v28.6.0: bounded + typed transport — rides the kernel gmFetch inlined
     // by tools/build.mjs instead of a bare GM_xmlhttpRequest: 20 s hard
     // bound, failures reject through the typed NetError taxonomy. The _t
@@ -5206,7 +5328,7 @@ const __4NDR0_NET_API__ = (function () {
           try {
             const o = new URL(n, "https://raw.githubusercontent.com");
             a = "http:" === o.protocol || "https:" === o.protocol;
-          } catch (e) {}
+          } catch (e) { console.debug("PM interceptor:", e);}
           return a
             ? `<a href="${n}" target="_blank" rel="noopener noreferrer" style="color:var(--mp-accent-primary); text-decoration:underline;">${t}</a>`
             : t;
@@ -5233,7 +5355,7 @@ const __4NDR0_NET_API__ = (function () {
     try {
       const t = new URL(e);
       (t.searchParams.set("_t", Date.now()), (a = t.toString()));
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
     // v28.6.0: bounded + typed transport — kernel gmFetch, 20 s hard bound.
     // Legacy rejection messages are preserved verbatim for callers; the
     // typed cause (NetError.kind) stays inspectable on the transport layer.
@@ -5305,7 +5427,7 @@ const __4NDR0_NET_API__ = (function () {
     )
       try {
         r = await fetchWithGM(t.changelog);
-      } catch (e) {}
+      } catch (e) { console.debug("PM interceptor:", e);}
     return {
       title: t.title,
       version: t.version,
@@ -5654,7 +5776,7 @@ const __4NDR0_NET_API__ = (function () {
                     ))
                 : await updateById(n.id, { lastUpdateCheck: t });
             } else await updateById(n.id, { lastUpdateCheck: t });
-          } catch (e) {}
+          } catch (e) { console.debug("PM interceptor:", e);}
       }
   }
   function showAIDiffModal(e, t, n) {
@@ -6523,7 +6645,7 @@ const __4NDR0_NET_API__ = (function () {
           ...DEFAULT_PREVIEW_PROMPT_CONFIG,
           ...JSON.parse(e),
         });
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
   }
   function applyGlobalSortMode(e, t) {
     return t && "manual" !== t
@@ -6636,7 +6758,7 @@ const __4NDR0_NET_API__ = (function () {
           // the org facets (collection scope / favorites / rating /
           // archived visibility) exactly as it resets the tag filters.
           await resetOrgFacets(),
-          (window.__mpSortMode = "manual"),
+          (__mpSortMode = "manual"),
           o.rebuild(),
           n());
       }),
@@ -6886,9 +7008,9 @@ const __4NDR0_NET_API__ = (function () {
               btn
             );
           };
-        (window.__mpSortMode ||
-          (window.__mpSortMode = currentTagsConfig.sortMode || "manual"),
-          (c.value = window.__mpSortMode),
+        (__mpSortMode ||
+          (__mpSortMode = currentTagsConfig.sortMode || "manual"),
+          (c.value = __mpSortMode),
           refreshOrgControls(),
           setSafeInnerHTML(d, ""));
         const e = getAllTags();
@@ -6939,7 +7061,7 @@ const __4NDR0_NET_API__ = (function () {
         d.scrollTop = scrollPos;
       }),
       (c.onchange = (e) => {
-        ((window.__mpSortMode = e.target.value),
+        ((__mpSortMode = e.target.value),
           (currentTagsConfig.sortMode = e.target.value),
           saveTagsConfig(),
           n());
@@ -7021,13 +7143,13 @@ const __4NDR0_NET_API__ = (function () {
             (currentTagsConfig &&
               currentTagsConfig.activeFilters &&
               currentTagsConfig.activeFilters.length > 0) ||
-            (window.__mpSortMode && "manual" !== window.__mpSortMode);
+            (__mpSortMode && "manual" !== __mpSortMode);
           if (hadFilter) {
             // v28.1.0: arm the flag BEFORE the re-render consumes it —
             // the old ordering set it after await refreshMenu(), so this
             // click never opened the search overlay and some LATER
             // unrelated refresh slid it open out of nowhere instead.
-            ((window.__mpSortMode = "manual"),
+            ((__mpSortMode = "manual"),
               await clearTagFilters(),
               (_abrirPesquisaComAtalho = !0),
               await refreshMenu());
@@ -7051,7 +7173,7 @@ const __4NDR0_NET_API__ = (function () {
             void 0 !== currentTagsConfig &&
             currentTagsConfig.activeFilters &&
             currentTagsConfig.activeFilters.length > 0,
-          t = window.__mpSortMode && "manual" !== window.__mpSortMode;
+          t = __mpSortMode && "manual" !== __mpSortMode;
         e || t
           ? (u.classList.add("active"),
             setSafeInnerHTML(u, ICONS.filterAct || ICONS.filter))
@@ -7260,7 +7382,7 @@ const __4NDR0_NET_API__ = (function () {
         // tag predicate; applyOrgSort delegates legacy modes verbatim to
         // applyGlobalSortMode and adds Recently Used / Top Rated.
         let t = r.filter((e) => promptMatchesFilter(e) && orgPromptMatches(e));
-        t = applyOrgSort(t, window.__mpSortMode || "manual");
+        t = applyOrgSort(t, __mpSortMode || "manual");
         const n = c.value.toLowerCase();
         if (0 === t.length) {
           const e =
@@ -7859,7 +7981,7 @@ const __4NDR0_NET_API__ = (function () {
         icon: ICONS.bookmark,
         isActive: () =>
           "recently_used" ===
-          (window.__mpSortMode || currentTagsConfig.sortMode || "manual"),
+          (__mpSortMode || currentTagsConfig.sortMode || "manual"),
         count: (ps) =>
           ps.filter((p) => !p.archived && (p.lastUsedAt || 0) > 0).length,
         apply: async () => {
@@ -7870,7 +7992,7 @@ const __4NDR0_NET_API__ = (function () {
             archived: "exclude",
           };
           await saveOrgPrefs();
-          (window.__mpSortMode = "recently_used"),
+          (__mpSortMode = "recently_used"),
             (currentTagsConfig.sortMode = "recently_used"),
             await saveTagsConfig();
         },
@@ -8830,7 +8952,7 @@ const __4NDR0_NET_API__ = (function () {
             void 0 !== currentTagsConfig &&
             currentTagsConfig.activeFilters &&
             currentTagsConfig.activeFilters.length > 0,
-          t = window.__mpSortMode && "manual" !== window.__mpSortMode;
+          t = __mpSortMode && "manual" !== __mpSortMode;
         e || t
           ? (A.classList.add("active"),
             setSafeInnerHTML(A, ICONS.filterAct || ICONS.filter))
@@ -9221,7 +9343,7 @@ const __4NDR0_NET_API__ = (function () {
         // derives the group layout (null when grouping is off — the v27
         // flat rendering path runs exactly as before).
         let e = t.filter((e) => promptMatchesFilter(e) && orgPromptMatches(e));
-        e = applyOrgSort(e, window.__mpSortMode || "manual");
+        e = applyOrgSort(e, __mpSortMode || "manual");
         const i = f.value.toLowerCase(),
           grouped = buildGroupedPairs(e, currentOrgPrefs.groupMode || "none"),
           lastUsedTxt = (ts) => {
@@ -9696,9 +9818,9 @@ const __4NDR0_NET_API__ = (function () {
         )
         .forEach((e) => e.remove()),
       wasVisible &&
-        (window.__mpSortMode &&
-          "manual" !== window.__mpSortMode &&
-          ((window.__mpSortMode = "manual"),
+        (__mpSortMode &&
+          "manual" !== __mpSortMode &&
+          ((__mpSortMode = "manual"),
           // v28.1.0: the stored sort follows the session reset — the dock
           // used to display "Manual Order" after close while the persisted
           // sortMode silently resurrected the old sort on the next page
@@ -9943,7 +10065,7 @@ const __4NDR0_NET_API__ = (function () {
                     c.dispatchEvent(new Event("input", { bubbles: !0 })),
                     c.focus());
                 }
-              } catch (e) {}
+              } catch (e) { console.debug("PM interceptor:", e);}
             }),
             u.appendChild(f),
             d.appendChild(u),
@@ -10219,7 +10341,7 @@ const __4NDR0_NET_API__ = (function () {
                             ),
                             l.focus());
                         }
-                      } catch (e) {}
+                      } catch (e) { console.debug("PM interceptor:", e);}
                     }),
                     l.addEventListener("keydown", (e) => {
                       if (!e.isComposing && 229 !== e.keyCode) {
@@ -10468,7 +10590,7 @@ const __4NDR0_NET_API__ = (function () {
               node: t.startContainer,
               offset: t.startOffset,
             };
-          } catch (e) {}
+          } catch (e) { console.debug("PM interceptor:", e);}
         }
       }
     }
@@ -11906,10 +12028,10 @@ const __4NDR0_NET_API__ = (function () {
           try {
             const r = img.getBoundingClientRect();
             if (r.width >= 24 && r.height >= 24) return !0;
-          } catch (e) {}
+          } catch (e) { console.debug("PM interceptor:", e);}
         }
       }
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
     return !1;
   }
   // The wall reconciliation, fired from the limit-notice watcher:
@@ -12471,7 +12593,7 @@ const __4NDR0_NET_API__ = (function () {
       let data = null;
       try {
         data = JSON.parse(body);
-      } catch (e) {}
+      } catch (e) { console.debug("PM interceptor:", e);}
       if (data != null)
         return walkFlowCreditJson(data, sourceTag, 0, !1, !1, { n: 6000 });
     }
@@ -12520,7 +12642,7 @@ const __4NDR0_NET_API__ = (function () {
             t,
             String(ev.url || "fetch").slice(0, 100),
           );
-      } catch (e) {}
+      } catch (e) { console.debug("PM interceptor:", e);}
     });
   }
   function sweepFlowCreditStorage() {
@@ -12528,10 +12650,10 @@ const __4NDR0_NET_API__ = (function () {
     const stores = [];
     try {
       stores.push(window.localStorage);
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
     try {
       stores.push(window.sessionStorage);
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
     for (const store of stores) {
       if (!store) continue;
       let len = 0;
@@ -12657,7 +12779,7 @@ const __4NDR0_NET_API__ = (function () {
               : " [enabled]"),
         );
       }
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
     return out;
   }
 
@@ -12845,7 +12967,7 @@ const __4NDR0_NET_API__ = (function () {
             },
           });
           t.dispatchEvent(ev);
-        } catch (e) {}
+        } catch (e) { console.debug("PM interceptor:", e);}
       }
     }
   }
@@ -12889,10 +13011,10 @@ const __4NDR0_NET_API__ = (function () {
                 "[Prompt Master] credit tracker: post-generation wallet re-pull — " +
                   flowCreditPullInfo,
               );
-            } catch (e) {}
+            } catch (e) { console.debug("PM interceptor:", e);}
           renderFlowCreditChip();
         });
-      } catch (e) {}
+      } catch (e) { console.debug("PM interceptor:", e);}
     }, 155000);
   }
   async function pullFlowCreditWallet(reason) {
@@ -12910,7 +13032,7 @@ const __4NDR0_NET_API__ = (function () {
       if (dlg) {
         try {
           flowCreditTick();
-        } catch (e) {}
+        } catch (e) { console.debug("PM interceptor:", e);}
         flowCreditPullRaw = (dlg.textContent || "").replace(/\s+/g, " ").trim().slice(0, 300);
         flowCreditPullInfo = "profile menu already open — harvested it without closing";
         return { ran: !0, opened: "already open", closed: "left open" };
@@ -12956,11 +13078,11 @@ const __4NDR0_NET_API__ = (function () {
       // D. harvest while it is open — twice, for late numbers.
       try {
         flowCreditTick();
-      } catch (e) {}
+      } catch (e) { console.debug("PM interceptor:", e);}
       await flowCreditSleep(450);
       try {
         flowCreditTick();
-      } catch (e) {}
+      } catch (e) { console.debug("PM interceptor:", e);}
       if (dlg)
         flowCreditPullRaw = (dlg.textContent || "").replace(/\s+/g, " ").trim().slice(0, 300);
       // E. close what WE opened — v27.3.5 cascade, strongest first:
@@ -12980,7 +13102,7 @@ const __4NDR0_NET_API__ = (function () {
         if (xBtn) {
           try {
             xBtn.click();
-          } catch (e) {}
+          } catch (e) { console.debug("PM interceptor:", e);}
           await flowCreditSleep(480);
         }
         if (flowCreditAnyDialog()) {
@@ -12989,7 +13111,7 @@ const __4NDR0_NET_API__ = (function () {
           if (flowCreditAnyDialog() && btn.isConnected) {
             try {
               btn.click();
-            } catch (e) {}
+            } catch (e) { console.debug("PM interceptor:", e);}
             await flowCreditSleep(480);
           }
           if (flowCreditAnyDialog()) {
@@ -13001,7 +13123,7 @@ const __4NDR0_NET_API__ = (function () {
                     new MouseEvent(type, { bubbles: !0, cancelable: !0, view: window }),
                   );
                 }
-            } catch (e) {}
+            } catch (e) { console.debug("PM interceptor:", e);}
             await flowCreditSleep(480);
           }
         }
@@ -13286,7 +13408,7 @@ const __4NDR0_NET_API__ = (function () {
             JSON.parse(JSON.stringify(flowCreditState)),
           ),
         ).catch(function () {});
-      } catch (e) {}
+      } catch (e) { console.debug("PM interceptor:", e);}
     }, 150);
   }
 
@@ -13322,7 +13444,7 @@ const __4NDR0_NET_API__ = (function () {
           if (r.width < 100 || r.height < 80) continue;
           if (r.bottom < 0 || r.top > window.innerHeight) continue;
           add(img.currentSrc || img.src || "");
-        } catch (e) {}
+        } catch (e) { console.debug("PM interceptor:", e);}
       }
       const bgs = document.body.querySelectorAll('[style*="background-image"]');
       for (const el of bgs) {
@@ -13333,7 +13455,7 @@ const __4NDR0_NET_API__ = (function () {
           if (r.bottom < 0 || r.top > window.innerHeight) continue;
           const m = /url\(["']?([^"')]+)["']?\)/i.exec(el.getAttribute("style") || "");
           if (m) add(m[1]);
-        } catch (e) {}
+        } catch (e) { console.debug("PM interceptor:", e);}
       }
     }
     return out;
@@ -13712,7 +13834,7 @@ const __4NDR0_NET_API__ = (function () {
                   wallUnits +
                   " units of unmetered pool spend reconciled at the limit notice (chat and code executions are invisible to the client meter).",
               );
-            } catch (e2) {}
+            } catch (e2) { console.debug("PM interceptor:", e2);}
           }
           // v27.3.12: roll the day counters first — a notice seen
           // before the day's first click must not read yesterday's
@@ -13756,12 +13878,12 @@ const __4NDR0_NET_API__ = (function () {
                   " turns for this model today — " +
                   t.slice(0, 120),
               );
-            } catch (e2) {}
+            } catch (e2) { console.debug("PM interceptor:", e2);}
           }
         }
         return;
       }
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
   }
   // v28.0.0: flowCreditMediaElFingerprint removed with the callback it
   // served — it existed solely to fingerprint media elements for the
@@ -13808,7 +13930,7 @@ const __4NDR0_NET_API__ = (function () {
             })
             .join(" ")
             .trim();
-        } catch (e) {}
+        } catch (e) { console.debug("PM interceptor:", e);}
       }
     }
     if (!name)
@@ -13874,7 +13996,7 @@ const __4NDR0_NET_API__ = (function () {
             return parseInt(bm[1], 10);
         }
       }
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
     return null;
   }
   function flowCreditArmGeneration(btn) {
@@ -13968,7 +14090,7 @@ const __4NDR0_NET_API__ = (function () {
         walletMutating
       )
         scheduleFlowCreditWalletRepull();
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
   }
   function installFlowCreditGenClickHook() {
     if (flowCreditGenHookInstalled) return;
@@ -13983,7 +14105,7 @@ const __4NDR0_NET_API__ = (function () {
             target && target.closest ? target.closest("button") : null;
           if (!btn || !flowCreditGenButtonOK(btn)) return;
           flowCreditArmGeneration(btn);
-        } catch (e) {}
+        } catch (e) { console.debug("PM interceptor:", e);}
       },
       !0,
     );
@@ -14752,11 +14874,48 @@ const __4NDR0_NET_API__ = (function () {
     renderFlowCreditChip();
     positionFlowCreditChip();
   }
+  // v1.5.0 (suite, B.1): both flow-credit timers are idle-parked — the
+  // 30 s storage sweep parks after 30 min of empty sweeps (DOM churn
+  // re-arms it via flowCreditScheduleTick), the 1 s poll parks after 30 min
+  // hidden (the visibilitychange handler re-arms it on return).
+  let flowCreditSweepIdle = 0;
+  let flowCreditPollIdle = 0;
+  function armFlowCreditStorageSweep() {
+    if (flowCreditStorageTimer) return;
+    flowCreditSweepIdle = 0;
+    flowCreditStorageTimer = setInterval(function () {
+      const found = sweepFlowCreditStorage();
+      if (found > 0) {
+        flowCreditSweepIdle = 0;
+        return;
+      }
+      if (++flowCreditSweepIdle > 60) {
+        clearInterval(flowCreditStorageTimer);
+        flowCreditStorageTimer = null;
+      }
+    }, 30000);
+  }
+  function armFlowCreditPoll() {
+    if (flowCreditPollTimer) return;
+    flowCreditPollIdle = 0;
+    flowCreditPollTimer = setInterval(function () {
+      if (document.hidden) {
+        if (++flowCreditPollIdle > 1800) {
+          clearInterval(flowCreditPollTimer);
+          flowCreditPollTimer = null;
+        }
+        return;
+      }
+      flowCreditPollIdle = 0;
+      flowCreditTick();
+    }, 1000);
+  }
   function flowCreditScheduleTick() {
     if (flowCreditMutationTimer) clearTimeout(flowCreditMutationTimer);
     flowCreditMutationTimer = setTimeout(function () {
       flowCreditMutationTimer = null;
       flowCreditTick();
+      armFlowCreditStorageSweep(); // v1.5.0: DOM churn keeps the sweep armed while the page is alive
     }, 250);
   }
   function startFlowCreditTracker() {
@@ -14866,7 +15025,7 @@ const __4NDR0_NET_API__ = (function () {
       if (storeTouched) {
         try {
           persistFlowCreditState();
-        } catch (e2) {}
+        } catch (e2) { console.debug("PM interceptor:", e2);}
       }
       if (!document.getElementById("pm-flow-credit-style")) {
         const s = document.createElement("style");
@@ -14881,9 +15040,9 @@ const __4NDR0_NET_API__ = (function () {
       installFlowCreditNetObserver();
       installFlowCreditGenClickHook();
       sweepFlowCreditStorage();
-      flowCreditStorageTimer = setInterval(sweepFlowCreditStorage, 30000);
+      armFlowCreditStorageSweep();
       flowCreditTick();
-      flowCreditPollTimer = setInterval(flowCreditTick, 1000);
+      armFlowCreditPoll();
       flowCreditObserver = new MutationObserver(flowCreditScheduleTick);
       flowCreditObserver.observe(document.body, {
         childList: !0,
@@ -14906,7 +15065,11 @@ const __4NDR0_NET_API__ = (function () {
         { capture: !0, passive: !0 },
       );
       document.addEventListener("visibilitychange", function () {
-        if (!document.hidden) flowCreditTick();
+        if (!document.hidden) {
+          armFlowCreditPoll(); // v1.5.0 (B.1): re-arm the parked poll on return
+          armFlowCreditStorageSweep();
+          flowCreditTick();
+        }
       });
       // v27.3.2: settled status line (replaces v27.3.1's first-tick
       // line, which raced Flow's SPA boot and always read
@@ -14936,7 +15099,7 @@ const __4NDR0_NET_API__ = (function () {
               : " · no credit text visible on the page";
           }
           console.info(line);
-        } catch (e) {}
+        } catch (e) { console.debug("PM interceptor:", e);}
       }, 8000);
       // v27.3.1: one-shot late warn — if after 15s no anchor ever
       // resolved, say so in the console instead of failing silently
@@ -14947,7 +15110,7 @@ const __4NDR0_NET_API__ = (function () {
             console.warn(
               "[Prompt Master] credit tracker: no prompt field, composer, or model chip found on this page — the chip will appear once Flow renders its prompt bar.",
             );
-          } catch (e) {}
+          } catch (e) { console.debug("PM interceptor:", e);}
         }
       }, 15000);
       // v27.3.4: wallet pull attempt, once per load. v28.1.1: this is
@@ -14975,7 +15138,7 @@ const __4NDR0_NET_API__ = (function () {
               console.info(
                 "[Prompt Master] credit tracker: wallet pull — " + flowCreditPullInfo,
               );
-            } catch (e) {}
+            } catch (e) { console.debug("PM interceptor:", e);}
         });
       }, 9000);
       setTimeout(function () {
@@ -15106,7 +15269,7 @@ const __4NDR0_NET_API__ = (function () {
         FLOW_CREDIT_STORAGE_KEY,
         JSON.parse(JSON.stringify(flowCreditState)),
       );
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
     renderFlowCreditChip();
   }
   // v27.3.15 FIX: this script runs with explicit @grant entries, so
@@ -15180,7 +15343,7 @@ const __4NDR0_NET_API__ = (function () {
               flowCreditEntryUnits(en) +
               " units — test only).",
           );
-        } catch (e2) {}
+        } catch (e2) { console.debug("PM interceptor:", e2);}
         return en ? JSON.parse(JSON.stringify(en)) : null;
       };
       // v27.3.17: the self-test rides the same gate — Flow-only,
@@ -15188,7 +15351,7 @@ const __4NDR0_NET_API__ = (function () {
       // Self-Test" menu command (which needs no console at all).
       unsafeWindow.__flowCreditDebugSelfTest = flowCreditDebugSelfTestImpl;
     }
-  } catch (e) {}
+  } catch (e) { console.debug("PM interceptor:", e);}
 
   // v27.3.17: the self-test — the tracker verifies its own state
   // machine so no human ever has to walk a manual multi-step
@@ -15793,7 +15956,7 @@ const __4NDR0_NET_API__ = (function () {
           had = localStorage.getItem(echoKey);
           localStorage.setItem(echoKey, "Leaving 4/182 turns left");
           probeSet = !0;
-        } catch (e9) {}
+        } catch (e9) { console.debug("PM interceptor:", e9);}
         if (probeSet) {
           const beforeNet = flowCreditPendingNet.length;
           sweepFlowCreditStorage();
@@ -15810,7 +15973,7 @@ const __4NDR0_NET_API__ = (function () {
           try {
             if (had == null) localStorage.removeItem(echoKey);
             else localStorage.setItem(echoKey, had);
-          } catch (e9) {}
+          } catch (e9) { console.debug("PM interceptor:", e9);}
         }
       }
       // v28.3.0: the v28.2.2 known-caps pins were REMOVED with the
@@ -15872,7 +16035,7 @@ const __4NDR0_NET_API__ = (function () {
           " passed\n" +
           body,
       );
-    } catch (e2) {}
+    } catch (e2) { console.debug("PM interceptor:", e2);}
     return results;
   }
 
@@ -15905,11 +16068,11 @@ const __4NDR0_NET_API__ = (function () {
       if (!flowCreditWalletKnown() || !flowCreditWalletFresh()) {
         try {
           await pullFlowCreditWallet("manual");
-        } catch (e2) {}
+        } catch (e2) { console.debug("PM interceptor:", e2);}
       }
       try {
         flowCreditTick();
-      } catch (e2) {}
+      } catch (e2) { console.debug("PM interceptor:", e2);}
       const fmtV = function (v) {
         return v == null ? "—" : String(v);
       };
@@ -16268,24 +16431,24 @@ const __4NDR0_NET_API__ = (function () {
     const text = lines.join("\n");
     try {
       console.info(text);
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
     try {
       if (typeof GM_setClipboard === "function") {
         GM_setClipboard(text, "text");
         copied = !0;
       }
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
     if (!copied)
       try {
         await navigator.clipboard.writeText(text);
         copied = !0;
-      } catch (e) {}
+      } catch (e) { console.debug("PM interceptor:", e);}
     try {
       console.info(
         "[Prompt Master] credit report " +
           (copied ? "copied to your clipboard" : "printed above — copy it manually"),
       );
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
   }
 
   function pickVisibleEditable(list, requireVisible = false) {
@@ -16359,7 +16522,7 @@ const __4NDR0_NET_API__ = (function () {
     if (!editor) return false;
     try {
       editor.focus();
-    } catch (err) {}
+    } catch (err) { console.debug("PM interceptor:", err);}
 
     // TEXTAREA / INPUT: native value setter keeps Angular's control in sync.
     if ("TEXTAREA" === editor.tagName || "INPUT" === editor.tagName) {
@@ -16390,7 +16553,7 @@ const __4NDR0_NET_API__ = (function () {
         sel.addRange(range);
       }
       document.execCommand("insertText", false, text);
-    } catch (err) {}
+    } catch (err) { console.debug("PM interceptor:", err);}
     if (editorContainsText(editor, text)) return true;
 
     // Strategy 2: synthetic beforeinput + paste (legacy Slate-compatible path).
@@ -16413,7 +16576,7 @@ const __4NDR0_NET_API__ = (function () {
         }),
       );
       editor.dispatchEvent(new Event("input", { bubbles: true }));
-    } catch (err) {}
+    } catch (err) { console.debug("PM interceptor:", err);}
     if (editorContainsText(editor, text)) return true;
 
     // Strategy 3: direct DOM insertion + input event (last resort).
@@ -16435,7 +16598,7 @@ const __4NDR0_NET_API__ = (function () {
       editor.dispatchEvent(
         new Event("input", { bubbles: true, composed: true }),
       );
-    } catch (err) {}
+    } catch (err) { console.debug("PM interceptor:", err);}
     return editorContainsText(editor, text);
   }
   function hasApiKeyForProvider(e) {
@@ -16879,7 +17042,7 @@ const __4NDR0_NET_API__ = (function () {
           (-1 === e && cachedMessages[n.index] && (e = n.index),
             -1 !== e && (currentNavIndex = e));
         }
-      } catch (e) {}
+      } catch (e) { console.debug("PM interceptor:", e);}
   }
   function getMessageSelectors() {
     switch (currentPlatform) {
@@ -18735,7 +18898,7 @@ const __4NDR0_NET_API__ = (function () {
     renderSlideshowSlide();
     try {
       slideshowOverlay.focus();
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
   }
   function closeSlideshow() {
     if (!slideshowOverlay) return;
@@ -18753,7 +18916,7 @@ const __4NDR0_NET_API__ = (function () {
         const p = document.exitFullscreen();
         if (p && p.catch) p.catch(function () {});
       }
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
     slideshowOverlay.remove();
     slideshowOverlay = null;
     slideshowDeck = [];
@@ -18823,7 +18986,7 @@ const __4NDR0_NET_API__ = (function () {
       if (Object.keys(snapshot).length > 0) {
         await GM_setValue(AUTO_BACKUP_KEY, JSON.stringify(snapshot));
       }
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
   }
   function scheduleAutoBackup() {
     if (_autoBackupTimer) clearTimeout(_autoBackupTimer);
@@ -18923,7 +19086,7 @@ const __4NDR0_NET_API__ = (function () {
               try {
                 const r = JSON.parse(e.responseText);
                 if (r.message) msg += `: ${r.message}`;
-              } catch (_) {}
+              } catch (_) { console.debug("PM interceptor:", _);}
               return void reject(new Error(msg));
             }
             try {
@@ -19016,7 +19179,7 @@ const __4NDR0_NET_API__ = (function () {
             try {
               const r = JSON.parse(e.responseText);
               if (r.message) msg += `: ${r.message}`;
-            } catch (_) {}
+            } catch (_) { console.debug("PM interceptor:", _);}
             reject(new Error(msg));
           }
         },
@@ -19108,7 +19271,7 @@ const __4NDR0_NET_API__ = (function () {
             try {
               const r = JSON.parse(e.responseText);
               if (r.message) msg += `: ${r.message}`;
-            } catch (_) {}
+            } catch (_) { console.debug("PM interceptor:", _);}
             reject(new Error(msg));
           }
         },
@@ -19157,7 +19320,7 @@ const __4NDR0_NET_API__ = (function () {
       if (!hasPrompts && !gistCfg) {
         setTimeout(showFirstRunBanner, 1500);
       }
-    } catch (e) {}
+    } catch (e) { console.debug("PM interceptor:", e);}
   }
   function installAutoBackupProxy() {
     const _orig = GM_setValue;
@@ -19892,7 +20055,7 @@ const __4NDR0_NET_API__ = (function () {
               cancelable: !0,
             });
             e.dispatchEvent(t);
-          } catch (e) {}
+          } catch (e) { console.debug("PM interceptor:", e);}
       }, 800);
   }
   async function insertPrompt(e, t = !1, n = !1) {
@@ -19994,7 +20157,7 @@ const __4NDR0_NET_API__ = (function () {
                 (t.files = e.files),
                 t.dispatchEvent(new Event("change", { bubbles: !0 })),
                 t.dispatchEvent(new Event("input", { bubbles: !0 })));
-            } catch (e) {}
+            } catch (e) { console.debug("PM interceptor:", e);}
           else
             ["dragenter", "dragover", "drop"].forEach((t) => {
               const n = new DragEvent(t, {
@@ -20327,7 +20490,7 @@ const __4NDR0_NET_API__ = (function () {
                           "true" === t.getAttribute("aria-disabled") ||
                           (t.click(), (e = !0));
                       }
-                    } catch (e) {}
+                    } catch (e) { console.debug("PM interceptor:", e);}
                     if (!e)
                       try {
                         const e = new KeyboardEvent("keydown", {
@@ -20339,7 +20502,7 @@ const __4NDR0_NET_API__ = (function () {
                           cancelable: !0,
                         });
                         a.dispatchEvent(e);
-                      } catch (e) {}
+                      } catch (e) { console.debug("PM interceptor:", e);}
                   }, 150)));
         // v28.1.0: the text-insertion delay finally CONSUMES the
         // size-scaled upload wait computed above (1500ms + ~1ms/KB) —
@@ -23042,7 +23205,7 @@ const __4NDR0_NET_API__ = (function () {
                   sel.removeAllRanges();
                   sel.addRange(range);
                 }
-              } catch (err) {}
+              } catch (err) { console.debug("PM interceptor:", err);}
             }
           }
           const finalPrompt = {
@@ -23120,8 +23283,8 @@ const __4NDR0_NET_API__ = (function () {
           hideModal(currentPlaceholderModal);
       }
       if (
-        window.__apCustomShortcutsMap &&
-        window.__apCustomShortcutsMap.length > 0
+        __apCustomShortcutsMap &&
+        __apCustomShortcutsMap.length > 0
       ) {
         const partsMatch = (ev, shortcutStr) => {
           if (!shortcutStr) return false;
@@ -23141,7 +23304,7 @@ const __4NDR0_NET_API__ = (function () {
           if (evKey === " ") evKey = "Space";
           return evKey === mainKey;
         };
-        const matchedItem = window.__apCustomShortcutsMap.find((item) =>
+        const matchedItem = __apCustomShortcutsMap.find((item) =>
           partsMatch(ev, item.shortcut),
         );
         if (matchedItem) {

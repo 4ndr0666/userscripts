@@ -501,7 +501,13 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.0
                     if (sourceUrl) attachOverlay(el, sourceUrl, 20000);
                 });
         };
-        const obs = new MutationObserver(scanTargets);
+        let scanTargetsTimer;
+        const obs = new MutationObserver(() => {
+            // v1.5.1 observer discipline: coalesced re-scan — same idempotent
+            // overlay attach, bounded to one pass per 150 ms of DOM churn.
+            clearTimeout(scanTargetsTimer);
+            scanTargetsTimer = setTimeout(scanTargets, 150);
+        });
         obs.observe(document.body, { childList: true, subtree: true });
         scanTargets();
         window.addEventListener('beforeunload', () => obs.disconnect(), { once: true });
@@ -1103,7 +1109,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.0
                         link.removeAttribute('data-blank-handler');
                         link.removeAttribute('data-proxy-href');
                     }
-                } catch { /* silently ignore unparseable hrefs */ }
+                } catch { console.debug('CB interceptor: unbound'); /* silently ignore unparseable hrefs */ }
             });
         };
 

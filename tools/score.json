@@ -1,0 +1,81 @@
+{
+  "round": "v1.6.3",
+  "total": 100,
+  "threshold": 90,
+  "dimensions": [
+    {
+      "dimension": "Correctness",
+      "weight": 20,
+      "score": 20,
+      "inputs": [
+        "kernel-smoke: 150/150 ALL PASS",
+        "check-gate failures: 0"
+      ]
+    },
+    {
+      "dimension": "Security",
+      "weight": 10,
+      "score": 10,
+      "inputs": [
+        "sink census clean: true",
+        "transport census clean: true",
+        "global census clean: true",
+        "hotkey census clean: true",
+        "connect census clean: true",
+        "domain co-install ledger clean: true",
+        "OPSEC remote-asset ban: true"
+      ]
+    },
+    {
+      "dimension": "Performance",
+      "weight": 15,
+      "score": 15,
+      "inputs": [
+        "polling census clean: true (39 sites)",
+        "observer census clean: true (57 sites)",
+        "cache census clean: true (133 registries)",
+        "size budget clean: true"
+      ]
+    },
+    {
+      "dimension": "Scalability",
+      "weight": 15,
+      "score": 15,
+      "inputs": [
+        "boundedness family clean: 5/5 (transport, polling, cache, global, observer)",
+        "domain co-install ledger: true",
+        "NetHook consumers sharing one wrap: 16",
+        "inventory deterministic: true"
+      ]
+    },
+    {
+      "dimension": "ErrorHandling",
+      "weight": 10,
+      "score": 10,
+      "inputs": [
+        "kernel typed-error family (NetError/NetTimeoutError/NetHttpError) — smoke battery: true",
+        "non-kernel catch census: 839 sites — 9 typed, 419 debug-logged, 411 handled, 0 silent (clean: true)"
+      ],
+      "coverage": 1
+    },
+    {
+      "dimension": "Maintainability",
+      "weight": 20,
+      "score": 20,
+      "inputs": [
+        "style audit 38/38: true",
+        "docs truthfulness (0 drift): true",
+        "identity-ledger evidence coverage: 61/61"
+      ]
+    },
+    {
+      "dimension": "DX",
+      "weight": 10,
+      "score": 10,
+      "inputs": [
+        "qr-verify green: true",
+        "documentation README coverage: 38/38"
+      ]
+    }
+  ]
+}

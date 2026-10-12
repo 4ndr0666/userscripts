@@ -142,12 +142,24 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: AlwaysNewWindow.user v1.
             if (active) return;
             active = true;
             // Observing documentElement document.body observation works from document-start.
+            // v1.5.1 observer discipline: buffered tranche — the same
+            // per-node processNode dispatch on the identical node set,
+            // coalesced to one flush per 150 ms of DOM churn.
+            const pendingNodes = [];
+            let processNodesTimer = null;
             observer = new MutationObserver((mutationsList) => {
+                let queued = false;
                 for (const mutation of mutationsList) {
                     if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                        mutation.addedNodes.forEach(processNode);
+                        mutation.addedNodes.forEach((n) => { pendingNodes.push(n); queued = true; });
                     }
                 }
+                if (!queued) return;
+                clearTimeout(processNodesTimer);
+                processNodesTimer = setTimeout(() => {
+                    const nodes = pendingNodes.splice(0, pendingNodes.length);
+                    nodes.forEach(processNode);
+                }, 150);
             });
             observer.observe(document.documentElement, { childList: true, subtree: true });
             scanAll();

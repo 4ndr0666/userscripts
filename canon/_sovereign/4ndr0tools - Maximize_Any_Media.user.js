@@ -390,8 +390,11 @@
       video.style.cssText = "position:fixed;left:-10px;top:-10px;width:1px;height:1px;opacity:0;pointer-events:none;z-index:-1;"
       // Continuous redraw keeps frames flowing through the captured stream
       // (a static canvas alone can render as black in the PiP window) and it
-      // animates GIFs as a bonus. Bounded: cleared unconditionally in stop().
+      // animates GIFs as a bonus. Bounded: cleared unconditionally in stop(),
+      // and (suite v1.5.0, B.1) the tick itself parks when the host page has
+      // evicted the kept-alive video element — no page left, nothing to draw.
       const drawTimer = setInterval(() => {
+        if (!video.isConnected) { clearInterval(drawTimer); return; }
         try {
           ctx.drawImage(img, 0, 0, width, height)
         } catch (e) {

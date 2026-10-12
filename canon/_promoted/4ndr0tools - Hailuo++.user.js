@@ -1816,7 +1816,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.0.1 —
                         }
                     }, 1500);
                 }).catch(() => {
-                    try { lazyVideo.muted = previousMutedState; } catch (e) { /* playback never started */ }
+                    try { lazyVideo.muted = previousMutedState; } catch (e) { console.debug('HAILUO interceptor:', e); /* playback never started */ }
                 });
             }
             if (this.isWithinEditableContext(card)) {

@@ -224,7 +224,7 @@
         const _SENTINEL_ATTR = 'data-psi-bunkr-instance';
         if (!_sentinelRoot || (_sentinelRoot.hasAttribute && _sentinelRoot.hasAttribute(_SENTINEL_ATTR))) return;
         _sentinelRoot.setAttribute(_SENTINEL_ATTR, String(Date.now()));
-    } catch (_) { /* EAFP — proceed; guards below absorb re-runs */ }
+    } catch (_) { console.debug('BUNKR interceptor:', _); /* EAFP — proceed; guards below absorb re-runs */ }
 
     const SCRIPT_VERSION = '7.7.0';
     console.log(`%c[4NDR0tools] Bunkr++ v${SCRIPT_VERSION}-Ψ`, 'color:#00E5FF; font-family:monospace; font-weight:bold;');
@@ -272,7 +272,7 @@
                         },
                     };
                 }
-            } catch (e) { /* EAFP */ }
+            } catch (e) { console.debug('BUNKR interceptor:', e); /* EAFP */ }
             return undefined;
         });
         console.log('[Ψ-4NDR0666] Synchronous environment isolation deployed.');
@@ -333,14 +333,18 @@
         return originalInsertBefore.apply(this, arguments);
     };
 
-    new MutationObserver((mutations) => {
+    /* v1.6.0: the defuse observer rides the NetHook DOM channel — one
+     * kernel-owned observer per realm fans the raw batch in the SAME
+     * insertion microtask (the anti-obfuscation race contract is
+     * unchanged); the defuse policy stays here. */
+    __4NDR0_NET_API__.onNode((mutations) => {
         for (const mutation of mutations) {
             for (const node of mutation.addedNodes) {
                 if (node.tagName === 'SCRIPT') defuseScript(node);
                 if (node.querySelectorAll) node.querySelectorAll('script').forEach(defuseScript);
             }
         }
-    }).observe(document.documentElement, { childList: true, subtree: true });
+    });
 
     // =========================================================================
     // MODULE 0.3: PERSISTED POWER-USER SETTINGS
@@ -460,11 +464,11 @@
                 link.href        = 'https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=JetBrains+Mono:wght@500;700&family=Orbitron:wght@500;700&display=swap';
                 (document.head || document.documentElement).appendChild(link);
             }
-        } catch (_) { /* EAFP */ }
+        } catch (_) { console.debug('BUNKR interceptor:', _); /* EAFP */ }
     }
     function unloadRemoteFonts() {
         _fontsInjected = false;
-        try { const el = document.getElementById('psi-remote-fonts'); if (el) el.remove(); } catch (_) { /* EAFP */ }
+        try { const el = document.getElementById('psi-remote-fonts'); if (el) el.remove(); } catch (_) { console.debug('BUNKR interceptor:', _); /* EAFP */ }
     }
     GM_registerMenuCommand('🔤 Typography: Remote Fonts ON/OFF', () => {
         const next = !REMOTE_FONTS_ENABLED();
@@ -939,7 +943,7 @@
                 }
                 if (isCdnUrl(url) || isMediaPlaylist(url)) recordUrl(url, 'sniffer-body');
             }
-        } catch (_) { /* EAFP */ }
+        } catch (_) { console.debug('BUNKR interceptor:', _); /* EAFP */ }
     }
 
     function _sniffableContentType(ct) {
@@ -996,7 +1000,7 @@
                 try { baseUrl = new URL(baseUrl, location.href).href; } catch (_) { baseUrl = location.href; }
             }
             sniffResponseBodyText(ev.body, baseUrl);
-        } catch (_) { /* EAFP */ }
+        } catch (_) { console.debug('BUNKR interceptor:', _); /* EAFP */ }
     });
     try {
         const _sandboxRealm = (typeof window !== 'undefined') ? window : null;
@@ -1179,11 +1183,11 @@
         try {
             const raw = localStorage.getItem(VISITED_KEY);
             if (raw) return new Set(JSON.parse(raw));
-        } catch { /* fall through */ }
+        } catch { console.debug('BUNKR interceptor: unbound'); /* fall through */ }
         try {
             const raw = GM_getValue(VISITED_KEY, null);
             if (raw) return new Set(JSON.parse(raw));
-        } catch { /* fall through */ }
+        } catch { console.debug('BUNKR interceptor: unbound'); /* fall through */ }
         return new Set();
     }
 
@@ -1206,8 +1210,8 @@
 
     window.addEventListener('beforeunload', () => {
         if (_visitedDirty && _visitedCache) {
-            try { localStorage.setItem(VISITED_KEY, JSON.stringify([..._visitedCache])); } catch {}
-            try { GM_setValue(VISITED_KEY, JSON.stringify([..._visitedCache])); } catch {}
+            try { localStorage.setItem(VISITED_KEY, JSON.stringify([..._visitedCache])); } catch { console.debug('BUNKR interceptor: unbound');}
+            try { GM_setValue(VISITED_KEY, JSON.stringify([..._visitedCache])); } catch { console.debug('BUNKR interceptor: unbound');}
         }
     });
 
@@ -1255,7 +1259,7 @@
         GM_registerMenuCommand('📂 Load History',  importVisitedRegistry);
         GM_registerMenuCommand('☠ Purge History', () => {
             localStorage.removeItem(VISITED_KEY);
-            try { GM_setValue(VISITED_KEY, null); } catch {}
+            try { GM_setValue(VISITED_KEY, null); } catch { console.debug('BUNKR interceptor: unbound');}
             _visitedCache = new Set();
             _visitedDirty = false;
             location.reload();
@@ -1289,8 +1293,8 @@
     // faithful drop-in twin of the existing save path (no new abstraction
     // layer introduced for a two-line write).
     function _persistVisitedNow(cache) {
-        try { localStorage.setItem(VISITED_KEY, JSON.stringify([...cache])); } catch { /* EAFP */ }
-        try { GM_setValue(VISITED_KEY, JSON.stringify([...cache])); } catch { /* EAFP */ }
+        try { localStorage.setItem(VISITED_KEY, JSON.stringify([...cache])); } catch { console.debug('BUNKR interceptor: unbound'); /* EAFP */ }
+        try { GM_setValue(VISITED_KEY, JSON.stringify([...cache])); } catch { console.debug('BUNKR interceptor: unbound'); /* EAFP */ }
     }
 
     function importVisitedRegistry() {
@@ -1518,7 +1522,7 @@
         hardTimeout = setTimeout(() => {
             if (settled) return;
             settled = true;
-            try { control && typeof control.abort === 'function' && control.abort(); } catch (_) { /* EAFP */ }
+            try { control && typeof control.abort === 'function' && control.abort(); } catch (_) { console.debug('BUNKR interceptor:', _); /* EAFP */ }
             _activeRequests.delete(control);
             console.warn('[Ψ-4NDR0666] GM_download hard-bounded at 60s — anchor fallback engaging.');
             anchorFallback();
@@ -2345,7 +2349,7 @@
             if (snap && snap.url && /^https?:\/\//i.test(snap.url)) {
                 return { via: 'archive.org', url: snap.url, ts: snap.timestamp || '' };
             }
-        } catch (e) { /* malformed body → not archived, degrade to null */ }
+        } catch (e) { console.debug('BUNKR interceptor:', e); /* malformed body → not archived, degrade to null */ }
         return null;
     }
 
@@ -2373,7 +2377,7 @@
                     };
                 }
             }
-        } catch (e) { /* empty body ("[]"/"") → not archived */ }
+        } catch (e) { console.debug('BUNKR interceptor:', e); /* empty body ("[]"/"") → not archived */ }
         return null;
     }
 
@@ -2523,9 +2527,9 @@
             f.style.cssText = 'position:fixed;width:0;height:0;border:0;visibility:hidden;';
             f.src = uri;
             (document.body || document.documentElement).appendChild(f);
-            setTimeout(() => { try { f.remove(); } catch (_) { /* EAFP */ } }, 4000);
+            setTimeout(() => { try { f.remove(); } catch (_) { console.debug('BUNKR interceptor:', _); /* EAFP */ } }, 4000);
         } catch (_) {
-            try { window.location.href = uri; } catch (_) { /* EAFP */ } // last-resort transport
+            try { window.location.href = uri; } catch (_) { console.debug('BUNKR interceptor:', _); /* EAFP */ } // last-resort transport
         }
     }
 
@@ -2735,7 +2739,7 @@
                         try {
                             const playlist = await resolveDomStreamUrl(resolveTargetUrl(), { preferPlaylist: true });
                             if (playlist && isMediaPlaylist(playlist)) streamUrl = playlist;
-                        } catch (_) { /* EAFP — keep the pipeline URL */ }
+                        } catch (_) { console.debug('BUNKR interceptor:', _); /* EAFP — keep the pipeline URL */ }
                     }
 
                     // Tier C: DOM gateway — playlist-preferring resolver.
@@ -2972,7 +2976,7 @@
                             try {
                                 const playlist = await resolveDomStreamUrl(link.href, { preferPlaylist: true });
                                 if (playlist && isMediaPlaylist(playlist)) streamUrl = playlist;
-                            } catch (_) { /* EAFP — keep the pipeline URL */ }
+                            } catch (_) { console.debug('BUNKR interceptor:', _); /* EAFP — keep the pipeline URL */ }
                         }
 
                         // Tier C: playlist-preferring DOM resolver with the
@@ -3410,7 +3414,7 @@
                     if (!name) { const img = a.querySelector('img');  name = img ? (img.alt || '') : ''; }
                     if (!name) { const sp  = a.querySelector('p,span'); name = sp ? sp.textContent.trim() : ''; }
                     files.push({ filePageURL: a.href, slug, name: name || slug });
-                } catch (_) { /* EAFP */ }
+                } catch (_) { console.debug('BUNKR interceptor:', _); /* EAFP */ }
             }
             return files;
         }
@@ -3454,7 +3458,7 @@
                 const hardTimeout = setTimeout(() => {
                     if (settled) return;
                     settled = true;
-                    try { control && typeof control.abort === 'function' && control.abort(); } catch (_) { /* EAFP */ }
+                    try { control && typeof control.abort === 'function' && control.abort(); } catch (_) { console.debug('BUNKR interceptor:', _); /* EAFP */ }
                     cleanup();
                     reject(new Error('Download timeout (' + (BulkState.DOWNLOAD_TIMEOUT / 1000) + 's): ' + url));
                 }, BulkState.DOWNLOAD_TIMEOUT);
@@ -3482,7 +3486,7 @@
                         try {
                             const playlist = await resolveDomStreamUrl(item.filePageURL, { preferPlaylist: true });
                             if (playlist && isMediaPlaylist(playlist)) url = playlist;
-                        } catch (_) { /* EAFP — keep the pipeline URL */ }
+                        } catch (_) { console.debug('BUNKR interceptor:', _); /* EAFP — keep the pipeline URL */ }
                     }
                     return url;
                 }
@@ -3777,7 +3781,7 @@
             // *new* items from starting. Now actively abort every live handle
             // (v7.4.0: resolver hops register too — fetchPageHop).
             for (const control of BulkState.activeRequests) {
-                try { control && typeof control.abort === 'function' && control.abort(); } catch (_) { /* EAFP */ }
+                try { control && typeof control.abort === 'function' && control.abort(); } catch (_) { console.debug('BUNKR interceptor:', _); /* EAFP */ }
             }
             BulkState.activeRequests.clear();
             setBulkStatus('✕ Pipeline Cancelled');

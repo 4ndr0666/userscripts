@@ -19,7 +19,7 @@
 
 Upgrading from the old repo? Follow the [**Migration Guide**](./docs/MIGRATION.md)
 (uninstall-then-install per script — never run both). The full audit trail
-(59 => 37 consolidation, superset verification, defect fixes) is in the
+(59 => 38 consolidation, superset verification, defect fixes) is in the
 [**Consolidation Report**](./docs/CONSOLIDATION.md).
 
 ## 🏗️ Suite Architecture
@@ -92,6 +92,7 @@ OPSEC notes, lineage — live in [`documentation/INDEX.md`](./documentation/INDE
 | Youtube Removed Video Revealer | v2.0.2 | video & players | [4ndr0tools - Youtube Removed Video Revealer.user.js](./dist/4ndr0tools%20-%20Youtube%20Removed%20Video%20Revealer.user.js) | Restores titles for removed or private videos in YouTube playlists |
 | YouTube Embed Redirect Button | v1.6 | video & players | [4ndr0tools - YouTubeEmbedRedirectButton.user.js](./dist/4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js) | Floating button for redirects to embedded version. Right click it to set a keybind (default Ctrl+E). |
 | YT Filter | v2.5 | video & players | [4ndr0tools - YT Filter.user.js](./dist/4ndr0tools%20-%20YT%20Filter.user.js) | Electric-Glass YouTube video filter — views, date, duration |
+| Zai Exporter | v1.0.0 | uncategorized | [4ndr0tools - Zai Exporter.user.js](./dist/4ndr0tools%20-%20Zai%20Exporter.user.js) | One-click conversation exfiltration for the Z.ai GLM web chat — scrapes the live thread (multi-strategy, no network, no timers) and exports it as Markdown, JSON, or plain text, with metadata and Ψ glass console. Runs entirely page-side: zero privileged transports, zero observers, zero polling. |
 <!-- END_CATALOG -->
 
 ## ⚠️ Co-Install Interference Report

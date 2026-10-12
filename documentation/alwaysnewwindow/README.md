@@ -13,7 +13,7 @@ AlwaysNewWindow enforces the operator's preferred link topology: every link open
 | Version | `1.0.1` |
 | Matches | `*://*/*` |
 | Run-at | `document-start` |
-| Size | 68.3 KB · 1555 lines |
+| Size | 68.9 KB · 1567 lines |
 | Install | [dist/4ndr0tools - AlwaysNewWindow.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20AlwaysNewWindow.user.js) |
 
 ## Feature Inventory

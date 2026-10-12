@@ -13,7 +13,7 @@ Yandex Image Search++ integrates Yandex's reverse image search into the browsing
 | Version | `0.4.1` |
 | Matches | `http*://yandex.com/images/*`, `http*://yandex.ru/images/*` |
 | Run-at | `document-idle` |
-| Size | 10.7 KB · 263 lines |
+| Size | 11.4 KB · 277 lines |
 | Install | [dist/4ndr0tools - YandexImageSearch++.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YandexImageSearch%2B%2B.user.js) |
 
 ## Feature Inventory

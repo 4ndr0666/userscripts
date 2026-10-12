@@ -13,7 +13,7 @@ YT Filter is the Electric-Glass video filter for YouTube feeds: views, date, and
 | Version | `2.5` |
 | Matches | `*://*.youtube.com/*` |
 | Run-at | `document-end` |
-| Size | 31.8 KB · 850 lines |
+| Size | 31.9 KB · 850 lines |
 | Install | [dist/4ndr0tools - YT Filter.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YT%20Filter.user.js) |
 
 ## Feature Inventory

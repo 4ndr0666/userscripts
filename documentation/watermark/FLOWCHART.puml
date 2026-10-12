@@ -1,0 +1,63 @@
+@startuml
+skinparam monochrome true
+title Watermark++ — RPC observation → processing proxy → overlay family (v1.5.0)
+
+start
+:boot on gemini.google.com (host-gated);
+:NetHook arm (kernel realm slot, shared wrap);
+
+partition "asset discovery" {
+  :batchexecute RPC observer (NetHook onTraffic);
+  :image candidates discovered (discoveredUrls sets —
+  call-scoped per scan, cache census class);
+  :history draft blocks collected (responseEntriesByDraftId,
+  per-parse local);
+}
+
+:image session store;
+note right
+  v1.5.0 (B.1): createImageSessionStore
+  sessions Map is FIFO-capped at 16
+  (factory-escaped registry — the
+  cache census's negative-proven
+  defect class on v1.4.10).
+  Element bindings ride WeakMaps.
+end note
+
+if (watermark detected (alpha-map engine)?) then (yes)
+  :decodedAlphaMaps cache (bounded);
+  :gradient + variance scoring;
+  :size-adjusted confidence (scale list);
+  :preview-neighborhood priors per radius;
+  :batchexecute processing request
+  (intent-gated, gmFetch-bound);
+  if (processed asset returns?) then (yes)
+    :original URL registry (for restore);
+    :overlay / download / clipboard action;
+  else (no)
+    :typed error path — retry bounded;
+  endif
+else (no)
+  :observer keeps scanning;
+endif
+
+partition "processing proxy" {
+  :intent-gated fetch rewriter (async
+  fetch→process→synthetic Response);
+  note right
+    Ledgered page-realm interposition
+    (sink census fetchWrap class +
+    global census ledger) — beyond the
+    hub's synchronous verdict scope.
+  end note
+}
+
+stop
+
+note bottom
+  SIZE-AUDIT (G6): 1.28 MB of pure code mass —
+  zero blob/font payload; externalization rejected
+  (OPSEC posture); record under
+  documentation/watermark/SIZE-AUDIT.md.
+end note
+@enduml

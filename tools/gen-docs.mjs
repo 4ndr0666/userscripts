@@ -53,8 +53,10 @@ const KNOWLEDGE = {
             "Whitelist (authorize), spooflist (silent pacification), blacklist (absolute prohibition)",
             "Gatekeeper deferral — the extension wins whenever it is present",
             "Notification surface for adjudication events",
+            "v7.4.0: sandboxed-frame resilience — privileged API captures route through safeGet() so opaque-origin documents never kill the gate",
         ],
         settings: "Whitelist / spooflist / blacklist are persisted through GM storage and editable from the manager menu. Edits route through the extension's confirm bar when the Gatekeeper is live.",
+        notes: "v7.4.0 (operator round): a document inside <iframe sandbox> without allow-same-origin has an opaque origin and its privileged property reads throw SecurityError — the v7.3 capture block died at its first read and the WebSocket gate never installed in any sandboxed frame. Every capture is now defensive: the SW surface is skipped where the sandbox already forbids it natively, while the WebSocket/SharedWorker gates still arm, so default-deny holds even in frames the embedder hides. The spoof-list surfaces also shifted to the amber data accent (#ffaa00).",
     },
     "4ndr0tools - Akasha Silence": {
         slug: "akasha-silence",
@@ -508,6 +510,21 @@ const KNOWLEDGE = {
             "Electric-Glass filter surface",
         ],
         settings: "Filter thresholds persist through GM storage.",
+    },
+    "4ndr0tools - Zai Exporter": {
+        slug: "zai-exporter",
+        tagline: "Z.ai conversation exfiltration",
+        mission: "Zai Exporter turns the Z.ai GLM web chat into an artifact you own: one click on the Ψ HUD button (or the manager menu command) scrapes the live conversation from the page and hands it over as Markdown, JSON, or plain text — code blocks fenced, roles classified, metadata stamped. The engine runs a strict strategy ladder (message-attribute mining, chat-region harvest, degraded plain-text sweep) and always reports which strategy produced the export and how many roles were classified, because a hostile third-party DOM is a versioned surface we do not control — a degraded export says so in the panel and in the artifact header rather than silently pretending a guess is ground truth. It is deliberately the quietest tool in the suite: zero polling, zero observers, zero network, zero HTML-string sinks — the conversation is read from the DOM the operator is already looking at, nothing phones home.",
+        features: [
+            "One-click conversation export to Markdown / JSON / plain text (Ψ HUD button + manager menu)",
+            "Strategy-ladder extraction: attribute mining → chat-region harvest → degraded text sweep, with the chosen strategy reported",
+            "Role classification with explicit attribute ground-truth first, stem heuristics second, alternation repair third — unknown roles stay honest as UNKNOWN",
+            "Code-block preservation (pre → fenced blocks) in Markdown and JSON exports",
+            "Metadata header (title, URL, timestamp, message count) — toggleable, persisted",
+            "Copy-to-clipboard transport (GM clipboard with page fallback) alongside file download",
+        ],
+        settings: "Format and metadata preference persist through GM storage. No other configuration surface.",
+        notes: "v1.0.0: born inside the suite gates (3lectric-Glass audit, style tokens, zero-footprint across every census) — the runbook's canon → check → docs → dist pipeline executed in full.",
     },
 };
 

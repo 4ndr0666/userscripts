@@ -238,7 +238,7 @@ function setNativeValue(field, value) {
         field.focus();
         field.select();
         // For password/email fields, select() may be a no-op; use setSelectionRange.
-        try { field.setSelectionRange(0, field.value.length); } catch (e) { /* ok */ }
+        try { field.setSelectionRange(0, field.value.length); } catch (e) { console.debug('LFA interceptor:', e); /* ok */ }
 
         var execResult = document.execCommand('insertText', false, value);
 

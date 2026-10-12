@@ -119,9 +119,10 @@
  *   - PAGE REALM FIRST: the slot + wraps live on unsafeWindow when
  *     available (that is where host page fetches live — the same realm
  *     choice the per-script wraps already made), window otherwise.
- *   - LAZY ARM: zero wraps until the first subscriber registers (onBody,
- *     onRequest, onTraffic OR onError) — a co-installed script that only
- *     subscribes on its own host costs nothing anywhere else.
+ *   - LAZY ARM: zero network wraps until the first subscriber registers
+ *     (onBody, onRequest, onTraffic OR onError); the v6 DOM observer arms
+ *     separately, only on the first onNode subscriber (zero observers
+ *     anywhere until a defuser registers).
  *   - SINGLE BODY READ: one clone per response, dispatched to every
  *     subscriber — the two-vault double-read on instagram is the exact
  *     failure this replaces. 4 MB read cap (Blob2URL's wire limit).
@@ -159,6 +160,42 @@
  *   chain while the v5 copy arms above it — the established transitional
  *   co-install progression).
  *
+ * v6 (suite v1.6.0) — THE DOM DEFEASE CHANNEL (onNode). The v1.5.1
+ *   observer census left the defuse class ledgered (TIMING entries:
+ *   microtask races a private per-script observer was winning) because
+ *   structurally bounding them meant weakening them. The hub takes the
+ *   channel instead — same consolidation the network wraps got in v1.4.3:
+ *   N co-installed document-level observers become ONE kernel-owned
+ *   observer per realm document, fanning raw record batches to isolated
+ *   subscribers.
+ *   - onNode(fn) -> unsubscribe. fn(mutations) receives a per-subscriber
+ *     copy of the raw MutationRecord batch — childList + subtree over
+ *     documentElement, plus attributes filtered to `src` (the union of
+ *     the migrated sites' observe configs) — in the SAME synchronous
+ *     microtask slot a private observer would have delivered it. The
+ *     defuse race is preserved exactly: the fan happens inside the
+ *     observer callback, before the next task, so a hostile script
+ *     inserted this batch is still neutralized before it executes.
+ *   - LAZY ARM, SYMMETRIC DISARM: zero observers until the first onNode
+ *     subscriber registers; the observer disconnects the moment the last
+ *     subscriber unsubscribes. Armed lifetime == subscription lifetime.
+ *   - ISOLATION: a throwing subscriber is scoped console.debug (GUP D6)
+ *     and treated as no-opinion — a broken defuser must never break the
+ *     page or its siblings. Each subscriber gets its own array copy, so
+ *     a hostile subscriber cannot splice its siblings' batch.
+ *   - AUTO-PROPAGATE: inserted iframes with a reachable contentWindow
+ *     get the network wrap set propagated by the hub itself — the same
+ *     idempotent, slot-aware, cross-origin-safe call the Akashan v5.2.0
+ *     iframe observer made per-site. Realm propagation is hub
+ *     infrastructure, not script surface; script-side propagators keep
+ *     working (idempotent double-arm is a no-op).
+ *   - Bounded registry (MAX_SUBS), versioned slot: isFullHub now requires
+ *     the onNode surface, so a v5-or-older slot owner is wrapped above by
+ *     a v6 copy (transitional chaining, as before).
+ *   - The kernel observer itself is self-asserted by the smoke battery
+ *     and the observer census (tools/observer-census.mjs verifies the
+ *     lazy-arm/disconnect/bounded/isolation markers on this file).
+ *
  * Consumed via build-time injection into the canon scripts that declare it
  * (tools/build.mjs CANON_KERNEL) — the identifier `__4NDR0_NET_API__` below
  * is script-scope visible to the consumer's IIFE.
@@ -167,7 +204,7 @@ const __4NDR0_NET_API__ = (function () {
     'use strict';
 
     const SLOT = '__4NDR0_NET__';
-    const VERSION = 5;
+    const VERSION = 6;
     const MAX_SUBS = 32;            /* bounded registry (GUP B.1) */
     const MAX_BODY = 4000000;       /* 4 MB read cap (Blob2URL's wire limit) */
     const XHR_MOCK_DELAY = 40;      /* D6 cadence — mocked XHR responses deliver
@@ -355,6 +392,9 @@ const __4NDR0_NET_API__ = (function () {
     const reqSubs = new Map();      /* onRequest defusers: key -> fn(req) */
     const trafficSubs = new Map();  /* onTraffic observers: key -> fn(ev) */
     const errSubs = new Map();      /* onError recoverers: key -> fn(ev) */
+    const nodeSubs = new Map();     /* v6 onNode defusers: key -> fn(mutations) */
+    let nseq = 0;
+    let nodeObserver = null;        /* v6: the kernel-owned DOM observer */
     const served = (typeof WeakSet === 'function') ? new WeakSet() : null; /* propagate-armed realms */
     let seq = 0;
     let rseq = 0;
@@ -837,7 +877,7 @@ const __4NDR0_NET_API__ = (function () {
     function isFullHub(h) {
         return !!(h && typeof h.onBody === 'function' && typeof h.onRequest === 'function' &&
             typeof h.onTraffic === 'function' && typeof h.onError === 'function' &&
-            typeof h.gmFetch === 'function');
+            typeof h.gmFetch === 'function' && typeof h.onNode === 'function');
     }
 
     /* Slot install — a strictly newer full-channel hub replaces the
@@ -852,6 +892,52 @@ const __4NDR0_NET_API__ = (function () {
                 value: api, writable: false, enumerable: false, configurable: true,
             });
         } catch (e) { /* slot collision with a foreign script — local hub only */ }
+    }
+
+    /* ── v6: the DOM defuse channel ────────────────────────────────────
+     * ONE kernel-owned MutationObserver per realm document; lazy arm on
+     * the first onNode subscriber, disconnect when the last one leaves.
+     * The fan is synchronous inside the callback — subscribers observe
+     * in the SAME microtask a private observer would have delivered (the
+     * defuse race is preserved, not debounced). The observer census
+     * self-asserts the lazy-arm / disconnect / bounded / isolation
+     * markers below; the smoke battery executes them. */
+    function fanNode(mutations) {
+        try {
+            /* auto-propagate: inserted iframes receive the network wrap
+             * set (idempotent, slot-aware; script-side propagators keep
+             * working — double-arm is a no-op) */
+            for (let i = 0; i < mutations.length; i++) {
+                const added = mutations[i] && mutations[i].addedNodes;
+                if (!added || !added.length) continue;
+                for (let j = 0; j < added.length; j++) {
+                    const n = added[j];
+                    if (n && n.tagName === 'IFRAME' && n.contentWindow) {
+                        try { api.propagate(n.contentWindow); } catch (e) { /* cross-origin or dead frame */ }
+                    }
+                }
+            }
+        } catch (e) { /* propagation must never break the fan */ }
+        for (const [, fn] of nodeSubs) {
+            try { fn(mutations.slice()); }
+            catch (e) { console.debug('[a4/net] node subscriber failed:', (e && e.message) || e); }
+        }
+    }
+    function armNodeObserver(target) {
+        if (nodeObserver || !target || !target.document) return;
+        try {
+            const root = target.document.documentElement;
+            if (!root || typeof MutationObserver !== 'function') return;
+            nodeObserver = new MutationObserver(fanNode);
+            nodeObserver.observe(root, {
+                childList: true, subtree: true, attributes: true, attributeFilter: ['src'],
+            });
+        } catch (e) { console.debug('[a4/net] node observer arm skipped:', (e && e.message) || e); nodeObserver = null; }
+    }
+    function disarmNodeObserver() {
+        if (!nodeObserver) return;
+        try { nodeObserver.disconnect(); } catch (e) { /* already dead */ }
+        nodeObserver = null;
     }
 
     const api = {
@@ -973,6 +1059,35 @@ const __4NDR0_NET_API__ = (function () {
             }
             return function () { errSubs.delete(key); };
         },
+        /* onNode(fn) -> unsubscribe. The DOM defuse channel — see the v6
+         * contract in the file header: one kernel-owned observer per realm
+         * document, lazy arm, synchronous fan in the insertion microtask,
+         * per-subscriber record copies, throwing subscribers isolated.
+         * The callback IS the script's defuse policy (the hub is plumbing);
+         * observe-config widening is the hub's union, not the script's. */
+        onNode: function (fn) {
+            if (typeof fn !== 'function') return function () {};
+            const target = realm();
+            if (target) {
+                try {
+                    const hub = target[SLOT];
+                    if (hub && hub !== api && hub.version >= VERSION && isFullHub(hub)) {
+                        return hub.onNode(fn);
+                    }
+                } catch (e) { /* unreadable slot — fall through to local hub */ }
+            }
+            if (nodeSubs.size >= MAX_SUBS) return function () {};
+            const key = 'nd' + (++nseq);
+            nodeSubs.set(key, fn);
+            if (target) {
+                armNodeObserver(target);
+                installSlot(target);
+            }
+            return function () {
+                nodeSubs.delete(key);
+                if (nodeSubs.size === 0) disarmNodeObserver();
+            };
+        },
         /* propagate(target) -> armed. Arm the wrap set into an additional
          * realm (iframe propagation, or the userscript sandbox realm for
          * scripts that historically hooked both contexts). Idempotent
@@ -1013,6 +1128,7 @@ const __4NDR0_NET_API__ = (function () {
         get requestSubscriberCount() { return reqSubs.size; },
         get trafficSubscriberCount() { return trafficSubs.size; },
         get errorSubscriberCount() { return errSubs.size; },
+        get nodeSubscriberCount() { return nodeSubs.size; },
     };
     return api;
 })();
@@ -1073,7 +1189,7 @@ const __4NDR0_NET_API__ = (function () {
     // =========================================================
     if (win.trustedTypes && win.trustedTypes.createPolicy) {
         try { win.trustedTypes.createPolicy('default', { createHTML: s => s }); }
-        catch (_) {}
+        catch (_) { console.debug('IG interceptor:', _);}
     }
 
     // =========================================================
@@ -1305,7 +1421,7 @@ const __4NDR0_NET_API__ = (function () {
         document.querySelectorAll('script[type="application/json"]').forEach(s => {
             try {
                 harvestJSON(JSON.parse(s.textContent), 'inline-scan');
-            } catch (_) { /* most script tags on the page aren't media JSON at all */ }
+            } catch (_) { console.debug('IG interceptor:', _); /* most script tags on the page aren't media JSON at all */ }
         });
     }
 
@@ -1534,7 +1650,7 @@ const __4NDR0_NET_API__ = (function () {
                         log(`Downloaded: ${filename}`);
                     } catch (err) {
                         log(`Download failed for ${filename}: ${err.message}`);
-                        try { window.open(url, '_blank'); } catch (_) {}
+                        try { window.open(url, '_blank'); } catch (_) { console.debug('IG interceptor:', _);}
                     }
                     await new Promise(r => setTimeout(r, CFG.DOWNLOAD_STAGGER_MS));
                 }
@@ -2044,22 +2160,39 @@ const __4NDR0_NET_API__ = (function () {
 
         NeuralDOM.observe(gui);
 
-        setInterval(() => {
-            const el = document.getElementById('ares-stat');
-            if (!el) return;
-            const active = STATE.domNodes.filter(n => !n.isPruned).length;
-            const parts = [
-                `ACTIVE:${active}`,
-                `TOTAL:${STATE.totalLoaded}`,
-                `UID:${STATE.userId || '…'}`,
-                `MODE:${STATE.MODE.toUpperCase()}`,
-                `BUFFERED:${STATE.pendingItems.length}`,
-            ];
-            if (STATE.isFetching) parts.push('FETCHING…');
-            if (DownloadEngine.queue.length || DownloadEngine.active) parts.push(`DL:${DownloadEngine.queue.length}`);
-            if (STATE.lastError) parts.push(`ERR:${STATE.lastError}`);
-            el.textContent = parts.join(' | ');
-        }, 1000);
+        // B.1 (suite v1.5.0): the stat updater parks after 30 min with the
+        // header gone (nothing left to update); any user click or tab
+        // return re-arms it — the updater only matters while the ARES GUI
+        // is alive and being used.
+        let aresStatTimer = null;
+        let aresStatIdle = 0;
+        const armAresStatUpdate = () => {
+            if (aresStatTimer) return;
+            aresStatIdle = 0;
+            aresStatTimer = setInterval(() => {
+                const el = document.getElementById('ares-stat');
+                if (!el) {
+                    if (++aresStatIdle > 1800) { clearInterval(aresStatTimer); aresStatTimer = null; }
+                    return;
+                }
+                aresStatIdle = 0;
+                const active = STATE.domNodes.filter(n => !n.isPruned).length;
+                const parts = [
+                    `ACTIVE:${active}`,
+                    `TOTAL:${STATE.totalLoaded}`,
+                    `UID:${STATE.userId || '…'}`,
+                    `MODE:${STATE.MODE.toUpperCase()}`,
+                    `BUFFERED:${STATE.pendingItems.length}`,
+                ];
+                if (STATE.isFetching) parts.push('FETCHING…');
+                if (DownloadEngine.queue.length || DownloadEngine.active) parts.push(`DL:${DownloadEngine.queue.length}`);
+                if (STATE.lastError) parts.push(`ERR:${STATE.lastError}`);
+                el.textContent = parts.join(' | ');
+            }, 1000);
+        };
+        document.addEventListener('click', armAresStatUpdate, true);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) armAresStatUpdate(); });
+        armAresStatUpdate();
 
         STATE.uiReady = true;
 
@@ -2211,14 +2344,15 @@ const __4NDR0_NET_API__ = (function () {
         start() {
             harvestInlineJSON();
             this.scan(document);
+            let mediaScanTimer;
             new MutationObserver(muts => {
-                for (const m of muts) {
-                    m.addedNodes.forEach(n => {
-                        if (n.nodeType !== 1) return;
-                        if (n.matches && n.matches('img,video')) this.inject(n);
-                        if (n.querySelectorAll) this.scan(n);
-                    });
-                }
+                // v1.5.1 observer discipline: coalesced re-scan — scan(document)
+                // covers every added subtree (queryselectorAll('img, video') with
+                // the `seen` idempotency guard), bounded to one pass per 250 ms.
+                const structural = muts.some(m => m.addedNodes && m.addedNodes.length);
+                if (!structural) return;
+                clearTimeout(mediaScanTimer);
+                mediaScanTimer = setTimeout(() => this.scan(document), 250);
             }).observe(document.body, { childList: true, subtree: true });
         },
     };
@@ -2250,10 +2384,19 @@ const __4NDR0_NET_API__ = (function () {
         // always present, independent of recon
         MediaOverlay.start();
 
-        // DOM injection loop — tries every 1.5 s until it lands
+        // DOM injection loop — tries every 1.5 s until it lands.
+        // B.1 (suite v1.5.0): attempt ceiling — an injection point that
+        // never appears (layout change) parks the daemon after 10 min
+        // instead of polling forever.
+        let daemonTries = 0;
         const daemon = setInterval(() => {
             if (document.getElementById('igBigContainer')) {
                 clearInterval(daemon); // UI is open, stop polling
+                return;
+            }
+            if (++daemonTries > 400) {
+                clearInterval(daemon);
+                log('UI injection point never appeared — daemon parked (reload to retry).');
                 return;
             }
             injectTrigger();

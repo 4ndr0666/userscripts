@@ -14,6 +14,10 @@
 // @connect      web.archive.org
 // @require      https://cdnjs.cloudflare.com/ajax/libs/cash/8.1.5/cash.min.js
 // ==/UserScript==
+let ArchivedIDS = {}, RecoveredIDS = {}, DetectedIDS = {}, deletedIDs = "", deletedIDCnt = 0;
+// v1.5.0 (suite, B.1): zero global pollution — restored/removed bookkeeping
+// moved off window into script scope (the page never reads these).
+
 // 2.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
 console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Youtube Removed Video Revealer.user v2.0.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
@@ -116,9 +120,9 @@ function cleanUP() {
     $(".filmot_c_link").remove();
     $(".filmot_button").remove();
 
-    window.ArchivedIDS = {};
-    window.RecoveredIDS = {};
-    window.DetectedIDS = {};
+    ArchivedIDS = {};
+    RecoveredIDS = {};
+    DetectedIDS = {};
 }
 
 // REVISION: Converted to async function to handle Promises effectively.
@@ -189,9 +193,9 @@ async function checkIfPrivatedOrRemoved() {
             waybackButton.append(anchor);
             parentItem.find("div#buttons").prepend(waybackButton);
 
-            window.deletedIDs = id;
-            window.deletedIDCnt = 1;
-            window.DetectedIDS[id] = 1;
+            deletedIDs = id;
+            deletedIDCnt = 1;
+            DetectedIDS[id] = 1;
             processClick(2, 0);
         }
     }
@@ -241,8 +245,8 @@ function createRestoreButton() {
 }
 
 function extractIDsFullView() {
-    window.deletedIDs = "";
-    window.deletedIDCnt = 0;
+    deletedIDs = "";
+    deletedIDCnt = 0;
     // REVISION: Changed `var` to `let` as these are modified in the block.
     let deletedIDs = "";
     let deletedIDsCnt = 0;
@@ -294,7 +298,7 @@ function extractIDsFullView() {
                     waybackButton.append(anchor);
                     $(this).parents("#container").append(waybackButton);
 
-                    const archiveData = window.ArchivedIDS[id];
+                    const archiveData = ArchivedIDS[id];
                     // REVISION: Improved type checking for archiveData object.
                     if (typeof archiveData === "object" && archiveData !== null) {
                         anchor.attr("href", archiveData.url)
@@ -320,13 +324,13 @@ function extractIDsFullView() {
                                         timestamp,
                                         url: `https://web.archive.org/web/${timestamp}oe_/${data[1][1]}`
                                     };
-                                    window.ArchivedIDS[videoID] = newArchiveData;
+                                    ArchivedIDS[videoID] = newArchiveData;
 
                                     $this.attr("href", newArchiveData.url)
                                         .css("background-color", "limegreen")
                                         .find("#state-text").text("Available: " + waybackTimestampToDateString(timestamp));
                                 } else {
-                                    window.ArchivedIDS[videoID] = false;
+                                    ArchivedIDS[videoID] = false;
                                     $this.css("background-color", "lightcoral")
                                         .find("#state-text").text("Not Available");
                                 }
@@ -339,7 +343,7 @@ function extractIDsFullView() {
                         });
                     }
 
-                    window.DetectedIDS[id] = 1;
+                    DetectedIDS[id] = 1;
                     if (deletedIDs.length > 0) {
                         deletedIDs += ",";
                     }
@@ -351,8 +355,8 @@ function extractIDsFullView() {
     });
 
     if (deletedIDs.length > 0) {
-        window.deletedIDs = deletedIDs;
-        window.deletedIDCnt = deletedIDsCnt;
+        deletedIDs = deletedIDs;
+        deletedIDCnt = deletedIDsCnt;
 
         // REVISION: Strict null check instead of ==.
         if (document.getElementById("TitleRestoredBtn") === null) {
@@ -407,8 +411,8 @@ function processJSONResultSingleVideo(fetched_details, format) {
             darkMode = (lum > 0.51) ? 1 : 0;
         }
 
-        if (!window.RecoveredIDS[meta.id]) {
-            window.RecoveredIDS[meta.id] = 1;
+        if (!RecoveredIDS[meta.id]) {
+            RecoveredIDS[meta.id] = 1;
             // REVISION: Nullish coalescing (??) for assigning fallback channel name.
             meta.channelname = meta.channelname ?? meta.channelid;
 
@@ -467,7 +471,7 @@ function processJSONResultFullView(fetched_details, format) {
     for (let i = 0; i < fetched_details.length; ++i) {
         // REVISION: Changed `var` to `const`.
         const meta = fetched_details[i];
-        window.RecoveredIDS[meta.id] = 1;
+        RecoveredIDS[meta.id] = 1;
 
         // REVISION: Nullish coalescing assignment (??=).
         meta.channelname ??= meta.channelid;
@@ -563,14 +567,14 @@ function processJSONResultFullView(fetched_details, format) {
             }
         });
     }
-    $("#TitleRestoredBtn").text(Object.keys(window.RecoveredIDS).length + " of " + Object.keys(window.DetectedIDS).length + " restored");
+    $("#TitleRestoredBtn").text(Object.keys(RecoveredIDS).length + " of " + Object.keys(DetectedIDS).length + " restored");
 }
 
 // REVISION: Converted processClick to async/await for clearer asynchronous flow and error handling.
 async function processClick(format, nTry = 0) {
     const maxTries = 2;
     // REVISION: Use template literals.
-    const apiURL = `https://filmot.com/api/getvideos?key=md5paNgdbaeudounjp39&id=${window.deletedIDs}`;
+    const apiURL = `https://filmot.com/api/getvideos?key=md5paNgdbaeudounjp39&id=${deletedIDs}`;
 
     try {
         const response = await fetch(apiURL);

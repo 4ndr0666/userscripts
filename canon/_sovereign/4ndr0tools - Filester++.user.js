@@ -82,7 +82,7 @@
         try {
             GM_setClipboard(text, 'text');
             return true;
-        } catch (e) { /* fall through */ }
+        } catch (e) { console.debug('FILESTER interceptor:', e); /* fall through */ }
         try {
             await navigator.clipboard.writeText(text);
             return true;
@@ -150,7 +150,7 @@
                     mediaCache.set(idOrSlug, entry);
                     return entry;
                 }
-            } catch (e) {}
+            } catch (e) { console.debug('FILESTER interceptor:', e);}
         }
 
         // DOM fallback for video players
@@ -186,7 +186,7 @@
                         return true;
                     }
                 }
-            } catch (e) {}
+            } catch (e) { console.debug('FILESTER interceptor:', e);}
         }
         console.warn(`[Ψ-4NDR0666] Folder API probes exhausted for ${folderId} — use the Python bridge for full enumeration.`);
         return false;

@@ -1,0 +1,53 @@
+@startuml
+skinparam monochrome true
+title LinkMasterΨ — capture pipeline → NetHook join (v1.5.0)
+
+start
+:page boot (host-gated);
+:NetHook arm (kernel __4NDR0_NET_API__, realm slot);
+note right
+  The page-realm wrap family is
+  kernel-owned: one fetch/XHR
+  wrap set per realm shared by
+  15 canon consumers (sink
+  census adjudication).
+end note
+
+partition "capture channels" {
+  :DOM extraction — extractExternalHostLinks()
+  (per-invocation link Set, call-scoped);
+  :MutationObserver family (filtered + debounced);
+  :NetHook onTraffic — response-phase media join;
+  :text ingest (Route 1 structural → Route 2 net)
+  with per-ingest prog Map (call-scoped);
+}
+
+if (candidate link / media found?) then (yes)
+  :confirmation-HREF deprox (decodeConfirmationHref);
+  :isExternalHoster classify;
+  :preview thumb map (build once);
+  :vault append (dedupe: seen-registries, has-guards);
+  :UI overlay render (createElement family — zero innerHTML, R3 endgame);
+else (no)
+  :observers keep watching;
+endif
+
+partition "media resolution" {
+  :gmFetch (kernel v5.1 transport — timeout-bound, typed NetError);
+  if (blob produced?) then (yes)
+    :vault URL mint (data-/blob- bridge);
+  else (no)
+    :typed NetError path — no silent swallow;
+  endif
+}
+
+:export / clipboard (execCommand fallback for cross-origin iframes);
+stop
+
+note bottom
+  v1.5.0 (B.1) round: link Sets are per-invocation
+  call-scoped work state (cache census class); the ψ-family
+  page-realm wraps ride the NetHook singleton (global census
+  ledger); no interval sites survive unbounded (polling census).
+end note
+@enduml

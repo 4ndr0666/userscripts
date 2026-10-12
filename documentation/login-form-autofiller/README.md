@@ -14,7 +14,7 @@ Login Form Autofiller wires BugMeNot into every login form on the web: it detect
 | Matches | universal (no @match) |
 | Excludes | `http://bugmenot.com/*`, `https://bugmenot.com/*` |
 | Run-at | `document-idle` |
-| Size | 43.1 KB · 1013 lines |
+| Size | 43.2 KB · 1013 lines |
 | Install | [dist/4ndr0tools - Login Form Autofiller.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Login%20Form%20Autofiller.user.js) |
 
 ## Feature Inventory
