@@ -31,12 +31,12 @@
   {
    "file": "4ndr0tools - 4ndr0serviceguard Companion.user.js",
    "name": "4ndr0tools - 4ndr0serviceguard Companion",
-   "version": "7.4.0",
-   "description": "Stealth Service Worker / WebSocket / SharedWorker firewall companion for the 4ndr0serviceguard extension. Default-deny with a three-way action model: AUTHORIZE (real), SPOOF (pacified live-looking socket) or DENY (native-faithful failure). Whitelist authorizes, spooflist auto-spoofs silently, the blacklist is an absolute prohibition. Defers to the extension's Gatekeeper whenever the extension is present — and routes list edits to it through the extension's confirm bar. v7.4.0: survives sandboxed frames (opaque origins) — privileged APIs are captured defensively and the WebSocket gate still arms there.",
+   "version": "7.4.1",
+   "description": "Stealth Service Worker / WebSocket / SharedWorker firewall companion for the 4ndr0serviceguard extension. Default-deny with a three-way action model: AUTHORIZE (real), SPOOF (pacified live-looking socket) or DENY (native-faithful failure). Whitelist authorizes, spooflist auto-spoofs silently, the blacklist is an absolute prohibition. Defers to the extension's Gatekeeper whenever the extension is present — and routes list edits to it through the extension's confirm bar. v7.4.0: survives sandboxed frames (opaque origins) — privileged APIs are captured defensively and the WebSocket gate still arms there. v7.4.1: harness/doc alignment with the post-release rename + the 2026-10-12 console-debrief classification (no behavior change).",
    "family": "privacy & security",
-   "sha256": "03c366827e91cc6b2926381aa0413e69bc415fed035ba5753393ef12858c7f12",
+   "sha256": "11010ef87f504ea8a512e2a22e6b306af8154ad54ec14d13892456423ddc4893",
    "lines": 1288,
-   "bytes": 54695,
+   "bytes": 54832,
    "matches": [
     "*://*/*"
    ],
@@ -1592,5 +1592,5 @@
    ]
   }
  ],
- "digest": "8db86a6cbecdf81d471ac5d202afadf5cb9f5fa393601a293618d18ec68b56ea"
+ "digest": "fda5a722fc6cae43a03d0c9ae2a8a4fc61b17eecfdac7c97c470cc1fcf45edf7"
 }

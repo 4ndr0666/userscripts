@@ -6,7 +6,7 @@
 | Script | Version | Family | Docs |
 |---|---|---|---|
 | **4ndr0Purge** | `1.0.2` | privacy & security | [reference](./4ndr0purge/) |
-| **4ndr0serviceguard Companion** | `7.4.0` | privacy & security | [reference](./4ndr0serviceguard-companion/) |
+| **4ndr0serviceguard Companion** | `7.4.1` | privacy & security | [reference](./4ndr0serviceguard-companion/) |
 | **Akasha Silence** | `5.2.1` | uncategorized | [reference](./akasha-silence/) |
 | **AlwaysNewWindow** | `1.0.1` | ux utilities | [reference](./alwaysnewwindow/) |
 | **AutoTranslate** | `6.0.0` | ux utilities | [reference](./autotranslate/) |
