@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name                4ndr0tools - Prompt Master
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version             28.7.0
+// @version             28.7.1
 // @author              4ndr0666
 // @icon                data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @license             UNLICENSED - RED TEAM USE ONLY
@@ -1160,6 +1160,24 @@ const __4NDR0_NET_API__ = (function () {
   let __mpSortMode;
   let __apCustomShortcutsMap;
 
+// 28.7.1: the kernel boundary round — the canon file is installable.
+// v28.7.0 shipped the engine with bare __4NDR0_NET_API__ references:
+// correct in the dist (the build inlines kernel/net.js) but fatal in the
+// canon source run as a userscript — installFlowCreditNetObserver threw
+// at boot, the boot IIFE's swallow-all catch ate the ReferenceError, and
+// everything downstream (the chip, the gen click hook, the 1s poll, the
+// MutationObserver) never started: the "no token chip counting
+// whatsoever" field report, with zero console output to diagnose it.
+// The boundary is now explicit everywhere: the net observer installs
+// only when the kernel is present (a kernel-less run keeps every DOM,
+// storage, and click source; only passive network readings are off, and
+// the export's netObserver field says "kernel-less" for one-paste
+// diagnosis), all four kernel gmFetch call sites reject through their
+// own typed/user-facing failure paths instead of throwing into callers,
+// and the boot IIFE's catch is loud (console.error with the stack — no
+// silent boot deaths, ever). The chip counter is thereby finalized for
+// production in BOTH files: dist = the full engine, canon = degraded but
+// alive.
 // 28.7.0: the counter's production round — the review's five cost/
 // policy findings mitigated, its four additions shipped, and the dev
 // scaffolding removed on the operator's explicit authorization
@@ -5277,6 +5295,11 @@ const __4NDR0_NET_API__ = (function () {
       const t = new URL(e);
       (t.searchParams.set("_t", Date.now()), (a = t.toString()));
     } catch (e) { console.debug("PM interceptor:", e);}
+    // v28.7.1: kernel-less (canon source, no inlined kernel) — reject
+    // through the same typed failure path as any transport error
+    // instead of throwing a bare ReferenceError into the caller.
+    if (typeof __4NDR0_NET_API__ === "undefined")
+      return Promise.reject(new Error(""));
     // v28.6.0: bounded + typed transport — rides the kernel gmFetch inlined
     // by tools/build.mjs instead of a bare GM_xmlhttpRequest: 20 s hard
     // bound, failures reject through the typed NetError taxonomy. The _t
@@ -5413,6 +5436,12 @@ const __4NDR0_NET_API__ = (function () {
       const t = new URL(e);
       (t.searchParams.set("_t", Date.now()), (a = t.toString()));
     } catch (e) { console.debug("PM interceptor:", e);}
+    // v28.7.1: kernel-less — reject through the legacy failure surface
+    // (same prefix, named cause) instead of a bare ReferenceError.
+    if (typeof __4NDR0_NET_API__ === "undefined")
+      return Promise.reject(
+        new Error("Failed to fetch metadata: kernel-less"),
+      );
     // v28.6.0: bounded + typed transport — kernel gmFetch, 20 s hard bound.
     // Legacy rejection messages are preserved verbatim for callers; the
     // typed cause (NetError.kind) stays inspectable on the transport layer.
@@ -11301,6 +11330,12 @@ const __4NDR0_NET_API__ = (function () {
     return new Promise(
       "gemini" === a
         ? (t, a) => {
+            // v28.7.1: kernel-less — reject through the same user-facing
+            // surface as a transport failure, never a bare ReferenceError.
+            if (typeof __4NDR0_NET_API__ === "undefined") {
+              a(new Error("Connection error with API."));
+              return;
+            }
             // v28.6.0: bounded + typed — kernel gmFetch, 60 s hard bound
             // (generation legitimately runs long). Typed rejections map onto
             // the legacy user-facing message; e.kind is logged for triage.
@@ -11342,6 +11377,12 @@ const __4NDR0_NET_API__ = (function () {
             );
           }
         : (t, s) => {
+            // v28.7.1: kernel-less — reject through the same user-facing
+            // surface as a transport failure, never a bare ReferenceError.
+            if (typeof __4NDR0_NET_API__ === "undefined") {
+              s(new Error("Connection error with API."));
+              return;
+            }
             const i = getOpenAIEndpoint(a);
             let l = n;
             "openrouter" === a
@@ -11860,6 +11901,11 @@ const __4NDR0_NET_API__ = (function () {
     flowCreditStorageCount = 0,
     flowCreditReadingsTotal = 0,
     flowCreditNetInstalled = !1,
+    // v28.7.1: the honest net-observer mode for the export — "missing"
+    // (engine never booted on this host), "installed" (dist: kernel
+    // present, traffic observed), or "kernel-less" (canon source run
+    // without the inlined kernel — every other source stays live).
+    flowCreditNetMode = "missing",
     flowCreditStorageTimer = null,
     // v27.3.4: active wallet-pull state — one pull at a time, a
     // debounce window for automatic pulls, a human-readable outcome
@@ -12745,6 +12791,20 @@ const __4NDR0_NET_API__ = (function () {
   function installFlowCreditNetObserver() {
     if (flowCreditNetInstalled) return;
     flowCreditNetInstalled = !0;
+    // v28.7.1: the kernel boundary is now load-bearing. The canon file
+    // runs kernel-less by design (tools/build.mjs inlines kernel/net.js
+    // into the dist only), and v28.7.0's bare __4NDR0_NET_API__ reference
+    // here threw at boot — the boot IIFE's swallow-all ate the
+    // ReferenceError and the engine (chip, tick, poll, observer, the gen
+    // click hook) never started. A kernel-less run degrades honestly
+    // instead: every DOM, storage, and click source stays live; only
+    // passive network readings are off, and the export's netObserver
+    // field carries the mode for one-paste diagnosis.
+    if (typeof __4NDR0_NET_API__ === "undefined") {
+      flowCreditNetMode = "kernel-less";
+      return;
+    }
+    flowCreditNetMode = "installed";
     // v28.4.0 (suite v1.4.7): the bespoke pageWin.fetch wrap + XHR
     // open/send taps are retired; the flow-credit scanner rides
     // kernel/net.js onTraffic response events — one shared page-realm
@@ -15415,7 +15475,17 @@ const __4NDR0_NET_API__ = (function () {
         if (flowCreditWalletKnown()) return;
         pullFlowCreditWallet("boot-retry").then(function () {});
       }, 45000);
-    })().catch(function () {});
+    })().catch(function (e) {
+      // v28.7.1: no silent boot deaths. v28.7.0 shipped a swallow-all
+      // here — a kernel-less canon install died inside this IIFE with
+      // zero console output, and everything after the throw (the chip,
+      // the poll, the observer) simply never started. Any future boot
+      // failure announces itself with the stack.
+      console.error(
+        "[Prompt Master] credit tracker: engine boot failed — " +
+          ((e && e.stack) || String(e)),
+      );
+    });
   }
   async function resetFlowCreditTracker() {
     // v27.3.13: snapshot learned caps before the wipe below destroys
@@ -15746,7 +15816,7 @@ const __4NDR0_NET_API__ = (function () {
             ? { key: disp.m.key, label: disp.m.label, src: disp.src }
             : null,
           selectedModel: flowCreditModel ? flowCreditModel.key : null,
-          netObserver: flowCreditNetInstalled ? "installed" : "missing",
+          netObserver: flowCreditNetMode,
         },
         sources: {
           pageTextReadings: flowCreditReadingsTotal,
@@ -18377,7 +18447,7 @@ const __4NDR0_NET_API__ = (function () {
     GM_info.script &&
     GM_info.script.version
       ? GM_info.script.version
-      : "28.7.0-Ψ";
+      : "28.7.1-Ψ";
   // v27.0.12: canonical backup snapshot helper. The beta's Gist push
   // called snapshotKeys() before it existed anywhere, so every "Sync Now"
   // threw a ReferenceError; takeAutoBackup() now shares this one helper
