@@ -1029,7 +1029,7 @@
    "version": "4.0.1",
    "description": "Covert SimpCity search UI directly from any website. (Electric-Glass + Alt+S Hotkey Only)",
    "family": "forums",
-   "sha256": "39a39a9dc67408665e300b5a255273ce7662e4425d93fb0e5d209e2934ba4528",
+   "sha256": "8fc0a5b51b3c2ec60fad83eec238d69aa98ce1361f60785898d7ccc0f75b98ba",
    "lines": 488,
    "bytes": 22471,
    "matches": [
@@ -1592,5 +1592,5 @@
    ]
   }
  ],
- "digest": "fda5a722fc6cae43a03d0c9ae2a8a4fc61b17eecfdac7c97c470cc1fcf45edf7"
+ "digest": "ee34c4d4b22202c79ace21448e62a471568597d1b8e939ba1c5d5db1c8a391b8"
 }
