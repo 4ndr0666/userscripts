@@ -66,7 +66,7 @@ Changelog:
     class ModelSearchTool {
 
         // === CONFIGURATION ===
-        static #SEARCH_URL_BASE = 'https://simpcity.cr/search/14138808/';
+        static #SEARCH_URL_BASE = 'https://simpcity.su/search/14138808/';
         static #MAX_Z_INDEX     = '2147483647';
         static #FONT_URL        = 'https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Roboto+Mono:wght@400;500&display=swap';
 
