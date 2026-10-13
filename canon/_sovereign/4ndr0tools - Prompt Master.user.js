@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name                4ndr0tools - Prompt Master
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version             28.7.1
+// @version             28.7.2
 // @author              4ndr0666
 // @icon                data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @license             UNLICENSED - RED TEAM USE ONLY
@@ -49,6 +49,26 @@
   let __mpSortMode;
   let __apCustomShortcutsMap;
 
+// 28.7.2: kernel-less transport parity — the canon install's dead
+// features live again. 28.7.1 made the canon file installable and kept
+// the chip counter alive without the kernel, but every privileged
+// transport still hard-rejected on that install: AI Enhance answered
+// "Connection error with API.", shared-prompt import answered
+// "Invalid JSON...", preview images never rendered, and the update
+// check never ran — the operator's field report read as a corrupted
+// install while the chip kept counting (the dist, kernel inlined, was
+// never affected). The four gmFetch call sites (fetchImageBlob,
+// fetchWithGM, and callAI_API's two provider executors) now fall back
+// to pmKernelLessGmFetch — a closure-local, literal-bounded
+// GM_xmlhttpRequest dispatch (the same sanctioned shape the Gist
+// backup family rides) that arms ONLY when the kernel is absent and
+// resolves the raw manager response, the exact contract the kernel's
+// gmFetch resolves, so every caller continuation runs unchanged. The
+// dist path is untouched (the kernel is present, the fallback never
+// arms); the net observer stays honestly kernel-less (passive network
+// readings remain off, the export keeps disclosing netObserver
+// "kernel-less" — the chip's DOM/storage/click sources are the
+// proven-live ones).
 // 28.7.1: the kernel boundary round — the canon file is installable.
 // v28.7.0 shipped the engine with bare __4NDR0_NET_API__ references:
 // correct in the dist (the build inlines kernel/net.js) but fatal in the
@@ -4178,22 +4198,66 @@
           .replace(/'/g, "&#039;")
       : "";
   }
+  // v28.7.2: the kernel-less privileged transport. Arms ONLY when
+  // __4NDR0_NET_API__ is absent (the canon run as a userscript — the
+  // dist's inlined kernel keeps this dormant by construction). One
+  // literal-bounded GM_xmlhttpRequest dispatch — the same sanctioned
+  // shape the Gist backup family rides — settle-once against managers
+  // that fire onload AND onerror, resolving the raw manager response
+  // (the exact contract the kernel's gmFetch resolves, so the four
+  // call sites' continuations run unchanged; they all gate status
+  // themselves under checkStatus:false). Rejections carry a typed
+  // kind ('gm-unavailable' | 'transport' | 'timeout' | 'abort') for
+  // the call sites' triage logging — never a bare string.
+  function pmKernelLessGmFetch(e, t) {
+    if (typeof GM_xmlhttpRequest !== "function")
+      return Promise.reject(
+        Object.assign(
+          new Error("kernel-less transport unavailable: no privileged grant"),
+          { kind: "gm-unavailable" },
+        ),
+      );
+    t = t || {};
+    return new Promise((a, o) => {
+      let r = !1;
+      const n = (e, t) => {
+        r || ((r = !0), e(t));
+      };
+      GM_xmlhttpRequest({
+        method: t.method || "GET",
+        url: e,
+        headers: t.headers || {},
+        data: t.data != null ? t.data : null,
+        timeout: Math.max(1, t.timeout || 15000),
+        responseType: t.responseType || "text",
+        onload: (e) => n(a, e),
+        onerror: () =>
+          n(
+            o,
+            Object.assign(new Error("network error"), { kind: "transport" }),
+          ),
+        ontimeout: () =>
+          n(
+            o,
+            Object.assign(new Error("gmFetch timeout"), { kind: "timeout" }),
+          ),
+        onabort: () =>
+          n(o, Object.assign(new Error("aborted"), { kind: "abort" })),
+      });
+    });
+  }
   function fetchImageBlob(e) {
     let a = e;
     try {
       const t = new URL(e);
       (t.searchParams.set("_t", Date.now()), (a = t.toString()));
     } catch (e) { console.debug("PM interceptor:", e);}
-    // v28.7.1: kernel-less (canon source, no inlined kernel) — reject
-    // through the same typed failure path as any transport error
-    // instead of throwing a bare ReferenceError into the caller.
-    if (typeof __4NDR0_NET_API__ === "undefined")
-      return Promise.reject(new Error(""));
-    // v28.6.0: bounded + typed transport — rides the kernel gmFetch inlined
-    // by tools/build.mjs instead of a bare GM_xmlhttpRequest: 20 s hard
-    // bound, failures reject through the typed NetError taxonomy. The _t
-    // cache-buster stays; the GM-only nocache flag was redundant next to it.
-    return __4NDR0_NET_API__.gmFetch(a, {
+    // v28.7.2: kernel-less (canon source, no inlined kernel) — the
+    // transport falls back to the canon-local bounded GM dispatch, so a
+    // canon install renders preview images again; the dist path (kernel
+    // gmFetch inlined by tools/build.mjs, 20 s hard bound, typed NetError
+    // taxonomy) is untouched. The _t cache-buster stays.
+    const pmImgOpts = {
       method: "GET",
       responseType: "blob",
       timeout: 20000,
@@ -4202,7 +4266,12 @@
         "Cache-Control": "no-cache, no-store, must-revalidate",
         Pragma: "no-cache",
       },
-    }).then(
+    };
+    return (
+      typeof __4NDR0_NET_API__ === "undefined"
+        ? pmKernelLessGmFetch(a, pmImgOpts)
+        : __4NDR0_NET_API__.gmFetch(a, pmImgOpts)
+    ).then(
       (e) =>
         e.status >= 200 && e.status < 300 && e.response
           ? e.response
@@ -4325,16 +4394,13 @@
       const t = new URL(e);
       (t.searchParams.set("_t", Date.now()), (a = t.toString()));
     } catch (e) { console.debug("PM interceptor:", e);}
-    // v28.7.1: kernel-less — reject through the legacy failure surface
-    // (same prefix, named cause) instead of a bare ReferenceError.
-    if (typeof __4NDR0_NET_API__ === "undefined")
-      return Promise.reject(
-        new Error("Failed to fetch metadata: kernel-less"),
-      );
-    // v28.6.0: bounded + typed transport — kernel gmFetch, 20 s hard bound.
-    // Legacy rejection messages are preserved verbatim for callers; the
-    // typed cause (NetError.kind) stays inspectable on the transport layer.
-    return __4NDR0_NET_API__.gmFetch(a, {
+    // v28.7.2: kernel-less — the transport falls back to the canon-local
+    // bounded GM dispatch, so a canon install keeps shared-prompt import
+    // and update checks; the dist path (kernel gmFetch, 20 s hard bound)
+    // is untouched. Legacy rejection messages are preserved verbatim for
+    // callers; the typed cause (kind) stays inspectable on the transport
+    // layer.
+    const pmMetaOpts = {
       method: "GET",
       timeout: 20000,
       checkStatus: !1,
@@ -4343,7 +4409,12 @@
         Pragma: "no-cache",
         Expires: "0",
       },
-    }).then(
+    };
+    return (
+      typeof __4NDR0_NET_API__ === "undefined"
+        ? pmKernelLessGmFetch(a, pmMetaOpts)
+        : __4NDR0_NET_API__.gmFetch(a, pmMetaOpts)
+    ).then(
       (e) =>
         e.status >= 200 && e.status < 300
           ? e.responseText
@@ -10219,18 +10290,14 @@
     return new Promise(
       "gemini" === a
         ? (t, a) => {
-            // v28.7.1: kernel-less — reject through the same user-facing
-            // surface as a transport failure, never a bare ReferenceError.
-            if (typeof __4NDR0_NET_API__ === "undefined") {
-              a(new Error("Connection error with API."));
-              return;
-            }
-            // v28.6.0: bounded + typed — kernel gmFetch, 60 s hard bound
-            // (generation legitimately runs long). Typed rejections map onto
-            // the legacy user-facing message; e.kind is logged for triage.
-            __4NDR0_NET_API__.gmFetch(
-              `https://generativelanguage.googleapis.com/v1beta/models/${n}:generateContent?key=${o}`,
-              {
+            // v28.7.2: kernel-less — the transport falls back to the
+            // canon-local bounded GM dispatch, so a canon install can
+            // Enhance again; the dist path (kernel gmFetch, 60 s hard
+            // bound — generation legitimately runs long) is untouched.
+            // Typed rejections map onto the legacy user-facing message;
+            // e.kind is logged for triage.
+            const pmGemUrl = `https://generativelanguage.googleapis.com/v1beta/models/${n}:generateContent?key=${o}`,
+              pmGemOpts = {
                 method: "POST",
                 timeout: 60000,
                 checkStatus: !1,
@@ -10239,7 +10306,11 @@
                   contents: [{ parts: [{ text: e }] }],
                   systemInstruction: { parts: [{ text: r }] },
                 }),
-              },
+              };
+            (
+              typeof __4NDR0_NET_API__ === "undefined"
+                ? pmKernelLessGmFetch(pmGemUrl, pmGemOpts)
+                : __4NDR0_NET_API__.gmFetch(pmGemUrl, pmGemOpts)
             ).then(
               (e) => {
                 try {
@@ -10266,12 +10337,6 @@
             );
           }
         : (t, s) => {
-            // v28.7.1: kernel-less — reject through the same user-facing
-            // surface as a transport failure, never a bare ReferenceError.
-            if (typeof __4NDR0_NET_API__ === "undefined") {
-              s(new Error("Connection error with API."));
-              return;
-            }
             const i = getOpenAIEndpoint(a);
             let l = n;
             "openrouter" === a
@@ -10281,24 +10346,32 @@
               "Content-Type": "application/json",
               Authorization: `Bearer ${o}`,
             };
-            ("openrouter" === a && (c["HTTP-Referer"] = window.location.origin),
-              // v28.6.0: bounded + typed — kernel gmFetch, 60 s hard bound.
-              // Status gating and every rejection message are preserved
-              // verbatim; transport failures log e.kind for triage.
-              __4NDR0_NET_API__.gmFetch(i, {
-                method: "POST",
-                timeout: 60000,
-                checkStatus: !1,
-                headers: c,
-                data: JSON.stringify({
-                  model: l,
-                  messages: [
-                    { role: "system", content: r },
-                    { role: "user", content: e },
-                  ],
-                  temperature: 0.7,
-                }),
-              }).then(
+            "openrouter" === a && (c["HTTP-Referer"] = window.location.origin);
+            // v28.7.2: kernel-less — the transport falls back to the
+            // canon-local bounded GM dispatch (canon installs can Enhance
+            // on every provider); the dist path (kernel gmFetch, 60 s hard
+            // bound) is untouched. Status gating and every rejection
+            // message are preserved verbatim; transport failures log e.kind
+            // for triage.
+            const pmOaiOpts = {
+              method: "POST",
+              timeout: 60000,
+              checkStatus: !1,
+              headers: c,
+              data: JSON.stringify({
+                model: l,
+                messages: [
+                  { role: "system", content: r },
+                  { role: "user", content: e },
+                ],
+                temperature: 0.7,
+              }),
+            };
+            (
+              typeof __4NDR0_NET_API__ === "undefined"
+                ? pmKernelLessGmFetch(i, pmOaiOpts)
+                : __4NDR0_NET_API__.gmFetch(i, pmOaiOpts)
+            ).then(
                 (e) => {
                   if (200 === e.status)
                     try {
@@ -10326,7 +10399,7 @@
                   (console.error(err),
                     s(new Error("Connection error with API.")));
                 },
-              ));
+              );
           },
     );
   }
@@ -17336,7 +17409,7 @@
     GM_info.script &&
     GM_info.script.version
       ? GM_info.script.version
-      : "28.7.1-Ψ";
+      : "28.7.2-Ψ";
   // v27.0.12: canonical backup snapshot helper. The beta's Gist push
   // called snapshotKeys() before it existed anywhere, so every "Sync Now"
   // threw a ReferenceError; takeAutoBackup() now shares this one helper
