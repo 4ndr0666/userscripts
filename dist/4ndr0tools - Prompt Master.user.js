@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name                4ndr0tools - Prompt Master
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version             28.6.0
+// @version             28.6.1
 // @author              4ndr0666
 // @icon                data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @license             UNLICENSED - RED TEAM USE ONLY
@@ -1160,6 +1160,35 @@ const __4NDR0_NET_API__ = (function () {
   let __mpSortMode;
   let __apCustomShortcutsMap;
 
+// 28.6.1: the counter's finalization round. A browser battery drove
+// the full engine live (headless Chromium, the real flow.google.com
+// origin serving a DOM built to the tracker's documented contract —
+// editor, model chip with batch hint, Start generation button,
+// profile menu, limit toast) and pinned one real defect with two
+// hardenings: (1) FRESH-SELECTION BLANK — a KNOWN model with no store
+// entry (selected, never generated, nothing printed) returned
+// all-null from flowCreditTurnsLeft, so the chip dimmed itself
+// "pending" and read "0 turns today · cap ?" while the official
+// pool's clean-state cap (NB2 200/200) was computable from the boot
+// constants the whole time. The !e guard now gates only the
+// Flow-print branch; the pool answers entry-less known models, and
+// the "cap ?" line remains only for a model whose per-image cost is
+// not yet officially disclosed. (2) The no-composer fallback of
+// detectFlowSelectedModel answered surviving look-alikes in DOM
+// order — now sorted by bottom edge toward the prompt-bar zone,
+// matching the anchor's own heuristic. (3) The batch-hint regex
+// capped at x8 — widened to x16 for future batch tiers (the
+// media-revision path already corrects any miss). (4) The model
+// slot's 110px cap — sized for the old short badge lines —
+// ellipsized the turns-left headline itself ("NB2 · 0/200
+// tur…" in the battery's screenshot); widened to 240px so the
+// full line ("NB2 Lite · 100/800 turns left · at the limit")
+// renders whole, the cap remaining only as an emergency guard.
+// SCRIPT_VERSION's sandbox fallback had silently lagged since 28.5.0 — synced
+// ("keep it in sync with the @version header" is its own comment's
+// standing obligation). Self-test pins extended for (1); the live
+// battery re-verified the wall charge, media revision, wallet
+// harvest, report clipboard and the engine's own 42-check battery.
 // 28.5.0 (suite v1.4.8): Media Slideshow — the operator's
 // v28.4.0 candidate integrated: presentation layer over the
 // page's media (videos, images, background images): one-shot
@@ -11713,7 +11742,7 @@ const __4NDR0_NET_API__ = (function () {
     "#pm-flow-credit-chip.mp-credit-hidden{opacity:0;pointer-events:none;transform:translateY(4px);}" +
     "#pm-flow-credit-chip.mp-credit-parked{box-shadow:0 0 20px rgba(0,229,255,.15),0 0 34px rgba(0,229,255,.25),inset 0 1px 0 rgba(0,229,255,.14),-4px 6px 18px rgba(0,0,0,.42);}" +
     "#pm-flow-credit-chip .mp-credit-glyph{width:12px;height:12px;display:block;flex:0 0 auto;color:rgba(0,229,255,.85);}" +
-    "#pm-flow-credit-chip .mp-credit-model{color:rgba(0,229,255,.7);max-width:110px;overflow:hidden;text-overflow:ellipsis;}" +
+    "#pm-flow-credit-chip .mp-credit-model{color:rgba(0,229,255,.7);max-width:240px;overflow:hidden;text-overflow:ellipsis;}" +
     "#pm-flow-credit-chip .mp-credit-sep{width:1px;height:10px;background:rgba(0,229,255,.35);flex:0 0 1px;}" +
     "#pm-flow-credit-chip .mp-credit-values{color:#00E5FF;font-variant-numeric:tabular-nums;}" +
     "#pm-flow-credit-chip .mp-credit-model.mp-credit-low{color:#ff0055;}" +
@@ -12179,7 +12208,19 @@ const __4NDR0_NET_API__ = (function () {
           const r = c.el.getBoundingClientRect();
           return r.top + r.height / 2 > vh * 0.4;
         });
-        if (filtered.length) return filtered[0].model;
+        // v28.6.1: DOM order is arbitrary — with several surviving
+        // look-alikes the pre-fix code answered whichever came first in
+        // the document. Sort by bottom edge (descending), the same
+        // prompt-bar-zone heuristic the anchor's own model-chip hunt
+        // uses, so the candidate closest to Flow's prompt bar wins.
+        if (filtered.length) {
+          filtered.sort(function (a, b) {
+            const rb = b.el.getBoundingClientRect(),
+              ra = a.el.getBoundingClientRect();
+            return rb.bottom - ra.bottom;
+          });
+          return filtered[0].model;
+        }
         continue;
       }
       return cands[0].model;
@@ -13689,7 +13730,30 @@ const __4NDR0_NET_API__ = (function () {
   // so the number is live after every turn and refills as the window
   // rolls. All-null only for an unknown model key.
   function flowCreditTurnsLeft(e, key) {
-    if (!e) return { left: null, max: null, src: "" };
+    // v28.6.1: a KNOWN model with NO store entry (selected, never
+    // generated, nothing printed) no longer returns all-null — the
+    // official-pool branch below is a pure read of the unit ledger
+    // and the code constants, so the clean-state cap (Pro 50 · NB2
+    // 200 · Lite 600) answers from the first render. Live-proven by
+    // the browser battery: the v28.6.0 chip dimmed itself "pending"
+    // and read "0 turns today · cap ?" on a fresh selection while
+    // the number was computable all along. The guard now rejects
+    // only an entry-less UNKNOWN key (all-null, exactly as before);
+    // an entry-less known key falls through to the pool, and the
+    // Flow-print branch below keeps its own e guard (it reads entry
+    // fields). A model whose per-image cost is not yet officially
+    // disclosed (costPerImage gap) still yields null there and
+    // renders the "cap ?" line — that is its designed purpose.
+    if (
+      !e &&
+      !(
+        key != null &&
+        FLOW_CREDIT_MODELS.some(function (x) {
+          return x.key === key;
+        })
+      )
+    )
+      return { left: null, max: null, src: "" };
     // v28.3.0: the key rides the call (render, report and self-test
     // all know it); the identity scan is a defensive fallback for any
     // caller that predates the parameter.
@@ -13708,6 +13772,7 @@ const __4NDR0_NET_API__ = (function () {
     // below subtracts e.turnsDay (see flowCreditRollEntryDay).
     flowCreditRollEntryDay(e);
     if (
+      e &&
       e.max != null &&
       e.usageAt &&
       flowCreditEntryDayKeyOf(e, e.usageAt) === today
@@ -13989,7 +14054,13 @@ const __4NDR0_NET_API__ = (function () {
         if (c.model.key !== model.key) continue;
         const t = (c.el.textContent || "").replace(/\s+/g, " ").trim();
         if (!t || t.length > 140) continue;
-        const bm = /\bx\s?([1-8])\b/i.exec(t);
+        const bm = /\bx\s?([1-9]|1[0-6])\b/i.exec(t);
+        // v28.6.1: the cap widens from x8 to x16 — no official tier
+        // reads above x8 today, but the hint is only the arming
+        // guess (n floors at 1) and the media-revision path raises it
+        // to the attributed images anyway, so accepting a future tier
+        // can never misbill — while rejecting one underbills every
+        // image of the tier until revision.
         if (bm) {
           const r = c.el.getBoundingClientRect();
           if (r.width && r.height && r.top + r.height / 2 > vh * 0.25)
@@ -15464,6 +15535,22 @@ const __4NDR0_NET_API__ = (function () {
         tl.left === 200 &&
           tl.max === 200 &&
           tl.src === "official AI-Pro unit pool",
+        JSON.stringify(tl),
+      );
+      // v28.6.1: the fresh-selection render path — a KNOWN model with
+      // no store entry must fall through to the pool, not blank to
+      // "cap ?" (live-proven on 28.6.0 by the browser battery: the
+      // chip dimmed itself pending on a fresh selection).
+      tl = flowCreditTurnsLeft(undefined, "pro");
+      t(
+        "pool: a known model with no store entry answers the clean-state cap",
+        tl.left === 50 && tl.max === 50 && tl.src === "official AI-Pro unit pool",
+        JSON.stringify(tl),
+      );
+      tl = flowCreditTurnsLeft(undefined, "not-a-model");
+      t(
+        "pool: an unknown key with no entry stays all-null",
+        tl.left == null && tl.max == null && tl.src === "",
         JSON.stringify(tl),
       );
       // The official example, verbatim from the disclosure: 100 NB2
@@ -18966,7 +19053,7 @@ const __4NDR0_NET_API__ = (function () {
     GM_info.script &&
     GM_info.script.version
       ? GM_info.script.version
-      : "28.5.0-Ψ";
+      : "28.6.1-Ψ";
   // v27.0.12: canonical backup snapshot helper. The beta's Gist push
   // called snapshotKeys() before it existed anywhere, so every "Sync Now"
   // threw a ReferenceError; takeAutoBackup() now shares this one helper

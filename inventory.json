@@ -1029,7 +1029,7 @@
    "version": "4.0.1",
    "description": "Covert SimpCity search UI directly from any website. (Electric-Glass + Alt+S Hotkey Only)",
    "family": "forums",
-   "sha256": "8fc0a5b51b3c2ec60fad83eec238d69aa98ce1361f60785898d7ccc0f75b98ba",
+   "sha256": "39a39a9dc67408665e300b5a255273ce7662e4425d93fb0e5d209e2934ba4528",
    "lines": 488,
    "bytes": 22471,
    "matches": [
@@ -1149,12 +1149,12 @@
   {
    "file": "4ndr0tools - Prompt Master.user.js",
    "name": "4ndr0tools - Prompt Master",
-   "version": "28.6.0",
+   "version": "28.6.1",
    "description": "Google Flow prompt manager toolkit (works on any AI, just add url) - persisted unit ledger meters every generation click, organization engine: collections, saved views, favorites, ratings, archive, group-by, and insights for large prompt libraries, dedupe, media slideshow, ai prompt enhancer, auto gist syncing, hotkeys, much more.",
    "family": "sovereign platforms",
-   "sha256": "6d3dce6c5c0e7ed5c270c584abdb2727d688199d27d1c1843f27843188ad4ffd",
-   "lines": 23473,
-   "bytes": 1133676,
+   "sha256": "0461e4bf9a4c45d8f26668bb3a9ce9b592d507970056a6b29405db3207285a08",
+   "lines": 23560,
+   "bytes": 1138435,
    "matches": [
     "*://geminigen.ai/*",
     "*://gist.github.com/*",
@@ -1592,5 +1592,5 @@
    ]
   }
  ],
- "digest": "ee34c4d4b22202c79ace21448e62a471568597d1b8e939ba1c5d5db1c8a391b8"
+ "digest": "6381b2eed67fbd62f5ee719edbbab9fbc296729fa07d91aea973dc721bc62ca0"
 }
