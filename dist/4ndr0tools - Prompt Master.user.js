@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name                4ndr0tools - Prompt Master
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version             28.6.1
+// @version             28.7.0
 // @author              4ndr0666
 // @icon                data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @license             UNLICENSED - RED TEAM USE ONLY
@@ -1160,6 +1160,34 @@ const __4NDR0_NET_API__ = (function () {
   let __mpSortMode;
   let __apCustomShortcutsMap;
 
+// 28.7.0: the counter's production round — the review's five cost/
+// policy findings mitigated, its four additions shipped, and the dev
+// scaffolding removed on the operator's explicit authorization
+// ("the tools initially used to arrive at the chip counter ... are
+// not for production release; Remove them"): the Copy Report and
+// Self-Test menu commands, the 44-assertion self-test battery, the
+// __flowCreditDebugCharge/__flowCreditDebugSelfTest console hooks,
+// and the pull's manual click path are GONE; their surviving
+// invariants live on as the boot-time integrity check (the report's
+// six machine checks + the model/cost table pin), and the ledger
+// export command is the production data surface (machine-exact JSON
+// via the same clipboard path). The five mitigations: (1) the 1s
+// poll's full-DOM harvest is now epoch-gated — the MutationObserver
+// advances a mutation epoch and the poll skips the DOM entirely
+// when nothing mutated since the last harvest; (2) media revision
+// lands on the EARLIEST-unrevised ledger entry of the model (was:
+// latest unconditionally — the revision asymmetry); (3) a Flow
+// print outranks the pool only while it is fresh (<= the 5h window
+// — was: the whole anchor-aware day); (4) the persisted deep-clone
+// (JSON.parse(JSON.stringify(state)) on every 150ms-debounced save)
+// is retired for a purpose-built two-level cloner, output-identical
+// for the JSON-safe flat state; (5) the six near-duplicate
+// exclusion selector lists are unified into FLOW_CREDIT_EXCLUDE
+// (three named variants, byte-preserved per consumer). The four
+// additions: the pool fill bar on the chip face (the 2,400u window
+// level was hover-only), the ledger export command, the continuous
+// reconciliation line (pool meter vs fresh Flow print, on the chip
+// title and in the export), and the table-integrity boot check.
 // 28.6.1: the counter's finalization round. A browser battery drove
 // the full engine live (headless Chromium, the real flow.google.com
 // origin serving a DOM built to the tracker's documented contract —
@@ -11726,6 +11754,39 @@ const __4NDR0_NET_API__ = (function () {
     costPerImage: { pro: 48, nb2: 12, nb2lite: 3 },
     liteRefCost: 4,
     proWeekGens: 1000,
+    // v28.7.0: the window's own duration — the pool refills as spend
+    // ages out of it, and the Flow-print freshness gate in
+    // flowCreditTurnsLeft keys off this same constant: a print older
+    // than the window can no longer speak for the window's current
+    // state, whatever day it was taken on.
+    windowMs: 5 * 3600000,
+  };
+  // v28.7.0: THE EXCLUSION TABLE — six consumers used to carry six
+  // consumer-local near-duplicate selector lists (three distinct
+  // sets), and the next editor had to notice the differences before
+  // touching any one of them (the review's #5). Unified here with the
+  // deltas on the record; every consumer keeps EXACTLY its
+  // pre-unification string, so the table is a pure refactor:
+  //   .chrome — the script's own surfaces only. The readings harvest
+  //     and the boot-census sampler MUST keep reading dialogs and
+  //     menus: an open profile menu's wallet print is the one live
+  //     text the passive pull harvests — excluding it would blind the
+  //     tracker to the very number it exists to read.
+  //   .media — chrome plus the picker/dialog containers. Media
+  //     fingerprints must skip a dropped-down picker's rows, but
+  //     [class*="overlay"] stays OUT of this set deliberately: the
+  //     result grid's hover/overlay chrome carries the generated
+  //     images themselves, and excluding it would stop counting them.
+  //   .full — chrome plus menus, listboxes, menu items, options, the
+  //     cdk overlay container AND [class*="overlay"]. The model-
+  //     detection family (selected-model hunt, batch-hint read, model
+  //     chip hunt) must never take a picker row or an overlay label
+  //     for the selected model — the widest set is the safe one.
+  const FLOW_CREDIT_EXCLUDE = {
+    chrome: "#pm-flow-dock, #pm-flow-credit-chip, .mp-overlay, .mp-modal-box",
+    media:
+      '#pm-flow-dock, #pm-flow-credit-chip, .mp-overlay, .mp-modal-box, [role="menu"], [role="listbox"], [role="dialog"], .cdk-overlay-container',
+    full: '#pm-flow-dock, #pm-flow-credit-chip, .mp-overlay, .mp-modal-box, [role="menu"], [role="listbox"], [role="menuitem"], [role="option"], .cdk-overlay-container, [class*="overlay"]',
   };
   // v28.2.0: the chip is rebuilt to the 3lectric-Glass spec — the data
   // face is JetBrains Mono, the glass base is the spec's rgba(10,19,26)
@@ -11745,6 +11806,8 @@ const __4NDR0_NET_API__ = (function () {
     "#pm-flow-credit-chip .mp-credit-model{color:rgba(0,229,255,.7);max-width:240px;overflow:hidden;text-overflow:ellipsis;}" +
     "#pm-flow-credit-chip .mp-credit-sep{width:1px;height:10px;background:rgba(0,229,255,.35);flex:0 0 1px;}" +
     "#pm-flow-credit-chip .mp-credit-values{color:#00E5FF;font-variant-numeric:tabular-nums;}" +
+    "#pm-flow-credit-chip .mp-credit-pool{width:40px;height:4px;border-radius:2px;background:rgba(0,229,255,.14);overflow:hidden;flex:0 0 auto;}" +
+    "#pm-flow-credit-chip .mp-credit-pool-fill{display:block;height:100%;background:linear-gradient(90deg,rgba(0,229,255,.55),#00E5FF);border-radius:2px;transition:width var(--mp-transition-fast,150ms);}" +
     "#pm-flow-credit-chip .mp-credit-model.mp-credit-low{color:#ff0055;}" +
     "#pm-flow-credit-chip .mp-credit-model.mp-credit-zero{color:#ff0055;text-shadow:0 0 12px rgba(255,0,85,.6);}";
   // v28.2.0: the canonical Ψ branding glyph at chip scale — the same
@@ -11771,6 +11834,14 @@ const __4NDR0_NET_API__ = (function () {
     flowCreditPollTimer = null,
     flowCreditObserver = null,
     flowCreditMutationTimer = null,
+    // v28.7.0: the epoch gate pair (see flowCreditTick). The mutation
+    // observer advances flowCreditMutEpoch on every batch it schedules;
+    // flowCreditPollEpoch records where the 1s poll last ran a full
+    // pass. Equal values mean the DOM has not changed since — the
+    // poll's harvest is then pure waste (the review's #1 cost
+    // finding), and the DOM side of the tick is skipped.
+    flowCreditMutEpoch = 0,
+    flowCreditPollEpoch = 0,
     flowCreditPosPending = !1,
     flowCreditSaveTimer = null,
     flowCreditLastSig = "",
@@ -11829,12 +11900,12 @@ const __4NDR0_NET_API__ = (function () {
     flowCreditMediaSeen = null,
     flowCreditLastScrollAt = 0,
     // v27.3.6: canonical NB usage capture + the corrected counter.
-    // flowCreditUsageCount tallies usage-kind readings for the report;
-    // the counter's mutation-stamped queue (fp + model selected at ADD
-    // time + timestamp) is drained by flowCreditCountGens, which only
-    // commits on /edit/ routes, re-seeds on SPA route change, and
-    // burst-groups fingerprints into turns (gap > 8s = new turn) with
-    // day counters that roll over at local midnight.
+    // flowCreditUsageCount tallies usage-kind readings for the ledger
+    // export (v28.7.0 — was "for the report"; the report is gone, the
+    // export is the reader). The queue those readings once fed (the
+    // mutation-stamped fp pipeline) is long gone — v27.3.8's
+    // click-anchored rebuild replaced it; the counter remains the
+    // uniform all-source usage tally.
     flowCreditUsageCount = 0,
     flowCreditTurnsSession = {},
     flowCreditGenUrl = "",
@@ -11842,7 +11913,8 @@ const __4NDR0_NET_API__ = (function () {
     // v27.3.8: click-anchored generation state. flowCreditGenArm
     // maps model key -> {from, to} armed windows opened by real
     // generation clicks (media counts only inside them);
-    // flowCreditClicksTotal/Unattributed tally clicks for the report;
+    // flowCreditClicksTotal/Unattributed tally clicks for the ledger
+    // export (v28.7.0 — was "for the report");
     // flowCreditLastGen remembers the model, batch hint and time of
     // the most recent generation; the hook installs once per page
     // lifetime.
@@ -11967,19 +12039,39 @@ const __4NDR0_NET_API__ = (function () {
   // counted total rides the entry itself (c), so arm replacement
   // mid-render cannot lose or double it. Idempotent by monotonicity:
   // n only ever rises toward max(batch hint, counted total).
+  // v28.7.0: EARLIEST-UNREVISED WINS (was: latest unconditionally) —
+  // the review's "revision asymmetry": with two same-model clicks
+  // inside the 180s window, late media landed on the LATER entry
+  // even when it belonged to the earlier generation's slow render.
+  // The fast renders of a click are counted in an earlier
+  // single-window sweep; the media that first appears AFTER a second
+  // click belongs, by elimination, to the earliest entry the window
+  // has NOT yet revised — and a revision added to an already-revised
+  // entry is exactly the double-count the v27.3.12 snapshot class
+  // guards against. Same-model totals are unchanged either way
+  // (same rate, same window bucket); the assignment now errs toward
+  // the entry with the least observed evidence — strictly
+  // conservative for the per-entry record the ledger export ships.
+  // All entries already revised: fall back to the most recent (the
+  // pre-fix behavior, still the maximum-likelihood owner).
   function flowCreditLedgerRevise(m, imgs) {
     if (!flowCreditState || !Array.isArray(flowCreditState.ledger)) return;
     if (!(imgs > 0)) return;
     const now = Date.now();
     const led = flowCreditState.ledger;
+    let firstUnrevised = null,
+      latest = null;
     for (let i = led.length - 1; i >= 0; i--) {
       const en = led[i];
       if (!en || en.m !== m || en.u > 0) continue;
       if (en.t > now || en.t <= now - 180000) continue;
-      en.c = (en.c || 0) + imgs;
-      en.n = Math.max(en.n || 1, en.c);
-      return;
+      if (!latest) latest = en; // first hit scanning back = most recent
+      if (!(en.c > 0)) firstUnrevised = en; // keep overwriting -> earliest unrevised
     }
+    const hit = firstUnrevised || latest;
+    if (!hit) return;
+    hit.c = (hit.c || 0) + imgs;
+    hit.n = Math.max(hit.n || 1, hit.c);
   }
   // A ledger entry's unit cost: wall entries carry raw units (u);
   // real generations cost images × the model's official per-image
@@ -12164,8 +12256,9 @@ const __4NDR0_NET_API__ = (function () {
   }
   function detectFlowSelectedModel() {
     const composer = findFlowComposerContainer();
-    const exclusion =
-      '#pm-flow-dock, #pm-flow-credit-chip, .mp-overlay, .mp-modal-box, [role="menu"], [role="listbox"], [role="menuitem"], [role="option"], .cdk-overlay-container, [class*="overlay"]';
+    // v28.7.0: the shared exclusion table (was a consumer-local copy
+    // of the full list — see FLOW_CREDIT_EXCLUDE for the deltas).
+    const exclusion = FLOW_CREDIT_EXCLUDE.full;
     const scopes = [];
     if (composer) {
       scopes.push(composer);
@@ -12739,9 +12832,9 @@ const __4NDR0_NET_API__ = (function () {
   }
   // Diagnostics helper: what credit- or usage-ish text is actually
   // visible right now (tag + trimmed text). Called for the settled
-  // status line when nothing parsed and for every Copy Report, so a
-  // console report carries Flow's live wording instead of a bare
-  // "readings=0". v27.3.6: the gate no longer demands the word
+  // status line when nothing parsed (v28.7.0 — the Copy Report's
+  // second caller is gone), so a console line carries Flow's live
+  // wording instead of a bare "readings=0". v27.3.6: the gate no longer demands the word
   // "credit" — Nano Banana usage surfaces say tokens/turns/daily/
   // limit — and a second lane dumps MODEL ROWS: any visible text
   // naming exactly one model and sitting beside digits, joined at
@@ -12751,7 +12844,9 @@ const __4NDR0_NET_API__ = (function () {
   function collectFlowCreditTextSamples() {
     const out = [];
     const seen = new Set();
-    const exclusion = "#pm-flow-dock, #pm-flow-credit-chip, .mp-overlay, .mp-modal-box";
+    // v28.7.0: the shared exclusion table (chrome only — the sampler
+    // must read open menus, same as the readings harvest).
+    const exclusion = FLOW_CREDIT_EXCLUDE.chrome;
     const push = function (label, t) {
       const norm = String(t || "")
         .replace(/\s+/g, " ")
@@ -12824,35 +12919,30 @@ const __4NDR0_NET_API__ = (function () {
     return out;
   }
 
-  // v27.3.4: the ACTIVE wallet pull — the half no passive source could
-  // ever cover. Google's own support note (support.google.com/flow/
+  // v27.3.4 (revised v28.7.0): the wallet pull — PASSIVE-ONLY, every
+  // reason. Google's own support note (support.google.com/flow/
   // answer/16526234) places the wallet readout under the profile
   // information in Flow's profile menu, and that menu's credit text
   // only exists in the DOM while the popover is OPEN — page text, the
   // net observer, and storage all read zero on the live site simply
-  // because the popover never was. The pull opens the menu itself: it
-  // finds the account chip at the top-right (Google's buttons there
-  // carry a "Google Account: …" accessible name; a geometry fallback
-  // covers plain avatar buttons), clicks it, lets the normal harvest
-  // read whatever renders (plus any lazy RPC the menu triggers — the
-  // net observer sees that too), captures the menu's raw text as
-  // report evidence, and closes the menu again through a three-step
-  // cascade (Escape, button toggle, outside click), verifying closure
-  // after each step. Safety rails: a menu that is ALREADY open is
-  // harvested but never closed (it may be the user's own); anchors
-  // (<a>) are never clicked — a stray navigation is the one
-  // unrecoverable side effect; one pull runs at a time; v28.1.1:
-  // automatic pulls (boot / boot-retry / post-gen) are PASSIVE-ONLY —
-  // they harvest an organically open menu and never click the account
-  // chip, so the profile menu can never appear on its own; only
-  // user-initiated pulls ("manual" — the Copy Report command) open
-  // and close it; and the script's own chrome (dock, chip, modals)
-  // can never be mistaken for the profile menu.
-  function flowCreditSleep(ms) {
-    return new Promise(function (res) {
-      setTimeout(res, ms);
-    });
-  }
+  // because the popover never was. The v27.3.4-v28.6.1 pull covered
+  // this by opening the menu itself (find the account chip, click,
+  // harvest, close through a three-step cascade); v28.1.1 already
+  // made the AUTOMATIC reasons passive-only (the 2026-09-22 field
+  // report: "Flow's profile menu periodically appears on its own" —
+  // the boot pull fired ~9s after every load with a stale wallet),
+  // and v28.7.0 removes the click path entirely: the "manual" reason
+  // that owned it existed for the Copy Report command, which is gone
+  // on the operator's authorization ("the tools initially used to
+  // arrive at the chip counter ... are not for production release").
+  // What remains is the one branch that always respected the host: a
+  // wallet-bearing menu already on screen is read, never closed,
+  // never clicked — it may be the user's own popover. The wallet
+  // establishes through the user's own profile-menu opens (this
+  // harvest, and the 1s tick reads it regardless), the net/storage
+  // passive sources, and the post-generation re-pull's passive
+  // check; a stale wallet stays honestly marked STALE on the chip
+  // until one of those re-reads it.
   // "Wallet known" gate for the pull (v27.3.5): any real wallet
   // reading — a left OR a total — means the menu pull already did
   // its job. The v27.3.4 gate demanded a TOTAL, but the profile menu
@@ -12875,8 +12965,9 @@ const __4NDR0_NET_API__ = (function () {
   }
   // v27.3.5: freshness companion for the AUTO pulls — a wallet read
   // within the last 6h is fresh enough to skip the pull; anything
-  // older (or absent) refreshes it. Manual/report pulls decide for
-  // themselves via flowCreditWalletKnown. v27.3.9 adds the second,
+  // older (or absent) refreshes it. v28.7.0: every pull is an auto
+  // pull now (the manual reason died with the report). v27.3.9 adds
+  // the second,
   // generation-anchored half: the wallet MUTATES at generation time
   // (Google's cost doc refreshes the daily grant on the FIRST
   // generation of the day; credit-charging models deduct per
@@ -12912,106 +13003,12 @@ const __4NDR0_NET_API__ = (function () {
     }
     return null;
   }
-  function flowCreditAnyDialog() {
-    const nodes = document.querySelectorAll(FLOW_CREDIT_DIALOG_SEL);
-    for (const n of nodes) if (flowCreditDialogSane(n)) return n;
-    return null;
-  }
-  // The account-chip hunt, in priority order: the standard Google
-  // accessible name ("Google Account: Name (email)") on a button, the
-  // same phrase on an avatar img's alt text, accountish data-testids,
-  // then geometry — a small control in the top-right corner that
-  // either contains an image or is avatar-square. Links never win.
-  function findFlowProfileMenuButton() {
-    const excl =
-      '#pm-flow-dock, #pm-flow-credit-chip, .mp-overlay, .mp-modal-box, [role="menu"], [role="listbox"], [role="menuitem"], [role="option"]';
-    const ok = function (el) {
-      if (!el || !el.isConnected || !isElementVisibleEl(el)) return !1;
-      if (el.closest(excl)) return !1;
-      if (el.closest("a")) return !1;
-      const r = el.getBoundingClientRect();
-      return r.width >= 20 && r.width <= 160 && r.height >= 20 && r.height <= 160;
-    };
-    const pick = function (list) {
-      for (const el of list) if (ok(el)) return el;
-      return null;
-    };
-    let b = pick(
-      document.querySelectorAll(
-        'button[aria-label^="Google Account" i], [role="button"][aria-label^="Google Account" i]',
-      ),
-    );
-    if (b) return b;
-    b = pick(
-      document.querySelectorAll(
-        'button[aria-label*="Google Account" i], [role="button"][aria-label*="Google Account" i]',
-      ),
-    );
-    if (b) return b;
-    const imgs = document.querySelectorAll('img[alt*="Google Account" i]');
-    for (const img of imgs) {
-      b = img.closest('button, [role="button"]');
-      if (b && ok(b)) return b;
-    }
-    b = pick(
-      document.querySelectorAll(
-        '[data-testid*="account" i], [data-testid*="avatar" i], [data-testid*="profile" i]',
-      ),
-    );
-    if (b) return b;
-    const vw = window.innerWidth,
-      vh = window.innerHeight;
-    const cands = [];
-    const ctrls = document.querySelectorAll('button, [role="button"]');
-    for (const el of ctrls) {
-      if (!ok(el)) continue;
-      const r = el.getBoundingClientRect();
-      const cx = r.left + r.width / 2,
-        cy = r.top + r.height / 2;
-      if (cy > vh * 0.25 || cx < vw * 0.65) continue;
-      const hasImg = !!el.querySelector("img");
-      const square =
-        r.width >= 24 &&
-        r.height >= 24 &&
-        Math.abs(r.width - r.height) <= Math.max(12, r.width * 0.35);
-      if (!hasImg && !square) continue;
-      cands.push({ el: el, right: r.right });
-    }
-    if (cands.length) {
-      cands.sort(function (a, b) {
-        return b.right - a.right;
-      });
-      return cands[0].el;
-    }
-    return null;
-  }
-  function flowCreditDispatchEscape() {
-    const targets = [document.activeElement, document.body, document];
-    for (const t of targets) {
-      if (!t || !t.dispatchEvent) continue;
-      for (const type of ["keydown", "keyup"]) {
-        try {
-          const ev = new KeyboardEvent(type, {
-            key: "Escape",
-            code: "Escape",
-            bubbles: !0,
-            cancelable: !0,
-          });
-          Object.defineProperty(ev, "keyCode", {
-            get: function () {
-              return 27;
-            },
-          });
-          Object.defineProperty(ev, "which", {
-            get: function () {
-              return 27;
-            },
-          });
-          t.dispatchEvent(ev);
-        } catch (e) { console.debug("PM interceptor:", e);}
-      }
-    }
-  }
+  // v28.7.0: flowCreditAnyDialog, findFlowProfileMenuButton and
+  // flowCreditDispatchEscape removed with the pull's click path —
+  // they existed to open and close Flow's profile menu, which no
+  // code path does anymore (the passive-only posture above).
+  // flowCreditDialogSane/WithCredits stay: branch A reads a menu
+  // that is already on screen.
   // v27.3.9: the post-generation wallet re-pull. A generation click
   // makes the stored wallet reading stale (grant refresh and/or
   // per-generation cost); the balance settles server-side while the
@@ -13020,13 +13017,13 @@ const __4NDR0_NET_API__ = (function () {
   // clicks never stacks pulls; a hidden tab retries every 60s until
   // it becomes visible (the pull needs the page laid out); a 5-per-
   // session cap makes a runaway loop impossible; and the stale
-  // check is re-evaluated at fire time — if a report or the boot
-  // pull already refreshed the reading, the timer exits without
-  // touching Flow's profile menu at all. v28.1.1: the pull itself is
-  // PASSIVE-ONLY for this automatic reason (see the allowlist gate in
-  // pullFlowCreditWallet) — it harvests a menu the user already has
-  // open and never opens one itself; the Copy Report command remains
-  // the explicit refresh path.
+  // check is re-evaluated at fire time — if the boot pull already
+  // refreshed the reading, the timer exits without touching Flow's
+  // profile menu at all. v28.1.1: the pull itself is PASSIVE-ONLY
+  // for this automatic reason (see pullFlowCreditWallet) — it
+  // harvests a menu the user already has open and never opens one
+  // itself; v28.7.0: with the report gone, the user's own profile-
+  // menu open IS the explicit refresh path.
   function scheduleFlowCreditWalletRepull() {
     if (flowCreditRepullTimer) return;
     flowCreditRepullTimer = setTimeout(function fire() {
@@ -13046,7 +13043,7 @@ const __4NDR0_NET_API__ = (function () {
         // re-pulls for the whole session.
         pullFlowCreditWallet("post-gen").then(function (r) {
           if (r && r.ran) flowCreditRepullCount++;
-          if (r && r.ran && (r.opened === "clicked" || r.opened === "already open"))
+          if (r && r.ran && r.opened === "already open")
             try {
               console.info(
                 "[Prompt Master] credit tracker: post-generation wallet re-pull — " +
@@ -13062,14 +13059,14 @@ const __4NDR0_NET_API__ = (function () {
     if (!flowCreditEngineActive) return { ran: !1, why: "engine inactive" };
     if (flowCreditPullBusy) return { ran: !1, why: "a pull is already running" };
     if (document.hidden) return { ran: !1, why: "tab hidden" };
-    if (reason !== "manual" && Date.now() - flowCreditPullLastAt < 30000)
+    if (Date.now() - flowCreditPullLastAt < 30000)
       return { ran: !1, why: "debounced — a pull ran moments ago" };
     flowCreditPullBusy = !0;
     try {
       // A. a wallet-bearing menu already on screen: harvest it, never
       // close it, never click the avatar — it may be the user's own
       // popover (and the 1s tick reads it anyway).
-      let dlg = flowCreditDialogWithCredits();
+      const dlg = flowCreditDialogWithCredits();
       if (dlg) {
         try {
           flowCreditTick();
@@ -13078,113 +13075,16 @@ const __4NDR0_NET_API__ = (function () {
         flowCreditPullInfo = "profile menu already open — harvested it without closing";
         return { ran: !0, opened: "already open", closed: "left open" };
       }
-      // v28.1.1: AUTOMATIC pulls stop here — passive-only. The 2026-09-22
-      // field report flagged that Flow's profile menu "periodically
-      // appears on its own": the boot pull fired ~9s after every load
-      // with a stale wallet, and the post-generation re-pull fired 155s
-      // after wallet-mutating clicks — both unannounced UI takeovers of
-      // the host page. An allowlist (not a blocklist) is the safe
-      // posture: only "manual" — the Copy Report command's reason, where
-      // the visible open/read/close IS the action the user asked for —
-      // may click the account chip. Automatic reasons still harvest a
-      // menu that is already on screen (branch A above, and the 1s tick
-      // reads it regardless), and the wallet's freshness now converges
-      // on any live observation (see mergeFlowCreditReadings) instead
-      // of demanding a pull.
-      if (reason !== "manual") {
-        flowCreditPullRaw = "";
-        flowCreditPullInfo =
-          "passive-only — automatic pulls never open the profile menu; open it yourself or copy the report to refresh the wallet";
-        return { ran: !1, opened: "none (passive)", closed: "n/a" };
-      }
-      // B. find the account chip (links are never clicked).
-      const btn = findFlowProfileMenuButton();
-      if (!btn) {
-        flowCreditPullRaw = "";
-        flowCreditPullInfo = "no profile/account button found in the top-right corner";
-        return { ran: !1, opened: "none", closed: "n/a" };
-      }
-      // C. click it, then wait up to 2.8s for the menu (its credit
-      // text can render a beat after the container, so the
-      // credit-bearing check and the any-dialog check are separate).
-      btn.click();
-      const t0 = Date.now();
-      let sawDialog = !1;
-      while (Date.now() - t0 < 2800) {
-        await flowCreditSleep(140);
-        if (flowCreditDialogWithCredits()) break;
-        if (flowCreditAnyDialog()) sawDialog = !0;
-      }
-      dlg = flowCreditDialogWithCredits();
-      // D. harvest while it is open — twice, for late numbers.
-      try {
-        flowCreditTick();
-      } catch (e) { console.debug("PM interceptor:", e);}
-      await flowCreditSleep(450);
-      try {
-        flowCreditTick();
-      } catch (e) { console.debug("PM interceptor:", e);}
-      if (dlg)
-        flowCreditPullRaw = (dlg.textContent || "").replace(/\s+/g, " ").trim().slice(0, 300);
-      // E. close what WE opened — v27.3.5 cascade, strongest first:
-      // the menu's own close control (the captured menu text opens
-      // with "close" — its accessible X), then Escape, then the
-      // button toggle, then an outside click — verifying after each
-      // step with a longer settle (480ms; v27.3.4's 320ms windows
-      // raced this menu's exit animation and reported failure while
-      // it was already closing).
-      if (flowCreditAnyDialog()) {
-        const openDlg = flowCreditAnyDialog();
-        const xBtn =
-          openDlg &&
-          openDlg.querySelector(
-            'button[aria-label*="close" i], [role="button"][aria-label*="close" i], button[title*="close" i], button[aria-label*="dismiss" i]',
-          );
-        if (xBtn) {
-          try {
-            xBtn.click();
-          } catch (e) { console.debug("PM interceptor:", e);}
-          await flowCreditSleep(480);
-        }
-        if (flowCreditAnyDialog()) {
-          flowCreditDispatchEscape();
-          await flowCreditSleep(480);
-          if (flowCreditAnyDialog() && btn.isConnected) {
-            try {
-              btn.click();
-            } catch (e) { console.debug("PM interceptor:", e);}
-            await flowCreditSleep(480);
-          }
-          if (flowCreditAnyDialog()) {
-            try {
-              const outside = document.elementFromPoint(8, window.innerHeight - 8);
-              if (outside)
-                for (const type of ["mousedown", "mouseup", "click"]) {
-                  outside.dispatchEvent(
-                    new MouseEvent(type, { bubbles: !0, cancelable: !0, view: window }),
-                  );
-                }
-            } catch (e) { console.debug("PM interceptor:", e);}
-            await flowCreditSleep(480);
-          }
-        }
-      }
-      const stillOpen = flowCreditAnyDialog();
-      const closed = stillOpen ? "close FAILED — the menu stayed open" : "closed";
-      if (dlg) {
-        flowCreditPullInfo =
-          "opened Flow's profile menu — " +
-          (flowCreditWalletKnown()
-            ? "wallet read"
-            : "no parsable credit text in the menu") +
-          " — " +
-          closed;
-      } else if (sawDialog || stillOpen) {
-        flowCreditPullInfo = "a menu opened but carried no credit text — " + closed;
-      } else {
-        flowCreditPullInfo = "clicked the profile button but no menu appeared within 2.8s";
-      }
-      return { ran: !0, opened: "clicked", closed: closed };
+      // v28.7.0: branches B-E (find the chip, click it, harvest,
+      // close the cascade) removed with the report's manual reason —
+      // see the function's header comment. No code path opens
+      // Flow's profile menu anymore.
+      flowCreditPullRaw = "";
+      flowCreditPullInfo =
+        "passive-only (" +
+        (reason || "pull") +
+        ") — no wallet-bearing menu is on screen; open Flow's profile menu yourself to refresh the wallet";
+      return { ran: !1, opened: "none (passive)", closed: "n/a" };
     } catch (e) {
       flowCreditPullInfo = "pull error: " + ((e && e.message) || e);
       return { ran: !1, why: String((e && e.message) || e) };
@@ -13203,7 +13103,9 @@ const __4NDR0_NET_API__ = (function () {
   function harvestFlowCreditReadings() {
     const readings = [];
     const seenContainers = new Set();
-    const exclusion = "#pm-flow-dock, #pm-flow-credit-chip, .mp-overlay, .mp-modal-box";
+    // v28.7.0: the shared exclusion table (chrome only — the harvest
+    // must read open dialogs and menus; the wallet print lives there).
+    const exclusion = FLOW_CREDIT_EXCLUDE.chrome;
     const pushParsed = function (text, context) {
       const rs = parseFlowCreditReadings(text);
       for (const r of rs)
@@ -13438,6 +13340,52 @@ const __4NDR0_NET_API__ = (function () {
     }
     return changed;
   }
+  // v28.7.0: the store cloner — replaces the JSON.parse(JSON.stringify(
+  // state)) deep-clone that rode every 150ms-debounced save (the
+  // review's #4 cost finding: a full intermediate object graph built
+  // and discarded on every persist, on a bounded-but-large ledger).
+  // The state is JSON-safe and exactly two levels deep (scalars, a
+  // flat wallet object, a flat per-model entry map, a flat ledger
+  // entry array), so a purpose-built two-level copy is
+  // storage-identical to the parse/stringify round-trip — every own
+  // enumerable field survives, nothing is invented — at a fraction
+  // of the cost and with no transient garbage. The defensive
+  // contract it serves is unchanged: GM_setValue crosses the sandbox
+  // boundary, and the page must never hold a mutable reference into
+  // live tracker state (managers may serialize asynchronously).
+  function cloneFlowCreditStateForStore(state) {
+    if (!state) return state;
+    const out = {};
+    for (const k of Object.keys(state)) {
+      const v = state[k];
+      if (v === null || typeof v !== "object") {
+        out[k] = v;
+      } else if (Array.isArray(v)) {
+        const arr = new Array(v.length);
+        for (let i = 0; i < v.length; i++) {
+          const en = v[i];
+          arr[i] =
+            en && typeof en === "object" && !Array.isArray(en)
+              ? Object.assign({}, en)
+              : en;
+        }
+        out[k] = arr;
+      } else {
+        // a flat object (the models map / the wallet): primitives
+        // copied, nested objects (model entries) shallow-cloned.
+        const o = {};
+        for (const k2 of Object.keys(v)) {
+          const v2 = v[k2];
+          o[k2] =
+            v2 && typeof v2 === "object" && !Array.isArray(v2)
+              ? Object.assign({}, v2)
+              : v2;
+        }
+        out[k] = o;
+      }
+    }
+    return out;
+  }
   function persistFlowCreditState() {
     if (flowCreditSaveTimer) return;
     flowCreditSaveTimer = setTimeout(function () {
@@ -13446,7 +13394,7 @@ const __4NDR0_NET_API__ = (function () {
         Promise.resolve(
           GM_setValue(
             FLOW_CREDIT_STORAGE_KEY,
-            JSON.parse(JSON.stringify(flowCreditState)),
+            cloneFlowCreditStateForStore(flowCreditState),
           ),
         ).catch(function () {});
       } catch (e) { console.debug("PM interceptor:", e);}
@@ -13474,8 +13422,9 @@ const __4NDR0_NET_API__ = (function () {
       seenFp[fp] = 1;
       out.push(fp);
     };
-    const exclusion =
-      '#pm-flow-dock, #pm-flow-credit-chip, .mp-overlay, .mp-modal-box, [role="menu"], [role="listbox"], [role="dialog"], .cdk-overlay-container';
+    // v28.7.0: the shared exclusion table (the media set — picker
+    // rows excluded, result-grid overlays still counted).
+    const exclusion = FLOW_CREDIT_EXCLUDE.media;
     if (document.body) {
       const imgs = document.body.querySelectorAll("img");
       for (const img of imgs) {
@@ -13505,8 +13454,10 @@ const __4NDR0_NET_API__ = (function () {
   // directive — v27.3.8's armed-window gate retired it (counting no
   // longer depends on the route), and although the v27.3.8 comment
   // claimed it "stays defined for that report signal", no report or
-  // self-test ever called it. The anchor source itself remains visible
-  // in the report line via flowCreditAnchorSrc.
+  // self-test ever called it. The anchor source itself remains
+  // visible in the boot line via flowCreditAnchorSrc (v28.7.0: the
+  // report is gone with the dev tools; the ledger export carries
+  // engine.anchor now).
   // v27.3.6: local-day key for the daily counters (the hidden NB
   // limit resets per day, so day counts are the relevant ones).
   function flowCreditDayKey(nowMs) {
@@ -13719,16 +13670,24 @@ const __4NDR0_NET_API__ = (function () {
   // before it runs out. v28.3.0: the meter is the OFFICIAL compute-
   // unit pool (2,400u per rolling 5-hour window, 48,384u per week,
   // ONE shared pool, billed per image — Pro 48u · NB2 12u · Lite 3u
-  // single-turn / 4u with reference). Priority: (1) Flow's own print
-  // (used/max from the model picker — left = max − used − the clicks
-  // made since the print; Flow's server numbers see the chat/code
-  // spend the client meter cannot, so they always outrank it); (2)
-  // the official pool — units left ÷ this model's per-image cost,
-  // floored, over BOTH the 5-hour window and the weekly budget (Pro
-  // additionally respects its official ~1,000-images-per-week
-  // ceiling). Both branches recompute from the ledger on every call,
-  // so the number is live after every turn and refills as the window
-  // rolls. All-null only for an unknown model key.
+  // single-turn / 4u with reference). Priority: (1) Flow's own FRESH
+  // print (used/max from the model picker — left = max − used − the
+  // clicks made since the print; Flow's server numbers see the
+  // chat/code spend the client meter cannot, so they outrank it
+  // while they can still speak for the window — v28.7.0: FRESH means
+  // taken within the current 5-hour window, no longer merely
+  // "today": a morning print used to outrank an afternoon-refilled
+  // pool for the whole anchor-aware day, quoting a stale low while
+  // the meter held the live arithmetic — the review's policy call,
+  // now adjudicated); (2) the official pool — units left ÷ this
+  // model's per-image cost, floored, over BOTH the 5-hour window and
+  // the weekly budget (Pro additionally respects its official
+  // ~1,000-images-per-week ceiling). Both branches recompute from the
+  // ledger on every call, so the number is live after every turn and
+  // refills as the window rolls. All-null only for an unknown model
+  // key. A stale print is not discarded — the reconciliation line
+  // (flowCreditReconciliation) still quotes it as the calibration
+  // signal.
   function flowCreditTurnsLeft(e, key) {
     // v28.6.1: a KNOWN model with NO store entry (selected, never
     // generated, nothing printed) no longer returns all-null — the
@@ -13754,8 +13713,9 @@ const __4NDR0_NET_API__ = (function () {
       )
     )
       return { left: null, max: null, src: "" };
-    // v28.3.0: the key rides the call (render, report and self-test
-    // all know it); the identity scan is a defensive fallback for any
+    // v28.3.0: the key rides the call (render and the ledger export
+    // both know it — v28.7.0: the report and self-test are gone);
+    // the identity scan is a defensive fallback for any
     // caller that predates the parameter.
     if (key == null && flowCreditState && flowCreditState.models) {
       for (const k in flowCreditState.models)
@@ -13771,10 +13731,20 @@ const __4NDR0_NET_API__ = (function () {
     // roll on the click path otherwise, and the Flow-print branch
     // below subtracts e.turnsDay (see flowCreditRollEntryDay).
     flowCreditRollEntryDay(e);
+    const nowMs = Date.now();
     if (
       e &&
       e.max != null &&
       e.usageAt &&
+      // v28.7.0: the freshness gate — a print may outrank the pool
+      // only while it can still speak for the current window. The
+      // pool refills as spend ages out of the 5-hour rolling window;
+      // a print older than the window describes a pool state that no
+      // longer exists, and quoting it all day (the pre-fix day-key
+      // gate alone) suppressed the refill the meter had already
+      // absorbed. The day-key gate stays as the secondary condition
+      // — yesterday's print never outranks today's pool either way.
+      nowMs - e.usageAt <= FLOW_CREDIT_OFFICIAL.windowMs &&
       flowCreditEntryDayKeyOf(e, e.usageAt) === today
     ) {
       const clicksSince = Math.max(0, (e.turnsDay || 0) - (e.turnsDayAtUsage || 0));
@@ -13797,7 +13767,7 @@ const __4NDR0_NET_API__ = (function () {
     if (!(cost > 0)) return { left: null, max: null, src: "" };
     const rem5h = Math.max(
       0,
-      FLOW_CREDIT_OFFICIAL.budget5h - flowCreditUnitsSpent(5 * 3600000),
+      FLOW_CREDIT_OFFICIAL.budget5h - flowCreditUnitsSpent(FLOW_CREDIT_OFFICIAL.windowMs),
     );
     const remWk = Math.max(
       0,
@@ -13820,6 +13790,68 @@ const __4NDR0_NET_API__ = (function () {
       max = Math.min(max, FLOW_CREDIT_OFFICIAL.proWeekGens);
     }
     return { left: Math.max(0, left), max: max, src: "official AI-Pro unit pool" };
+  }
+  // v28.7.0: THE RECONCILIATION (the review's addition #3) — when
+  // BOTH the pool meter and a Flow print exist for a model, the
+  // delta between them is a calibration signal: the print's
+  // server-side view carries the chat/code spend the client meter
+  // cannot see, so pool − print = the server-side spend accumulated
+  // since the print was taken. Surfaced on the chip's hover title
+  // (while the print is fresh enough to outrank the pool) and as a
+  // computed block per model in the ledger export. Pure read;
+  // mutates nothing; null when either side is not computable (no
+  // print, unknown model, no per-image cost).
+  function flowCreditReconciliation(e, key) {
+    if (!flowCreditState) return null;
+    const known = FLOW_CREDIT_MODELS.some(function (x) {
+      return x.key === key;
+    });
+    if (!known) return null;
+    const cost = flowCreditDisplayCost(key);
+    if (!(cost > 0)) return null;
+    if (!e || e.max == null || !e.usageAt) return null;
+    // the print side — the same clicks-since subtraction the
+    // outranking branch of flowCreditTurnsLeft uses
+    const today = flowCreditEntryDayKey(e);
+    flowCreditRollEntryDay(e);
+    const fresh =
+      Date.now() - e.usageAt <= FLOW_CREDIT_OFFICIAL.windowMs &&
+      flowCreditEntryDayKeyOf(e, e.usageAt) === today;
+    const clicksSince = Math.max(0, (e.turnsDay || 0) - (e.turnsDayAtUsage || 0));
+    const printLeft = Math.max(0, e.max - (e.used || 0) - clicksSince);
+    // the pool side — the same arithmetic as the pool branch
+    const rem5h = Math.max(
+      0,
+      FLOW_CREDIT_OFFICIAL.budget5h - flowCreditUnitsSpent(FLOW_CREDIT_OFFICIAL.windowMs),
+    );
+    const remWk = Math.max(
+      0,
+      FLOW_CREDIT_OFFICIAL.budgetWeek - flowCreditUnitsSpent(7 * 86400000),
+    );
+    let poolLeft = Math.min(Math.floor(rem5h / cost), Math.floor(remWk / cost));
+    if (key === "pro")
+      poolLeft = Math.min(
+        poolLeft,
+        Math.max(
+          0,
+          FLOW_CREDIT_OFFICIAL.proWeekGens - flowCreditModelImages("pro", 7 * 86400000),
+        ),
+      );
+    poolLeft = Math.max(0, poolLeft);
+    return {
+      fresh: fresh,
+      printLeft: printLeft,
+      printMax: e.max,
+      printAt: e.usageAt,
+      poolLeft: poolLeft,
+      // positive: the meter sees MORE capacity than the print claims
+      //   -> that many turns (deltaUnits of pool) of server-side spend
+      //      the client meter cannot see since the print.
+      // negative: the client meter counts turns the server has not
+      //   billed yet (mid-flight generations, wall-charge slack).
+      deltaTurns: poolLeft - printLeft,
+      deltaUnits: (poolLeft - printLeft) * cost,
+    };
   }
   // v27.3.10: the daily-limit notice watcher — the second source of
   // turns-left. Flow's limit notice fires when a model runs out
@@ -14044,8 +14076,9 @@ const __4NDR0_NET_API__ = (function () {
   // list, so a dropped-down picker can no longer supply the hint.
   function flowCreditReadBatchHint(model) {
     try {
-      const exclusion =
-        '#pm-flow-dock, #pm-flow-credit-chip, .mp-overlay, .mp-modal-box, [role="menu"], [role="listbox"], [role="menuitem"], [role="option"], .cdk-overlay-container, [class*="overlay"]';
+      // v28.7.0: the shared exclusion table (the full set — a
+      // dropped-down picker can never supply the hint).
+      const exclusion = FLOW_CREDIT_EXCLUDE.full;
       const cands = flowCreditModelCandidates(document, exclusion).concat(
         flowCreditModelTextCandidates(document, exclusion),
       );
@@ -14191,16 +14224,27 @@ const __4NDR0_NET_API__ = (function () {
   // v28.2.0: window-true attribution — the armed window that covers
   // the media's timestamp owns it; when two windows overlap (a slow
   // render from an earlier click outliving a newer one), the most
-  // recently opened window wins. Returns null when no window covers
-  // the timestamp (history browsing, lazy loads — never counted).
-  // Named so the self-test exercises the exact production path.
+  // recently opened window wins (the maximum-likelihood owner: Flow
+  // renders ~2 s after its click, and a window that opened after the
+  // sweep stamp cannot own the media). Returns null when no window
+  // covers the timestamp (history browsing, lazy loads — never
+  // counted). v28.7.0: the -2000 ms future tolerance is now a hard
+  // CAUSAL GATE — arms are written by the click hook and the walk
+  // runs inside the same synchronous tick machinery, so an arm with
+  // from > t is unreachable in practice; where it would matter, the
+  // media predates the click and belongs to whatever was already
+  // open. The residual ambiguity (two open windows, media swept
+  // after both clicks) is an information-theoretic limit — the
+  // revision side carries the conservatism (earliest-unrevised, see
+  // flowCreditLedgerRevise), and the assignment side stays
+  // max-likelihood.
   function flowCreditAttributionKey(t) {
     let key = null,
       armAt = 0;
     for (const k in flowCreditGenArm) {
       const arm = flowCreditGenArm[k];
       if (!arm || !arm.from) continue;
-      if (t < arm.from - 2000 || t > arm.to + 30000) continue;
+      if (arm.from > t || t > arm.to + 30000) continue;
       if (arm.from > armAt) {
         key = k;
         armAt = arm.from;
@@ -14567,6 +14611,23 @@ const __4NDR0_NET_API__ = (function () {
     }
     modelEl.classList.toggle("mp-credit-low", !!low);
     modelEl.classList.toggle("mp-credit-zero", !!zero);
+    // v28.7.0: THE POOL BAR (the review's addition #1) — the shared
+    // 2,400u window's level was hover-only; a 40px inline bar now
+    // surfaces the number every model's turns-left divides, on the
+    // chip face itself. u5 already rides the render signature, so the
+    // fill moves with every charge and refill and nothing else.
+    const poolFillEl = chip.querySelector(".mp-credit-pool-fill");
+    if (poolFillEl) {
+      const left5h = Math.max(0, FLOW_CREDIT_OFFICIAL.budget5h - u5);
+      poolFillEl.style.width =
+        Math.max(
+          0,
+          Math.min(
+            100,
+            Math.round((100 * left5h) / FLOW_CREDIT_OFFICIAL.budget5h),
+          ),
+        ) + "%";
+    }
     // v28.1.0: the valEl toggles (hard-coded off since v27.3.10 moved
     // low/zero semantics to turns-left on the model line) and their
     // unreachable .mp-credit-values rules were removed — the values
@@ -14612,6 +14673,53 @@ const __4NDR0_NET_API__ = (function () {
         (tLeft != null
           ? tLeft + " of " + tMax + " (" + tSrc + ")"
           : "unknown — Flow prints it in the model picker when it prints at all, and the limit notice marks the wall when a model runs out");
+      // v28.7.0: THE RECONCILIATION LINE (the review's addition #3) —
+      // while a fresh Flow print outranks the pool, the delta between
+      // the two is the calibration signal: the print's server-side
+      // view carries the chat/code spend the client meter cannot
+      // see. The wall-charge heuristic stops being a guess the moment
+      // the two sources disagree and say so.
+      if (tSrc === "Flow-printed" && flowCreditState) {
+        const rc = flowCreditReconciliation(
+          flowCreditState.models[m.key],
+          m.key,
+        );
+        if (rc && rc.fresh) {
+          if (rc.deltaTurns > 0)
+            title +=
+              "\nReconciliation: pool meter " +
+              rc.poolLeft +
+              " vs Flow print " +
+              rc.printLeft +
+              " turns — " +
+              rc.deltaTurns +
+              " turn" +
+              (rc.deltaTurns === 1 ? "" : "s") +
+              " (" +
+              rc.deltaUnits +
+              "u at " +
+              dCost +
+              "u/image) of server-side spend the client meter cannot see since the print";
+          else if (rc.deltaTurns < 0)
+            title +=
+              "\nReconciliation: pool meter " +
+              rc.poolLeft +
+              " vs Flow print " +
+              rc.printLeft +
+              " turns — the client meter counts " +
+              -rc.deltaTurns +
+              " turn" +
+              (rc.deltaTurns === -1 ? "" : "s") +
+              " the server has not billed yet (" +
+              -rc.deltaUnits +
+              "u)";
+          else
+            title +=
+              "\nReconciliation: pool meter and Flow print agree — " +
+              rc.poolLeft +
+              " turns, zero invisible spend since the print";
+        }
+      }
       // v28.3.0: the official pool — the number every model's
       // turns-left divides. One shared 2,400-unit window (48,384u
       // per week), billed per image: Pro 48u · NB2 12u · Lite 3u
@@ -14715,8 +14823,9 @@ const __4NDR0_NET_API__ = (function () {
     return r;
   }
   function flowCreditModelChipElement() {
-    const exclusion =
-      '#pm-flow-dock, #pm-flow-credit-chip, .mp-overlay, .mp-modal-box, [role="menu"], [role="listbox"], [role="menuitem"], [role="option"], .cdk-overlay-container, [class*="overlay"]';
+    // v28.7.0: the shared exclusion table (the full set — the chip
+    // hunt must never take a picker row for the anchor).
+    const exclusion = FLOW_CREDIT_EXCLUDE.full;
     const cands = flowCreditModelCandidates(document, exclusion).concat(
       flowCreditModelTextCandidates(document, exclusion),
     );
@@ -14905,12 +15014,36 @@ const __4NDR0_NET_API__ = (function () {
       setSafeInnerHTML(
         chip,
         FLOW_CREDIT_GLYPH +
-          '<span class="mp-credit-model">—</span><span class="mp-credit-sep"></span><span class="mp-credit-values">— / —</span>',
+          '<span class="mp-credit-model">—</span><span class="mp-credit-sep"></span><span class="mp-credit-values">— / —</span>' +
+          // v28.7.0: the pool bar — the shared 2,400u window's fill on
+          // the chip face (was hover-only). Decorative: the exact
+          // numbers ride the title.
+          '<span class="mp-credit-pool" aria-hidden="true"><span class="mp-credit-pool-fill" style="width:100%"></span></span>',
       ));
     return chip;
   }
 
-  function flowCreditTick() {
+  // v28.7.0: THE EPOCH GATE. The 1s poll was the hottest path in the
+  // script — a full text-node walk plus a [aria-label]/[title] sweep
+  // every second even on a perfectly still page (the review's #1 cost
+  // finding). The MutationObserver (childList + subtree +
+  // characterData on body — full coverage) advances flowCreditMutEpoch
+  // on every batch it schedules; the poll (the only caller that passes
+  // viaPoll) skips the DOM entirely — selected-model detection, the
+  // readings harvest, the limit-notice scan, the anchor resolve, the
+  // media walk — when nothing has mutated since the last full pass
+  // and no network readings are pending (those arrive without DOM
+  // mutations). What still runs every second: the chip self-heal, the
+  // net queue drain + merge, the render (its signature is time-
+  // derived — the 5h window rolls entries out on time alone), and the
+  // chip position (two rect reads). The gate is conservative in the
+  // safe direction: it only ever skips work that cannot have changed,
+  // and PM's own chrome mutations (chip rebuild, overlay churn)
+  // merely re-open a full pass — over-running is a cost question,
+  // never a miss. The mutation-debounced tick (250 ms after real
+  // churn) and every direct call (the pull's harvest, the
+  // visibilitychange return) always run the full pass.
+  function flowCreditTick(viaPoll) {
     if (!flowCreditEngineActive) return;
     if (document.hidden) return;
     if (!flowCreditChip || !flowCreditChip.isConnected) {
@@ -14918,30 +15051,37 @@ const __4NDR0_NET_API__ = (function () {
       document.body.appendChild(flowCreditChip);
       flowCreditLastSig = "";
     }
-    flowCreditModel = detectFlowSelectedModel();
-    const readings = harvestFlowCreditReadings();
-    flowCreditReadingsTotal += readings.length;
-    // v27.3.2: drain the passive observers' queue (network +
-    // storage — counted separately in net=/storage=) through the
-    // same merge — one attribution pipeline, one persist path, one
-    // render signature.
-    while (flowCreditPendingNet.length) {
-      const batch = flowCreditPendingNet.splice(0, 40);
-      for (const r of batch) readings.push(r);
+    if (!(
+      viaPoll &&
+      flowCreditMutEpoch === flowCreditPollEpoch &&
+      !flowCreditPendingNet.length
+    )) {
+      flowCreditPollEpoch = flowCreditMutEpoch;
+      flowCreditModel = detectFlowSelectedModel();
+      const readings = harvestFlowCreditReadings();
+      flowCreditReadingsTotal += readings.length;
+      // v27.3.2: drain the passive observers' queue (network +
+      // storage — counted separately in net=/storage=) through the
+      // same merge — one attribution pipeline, one persist path, one
+      // render signature.
+      while (flowCreditPendingNet.length) {
+        const batch = flowCreditPendingNet.splice(0, 40);
+        for (const r of batch) readings.push(r);
+      }
+      // v27.3.13: flowCreditUsageCount was declared but never tallied.
+      // Counted here (after net/storage batches are merged into readings,
+      // the same point flowCreditReadingsTotal's own source is measured
+      // at) so it covers all three sources uniformly, matching its
+      // stated purpose of tallying usage-kind readings regardless of
+      // origin. v28.7.0: the tally's reader is the ledger export.
+      for (const r of readings) if (r && r.kind === "usage") flowCreditUsageCount++;
+      if (mergeFlowCreditReadings(flowCreditModel, readings)) persistFlowCreditState();
+      // v27.3.10: watch for Flow's daily-limit notice — the wall-hit
+      // moment that teaches the per-model cap.
+      flowCreditScanLimitNotice();
+      resolveFlowCreditAnchor();
+      flowCreditCountGens();
     }
-    // v27.3.13: flowCreditUsageCount was declared but never tallied.
-    // Counted here (after net/storage batches are merged into readings,
-    // the same point flowCreditReadingsTotal's own source is measured
-    // at) so it covers all three sources uniformly, matching its
-    // stated purpose of tallying usage-kind readings regardless of
-    // origin.
-    for (const r of readings) if (r && r.kind === "usage") flowCreditUsageCount++;
-    if (mergeFlowCreditReadings(flowCreditModel, readings)) persistFlowCreditState();
-    // v27.3.10: watch for Flow's daily-limit notice — the wall-hit
-    // moment that teaches the per-model cap.
-    flowCreditScanLimitNotice();
-    resolveFlowCreditAnchor();
-    flowCreditCountGens();
     renderFlowCreditChip();
     positionFlowCreditChip();
   }
@@ -14978,10 +15118,43 @@ const __4NDR0_NET_API__ = (function () {
         return;
       }
       flowCreditPollIdle = 0;
-      flowCreditTick();
+      flowCreditTick(!0);
     }, 1000);
   }
-  function flowCreditScheduleTick() {
+  function flowCreditScheduleTick(records) {
+    // v28.7.0: every HOST mutation batch advances the epoch — the
+    // poll's idle gate keys off this (see flowCreditTick). Two
+    // disciplines make it safe:
+    // (1) attributes: true joined the observation set (below)
+    //     because Flow renders some popovers by toggling classes on
+    //     existing nodes (the profile menu) — a childList-only
+    //     observer never sees those, and the battery proved the
+    //     gated poll then skips the very text it exists to read.
+    // (2) PM's own chrome (the chip, the dock, the overlays) is
+    //     filtered OUT of the bump: the harvest excludes those
+    //     selectors anyway, so their mutations can never change what
+    //     a full pass would find — and without the filter the chip's
+    //     own reposition writes (a style mutation every tick)
+    //     would self-sustain the full pass forever. Worst case with
+    //     both in place equals the pre-gate engine (a full pass per
+    //     poll on churning pages); a still page pays ~nothing.
+    let hostMutated = !1;
+    if (records && records.length) {
+      for (const rec of records) {
+        const t = rec.target;
+        const el = t && t.nodeType === 3 ? t.parentElement : t;
+        if (!el || !el.closest) {
+          hostMutated = !0;
+          break;
+        }
+        if (!el.closest(FLOW_CREDIT_EXCLUDE.chrome)) {
+          hostMutated = !0;
+          break;
+        }
+      }
+    } else hostMutated = !0; // no records (defensive): assume host work
+    if (!hostMutated) return;
+    flowCreditMutEpoch++;
     if (flowCreditMutationTimer) clearTimeout(flowCreditMutationTimer);
     flowCreditMutationTimer = setTimeout(function () {
       flowCreditMutationTimer = null;
@@ -15088,6 +15261,28 @@ const __4NDR0_NET_API__ = (function () {
         flowCreditStoreInfo = "load failed: " + ((e && e.message) || e);
       }
       if (!flowCreditState) flowCreditState = freshFlowCreditState();
+      // v28.7.0: the boot integrity check (the production descendant
+      // of the self-test pin and the report's audit) — the state the
+      // engine is about to serve, machine-checked once per load. A
+      // violation console.warns (no silent failures) and rides the
+      // ledger export; every failure class here already has a runtime
+      // degradation path (the prune, the reseed, the "cap ?" line).
+      try {
+        const ic = flowCreditIntegrityCheck();
+        if (ic.fails.length)
+          console.warn(
+            "[Prompt Master] credit tracker integrity: " +
+              (ic.n - ic.fails.length) +
+              "/" +
+              ic.n +
+              " PASS — " +
+              ic.fails
+                .map(function (c) {
+                  return c.name + " (" + String(c.detail).trim() + ")";
+                })
+                .join("; "),
+          );
+      } catch (e) { console.debug("PM interceptor:", e);}
       // v28.3.0: the cv-4 migration (purged [seed] caps + the ledger
       // field) persists immediately — the corrected state must survive
       // even if no later mutation schedules a save this session. The
@@ -15119,6 +15314,9 @@ const __4NDR0_NET_API__ = (function () {
         childList: !0,
         subtree: !0,
         characterData: !0,
+        // v28.7.0: attribute mutations join the set (class-toggled
+        // popovers) — see the filter in flowCreditScheduleTick.
+        attributes: !0,
       });
       window.addEventListener("scroll", scheduleFlowCreditPosition, {
         capture: !0,
@@ -15190,9 +15388,9 @@ const __4NDR0_NET_API__ = (function () {
       // clicks the account chip (see the allowlist gate inside the
       // pull), so the menu can never pop open on its own ~9s after a
       // load. The wallet establishes through the user's own profile
-      // menu opens, the Copy Report command's explicit pull, or the
-      // net/storage passive sources; a stale wallet stays honestly
-      // marked STALE in the report until one of those re-reads it,
+      // menu opens, the net/storage passive sources, or the
+      // post-generation re-pull; a stale wallet stays honestly
+      // marked STALE on the chip until one of those re-reads it,
       // and a live re-observation clears the flag even at an
       // unchanged value (see mergeFlowCreditReadings). The 45s retry
       // below covers a slow SPA boot the same passive way.
@@ -15204,7 +15402,7 @@ const __4NDR0_NET_API__ = (function () {
           return;
         }
         pullFlowCreditWallet("boot").then(function (r) {
-          if (r && r.ran && (r.opened === "clicked" || r.opened === "already open"))
+          if (r && r.ran && r.opened === "already open")
             try {
               console.info(
                 "[Prompt Master] credit tracker: wallet pull — " + flowCreditPullInfo,
@@ -15338,1187 +15536,309 @@ const __4NDR0_NET_API__ = (function () {
     try {
       await GM_setValue(
         FLOW_CREDIT_STORAGE_KEY,
-        JSON.parse(JSON.stringify(flowCreditState)),
+        cloneFlowCreditStateForStore(flowCreditState),
       );
     } catch (e) { console.debug("PM interceptor:", e);}
     renderFlowCreditChip();
   }
-  // v27.3.15 FIX: this script runs with explicit @grant entries, so
-  // Tampermonkey/Violentmonkey execute it in a sandboxed JS realm where
-  // plain `window` is a proxy local to that sandbox — writes to it are
-  // invisible from DevTools console, which evaluates against the
-  // page's real global object by default. unsafeWindow (already in
-  // @grant above) is the manager-provided bridge to that real object;
-  // assigning the hook there is what actually makes it reachable from
-  // the console.
-  // v28.3.0: the debug hook is the METER now —
-  //   window.__flowCreditDebugCharge("nb2", 100)          // 100 NB2 images → 1,200u (the official example: Pro halves to 25)
-  //   window.__flowCreditDebugCharge("nb2lite", 10, true)  // 10 Lite reference-context images → 40u (4u/image)
-  // then run the "📋 Flow Credits: Copy Report" menu command to see
-  // the pool lines, or read the chip: turns-left = floor(units left
-  // ÷ cost), live. The v27.3.15–v28.2.2 __flowCreditDebugSetCap hook
-  // injected capTurns, which the official pool superseded — the cap
-  // branch is gone, and a hook that writes a field nothing reads
-  // would be dead code. Same hardening contract as the hook it
-  // replaces: (1) the KEY is validated against FLOW_CREDIT_MODELS
-  // (flowCreditEntry auto-creates any key it is given, so a typo used
-  // to plant a phantom, reset-proof model row); (2) the IMAGE count
-  // is validated as a positive integer; (3) the write itself is
-  // try/caught and Flow-hostname-gated — an unguarded unsafeWindow
-  // write would kill every statement after it in this IIFE (start()
-  // included) on any manager that provides no unsafeWindow, and a
-  // page-reachable state-write primitive has no business on the
-  // other matched platforms; (4) it returns a JSON clone, never the
-  // live entry — the page realm must not hold a mutable reference
-  // into tracker state.
-  try {
-    if (/^flow\.google\.com$/i.test(location.hostname)) {
-      unsafeWindow.__flowCreditDebugCharge = function (modelKey, images, refCtx) {
-        if (!flowCreditState || !flowCreditState.models) {
-          console.warn("[Prompt Master] credit tracker not initialized yet.");
-          return null;
-        }
-        const validKeys = FLOW_CREDIT_MODELS.map(function (m) {
-          return m.key;
-        });
-        if (validKeys.indexOf(modelKey) === -1) {
-          console.warn(
-            '[Prompt Master] __flowCreditDebugCharge: unknown model key "' +
-              modelKey +
-              '" — valid keys: ' +
-              validKeys.join(", "),
-          );
-          return null;
-        }
-        const n = Number(images);
-        if (!Number.isInteger(n) || n <= 0) {
-          console.warn(
-            "[Prompt Master] __flowCreditDebugCharge: images must be a positive integer (got " +
-              images +
-              ").",
-          );
-          return null;
-        }
-        const en = flowCreditLedgerAppend(modelKey, n, !!refCtx);
-        persistFlowCreditState();
-        renderFlowCreditChip();
-        try {
-          console.info(
-            "[Prompt Master] credit tracker: charged " +
-              n +
-              " image" +
-              (n === 1 ? "" : "s") +
-              " to \"" +
-              modelKey +
-              "\" (" +
-              flowCreditEntryUnits(en) +
-              " units — test only).",
-          );
-        } catch (e2) { console.debug("PM interceptor:", e2);}
-        return en ? JSON.parse(JSON.stringify(en)) : null;
-      };
-      // v27.3.17: the self-test rides the same gate — Flow-only,
-      // console-reachable, but also exposed as the "🧪 Flow Credits:
-      // Self-Test" menu command (which needs no console at all).
-      unsafeWindow.__flowCreditDebugSelfTest = flowCreditDebugSelfTestImpl;
-    }
-  } catch (e) { console.debug("PM interceptor:", e);}
-
-  // v27.3.17: the self-test — the tracker verifies its own state
-  // machine so no human ever has to walk a manual multi-step
-  // procedure again. Covers every path the back-and-forth rounds
-  // were about: hook key/value validation, the official unit pool
-  // and its arithmetic (v28.3.0: clean-state caps, the halving
-  // example, batch billing, Lite's two rates, the wall charge, the
-  // weekly budgets), Flow-print precedence, read-path day rolling,
-  // anchor-aware period keys, the reset-time parser, and reset
-  // preservation/honesty (the meter survives the wipe). Runs entirely
-  // offline against the in-page state; snapshots EVERYTHING it
-  // touches (store, session maps, click tallies, notice capture) and
-  // restores it in a finally block, so a run leaves the tracker
-  // exactly as it found it. Reachable three ways: the "🧪 Flow
-  // Credits: Self-Test" menu command, window.__flowCreditDebugSelfTest()
-  // from the DevTools console, or awaited from other debug code.
-  // Returns the results array; prints a PASS/FAIL table either way.
-  async function flowCreditDebugSelfTestImpl() {
-    const results = [];
+  // v28.7.0: THE BOOT INTEGRITY CHECK (the review's addition #4, and
+  // the production descendant of the self-test pin and the report's
+  // own machine audit — both removed on the operator's authorization).
+  // Seven checks over the state the engine is about to serve: the
+  // model/cost table pin (every FLOW_CREDIT_MODELS key must carry a
+  // per-image cost — Lite is dual-rate by design, its reference rate
+  // lives in the liteRefCost constant), no phantom model keys in the
+  // store (flowCreditEntry auto-creates any key it is given; a
+  // phantom means something fed it a typo'd key), print snapshots
+  // consistent with current-period clicks, attributed session clicks
+  // within the session total, armed windows well-formed, learned caps
+  // well-formed, and the unit ledger well-formed and bounded. Run
+  // once at boot (a violation console.warns — the no-silent-failure
+  // discipline) and re-run live for every ledger export; nothing
+  // ever throws, because every failure class here already has a
+  // runtime degradation path (the prune, the reseed, the "cap ?"
+  // line). Pure read: snapshots nothing, mutates nothing.
+  function flowCreditIntegrityCheck() {
+    const checks = [];
     const t = function (name, pass, detail) {
-      results.push({ name: name, pass: !!pass, detail: detail || "" });
+      checks.push({ name: name, pass: !!pass, detail: detail || "" });
     };
-    const snap = flowCreditState
-      ? {
-          state: JSON.parse(JSON.stringify(flowCreditState)),
-          storeInfo: flowCreditStoreInfo,
-          clicksTotal: flowCreditClicksTotal,
-          clicksUnattributed: flowCreditClicksUnattributed,
-          turnsSession: JSON.parse(JSON.stringify(flowCreditTurnsSession)),
-          gensSession: JSON.parse(JSON.stringify(flowCreditGensSession)),
-          arm: JSON.parse(JSON.stringify(flowCreditGenArm)),
-          lastGen: flowCreditLastGen
-            ? JSON.parse(JSON.stringify(flowCreditLastGen))
-            : null,
-          limitNotice: flowCreditLimitNotice
-            ? JSON.parse(JSON.stringify(flowCreditLimitNotice))
-            : null,
-          limitLastAt: flowCreditLimitLastAt,
-          lastSig: flowCreditLastSig,
-          // v28.1.0: the reset invoked by this self-test also clears the
-          // pending network readings, the media fingerprint set and the
-          // post-generation re-pull state — the snapshot now carries all
-          // of them so the "leaves the tracker exactly as it found it"
-          // contract finally holds (a run mid-session used to silently
-          // cancel a scheduled wallet re-read and refill its budget).
-          pendingNet: flowCreditPendingNet.slice(),
-          mediaSeen: flowCreditMediaSeen
-            ? JSON.parse(JSON.stringify(flowCreditMediaSeen))
-            : null,
-          repullTimer: flowCreditRepullTimer,
-          repullCount: flowCreditRepullCount,
-          // v28.2.0: parked-mode state — restored with the rest so a
-          // mid-berth self-test cannot strand a phantom miss stamp.
-          anchorMissSince: flowCreditAnchorMissSince,
-        }
-      : null;
-    try {
-      t(
-        "store loaded",
-        !!(flowCreditState && flowCreditState.models),
-        flowCreditStoreInfo,
-      );
-      const beforeKeys = Object.keys(flowCreditState.models).join(",");
-      t(
-        "typo key rejected, no phantom row",
-        unsafeWindow.__flowCreditDebugCharge("nb2Typo", 5) === null &&
-          Object.keys(flowCreditState.models).join(",") === beforeKeys,
-        "an unknown key must warn and create nothing",
-      );
-      t(
-        "non-integer charge rejected",
-        unsafeWindow.__flowCreditDebugCharge("nb2", "abc") === null,
-      );
-      t(
-        "zero charge rejected",
-        unsafeWindow.__flowCreditDebugCharge("nb2", 0) === null,
-      );
-      const beforeLedger = Array.isArray(flowCreditState.ledger)
-        ? flowCreditState.ledger.length
-        : -1;
-      t(
-        "charge accepted (a ledger entry is appended)",
-        !!(
-          unsafeWindow.__flowCreditDebugCharge("nb2", 5) &&
-          Array.isArray(flowCreditState.ledger) &&
-          flowCreditState.ledger.length === beforeLedger + 1 &&
-          flowCreditState.ledger[flowCreditState.ledger.length - 1].n === 5
-        ),
-      );
-      // v28.3.0: the pool pins run against a CONTROLLED ledger — the
-      // live one rides the snapshot's state deep-clone and is restored
-      // by the finally block; every scenario below sets exactly the
-      // entries it asserts against.
-      flowCreditState.ledger = [];
-      // Baseline the entry so a live store's prints/counts cannot
-      // skew the assertions (restored by the finally block).
-      const e = flowCreditEntry(flowCreditState, "nb2");
-      e.used = null;
-      e.max = null;
-      e.usageAt = 0;
-      e.turnsDayAtUsage = 0;
-      e.day = "";
-      e.turnsDay = 0;
-      e.turns = 0;
-      e.gens = 0;
-      e.gensDay = 0;
-      let tl = flowCreditTurnsLeft(e, "nb2");
-      t(
-        "pool: empty ledger answers the clean-state cap (NB2 200/200)",
-        tl.left === 200 &&
-          tl.max === 200 &&
-          tl.src === "official AI-Pro unit pool",
-        JSON.stringify(tl),
-      );
-      // v28.6.1: the fresh-selection render path — a KNOWN model with
-      // no store entry must fall through to the pool, not blank to
-      // "cap ?" (live-proven on 28.6.0 by the browser battery: the
-      // chip dimmed itself pending on a fresh selection).
-      tl = flowCreditTurnsLeft(undefined, "pro");
-      t(
-        "pool: a known model with no store entry answers the clean-state cap",
-        tl.left === 50 && tl.max === 50 && tl.src === "official AI-Pro unit pool",
-        JSON.stringify(tl),
-      );
-      tl = flowCreditTurnsLeft(undefined, "not-a-model");
-      t(
-        "pool: an unknown key with no entry stays all-null",
-        tl.left == null && tl.max == null && tl.src === "",
-        JSON.stringify(tl),
-      );
-      // The official example, verbatim from the disclosure: 100 NB2
-      // images = 1,200 units, halving Pro's allowance to 25 — the
-      // shared pool reproducing exactly.
-      flowCreditLedgerAppend("nb2", 100, !1);
-      tl = flowCreditTurnsLeft(flowCreditEntry(flowCreditState, "pro"), "pro");
-      t(
-        "pool: 100 NB2 images (1,200u) halve Pro to 25 — the official example",
-        tl.left === 25 && tl.max === 50,
-        JSON.stringify(tl),
-      );
-      tl = flowCreditTurnsLeft(e, "nb2");
-      t(
-        "pool: the same 1,200u leave NB2 itself 100/200",
-        tl.left === 100 && tl.max === 200,
-        JSON.stringify(tl),
-      );
-      // The official batch rule: a multi-image prompt deducts per
-      // image RETURNED — one x4 Pro prompt burns 4 × 48 = 192u.
-      flowCreditState.ledger = [];
-      flowCreditLedgerAppend("pro", 4, !1);
-      tl = flowCreditTurnsLeft(flowCreditEntry(flowCreditState, "pro"), "pro");
-      t(
-        "pool: a 4-image Pro prompt burns 192u → 46/50",
-        tl.left === 46 && tl.max === 50,
-        JSON.stringify(tl),
-      );
-      // Lite's official rate pair: 3u single-turn (800/window) vs 4u
-      // with reference context (600/window) — the chip's own scale
-      // follows the model's most recent generation context, and the
-      // conservative 4u answers until Lite has history.
-      flowCreditState.ledger = [];
-      const eL = flowCreditEntry(flowCreditState, "nb2lite");
-      // Baseline like `e` above — a live store's same-day print (a
-      // picker row merged minutes ago) would outrank the pool branch
-      // and skew the rate pins; the finally-restore puts it back.
-      eL.used = null;
-      eL.max = null;
-      eL.usageAt = 0;
-      eL.turnsDayAtUsage = 0;
-      eL.day = "";
-      eL.turnsDay = 0;
-      tl = flowCreditTurnsLeft(eL, "nb2lite");
-      t(
-        "pool: Lite with no history bills the conservative reference wall (600)",
-        tl.left === 600 && tl.max === 600,
-        JSON.stringify(tl),
-      );
-      flowCreditLedgerAppend("nb2lite", 1, !1);
-      tl = flowCreditTurnsLeft(eL, "nb2lite");
-      t(
-        "pool: a single-turn Lite click flips the scale to 800 (3u/image)",
-        tl.left === 799 && tl.max === 800,
-        JSON.stringify(tl),
-      );
-      flowCreditLedgerAppend("nb2lite", 1, !0);
-      tl = flowCreditTurnsLeft(eL, "nb2lite");
-      t(
-        "pool: a reference-context Lite click flips it back to 600 (4u/image)",
-        tl.left === 598 && tl.max === 600,
-        JSON.stringify(tl),
-      );
-      // The wall reconciliation: a limit notice at 400u metered means
-      // 2,000u of invisible chat/code spend — charged at the wall, it
-      // empties EVERY model (the pool is shared) and never doubles.
-      flowCreditState.ledger = [];
-      flowCreditLedgerAppend("nb2lite", 100, !0);
-      const wallCharge = flowCreditLedgerWallCharge("nb2lite");
-      tl = flowCreditTurnsLeft(flowCreditEntry(flowCreditState, "pro"), "pro");
-      t(
-        "pool: the wall charge empties the shared pool — every model reads 0",
-        wallCharge === 2000 && tl.left === 0,
-        "charged=" + wallCharge + " pro=" + JSON.stringify(tl),
-      );
-      t(
-        "pool: the wall charge is idempotent per notice (60s window)",
-        flowCreditLedgerWallCharge("nb2") === 0,
-        "a second notice inside 60s must not double-charge",
-      );
-      // The weekly budget binds across windows, and Pro's official
-      // ~1,000-images/week ceiling binds before the units do.
-      flowCreditState.ledger = [];
-      flowCreditState.ledger.push({
-        t: Date.now() - 6 * 3600000,
-        m: "nb2",
-        u: 47000,
-      });
-      tl = flowCreditTurnsLeft(flowCreditEntry(flowCreditState, "pro"), "pro");
-      t(
-        "pool: the weekly budget binds — 47,000u of week spend leaves Pro 28",
-        tl.left === 28 && tl.max === 50,
-        JSON.stringify(tl),
-      );
-      flowCreditState.ledger = [];
-      flowCreditState.ledger.push({
-        t: Date.now() - 6 * 3600000,
-        m: "pro",
-        n: 1001,
-      });
-      tl = flowCreditTurnsLeft(flowCreditEntry(flowCreditState, "pro"), "pro");
-      t(
-        "pool: Pro's ~1,000/week generation ceiling binds before the unit budget",
-        tl.left === 0,
-        "units alone would allow 7 — got " + tl.left,
-      );
-      // The meter's media revision: the armed window's attributed
-      // images raise the entry's count (official per-image billing),
-      // never below the batch hint it armed with.
-      flowCreditState.ledger = [];
-      const enProv = flowCreditLedgerAppend("nb2", 1, !1);
-      flowCreditLedgerRevise("nb2", 3);
-      flowCreditLedgerRevise("nb2", 1);
-      t(
-        "ledger: the entry's count rises to the attributed media (4 images = 48u)",
-        enProv.n === 4 && flowCreditUnitsSpent(5 * 3600000) === 48,
-        "n=" + enProv.n + " units=" + flowCreditUnitsSpent(5 * 3600000),
-      );
-      // The 8-day prune: the weekly window needs 7 days of entries.
-      flowCreditState.ledger.push({
-        t: Date.now() - 9 * 86400000,
-        m: "nb2",
-        n: 5,
-      });
-      flowCreditLedgerPrune();
-      t(
-        "ledger: entries older than 8 days are pruned",
-        !flowCreditState.ledger.some(function (en) {
-          return en.t < Date.now() - 8 * 86400000;
-        }),
-        "entries=" + flowCreditState.ledger.length,
-      );
-      // Precedence, unchanged since v27.3.10: Flow's own print still
-      // outranks the client meter whenever it parses.
-      flowCreditState.ledger = [];
-      e.used = 3;
-      e.max = 16;
-      e.usageAt = Date.now();
-      e.turnsDayAtUsage = 4;
-      e.day = flowCreditEntryDayKey(e);
-      e.turnsDay = 5;
-      tl = flowCreditTurnsLeft(e, "nb2");
-      t(
-        "Flow print outranks the pool",
-        tl.left === 12 && tl.src === "Flow-printed",
-        "16-3-(5-4)=12 expected, got " + tl.left + " (" + tl.src + ")",
-      );
-      e.day = "1970-1-1";
-      e.turnsDay = 9;
-      tl = flowCreditTurnsLeft(e, "nb2");
-      t(
-        "read-path day roll zeroes stale counters",
-        e.day !== "1970-1-1" && e.turnsDay === 0 && tl.left === 13,
-        "rolled day must drop the stale 9; 16-3 expected, got " + tl.left,
-      );
-      // Anchor-aware period keys: a learned reset at 23:58 local
-      // must split timestamps across it into different periods.
-      const anchor = new Date();
-      anchor.setHours(23, 58, 0, 0);
-      e.capResetAt = anchor.getTime();
-      t(
-        "anchor splits periods across the reset moment",
-        flowCreditEntryDayKeyOf(e, anchor.getTime() - 3600000) !==
-          flowCreditEntryDayKeyOf(e, anchor.getTime() + 3600000),
-      );
-      t(
-        "no anchor falls back to the local day",
-        flowCreditEntryDayKeyOf({ capResetAt: 0 }, Date.now()) ===
-          flowCreditDayKey(),
-      );
-      // The reset-time parser, deterministic via a fixed "now".
-      const fixedNow = 1770000000000;
-      const p2 = flowCreditParseResetAt(
-        "You hit your daily limit — resets in 7 hours",
-        fixedNow,
-      );
-      t(
-        "parser: relative hours",
-        p2 != null && Math.abs(p2 - (fixedNow + 7 * 3600000)) < 60000,
-        p2 == null ? "null" : new Date(p2).toISOString(),
-      );
-      const p3 = flowCreditParseResetAt("nothing here parses", fixedNow);
-      t("parser: garbage rejected", p3 == null);
-      const dT = new Date(fixedNow + 8 * 3600000);
-      const h12 = dT.getHours() % 12 || 12;
-      const absText =
-        "Daily limit reached. It will not reset until " +
-        (dT.getMonth() + 1) +
-        "/" +
-        dT.getDate() +
-        "/" +
-        dT.getFullYear() +
-        ", " +
-        h12 +
-        ":00 " +
-        (dT.getHours() < 12 ? "AM" : "PM");
-      const target = new Date(
-        dT.getFullYear(),
-        dT.getMonth(),
-        dT.getDate(),
-        dT.getHours(),
-        0,
-        0,
-        0,
-      ).getTime();
-      const p1 = flowCreditParseResetAt(absText, fixedNow);
-      t(
-        "parser: absolute M/D/Y + clock time",
-        p1 != null && Math.abs(p1 - target) < 90000,
-        p1 == null ? "null" : new Date(p1).toISOString(),
-      );
-      // Reset honesty — the point of v27.3.13/16/17, extended in
-      // v28.3.0 to the meter: the ledger (the server's real draw-down
-      // of the shared pool) survives the wipe, so a reset can never
-      // fake a full tank.
-      e.used = null;
-      e.max = null;
-      e.usageAt = 0;
-      e.turnsDayAtUsage = 0;
-      e.day = flowCreditEntryDayKey(e);
-      e.turnsDay = 4;
-      e.capTurns = 16;
-      e.capAt = Date.now() - 1000;
-      e.capText = "[debug] keep me";
-      flowCreditState.ledger = [];
-      flowCreditLedgerAppend("nb2", 10, !1);
-      await resetFlowCreditTracker();
-      const e2 = flowCreditState.models.nb2;
-      t(
-        "reset preserves the notice-recorded cap evidence",
-        !!(e2 && e2.capTurns === 16),
-        e2 ? "capTurns=" + e2.capTurns : "entry missing",
-      );
-      t(
-        "reset preserves current-period turns (honest turns-left)",
-        !!(e2 && e2.turnsDay === 4),
-        "turnsDay=" + (e2 ? e2.turnsDay : "?"),
-      );
-      t(
-        "reset wipes session counters",
-        flowCreditClicksTotal === 0 && !Object.keys(flowCreditGensSession).length,
-        "clicks=" + flowCreditClicksTotal,
-      );
-      tl = e2 ? flowCreditTurnsLeft(e2, "nb2") : { left: null };
-      t(
-        "reset preserves the meter — post-reset turns-left keeps the drawn-down pool (200 − 10)",
-        tl.left === 190,
-        "got " + tl.left,
-      );
-      flowCreditEntry(flowCreditState, "nb2lite").day = "1970-1-1";
-      flowCreditState.models.nb2lite.turnsDay = 99;
-      await resetFlowCreditTracker();
-      const e3 = flowCreditEntry(flowCreditState, "nb2lite");
-      t(
-        "unused-period model resets to a true zero",
-        e3.turnsDay === 0,
-        "turnsDay=" + e3.turnsDay,
-      );
-      // v28.2.0: the display ladder — which model the chip speaks for
-      // when Flow's own selection is unreadable. Runs against the
-      // post-reset store (state mutations are discarded by the
-      // finally-restore); module-level engine state is kept and
-      // restored locally.
-      {
-        const keepModel = flowCreditModel;
-        const keepLastGen = flowCreditLastGen;
-        flowCreditModel = null;
-        flowCreditLastGen = null;
-        let d = flowCreditDisplayModel();
-        t(
-          "display ladder: no history yields no model",
-          d === null,
-          d ? "expected null, got " + d.m.key + "/" + d.src : "",
-        );
-        const ee = flowCreditEntry(flowCreditState, "nb2");
-        ee.at = Date.now();
-        ee.day = flowCreditEntryDayKey(ee);
-        ee.turnsDay = 2;
-        d = flowCreditDisplayModel();
-        t(
-          "display ladder: current-period entry answers",
-          !!(d && d.m.key === "nb2" && d.src === "recently-used"),
-          d ? d.m.key + "/" + d.src : "null",
-        );
-        flowCreditLastGen = {
-          model: "pro",
-          label: "Nano Banana Pro",
-          batch: null,
-          at: Date.now() - 60000,
-        };
-        d = flowCreditDisplayModel();
-        t(
-          "display ladder: fresh generation outranks store recency",
-          !!(d && d.m.key === "pro" && d.src === "last-generated"),
-          d ? d.m.key + "/" + d.src : "null",
-        );
-        flowCreditLastGen.at = Date.now() - 16 * 60000;
-        d = flowCreditDisplayModel();
-        t(
-          "display ladder: 15-minute generation window expires",
-          !!(d && d.m.key === "nb2" && d.src === "recently-used"),
-          d ? d.m.key + "/" + d.src : "null",
-        );
-        flowCreditModel = keepModel;
-        flowCreditLastGen = keepLastGen;
+    // 1. v28.7.0: THE TABLE PIN — FLOW_CREDIT_MODELS.keys must divide
+    //    into the cost table: a model row without a per-image cost
+    //    ships the "cap ?" line forever and can never answer the
+    //    pool. The next official-disclosure update can never
+    //    silently ship the gap.
+    {
+      const bad = [];
+      const seen = {};
+      for (const m of FLOW_CREDIT_MODELS) {
+        if (seen[m.key]) bad.push(m.key + " (duplicate)");
+        seen[m.key] = 1;
+        if (
+          !(
+            FLOW_CREDIT_OFFICIAL.costPerImage &&
+            m.key in FLOW_CREDIT_OFFICIAL.costPerImage
+          )
+        )
+          bad.push(m.key + " (no per-image cost)");
       }
-      // v28.2.0: window-true attribution — the production path
-      // (flowCreditAttributionKey) exercised directly.
-      {
-        const keepArm = JSON.parse(JSON.stringify(flowCreditGenArm));
-        flowCreditGenArm = {
-          nb2: {
-            from: Date.now() - 60000,
-            to: Date.now() - 60000 + 150000,
-          },
-          pro: {
-            from: Date.now() - 30000,
-            to: Date.now() - 30000 + 150000,
-          },
-        };
-        t(
-          "attribution: most recent covering window wins",
-          flowCreditAttributionKey(Date.now() - 20000) === "pro",
-          "expected pro, got " + flowCreditAttributionKey(Date.now() - 20000),
-        );
-        t(
-          "attribution: media outside every window counts to nothing",
-          flowCreditAttributionKey(Date.now() - 300000) === null,
-          "expected null, got " + flowCreditAttributionKey(Date.now() - 300000),
-        );
-        flowCreditGenArm = keepArm;
-      }
-      // v28.2.1: the harvest-gate pin — the exact chain that starved
-      // the canonical source for every build since v27.3.8: the GATE
-      // (does the row wording survive flowCreditTextGate?), the
-      // PARSER (does the surviving text yield the used/max pair?),
-      // and the LIVE HARVEST (does a real DOM node carrying the row
-      // text come back from harvestFlowCreditReadings — the
-      // production path, not the parser shortcut the older
-      // assertions used). The row is built transiently, read, and
-      // removed; nothing of the page is touched beyond it.
-      {
-        t(
-          "gate: canonical picker wordings survive the text gate",
-          flowCreditTextGate("Leaving 4/16") &&
-            flowCreditTextGate("4/16 left") &&
-            flowCreditTextGate("4/16 available") &&
-            !flowCreditTextGate("aspect ratio 16 9"),
-          "Leaving/left/available must gate in, numberless prose must not",
-        );
-        const pr = parseFlowCreditReadings("Leaving 4/16");
-        t(
-          "parser: Leaving 4/16 yields used 12 of max 16",
-          !!(
-            pr.length === 1 &&
-            pr[0].kind === "usage" &&
-            pr[0].used === 12 &&
-            pr[0].max === 16
-          ),
-          pr.length
-            ? "kind=" +
-              pr[0].kind +
-              " used=" +
-              pr[0].used +
-              " max=" +
-              pr[0].max
-            : "no reading",
-        );
-        const rowHost = document.createElement("div");
-        const rowOption = document.createElement("div");
-        rowOption.setAttribute("role", "option");
-        const rowSpan1 = document.createElement("span");
-        rowSpan1.textContent = "Nano Banana 2 Lite";
-        const rowSpan2 = document.createElement("span");
-        rowSpan2.textContent = "Leaving 4/16";
-        rowOption.append(rowSpan1, " ", rowSpan2);
-        rowHost.appendChild(rowOption);
-        rowHost.style.cssText =
-          "position:fixed;left:-9999px;top:0;width:200px;height:20px;";
-        document.body.appendChild(rowHost);
-        const live = harvestFlowCreditReadings();
-        document.body.removeChild(rowHost);
-        const liveUsage = live.filter(function (r) {
-          return r.kind === "usage" && /Nano Banana 2 Lite/.test(r.context || "");
-        });
-        // Split-span recovery parses the row once per small ancestor
-        // container (the option div and its host carry the same joined
-        // text) — the merge treats identical re-reads as no-ops, so the
-        // assertion is EXISTENCE, not count: at least one live reading
-        // with the printed pair, on any page state.
-        t(
-          "harvest: live DOM row with Leaving 4/16 is read end-to-end",
-          !!liveUsage.some(function (r) {
-            return r.used === 12 && r.max === 16;
-          }),
-          liveUsage.length
-            ? "readings=" +
-              liveUsage.length +
-              " first: used=" +
-              liveUsage[0].used +
-              " max=" +
-              liveUsage[0].max
-            : "no usage reading from the live row",
-        );
-      }
-      // v28.2.1: merge disambiguation — a multi-model batch (an open
-      // picker prints every row at once) must not let sibling rows'
-      // unnamed "Leaving" spans land on the selected model.
-      // Live-proven regression: NB2 Lite's "Leaving 4/16" was
-      // clobbered to 13/16 by NB2's row merged after it. The finally-
-      // restore returns the store exactly as it found it.
-      {
-        const sel = { key: "nb2lite", label: "Nano Banana 2 Lite", badge: "NB2 Lite" };
-        const eL = flowCreditEntry(flowCreditState, "nb2lite");
-        const e2 = flowCreditEntry(flowCreditState, "nb2");
-        eL.used = null;
-        eL.max = null;
-        e2.used = null;
-        e2.max = null;
-        mergeFlowCreditReadings(sel, [
-          {
-            kind: "usage",
-            left: null,
-            total: null,
-            cost: null,
-            used: 12,
-            max: 16,
-            context: "Nano Banana 2 Lite Leaving 4/16",
-          },
-          {
-            kind: "usage",
-            left: null,
-            total: null,
-            cost: null,
-            used: 3,
-            max: 16,
-            context: "Leaving 13/16",
-          },
-          {
-            kind: "usage",
-            left: null,
-            total: null,
-            cost: null,
-            used: 3,
-            max: 16,
-            context: "Nano Banana 2 Leaving 13/16",
-          },
-        ]);
-        t(
-          "merge: named rows win, sibling unnamed spans never touch the selected model",
-          !!(eL.used === 12 && eL.max === 16 && e2.used === 3 && e2.max === 16),
-          "nb2lite used=" +
-            eL.used +
-            "/" +
-            eL.max +
-            " nb2 used=" +
-            e2.used +
-            "/" +
-            e2.max,
-        );
-        eL.used = null;
-        eL.max = null;
-        mergeFlowCreditReadings(sel, [
-          {
-            kind: "usage",
-            left: null,
-            total: null,
-            cost: null,
-            used: 10,
-            max: 16,
-            context: "Leaving 6/16",
-          },
-        ]);
-        t(
-          "merge: a lone unnamed meter still attributes to the selected model",
-          !!(eL.used === 10 && eL.max === 16),
-          "used=" + eL.used + "/" + eL.max,
-        );
-      }
-      // v28.3.0: the storage-sweep self-echo pin — the script's own
-      // pm_* namespace must never come back as a Flow print (the
-      // live-boot defect: the pre-migration store's own 182 echoed
-      // through the sweep into a day-long fake print that outranked
-      // the official pool).
-      {
-        const echoKey = "pm_selfecho_probe";
-        let had = null,
-          probeSet = !1;
-        try {
-          had = localStorage.getItem(echoKey);
-          localStorage.setItem(echoKey, "Leaving 4/182 turns left");
-          probeSet = !0;
-        } catch (e9) { console.debug("PM interceptor:", e9);}
-        if (probeSet) {
-          const beforeNet = flowCreditPendingNet.length;
-          sweepFlowCreditStorage();
-          const echoed = flowCreditPendingNet
-            .slice(beforeNet)
-            .some(function (r) {
-              return (r.context || "").indexOf(echoKey) !== -1;
-            });
-          t(
-            "sweep: the script's own pm_* storage never echoes back as a print",
-            !echoed,
-            "probe readings queued: " + (flowCreditPendingNet.length - beforeNet),
-          );
-          try {
-            if (had == null) localStorage.removeItem(echoKey);
-            else localStorage.setItem(echoKey, had);
-          } catch (e9) { console.debug("PM interceptor:", e9);}
-        }
-      }
-      // v28.3.0: the v28.2.2 known-caps pins were REMOVED with the
-      // seed they pinned — the user-supplied official output
-      // superseded the 182/33/21 table (the wall-day counts of the
-      // shared pool), and the pool pins above now carry the
-      // deterministic-arithmetic contract (clean-state caps, the
-      // halving example, batch billing, both Lite rates, the wall
-      // charge, the weekly budgets, the reset-preserved meter).
-    } catch (err) {
-      t("self-test crashed", !1, String((err && err.message) || err));
-    } finally {
-      if (snap) {
-        flowCreditState = snap.state;
-        flowCreditStoreInfo = snap.storeInfo;
-        flowCreditClicksTotal = snap.clicksTotal;
-        flowCreditClicksUnattributed = snap.clicksUnattributed;
-        flowCreditTurnsSession = snap.turnsSession;
-        flowCreditGensSession = snap.gensSession;
-        flowCreditGenArm = snap.arm;
-        flowCreditLastGen = snap.lastGen;
-        flowCreditLimitNotice = snap.limitNotice;
-        flowCreditLimitLastAt = snap.limitLastAt;
-        flowCreditLastSig = "";
-        // v28.1.0: restore the newly-snapshotted engine state — a pending
-        // timer id is only meaningful if it is still live, so a stale id
-        // (timer fired during the test) is dropped rather than restored.
-        if (snap.repullTimer) {
-          flowCreditRepullTimer = snap.repullTimer;
-          flowCreditRepullCount = snap.repullCount;
-        } else {
-          flowCreditRepullCount = snap.repullCount;
-        }
-        flowCreditPendingNet = snap.pendingNet;
-        flowCreditMediaSeen = snap.mediaSeen;
-        flowCreditAnchorMissSince = snap.anchorMissSince;
-        persistFlowCreditState();
-        renderFlowCreditChip();
+      if (!FLOW_CREDIT_MODELS.length) bad.push("(table empty)");
+      t("model/cost table integrity", !bad.length, bad.join(", "));
+    }
+    const modelKeys = flowCreditState
+      ? Object.keys(flowCreditState.models)
+      : [];
+    const validKeys = FLOW_CREDIT_MODELS.map(function (x) {
+      return x.key;
+    });
+    // 2. no phantom model keys.
+    const phantoms = modelKeys.filter(function (k) {
+      return validKeys.indexOf(k) === -1;
+    });
+    t("no phantom model keys", !phantoms.length, phantoms.join(","));
+    // 3. print snapshots consistent with current-period clicks.
+    let snapBad = "";
+    let clickSum = 0;
+    for (const k of modelKeys) {
+      const ee = flowCreditState.models[k];
+      if (!ee) continue;
+      clickSum += flowCreditTurnsSession[k] || 0;
+      if (
+        ee.usageAt &&
+        flowCreditEntryDayKeyOf(ee, ee.usageAt) ===
+          flowCreditEntryDayKey(ee) &&
+        (ee.turnsDay || 0) < (ee.turnsDayAtUsage || 0)
+      )
+        snapBad += k + " ";
+    }
+    t(
+      "print snapshots consistent with current-period clicks",
+      !snapBad,
+      snapBad.trim(),
+    );
+    // 4. attributed session clicks within the session total.
+    t(
+      "attributed session clicks within total",
+      clickSum + (flowCreditClicksUnattributed || 0) <=
+        (flowCreditClicksTotal || 0),
+      clickSum + (flowCreditClicksUnattributed || 0) >
+        (flowCreditClicksTotal || 0)
+        ? "sum " +
+          (clickSum + (flowCreditClicksUnattributed || 0)) +
+          " > total " +
+          flowCreditClicksTotal
+        : "",
+    );
+    // 5. armed windows well-formed.
+    let armBad = "";
+    for (const k in flowCreditGenArm)
+      if (!(flowCreditGenArm[k].to > flowCreditGenArm[k].from))
+        armBad += k + " ";
+    t("armed windows well-formed", !armBad, armBad.trim());
+    // 6. learned caps well-formed.
+    let capBad = "";
+    for (const k of modelKeys) {
+      const ee = flowCreditState.models[k];
+      if (
+        ee &&
+        ee.capTurns != null &&
+        !(ee.capTurns > 0 && (ee.capAt || 0) > 0)
+      )
+        capBad += k + " ";
+    }
+    t("learned caps well-formed", !capBad, capBad.trim());
+    // 7. v28.3.0: the meter's own invariant — the ledger is
+    //    well-formed (timestamped, a real model key, an image count
+    //    or raw units) and bounded.
+    let ledgerBad = "";
+    const ledArr = Array.isArray(flowCreditState && flowCreditState.ledger)
+      ? flowCreditState.ledger
+      : [];
+    if (ledArr.length > 20000) ledgerBad += "oversize ";
+    for (const en of ledArr) {
+      if (
+        !en ||
+        typeof en.t !== "number" ||
+        !(en.t > 0) ||
+        validKeys.indexOf(en.m) === -1 ||
+        (!(en.u > 0) && !((en.n || 1) > 0))
+      ) {
+        ledgerBad += "malformed";
+        break;
       }
     }
-    const failed = results.filter(function (r) {
-      return !r.pass;
+    t("unit ledger well-formed and bounded", !ledgerBad, ledgerBad.trim());
+    const fails = checks.filter(function (c) {
+      return !c.pass;
     });
-    const body = results
-      .map(function (r) {
-        return (
-          (r.pass ? "PASS " : "FAIL ") +
-          r.name +
-          (r.pass ? "" : " — " + r.detail)
-        );
-      })
-      .join("\n");
-    try {
-      console.info(
-        "[Prompt Master] credit tracker self-test: " +
-          (results.length - failed.length) +
-          "/" +
-          results.length +
-          " passed\n" +
-          body,
-      );
-    } catch (e2) { console.debug("PM interceptor:", e2);}
-    return results;
+    return { n: checks.length, fails: fails, checks: checks };
   }
-
-  // v27.3.3: on-demand report. The settled 8s line answers "what did
-  // the tracker find" once per load, but a live-site miss needs the
-  // same answer AT REPORT TIME — after the user opened a popover,
-  // switched models, or waited out Flow's SPA. "📋 Flow Credits: Copy
-  // Report" (userscript menu, Flow only) forces a fresh tick, then
-  // prints AND copies a one-paste report: engine/anchor/model, the
-  // per-source counters, the persisted wallet + per-model store with
-  // timestamps, what the chip is showing right now, and every
-  // credit-ish text visible at that moment — the exact evidence that
-  // pins Flow's live wording in one round. Read-only: the report
-  // itself requests nothing, mutates nothing, persists nothing.
-  async function reportFlowCreditTracker() {
-    const lines = [];
+  // v28.7.0: THE LEDGER EXPORT (the review's addition #2) — the
+  // production data surface that replaces the Copy Report (removed
+  // on the operator's authorization: "the tools initially used to
+  // arrive at the chip counter ... are not for production release").
+  // The report was prose for humans reading a paste; the export is
+  // machine-exact JSON for migration and bug reports — the full
+  // persisted state (wallet, per-model entries, the unit ledger),
+  // the live pool arithmetic, every model's turns-left with its
+  // source, the reconciliation block, the session tallies, the
+  // per-source counters, and the integrity check's verdict. Read-
+  // only: the export requests nothing, mutates nothing, persists
+  // nothing, and never touches the host UI (the passive-posture
+  // contract — opening Flow's profile menu is the user's move).
+  // Clipboard path identical to the old report's: GM_setClipboard,
+  // then the async navigator fallback, then the console as the last
+  // resort.
+  async function exportFlowCreditLedger() {
+    let payload = null;
     let copied = !1;
     try {
-      // v27.3.4: pull FIRST. When the store has no wallet reading, the
-      // report opens Flow's profile menu itself, harvests it, and
-      // closes it — the one-paste evidence loop no longer depends on
-      // the user opening anything by hand. v27.3.5: a left-only
-      // reading ("280 Google Flow credits") counts as known. v27.3.9:
-      // a KNOWN reading that predates the last generation click (or
-      // has passed 6h) also pulls — the first live v27.3.8 report
-      // quoted a 02:58 wallet as current at 05:59 while the 05:58
-      // first generation of the day had already refreshed the grant
-      // under it; the report re-reads it now, so the wallet line can
-      // never again quote a number the page has already replaced.
-      if (!flowCreditWalletKnown() || !flowCreditWalletFresh()) {
-        try {
-          await pullFlowCreditWallet("manual");
-        } catch (e2) { console.debug("PM interceptor:", e2);}
+      const disp = flowCreditDisplayModel();
+      const u5 = flowCreditUnitsSpent(FLOW_CREDIT_OFFICIAL.windowMs);
+      const uw = flowCreditUnitsSpent(7 * 86400000);
+      const models = {};
+      if (flowCreditState && flowCreditState.models) {
+        for (const k of Object.keys(flowCreditState.models)) {
+          const e = flowCreditState.models[k];
+          const known = FLOW_CREDIT_MODELS.filter(function (x) {
+            return x.key === k;
+          })[0];
+          const tl = flowCreditTurnsLeft(e, k);
+          models[k] = {
+            known: !!known,
+            label: known ? known.label : null,
+            used: e && e.used != null ? e.used : null,
+            max: e && e.max != null ? e.max : null,
+            usageAt: (e && e.usageAt) || 0,
+            turnsLeft: tl.left,
+            turnsMax: tl.max,
+            turnsSrc: tl.src,
+            reconciliation: flowCreditReconciliation(e, k),
+            cost: e && e.cost != null ? e.cost : null,
+            capTurns: e && e.capTurns != null ? e.capTurns : null,
+            capAt: (e && e.capAt) || 0,
+            capText: (e && e.capText) || "",
+            capResetAt: (e && e.capResetAt) || 0,
+            turns: (e && e.turns) || 0,
+            turnsDay: (e && e.turnsDay) || 0,
+            gens: (e && e.gens) || 0,
+            gensDay: (e && e.gensDay) || 0,
+            sessionTurns: flowCreditTurnsSession[k] || 0,
+            sessionGens: flowCreditGensSession[k] || 0,
+            at: (e && e.at) || 0,
+          };
+        }
       }
-      try {
-        flowCreditTick();
-      } catch (e2) { console.debug("PM interceptor:", e2);}
-      const fmtV = function (v) {
-        return v == null ? "—" : String(v);
-      };
-      lines.push(
-        "[Prompt Master] Flow credit tracker report (v" + SCRIPT_VERSION + ")",
-      );
-      lines.push(
-        "url: " +
-          location.href.slice(0, 120) +
-          " · engine: " +
-          (flowCreditEngineActive ? "active" : "not started") +
-          " · anchor: " +
-          (flowCreditAnchorSrc || "none") +
-          (flowCreditChip &&
-          flowCreditChip.classList.contains("mp-credit-parked")
-            ? " (chip parked at the dock)"
-            : "") +
-          " · model: " +
-          (flowCreditModel ? flowCreditModel.label : "?"),
-      );
-      // v28.2.0: when the selection is unreadable, the report says
-      // which model the chip is speaking for instead — the display
-      // ladder's rung, so a pasted report explains its own "chip
-      // shows" line even in the anchor:none · model:? state.
-      if (!flowCreditModel) {
-        const dm = flowCreditDisplayModel();
-        if (dm)
-          lines.push(
-            "chip fallback: " +
-              dm.m.label +
-              " (" +
-              dm.src +
-              ") — the chip speaks for this model until Flow's model chip is readable again",
-          );
-      }
-      lines.push(
-        "sources this session — page text: " +
-          flowCreditReadingsTotal +
-          " · network payloads: " +
-          flowCreditNetCount +
-          " · storage hits: " +
-          flowCreditStorageCount +
-          " · usage-kind readings: " +
-          flowCreditUsageCount +
-          " · net observer: " +
-          (flowCreditNetInstalled ? "installed" : "missing"),
-      );
-      lines.push("wallet pull: " + flowCreditPullInfo);
-      if (flowCreditPullRaw)
-        lines.push(
-          "profile menu text: " + '"' + flowCreditPullRaw.slice(0, 160) + '"',
-        );
-      lines.push(
-        "store: " +
-          flowCreditStoreInfo +
-          " · count mode: click-anchored — turns = generation clicks (exact), images = media in the 150s post-click window",
-      );
-      {
-        let genLine =
-          "generation clicks: " + flowCreditClicksTotal + " this session";
-        if (flowCreditLastGen)
-          genLine +=
-            " · last: " +
-            (flowCreditLastGen.label || "?") +
-            (flowCreditLastGen.batch
-              ? " · batch x" +
-                flowCreditLastGen.batch +
-                " (images per generation, read from the model row)"
-              : "") +
-            " · at " +
-            new Date(flowCreditLastGen.at).toISOString();
-        if (flowCreditClicksUnattributed)
-          genLine +=
-            " · unattributed (no NB model selected): " +
-            flowCreditClicksUnattributed;
-        const armKeys = flowCreditGenArm
-          ? Object.keys(flowCreditGenArm).filter(function (k) {
+      const w = flowCreditState && flowCreditState.wallet;
+      payload = {
+        schema: "pm-flow-credit-ledger/1",
+        version: SCRIPT_VERSION,
+        exportedAt: new Date().toISOString(),
+        url: location.href.slice(0, 120),
+        engine: {
+          active: !!flowCreditEngineActive,
+          anchor: flowCreditAnchorSrc || "none",
+          chipParked: !!(
+            flowCreditChip &&
+            flowCreditChip.classList.contains("mp-credit-parked")
+          ),
+          displayModel: disp
+            ? { key: disp.m.key, label: disp.m.label, src: disp.src }
+            : null,
+          selectedModel: flowCreditModel ? flowCreditModel.key : null,
+          netObserver: flowCreditNetInstalled ? "installed" : "missing",
+        },
+        sources: {
+          pageTextReadings: flowCreditReadingsTotal,
+          networkPayloads: flowCreditNetCount,
+          storageHits: flowCreditStorageCount,
+          usageKindReadings: flowCreditUsageCount,
+        },
+        session: {
+          generationClicks: flowCreditClicksTotal,
+          unattributedClicks: flowCreditClicksUnattributed,
+          lastGeneration: flowCreditLastGen
+            ? {
+                model: flowCreditLastGen.model,
+                label: flowCreditLastGen.label,
+                batch: flowCreditLastGen.batch,
+                at: new Date(flowCreditLastGen.at).toISOString(),
+              }
+            : null,
+          armedWindows: Object.keys(flowCreditGenArm)
+            .filter(function (k) {
               return Date.now() < flowCreditGenArm[k].to;
             })
-          : [];
-        if (armKeys.length)
-          genLine +=
-            " · armed now: " +
-            armKeys
-              .map(function (k) {
-                const m = FLOW_CREDIT_MODELS.filter(function (x) {
-                  return x.key === k;
-                })[0];
-                return (
-                  (m ? m.badge : k) +
-                  " (" +
-                  Math.max(
-                    0,
-                    Math.round((flowCreditGenArm[k].to - Date.now()) / 1000),
-                  ) +
-                  "s left)"
-                );
-              })
-              .join(", ");
-        lines.push(genLine);
-      }
-      // v27.3.10: the captured daily-limit notice, if the wall fired
-      // this session — verbatim wording plus the attribution.
-      if (flowCreditLimitNotice)
-        lines.push(
-          "limit notice (captured " +
-            new Date(flowCreditLimitNotice.at).toISOString() +
-            "): " +
-            '"' +
-            flowCreditLimitNotice.text.slice(0, 240) +
-            '"' +
-            (flowCreditLimitNotice.model
-              ? " · attributed to: " + flowCreditLimitNotice.model
-              : " · attributed to no model (evidence only)") +
-            (flowCreditLimitNotice.resetAt
-              ? " · resets at " +
-                new Date(flowCreditLimitNotice.resetAt).toISOString() +
-                " (parsed — the anchor is live)"
-              : " · reset time not parsed from this wording (day boundary falls back to local midnight)"),
-        );
-      if (flowCreditState) {
-        const w = flowCreditState.wallet;
-        if (w && (w.left != null || w.total != null))
-          lines.push(
-            "wallet: " +
-              fmtV(w.left) +
-              " / " +
-              fmtV(w.total) +
-              (w.at ? " · as of " + new Date(w.at).toISOString() : "") +
-              (w.at &&
-              flowCreditState.lastGenAt &&
-              w.at < flowCreditState.lastGenAt
-                ? " · STALE — predates the last generation (" +
-                  new Date(flowCreditState.lastGenAt).toISOString() +
-                  "); the wallet pull above re-read it"
-                : ""),
-          );
-        const keys = Object.keys(flowCreditState.models);
-        if (keys.length)
-          for (const k of keys) {
-            const e = flowCreditState.models[k];
-            const m = FLOW_CREDIT_MODELS.filter(function (x) {
-              return x.key === k;
-            })[0];
-            // v27.3.5: the per-model line now carries the numbers
-            // that actually exist for Nano Banana — cost per
-            // generation and the client-side image counts — instead
-            // of implying a per-model credit budget.
-            // v27.3.10: and now the headline number itself — turns
-            // left before this model runs out, in the current 5-hour
-            // window (v28.3.0: official pool arithmetic).
-            const tl = flowCreditTurnsLeft(e, k);
-            lines.push(
-              "model " +
-                (m ? m.label : k) +
-                ": " +
-                fmtV(e && e.left) +
-                " / " +
-                fmtV(e && e.total) +
-                (e && e.cost != null
-                  ? " · " + e.cost + " per generation"
-                  : "") +
-                (tl && tl.left != null
-                  ? " · " + tl.left + "/" + tl.max + " turns left (" + tl.src + ")"
-                  : " · turns left: n/a (unknown model key)") +
-                (e && e.capTurns != null && e.capAt
-                  ? " · limit-notice record " +
-                    e.capTurns +
-                    " (recorded " +
-                    new Date(e.capAt).toISOString() +
-                    (e.capText
-                      ? " — " + '"' + String(e.capText).slice(0, 90) + '"'
-                      : "") +
-                    ")" +
-                    (e.capResetAt
-                      ? " · resets " + new Date(e.capResetAt).toISOString()
-                      : "")
-                  : "") +
-                (e && e.used != null
-                  ? " · Flow-printed usage: " + e.used + " used"
-                  : "") +
-                (e && e.max != null ? " of " + e.max : "") +
-                " · " +
-                ((e && e.turns) || 0) +
-                " turns total (" +
-                ((e && e.turnsDay) || 0) +
-                " today) · " +
-                ((e && e.gens) || 0) +
-                " images total (" +
-                ((e && e.gensDay) || 0) +
-                " today) · this session " +
-                (flowCreditTurnsSession[k] || 0) +
-                " turns / " +
-                (flowCreditGensSession[k] || 0) +
-                " img (click-anchored)" +
-                (e && e.at ? " · as of " + new Date(e.at).toISOString() : ""),
-            );
-          }
-        // v28.3.0: the meter's own line — the official pool numbers
-        // every per-model turns-left above divides by.
-        lines.push(
-          "unit pool (official AI Pro): 5h window " +
-            flowCreditFmt(
-              Math.max(
-                0,
-                FLOW_CREDIT_OFFICIAL.budget5h - flowCreditUnitsSpent(5 * 3600000),
-              ),
-            ) +
-            " / " +
-            FLOW_CREDIT_OFFICIAL.budget5h +
-            " units left · week " +
-            flowCreditFmt(
-              Math.max(
-                0,
-                FLOW_CREDIT_OFFICIAL.budgetWeek - flowCreditUnitsSpent(7 * 86400000),
-              ),
-            ) +
-            " / " +
-            flowCreditFmt(FLOW_CREDIT_OFFICIAL.budgetWeek) +
-            " · per image: Pro 48u · NB2 12u · Lite 3u single-turn / 4u with reference · ONE shared pool across all models (plus chat and code executions — invisible to this client meter; Flow's prints and the limit-notice wall charge reconcile it) · ledger: " +
-            (Array.isArray(flowCreditState.ledger)
-              ? flowCreditState.ledger.length
-              : 0) +
-            " entries (rolling 5h window + 7-day week, pruned at 8 days)",
-        );
-        if (!w && !keys.length)
-          lines.push(
-            "store: empty — no reading has ever landed this session",
-          );
-      } else lines.push("store: not loaded yet");
-      let chipLine = "not built";
-      if (flowCreditChip && flowCreditChip.isConnected) {
-        const a = flowCreditChip.querySelector(".mp-credit-model");
-        const b = flowCreditChip.querySelector(".mp-credit-values");
-        chipLine =
-          a && b
-            ? (a.textContent || "—") + " · " + (b.textContent || "—")
-            : String(flowCreditChip.textContent).replace(/\s+/g, " ").trim() ||
-              "—";
-      }
-      lines.push("chip shows: " + chipLine);
-      const samples = collectFlowCreditTextSamples();
-      lines.push(
-        samples.length
-          ? "credit text visible now: " + samples.join(" | ")
-          : "credit text visible now: none",
-      );
-      {
-        // v27.3.17: the report audits itself — machine-checked
-        // invariants appended to every Copy Report, so a pasted
-        // report can never silently mislead either of us.
-        const checks = [];
-        const modelKeys = flowCreditState
-          ? Object.keys(flowCreditState.models)
-          : [];
-        const validKeys = FLOW_CREDIT_MODELS.map(function (x) {
-          return x.key;
-        });
-        const phantoms = modelKeys.filter(function (k) {
-          return validKeys.indexOf(k) === -1;
-        });
-        checks.push([
-          "no phantom model keys",
-          phantoms.length ? phantoms.join(",") : "",
-        ]);
-        let snapBad = "";
-        let clickSum = 0;
-        for (const k of modelKeys) {
-          const ee = flowCreditState.models[k];
-          if (!ee) continue;
-          clickSum += flowCreditTurnsSession[k] || 0;
-          if (
-            ee.usageAt &&
-            flowCreditEntryDayKeyOf(ee, ee.usageAt) ===
-              flowCreditEntryDayKey(ee) &&
-            (ee.turnsDay || 0) < (ee.turnsDayAtUsage || 0)
+            .map(function (k) {
+              return {
+                model: k,
+                closesAt: new Date(flowCreditGenArm[k].to).toISOString(),
+              };
+            }),
+          limitNotice: flowCreditLimitNotice
+            ? {
+                text: flowCreditLimitNotice.text.slice(0, 240),
+                model: flowCreditLimitNotice.model || null,
+                at: new Date(flowCreditLimitNotice.at).toISOString(),
+                resetAt: flowCreditLimitNotice.resetAt
+                  ? new Date(flowCreditLimitNotice.resetAt).toISOString()
+                  : null,
+              }
+            : null,
+        },
+        wallet: {
+          left: w && w.left != null ? w.left : null,
+          total: w && w.total != null ? w.total : null,
+          at: (w && w.at) || 0,
+          stale: !!(
+            w &&
+            w.at &&
+            flowCreditState &&
+            flowCreditState.lastGenAt &&
+            w.at < flowCreditState.lastGenAt
+          ),
+          lastPull: flowCreditPullInfo,
+          lastMenuText: flowCreditPullRaw
+            ? flowCreditPullRaw.slice(0, 160)
+            : "",
+        },
+        pool: {
+          budget5h: FLOW_CREDIT_OFFICIAL.budget5h,
+          windowMs: FLOW_CREDIT_OFFICIAL.windowMs,
+          spent5h: u5,
+          left5h: Math.max(0, FLOW_CREDIT_OFFICIAL.budget5h - u5),
+          budgetWeek: FLOW_CREDIT_OFFICIAL.budgetWeek,
+          spentWeek: uw,
+          leftWeek: Math.max(0, FLOW_CREDIT_OFFICIAL.budgetWeek - uw),
+          costPerImage: FLOW_CREDIT_OFFICIAL.costPerImage,
+          liteRefCost: FLOW_CREDIT_OFFICIAL.liteRefCost,
+          proWeekGens: FLOW_CREDIT_OFFICIAL.proWeekGens,
+          ledgerEntries: Array.isArray(
+            flowCreditState && flowCreditState.ledger,
           )
-            snapBad += k + " ";
-        }
-        checks.push([
-          "print snapshots consistent with current-period clicks",
-          snapBad,
-        ]);
-        checks.push([
-          "attributed session clicks within total",
-          clickSum + (flowCreditClicksUnattributed || 0) <=
-            (flowCreditClicksTotal || 0)
-            ? ""
-            : "sum " +
-              (clickSum + (flowCreditClicksUnattributed || 0)) +
-              " > total " +
-              flowCreditClicksTotal,
-        ]);
-        let armBad = "";
-        for (const k in flowCreditGenArm)
-          if (!(flowCreditGenArm[k].to > flowCreditGenArm[k].from))
-            armBad += k + " ";
-        checks.push(["armed windows well-formed", armBad]);
-        let capBad = "";
-        for (const k of modelKeys) {
-          const ee = flowCreditState.models[k];
-          if (
-            ee &&
-            ee.capTurns != null &&
-            !(ee.capTurns > 0 && (ee.capAt || 0) > 0)
-          )
-            capBad += k + " ";
-        }
-        checks.push(["learned caps well-formed", capBad]);
-        // v28.3.0: the meter's own invariant — every ledger entry is
-        // well-formed (timestamped, a real model key, an image count
-        // or raw units) and the ledger is bounded.
-        let ledgerBad = "";
-        const ledArr = Array.isArray(flowCreditState.ledger)
-          ? flowCreditState.ledger
-          : [];
-        if (ledArr.length > 20000) ledgerBad += "oversize ";
-        for (const en of ledArr) {
-          if (
-            !en ||
-            typeof en.t !== "number" ||
-            !(en.t > 0) ||
-            validKeys.indexOf(en.m) === -1 ||
-            (!(en.u > 0) && !((en.n || 1) > 0))
-          ) {
-            ledgerBad += "malformed";
-            break;
-          }
-        }
-        checks.push(["unit ledger well-formed and bounded", ledgerBad]);
-        const fails = checks.filter(function (c) {
-          return c[1];
-        });
-        lines.push(
-          "self-check: " +
-            (checks.length - fails.length) +
-            "/" +
-            checks.length +
-            " PASS" +
-            (fails.length
-              ? " — " +
-                fails
-                    .map(function (c) {
-                      return c[0] + " (" + String(c[1]).trim() + ")";
-                    })
-                    .join("; ")
-              : ""),
-        );
-      }
-      lines.push(
-        "tip: the meter is the OFFICIAL AI-Pro compute pool — 2,400 units per rolling 5-hour window (48,384 per week), shared by ALL Nano Banana models plus chat and code executions, billed per image: Pro 48u · NB2 12u · Lite 3u single-turn / 4u with reference context. Turns left per model = floor(units left \u00f7 its per-image cost) — clean-state caps Pro 50 · NB2 200 · Lite 600\u2013800 per window; 100 NB2 images (1,200u) halve Pro to 25; a multi-image prompt deducts per image returned (x4 on Pro = 192u). Flow's own prints (picker \"Leaving N/M\" rows, parsed live into the per-model lines above) still outrank the client meter whenever they parse, and the limit-notice wall charge reconciles the invisible chat/code spend at the wall. Nano Banana generations cost 0 Flow credits (support.google.com/flow/answer/16526234) — the wallet is the account-wide pool shared with Veo/Omni, reported for completeness; it has nothing to do with model runout.",
-      );
+            ? flowCreditState.ledger.length
+            : 0,
+        },
+        models: models,
+        ledger:
+          flowCreditState && Array.isArray(flowCreditState.ledger)
+            ? cloneFlowCreditStateForStore(flowCreditState).ledger
+            : [],
+        integrity: flowCreditIntegrityCheck(),
+        store: {
+          info: flowCreditStoreInfo,
+          storageKey: FLOW_CREDIT_STORAGE_KEY,
+        },
+      };
     } catch (e) {
-      lines.push("report aborted: " + ((e && e.message) || e));
+      // the export itself must never throw into the menu handler
+      payload = {
+        schema: "pm-flow-credit-ledger/1",
+        version: SCRIPT_VERSION,
+        error: String((e && e.message) || e),
+      };
     }
-    const text = lines.join("\n");
-    try {
-      console.info(text);
-    } catch (e) { console.debug("PM interceptor:", e);}
+    const text = JSON.stringify(payload, null, 2);
     try {
       if (typeof GM_setClipboard === "function") {
         GM_setClipboard(text, "text");
@@ -16532,10 +15852,14 @@ const __4NDR0_NET_API__ = (function () {
       } catch (e) { console.debug("PM interceptor:", e);}
     try {
       console.info(
-        "[Prompt Master] credit report " +
-          (copied ? "copied to your clipboard" : "printed above — copy it manually"),
+        "[Prompt Master] flow credit ledger (" +
+          text.length +
+          " chars) " +
+          (copied ? "exported to your clipboard (JSON)" : "printed below — copy it manually"),
       );
+      if (!copied) console.info(text);
     } catch (e) { console.debug("PM interceptor:", e);}
+    return payload;
   }
 
   function pickVisibleEditable(list, requireVisible = false) {
@@ -19053,7 +18377,7 @@ const __4NDR0_NET_API__ = (function () {
     GM_info.script &&
     GM_info.script.version
       ? GM_info.script.version
-      : "28.6.1-Ψ";
+      : "28.7.0-Ψ";
   // v27.0.12: canonical backup snapshot helper. The beta's Gist push
   // called snapshotKeys() before it existed anywhere, so every "Sync Now"
   // threw a ReferenceError; takeAutoBackup() now shares this one helper
@@ -23523,18 +22847,14 @@ const __4NDR0_NET_API__ = (function () {
       GM_registerMenuCommand("🔄 Reset Flow Credit Tracker", () => {
         resetFlowCreditTracker();
       });
-      // v27.3.3: on-demand diagnostics — forces a fresh scan, then
-      // prints + copies a one-paste report (engine/anchor/model,
-      // per-source counters, the persisted store, and every credit
-      // text visible right now), so a live-site miss is pinpointed
-      // from a single paste instead of another blind round.
-      GM_registerMenuCommand("📋 Flow Credits: Copy Report", () => {
-        reportFlowCreditTracker();
-      });
-      // v27.3.17: one click, machine verdict — see
-      // flowCreditDebugSelfTestImpl.
-      GM_registerMenuCommand("🧪 Flow Credits: Self-Test", () => {
-        flowCreditDebugSelfTestImpl();
+      // v28.7.0: the production data surface (the review's addition
+      // #2) — machine-exact ledger JSON via the clipboard path the
+      // old Copy Report used. The dev tools that arrived at the
+      // counter (Copy Report, Self-Test) were removed on the
+      // operator's authorization; their surviving invariants live in
+      // the boot integrity check. See exportFlowCreditLedger.
+      GM_registerMenuCommand("📋 Flow Credits: Export Ledger", () => {
+        exportFlowCreditLedger();
       });
     }
     // v27.0.8: the "🔧 Force mount Prompt Master UI" extension-menu command

@@ -51,6 +51,20 @@ function ledgerKey(baseFile) {
 /* Some baseline unit names are intentionally renamed in the destination;
  * these are reconciled explicitly (GUP bidirectional alignment). */
 const RECONCILED_NAMES = {
+    "Prompt Master": {
+        // v28.7.0 — operator-authorized removals (2026-10-13 transmission,
+        // WO-001d): "the tools initially used to arrive at the chip counter
+        // (e.g., Flow Credits Copy Report, Self-Test, etc) are not for
+        // production release; Remove them." Each removal's surviving
+        // invariants live on in flowCreditIntegrityCheck (boot-time) and
+        // exportFlowCreditLedger (the production data surface).
+        "reportFlowCreditTracker": "removed per operator authorization (WO-001d): the Copy Report was dev diagnostics, not production; superseded by exportFlowCreditLedger (machine-exact ledger JSON via the same clipboard path) + flowCreditIntegrityCheck (its self-audit block's seven machine checks live on at boot)",
+        "flowCreditDebugSelfTestImpl": "removed per operator authorization (WO-001d): the 44-assertion self-test battery was the arrival tool for the counter; its table-integrity and state-machine pins survive as flowCreditIntegrityCheck's production checks, and the browser battery (scripts/wo001c-battery.py, 20/20) remains the external regression gate",
+        "findFlowProfileMenuButton": "removed with the pull's click path (WO-001d): its only caller was the report's manual pull reason; pulls are passive-only now — a wallet-bearing menu already on screen is harvested, never opened",
+        "flowCreditDispatchEscape": "removed with the pull's click path (WO-001d): closed the menu the report opened; no code path opens Flow's profile menu anymore",
+        "flowCreditAnyDialog": "removed with the pull's click path (WO-001d): verified the report-opened menu's closure; flowCreditDialogWithCredits (branch A, passive harvest) stays",
+        "flowCreditSleep": "removed with the pull's click path (WO-001d): paced the click/close cascade that no longer exists",
+    },
     "Recon": {
         "overrideFetch": "armNetworkHub onRequest/onTraffic/onError subscribers (NetHook v4 adoption, suite v1.4.6 — the reconh recorder + MITM blocklist + TypeError→204 pacification ride the shared hub; same surface, no local wrap)",
         "overrideXHR": "armNetworkHub onTraffic response subscriber (NetHook v4 adoption — the XHR recorder twin rides the shared hub)",

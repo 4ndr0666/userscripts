@@ -145,12 +145,13 @@ const ADJUDICATED = [
         reason: "SCOPED single-element sync: watches ONE prompt-row element (attributeFilter on class/data attributes) to re-sync color/tooltip from prompt metadata — per-fire work is an async storage read plus style writes on that single element; a coalescer would lag the UI sync visibly behind the class toggle; scoped by construction (the element is the whole observed surface). v1.6.0 re-adjudication: scope + filter re-verified. v1.7.0 re-review",
         expiry: "v1.7.0",
     },
-    {
-        file: "canon/_sovereign/4ndr0tools - Prompt Master.user.js",
-        callText: "new MutationObserver(flowCreditScheduleTick); flowCredi",
-        reason: "SETTLE liveness keeper: flowCreditScheduleTick debounces 250 ms (clearTimeout + setTimeout); childList+characterData on body is deliberate — chat text churn IS the liveness signal that keeps the flow-credit sweep armed (v1.5.0 G1 adjudication, same engine); the debounced tick itself is the O(1) credit read. v1.6.0 re-adjudication: debounce + liveness semantics re-verified. v1.7.0 re-review",
-        expiry: "v1.7.0",
-    },
+    /* v28.7.0 (suite re-review): the Prompt Master flow-credit SETTLE liveness
+     * ledger entry REMOVED — the site graduated to structural discipline:
+     * flowCreditScheduleTick now carries its own node gate (the host-chrome
+     * filter over the mutation records) ahead of the 250 ms debounce, so the
+     * census classifies it coalesced (node filter + coalescer) and no
+     * justification ledger is owed. The v1.5.0 G1 liveness semantics are
+     * unchanged: host DOM churn still keeps the storage sweep armed. */
     {
         file: "canon/_sovereign/4ndr0tools - Watermark++.user.js",
         callText: "new MutationObserver((mutations) => { handlePageImageMu",

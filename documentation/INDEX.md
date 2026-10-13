@@ -30,7 +30,7 @@
 | **ModelSearch** | `4.0.1` | forums | [reference](./modelsearch/) |
 | **PageCraft** | `1.1.3` | ux utilities | [reference](./pagecraft/) |
 | **Pixeldrain++** | `1.2.0` | media & links | [reference](./pixeldrain/) |
-| **Prompt Master** | `28.6.1` | sovereign platforms | [reference](./prompt-master/) |
+| **Prompt Master** | `28.7.0` | sovereign platforms | [reference](./prompt-master/) |
 | **Recon** | `9.1.0` | privacy & security | [reference](./recon/) |
 | **Redgifs++** | `5.3` | video & players | [reference](./redgifs/) |
 | **Stream Interceptor** | `3.3.0` | uncategorized | [reference](./stream-interceptor/) |

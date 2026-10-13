@@ -1149,12 +1149,12 @@
   {
    "file": "4ndr0tools - Prompt Master.user.js",
    "name": "4ndr0tools - Prompt Master",
-   "version": "28.6.1",
+   "version": "28.7.0",
    "description": "Google Flow prompt manager toolkit (works on any AI, just add url) - persisted unit ledger meters every generation click, organization engine: collections, saved views, favorites, ratings, archive, group-by, and insights for large prompt libraries, dedupe, media slideshow, ai prompt enhancer, auto gist syncing, hotkeys, much more.",
    "family": "sovereign platforms",
-   "sha256": "0461e4bf9a4c45d8f26668bb3a9ce9b592d507970056a6b29405db3207285a08",
-   "lines": 23560,
-   "bytes": 1138435,
+   "sha256": "165bdc732abd92d385eb2de4aee109bdbcaa1d1c09bcabc6ddb8e77f5f0a94d1",
+   "lines": 22880,
+   "bytes": 1114305,
    "matches": [
     "*://geminigen.ai/*",
     "*://gist.github.com/*",
@@ -1592,5 +1592,5 @@
    ]
   }
  ],
- "digest": "6381b2eed67fbd62f5ee719edbbab9fbc296729fa07d91aea973dc721bc62ca0"
+ "digest": "727626a3ff855a9c67069abd45782c5eae68a0e63830eb6ee146a87b2cc998d6"
 }
