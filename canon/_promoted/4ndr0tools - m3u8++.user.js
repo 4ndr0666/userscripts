@@ -329,7 +329,7 @@
             }
         }
 
-        __4NDR0_NET_API__.onTraffic((ev) => {
+        if (typeof __4NDR0_NET_API__ !== "undefined") __4NDR0_NET_API__.onTraffic((ev) => {
             if (ev.phase !== "response") return;
             try {
                 const content = ev.body;

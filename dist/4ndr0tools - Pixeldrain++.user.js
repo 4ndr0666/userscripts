@@ -1387,8 +1387,37 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
     // contract (every status resolves; callers gate — checkStatus:false).
     // Abort-branching call sites now test e.kind === 'abort' OR the legacy
     // 'aborted' message (both forms recognized — superset).
+    function pdKernelLessGmFetch(url, opts) {
+        if (typeof GM_xmlhttpRequest !== 'function') return Promise.reject(Object.assign(new Error('kernel-less transport unavailable'), { kind: 'gm-unavailable' }));
+        opts = opts || {};
+        return new Promise((resolve, reject) => {
+            let settled = false;
+            const done = (fn, val) => { if (!settled) { settled = true; fn(val); } };
+            const ctl = GM_xmlhttpRequest({
+                method: opts.method || 'GET',
+                url,
+                headers: opts.headers || {},
+                data: opts.data != null ? opts.data : null,
+                responseType: opts.responseType || 'text',
+                timeout: Math.max(1, opts.timeout || 60000),
+                anonymous: opts.anonymous !== false,
+                onprogress: opts.onprogress,
+                onloadstart: opts.onloadstart,
+                onload: (res) => done(resolve, res),
+                onerror: () => done(reject, Object.assign(new Error('network error'), { kind: 'transport' })),
+                ontimeout: () => done(reject, Object.assign(new Error('gmFetch timeout'), { kind: 'timeout' })),
+                onabort: () => done(reject, Object.assign(new Error('aborted'), { kind: 'abort' })),
+            });
+            if (opts.signal && typeof opts.signal.addEventListener === 'function') {
+                opts.signal.addEventListener('abort', () => {
+                    try { if (ctl && typeof ctl.abort === 'function') ctl.abort(); } catch (e) { console.debug('PD interceptor:', e); }
+                    done(reject, Object.assign(new Error('aborted'), { kind: 'abort' }));
+                }, { once: true });
+            }
+        });
+    }
     function gmXHR(opts) {
-        return __4NDR0_NET_API__.gmFetch(opts.url, {
+        return (typeof __4NDR0_NET_API__ === 'undefined' ? pdKernelLessGmFetch : __4NDR0_NET_API__.gmFetch)(opts.url, {
             method:       opts.method,
             headers:      Object.assign({}, opts.spoof === false ? {} : SPOOF_HEADERS, opts.headers || {}),
             data:         opts.data != null ? opts.data : null,

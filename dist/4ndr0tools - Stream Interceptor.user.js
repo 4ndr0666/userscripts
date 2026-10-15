@@ -1717,9 +1717,10 @@ const __4NDR0_NET_API__ = (function () {
        discovery, the content-type-gated response deep-inspection, the
        XHR load twin with responseURL-preferred targets, and the
        pass_md5 token capture. */
-    const NET_HUB = __4NDR0_NET_API__;   // build-inlined (tools/build.mjs CANON_KERNEL)
+    const NET_HUB = typeof __4NDR0_NET_API__ !== 'undefined' ? __4NDR0_NET_API__ : null;   // build-inlined (tools/build.mjs CANON_KERNEL; kernel-less safe)
 
     function installNetworkHooks() {
+        if (!NET_HUB) return;
         // Defusal — malformed-SVG requests die at the hub (all three
         // channels: fetch, XHR and beacons; the v3.1 fetch-only gate
         // widens to the same doctrine the rest of the suite runs).
@@ -1831,7 +1832,7 @@ const __4NDR0_NET_API__ = (function () {
              * site declared) fans the raw batch in the insertion microtask;
              * the sanitize policy stays here. root was documentElement —
              * the hub's observer target is documentElement. */
-            __4NDR0_NET_API__.onNode((mutations) => {
+            if (typeof __4NDR0_NET_API__ !== 'undefined') __4NDR0_NET_API__.onNode((mutations) => {
                 for (const mutation of mutations) {
                     if (mutation.type === 'childList') {
                         mutation.addedNodes.forEach(sanitizeNode);

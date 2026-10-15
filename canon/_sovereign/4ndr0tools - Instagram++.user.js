@@ -117,7 +117,7 @@
         harvestJSON(json, url);
     }
 
-    __4NDR0_NET_API__.onTraffic((ev) => {
+    if (typeof __4NDR0_NET_API__ !== 'undefined') __4NDR0_NET_API__.onTraffic((ev) => {
         if (ev.phase !== 'response') return;
         if (!ev.url || !ev.body || !isFeedUrl(ev.url)) return;
         digestText(ev.url, ev.body);
@@ -371,8 +371,26 @@
     // download tier's catch logs err.message; the old untyped
     // 'GM_xmlhttpRequest timed out' strings were never branched on —
     // verified by census).
+    function igKernelLessGmFetch(url, opts) {
+        if (typeof GM_xmlhttpRequest !== 'function') return Promise.reject(Object.assign(new Error('kernel-less transport unavailable'), { kind: 'gm-unavailable' }));
+        opts = opts || {};
+        return new Promise((resolve, reject) => {
+            let settled = false;
+            const done = (fn, val) => { if (!settled) { settled = true; fn(val); } };
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url,
+                responseType: opts.responseType || 'blob',
+                timeout: Math.max(1, opts.timeout || 20000),
+                onload: (res) => done(resolve, res),
+                onerror: () => done(reject, Object.assign(new Error('network error'), { kind: 'transport' })),
+                ontimeout: () => done(reject, Object.assign(new Error('gmFetch timeout'), { kind: 'timeout' })),
+                onabort: () => done(reject, Object.assign(new Error('aborted'), { kind: 'abort' })),
+            });
+        });
+    }
     function gmFetchBlob(url, timeoutMs) {
-        return __4NDR0_NET_API__.gmFetch(url, {
+        return (typeof __4NDR0_NET_API__ === 'undefined' ? igKernelLessGmFetch : __4NDR0_NET_API__.gmFetch)(url, {
             responseType: 'blob',
             timeout: timeoutMs,
             checkStatus: false,

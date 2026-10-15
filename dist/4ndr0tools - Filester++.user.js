@@ -1226,7 +1226,7 @@ const __4NDR0_NET_API__ = (function () {
     // =========================================================================
     const origFetch = window.fetch;
 
-    __4NDR0_NET_API__.onTraffic((ev) => {
+    if (typeof __4NDR0_NET_API__ !== 'undefined') __4NDR0_NET_API__.onTraffic((ev) => {
         if (ev.phase !== 'request' || !ev.url) return;
         const reqUrl = ev.url;
 

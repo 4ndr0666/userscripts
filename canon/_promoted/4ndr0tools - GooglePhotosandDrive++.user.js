@@ -1099,7 +1099,24 @@
         /* checkStatus:false — the probe's verdict is BY SHAPE (HTML vs
          * redirect), and a 4xx from a dead share must reach the caller as
          * a typed error it can narrate, not a swallowed rejection. */
-        const res = await __4NDR0_NET_API__.gmFetch(probeUrl, {
+        const gpdKernelLessGmFetch = (url, opts) => {
+            if (typeof GM_xmlhttpRequest !== 'function') return Promise.reject(Object.assign(new Error('kernel-less transport unavailable'), { kind: 'gm-unavailable' }));
+            opts = opts || {};
+            return new Promise((resolve, reject) => {
+                let settled = false;
+                const done = (fn, val) => { if (!settled) { settled = true; fn(val); } };
+                GM_xmlhttpRequest({
+                    method: 'GET',
+                    url,
+                    timeout: Math.max(1, opts.timeout || 15000),
+                    onload: (r) => done(resolve, r),
+                    onerror: () => done(reject, Object.assign(new Error('network error'), { kind: 'transport' })),
+                    ontimeout: () => done(reject, Object.assign(new Error('gmFetch timeout'), { kind: 'timeout' })),
+                    onabort: () => done(reject, Object.assign(new Error('aborted'), { kind: 'abort' })),
+                });
+            });
+        };
+        const res = await (typeof __4NDR0_NET_API__ === 'undefined' ? gpdKernelLessGmFetch : __4NDR0_NET_API__.gmFetch)(probeUrl, {
             timeout: 15000,
             retries: 1,
             checkStatus: false

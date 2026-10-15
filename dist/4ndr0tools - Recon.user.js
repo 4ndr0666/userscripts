@@ -1628,7 +1628,7 @@ const __4NDR0_NET_API__ = (function () {
     //   - external-block logging + the reconh TypeError→204 pacification
     //     → the onError recovery channel (hub vetoes from co-installed
     //     defusers are final and never un-defused).
-    const NET_HUB = __4NDR0_NET_API__;   // build-inlined (tools/build.mjs CANON_KERNEL)
+    const NET_HUB = typeof __4NDR0_NET_API__ !== 'undefined' ? __4NDR0_NET_API__ : null;   // build-inlined (tools/build.mjs CANON_KERNEL; kernel-less safe)
 
     // In-flight request parses, keyed by hub exchange id — bounded FIFO
     // (B.1): beyond 512 concurrent exchanges the oldest entry evicts and
@@ -1653,6 +1653,7 @@ const __4NDR0_NET_API__ = (function () {
     }
 
     function armNetworkHub() {
+        if (!NET_HUB) return;
         // Defusal — the reconh MITM blocklist as request-time verdicts: a
         // blocked exchange never leaves the page.
         NET_HUB.onRequest((req) => {

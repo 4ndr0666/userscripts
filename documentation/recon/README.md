@@ -13,7 +13,7 @@ Recon is the suite's security-research wing: hardened XHR/fetch interception wit
 | Version | `9.1.0` |
 | Matches | `*://*/*` |
 | Run-at | `document-start` |
-| Size | 115.5 KB · 2145 lines |
+| Size | 115.6 KB · 2146 lines |
 | Install | [dist/4ndr0tools - Recon.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Recon.user.js) |
 
 ## Feature Inventory

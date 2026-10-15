@@ -4567,7 +4567,7 @@ shuffleButtonActive: "path[d='M18.51,13.29l4.21,4.21l-4.21,4.21l-1.41-1.41l1.8-1
          * (its records no longer match the filter) — the disconnect/re-create
          * cycle is gone. */
         let reattachMenu = null;
-        __4NDR0_NET_API__.onNode((entries) => {
+        if (typeof __4NDR0_NET_API__ !== 'undefined') __4NDR0_NET_API__.onNode((entries) => {
             for (const entry of entries) {
                 if (entry.target !== reattachMenu) continue;
                 const { target, previousSibling, removedNodes } = entry;

@@ -3381,7 +3381,24 @@ const resolvers = [
                     // HTTP status resolves so the caller's gates are
                     // unchanged; transport faults map to status 0 with the
                     // typed NetError kind logged.
-                    const response = await __4NDR0_NET_API__.gmFetch(apiUrl, {
+                    const fppKernelLessGmFetch = (u, o) => {
+                        if (typeof GM_xmlhttpRequest !== "function") return Promise.reject(Object.assign(new Error("kernel-less transport unavailable"), { kind: "gm-unavailable" }));
+                        o = o || {};
+                        return new Promise((res, rej) => {
+                            let s = false;
+                            const d = (fn, v) => { if (!s) { s = true; fn(v); } };
+                            GM_xmlhttpRequest({
+                                method: o.method || "GET",
+                                url: u,
+                                timeout: Math.max(1, o.timeout || 15000),
+                                onload: (r) => d(res, r),
+                                onerror: () => d(rej, Object.assign(new Error("network error"), { kind: "transport" })),
+                                ontimeout: () => d(rej, Object.assign(new Error("gmFetch timeout"), { kind: "timeout" })),
+                                onabort: () => d(rej, Object.assign(new Error("aborted"), { kind: "abort" })),
+                            });
+                        });
+                    };
+                    const response = await (typeof __4NDR0_NET_API__ === "undefined" ? fppKernelLessGmFetch : __4NDR0_NET_API__.gmFetch)(apiUrl, {
                         method: "GET",
                         timeout: 15000,
                         checkStatus: false
@@ -3427,7 +3444,24 @@ const resolvers = [
                         // Transport faults map to status 0 so the non-200 path
                         // (warn + cyberdrop_helper fallback) is preserved;
                         // the typed NetError kind is logged.
-                        const response = await __4NDR0_NET_API__.gmFetch(fileApiUrl, {
+                        const fppKernelLessGmFetch2 = (u, o) => {
+                            if (typeof GM_xmlhttpRequest !== "function") return Promise.reject(Object.assign(new Error("kernel-less transport unavailable"), { kind: "gm-unavailable" }));
+                            o = o || {};
+                            return new Promise((res, rej) => {
+                                let s = false;
+                                const d = (fn, v) => { if (!s) { s = true; fn(v); } };
+                                GM_xmlhttpRequest({
+                                    method: o.method || "GET",
+                                    url: u,
+                                    timeout: Math.max(1, o.timeout || 15000),
+                                    onload: (r) => d(res, r),
+                                    onerror: () => d(rej, Object.assign(new Error("network error"), { kind: "transport" })),
+                                    ontimeout: () => d(rej, Object.assign(new Error("gmFetch timeout"), { kind: "timeout" })),
+                                    onabort: () => d(rej, Object.assign(new Error("aborted"), { kind: "abort" })),
+                                });
+                            });
+                        };
+                        const response = await (typeof __4NDR0_NET_API__ === "undefined" ? fppKernelLessGmFetch2 : __4NDR0_NET_API__.gmFetch)(fileApiUrl, {
                             method: "GET",
                             timeout: 15000,
                             checkStatus: false
@@ -3725,7 +3759,24 @@ async function cyberdrop_helper(fileUrl, retries = 3, delay = 3500) {
             // v1.10.0: bounded + typed — kernel gmFetch (15 s). Transport
             // faults map to status 0 so the retry loop is preserved; the
             // typed NetError kind is logged.
-            const response = await __4NDR0_NET_API__.gmFetch(fileUrl, {
+            const fppKernelLessGmFetch3 = (u, o) => {
+                if (typeof GM_xmlhttpRequest !== "function") return Promise.reject(Object.assign(new Error("kernel-less transport unavailable"), { kind: "gm-unavailable" }));
+                o = o || {};
+                return new Promise((res, rej) => {
+                    let s = false;
+                    const d = (fn, v) => { if (!s) { s = true; fn(v); } };
+                    GM_xmlhttpRequest({
+                        method: o.method || "GET",
+                        url: u,
+                        timeout: Math.max(1, o.timeout || 15000),
+                        onload: (r) => d(res, r),
+                        onerror: () => d(rej, Object.assign(new Error("network error"), { kind: "transport" })),
+                        ontimeout: () => d(rej, Object.assign(new Error("gmFetch timeout"), { kind: "timeout" })),
+                        onabort: () => d(rej, Object.assign(new Error("aborted"), { kind: "abort" })),
+                    });
+                });
+            };
+            const response = await (typeof __4NDR0_NET_API__ === "undefined" ? fppKernelLessGmFetch3 : __4NDR0_NET_API__.gmFetch)(fileUrl, {
                 method: "GET",
                 timeout: 15000,
                 checkStatus: false

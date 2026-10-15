@@ -1535,7 +1535,27 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.1.1 —
             // still resolves; the fetch-Response facade below is preserved
             // byte-for-byte for callers (ok/status/statusText/url/text/
             // json/xml/raw).
-            return __4NDR0_NET_API__.gmFetch(url, {
+            const gfKernelLessGmFetch = (u, o) => {
+                if (typeof GM_xmlhttpRequest !== 'function') return Promise.reject(Object.assign(new Error('kernel-less transport unavailable'), { kind: 'gm-unavailable' }));
+                o = o || {};
+                return new Promise((res, rej) => {
+                    let s = false;
+                    const d = (fn, v) => { if (!s) { s = true; fn(v); } };
+                    GM_xmlhttpRequest({
+                        method: o.method || 'GET',
+                        url: u,
+                        headers: o.headers || {},
+                        data: o.data != null ? o.data : null,
+                        responseType: o.responseType || 'text',
+                        timeout: Math.max(1, o.timeout || 20000),
+                        onload: (r) => d(res, r),
+                        onerror: () => d(rej, Object.assign(new Error('network error'), { kind: 'transport' })),
+                        ontimeout: () => d(rej, Object.assign(new Error('gmFetch timeout'), { kind: 'timeout' })),
+                        onabort: () => d(rej, Object.assign(new Error('aborted'), { kind: 'abort' })),
+                    });
+                });
+            };
+            return (typeof __4NDR0_NET_API__ === 'undefined' ? gfKernelLessGmFetch : __4NDR0_NET_API__.gmFetch)(url, {
                 method: options.method,
                 headers: options.headers,
                 data: options.body != null ? options.body : null,

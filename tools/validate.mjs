@@ -34,6 +34,7 @@ import { runGlobalCensus } from "./global-census.mjs";
 import { runCacheCensus } from "./cache-census.mjs";
 import { runSizeBudget } from "./size-budget.mjs";
 import { runWatermarkBatchSmoke } from "./watermark-batch-smoke.mjs";
+import { runKernelBoundarySmoke } from "./kernel-boundary-smoke.mjs";
 import { runProductionScore, SCORE_THRESHOLD } from "./production-score.mjs";
 import { computeInventory, serialize } from "./inventory.mjs";
 
@@ -461,7 +462,7 @@ function gateC() {
 }
 
 /* ── Gate D: documented collision fixes present in dist ───────────────── */
-function gateD() {
+async function gateD() {
     const read = (key) => {
         const f = path.join(DIST, `4ndr0tools - ${key}.user.js`);
         return fs.existsSync(f) ? fs.readFileSync(f, "utf8") : "";
@@ -640,7 +641,7 @@ function gateD() {
     if (!gpdCanon.includes("__4NDR0_NET_API__.gmFetch") || !gpdCanon.includes("resolveDriveTrueDirect") || !gpdCanon.includes("buildDirectFromForm")) {
         failures.push(`[D] GooglePhotosandDrive++: kernel gmFetch adoption surface missing (resolveDriveTrueDirect via __4NDR0_NET_API__.gmFetch)`);
     } else passes.push(`[D] GooglePhotosandDrive++ gmFetch adoption verified (Drive true-direct resolution rides the kernel v5 transport)`);
-    if (/GM_xmlhttpRequest\s*\(/.test(gpdCanon)) {
+    if (/GM_xmlhttpRequest\s*\(/.test(gpdCanon.replace(/const gpdKernelLessGmFetch = [\s\S]*?\n        \};/, ""))) {
         failures.push(`[D] GooglePhotosandDrive++: bare GM transport call in canon (must ride __4NDR0_NET_API__.gmFetch)`);
     }
     if (!/@grant\s+GM_xmlhttpRequest/.test(gpdCanon) || !/@connect\s+drive\.usercontent\.google\.com/.test(gpdCanon) || !/@connect\s+drive\.google\.com/.test(gpdCanon)) {
@@ -1241,12 +1242,19 @@ function gateD() {
     } else {
         passes.push(`[D] NetHook singleton wiring verified (${netConsumers} canon consumer(s) share one page-realm wrap; lazy arm + 4 MB single-read contract)`);
     }
+
+    const kbSmoke = await runKernelBoundarySmoke(ROOT);
+    if (kbSmoke.problems.length) {
+        for (const p of kbSmoke.problems) failures.push(`[D] kernel-boundary smoke: ${p}`);
+    } else {
+        passes.push(`[D] canon kernel-less boundary verified (${kbSmoke.canonFiles} canon scripts: ${kbSmoke.kernelFreeCount} kernel-free, ${kbSmoke.guardedConsumerCount} typeof-guarded across ${kbSmoke.totalGuardedSites} sites, ${kbSmoke.transportFallbacksVerified}/8 kernel-less gmFetch fallbacks, ${kbSmoke.runtimeAssertions}/10 runtime+red-control assertions)`);
+    }
 }
 
 gateA();
 gateB();
 gateC();
-gateD();
+await gateD();
 
 console.log("╔══════════════════════════════════════════════════════════════╗");
 console.log("║  GUP v5.3.1 SUITE VERIFICATION — " + new Date().toISOString().slice(0, 19) + "        ║");

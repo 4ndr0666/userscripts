@@ -1469,7 +1469,25 @@ const __4NDR0_NET_API__ = (function () {
     // messages hardenedFetch reports through its fallback chain (the
     // 'GM_xmlhttpRequest unavailable' pre-check is now the kernel's typed
     // gm-unavailable rejection — no ReferenceError, same fallback tier).
-    const gmFetch = (url) => __4NDR0_NET_API__.gmFetch(url, {
+    const b2uKernelLessGmFetch = (url, opts) => {
+        if (typeof GM_xmlhttpRequest !== 'function') return Promise.reject(Object.assign(new Error('kernel-less transport unavailable'), { kind: 'gm-unavailable' }));
+        opts = opts || {};
+        return new Promise((resolve, reject) => {
+            let settled = false;
+            const done = (fn, val) => { if (!settled) { settled = true; fn(val); } };
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url,
+                responseType: opts.responseType || 'blob',
+                timeout: Math.max(1, opts.timeout || 45000),
+                onload: (res) => done(resolve, res),
+                onerror: () => done(reject, Object.assign(new Error('network error'), { kind: 'transport' })),
+                ontimeout: () => done(reject, Object.assign(new Error('gmFetch timeout'), { kind: 'timeout' })),
+                onabort: () => done(reject, Object.assign(new Error('aborted'), { kind: 'abort' })),
+            });
+        });
+    };
+    const gmFetch = (url) => (typeof __4NDR0_NET_API__ === 'undefined' ? b2uKernelLessGmFetch : __4NDR0_NET_API__.gmFetch)(url, {
         responseType: 'blob',
         timeout: 45000,
         checkStatus: false,

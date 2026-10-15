@@ -12907,7 +12907,8 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.1.0 
     // re-stack observers.
     const RPC_PENDING_LIMIT = 256;
     const rpcPending = new Map();
-    const off = __4NDR0_NET_API__.onTraffic(function (ev) {
+    let off = null;
+    if (typeof __4NDR0_NET_API__ !== "undefined") off = __4NDR0_NET_API__.onTraffic(function (ev) {
       try {
         if (ev.kind !== "xhr") return;
         if (!isGeminiBatchExecuteUrl(ev.url)) return;

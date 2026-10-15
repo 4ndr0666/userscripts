@@ -439,7 +439,7 @@
      * facades this replaces stacked N deep under co-install. */
     const AKASHA_MOCK_BODY = JSON.stringify({ success: true, code: 0 });
 
-    __4NDR0_NET_API__.onRequest(function (req) {
+    if (typeof __4NDR0_NET_API__ !== 'undefined') __4NDR0_NET_API__.onRequest(function (req) {
         if (isTracker(req.url)) {
             if (req.kind === 'beacon') {
                 console.log(`%c [💀] BEACON NULLIFIED: ${req.url}`, "color: #ff0055;");
@@ -610,7 +610,7 @@
      *    observer per realm fans the raw batch in the SAME insertion
      *    microtask (the anti-bot race contract is unchanged); the defuse
      *    policy (neutralizeNode + subtree script sweep) stays here. */
-    __4NDR0_NET_API__.onNode((mutations) => {
+    if (typeof __4NDR0_NET_API__ !== 'undefined') __4NDR0_NET_API__.onNode((mutations) => {
         for (const mutation of mutations) {
             for (const node of mutation.addedNodes) {
                 neutralizeNode(node);
@@ -947,7 +947,7 @@
      * network wrap set into inserted iframes; this subscriber keeps the
      * Akashan local-pacifier arming + re-arm-on-load surface (policy), and
      * its propagate calls remain as idempotent belt-and-suspenders. */
-    __4NDR0_NET_API__.onNode((mutations) => {
+    if (typeof __4NDR0_NET_API__ !== 'undefined') __4NDR0_NET_API__.onNode((mutations) => {
         mutations.forEach((mutation) => {
             mutation.addedNodes.forEach((node) => {
                 if (node.tagName && node.tagName.toLowerCase() === 'iframe') {

@@ -1366,7 +1366,7 @@ const __4NDR0_NET_API__ = (function () {
         // baseline Response shape; the hub's synthetic statusText is 'OK'
         // where the bare constructor default was '' — stats JSON consumers
         // read the body, not the status line.
-        __4NDR0_NET_API__.onRequest((req) => {
+        if (typeof __4NDR0_NET_API__ !== 'undefined') __4NDR0_NET_API__.onRequest((req) => {
             try {
                 const reqUrl = req.url || '';
                 if (
@@ -1448,7 +1448,7 @@ const __4NDR0_NET_API__ = (function () {
      * kernel-owned observer per realm fans the raw batch in the SAME
      * insertion microtask (the anti-obfuscation race contract is
      * unchanged); the defuse policy stays here. */
-    __4NDR0_NET_API__.onNode((mutations) => {
+    if (typeof __4NDR0_NET_API__ !== 'undefined') __4NDR0_NET_API__.onNode((mutations) => {
         for (const mutation of mutations) {
             for (const node of mutation.addedNodes) {
                 if (node.tagName === 'SCRIPT') defuseScript(node);
@@ -2091,7 +2091,7 @@ const __4NDR0_NET_API__ = (function () {
     // sniffer saw the defuser's synthetic Responses pass through its
     // wrap. json-XHR bodies arrive pre-stringified and are swept — the
     // baseline XHR tap threw on those and skipped.
-    __4NDR0_NET_API__.onTraffic((ev) => {
+    if (typeof __4NDR0_NET_API__ !== 'undefined') __4NDR0_NET_API__.onTraffic((ev) => {
         try {
             if (ev.phase === 'request') {
                 classifyRequestUrl(ev.url);
@@ -2115,7 +2115,7 @@ const __4NDR0_NET_API__ = (function () {
     });
     try {
         const _sandboxRealm = (typeof window !== 'undefined') ? window : null;
-        if (_sandboxRealm && _sandboxRealm !== unsafeWindow) {
+        if (_sandboxRealm && _sandboxRealm !== unsafeWindow && typeof __4NDR0_NET_API__ !== 'undefined') {
             __4NDR0_NET_API__.propagate(_sandboxRealm);
             console.log('[Ψ-4NDR0666] M3: sandbox-realm propagation armed (NetHook).');
         }
@@ -3057,11 +3057,39 @@ const __4NDR0_NET_API__ = (function () {
     // AbortController per request, registered in the shared set, aborted
     // by the bulk STOP surface, deregistered on every terminal path
     // (finally-equivalent; the kernel detaches its listener on settle).
+    function bkrKernelLessGmFetch(url, opts) {
+        if (typeof GM_xmlhttpRequest !== 'function') {
+            return Promise.reject(Object.assign(new Error('kernel-less transport unavailable: no privileged grant'), { kind: 'gm-unavailable' }));
+        }
+        opts = opts || {};
+        return new Promise((resolve, reject) => {
+            let settled = false;
+            const done = (fn, val) => { if (!settled) { settled = true; fn(val); } };
+            const ctl = GM_xmlhttpRequest({
+                method: opts.method || 'GET',
+                url,
+                headers: opts.headers || {},
+                data: opts.data != null ? opts.data : null,
+                timeout: Math.max(1, opts.timeout || 15000),
+                responseType: opts.responseType || 'text',
+                onload: (res) => done(resolve, res),
+                onerror: () => done(reject, Object.assign(new Error('network error'), { kind: 'transport' })),
+                ontimeout: () => done(reject, Object.assign(new Error('gmFetch timeout'), { kind: 'timeout' })),
+                onabort: () => done(reject, Object.assign(new Error('aborted'), { kind: 'abort' })),
+            });
+            if (opts.signal && typeof opts.signal.addEventListener === 'function') {
+                opts.signal.addEventListener('abort', () => {
+                    try { if (ctl && typeof ctl.abort === 'function') ctl.abort(); } catch (e) { console.debug('BUNKR interceptor:', e); }
+                    done(reject, Object.assign(new Error('aborted'), { kind: 'abort' }));
+                }, { once: true });
+            }
+        });
+    }
     function gmFetch(opts) {
         const ctl = (typeof AbortController === 'function') ? new AbortController() : null;
         if (ctl) _activeRequests.add(ctl);
         const cleanup = () => { if (ctl) _activeRequests.delete(ctl); };
-        return __4NDR0_NET_API__.gmFetch(opts.url, {
+        return (typeof __4NDR0_NET_API__ === 'undefined' ? bkrKernelLessGmFetch : __4NDR0_NET_API__.gmFetch)(opts.url, {
             method:       opts.method,
             headers:      opts.headers,
             data:         opts.data != null ? opts.data : null,
