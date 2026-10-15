@@ -601,7 +601,7 @@ ${scriptName.indexOf("m3u8") !== -1 ? `<script src="/m3u8-parser-stub.js"></scri
              * reads, ArrowRight advances, Escape tears the deck down. */
             return waitFor(function () {
                 var slot = window.__4NDR0_NET__;
-                return !!(slot && slot.version === 5 && (slot.trafficSubscriberCount || 0) >= 1);
+                return !!(slot && slot.version >= 5 && (slot.trafficSubscriberCount || 0) >= 1);
             }, 10000).then(function (hubReady) {
                 out.hubReadyBeforeFetch = hubReady;
                 return fetch('/api/flow.json');
@@ -670,7 +670,7 @@ ${scriptName.indexOf("m3u8") !== -1 ? `<script src="/m3u8-parser-stub.js"></scri
              * hub wait is version 5 (kernel gmFetch round). */
             return waitFor(function () {
                 var slot = window.__4NDR0_NET__;
-                return !!(slot && slot.version === 5 && (slot.trafficSubscriberCount || 0) >= 1);
+                return !!(slot && slot.version >= 5 && (slot.trafficSubscriberCount || 0) >= 1);
             }, 10000).then(function (hubReady) {
                 out.hubReadyBeforeXhr = hubReady;
                 return new Promise(function (resolve) {

@@ -35,6 +35,7 @@ import { runCacheCensus } from "./cache-census.mjs";
 import { runSizeBudget } from "./size-budget.mjs";
 import { runWatermarkBatchSmoke } from "./watermark-batch-smoke.mjs";
 import { runKernelBoundarySmoke } from "./kernel-boundary-smoke.mjs";
+import { runFamilyFixtureSmoke } from "./family-fixture-smoke.mjs";
 import { runProductionScore, SCORE_THRESHOLD } from "./production-score.mjs";
 import { computeInventory, serialize } from "./inventory.mjs";
 
@@ -1248,6 +1249,13 @@ async function gateD() {
         for (const p of kbSmoke.problems) failures.push(`[D] kernel-boundary smoke: ${p}`);
     } else {
         passes.push(`[D] canon kernel-less boundary verified (${kbSmoke.canonFiles} canon scripts: ${kbSmoke.kernelFreeCount} kernel-free, ${kbSmoke.guardedConsumerCount} typeof-guarded across ${kbSmoke.totalGuardedSites} sites, ${kbSmoke.transportFallbacksVerified}/8 kernel-less gmFetch fallbacks, ${kbSmoke.runtimeAssertions}/10 runtime+red-control assertions)`);
+    }
+
+    const famSmoke = await runFamilyFixtureSmoke(ROOT);
+    if (famSmoke.problems.length) {
+        for (const p of famSmoke.problems) failures.push(`[D] family-fixture smoke: ${p}`);
+    } else {
+        passes.push(`[D] per-family contract fixture battery verified (${famSmoke.passed}/${famSmoke.total} assertions: Zai Exporter 3-strategy ladder + NetHook v6 family fixtures + red control)`);
     }
 }
 
