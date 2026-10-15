@@ -1848,7 +1848,7 @@ const __4NDR0_NET_API__ = (function () {
              .then(json => {
                  STATE.userId = json?.data?.user?.id || json?.user?.pk;
                  log(`UID via web_profile_info: ${STATE.userId}`);
-             }).catch(() => {});
+             }).catch((e) => { console.debug('IG interceptor:', e); });
         }
     }
 

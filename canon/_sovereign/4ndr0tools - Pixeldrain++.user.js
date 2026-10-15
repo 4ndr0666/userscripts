@@ -1429,7 +1429,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
             }
 
             if (SETTINGS.viewPadEnabled && strategy !== 'premium_direct') {
-                PDApi.viewPad(file.id, 2).catch(() => {});
+                PDApi.viewPad(file.id, 2).catch((e) => { console.debug('PD interceptor:', e); });
             }
 
             const ui = this._createProgressUI(file, () => ac.abort());
@@ -2469,7 +2469,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
                 file.name = info.name || id;
                 file.size = info.size || 0;
                 file.mime_type = info.mime_type || '';
-            }).catch(() => {});
+            }).catch((e) => { console.debug('PD interceptor:', e); });
         }
 
         host.appendChild(buildToolbar(file, kind === 'list' ? 'list' : 'file', files));
@@ -2580,14 +2580,14 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.1.1
 
                 if (Page.kind() === 'fs') {
                     const p = Page.fsPath();
-                    if (p) PDApi.fsPath(p).then(() => injectFallback()).catch(() => {});
+                    if (p) PDApi.fsPath(p).then(() => injectFallback()).catch((e) => { console.debug('PD interceptor:', e); });
                 }
 
                 if ((Page.kind() === 'file' || Page.kind() === 'list') && SETTINGS.autoTriggerOnLoad) {
                     const f = getCurrentFileFromViewer();
                     if (f) {
                         Log.info('Auto-trigger download');
-                        Downloader.run(f, 'auto').catch(() => {});
+                        Downloader.run(f, 'auto').catch((e) => { console.debug('PD interceptor:', e); });
                     }
                 }
             }, 500);

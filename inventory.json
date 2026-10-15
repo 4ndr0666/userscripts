@@ -815,9 +815,9 @@
    "version": "13.2.0",
    "description": "Tab-Bar + Dock Integration. Hotkey trigger (Alt+I). Ad-Blocking. Deep-Stack Recovery. Resilient cursor-based pagination. Stories support. Image/video download engine.",
    "family": "sovereign platforms",
-   "sha256": "e60fd0892c3ddc988ee6d6fd24fc3513c3b22ebdb8a6a4d021b2cede9e624082",
+   "sha256": "2ae2a72f4a68624dbb889f2fe405679b7e94c0227daf76de805ef760ca570093",
    "lines": 2447,
-   "bytes": 126364,
+   "bytes": 126403,
    "matches": [
     "*://*.instagram.com/*"
    ],
@@ -1087,9 +1087,9 @@
    "version": "1.2.0",
    "description": "Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.",
    "family": "media & links",
-   "sha256": "4b1700e0f0e4e74de46bc796a15bdb139e7a34bec6faa0f10e5f9e59e83a8ccc",
+   "sha256": "6ac818c29ee96123613152d929029878746153cfe4a3f9f416ed1f28e37ccbc9",
    "lines": 3713,
-   "bytes": 204700,
+   "bytes": 204856,
    "matches": [
     "https://pixeldrain.com/*",
     "https://pixeldrain.net/*",
@@ -1592,5 +1592,5 @@
    ]
   }
  ],
- "digest": "ad44f8b448faa3b89016217870d3da5a0430b4af9df796be3702ea4ade534af1"
+ "digest": "2eccee28e5fb4d390691c2c33e3242594e54322f81041e63ba2cec7a9d06ecd4"
 }
