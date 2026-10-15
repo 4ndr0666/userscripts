@@ -33,6 +33,7 @@ import { runDomainCensus } from "./domain-census.mjs";
 import { runGlobalCensus } from "./global-census.mjs";
 import { runCacheCensus } from "./cache-census.mjs";
 import { runSizeBudget } from "./size-budget.mjs";
+import { runWatermarkBatchSmoke } from "./watermark-batch-smoke.mjs";
 import { runProductionScore, SCORE_THRESHOLD } from "./production-score.mjs";
 import { computeInventory, serialize } from "./inventory.mjs";
 
@@ -840,6 +841,13 @@ function gateD() {
     if (!wmk.includes("function resolveFetchedImageMimeType")) {
         failures.push(`[D] Watermark++: resolveFetchedImageMimeType restoration not present`);
     } else passes.push(`[D] Watermark++ mime resolver restoration verified`);
+
+    const wmBatch = runWatermarkBatchSmoke(ROOT);
+    if (wmBatch.problems.length) {
+        for (const p of wmBatch.problems) failures.push(`[D] Watermark++ delegated-batch smoke: ${p}`);
+    } else {
+        passes.push(`[D] Watermark++ delegated-batch battery verified (${wmBatch.passed}/${wmBatch.total} assertions + red control; observer graduated to structural COALESCED)`);
+    }
 
     // OPSEC invariant (suite v1.4.0): zero remote asset fetches — a
     // counter-surveillance suite must never phone home to font CDNs

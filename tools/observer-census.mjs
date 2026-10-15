@@ -103,7 +103,7 @@ import { fileURLToPath } from "node:url";
 import { codeOnly } from "./sink-census.mjs";
 
 const DEFAULT_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const CURRENT_ROUND = "v1.6.3"; /* expiry = the round that must re-adjudicate */
+const CURRENT_ROUND = "v1.7.0"; /* expiry = the round that must re-adjudicate */
 
 /* ── Adjudication ledger (drift-checked; expiry must not have passed) ──────
  * Every entry is a PERSISTENT site the scanner cannot structurally clear.
@@ -119,31 +119,31 @@ const ADJUDICATED = [
         file: "canon/_promoted/4ndr0tools - Media Player Controller.user.js",
         callText: "new MutationObserver((mutations) => { if (!repeatActive",
         reason: "SCOPED repeat tracker: observes the active media container only (subtree + attributeFilter on time/src); each fire is a gated single-action (executeRepeat) on a matching mutation — coalescing would collapse distinct video-end signals into one and change repeat semantics; repeat-mode exit gates the whole observer (repeatActive early return). v1.6.0 re-adjudication: site re-verified unchanged; scoped-container contract still the bound; NetHook onNode migration not applicable (per-container observe target, not document-level)",
-        expiry: "v1.7.0",
+        expiry: "v1.8.0",
     },
     {
         file: "canon/_promoted/4ndr0tools - Media Player Controller.user.js",
         callText: "new MutationObserver((mutations) => { const current = g",
         reason: "SCOPED media acquisition: observes the active container; getActiveMedia() liveness check + first-match early return per fire — acquisition must see the transient window when the active media swaps (a coalesced flush can miss intermediate nodes and latch a stale target); disconnected and re-armed per container by the acquire path. v1.6.0 re-adjudication: site re-verified unchanged; the re-arm-per-container lifecycle is the site's own, kernel ownership would not add a proof. v1.7.0 re-review",
-        expiry: "v1.7.0",
+        expiry: "v1.8.0",
     },
     {
         file: "canon/_promoted/4ndr0tools - m3u8++.user.js",
         callText: "new MutationObserver(() => { if (!timeout) { timeout = ",
         reason: "SETTLE generic body watcher: watchBodyChange utility — the 200 ms in-flight debounce timer IS in the callback; the broad config (childList+attributes+characterData on the document) is deliberate because the utility's consumers (player mount/unmount detection) need the full surface and the consumer's onchange performs the filtering; per-fire work is the O(1) timer guard. v1.6.0 re-adjudication: coalescer-in-callback re-verified; the broad config is the utility's contract (consumer-side filtering), not drift. v1.7.0 re-review",
-        expiry: "v1.7.0",
+        expiry: "v1.8.0",
     },
     {
         file: "canon/_sovereign/4ndr0tools - AutoTranslate.user.js",
         callText: "new MutationObserver(probe); obs.observe(document.body,",
         reason: "SETTLE language probe: 120 ms Date.now() throttle gate + O(bounded) visible-text sample per fire; characterData on body is the point (text arrival is the signal); settles via finish() or the arming timeoutMs timer, after which the waitForText caller disconnects it — settle-bounded by construction. v1.6.0 re-adjudication: settle path re-verified; probe semantics unchanged. v1.7.0 re-review",
-        expiry: "v1.7.0",
+        expiry: "v1.8.0",
     },
     {
         file: "canon/_sovereign/4ndr0tools - Prompt Master.user.js",
         callText: "new MutationObserver(async () => { if (!e.classList.con",
         reason: "SCOPED single-element sync: watches ONE prompt-row element (attributeFilter on class/data attributes) to re-sync color/tooltip from prompt metadata — per-fire work is an async storage read plus style writes on that single element; a coalescer would lag the UI sync visibly behind the class toggle; scoped by construction (the element is the whole observed surface). v1.6.0 re-adjudication: scope + filter re-verified. v1.7.0 re-review",
-        expiry: "v1.7.0",
+        expiry: "v1.8.0",
     },
     /* v28.7.0 (suite re-review): the Prompt Master flow-credit SETTLE liveness
      * ledger entry REMOVED — the site graduated to structural discipline:
@@ -152,12 +152,13 @@ const ADJUDICATED = [
      * census classifies it coalesced (node filter + coalescer) and no
      * justification ledger is owed. The v1.5.0 G1 liveness semantics are
      * unchanged: host DOM churn still keeps the storage sweep armed. */
-    {
-        file: "canon/_sovereign/4ndr0tools - Watermark++.user.js",
-        callText: "new MutationObserver((mutations) => { handlePageImageMu",
-        reason: "DELEGATED batch processor: callback delegates records to handlePageImageMutations (type/instanceof/node gates — F1/F2 filter holds) which dispatches roots into scheduleProcess = batchProcessor.schedule, the rAF-batched root coalescer (pendingRoots Set + scheduled flag + containment dedupe); the alias chain (scheduleProcess → batchProcessor.schedule → createRootBatchProcessor closure) exceeds the census's bounded resolution depth, so the coalescer is adjudicated here rather than machine-proven. v1.6.0 re-adjudication: alias chain re-walked, rAF coalescer present and unchanged. v1.7.0 re-review",
-        expiry: "v1.7.0",
-    },
+    /* v1.7.0 (Wave 1.1 / 1.2 Door 1 graduation): the Watermark++ DELEGATED
+     * batch processor ledger entry REMOVED — findDefs now skips destructured
+     * parameter braces before locating the function body, and hasCoalescer
+     * resolves the 2-hop factory member chain (scheduleProcess →
+     * batchProcessor.schedule → createRootBatchProcessor → scheduleOnNextFrame),
+     * graduating the site to structurally proven COALESCED, backed by the
+     * 15-assertion tools/watermark-batch-smoke.mjs battery. */
 ];
 
 /* ledger key: file + normalized callText */
@@ -211,7 +212,18 @@ function findDefs(view, name) {
     for (const re of patterns) {
         let m;
         while ((m = re.exec(view)) !== null) {
-            const bOff = view.indexOf("{", m.index + m[0].length - 1);
+            let searchFrom = m.index + m[0].length - 1;
+            if (view[searchFrom] === "(") {
+                let pDepth = 0;
+                for (let k = searchFrom; k < view.length; k++) {
+                    if (view[k] === "(") pDepth++;
+                    else if (view[k] === ")") {
+                        pDepth--;
+                        if (pDepth === 0) { searchFrom = k + 1; break; }
+                    }
+                }
+            }
+            const bOff = view.indexOf("{", searchFrom);
             const sp = bOff >= 0 ? braceSpan(view, bOff) : null;
             if (sp) defs.push({ offset: m.index, end: sp[1], span: sp });
         }
@@ -338,12 +350,27 @@ function hasCoalescer(view, body, siteIdx) {
         const fn = m[1];
         const res = resolveIdentBody(view, fn, siteIdx);
         if (res && (COALESCE_STRUCT_RE.test(res.body) || THROTTLE_RE.test(res.body))) return true;
-        /* factory-result assignment: X = FACTORY(args…) */
-        const factRe = new RegExp("(?:^|[^\\w$.])" + escapeRe(fn) + "\\s*=\\s*([A-Za-z_$][\\w$]*)\\s*\\(");
+        /* factory-result assignment: X = FACTORY(args…) or X = OBJ.method where OBJ = FACTORY(args…) */
+        let targetVar = fn;
+        const propRe = new RegExp("(?:^|[^\\w$.])" + escapeRe(fn) + "\\s*=\\s*([A-Za-z_$][\\w$]*)\\s*\\.\\s*[A-Za-z_$][\\w$]*");
+        const pm = propRe.exec(view.slice(0, siteIdx + 400));
+        if (pm) targetVar = pm[1];
+        const factRe = new RegExp("(?:^|[^\\w$.])" + escapeRe(targetVar) + "\\s*=\\s*([A-Za-z_$][\\w$]*)\\s*\\(");
         const fm = factRe.exec(view.slice(0, siteIdx + 400));
         if (fm) {
             const fres = resolveIdentBody(view, fm[1], siteIdx);
-            if (fres && (COALESCE_STRUCT_RE.test(fres.body) || THROTTLE_RE.test(fres.body))) return true;
+            if (fres) {
+                if (COALESCE_STRUCT_RE.test(fres.body) || THROTTLE_RE.test(fres.body)) return true;
+                const fDefs = findDefs(view, fm[1]);
+                if (fDefs.length) {
+                    const hdr = view.slice(fDefs[0].offset, fDefs[0].span[0]);
+                    const defSched = hdr.match(/(?:schedule\w*|flush\w*)\s*=\s*([A-Za-z_$][\w$]*)/);
+                    if (defSched) {
+                        const sres = resolveIdentBody(view, defSched[1], siteIdx);
+                        if (sres && (COALESCE_STRUCT_RE.test(sres.body) || THROTTLE_RE.test(sres.body))) return true;
+                    }
+                }
+            }
         }
     }
     return false;

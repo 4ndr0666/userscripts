@@ -45,7 +45,7 @@ import { fileURLToPath } from "node:url";
 import { codeOnly } from "./sink-census.mjs";
 
 const DEFAULT_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const CURRENT_ROUND = "v1.6.3";
+const CURRENT_ROUND = "v1.7.0";
 
 /* ── Adjudication ledger: files whose deliberate silences are sanctioned ──
  * Each entry: file, count (the sanctioned silent-catch count — drift-checked

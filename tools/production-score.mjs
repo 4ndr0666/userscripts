@@ -169,7 +169,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToP
         opsec: true, netHook: { consumers: 16 }, inventoryDeterministic: true, style: true, styleCounts: { pass: 38, total: 38 }, docsTruthful: true,
         ledger: { units: 61, evidenced: 61 },
         qr: true, docsCoverage: { readmes: 38, scripts: 38 },
-        round: "v1.6.3",
+        round: "v1.7.0",
     });
     for (const d of r.dims) console.log(`  ${d.dimension.padEnd(15)} ${d.score}/${d.weight}  [${d.inputs.join("; ")}]`);
     console.log(`TOTAL: ${r.total}/100 (threshold ${SCORE_THRESHOLD})`);

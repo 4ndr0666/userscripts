@@ -54,13 +54,13 @@ const ADJUDICATED_VAR_PASSED = [
         file: "canon/_merged/4ndr0tools - LinkMasterΨ.user.js",
         callText: "GM_xmlhttpRequest(opts)",
         reason: "GMapi.xhr util passthrough body (returns the raw control handle) — every GMapi.xhr call site is itself literal-scanned with its own timeout (5/10/12 s)",
-        expiry: "v1.7.0",
+        expiry: "v1.8.0",
     },
     {
         file: "canon/_merged/4ndr0tools - LinkMasterΨ.user.js",
         callText: "xhr(opts)",
         reason: "GMapi.xhr util DEF site (the wrapper name is dispatch-shaped) — the body's own GM_xmlhttpRequest(opts) is the adjacent adjudicated entry; all call sites are literal-bounded",
-        expiry: "v1.7.0",
+        expiry: "v1.8.0",
     },
 ];
 
@@ -237,7 +237,7 @@ export function runTransportCensus(root = DEFAULT_ROOT) {
 
     /* drift: ledger entries whose site no longer exists, or whose expiry
      * round has passed without re-adjudication (G9 ledger hygiene, v1.5.1) */
-    const CURRENT_ROUND = "v1.6.3";
+    const CURRENT_ROUND = "v1.7.0";
     const roundLt = (a, b) => {
         const pa = a.replace(/^v/, "").split(".").map(Number);
         const pb = b.replace(/^v/, "").split(".").map(Number);
