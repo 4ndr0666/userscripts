@@ -1382,12 +1382,12 @@
   {
    "file": "4ndr0tools - YouTube Playlist Master.user.js",
    "name": "4ndr0tools - YouTube Playlist Master",
-   "version": "1.7.0",
+   "version": "1.7.1",
    "description": "Channel playlist buttons (All / Popular / Videos / Shorts / Streams / Members-only), Random play (prefer newest/oldest), reverse autoplay order, playlist autoplay toggle, duration sort, bulk copy/move/delete, JSON + plaintext export/import, snapshots with deleted-video detection, quick watch_videos playlists, queue & watch-later overlays, playlist close button, date/view metadata, episode auto-expand, huge-playlist browser, live settings (no reload), always-available Ψ deck, playlist row filter, duplicate finder & purge, global hotkeys (Alt+Shift+U/S/X), failsafe deck rescue, 404-proof navigation guards, Trusted-Types-immune rendering, fully-visible fit-content modal dialogs.",
    "family": "video & players",
-   "sha256": "bc6bc2a0876611eac19a46203ad766efff0897fb19be1bfa4b071d09ce33662b",
-   "lines": 6576,
-   "bytes": 340157,
+   "sha256": "15718bdab0a576b044dcda2b799e4177e13862cc5abdec456330decadf70d549",
+   "lines": 6612,
+   "bytes": 343212,
    "matches": [
     "https://*.youtube.com/*",
     "https://youtube.com/*"
@@ -1592,5 +1592,5 @@
    ]
   }
  ],
- "digest": "eeb324508d999837cd6736d19a38e1516a24283cbd02b17f71b4cab3e5fc495b"
+ "digest": "8ba968cbc46cd9c142e1b14dd1558e2d5cf02f424be53b7739dd6e68b9cff800"
 }

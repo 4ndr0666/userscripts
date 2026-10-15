@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - YouTube Playlist Master
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.7.0
+// @version      1.7.1
 // @description  Channel playlist buttons (All / Popular / Videos / Shorts / Streams / Members-only), Random play (prefer newest/oldest), reverse autoplay order, playlist autoplay toggle, duration sort, bulk copy/move/delete, JSON + plaintext export/import, snapshots with deleted-video detection, quick watch_videos playlists, queue & watch-later overlays, playlist close button, date/view metadata, episode auto-expand, huge-playlist browser, live settings (no reload), always-available Ψ deck, playlist row filter, duplicate finder & purge, global hotkeys (Alt+Shift+U/S/X), failsafe deck rescue, 404-proof navigation guards, Trusted-Types-immune rendering, fully-visible fit-content modal dialogs.
 // @author       4ndr0666
 // @license      UNLICENSED REDTEAM ONLY
@@ -1134,6 +1134,34 @@ const __4NDR0_NET_API__ = (function () {
 /* ============================================================================
  *                           VERSION HISTORY (GUP-superset)
  * ============================================================================
+ * v1.7.1 (2026-10-15) — the live round: operator-authored features kept
+ *   byte-for-byte, suite discipline reconciled by the executor (the v1.7.1
+ *   push arrived as a dist-export paste; every hunk is classified in the
+ *   round commit).
+ *   AUTHORED (kept): SHUFFLE ICONS — the shuffle button renders dedicated
+ *     active/inactive SVG paths; PLAYER REBIND — a swapped-out player
+ *     element no longer orphans the autoplay listeners (detach before
+ *     re-arm; the once-only flag now also requires player.isConnected);
+ *     AUTOPLAY INTERVAL LEAK — autoInterval is module-scoped and cleared
+ *     before re-arm (a fresh interval previously stacked on every open);
+ *     CLOSE-BTN STYLING — the deck close button finally carries
+ *     .ytpu-close-btn (the CSS rules had shipped without an applicant);
+ *     SPACER LIVE-READ — the deck spacer reads the live STORE appearance
+ *     record instead of a build-time snapshot; the account-handle dead
+ *     store is swept (grep-verified unread since introduction);
+ *     fromFirstVideoPage's await is hoisted to its own statement.
+ *   RECONCILED (transmission damage, mechanically proven, reverted): the
+ *     baked dist kernel block is stripped — canon is kernel-less by
+ *     design, tools/build.mjs injects kernel/net.js at dist time (the
+ *     double declaration was the V8 parse rejection at dist:1311); six
+ *     dollar-escape corruptions are restored — four regex end-anchors
+ *     (YT_HOST_RE, the 11-char video-id check, the playlist-id check,
+ *     the channel-page path check) and two template interpolations (the
+ *     huge-browser progress line, the snapshot row duration): a
+ *     backslash-dollar in a regex matches a literal dollar character, so
+ *     every corrupted anchor was an unconditional never-match; two
+ *     de-indented lines are re-indented (the Set declaration, the
+ *     delete-confirm guard).
  * v1.7.0 (2026-09-28) — channel-navigation hang: root-cause fix. The v1.6.0
  *   SCHED pass chunked the playlist-page sweeps, but the field symptom —
  *   "UI fine, settings fine; the page chokes the moment I navigate to a
@@ -1267,7 +1295,7 @@ const __4NDR0_NET_API__ = (function () {
 
     const CFG = {
         SCRIPT_NAME: 'Ψ Playlist Master',
-        SCRIPT_VERSION: '1.7.0',
+        SCRIPT_VERSION: '1.7.1',
         STORAGE_KEY: 'ytpu.settings',
         SNAPSHOT_KEY: 'ytpu.snapshots',
         SNAPSHOT_CAP: 20,
@@ -2063,7 +2091,8 @@ const __4NDR0_NET_API__ = (function () {
                         if (pathKey() !== key) return null;
                     }
                     let id = await fromCanonicalLink();
-                    if (!id) id = await fromFirstVideoPage();
+                    if (!id) id = fromFirstVideoPage();
+                    id = await id;
                     if (id && key) resolveCachePut(key, id);
                     return id;
                 } finally {
@@ -2307,14 +2336,12 @@ const __4NDR0_NET_API__ = (function () {
         const ytcfgGet = (key) => ENV.cfgGet(key);
 
         let acctName = null;
-        let acctHandle = null;
         let acctTag = null;
 
         async function accountLabel() {
             const tag = identityTag();
             if (acctName && acctTag === tag) return acctName;
             let name = null;
-            let handle = null;
             try {
                 const j = await INNERTUBE.call('account/account_menu', {});
                 (function walk(n) {
@@ -2323,7 +2350,6 @@ const __4NDR0_NET_API__ = (function () {
                     const a = n.activeAccountHeaderRenderer;
                     if (a) {
                         name = a.accountName?.simpleText || a.accountName?.runs?.[0]?.text || null;
-                        handle = a.channelHandle?.simpleText || a.channelHandle?.runs?.[0]?.text || a.email?.simpleText || null;
                         return;
                     }
                     for (const k of Object.keys(n)) walk(n[k]);
@@ -2331,7 +2357,7 @@ const __4NDR0_NET_API__ = (function () {
             } catch (e) {
                 LOG.debug('accountLabel lookup failed (caller keeps fallback):', e && e.message);
             }
-            if (name) { acctName = name; acctHandle = handle; acctTag = tag; }
+            if (name) { acctName = name; acctTag = tag; }
             return name;
         }
 
@@ -4105,7 +4131,7 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
                 bar.appendChild(makeButton('Mem', 'Members-Only Videos', listUrl('UUMO', bareId)));
             }
 
-            if (cb.spacerVisible) bar.appendChild(DOMU.el('span', { class: 'ytpu-sep', 'aria-hidden': 'true' }));
+            if (STORE.data().appearance.spacerVisible) bar.appendChild(DOMU.el('span', { class: 'ytpu-sep', 'aria-hidden': 'true' }));
 
             // Random play — needs the current tab's playlist.
             if (cb.randomEnabled && currentTab) {
@@ -4306,6 +4332,8 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
             playlistVideosMiniplayer: 'yt-formatted-string[id=owner-text] :nth-child(3)',
             shuffleButtonActive: "path[d='M18.51,13.29l4.21,4.21l-4.21,4.21l-1.41-1.41l1.8-1.8c-2.95-0.03-5.73-1.32-7.66-3.55l1.51-1.31 c1.54,1.79,3.77,2.82,6.13,2.85l-1.79-1.79L18.51,13.29z M18.88,7.51l-1.78,1.78l1.41,1.41l4.21-4.21l-4.21-4.21l-1.41,1.41l1.8,1.8 c-3.72,0.04-7.12,2.07-8.9,5.34l-0.73,1.34C7.81,14.85,5.03,17,2,17v2c3.76,0,7.21-2.55,9.01-5.85l0.73-1.34 C13.17,9.19,15.9,7.55,18.88,7.51z M8.21,10.31l1.5-1.32C7.77,6.77,4.95,5,2,5v2C4.38,7,6.64,8.53,8.21,10.31z']",
             shuffleButtonInactive: "path[d='M18.15,13.65l3.85,3.85l-3.85,3.85l-0.71-0.71L20.09,18H19c-2.84,0-5.53-1.23-7.39-3.38l0.76-0.65 C14.03,15.89,16.45,17,19,17h1.09l-2.65-2.65L18.15,13.65z M19,7h1.09l-2.65,2.65l0.71,0.71l3.85-3.85l-3.85-3.85l-0.71,0.71 L20.09,6H19c-3.58,0-6.86,1.95-8.57,5.09l-0.73,1.34C8.16,15.25,5.21,17,2,17v1c3.58,0,6.86-1.95,8.57-5.09l0.73-1.34 C12.84,8.75,15.79,7,19,7z M8.59,9.98l0.75-0.66C7.49,7.21,4.81,6,2,6v1C4.52,7,6.92,8.09,8.59,9.98z']",
+shuffleButtonActive: "path[d='M18.51,13.29l4.21,4.21l-4.21,4.21l-1.41-1.41l1.8-1.8c-2.95-0.03-5.73-1.32-7.66-3.55l1.51-1.31 c1.54,1.79,3.77,2.82,6.13,2.85l-1.79-1.79L18.51,13.29z M18.88,7.51l-1.78,1.78l1.41,1.41l4.21-4.21l-4.21-4.21l-1.41,1.41l1.8,1.8 c-3.72,0.04-7.12,2.07-8.9,5.34l-0.73,1.34C7.81,14.85,5.03,17,2,17v2c3.76,0,7.21-2.55,9.01-5.85l0.73-1.34 C13.17,9.19,15.9,7.55,18.88,7.51z M8.21,10.31l1.5-1.32C7.77,6.77,4.95,5,2,5v2C4.38,7,6.64,8.53,8.21,10.31z']",
+            shuffleButtonInactive: "path[d='M18.15,13.65l3.85,3.85l-3.85,3.85l-0.71-0.71L20.09,18H19c-2.84,0-5.53-1.23-7.39-3.38l0.76-0.65 C14.03,15.89,16.45,17,19,17h1.09l-2.65-2.65L18.15,13.65z M19,7h1.09l-2.65,2.65l0.71,0.71l3.85-3.85l-3.85-3.85l-0.71,0.71 L20.09,6H19c-3.58,0-6.86,1.95-8.57,5.09l-0.73,1.34C8.16,15.25,5.21,17,2,17v1c3.58,0,6.86-1.95,8.57-5.09l0.73-1.34 C12.84,8.75,15.79,7,19,7z M8.59,9.98l0.75-0.66C7.49,7.21,4.81,6,2,6v1C4.52,7,6.92,8.09,8.59,9.98z']",
             shuffleButtonLegacy: "path[d='M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z']",
             timestamp: 'span.ytd-thumbnail-overlay-time-status-renderer',
             videoPlayer: '.html5-video-player',
@@ -4370,9 +4398,13 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
         }
 
         function ensurePlayerListeners() {
-            if (playerListenersAdded) return;
+            if (playerListenersAdded && player && player.isConnected) return;
             const video = document.querySelector(selectors.player);
             if (!video) return;
+            if (player && player !== video) {
+                player.removeEventListener('timeupdate', checkTime);
+                player.removeEventListener('play', addButton);
+            }
             player = video;
             video.addEventListener('timeupdate', checkTime);
             video.addEventListener('play', addButton);
@@ -5758,6 +5790,7 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
         function buildButton() {
             const b = document.createElement('a');
             b.id = 'ytpu-close-playlist-btn';
+            b.className = 'ytpu-close-btn';
             b.title = 'Close playlist';
             const svg = DOMU.svg('svg', {
                 viewBox: '0 0 24 24', width: '20', height: '20',
@@ -5881,6 +5914,7 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
 
     const HUGE = (() => {
         let nextButtonInterval = null;
+        let autoInterval = null;
         let keydownWired = false;
 
         /** v1.7.0: wire the Shift+N shortcut exactly once. v1.5.0/v1.6.0
@@ -5983,7 +6017,8 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
 
             wireKeydown();
 
-            const autoInterval = setInterval(() => {
+            if (autoInterval) clearInterval(autoInterval);
+            autoInterval = setInterval(() => {
                 if (!document.querySelector('.ytpu-huge-browser')) { clearInterval(autoInterval); return; }
                 const player = PLAYER.getPlayer();
                 const progressState = PLAYER.getProgressState();
@@ -6573,3 +6608,4 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
         window.addEventListener('DOMContentLoaded', BOOT.start, { once: true });
     }
 })();
+

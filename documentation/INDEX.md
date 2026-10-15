@@ -39,7 +39,7 @@
 | **YT Filter** | `2.5` | video & players | [reference](./yt-filter/) |
 | **Yandex Image Search++** | `0.4.1` | images | [reference](./yandex-image-search/) |
 | **YouTube Embed Redirect Button** | `1.6` | video & players | [reference](./yt-embed-redirect/) |
-| **YouTube Playlist Master** | `1.7.0` | video & players | [reference](./youtube-playlist-master/) |
+| **YouTube Playlist Master** | `1.7.1` | video & players | [reference](./youtube-playlist-master/) |
 | **Youtube Removed Video Revealer** | `2.0.2` | video & players | [reference](./yt-removed-video-revealer/) |
 | **Zai Exporter** | `1.0.0` | uncategorized | [reference](./zai-exporter/) |
 | **m3u8++** | `5.1.0` | media & links | [devlog](./m3u8++/) |
