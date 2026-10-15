@@ -12,7 +12,7 @@
 // @match        *://turbo.cr/*
 // @match        *://turbo.cr/embed/*
 // @match        *://*.xcandid.vip/*
-// @match        *
+// @match        *://*/*
 // @noframes
 // @run-at       document-idle
 // @grant        GM_addStyle

@@ -407,9 +407,9 @@
    "version": "4.0.3",
    "description": "Reveals forum invisi-text, view all replies, rewrite redirect links. Download Gate: bypass all confirmation pages on all sites, glass overlay copy/download URL (incl. vidara embeds on xcandid), auto-solve Altcha, auto-click download. Turbo: embed routing, upload injector. Util: external link safety, right-click scrollbar to top.",
    "family": "forums",
-   "sha256": "0ef8229e9cc342f8adb600098783e6ff2647eee8f2ac4597657cc9c986dd67af",
+   "sha256": "9d9722e051ff3a176b4e19b9283f541e0012de673f175bf184d1af1f161fad42",
    "lines": 1187,
-   "bytes": 62610,
+   "bytes": 62616,
    "matches": [
     "*://forums.socialmediagirls.com/*",
     "*://forums.socialmediagirls.com/goto/link-confirmation*",
@@ -418,7 +418,7 @@
     "*://turbo.cr/*",
     "*://turbo.cr/embed/*",
     "*://*.xcandid.vip/*",
-    "*"
+    "*://*/*"
    ],
    "excludes": [],
    "grants": [
@@ -1525,7 +1525,7 @@
  "hotDomains": [
   {
    "domain": "*:",
-   "count": 220,
+   "count": 221,
    "scripts": [
     "4ndr0tools - 4ndr0Purge",
     "4ndr0tools - 4ndr0serviceguard Companion",
@@ -1592,5 +1592,5 @@
    ]
   }
  ],
- "digest": "de932e8153bd2b4bf0e7d85be6716780f25bd430927464998801a54755cf96f3"
+ "digest": "eeb324508d999837cd6736d19a38e1516a24283cbd02b17f71b4cab3e5fc495b"
 }
