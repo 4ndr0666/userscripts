@@ -13,7 +13,7 @@
     "check": "node tools/build.mjs && node tools/inventory.mjs && node tools/qr-verify.mjs && node tools/style-audit.mjs && node tools/validate.mjs",
     "qr": "node tools/qr-verify.mjs",
     "docs": "node tools/gen-docs.mjs",
-    "smoke": "node tools/family-fixture-smoke.mjs && node tools/watermark-batch-smoke.mjs && node tools/kernel-boundary-smoke.mjs"
+    "smoke": "node tools/family-fixture-smoke.mjs && node tools/watermark-batch-smoke.mjs && node tools/kernel-boundary-smoke.mjs && node tools/flow-chip-browser-smoke.mjs"
   },
   "devDependencies": {}
 }

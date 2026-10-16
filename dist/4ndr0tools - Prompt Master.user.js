@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name                4ndr0tools - Prompt Master
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version             28.7.2
+// @version             28.7.3
 // @author              4ndr0666
 // @icon                data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @license             UNLICENSED - RED TEAM USE ONLY
@@ -1160,6 +1160,27 @@ const __4NDR0_NET_API__ = (function () {
   let __mpSortMode;
   let __apCustomShortcutsMap;
 
+// 28.7.3 (suite v1.7.1): Google Flow token/credit chip counter logic &
+// dynamic flexbox/resizing hardening (GUP v6.0.0 certified with live
+// Chromium click/wait/get Proof-of-Possession): (1) FLOW_CREDIT_CSS
+// flexbox contract hardened — box-sizing:border-box, min-height:22px,
+// max-width:calc(100vw - 16px), overflow:hidden on #pm-flow-credit-chip;
+// flex:0 1 auto + min-width:44px on .mp-credit-model so long badges
+// ellipsize without crushing siblings; flex:0 0 auto on .mp-credit-values
+// so image counts never clip; flex:0 1 40px + min-width:20px on
+// .mp-credit-pool; (2) positionFlowCreditChip & parkAtFlowDock apply
+// dynamic anchor/viewport maxWidth before reading offsetWidth/Height and
+// resolve left/right/above placement around model-chip anchors so a
+// left-aligned model selector is never occluded when x clamps at 8px;
+// (3) single coalesced ResizeObserver (flowCreditResizeObserver) tracks
+// live dimension changes of flowCreditAnchorEl and #pm-flow-dock, and
+// renderFlowCreditChip + resetFlowCreditTracker schedule rAF reposition
+// on every signature move; (4) flowCreditTurnsLeft reconnects learned
+// limit-notice capTurns as both a same-period ceiling clamp and a
+// fallback when costPerImage is absent, while .mp-credit-pool-fill
+// meters Math.min(left5h, leftWeek); (5) findFlowAnchorButton,
+// findFlowComposerContainer, and findPlatformEditor("flow") gain
+// gen-button and bottom-viewport fallbacks.
 // 28.7.2: kernel-less transport parity — the canon install's dead
 // features live again. 28.7.1 made the canon file installable and kept
 // the chip counter alive without the kernel, but every privileged
@@ -11746,20 +11767,43 @@ const __4NDR0_NET_API__ = (function () {
     const pinhole = document.querySelector("#PINHOLE_TEXT_AREA_ELEMENT_ID");
     if (pinhole && isElementVisibleEl(pinhole))
       return { element: pinhole, type: "pinhole-textarea" };
+    const genBtn = buttons.find(
+      (b) => typeof flowCreditGenButtonOK === "function" && flowCreditGenButtonOK(b),
+    );
+    if (genBtn) return { element: genBtn, type: "gen-button-fallback" };
     return null;
   }
   function findFlowComposerContainer() {
     const anchor = findFlowAnchorButton();
-    if (!anchor) return null;
-    if ("pinhole-textarea" === anchor.type)
-      return anchor.element.closest(
-        'form, [class*="prompt"], [class*="composer"], [class*="input"]',
+    if (anchor) {
+      if ("pinhole-textarea" === anchor.type)
+        return anchor.element.closest(
+          'form, [class*="prompt"], [class*="composer"], [class*="input"]',
+        );
+      return (
+        anchor.element.closest(
+          'form, [class*="prompt"], [class*="composer"], [class*="input"], [class*="chat"], [class*="toolbar"], [role="textbox"], textarea',
+        ) || anchor.element.closest("div")
       );
-    return (
-      anchor.element.closest(
-        'form, [class*="prompt"], [class*="composer"], [class*="input"], [class*="chat"], [class*="toolbar"], [role="textbox"], textarea',
-      ) || anchor.element.closest("div")
-    );
+    }
+    const vh = window.innerHeight;
+    const cands = Array.from(
+      document.querySelectorAll(
+        'form, [class*="composer" i], [class*="prompt-bar" i], [data-testid*="composer" i]',
+      ),
+    ).filter(function (el) {
+      if (!isElementVisibleEl(el)) return !1;
+      if (el.closest(FLOW_CREDIT_EXCLUDE.full)) return !1;
+      const r = el.getBoundingClientRect();
+      return r.width >= 160 && r.height >= 28 && r.top + r.height / 2 > vh * 0.4;
+    });
+    if (cands.length) {
+      cands.sort(function (a, b) {
+        return b.getBoundingClientRect().bottom - a.getBoundingClientRect().bottom;
+      });
+      return cands[0];
+    }
+    return null;
   }
 
   // ─── v27.3.0: Flow per-model credit tracker chip ──────────────────────────
@@ -11912,15 +11956,15 @@ const __4NDR0_NET_API__ = (function () {
   // the model slot since v27.3.10) finally have rules — the spec's
   // alert #ff0055, zero with the glow. Parked mode adds its berth glow.
   const FLOW_CREDIT_CSS =
-    "#pm-flow-credit-chip{position:fixed;left:-9999px;top:-9999px;z-index:2147483645;display:inline-flex;align-items:center;gap:7px;height:22px;padding:0 10px;border-radius:4px;font:600 10.5px/1 'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;letter-spacing:.02em;color:#00E5FF;background:linear-gradient(160deg,rgba(10,19,26,.65) 0%,rgba(10,19,26,.72) 100%);backdrop-filter:blur(16px) saturate(1.45);-webkit-backdrop-filter:blur(16px) saturate(1.45);border:1px solid rgba(0,229,255,.3);box-shadow:0 0 20px rgba(0,229,255,.15),inset 0 1px 0 rgba(0,229,255,.14),-4px 6px 18px rgba(0,0,0,.42);cursor:default;user-select:none;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.35);transition:opacity var(--mp-transition-fast,150ms),transform var(--mp-transition-fast,150ms);}" +
+    "#pm-flow-credit-chip{position:fixed;left:-9999px;top:-9999px;z-index:2147483645;display:inline-flex;align-items:center;gap:7px;height:22px;min-height:22px;max-width:calc(100vw - 16px);box-sizing:border-box;overflow:hidden;padding:0 10px;border-radius:4px;font:600 10.5px/1 'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;letter-spacing:.02em;color:#00E5FF;background:linear-gradient(160deg,rgba(10,19,26,.65) 0%,rgba(10,19,26,.72) 100%);backdrop-filter:blur(16px) saturate(1.45);-webkit-backdrop-filter:blur(16px) saturate(1.45);border:1px solid rgba(0,229,255,.3);box-shadow:0 0 20px rgba(0,229,255,.15),inset 0 1px 0 rgba(0,229,255,.14),-4px 6px 18px rgba(0,0,0,.42);cursor:default;user-select:none;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.35);transition:opacity var(--mp-transition-fast,150ms),transform var(--mp-transition-fast,150ms);}" +
     "#pm-flow-credit-chip.mp-credit-pending{opacity:.72;}" +
     "#pm-flow-credit-chip.mp-credit-hidden{opacity:0;pointer-events:none;transform:translateY(4px);}" +
     "#pm-flow-credit-chip.mp-credit-parked{box-shadow:0 0 20px rgba(0,229,255,.15),0 0 34px rgba(0,229,255,.25),inset 0 1px 0 rgba(0,229,255,.14),-4px 6px 18px rgba(0,0,0,.42);}" +
     "#pm-flow-credit-chip .mp-credit-glyph{width:12px;height:12px;display:block;flex:0 0 auto;color:rgba(0,229,255,.85);}" +
-    "#pm-flow-credit-chip .mp-credit-model{color:rgba(0,229,255,.7);max-width:240px;overflow:hidden;text-overflow:ellipsis;}" +
+    "#pm-flow-credit-chip .mp-credit-model{color:rgba(0,229,255,.7);flex:0 1 auto;min-width:44px;max-width:240px;overflow:hidden;text-overflow:ellipsis;}" +
     "#pm-flow-credit-chip .mp-credit-sep{width:1px;height:10px;background:rgba(0,229,255,.35);flex:0 0 1px;}" +
-    "#pm-flow-credit-chip .mp-credit-values{color:#00E5FF;font-variant-numeric:tabular-nums;}" +
-    "#pm-flow-credit-chip .mp-credit-pool{width:40px;height:4px;border-radius:2px;background:rgba(0,229,255,.14);overflow:hidden;flex:0 0 auto;}" +
+    "#pm-flow-credit-chip .mp-credit-values{color:#00E5FF;flex:0 0 auto;font-variant-numeric:tabular-nums;}" +
+    "#pm-flow-credit-chip .mp-credit-pool{width:40px;min-width:20px;height:4px;border-radius:2px;background:rgba(0,229,255,.14);overflow:hidden;flex:0 1 40px;}" +
     "#pm-flow-credit-chip .mp-credit-pool-fill{display:block;height:100%;background:linear-gradient(90deg,rgba(0,229,255,.55),#00E5FF);border-radius:2px;transition:width var(--mp-transition-fast,150ms);}" +
     "#pm-flow-credit-chip .mp-credit-model.mp-credit-low{color:#ff0055;}" +
     "#pm-flow-credit-chip .mp-credit-model.mp-credit-zero{color:#ff0055;text-shadow:0 0 12px rgba(255,0,85,.6);}";
@@ -11961,6 +12005,9 @@ const __4NDR0_NET_API__ = (function () {
     flowCreditLastSig = "",
     flowCreditAnchorEl = null,
     flowCreditAnchorSrc = "",
+    flowCreditResizeObserver = null,
+    flowCreditResizeEl = null,
+    flowCreditResizeDock = null,
     // v28.2.0: parked-mode state — the first moment the anchor cascade
     // failed (0 = an anchor is resolved). positionFlowCreditChip parks
     // the chip above the Flow dock once the miss outlives the 15s grace;
@@ -13897,7 +13944,16 @@ const __4NDR0_NET_API__ = (function () {
       return x.key === key;
     });
     const cost = known ? flowCreditDisplayCost(key) : 0;
-    if (!(cost > 0)) return { left: null, max: null, src: "" };
+    if (!(cost > 0)) {
+      if (e && e.capTurns > 0) {
+        return {
+          left: Math.max(0, e.capTurns - (e.turnsDay || 0)),
+          max: e.capTurns,
+          src: "learned cap",
+        };
+      }
+      return { left: null, max: null, src: "" };
+    }
     const rem5h = Math.max(
       0,
       FLOW_CREDIT_OFFICIAL.budget5h - flowCreditUnitsSpent(FLOW_CREDIT_OFFICIAL.windowMs),
@@ -13921,6 +13977,14 @@ const __4NDR0_NET_API__ = (function () {
         ),
       );
       max = Math.min(max, FLOW_CREDIT_OFFICIAL.proWeekGens);
+    }
+    if (
+      e &&
+      e.capTurns > 0 &&
+      e.capAt &&
+      flowCreditEntryDayKeyOf(e, e.capAt) === today
+    ) {
+      left = Math.min(left, Math.max(0, e.capTurns - (e.turnsDay || 0)));
     }
     return { left: Math.max(0, left), max: max, src: "official AI-Pro unit pool" };
   }
@@ -14038,7 +14102,11 @@ const __4NDR0_NET_API__ = (function () {
           resetAt: flowCreditParseResetAt(t, now),
         };
         let key = null;
-        if (
+        const namedHits = FLOW_CREDIT_MODELS.filter(function (m) {
+          return m.re.test(t);
+        });
+        if (namedHits.length === 1) key = namedHits[0].key;
+        else if (
           flowCreditLastGen &&
           flowCreditLastGen.model &&
           now - flowCreditLastGen.at < 15 * 60000
@@ -14752,12 +14820,14 @@ const __4NDR0_NET_API__ = (function () {
     const poolFillEl = chip.querySelector(".mp-credit-pool-fill");
     if (poolFillEl) {
       const left5h = Math.max(0, FLOW_CREDIT_OFFICIAL.budget5h - u5);
+      const leftWk = Math.max(0, FLOW_CREDIT_OFFICIAL.budgetWeek - uw);
+      const effLeft = Math.min(left5h, leftWk);
       poolFillEl.style.width =
         Math.max(
           0,
           Math.min(
             100,
-            Math.round((100 * left5h) / FLOW_CREDIT_OFFICIAL.budget5h),
+            Math.round((100 * effLeft) / FLOW_CREDIT_OFFICIAL.budget5h),
           ),
         ) + "%";
     }
@@ -14933,6 +15003,7 @@ const __4NDR0_NET_API__ = (function () {
     if (at) title += "\nUpdated " + new Date(at).toLocaleTimeString("en-US");
     title += "\nRead live from the Flow page · Reset via the userscript menu";
     chip.title = title;
+    scheduleFlowCreditPosition();
   }
 
   // Virtual anchor: the chip is body-level and fixed; every reposition
@@ -14993,24 +15064,48 @@ const __4NDR0_NET_API__ = (function () {
         flowCreditAnchorEl = ed;
         flowCreditAnchorSrc = "editor";
         flowCreditAnchorMissSince = 0;
-        return;
       }
     }
-    const comp = findFlowComposerContainer();
-    if (comp && flowCreditSaneAnchorRect(comp)) {
-      flowCreditAnchorEl = comp;
-      flowCreditAnchorSrc = "composer";
-      flowCreditAnchorMissSince = 0;
-      return;
+    if (!flowCreditAnchorEl) {
+      const comp = findFlowComposerContainer();
+      if (comp && flowCreditSaneAnchorRect(comp)) {
+        flowCreditAnchorEl = comp;
+        flowCreditAnchorSrc = "composer";
+        flowCreditAnchorMissSince = 0;
+      }
     }
-    const chipEl = flowCreditModelChipElement();
-    if (chipEl && flowCreditSaneAnchorRect(chipEl)) {
-      flowCreditAnchorEl = chipEl;
-      flowCreditAnchorSrc = "model-chip";
-      flowCreditAnchorMissSince = 0;
-      return;
+    if (!flowCreditAnchorEl) {
+      const chipEl = flowCreditModelChipElement();
+      if (chipEl && flowCreditSaneAnchorRect(chipEl)) {
+        flowCreditAnchorEl = chipEl;
+        flowCreditAnchorSrc = "model-chip";
+        flowCreditAnchorMissSince = 0;
+      }
     }
-    if (!flowCreditAnchorMissSince) flowCreditAnchorMissSince = Date.now();
+    if (!flowCreditAnchorEl && !flowCreditAnchorMissSince)
+      flowCreditAnchorMissSince = Date.now();
+    // v28.7.3: synchronize ResizeObserver with the active anchor and dock
+    // so textarea auto-grow or flexbox container resizing triggers an
+    // immediate rAF reposition without waiting for the 1s poll.
+    if (flowCreditResizeObserver) {
+      try {
+        if (flowCreditResizeEl !== flowCreditAnchorEl) {
+          if (flowCreditResizeEl)
+            flowCreditResizeObserver.unobserve(flowCreditResizeEl);
+          flowCreditResizeEl = flowCreditAnchorEl || null;
+          if (flowCreditResizeEl)
+            flowCreditResizeObserver.observe(flowCreditResizeEl);
+        }
+        const dockEl = document.getElementById("pm-flow-dock");
+        if (dockEl !== flowCreditResizeDock) {
+          if (flowCreditResizeDock)
+            flowCreditResizeObserver.unobserve(flowCreditResizeDock);
+          flowCreditResizeDock = dockEl && dockEl.isConnected ? dockEl : null;
+          if (flowCreditResizeDock)
+            flowCreditResizeObserver.observe(flowCreditResizeDock);
+        }
+      } catch (e) { console.debug("PM interceptor:", e);}
+    }
   }
   // v28.2.0: does the chip have anything worth parking? A display
   // model (selected or any fallback rung) or a known wallet reading —
@@ -15028,6 +15123,7 @@ const __4NDR0_NET_API__ = (function () {
   // dropdown / menu container clamp above the dock too — the v28.1.1
   // occlusion lesson applied to the chip's berth).
   function parkAtFlowDock(chip) {
+    chip.style.maxWidth = Math.max(140, window.innerWidth - 24) + "px";
     const w = chip.offsetWidth,
       h = chip.offsetHeight;
     let x = window.innerWidth - 12 - w,
@@ -15065,10 +15161,14 @@ const __4NDR0_NET_API__ = (function () {
   function positionFlowCreditChip() {
     const chip = flowCreditChip;
     if (!chip || !chip.isConnected) return;
-    if (!flowCreditAnchorEl || !flowCreditAnchorEl.isConnected)
+    let r =
+      flowCreditAnchorEl && flowCreditAnchorEl.isConnected
+        ? flowCreditSaneAnchorRect(flowCreditAnchorEl)
+        : null;
+    if (!r) {
       resolveFlowCreditAnchor();
-    const el = flowCreditAnchorEl;
-    const r = el ? flowCreditSaneAnchorRect(el) : null;
+      r = flowCreditAnchorEl ? flowCreditSaneAnchorRect(flowCreditAnchorEl) : null;
+    }
     if (!r) {
       // v28.2.0: PARKED MODE. An anchor that resolved but scrolled out
       // of view keeps hiding exactly as before (the designed behavior);
@@ -15095,14 +15195,37 @@ const __4NDR0_NET_API__ = (function () {
     }
     chip.classList.remove("mp-credit-hidden");
     chip.classList.remove("mp-credit-parked");
+    // v28.7.3: dynamic flexbox width clamping — constrain chip.style.maxWidth
+    // to the active container/viewport BEFORE reading offsetWidth/offsetHeight
+    // so .mp-credit-model truncates cleanly and .mp-credit-values never clips.
+    const vwMax = Math.max(140, window.innerWidth - 16);
+    if (flowCreditAnchorSrc === "model-chip") {
+      const sideBudget = Math.max(r.left - 18, window.innerWidth - r.right - 18);
+      chip.style.maxWidth =
+        Math.max(140, Math.min(vwMax, sideBudget >= 140 ? Math.round(sideBudget) : vwMax)) +
+        "px";
+    } else {
+      chip.style.maxWidth =
+        Math.max(140, Math.min(vwMax, Math.round(r.width - 16))) + "px";
+    }
     const w = chip.offsetWidth,
       h = chip.offsetHeight;
     let x = r.right - w - 10,
       y = null;
     if (flowCreditAnchorSrc === "model-chip") {
-      // Beside the selector itself: just left of the chip, aligned.
-      x = r.left - w - 10;
-      y = r.top + (r.height - h) / 2;
+      // v28.7.3: beside the selector when room exists on the left; if the
+      // model chip sits near the left edge of the composer, prefer its right
+      // side or directly above it so clamping at x=8 never occludes the picker.
+      if (r.left - w - 10 >= 8) {
+        x = r.left - w - 10;
+        y = r.top + (r.height - h) / 2;
+      } else if (r.right + 10 + w <= window.innerWidth - 8) {
+        x = r.right + 10;
+        y = r.top + (r.height - h) / 2;
+      } else {
+        x = Math.max(8, Math.min(window.innerWidth - 8 - w, r.left));
+        y = r.top - h - 6 >= 8 ? r.top - h - 6 : r.bottom + 6;
+      }
     } else if (r.height >= 160) {
       y = r.top + 7;
     } else {
@@ -15436,6 +15559,11 @@ const __4NDR0_NET_API__ = (function () {
       // (fetch/XHR observed, never blocked, never requested) and
       // client-side storage sweep — both feed the pending queue for
       // the tick loop to merge.
+      if (typeof ResizeObserver !== "undefined" && !flowCreditResizeObserver) {
+        try {
+          flowCreditResizeObserver = new ResizeObserver(scheduleFlowCreditPosition);
+        } catch (e) { console.debug("PM interceptor:", e);}
+      }
       installFlowCreditNetObserver();
       installFlowCreditGenClickHook();
       sweepFlowCreditStorage();
@@ -15683,6 +15811,7 @@ const __4NDR0_NET_API__ = (function () {
       );
     } catch (e) { console.debug("PM interceptor:", e);}
     renderFlowCreditChip();
+    scheduleFlowCreditPosition();
   }
   // v28.7.0: THE BOOT INTEGRITY CHECK (the review's addition #4, and
   // the production descendant of the self-test pin and the report's
@@ -16040,20 +16169,25 @@ const __4NDR0_NET_API__ = (function () {
           true,
         );
         if (el) return el;
-        // Last resort: any visible editable that sits near the bottom of the
-        // viewport (Flow's prompt bar) instead of a stale hidden one.
-        const editables = Array.from(
-          document.querySelectorAll(
-            'div[contenteditable="true"][role="textbox"], div[role="textbox"], textarea:not([hidden]):not([disabled])',
-          ),
-        ).filter(isElementVisibleEl);
-        if (editables.length) {
-          editables.sort(
-            (a, b) =>
-              b.getBoundingClientRect().bottom - a.getBoundingClientRect().bottom,
-          );
-          return getEditableRoot(editables[0]);
-        }
+      }
+      // Last resort: any visible editable that sits near the bottom of the
+      // viewport (Flow's prompt bar) instead of a stale hidden one.
+      const vh = window.innerHeight;
+      const editables = Array.from(
+        document.querySelectorAll(
+          'div[contenteditable="true"][role="textbox"], div[role="textbox"], textarea:not([hidden]):not([disabled])',
+        ),
+      ).filter(function (node) {
+        if (!isElementVisibleEl(node)) return false;
+        const r = node.getBoundingClientRect();
+        return r.top + r.height / 2 > vh * 0.4;
+      });
+      if (editables.length) {
+        editables.sort(
+          (a, b) =>
+            b.getBoundingClientRect().bottom - a.getBoundingClientRect().bottom,
+        );
+        return getEditableRoot(editables[0]);
       }
     }
     return null;
@@ -18520,7 +18654,7 @@ const __4NDR0_NET_API__ = (function () {
     GM_info.script &&
     GM_info.script.version
       ? GM_info.script.version
-      : "28.7.2-Ψ";
+      : "28.7.3-Ψ";
   // v27.0.12: canonical backup snapshot helper. The beta's Gist push
   // called snapshotKeys() before it existed anywhere, so every "Sync Now"
   // threw a ReferenceError; takeAutoBackup() now shares this one helper
@@ -22987,18 +23121,18 @@ const __4NDR0_NET_API__ = (function () {
       // v27.3.0: wipes the persisted per-model credit state (see
       // startFlowCreditTracker); the live harvest re-fills it on the next
       // tick. Registered only on Flow — the tracker is a Flow feature.
-      GM_registerMenuCommand("🔄 Reset Flow Credit Tracker", () => {
-        resetFlowCreditTracker();
-      });
+      GM_registerMenuCommand("🔄 Reset Flow Credit Tracker", () =>
+        resetFlowCreditTracker(),
+      );
       // v28.7.0: the production data surface (the review's addition
       // #2) — machine-exact ledger JSON via the clipboard path the
       // old Copy Report used. The dev tools that arrived at the
       // counter (Copy Report, Self-Test) were removed on the
       // operator's authorization; their surviving invariants live in
       // the boot integrity check. See exportFlowCreditLedger.
-      GM_registerMenuCommand("📋 Flow Credits: Export Ledger", () => {
-        exportFlowCreditLedger();
-      });
+      GM_registerMenuCommand("📋 Flow Credits: Export Ledger", () =>
+        exportFlowCreditLedger(),
+      );
     }
     // v27.0.8: the "🔧 Force mount Prompt Master UI" extension-menu command
     // was removed on request; tryInit() below (plus the page observer)

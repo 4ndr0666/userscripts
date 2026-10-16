@@ -32,7 +32,7 @@
 | 4ndr0tools - ModelSearch | `4.0.1` | promoted | 1 | kernel-free | *: |
 | 4ndr0tools - PageCraft | `1.1.3` | module:pagecraft | 13 | build-module (6-kernel) | *: |
 | 4ndr0tools - Pixeldrain++ | `1.2.0` | sovereign | 71 | typeof-guarded + gmFetch fallback | pixeldrain.com, pixeldrain.net, pixeldrain.dev, pixeldra.in |
-| 4ndr0tools - Prompt Master | `28.7.2` | sovereign | 402 | typeof-guarded + gmFetch fallback | *: |
+| 4ndr0tools - Prompt Master | `28.7.3` | sovereign | 402 | typeof-guarded + gmFetch fallback | *: |
 | 4ndr0tools - Recon | `9.1.0` | sovereign | 28 | typeof-guarded (NetHook) | *: |
 | 4ndr0tools - Redgifs++ | `5.3` | sovereign | 11 | kernel-free | *: |
 | 4ndr0tools - Stream Interceptor | `3.3.0` | promoted | 32 | typeof-guarded (NetHook) | *: |
@@ -50,3 +50,4 @@
 - **Wave 1.1 & 1.2 (v1.7.0 Census-Ledger Wave & Watermark++ Graduation):** All 51 active census-ledger entries reconciled; **Watermark++** delegated-batch observer graduated through Lawful Door 1 to structurally machine-proven `COALESCED` (backed by `tools/watermark-batch-smoke.mjs`, 15/15 assertions + red control); remaining 50 entries re-verified and rolled to `v1.8.0` under Door 2.
 - **Wave 1.3, 1.4 & 3.9 (Per-Family Contract Fixture Battery):** `tools/family-fixture-smoke.mjs` (13/13 assertions + red controls) verifies **Zai Exporter**'s 3-tier extraction ladder (attribute mining + alternation repair + code fencing, region harvest, honest degraded sweep) and the **NetHook v6** script families (veto, phantom respond, structured traffic, `onNode` DOM defusal, and `gmFetch` privileged transport).
 - **Wave 2.5 (Kernel-Boundary Audit ×38):** All 14 remaining `CANON_KERNEL` scripts hardened with `typeof __4NDR0_NET_API__` guards and closure-local `*KernelLessGmFetch` fallbacks (8/8 `gmFetch` consumers covered), enforced by `tools/kernel-boundary-smoke.mjs` in `npm run check`.
+- **Google Flow Token/Credit Chip Counter Hardening & Browser Proof-of-Possession (`Prompt Master` v28.7.3, GUP v6.0.0):** Hardened `FLOW_CREDIT_CSS` flexbox sizing (`box-sizing:border-box`, `min-width:44px` + `flex:0 1 auto` on `.mp-credit-model`, `flex:0 0 auto` on `.mp-credit-values`, `flex:0 1 40px` + `min-width:20px` on `.mp-credit-pool`), added coalesced `ResizeObserver` tracking for `flowCreditAnchorEl` and `#pm-flow-dock`, added dynamic container/viewport `maxWidth` clamping and left/right/above non-occlusion guard around `model-chip` anchors, reconnected learned `capTurns` in `flowCreditTurnsLeft`, prioritized explicit model names in `flowCreditScanLimitNotice`, and wired `tools/flow-chip-browser-smoke.mjs` (11/11 live headless Chromium `click, wait, get` assertions + red control).

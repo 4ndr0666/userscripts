@@ -36,6 +36,7 @@ import { runSizeBudget } from "./size-budget.mjs";
 import { runWatermarkBatchSmoke } from "./watermark-batch-smoke.mjs";
 import { runKernelBoundarySmoke } from "./kernel-boundary-smoke.mjs";
 import { runFamilyFixtureSmoke } from "./family-fixture-smoke.mjs";
+import { runFlowChipBrowserBattery } from "./flow-chip-browser-smoke.mjs";
 import { runProductionScore, SCORE_THRESHOLD } from "./production-score.mjs";
 import { computeInventory, serialize } from "./inventory.mjs";
 
@@ -1257,6 +1258,13 @@ async function gateD() {
     } else {
         passes.push(`[D] per-family contract fixture battery verified (${famSmoke.passed}/${famSmoke.total} assertions: Zai Exporter 3-strategy ladder + NetHook v6 family fixtures + red control)`);
     }
+
+    const flowBrowser = await runFlowChipBrowserBattery();
+    if (!flowBrowser.clean) {
+        for (const f of flowBrowser.failed) failures.push(`[D] flow-chip browser smoke: ${f.name} (${f.detail})`);
+    } else {
+        passes.push(`[D] Google Flow token/credit chip browser Proof-of-Possession verified (${flowBrowser.passed}/${flowBrowser.total} click/wait/get assertions + red control)`);
+    }
 }
 
 gateA();
@@ -1265,7 +1273,7 @@ gateC();
 await gateD();
 
 console.log("╔══════════════════════════════════════════════════════════════╗");
-console.log("║  GUP v5.3.1 SUITE VERIFICATION — " + new Date().toISOString().slice(0, 19) + "        ║");
+console.log("║  GUP v6.0.0 SUITE VERIFICATION — " + new Date().toISOString().slice(0, 19) + "        ║");
 console.log("╚══════════════════════════════════════════════════════════════╝");
 for (const p of passes) console.log("  ✓ " + p);
 if (failures.length > 0) {
