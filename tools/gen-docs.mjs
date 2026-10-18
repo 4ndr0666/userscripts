@@ -641,9 +641,16 @@ function resolveSourceMeta(s) {
     }
     const slug = s.file.toLowerCase().includes("hostwarp") ? "hostwarp" : "pagecraft";
     const mp = path.join(ROOT, "modules", slug, "body.js");
+    const metaPath = path.join(ROOT, "modules", slug, "meta.json");
     const msrc = fs.existsSync(mp) ? fs.readFileSync(mp, "utf8") : "";
-    const mfns = new Set([...msrc.matchAll(/\bfunction\s+([A-Za-z_$][\w$]*)\s*\(/g)].map(m => m[1]));
-    return { tier: "module:" + slug, units: mfns.size, kb: "build-module (6-kernel)" };
+    const mclean = msrc.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+    const mfns = new Set([
+        ...[...mclean.matchAll(/\bfunction\s+([A-Za-z_$][\w$]*)\s*\(/g)].map(m => m[1]),
+        ...[...mclean.matchAll(/\bclass\s+([A-Za-z_$][\w$]*)\b/g)].map(m => m[1]),
+        ...[...mclean.matchAll(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?(?:function\b|\([^)]*\)\s*=>|[A-Za-z_$][\w$]*\s*=>)/g)].map(m => m[1]),
+    ]);
+    const kCount = fs.existsSync(metaPath) ? (JSON.parse(fs.readFileSync(metaPath, "utf8")).kernel || []).length : 6;
+    return { tier: "module:" + slug, units: mfns.size, kb: `build-module (${kCount}-kernel)` };
 }
 
 function renderFeatureMatrix(scripts) {
@@ -678,6 +685,7 @@ function renderFeatureMatrix(scripts) {
     L.push("- **Wave 1.3, 1.4 & 3.9 (Per-Family Contract Fixture Battery):** \`tools/family-fixture-smoke.mjs\` (13/13 assertions + red controls) verifies **Zai Exporter**'s 3-tier extraction ladder (attribute mining + alternation repair + code fencing, region harvest, honest degraded sweep) and the **NetHook v6** script families (veto, phantom respond, structured traffic, \`onNode\` DOM defusal, and \`gmFetch\` privileged transport).");
     L.push("- **Wave 2.5 (Kernel-Boundary Audit ×38):** All 14 remaining \`CANON_KERNEL\` scripts hardened with \`typeof __4NDR0_NET_API__\` guards and closure-local \`*KernelLessGmFetch\` fallbacks (8/8 \`gmFetch\` consumers covered), enforced by \`tools/kernel-boundary-smoke.mjs\` in \`npm run check\`.");
     L.push("- **Google Flow Token/Credit Chip Counter Hardening & Browser Proof-of-Possession (`Prompt Master` v28.7.3, GUP v6.0.0):** Hardened `FLOW_CREDIT_CSS` flexbox sizing (`box-sizing:border-box`, `min-width:44px` + `flex:0 1 auto` on `.mp-credit-model`, `flex:0 0 auto` on `.mp-credit-values`, `flex:0 1 40px` + `min-width:20px` on `.mp-credit-pool`), added coalesced `ResizeObserver` tracking for `flowCreditAnchorEl` and `#pm-flow-dock`, added dynamic container/viewport `maxWidth` clamping and left/right/above non-occlusion guard around `model-chip` anchors, reconnected learned `capTurns` in `flowCreditTurnsLeft`, prioritized explicit model names in `flowCreditScanLimitNotice`, and wired `tools/flow-chip-browser-smoke.mjs` (11/11 live headless Chromium `click, wait, get` assertions + red control).");
+    L.push("- **GUP v7.0.0 Stepwise Gap Mitigation & Superset Closure (`suite v1.7.1`):** Eliminated TDZ self-shadowing runtime crashes (`const isFF = isFF;` in **LinkMasterΨ** v6.3.1 & **Forums++** v1.10.1, `let deletedIDs` shadowing/self-assignment in **Youtube Removed Video Revealer** v2.0.3), wired `#TitleRestoredBtn` to `ButtonClickActionFullView`, completed Wave 2.8 async Promise `.catch` debug hardening across all 38 scripts with machine enforcement in `tools/error-census.mjs`, hardened **HostWarp** v1.1.4 `forceImmediateAnswer` for `contenteditable` surfaces, implemented redirect unwrapping in `plugins/candidshiny.user.js` v1.1.2 & `GET`/scheme hardening in `plugins/bridge.py`, and closed all 5 `uncategorized` script family classifications.");
     L.push("");
     return L.join("\n");
 }

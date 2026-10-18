@@ -58,13 +58,13 @@ function parseMeta(src) {
 const first = (meta, key) => (meta[key] && meta[key][0]) || null;
 
 const FAMILIES = [
-    [/linkmaster|m3u8|bunkr|pixeldrain|gofile|filester|blob2url|mega/i, "media & links"],
+    [/linkmaster|m3u8|bunkr|pixeldrain|gofile|filester|blob2url|mega|stream\s*interceptor/i, "media & links"],
     [/images|yandex|googlephotos|brokenimg|hdimgs/i, "images"],
-    [/youtube|yt |mediaplayer|maximize|redgifs/i, "video & players"],
+    [/youtube|yt |media\s*player|maximize|redgifs/i, "video & players"],
     [/forum|confirmation|modelsearch|planetsuzy/i, "forums"],
-    [/anti|counter|purge|serviceguard|recon|bypasspaywalls/i, "privacy & security"],
+    [/akasha|anti|counter|purge|serviceguard|recon|bypass\s*paywalls/i, "privacy & security"],
     [/hostwarp|pagecraft|alwaysnew|selectall|autotranslate|searxng|telegram|gemini|infinitebrave|control panel|login form/i, "ux utilities"],
-    [/prompt|watermark|hailuo|instagram/i, "sovereign platforms"],
+    [/prompt|watermark|hailuo|instagram|zai/i, "sovereign platforms"],
 ];
 
 function familyOf(name) {
@@ -157,7 +157,7 @@ function inventory() {
             name,
             version: first(meta, "version"),
             description: first(meta, "description"),
-            family: familyOf(name),
+            family: (() => { const fam = familyOf(name); if (fam === "uncategorized") problems.push(`${file}: uncategorized script family for "${name}"`); return fam; })(),
             sha256: crypto.createHash("sha256").update(src).digest("hex"),
             lines: src.split("\n").length,
             bytes: Buffer.byteLength(src),

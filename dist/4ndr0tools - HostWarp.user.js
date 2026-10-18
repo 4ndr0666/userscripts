@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - HostWarp
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.1.3
+// @version      1.1.4
 // @description  Per-host warp drive: bypasses image-host interstitials (imagetwist/imgspice/turboimagehost/acidimg/imx/pixhost/imagebam/imgbox/kropic/vipr/imagevenue), MEGA embed redirect + autoplay, PlanetSuzy mobile skin, t.me Web button, SearXNG sticky preferences, Gemini Answer Now — one engine, glass settings console, every module toggleable.
 // @author       4ndr0666
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -19,7 +19,7 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20HostWarp.user.js
 // ==/UserScript==
 
-/* 4ndr0tools - HostWarp v1.1.3 — built from modules/hostwarp + kernel {brand, core, glass, store, hotkeys, hosts}
+/* 4ndr0tools - HostWarp v1.1.4 — built from modules/hostwarp + kernel {brand, core, glass, store, hotkeys, hosts}
  * Per-host warp drive: bypasses image-host interstitials (imagetwist/imgspice/turboimagehost/acidimg/imx/pixhost/imagebam/imgbox/kropic/vipr/imagevenue), MEGA embed redirect + autoplay, PlanetSuzy mobile skin, t.me Web button, SearXNG sticky preferences, Gemini Answer Now — one engine, glass settings console, every module toggleable.
  * This is a generated file; edit modules/ and run `npm run build`.
  */
@@ -949,7 +949,6 @@
 
     /* In-memory snapshot — the single boot-time ingest (GUP B.1). */
     const memory = new Map();
-    const booted = false;
 
     const fullKey = (ns, key) => `${ns}::${key}`;
 
@@ -963,7 +962,7 @@
             try {
                 const raw = localStorage.getItem('a4:' + key);
                 if (raw !== null) v = JSON.parse(raw);
-            } catch (e) { /* quota/private-mode — memory store remains authoritative */ }
+            } catch (e) { console.debug('[a4/store] localStorage read skipped:', key, e.message); /* quota/private-mode — memory store remains authoritative */ }
         }
         memory.set(key, v === undefined ? null : v);
         return v;
@@ -1047,7 +1046,7 @@
                 if (hasGM) {
                     try { GM_deleteValue(fullKey(prefix, key)); } catch (e) { console.debug('[a4/store] delete failed:', key, e.message); }
                 }
-                try { localStorage.removeItem('a4:' + fullKey(prefix, key)); } catch (e) { /* non-fatal */ }
+                try { localStorage.removeItem('a4:' + fullKey(prefix, key)); } catch (e) { console.debug('[a4/store] localStorage remove skipped:', key, e.message); }
             },
             /** Subscribe to key changes (local + cross-tab when supported). */
             watch(key, cb) {
@@ -1077,7 +1076,7 @@
                     scan(Object.keys(localStorage)
                         .filter((k) => k.startsWith('a4:'))
                         .map((k) => k.slice(3)), `${prefix}::`);
-                } catch (e) { /* private mode */ }
+                } catch (e) { console.debug('[a4/store] localStorage export skipped:', e.message); }
                 return JSON.stringify(out);
             },
             /** Import a namespace export (merge, non-destructive). */
@@ -1531,17 +1530,17 @@ for (const [domain, handler] of IMAGE_HOST_HANDLERS) {
                 else if (video.mozRequestFullScreen) video.mozRequestFullScreen();
                 else if (video.webkitRequestFullscreen) video.webkitRequestFullscreen();
                 else if (video.msRequestFullscreen) video.msRequestFullscreen();
-            }).catch(() => { /* autoplay needs a gesture — acceptable */ });
+            }).catch((e) => { console.debug('[HostWarp] autoplay deferred until user gesture:', e && e.message ? e.message : e); });
         });
         return true;
     };
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
-            if (!enhance()) waitFor('video', { timeout: 15000 }).then(enhance, () => {});
+            if (!enhance()) waitFor('video', { timeout: 15000 }).then(enhance).catch((e) => { console.debug('[HostWarp] mega video wait timed out:', e.message); });
         }, { once: true });
     } else if (!enhance()) {
-        waitFor('video', { timeout: 15000 }).then(enhance, () => {});
+        waitFor('video', { timeout: 15000 }).then(enhance).catch((e) => { console.debug('[HostWarp] mega video wait timed out:', e.message); });
     }
 }, { id: 'mega', script: 'HostWarp' });
 
@@ -1653,7 +1652,7 @@ function telegramChannelId(url) {
     };
 
     if (injectWebButton()) return;
-    waitFor('.tgme_page_action', { timeout: 15000 }).then(injectWebButton, () => {});
+    waitFor('.tgme_page_action', { timeout: 15000 }).then(injectWebButton).catch((e) => { console.debug('[HostWarp] telegram action wait timed out:', e.message); });
 }, { id: 'telegram', script: 'HostWarp' });
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -1705,10 +1704,14 @@ function telegramChannelId(url) {
         const input = document.querySelector(GEMINI_SELECTORS.input);
         if (!input) return;
 
-        const promptText = (input.value || '').trim();
+        const hasValueProp = typeof input.value === 'string';
+        const promptText = (hasValueProp ? input.value : (input.textContent || '')).trim();
         if (promptText) {
             const forceText = '\n\nAnswer immediately. No thinking steps. Output only the final answer right now.';
-            if (!promptText.endsWith(forceText)) input.value = promptText + forceText;
+            if (!promptText.endsWith(forceText)) {
+                if (hasValueProp) input.value = promptText + forceText;
+                else input.textContent = promptText + forceText;
+            }
         }
 
         input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -1804,7 +1807,7 @@ function openSettings() {
                         $new('p', { style: { fontSize: '11px', lineHeight: '1.6' } },
                             'HostWarp consolidates six legacy micro-tools into one engine. ' +
                             'Active modules on this page: ' + (Ψ.hosts.resolve()
-                                ? 'matched — ' + Ψ.hosts.listDomains().filter((d) => location.hostname.endsWith(d)).join(', ')
+                                ? 'matched — ' + Ψ.hosts.listDomains().filter((d) => location.hostname === d || location.hostname.endsWith('.' + d)).join(', ')
                                 : 'none') +
                             '.')));
                 },

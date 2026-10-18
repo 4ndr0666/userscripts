@@ -1,4 +1,4 @@
-# Forums++ · v1.10.0
+# Forums++ · v1.10.1
 
 > Forum power-user workstation — `forums` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,7 +10,7 @@ Forums++ is the heavy machinery for forum work sessions: powerful bulk downloadi
 
 | Dimension | Value |
 |---|---|
-| Version | `1.10.0` |
+| Version | `1.10.1` |
 | Matches | `https://simpcity.su/threads/*`, `https://simpcity.cr/threads/*` |
 | Run-at | `document-start` |
 | Size | 223.5 KB · 4817 lines |

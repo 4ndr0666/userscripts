@@ -2,7 +2,7 @@
 // @name         4ndr0tools - Youtube Removed Video Revealer
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666
-// @version      2.0.2
+// @version      2.0.3
 // @description  Restores titles for removed or private videos in YouTube playlists
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Youtube%20Removed%20Video%20Revealer.user.js
@@ -19,7 +19,7 @@ let ArchivedIDS = {}, RecoveredIDS = {}, DetectedIDS = {}, deletedIDs = "", dele
 // moved off window into script scope (the page never reads these).
 
 // 2.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Youtube Removed Video Revealer.user v2.0.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Youtube Removed Video Revealer.user v2.0.3 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 // REVISION: Migrated from 'var' to 'const' for immutable global styling constants to prevent accidental reassignment.
 const darkModeBackground = "#000099";
@@ -223,6 +223,7 @@ function createRestoreButton() {
             const button = document.createElement('button');
             button.id = 'TitleRestoredBtn';
             button.textContent = 'Restore Titles';
+            button.addEventListener('click', ButtonClickActionFullView);
 
             const link = document.createElement('a');
             link.href = 'https://filmot.com';
@@ -247,8 +248,9 @@ function createRestoreButton() {
 function extractIDsFullView() {
     deletedIDs = "";
     deletedIDCnt = 0;
-    // REVISION: Changed `var` to `let` as these are modified in the block.
-    let deletedIDs = "";
+    // v2.0.3: distinct block-local accumulator name prevents TDZ ReferenceError
+    // and self-assignment against the script-scope `deletedIDs` state.
+    let batchDeletedIDs = "";
     let deletedIDsCnt = 0;
 
     const rendererSelector = "h3.ytd-playlist-video-renderer";
@@ -344,18 +346,18 @@ function extractIDsFullView() {
                     }
 
                     DetectedIDS[id] = 1;
-                    if (deletedIDs.length > 0) {
-                        deletedIDs += ",";
+                    if (batchDeletedIDs.length > 0) {
+                        batchDeletedIDs += ",";
                     }
-                    deletedIDs += id;
+                    batchDeletedIDs += id;
                     deletedIDsCnt++;
                 }
             }
         }
     });
 
-    if (deletedIDs.length > 0) {
-        deletedIDs = deletedIDs;
+    if (batchDeletedIDs.length > 0) {
+        deletedIDs = batchDeletedIDs;
         deletedIDCnt = deletedIDsCnt;
 
         // REVISION: Strict null check instead of ==.
@@ -603,6 +605,7 @@ async function processClick(format, nTry = 0) {
 }
 
 function ButtonClickActionFullView(zEvent) {
-    processClick(2, 0);
+    if (zEvent && typeof zEvent.preventDefault === "function") zEvent.preventDefault();
+    processClick(window.location.href.includes("/playlist?") ? 1 : 2, 0);
     return false;
 }

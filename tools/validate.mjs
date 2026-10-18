@@ -840,6 +840,16 @@ async function gateD() {
         failures.push(`[D] Forums++: setProcessing restoration not present`);
     } else passes.push(`[D] Forums++ setProcessing restoration verified`);
 
+    const yrvrDist = read("Youtube Removed Video Revealer");
+    if (/\b(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*\1\s*;/.test(stripComments(lm2)) ||
+        /\b(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*\1\s*;/.test(stripComments(fpp)) ||
+        !yrvrDist.includes("let batchDeletedIDs =") ||
+        !yrvrDist.includes("button.addEventListener('click', ButtonClickActionFullView)")) {
+        failures.push(`[D] TDZ & restore-button closure: self-shadowing TDZ or unwired TitleRestoredBtn detected in LinkMasterΨ / Forums++ / Youtube Removed Video Revealer`);
+    } else {
+        passes.push(`[D] LinkMasterΨ, Forums++ & Youtube Removed Video Revealer TDZ closure + Restore Titles button wiring verified`);
+    }
+
     const wmk = read("Watermark++");
     if (!wmk.includes("function resolveFetchedImageMimeType")) {
         failures.push(`[D] Watermark++: resolveFetchedImageMimeType restoration not present`);
@@ -966,7 +976,7 @@ async function gateD() {
     if (errors.problems.length) {
         for (const er of errors.problems) failures.push(`[D] error census: ${er}`);
     } else {
-        passes.push(`[D] error census verified (${errors.catchSites} catch sites across ${errors.filesScanned} source files — ${errors.typed} typed, ${errors.debug} debug-logged, ${errors.handled} handled, ${errors.silent} silent; kernel NetError family asserted, ${errors.kernelClasses} classes)`);
+        passes.push(`[D] error census verified (${errors.catchSites} catch sites + ${errors.promiseCatchSites} Promise .catch sites across ${errors.filesScanned} source files — ${errors.typed} typed, ${errors.debug} debug-logged, ${errors.handled} handled, ${errors.silent} silent, ${errors.silentPromiseCatches} silent Promise .catch; kernel NetError family asserted, ${errors.kernelClasses} classes)`);
     }
 
     // Minimal-privilege connect census (suite v1.5.1, GUP G7 — v1.5.0

@@ -328,7 +328,7 @@ export function runSinkCensus() {
     const registrations = [];   /* per-file per-class sites (report mode) */
     let totalSites = 0;
     let adjudicatedSites = 0;
-    const CURRENT_ROUND = "v1.7.0"; /* G9 ledger hygiene, v1.5.1 */
+    const CURRENT_ROUND = "v1.7.1"; /* G9 ledger hygiene, v1.5.1 */
     const roundLt = (a, b) => {
         const pa = a.replace(/^v/, "").split(".").map(Number);
         const pb = b.replace(/^v/, "").split(".").map(Number);

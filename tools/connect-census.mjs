@@ -36,7 +36,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const DEFAULT_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const CURRENT_ROUND = "v1.7.0";
+const CURRENT_ROUND = "v1.7.1";
 
 /* ── Adjudication ledger: sanctioned wildcards (drift-checked) ───────────── */
 const ADJUDICATED_WILDCARD = [

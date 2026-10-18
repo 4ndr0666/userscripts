@@ -62,7 +62,7 @@
    "name": "4ndr0tools - Akasha Silence",
    "version": "5.2.1",
    "description": "Unified counter-surveillance defense layer with a three-stage strictness valve (full / core / off via Ctrl+Alt+Shift+K). Three-way consolidation of Anti-detection + Counter-surveillance + Anti-telemetry (ICC): anti-analysis script neutralization, telemetry sinkholing (fetch/XHR/beacon/WebSocket), WebRTC blinding, session-stable fingerprint spoofing (hardware/canvas/WebGL/audio), identifier poisoning, Google link-tracking sanitization and hostile-UI countermeasures.",
-   "family": "uncategorized",
+   "family": "privacy & security",
    "sha256": "ffca3c7f21a80fdba575707c9f58bd820ee4a43c62f1e406897469faa2f4c7e6",
    "lines": 2090,
    "bytes": 112176,
@@ -212,12 +212,12 @@
   {
    "file": "4ndr0tools - BypassPaywalls.user.js",
    "name": "4ndr0tools - Bypass Paywalls",
-   "version": "0.1.5",
+   "version": "0.1.6",
    "description": "A way to bypass paywalls for popular news sites",
-   "family": "uncategorized",
-   "sha256": "b0c960c7067cb288aca1e88f7d4444db24002d3a624e473b465fef065fe199f1",
-   "lines": 1616,
-   "bytes": 75225,
+   "family": "privacy & security",
+   "sha256": "f67606975aa45ed57c7a828bcb7310aabc18b8ff0b63c8ee974e20c6914ca4c1",
+   "lines": 1618,
+   "bytes": 75326,
    "matches": [
     "*://404media.co/*",
     "*://*.adweek.com/*",
@@ -407,7 +407,7 @@
    "version": "4.0.3",
    "description": "Reveals forum invisi-text, view all replies, rewrite redirect links. Download Gate: bypass all confirmation pages on all sites, glass overlay copy/download URL (incl. vidara embeds on xcandid), auto-solve Altcha, auto-click download. Turbo: embed routing, upload injector. Util: external link safety, right-click scrollbar to top.",
    "family": "forums",
-   "sha256": "9d9722e051ff3a176b4e19b9283f541e0012de673f175bf184d1af1f161fad42",
+   "sha256": "0b77ef71df4af0fb879af229338d90d458e038bb64599069b243daa9dbdd8bc5",
    "lines": 1187,
    "bytes": 62616,
    "matches": [
@@ -470,7 +470,7 @@
    "version": "3.2.3",
    "description": "Link xtractor, Invisitext revealer, and inline post reply viewer.",
    "family": "forums",
-   "sha256": "ee7311596c5ab57df9aa9fc62582b80210f615cbcc0bade0e4ac3f72e00ba0c9",
+   "sha256": "c4ee9494fc16bca121b46518468181e586d48d12fcd74aa2e8694ac56a9a3ac1",
    "lines": 821,
    "bytes": 41972,
    "matches": [
@@ -504,12 +504,12 @@
   {
    "file": "4ndr0tools - Forums++.user.js",
    "name": "4ndr0tools - Forums++",
-   "version": "1.10.0",
+   "version": "1.10.1",
    "description": "Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.",
    "family": "forums",
-   "sha256": "f880f0ddfcfc758c9fb7003762f29e178d38c60b2e6bb3b5cb5b1f25fc4d23ba",
+   "sha256": "e9547ff6cba044a8627af2e69a9c1148d2088b56b65ced978e20d8edf548ab04",
    "lines": 4817,
-   "bytes": 228822,
+   "bytes": 228889,
    "matches": [
     "https://simpcity.su/threads/*",
     "https://simpcity.cr/threads/*"
@@ -621,7 +621,7 @@
    "version": "2.2.0",
    "description": "Directly batch-download GoFiles with a robust UI. Supports recursive folder scans, direct links, and download managers (Aria2, IDM). Fixing SPA persistence and Sandbox access.",
    "family": "media & links",
-   "sha256": "cb62baae795d82354d0ff1ca7c84681cb7c6dad0d22a9ab63264eb4fcf143f69",
+   "sha256": "e416f5455be16f5602e728b31874096886f8f77bf94641e1d3991b1bf0ffdebb",
    "lines": 2259,
    "bytes": 116958,
    "matches": [
@@ -683,12 +683,12 @@
   {
    "file": "4ndr0tools - Hailuo++.user.js",
    "name": "4ndr0tools - Hailuo++",
-   "version": "6.0.1",
+   "version": "6.0.2",
    "description": "Enterprise-grade, idempotent automation engine for HailuoAI featuring automated queue management, asset fetching with tracked-download deduplication, an in-HUD Asset Bay thumbnail gallery (click-to-new-window, hover-playable previews, blob downloads that never navigate the session window) with cross-reload persistence, completion notifications, failure-card masking, API hard purge, and interactive asset links — hardened for the 2026-09 MiniMax H3 site generation and the hailuoai.video/agent chat surface. v5.4: editable-context (Slate) DOM guards, self-healing HUD watchdog, HUD collapse + Ctrl+Alt+H toggle, frame isolation, webp-aware blob transport with retry, and non-destructive title telemetry.",
    "family": "sovereign platforms",
-   "sha256": "1571e45d1b822791f2ed331a28340075a5c44b7cfa75596b0caa28a41874fd0d",
+   "sha256": "25370e44646fb4c7ad01d9a486d700e060533af90b4f85b12637fdaf8b4a3670",
    "lines": 1905,
-   "bytes": 96582,
+   "bytes": 96625,
    "matches": [
     "https://hailuoai.com/video*",
     "https://hailuoai.video/*",
@@ -720,12 +720,12 @@
   {
    "file": "4ndr0tools - HostWarp.user.js",
    "name": "4ndr0tools - HostWarp",
-   "version": "1.1.3",
+   "version": "1.1.4",
    "description": "Per-host warp drive: bypasses image-host interstitials (imagetwist/imgspice/turboimagehost/acidimg/imx/pixhost/imagebam/imgbox/kropic/vipr/imagevenue), MEGA embed redirect + autoplay, PlanetSuzy mobile skin, t.me Web button, SearXNG sticky preferences, Gemini Answer Now — one engine, glass settings console, every module toggleable.",
    "family": "ux utilities",
-   "sha256": "162467dcaac94f1f43513125ac6d950cd4004dbe8b7a094dc9f644667c01db4d",
-   "lines": 1832,
-   "bytes": 91661,
+   "sha256": "d0a9f2afc10faff3342144dc495feccc95c85b1890175fa966928ac319fad3ec",
+   "lines": 1835,
+   "bytes": 92346,
    "matches": [
     "*://*/*"
    ],
@@ -754,7 +754,7 @@
    "version": "4.0.3",
    "description": "Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. Collapse-mode hotkey is configurable.",
    "family": "images",
-   "sha256": "b9087aa7dcdcee21b6760316cc29e5ce2619c1e1e20599a910a565a4bf7d035e",
+   "sha256": "b1d45bd10189adbbe4ec907e9e9684e33f7b9ca887be2fa276f235807b064807",
    "lines": 4617,
    "bytes": 137969,
    "matches": [
@@ -848,12 +848,12 @@
   {
    "file": "4ndr0tools - LinkMasterΨ.user.js",
    "name": "4ndr0tools - LinkMasterΨ",
-   "version": "6.3.0",
+   "version": "6.3.1",
    "description": "Accurately decodes, previews, exports, validates and scrapes all links. (Dual MPV Support + Ψ IG Harvester + sexyforums premium-link unwrap + GitHub raw-URL harvest + Ψ2 forum deep-scrape engine)",
    "family": "media & links",
-   "sha256": "04ee2bb5a9a1ff1f042f37bf60aee9015011658e7bebd695669d1da82b49a78c",
+   "sha256": "c0e437f3828953c4d595b8184626598e73f167a994a362785aefc83613898ebd",
    "lines": 5030,
-   "bytes": 257351,
+   "bytes": 257416,
    "matches": [
     "*://*/*",
     "*://*.instagram.com/*"
@@ -896,7 +896,7 @@
    "version": "2.0.3",
    "description": "It integrates BugMeNot into any login form (it retrieves all matching logins from bugmenot.com and autofills the login form)",
    "family": "ux utilities",
-   "sha256": "8b020e4fa82bfe57e367eaa1ed487e591b1cbb98fb35d26b5b04f24197d0c63b",
+   "sha256": "d2046039665e4b07529a93534dfa126ad4c0cd51abb9c4c5815673988d6c2a34",
    "lines": 1013,
    "bytes": 44221,
    "matches": [],
@@ -998,12 +998,12 @@
   {
    "file": "4ndr0tools - Media Player Controller.user.js",
    "name": "4ndr0tools - Media Player Controller",
-   "version": "8.1.2",
+   "version": "8.1.3",
    "description": "Speed • Fine Rate ±0.1 • Alt+Shift rAF Zoom/Pan • Rotation • Smart Maximize • Native Fullscreen • PiP • Play • DblClick • Pause-on-Acquire • Virtual DOM Nodes • Shadow-DOM Discovery • Cyan-Glass Scrub Bar • Download Button (fetch + blob capture) • Screenshot • Volume/Mute • Frame Step • Seek Hotkeys • IG Story Nav (3-Layer) • Story Repeat (3-Layer) • Active-Media Observer • YouTube Ad Auto-Skip • Toast Feedback • Draggable HUD • Full Hotkey Suite",
-   "family": "uncategorized",
-   "sha256": "4acfbee888a59c270b2a006ff9b3a5e1847c595f1ced82f859fb05bfac9da9e5",
+   "family": "video & players",
+   "sha256": "7c48a4f6e672c0ed1c7101e4657bce3e063a669a99872dc6f6d6800ec9352326",
    "lines": 2696,
-   "bytes": 116886,
+   "bytes": 117105,
    "matches": [
     "*://*/*"
    ],
@@ -1056,9 +1056,9 @@
    "version": "1.1.3",
    "description": "All-sites page utility belt: bulk checkbox control with range/alt-hover selection (de-jQueryed), broken-image auto-repair with cache-busting + frame broadcast, hover-collapse image I/O governor, and Brave infinite scroll — one engine, glass settings console, zero runtime dependencies.",
    "family": "ux utilities",
-   "sha256": "9c30c2c82b86c694141ad6d06bf2ed9fc76636234fbdd9d1bebadb4bc94a1d7a",
-   "lines": 1692,
-   "bytes": 83624,
+   "sha256": "20e85eb719c15a6bd25660699a1cce02511de8be761e405305732eab66cb0081",
+   "lines": 1691,
+   "bytes": 83778,
    "matches": [
     "*://*/*"
    ],
@@ -1087,7 +1087,7 @@
    "version": "1.2.0",
    "description": "Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.",
    "family": "media & links",
-   "sha256": "6ac818c29ee96123613152d929029878746153cfe4a3f9f416ed1f28e37ccbc9",
+   "sha256": "d0466d276902caf2651bd6f9e5bc54ee1d33ec1c41487709fb72953226f29209",
    "lines": 3713,
    "bytes": 204856,
    "matches": [
@@ -1149,12 +1149,12 @@
   {
    "file": "4ndr0tools - Prompt Master.user.js",
    "name": "4ndr0tools - Prompt Master",
-   "version": "28.7.3",
+   "version": "28.7.4",
    "description": "Google Flow prompt manager toolkit (works on any AI, just add url) - persisted unit ledger meters every generation click, organization engine: collections, saved views, favorites, ratings, archive, group-by, and insights for large prompt libraries, dedupe, media slideshow, ai prompt enhancer, auto gist syncing, hotkeys, much more.",
    "family": "sovereign platforms",
-   "sha256": "49302f42d98220aade473439c99cbb722c1e5a86cd97b97ef8f7411929b8464b",
+   "sha256": "fd330cfacdf8d101168ed6c43f003feefe56e6168b4a445b85e5f27b0f7b4c2b",
    "lines": 23157,
-   "bytes": 1127643,
+   "bytes": 1127799,
    "matches": [
     "*://geminigen.ai/*",
     "*://gist.github.com/*",
@@ -1229,7 +1229,7 @@
    "version": "5.3",
    "description": "Intercepts Redgifs links on Reddit for a cinematic overlay. On Redgifs itself, enters focused video-only mode. Falls back to JSON.parse intercept for direct /watch/ loads before SPA hydration.",
    "family": "video & players",
-   "sha256": "ce58e3685cf958093570ff92a17c1dd3ce9700d1f2549e9fad612a1dfa6d44fb",
+   "sha256": "c6bc70044f1ad8ed6a079d694ec7cdca176d9029a7cf1f424d0e7721a6508b78",
    "lines": 374,
    "bytes": 18077,
    "matches": [
@@ -1258,7 +1258,7 @@
    "name": "4ndr0tools - Stream Interceptor",
    "version": "3.3.0",
    "description": "Intercepts, parses, and extracts stream tokens, manifests, and direct video sources via the suite's shared NetHook hub and DOM inspection. Suite v3.3: the v3.1 dual-realm fetch/XHR hooks ride the shared NetHook singleton (malformed-SVG veto, asset discovery, deep text inspection); ShadowDOM piercing, ReDoS-proof regex, 3lectric-Glass card surface, universal URL registry cap.",
-   "family": "uncategorized",
+   "family": "media & links",
    "sha256": "68a920a71b12e0d2349eb313e149c39ff168311e7de86bf672787b93f7d20728",
    "lines": 1943,
    "bytes": 101409,
@@ -1382,12 +1382,12 @@
   {
    "file": "4ndr0tools - YouTube Playlist Master.user.js",
    "name": "4ndr0tools - YouTube Playlist Master",
-   "version": "1.7.1",
+   "version": "1.7.2",
    "description": "Channel playlist buttons (All / Popular / Videos / Shorts / Streams / Members-only), Random play (prefer newest/oldest), reverse autoplay order, playlist autoplay toggle, duration sort, bulk copy/move/delete, JSON + plaintext export/import, snapshots with deleted-video detection, quick watch_videos playlists, queue & watch-later overlays, playlist close button, date/view metadata, episode auto-expand, huge-playlist browser, live settings (no reload), always-available Ψ deck, playlist row filter, duplicate finder & purge, global hotkeys (Alt+Shift+U/S/X), failsafe deck rescue, 404-proof navigation guards, Trusted-Types-immune rendering, fully-visible fit-content modal dialogs.",
    "family": "video & players",
-   "sha256": "a9abfa799b352b0d1a38132fa6e2c5bbe96e44309f704a128ed44eb4dca5413c",
+   "sha256": "3b76991c8ad7b0b6b275ae38dff4505296889228d468ffc645c55923d69f1d25",
    "lines": 6612,
-   "bytes": 343258,
+   "bytes": 343340,
    "matches": [
     "https://*.youtube.com/*",
     "https://youtube.com/*"
@@ -1413,12 +1413,12 @@
   {
    "file": "4ndr0tools - Youtube Removed Video Revealer.user.js",
    "name": "4ndr0tools - Youtube Removed Video Revealer",
-   "version": "2.0.2",
+   "version": "2.0.3",
    "description": "Restores titles for removed or private videos in YouTube playlists",
    "family": "video & players",
-   "sha256": "bc5d76be1793f1a1ae5714919962e1cd1a3e4be11cda43da227d1924a90df2bc",
-   "lines": 609,
-   "bytes": 29531,
+   "sha256": "34987329a9821bb6313a9d9f7eeef6c0d3ce0a3580065a0f61ed22285cf04144",
+   "lines": 612,
+   "bytes": 29849,
    "matches": [
     "*://*.youtube.com/*"
    ],
@@ -1445,7 +1445,7 @@
    "version": "1.6",
    "description": "Floating button for redirects to embedded version. Right click it to set a keybind (default Ctrl+E).",
    "family": "video & players",
-   "sha256": "4badf351270754c539e8480ab1f1976da3b1e70d0e280f6585e7eff47aa38997",
+   "sha256": "4ac9ef5dce6ebb18bb76d185b53f96b25b653de6202a6813ed26df813fdf47ec",
    "lines": 320,
    "bytes": 13058,
    "matches": [
@@ -1494,7 +1494,7 @@
    "name": "4ndr0tools - Zai Exporter",
    "version": "1.0.0",
    "description": "One-click conversation exfiltration for the Z.ai GLM web chat — scrapes the live thread (multi-strategy, no network, no timers) and exports it as Markdown, JSON, or plain text, with metadata and Ψ glass console. Runs entirely page-side: zero privileged transports, zero observers, zero polling.",
-   "family": "uncategorized",
+   "family": "sovereign platforms",
    "sha256": "a3943bb12af8cb7cbdab4ddfd30ede86fa69f2f3cb5e902e1d81f9cf0f9600f1",
    "lines": 1110,
    "bytes": 45796,
@@ -1592,5 +1592,5 @@
    ]
   }
  ],
- "digest": "159c8702f49e984f60472d14b51a25a4d58e7121c157f21ac9672a625793b696"
+ "digest": "11cfa2f53939695af22abe7a217a6642c741a519f99b24ea073f12db27ecbd10"
 }

@@ -45,7 +45,7 @@ import { fileURLToPath } from "node:url";
 import { codeOnly } from "./sink-census.mjs";
 
 const DEFAULT_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const CURRENT_ROUND = "v1.7.0";
+const CURRENT_ROUND = "v1.7.1";
 
 /* ── Adjudication ledger: files whose deliberate silences are sanctioned ──
  * Each entry: file, count (the sanctioned silent-catch count — drift-checked
@@ -251,7 +251,7 @@ function roundLt(a, b) {
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {
     const root = process.argv[2] ? path.resolve(process.argv[2]) : DEFAULT_ROOT;
     const r = runErrorCensus(root);
-    console.log(`error census: ${r.filesScanned} source files, ${r.catchSites} catch sites — ${r.typed} typed, ${r.debug} debug-logged, ${r.handled} handled, ${r.silent} silent`);
+    console.log(`error census: ${r.filesScanned} source files, ${r.catchSites} catch sites (${r.typed} typed, ${r.debug} debug-logged, ${r.handled} handled, ${r.silent} silent) + ${r.promiseCatchSites} Promise .catch sites (${r.silentPromiseCatches} silent)`);
     if (r.problems.length) {
         for (const p of r.problems) console.log(`  ✗ ${p}`);
         process.exit(1);

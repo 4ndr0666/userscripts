@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Media Player Controller
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      8.1.2
+// @version      8.1.3
 // @author       4ndr0666
 // @description  Speed • Fine Rate ±0.1 • Alt+Shift rAF Zoom/Pan • Rotation • Smart Maximize • Native Fullscreen • PiP • Play • DblClick • Pause-on-Acquire • Virtual DOM Nodes • Shadow-DOM Discovery • Cyan-Glass Scrub Bar • Download Button (fetch + blob capture) • Screenshot • Volume/Mute • Frame Step • Seek Hotkeys • IG Story Nav (3-Layer) • Story Repeat (3-Layer) • Active-Media Observer • YouTube Ad Auto-Skip • Toast Feedback • Draggable HUD • Full Hotkey Suite
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -990,7 +990,7 @@
         pauseAllExcept(video);
         applyMediaState();
         if (autoPlay) {
-            video.play().catch(() => { /* Autoplay blocked — silently accept */ });
+            video.play().catch((e) => { console.debug('MPC interceptor:', e); /* Autoplay blocked */ });
         }
         if (syncPlayButton) syncPlayButton();
     }
@@ -1114,7 +1114,7 @@
         if (!video) return;
         if (video !== activeVideo) acquireTarget(video, false);
         if (video.paused || video.ended) {
-            video.play().catch(() => {});
+            video.play().catch((e) => { console.debug('MPC interceptor:', e); });
             state.isPlaying = true;
         } else {
             video.pause();
@@ -1550,7 +1550,7 @@
         if (!v) return;
         // Direct toggle — no re-acquisition, no side effects
         if (v.paused || v.ended) {
-            v.play().catch(() => {});
+            v.play().catch((e) => { console.debug('MPC interceptor:', e); });
             state.isPlaying = true;
         } else {
             v.pause();
@@ -1628,7 +1628,7 @@
             if (typeof exit !== 'function') { showToast('FULLSCREEN UNSUPPORTED'); return; }
             try {
                 const p = exit.call(document);
-                if (p && typeof p.catch === 'function') p.catch(() => {});
+                if (p && typeof p.catch === 'function') p.catch((e) => { console.debug('MPC interceptor:', e); });
             } catch (err) {
                 console.warn('[4NDR0666OS] fullscreen exit failed:', err);
             }
@@ -2241,7 +2241,7 @@
                 const v = activeVideo;
                 if (v) {
                     v.currentTime = 0;
-                    v.play().catch(() => {});
+                    v.play().catch((e) => { console.debug('MPC interceptor:', e); });
                 }
             }
         }, 150);
@@ -2560,7 +2560,7 @@
             case 'Space':
                 if (!v) return;
                 e.preventDefault(); e.stopImmediatePropagation();
-                if (v.paused || v.ended) { v.play().catch(() => {}); state.isPlaying = true; }
+                if (v.paused || v.ended) { v.play().catch((e) => { console.debug('MPC interceptor:', e); }); state.isPlaying = true; }
                 else                     { v.pause();                 state.isPlaying = false; }
                 syncPlayButton();
                 return;
@@ -2684,7 +2684,7 @@
     // BOOT LOG
     // ==========================================
     console.log(
-        '%c[4NDR0666OS] Media Player Controller v8.1.2-Ψ — Unified Superset. ' +
+        '%c[4NDR0666OS] Media Player Controller v8.1.3-Ψ — Unified Superset. ' +
         'Speed ±0.1 | rAF Zoom/Pan (0.5–8x) | Rotation | Smart Maximize (Video+Image) | ' +
         'Native Fullscreen | PiP | Play/DblClick/Space | Pause-on-Acquire | Fallback Target Acquisition | Virtual DOM | ' +
         'Shadow-DOM Discovery | Scrub Bar | Download (fetch + blob capture) | Screenshot | ' +

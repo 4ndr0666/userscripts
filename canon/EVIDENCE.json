@@ -6,7 +6,7 @@
     "source_sha16": "1eb282371f7d1965",
     "retired": "4ndr0tools - m3u8++.user.js",
     "retired_sha16": "04c4f1e32a41b451",
-    "version": "5.0.0",
+    "version": "5.1.0",
     "evidence": "m3u8++BETA v4.5 promoted: G1–G10 GUP gap-mitigation set + magnet-play relays are a strict superset of stable v4.4 (verified by diff + embedded changelog)."
   },
   {
@@ -16,7 +16,7 @@
     "source_sha16": "b8de4ca5d56ce533",
     "retired": "4ndr0tools - Hailuo++.user.js",
     "retired_sha16": "a4a4df8c478be46c",
-    "version": "6.0.0",
+    "version": "6.0.2",
     "evidence": "Hailuo++BETA v5.4.0 promoted: 'superset upgrade over 5.3.0 (zero functional removals)' — editable-context DOM guards, self-healing HUD watchdog, cross-reload persistence absent from stable v5.1.1."
   },
   {
@@ -26,7 +26,7 @@
     "source_sha16": "ce77ed2fc35db970",
     "retired": "4ndr0tools - Blob2URL.user.js",
     "retired_sha16": "495ab3f25c728538",
-    "version": "7.0.0",
+    "version": "7.3.0",
     "evidence": "Blob2URLBETA v6.5 promoted: SUPerset gap mitigation (G1..G3) + IG vault render — strict superset of stable v6.3."
   },
   {
@@ -36,7 +36,7 @@
     "source_sha16": "f02771ea82f5692b",
     "retired": "4ndr0tools - Confirmation Bypass.user.js",
     "retired_sha16": "aaeb1fa9a490e6ba",
-    "version": "4.0.0",
+    "version": "4.0.3",
     "evidence": "Confirmation Bypass BETA v3.6.2 promoted: GUP v5.3 stepwise gap mitigation over v3.6.1 (Set-based rel handling superset, xcandid overlay init fix)."
   },
   {
@@ -46,7 +46,7 @@
     "source_sha16": "539d70f04768c048",
     "retired": "4ndr0tools - ModelSearch.user.js",
     "retired_sha16": "1a15bc13ce185c5d",
-    "version": "4.0.0",
+    "version": "4.0.1",
     "evidence": "ModelSearchBETA v3.2.0-Ψ promoted: Superset Protocol audit pass (BUG-1/2/3 fixes), Electric-Glass covert UI; supersedes stable v2.1 (Alt+S retained; legacy @updateURL pointing at the STABLE filename — a self-downgrade bug — corrected by the suite build)."
   },
   {
@@ -56,7 +56,7 @@
     "source_sha16": "f95ea8badf1900f9",
     "retired": "4ndr0tools - GooglePhotosandDrive++.user.js",
     "retired_sha16": "6ad8e5b45ffe38f3",
-    "version": "8.0.0",
+    "version": "8.1.0",
     "evidence": "GooglePhotosandDrive++BETA v7.0.0 promoted: 'Unified superset revision — GUP gate: 0 MISSING' — Drive direct-download resolution, Photos full-res extraction, hotkeys, drag persistence, settings console; supersedes stable v1.5.0."
   },
   {
@@ -66,7 +66,7 @@
     "source_sha16": "53e22992b19230bf",
     "retired": "4ndr0tools - Media Player Controller.user.js",
     "retired_sha16": "30c3184c98ab1788",
-    "version": "8.0.0",
+    "version": "8.1.3",
     "evidence": "Media Player Controller BETA v7.0.0-Ψ promoted: 'UNIFIED SUPERSET' over mediaplayercontroller v5.1.0 (31 baseline units) + IGDL v6.0.1 salvage — shadow-DOM discovery, scrub bar, download blob-capture, full hotkey suite."
   },
   {
@@ -76,7 +76,7 @@
     "source_sha16": "8edb264774e81bd3",
     "retired": "4ndr0tools - Forum Link Xtractor.user.js",
     "retired_sha16": "58a781595222de8a",
-    "version": "3.0.0",
+    "version": "3.2.3",
     "evidence": "Forum Link Xtractor BETA v2.1.0 promoted: XenForo Enhancer superset — extraction w/ download+copy radio flows, invisi-text revealer, inline reply viewer, optimized regex precompile; supersedes stable v1.0."
   },
   {
@@ -316,7 +316,7 @@
   {
     "dest": "4ndr0tools - LinkMasterΨ.user.js",
     "mode": "merged",
-    "version": "6.1.0",
+    "version": "6.3.1",
     "sources": [
       {
         "file": "4ndr0tools - LinkMasterBETA.user.js",
@@ -358,7 +358,7 @@
   {
     "dest": "4ndr0tools - Images++.user.js",
     "mode": "merged",
-    "version": "4.0.0",
+    "version": "4.0.3",
     "sources": [
       {
         "file": "4ndr0tools - Images++.user.js",
@@ -392,7 +392,7 @@
       "cbbf6d96bb6da66d"
     ],
     "dest_sha16": "f5a71b33bd38750c",
-    "version": "5.0.0",
+    "version": "5.2.1",
     "evidence": "Three-way consolidation (user-directed synergy pass): Anti-detection v1.1 (anti-analysis neutralizer) + Counter-surveillance v4.0.0 (telemetry/canvas/Google/site defenses) + Anti-telemetry v3.5.0 (ICC worker pacifier, iframe propagation). All 19 baseline unit names preserved; blocklist and poison-key sets are the union. Engineering upgrades: Proxy-facade native hooks (D1 stealth), session-stable fingerprint values + per-canvas seeded noise (D2), toDataURL/toBlob/WebGL/AudioBuffer coverage (D3), pacified SPOOF WebSocket phantoms (D4), 4ndr0serviceguard interop (D5), async-faithful 40ms XHR mocks (D6), ICC-scoped worker pacifier preserved (D7)."
   },
   {
@@ -402,7 +402,7 @@
     "source_sha16": "a74a72ce73117ccf",
     "retired": "4ndr0tools - Forum Link Xtractor.user.js (canon v3.1.0)",
     "retired_sha16": "36f9f7019a56fdaf",
-    "version": "3.2.0",
+    "version": "3.2.3",
     "evidence": "User's Forum Link Xtractor BETA (LUCASD FIX v2) promoted to canon v3.2.0: real-URL aggregation for candidshiny.com/lucasd-* links (network resolver with bounded concurrency, psi_lucasd_cache, progress toast, unresolved-preservation), candidshiny @match pair, viderea/vidara exclusion terms, Clear-Cache menu command, suite update channel added. The BETA had been built from the v3.0.0 base and regressed the v3.1.0 hardenings — GM_xmlhttpRequest native timeout re-ported (the AbortController shim left hung requests unsettled) and the dropped explanatory comments restored; redColor kept at the author's #FF4C4C. Superset verified: all canon v3.1.0 units present."
   },
   {
@@ -412,7 +412,28 @@
     "source_sha16": "90ea9ef8471177a8",
     "retired": "n/a — net-new suite member (no baseline predecessor)",
     "retired_sha16": "n/a",
-    "version": "3.2.0",
+    "version": "3.3.0",
     "evidence": "Operator's Stream Interceptor BETA v3.1.0 promoted to canon v3.2.0 as a net-new suite member (the stream-token/manifest gap-filler the operator built to complement LinkMaster). Full 858-line review: the engine is sound and preserved verbatim — ShadowDOM-piercing DOM scans, context-safe Reflect hooks installed into BOTH page and sandbox windows with mark-guards, the ReDoS-lazy extraction regex, pass_md5 token capture, malformed-SVG src sanitization, capped stream-body inspection with unicode/percent re-decode passes, the _wv tracker-stub suppressor, and the debounced observer discipline. Changes: P1 suite metadata + update channel (raw dist/ URLs, Ψ glyph @icon, suite namespace, BETA suffix stripped per promotion convention); P2 the operator's explicit UI mandate — cards refactored from the off-spec palette (rgba(10,15,26) base, #ff003c destructive, #15FFFF cyan, Courier New, 300ms transitions) to the 3lectric-Glass spec (RGB(10,19,26) glass base, #00E5FF primary / #67E8F9 hover / #ff0055 destructive, JetBrains Mono data + Orbitron label typography, 150ms ease-in-out transitions, 0px-radius brutalist buttons, toast left-rail accent); P3 review hardening — the discovered-URL registry is now bounded at 1000 entries (GUP B.1; a long session on a busy page previously grew it without limit), console chrome follows the suite color matrix, menu labels carry the Ψ prefix. V8-parse clean, Gate C compliant."
+  },
+  {
+    "dest": "4ndr0tools - HostWarp.user.js",
+    "mode": "composite",
+    "source": "modules/hostwarp/body.js",
+    "version": "1.1.4",
+    "evidence": "Consolidates 6 legacy host utilities (HDImgsOnly, MegaEmbedRedirector, PlanetsuzyMobileSkinRedirect, Telegram Web Redirect, Searxng Sticky Settings, Gemini Answer Now) over the 6-module suite kernel with 3lectric-Glass settings console."
+  },
+  {
+    "dest": "4ndr0tools - PageCraft.user.js",
+    "mode": "composite",
+    "source": "modules/pagecraft/body.js",
+    "version": "1.1.3",
+    "evidence": "Consolidates 4 legacy page utilities (SelectAllCheckboxes, BrokenImgFixer, Collapse All Images, InfiniteBrave) over the 5-module suite kernel with 3lectric-Glass settings console."
+  },
+  {
+    "dest": "4ndr0tools - Zai Exporter.user.js",
+    "mode": "sovereign",
+    "source": "4ndr0tools - Zai Exporter.user.js",
+    "version": "1.0.0",
+    "evidence": "Gate-born sovereign Z.ai GLM conversation exporter with 3-tier extraction ladder (attribute mining, region harvest, honest degraded sweep), role alternation repair, and Markdown/JSON/text composers."
   }
 ]

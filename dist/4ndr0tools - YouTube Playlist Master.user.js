@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - YouTube Playlist Master
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.7.1
+// @version      1.7.2
 // @description  Channel playlist buttons (All / Popular / Videos / Shorts / Streams / Members-only), Random play (prefer newest/oldest), reverse autoplay order, playlist autoplay toggle, duration sort, bulk copy/move/delete, JSON + plaintext export/import, snapshots with deleted-video detection, quick watch_videos playlists, queue & watch-later overlays, playlist close button, date/view metadata, episode auto-expand, huge-playlist browser, live settings (no reload), always-available Ψ deck, playlist row filter, duplicate finder & purge, global hotkeys (Alt+Shift+U/S/X), failsafe deck rescue, 404-proof navigation guards, Trusted-Types-immune rendering, fully-visible fit-content modal dialogs.
 // @author       4ndr0666
 // @license      UNLICENSED REDTEAM ONLY
@@ -2427,7 +2427,7 @@ const __4NDR0_NET_API__ = (function () {
         /** Serializes all write operations single-file. */
         function serialize(fn) {
             const p = queue.then(() => fn());
-            queue = p.catch(() => {});
+            queue = p.catch((e) => { console.debug('YTPM interceptor:', e); });
             return p;
         }
 
@@ -3483,7 +3483,7 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
                     elx.acct.textContent = `· ${name}`;
                     elx.acct.title = 'Active account';
                 }
-            }).catch(() => {});
+            }).catch((e) => { console.debug('YTPM interceptor:', e); });
         }
 
         // ---- destination picker ----

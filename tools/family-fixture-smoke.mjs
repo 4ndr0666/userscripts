@@ -318,7 +318,153 @@ export async function runFamilyFixtureSmoke(root = ROOT) {
     const gmRes = await hub.gmFetch("https://drive.google.com/uc?id=123&export=download", { timeout: 10000, checkStatus: false });
     assert("NetHook v6 gmFetch resolves Drive confirm-form interstitial HTML over privileged transport", gmRes && gmRes.status === 200 && gmRes.responseText.includes('id="download-form"'));
 
-    return { problems, passed, total: 13 };
+    /* ── 3. GUP v7.0.0 Stepwise Gap Mitigation Fixtures (suite v1.7.1) ───── */
+    // 3A. Youtube Removed Video Revealer: extractIDsFullView + createRestoreButton + ButtonClickActionFullView
+    const yrvrSrc = fs.readFileSync(
+        path.join(root, "canon", "_sovereign", "4ndr0tools - Youtube Removed Video Revealer.user.js"),
+        "utf8"
+    );
+    const yrvrFns = [
+        "createRestoreButton",
+        "extractIDsFullView",
+        "ButtonClickActionFullView",
+    ].map((fn) => extractFn(yrvrSrc, fn)).join("\n\n");
+
+    let createdBtn = null;
+    let processClickCalls = [];
+    const mockPlaylistDom = {
+        getElementById: (id) => (id === "TitleRestoredBtn" ? createdBtn : null),
+        querySelectorAll: () => [{
+            offsetParent: {},
+            checkVisibility: () => true,
+            firstChild: null,
+            insertBefore: () => {},
+        }],
+        createElement: (tag) => {
+            const el = {
+                tagName: tag.toUpperCase(),
+                id: "",
+                style: {},
+                textContent: "",
+                children: [],
+                listeners: {},
+                appendChild(c) { this.children.push(c); if (c && c.id === "TitleRestoredBtn") createdBtn = c; },
+                addEventListener(ev, fn) { this.listeners[ev] = fn; },
+            };
+            return el;
+        },
+    };
+    const fakeCash = (sel) => {
+        if (sel && sel._isItem) return sel;
+        if (sel === "h3.ytd-playlist-video-renderer") {
+            const item = {
+                _isItem: true,
+                attr: (k) => (k === "aria-label" ? null : null),
+                parents: () => ({ length: 1, append: () => {} }),
+                children: () => ({
+                    length: 1,
+                    attr: function (k, v) {
+                        if (v !== undefined) { this._chk = v; return this; }
+                        if (k === "href") return "/watch?v=dQw4w9WgXcQ&list=PL123";
+                        if (k === "filmot_chk") return this._chk || null;
+                        return null;
+                    },
+                }),
+            };
+            return {
+                filter: () => ({
+                    each: (cb) => cb.call(item),
+                }),
+            };
+        }
+        const chain = {
+            addClass: () => chain,
+            attr: () => chain,
+            css: () => chain,
+            one: () => chain,
+            append: () => chain,
+            find: () => ({ text: () => chain }),
+            text: () => chain,
+        };
+        return chain;
+    };
+    const yrvrCtx = vm.createContext({
+        ArchivedIDS: {},
+        RecoveredIDS: {},
+        DetectedIDS: {},
+        deletedIDs: "",
+        deletedIDCnt: 0,
+        document: mockPlaylistDom,
+        window: { location: { href: "https://www.youtube.com/playlist?list=PL123" } },
+        $: fakeCash,
+        processClick: (fmt, nTry) => processClickCalls.push({ fmt, nTry }),
+        waybackTimestampToDateString: () => "01.01.2025",
+        fetchWaybackData: async () => [],
+        getWaybackVideoAvailabilityCheckURL: () => "",
+        Array, Object, String, console,
+    });
+    vm.runInContext(`${yrvrFns}\nglobalThis.__yrvr = { extractIDsFullView, ButtonClickActionFullView, getDeleted: () => ({ deletedIDs, deletedIDCnt }) };`, yrvrCtx);
+    yrvrCtx.__yrvr.extractIDsFullView();
+    const yrvrState = yrvrCtx.__yrvr.getDeleted();
+    assert("Youtube Removed Video Revealer extractIDsFullView populates script-scope deletedIDs without TDZ crash", yrvrState.deletedIDs === "dQw4w9WgXcQ" && yrvrState.deletedIDCnt === 1 && processClickCalls.length === 1 && processClickCalls[0].fmt === 1);
+    if (createdBtn && createdBtn.listeners && typeof createdBtn.listeners.click === "function") {
+        createdBtn.listeners.click({ preventDefault() {} });
+    }
+    assert("Youtube Removed Video Revealer #TitleRestoredBtn wires ButtonClickActionFullView & dispatches format=1 on playlist view", processClickCalls.length === 2 && processClickCalls[1].fmt === 1);
+
+    // 3B. HostWarp Gemini forceImmediateAnswer on contenteditable div[role="textbox"]
+    const hwSrc = fs.readFileSync(path.join(root, "modules", "hostwarp", "body.js"), "utf8");
+    const fiaStart = hwSrc.indexOf("const forceImmediateAnswer = () => {");
+    const fiaEnd = hwSrc.indexOf("    const createAnswerNowButton = () => {");
+    const fiaCode = hwSrc.slice(fiaStart, fiaEnd);
+    const mockEditableDiv = {
+        textContent: "Explain quantum entanglement",
+        dispatched: [],
+        dispatchEvent(ev) { this.dispatched.push(ev.type); },
+    };
+    const hwCtx = vm.createContext({
+        GEMINI_SELECTORS: { input: 'div[role="textbox"]', sendButton: "button.send", stopButton: "button.stop" },
+        document: {
+            querySelector: () => mockEditableDiv,
+            querySelectorAll: () => [],
+        },
+        Event: class { constructor(type) { this.type = type; } },
+        setTimeout: () => {},
+        Ψ: { glass: { toast: () => {} } },
+    });
+    vm.runInContext(`${fiaCode}
+forceImmediateAnswer();`, hwCtx);
+    assert("HostWarp Gemini forceImmediateAnswer appends immediate-response prompt to contenteditable div[role=textbox]", mockEditableDiv.textContent.includes("Explain quantum entanglement") && mockEditableDiv.textContent.includes("Answer immediately. No thinking steps.") && mockEditableDiv.dispatched.includes("input"));
+
+    // 3C. CandidShiny plugin scanAllMedia redirect-query unwrapping
+    const csSrc = fs.readFileSync(path.join(root, "plugins", "candidshiny.user.js"), "utf8");
+    const scanFnCode = extractFn(csSrc, "scanAllMedia");
+    const csCtx = vm.createContext({
+        document: {
+            querySelectorAll: (sel) => {
+                if (sel === "a[href]") {
+                    return [{ href: "https://forum.candidshiny.com/redirect?to=https%3A%2F%2Fcdn.example.org%2Fvideo%2Fclip.mp4" }];
+                }
+                return [];
+            },
+        },
+        window: { location: { href: "https://forum.candidshiny.com/threads/1" } },
+        URL, Set, Array, decodeURIComponent, console,
+    });
+    vm.runInContext(`${scanFnCode}
+globalThis.__csUrls = scanAllMedia();`, csCtx);
+    assert("CandidShiny plugin scanAllMedia unwraps percent-encoded redirector target URLs", Array.isArray(csCtx.__csUrls) && csCtx.__csUrls.includes("https://cdn.example.org/video/clip.mp4"));
+
+    // 3D. Red control: verify TDZ self-shadowing (`const isFF = isFF;`) throws ReferenceError in VM
+    let tdzCaught = false;
+    try {
+        vm.runInNewContext("(function() { const isFF = true; { const isFF = isFF; return isFF; } })()");
+    } catch (e) {
+        tdzCaught = e instanceof ReferenceError || (e && e.name === "ReferenceError");
+    }
+    assert("TDZ self-shadowing red control: `const isFF = isFF` throws ReferenceError and is absent from suite", tdzCaught);
+
+    return { problems, passed, total: 18 };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {

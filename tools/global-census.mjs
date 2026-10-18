@@ -37,7 +37,7 @@ import { fileURLToPath } from "node:url";
 import { codeOnly } from "./sink-census.mjs";
 
 const DEFAULT_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const CURRENT_ROUND = "v1.7.0"; /* expiry = the round that must re-adjudicate (v1.6.0: enforcement wired — the fields were carried but unchecked before this round) */
+const CURRENT_ROUND = "v1.7.1"; /* expiry = the round that must re-adjudicate (v1.6.0: enforcement wired — the fields were carried but unchecked before this round) */
 
 /* v1.6.0 < v1.7.0 (string-aware compare, tolerant of missing segments) */
 function roundLt(a, b) {

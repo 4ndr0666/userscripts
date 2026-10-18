@@ -2,7 +2,7 @@
 // @name           4ndr0tools - LinkMasterΨ
 // @namespace      https://github.com/4ndr0666/userscripts
 // @author         4ndr0666
-// @version      6.3.0
+// @version      6.3.1
 // @description    Accurately decodes, previews, exports, validates and scrapes all links. (Dual MPV Support + Ψ IG Harvester + sexyforums premium-link unwrap + GitHub raw-URL harvest + Ψ2 forum deep-scrape engine)
 // @downloadURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
 // @updateURL      https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
@@ -4529,7 +4529,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
       customFilename = customFilename.replace(/:title:/g, threadTitle).replace(/:#:/g, postNumber).replace(/:id:/g, postId);
     }
 
-    const isFF = isFF;
+    // v6.3.1: removed TDZ self-shadowing `const isFF = isFF;` (uses script-scope isFF)
 
     if (!postSettings.skipDownload) {
       const resources = resolved.filter((r) => r.url);
