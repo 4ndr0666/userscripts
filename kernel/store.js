@@ -15,7 +15,6 @@
 
     /* In-memory snapshot — the single boot-time ingest (GUP B.1). */
     const memory = new Map();
-    const booted = false;
 
     const fullKey = (ns, key) => `${ns}::${key}`;
 
@@ -29,7 +28,7 @@
             try {
                 const raw = localStorage.getItem('a4:' + key);
                 if (raw !== null) v = JSON.parse(raw);
-            } catch (e) { /* quota/private-mode — memory store remains authoritative */ }
+            } catch (e) { console.debug('[a4/store] localStorage read skipped:', key, e.message); /* quota/private-mode — memory store remains authoritative */ }
         }
         memory.set(key, v === undefined ? null : v);
         return v;
@@ -113,7 +112,7 @@
                 if (hasGM) {
                     try { GM_deleteValue(fullKey(prefix, key)); } catch (e) { console.debug('[a4/store] delete failed:', key, e.message); }
                 }
-                try { localStorage.removeItem('a4:' + fullKey(prefix, key)); } catch (e) { /* non-fatal */ }
+                try { localStorage.removeItem('a4:' + fullKey(prefix, key)); } catch (e) { console.debug('[a4/store] localStorage remove skipped:', key, e.message); }
             },
             /** Subscribe to key changes (local + cross-tab when supported). */
             watch(key, cb) {
@@ -143,7 +142,7 @@
                     scan(Object.keys(localStorage)
                         .filter((k) => k.startsWith('a4:'))
                         .map((k) => k.slice(3)), `${prefix}::`);
-                } catch (e) { /* private mode */ }
+                } catch (e) { console.debug('[a4/store] localStorage export skipped:', e.message); }
                 return JSON.stringify(out);
             },
             /** Import a namespace export (merge, non-destructive). */

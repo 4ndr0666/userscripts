@@ -145,17 +145,17 @@ for (const [domain, handler] of IMAGE_HOST_HANDLERS) {
                 else if (video.mozRequestFullScreen) video.mozRequestFullScreen();
                 else if (video.webkitRequestFullscreen) video.webkitRequestFullscreen();
                 else if (video.msRequestFullscreen) video.msRequestFullscreen();
-            }).catch(() => { /* autoplay needs a gesture — acceptable */ });
+            }).catch((e) => { console.debug('[HostWarp] autoplay deferred until user gesture:', e && e.message ? e.message : e); });
         });
         return true;
     };
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
-            if (!enhance()) waitFor('video', { timeout: 15000 }).then(enhance, () => {});
+            if (!enhance()) waitFor('video', { timeout: 15000 }).then(enhance).catch((e) => { console.debug('[HostWarp] mega video wait timed out:', e.message); });
         }, { once: true });
     } else if (!enhance()) {
-        waitFor('video', { timeout: 15000 }).then(enhance, () => {});
+        waitFor('video', { timeout: 15000 }).then(enhance).catch((e) => { console.debug('[HostWarp] mega video wait timed out:', e.message); });
     }
 }, { id: 'mega', script: 'HostWarp' });
 
@@ -267,7 +267,7 @@ function telegramChannelId(url) {
     };
 
     if (injectWebButton()) return;
-    waitFor('.tgme_page_action', { timeout: 15000 }).then(injectWebButton, () => {});
+    waitFor('.tgme_page_action', { timeout: 15000 }).then(injectWebButton).catch((e) => { console.debug('[HostWarp] telegram action wait timed out:', e.message); });
 }, { id: 'telegram', script: 'HostWarp' });
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -319,10 +319,14 @@ function telegramChannelId(url) {
         const input = document.querySelector(GEMINI_SELECTORS.input);
         if (!input) return;
 
-        const promptText = (input.value || '').trim();
+        const hasValueProp = typeof input.value === 'string';
+        const promptText = (hasValueProp ? input.value : (input.textContent || '')).trim();
         if (promptText) {
             const forceText = '\n\nAnswer immediately. No thinking steps. Output only the final answer right now.';
-            if (!promptText.endsWith(forceText)) input.value = promptText + forceText;
+            if (!promptText.endsWith(forceText)) {
+                if (hasValueProp) input.value = promptText + forceText;
+                else input.textContent = promptText + forceText;
+            }
         }
 
         input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -418,7 +422,7 @@ function openSettings() {
                         $new('p', { style: { fontSize: '11px', lineHeight: '1.6' } },
                             'HostWarp consolidates six legacy micro-tools into one engine. ' +
                             'Active modules on this page: ' + (Ψ.hosts.resolve()
-                                ? 'matched — ' + Ψ.hosts.listDomains().filter((d) => location.hostname.endsWith(d)).join(', ')
+                                ? 'matched — ' + Ψ.hosts.listDomains().filter((d) => location.hostname === d || location.hostname.endsWith('.' + d)).join(', ')
                                 : 'none') +
                             '.')));
                 },

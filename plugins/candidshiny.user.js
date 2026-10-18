@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         LinkMasterΨ2 - CandidShiny Full Autopsy Plugin
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.1.1
+// @version      1.1.2
 // @description  Scans ALL possible links, images, videos, attachments, even shadow roots, on CandidShiny. v1.1.1: fixed three invalid selectors ('a[href]', 'a.attachment[href]') that threw SyntaxError and silently killed every scan.
 // @match        *://forum.candidshiny.com/*
 // @grant        none
@@ -30,7 +30,7 @@
                 const d = tpl.content || tpl;
                 d.querySelectorAll('a[href]').forEach(a => urls.add(a.href));
                 d.querySelectorAll('img[src]').forEach(img => urls.add(img.src));
-            } catch (e) { /* shadow dom could throw */ }
+            } catch (e) { console.debug('[CandidShiny] template scan skipped:', e); }
         });
         // Inspect shadow roots (cursed, but thorough)
         document.querySelectorAll('*').forEach(el => {
@@ -46,10 +46,22 @@
             if(img.src && img.src.startsWith('data:')) urls.add(img.src);
         });
 
-        // Anything that "looks" like a file: direct uploads (heuristic)
-        Array.from(urls).forEach(url => {
-            // Add additional transformations if needed
-            // (e.g., resolve redirects, decode percent-encodings, etc.)
+        // Unwrap redirector query parameters and normalize relative/percent-encoded URLs
+        Array.from(urls).forEach(rawUrl => {
+            if (!rawUrl || typeof rawUrl !== 'string') return;
+            try {
+                const resolved = new URL(rawUrl, window.location.href);
+                urls.add(resolved.href);
+                for (const key of ['url', 'to', 'u', 'target', 'dest']) {
+                    const param = resolved.searchParams.get(key);
+                    if (param) {
+                        const decoded = decodeURIComponent(param);
+                        if (/^https?:\/\//i.test(decoded)) urls.add(decoded);
+                    }
+                }
+            } catch (e) {
+                console.debug('[CandidShiny] URL normalization skipped:', e);
+            }
         });
 
         return Array.from(urls).filter(Boolean);
@@ -66,13 +78,18 @@
         ]
     };
 
-    // Optional: live update as new content is loaded
+    // Live update as new content is loaded (visibility-guarded, error-isolated)
     let lastCount = 0;
     setInterval(() => {
-        const urls = scanAllMedia();
-        if (urls.length !== lastCount) {
-            window.LinkMasterPlugin.hosts[0][1] = urls;
-            lastCount = urls.length;
+        if (document.hidden) return;
+        try {
+            const urls = scanAllMedia();
+            if (urls.length !== lastCount) {
+                window.LinkMasterPlugin.hosts[0][1] = urls;
+                lastCount = urls.length;
+            }
+        } catch (e) {
+            console.debug('[CandidShiny] live scan error:', e);
         }
     }, 3333);
 
