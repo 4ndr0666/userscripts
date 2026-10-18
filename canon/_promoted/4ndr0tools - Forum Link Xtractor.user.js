@@ -47,7 +47,7 @@
 (function () {
     'use strict';
 
-    console.log('%c[4NDR0666OS] XenForo Enhancer v1.0.0-Ψ — INITIATING SEQUENCE', 'color:#00E5FF; font-family:monospace; font-weight:bold;');
+    console.log('%c[4NDR0666OS] XenForo Enhancer v3.2.3-Ψ — INITIATING SEQUENCE', 'color:#00E5FF; font-family:monospace; font-weight:bold;');
 
     // =========================================================================
     // MODULE 0: GLOBAL CONFIGURATION & OPTIMIZED REGEX

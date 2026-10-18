@@ -30,6 +30,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { runErrorCensus } from "./error-census.mjs";
+import { runPollingCensus } from "./polling-census.mjs";
+import { runObserverCensus } from "./observer-census.mjs";
+import { runCacheCensus } from "./cache-census.mjs";
 
 const DEFAULT_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 export const SCORE_THRESHOLD = 90;
@@ -162,14 +166,31 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToP
      * 133 registries (one call-scoped Set), docs coverage derived 38/38.
      * v1.6.2: counts unchanged — the round is the determinism contract
      * itself: score.json round-addressed, style label 38/38.) */
+    const liveErr = runErrorCensus(root);
+    const livePoll = runPollingCensus(root);
+    const liveObs = runObserverCensus(root);
+    const liveCache = runCacheCensus(root);
+    const pkgRound = "v" + JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8")).version;
     const r = runProductionScore(root, {
         smoke: { pass: true, count: 150, floor: 150 },
         otherGateFailures: 0,
-        censuses: { sink: { clean: true }, transport: { clean: true }, global: { clean: true }, hotkey: { clean: true }, polling: { clean: true, sites: 39 }, observer: { clean: true, sites: 57 }, cache: { clean: true, registries: 133 }, size: { clean: true }, connect: { clean: true }, domain: { clean: true }, error: { clean: true, catchSites: 839, typed: 9, debug: 419, handled: 411, silent: 0 } },
+        censuses: {
+            sink: { clean: true },
+            transport: { clean: true },
+            global: { clean: true },
+            hotkey: { clean: true },
+            polling: { clean: !livePoll.problems.length, sites: livePoll.sites },
+            observer: { clean: !liveObs.problems.length, sites: liveObs.sites },
+            cache: { clean: !liveCache.problems.length, registries: liveCache.registries },
+            size: { clean: true },
+            connect: { clean: true },
+            domain: { clean: true },
+            error: { clean: !liveErr.problems.length, catchSites: liveErr.catchSites, typed: liveErr.typed, debug: liveErr.debug, handled: liveErr.handled, silent: liveErr.silent },
+        },
         opsec: true, netHook: { consumers: 16 }, inventoryDeterministic: true, style: true, styleCounts: { pass: 38, total: 38 }, docsTruthful: true,
         ledger: { units: 61, evidenced: 61 },
         qr: true, docsCoverage: { readmes: 38, scripts: 38 },
-        round: "v1.7.0",
+        round: pkgRound,
     });
     for (const d of r.dims) console.log(`  ${d.dimension.padEnd(15)} ${d.score}/${d.weight}  [${d.inputs.join("; ")}]`);
     console.log(`TOTAL: ${r.total}/100 (threshold ${SCORE_THRESHOLD})`);

@@ -85,6 +85,8 @@ function braceSpan(view, from) {
 }
 
 /* body with comments blanked (codeOnly already blanked strings/templates) */
+function arrowFnMatch(m) { return Boolean(m); }
+
 function stripBodyComments(body) {
     return body.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
 }
@@ -123,7 +125,7 @@ function assertKernelFamily(root, problems) {
 
 export function runErrorCensus(root = DEFAULT_ROOT) {
     const problems = [];
-    const stats = { catchSites: 0, typed: 0, debug: 0, handled: 0, silent: 0, filesScanned: 0, silentFiles: 0 };
+    const stats = { catchSites: 0, typed: 0, debug: 0, handled: 0, silent: 0, promiseCatchSites: 0, silentPromiseCatches: 0, filesScanned: 0, silentFiles: 0 };
     const seenLedger = new Set();
     const perFile = {};
 
@@ -173,6 +175,28 @@ export function runErrorCensus(root = DEFAULT_ROOT) {
             } else {
                 fileStats.silent++; stats.silent++;
                 fileStats.silentSites.push(line);
+            }
+        }
+
+        /* Wave 2.8 class-closure: Promise `.catch(...)` handlers — an inline
+         * arrow/function handler with an empty `{}` body is a silent async
+         * rejection swallow and must fail closed. */
+        const pCatchRe = /\.catch\s*\(/g;
+        let pm;
+        while ((pm = pCatchRe.exec(view)) !== null) {
+            stats.promiseCatchSites++;
+            const openParen = pm.index + pm[0].length - 1;
+            const afterOpen = view.slice(openParen + 1, openParen + 120);
+            const arrowOrFn = /^\s*(?:async\s+)?(?:function\s*\([^)]*\)|\([^)]*\)\s*=>|[A-Za-z_$][\w$]*\s*=>)\s*\{/.exec(afterOpen);
+            if (!arrowFnMatch(arrowOrFn)) continue;
+            const braceAt = openParen + 1 + arrowOrFn[0].lastIndexOf("{");
+            const sp = braceSpan(view, braceAt);
+            if (!sp) continue;
+            const body = stripBodyComments(view.slice(sp[0] + 1, sp[1]));
+            if (body.trim().length === 0) {
+                const line = lineOf(starts, pm.index);
+                stats.silentPromiseCatches++;
+                problems.push(`${rel}:${line}: SILENT Promise .catch() handler — empty body (Wave 2.8 / GUP G11: add scoped console.debug or recovery handling)`);
             }
         }
         perFile[rel] = fileStats;

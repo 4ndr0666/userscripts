@@ -24,7 +24,7 @@
 // @license      UNLICENSED - RED TEAM USE ONLY
 // ==/UserScript==
 // 4.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.0.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.0.3 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px');
 
 
 /* ═══ SUITE PROMOTION 4.0.0 ═══════════════════════════════════════════
