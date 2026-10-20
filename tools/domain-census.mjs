@@ -29,7 +29,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const DEFAULT_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const CURRENT_ROUND = "v1.7.1";
+const CURRENT_ROUND = "v1.7.2";
 
 /* ── Adjudication ledger: the sanctioned co-install map (drift-checked) ────
  * Each entry: the domain key + its EXACT script set + coordination argument.

@@ -113,7 +113,7 @@ at `dist/`, author/license fields filled).
 
 | Legacy | Suite | Why |
 |---|---|---|
-| Maximize_Any_Media console `Alt+S` | `Alt+Shift+S` | `Alt+S` is ModelSearch's overlay (collision) |
+| Maximize_Any_Media console `Alt+S` | `Alt+Shift+M` | `Alt+S` is ModelSearch's overlay; `Alt+Shift+S` is YouTube Playlist Master's settings (collision) |
 | Recon dock `Alt+R` | `Alt+Shift+R` | `Alt+R` is PageCraft's broken-image retrigger (collision) |
 
 All other hotkeys are unchanged.

@@ -178,7 +178,7 @@
   "Maximize_Any_Media": {
     "dest": "Maximize_Any_Media",
     "mode": "carried",
-    "note": "+ Alt+S -> Alt+Shift+S console collision fix"
+    "note": "+ Alt+S -> Alt+Shift+M console collision fix (Alt+S owned by ModelSearch; Alt+Shift+S owned by YouTube Playlist Master)"
   },
   "Media Player Controller": {
     "dest": "Media Player Controller",

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Pixeldrain++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.2.0
+// @version      1.2.1
 // @description  Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.
 // @author       4ndr0666
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -52,7 +52,7 @@
 // @connect         *
 // ==/UserScript==
 // 1.1.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.0 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 /* eslint-disable no-undef */
 (function () {
@@ -61,7 +61,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.0
     // ================================================================
     // 0. CONFIG & CONSTANTS
     // ================================================================
-    const VERSION = '1.1.2';
+    const VERSION = '1.2.1';
     const NS = 'pdbp';
 
     /* [R3 createElement migration — suite v1.4.4] Local element builder:
@@ -232,7 +232,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.0
     };
     function uuid() { return crypto.randomUUID ? crypto.randomUUID() : 'xxxx-xxxx-xxxx'.replace(/x/g, () => (Math.random() * 16 | 0).toString(16)); }
     function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-    function escapeHTML(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+    function escapeHTML(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
     function sanitizeFilename(n) { return String(n || 'download').replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').trim() || 'download'; }
     function formatBytes(b) { if (!b) return '0 B'; const u = ['B', 'KB', 'MB', 'GB', 'TB']; const i = Math.min(Math.floor(Math.log(b) / Math.log(1024)), u.length - 1); return (b / Math.pow(1024, i)).toFixed(i ? 1 : 0) + ' ' + u[i]; }
     function formatSpeed(bps) { return bps ? formatBytes(bps) + '/s' : ''; }
@@ -2285,12 +2285,14 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.0
         body.querySelector(`.${NS}-show-jobs`).addEventListener('click', () => {
             const jobs = ResumeManager.getPendingJobs();
             if (!jobs.length) { Toast.info('No pending jobs'); return; }
-            const html = jobs.map(j => {
+            const list = el('div', null, jobs.map(j => {
                 const sum = j.chunks.reduce((a, b) => a + b, 0);
                 const pct = j.fileSize ? (sum / j.fileSize * 100).toFixed(1) : '?';
-                return `<div style="padding:6px;border-bottom:1px solid rgba(0,229,255,0.2)"><strong>${escapeHTML(j.fileName)}</strong> · ${pct}% (${formatBytes(sum)} / ${formatBytes(j.fileSize)})</div>`;
-            }).join('');
-            Modal.open({ title: `Pending Jobs (${jobs.length})`, body: html });
+                return el('div', { style: 'padding:6px;border-bottom:1px solid rgba(0,229,255,0.2)', 'data-safe-name': escapeHTML(j.fileName) },
+                    el('strong', null, String(j.fileName || '')),
+                    ` · ${pct}% (${formatBytes(sum)} / ${formatBytes(j.fileSize)})`);
+            }));
+            Modal.open({ title: `Pending Jobs (${jobs.length})`, body: list });
         });
 
         m.el.querySelector(`.${NS}-cancel`).addEventListener('click', () => m.close());
@@ -2503,7 +2505,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.0
         GM_registerMenuCommand('🔓 Unblock all mirrors', () => { ProxyManager.unblockAll(); Toast.success('Unblocked'); });
         GM_registerMenuCommand('🧹 Cleanup resume jobs', () => Toast.success(`Cleaned ${ResumeManager.cleanup(0)}`));
         GM_registerMenuCommand('❌ Cancel all downloads', () => { Downloader.cancelAll(); Toast.warn('Cancelled'); });
-        if (SETTINGS.apiKey) GM_registerMenuCommand('★ Premium: active', () => {});
+        if (SETTINGS.apiKey) GM_registerMenuCommand('★ Premium: active', openSettingsPanel);
     }
 
     function findToolbar() {
@@ -2542,16 +2544,17 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.0
             setTimeout(() => obs.disconnect(), 60000);
 
             let lastPath = location.pathname;
+            const runNavRefresh = debounce(() => {
+                document.querySelectorAll('[data-pdbp="1"]').forEach(e => e.remove());
+                document.querySelectorAll('[data-pdbp-injected]').forEach(e => delete e.dataset.pdbpInjected);
+                document.querySelectorAll(`[data-pdbp-injected]`).forEach(e => e.removeAttribute('data-pdbp-injected'));
+                try { patchVideoLoggedRestriction(); } catch { console.debug('PD interceptor: unbound');}
+                tryInject();
+            }, 600);
             const onNav = () => {
                 if (location.pathname !== lastPath) {
                     lastPath = location.pathname;
-                    setTimeout(() => {
-                        document.querySelectorAll('[data-pdbp="1"]').forEach(e => e.remove());
-                        document.querySelectorAll('[data-pdbp-injected]').forEach(e => delete e.dataset.pdbpInjected);
-                        document.querySelectorAll(`[data-pdbp-injected]`).forEach(e => e.removeAttribute('data-pdbp-injected'));
-                        try { patchVideoLoggedRestriction(); } catch { console.debug('PD interceptor: unbound');}
-                        tryInject();
-                    }, 600);
+                    runNavRefresh();
                 }
             };
             const origPush = history.pushState, origReplace = history.replaceState;

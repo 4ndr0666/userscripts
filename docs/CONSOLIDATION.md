@@ -50,8 +50,8 @@ feature was dropped, renamed away, or weakened**.
 5. **Page-utility overlap** — SelectAllCheckboxes, Collapse All Images, HDImgsOnly
    and Brave-infinite-scroll utilities collapsed into **PageCraft**.
 6. **Co-install interference** (documented, then fixed):
-   - `Alt+S` — Maximize_Any_Media console vs ModelSearch overlay → console
-     moved to `Alt+Shift+S`.
+   - `Alt+S` — Maximize_Any_Media console vs ModelSearch overlay (and `Alt+Shift+S` vs YouTube Playlist Master) → console
+     moved to `Alt+Shift+M`.
    - `Alt+R` — Recon dock vs legacy BrokenImgFixer retrigger → Recon moved to
      `Alt+Shift+R` (PageCraft keeps `Alt+R` through the collision-aware
      kernel hotkey registry).

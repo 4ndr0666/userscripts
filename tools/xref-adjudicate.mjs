@@ -7,7 +7,12 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
-const targets = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+const targetArg = process.argv[2];
+if (!targetArg || !fs.existsSync(targetArg)) {
+    console.log("xref-adjudicate: no target JSON supplied (usage: node tools/xref-adjudicate.mjs <targets.json>)");
+    process.exit(0);
+}
+const targets = JSON.parse(fs.readFileSync(targetArg, "utf8"));
 for (const [rel, names] of Object.entries(targets)) {
     const file = path.join(ROOT, rel);
     if (!fs.existsSync(file)) { console.log(`!! missing ${rel}`); continue; }

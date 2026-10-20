@@ -103,7 +103,7 @@ import { fileURLToPath } from "node:url";
 import { codeOnly } from "./sink-census.mjs";
 
 const DEFAULT_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const CURRENT_ROUND = "v1.7.1"; /* expiry = the round that must re-adjudicate */
+const CURRENT_ROUND = "v1.7.2"; /* expiry = the round that must re-adjudicate */
 
 /* ── Adjudication ledger (drift-checked; expiry must not have passed) ──────
  * Every entry is a PERSISTENT site the scanner cannot structurally clear.

@@ -237,7 +237,7 @@ export function runTransportCensus(root = DEFAULT_ROOT) {
 
     /* drift: ledger entries whose site no longer exists, or whose expiry
      * round has passed without re-adjudication (G9 ledger hygiene, v1.5.1) */
-    const CURRENT_ROUND = "v1.7.1";
+    const CURRENT_ROUND = "v1.7.2";
     const roundLt = (a, b) => {
         const pa = a.replace(/^v/, "").split(".").map(Number);
         const pb = b.replace(/^v/, "").split(".").map(Number);

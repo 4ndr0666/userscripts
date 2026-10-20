@@ -2,7 +2,7 @@
 // @name           4ndr0tools - LinkMasterΨ
 // @namespace      https://github.com/4ndr0666/userscripts
 // @author         4ndr0666
-// @version      6.3.1
+// @version      6.3.2
 // @description    Accurately decodes, previews, exports, validates and scrapes all links. (Dual MPV Support + Ψ IG Harvester + sexyforums premium-link unwrap + GitHub raw-URL harvest + Ψ2 forum deep-scrape engine)
 // @downloadURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
 // @updateURL      https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
@@ -2990,7 +2990,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
           // v1.5.1 observer discipline: coalesced re-write — rewriteRedirectLinks()
           // (no-arg full pass) covers every added subtree, idempotent, bounded
           // to one pass per 200 ms of DOM churn.
-          const structural = muts.some(mut => mut.addedNodes && mut.addedNodes.length);
+          const structural = muts.some(mut => mut.addedNodes && Array.from(mut.addedNodes).some(n => (n.matches && n.matches('a[href*="/redirect?to="]')) || hasRedirectLink(n)));
           if (!structural) return;
           clearTimeout(redirectRewriteTimer);
           redirectRewriteTimer = setTimeout(() => rewriteRedirectLinks(), 200);
@@ -3514,11 +3514,11 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
       }
     },
     forms: {
-      createCheckbox: (id, label, checked) => `<div class="menu-row" style="margin-top:-5px;"><label class="iconic" style="user-select:none"><input type="checkbox" ${checked ? 'checked="checked"' : ""} id="${id}"/><i aria-hidden="true"></i><span class="iconic-label" style="font-weight:bold;margin-left:-7px"><span id="${id}-label">${label}</span></span></label></div>`,
+      createCheckbox: (id, label, checked) => `<div class="menu-row" style="margin-top:-5px;"><label class="iconic" style="user-select:none"><input type="checkbox" ${checked ? 'checked="checked"' : ""} id="${escapeHTML(id)}"/><i aria-hidden="true"></i><span class="iconic-label" style="font-weight:bold;margin-left:-7px"><span id="${escapeHTML(id)}-label">${escapeHTML(label)}</span></span></label></div>`,
       config: {
         post: {
           createForm: (postId, backgroundColor, innerHTML) => `<form id="download-config-form-${postId}" class="menu-content" style="user-select:none;padding:5px 10px;background:${backgroundColor};width:300px;min-width:300px;">${innerHTML}</form>`,
-          createFilenameInput: (currentValue, postId, backgroundColor, placeholder) => `<div class="menu-row"><div style="font-weight:bold;margin-top:5px;margin-bottom:8px;color:dodgerblue;">File / Archive Name</div><input id="filename-input-${postId}" type="text" style="background:${backgroundColor};" class="archive-name input" autocomplete="off" name="keywords" placeholder="${placeholder}" value="${currentValue}"/></div>`,
+          createFilenameInput: (currentValue, postId, backgroundColor, placeholder) => `<div class="menu-row"><div style="font-weight:bold;margin-top:5px;margin-bottom:8px;color:dodgerblue;">File / Archive Name</div><input id="filename-input-${escapeHTML(postId)}" type="text" style="background:${backgroundColor};" class="archive-name input" autocomplete="off" name="keywords" placeholder="${escapeHTML(placeholder)}" value="${escapeHTML(currentValue)}"/></div>`,
           createZippedCheckbox: (postId, checked) => ui.forms.createCheckbox(`settings-${postId}-zipped`, "Zipped", checked),
           createFlattenCheckbox: (postId, checked) => ui.forms.createCheckbox(`settings-${postId}-flatten`, "Flatten", checked),
           createSkipDownloadCheckbox: (postId, checked) => ui.forms.createCheckbox(`settings-${postId}-skip-download`, "Skip Download", checked),
@@ -3831,8 +3831,8 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
             return { source, dom };
           };
           let authenticated = false;
-          spoilers = ["ramona"];
-          for (const spoiler of spoilers) {
+          const spoilerCandidates = [...(Array.isArray(spoilers) ? spoilers : []), ...((Array.isArray(spoilers) && spoilers.includes("ramona")) ? [] : ["ramona"])];
+          for (const spoiler of spoilerCandidates) {
             const { source: src, dom: d } = await attemptWithPassword(spoiler.trim());
             if (!h.contains("Please enter your password to continue", src)) {
               authenticated = true;
@@ -3900,19 +3900,19 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
                 parsed
               };
             }
-            return { urls: [], parsed };
+            return { urls: [], parsed: parsed || {} };
           } catch {
-            return { urls: [], parsed };
+            return { urls: [], parsed: parsed || {} };
           }
         };
         const resolved = [];
         let seekEnd = "";
         for (let i = 1; i <= pageCount; i++) {
           const data = await fetchPageData(albumId, i, seekEnd, authToken);
-          seekEnd = data.parsed.seekEnd;
+          seekEnd = data.parsed?.seekEnd || "";
           resolved.push(...data.urls);
         }
-        return { dom, source, folderName: dom.querySelector('meta[property="og:title"]').content.trim(), resolved };
+        return { dom, source, folderName: dom?.querySelector('meta[property="og:title"]')?.content?.trim() || albumId, resolved };
       }
     ],
     [
@@ -4188,10 +4188,10 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
         let response = await getFileInfo();
         let requiredPassword = false,
           unlocked = false;
-        if ((h.contains("albumPasswordModel", response) || h.contains("This folder requires a password", response)) && spoilers.length) {
-          const html = JSON.parse(response).html;
+        if ((h.contains("albumPasswordModel", response) || h.contains("This folder requires a password", response)) && spoilers?.length) {
+          const html = JSON.parse(response)?.html || "";
           const matches = /value="(\d+)"\sid="folderId"|value="(\d+)"\sname="folderId"/is.exec(html);
-          const folderId = matches.length ? matches[1] : null;
+          const folderId = matches?.[1] || matches?.[2] || null;
           if (!folderId) return null;
           requiredPassword = true;
           for (const password of spoilers) {
@@ -4202,6 +4202,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
             }
           }
         }
+        if (requiredPassword && !unlocked) return null;
         if (requiredPassword && unlocked) response = await getFileInfo();
         return h.re.matchAll(/(?<=openUrl\(').*?(?=')/gi, response)[0]?.replace(/\\/gi, "/");
       }
@@ -4210,8 +4211,10 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
       [/cyberfile.(su|me)\/folder\//],
       async (url, http, spoilers) => {
         const { source, dom } = await http.get(url);
-        const script = [...dom.querySelectorAll("script")].map((s) => s.innerText).find((s) => h.contains('data-toggle="tab"', s));
-        const nodeId = h.re.matchAll(/(?<='folder',\s').*?(?=')/gis, script)[0];
+        const script = [...(dom?.querySelectorAll("script") || [])].map((s) => s.innerText).find((s) => h.contains('data-toggle="tab"', s));
+        if (!script) return null;
+        const nodeId = h.re.matchAll(/(?<='folder',\s').*?(?=')/gis, script)?.[0];
+        if (!nodeId) return null;
         const loadFiles = async () => {
           const { source } = await http.post("https://cyberfile.me/account/ajax/load_files", `pageType=folder&nodeId=${nodeId}`, {}, { "Content-Type": "application/x-www-form-urlencoded" });
           return source;
@@ -4281,7 +4284,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
           });
           url = finalUrl || url;
         }
-        url = url.replace("cyberdrop.me/f", "https://cyberdrop.me/api/f").replace("cyberdrop.me/e", "https://cyberdrop.me/api/f");
+        url = url.replace(/^(?:https?:\/\/)?cyberdrop\.me\/(f|e)\//i, "https://cyberdrop.me/api/f/");
         try {
           const response = await h.http.gm_promise({ method: "GET", url: url });
           const webData = JSON.parse(response.responseText);
@@ -4316,7 +4319,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
         const { dom } = await http.get(url);
         let playerIFrameUrl = dom.querySelector("#iplayer")?.getAttribute("src");
         if (!playerIFrameUrl) return null;
-        playerIFrameUrl = playerIFrameUrl.replace("/player/", "https://noodlemagazine.com/playlist/");
+        playerIFrameUrl = playerIFrameUrl.replace(/^(?:https?:\/\/noodlemagazine\.com)?\/player\//i, "https://noodlemagazine.com/playlist/");
         const { source } = await http.get(playerIFrameUrl);
         const props = JSON.parse(source || "[]");
         if (props.sources && props.sources.length) return props.sources[0].file;
@@ -4386,17 +4389,20 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
       [/m\.box\.com\//],
       async (url, http) => {
         const { source, dom } = await http.get(url);
-        const files = [...dom.querySelectorAll(".files-item-anchor")].map((el) => `https://m.box.com${el.getAttribute("href")}`);
+        const files = [...(dom?.querySelectorAll(".files-item-anchor") || [])].map((el) => {
+          const href = el.getAttribute("href") || "";
+          return href.startsWith("http") ? href : `https://m.box.com${href}`;
+        });
         const resolved = [];
         for (const fileUrl of files) {
           const { source: fileSource, dom: fileDom } = await http.get(fileUrl);
           if (h.contains("image-preview", fileSource)) {
-            resolved.push(fileDom.querySelector(".image-preview").getAttribute("src"));
+            resolved.push(fileDom.querySelector(".image-preview")?.getAttribute("src"));
           } else {
-            resolved.push(fileDom.querySelector(".mtl > a").getAttribute("href"));
+            resolved.push(fileDom.querySelector(".mtl > a")?.getAttribute("href"));
           }
         }
-        return { source, dom, folderName: dom.querySelector(".folder-nav-title")?.innerText?.trim(), resolved: resolved.map((u) => `https://m.box.com${u}`) };
+        return { source, dom, folderName: dom?.querySelector(".folder-nav-title")?.innerText?.trim(), resolved: resolved.filter(Boolean).map((u) => (u.startsWith("http") ? u : `https://m.box.com${u}`)) };
       }
     ],
     [

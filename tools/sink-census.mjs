@@ -97,8 +97,8 @@ export function codeOnly(src) {
 
         if (st === "tpl") {
             if (c === "\\") { i += 2; continue; }          // escaped content
-            if (c === "`") { stack.pop(); i++; continue; } // template closes
-            if (c === "$" && src[i + 1] === "{") { stack.push({ type: "interp", depth: 0 }); i += 2; continue; }
+            if (c === "`") { emit("`"); stack.pop(); i++; continue; } // template closes
+            if (c === "$" && src[i + 1] === "{") { emit(" "); stack.push({ type: "interp", depth: 0 }); i += 2; continue; }
             i++; continue;                                  // content: blanked
         }
 
@@ -123,7 +123,7 @@ export function codeOnly(src) {
             }
             continue;
         }
-        if (c === "`") { stack.push({ type: "tpl" }); i++; continue; }
+        if (c === "`") { emit("`"); stack.push({ type: "tpl" }); i++; continue; }
 
         /* regex literal — heuristically: only where a value may start */
         const prev = out[line].trim().slice(-1) || "";
@@ -146,7 +146,7 @@ export function codeOnly(src) {
             const f = stack[stack.length - 1];
             if (c === "{") { f.depth++; emit(c); i++; continue; }
             if (c === "}") {
-                if (f.depth === 0) { stack.pop(); i++; continue; } // ${…} closes
+                if (f.depth === 0) { emit(" "); stack.pop(); i++; continue; } // ${…} closes
                 f.depth--; emit(c); i++; continue;
             }
         }
@@ -328,7 +328,7 @@ export function runSinkCensus() {
     const registrations = [];   /* per-file per-class sites (report mode) */
     let totalSites = 0;
     let adjudicatedSites = 0;
-    const CURRENT_ROUND = "v1.7.1"; /* G9 ledger hygiene, v1.5.1 */
+    const CURRENT_ROUND = "v1.7.2"; /* G9 ledger hygiene, v1.5.1 */
     const roundLt = (a, b) => {
         const pa = a.replace(/^v/, "").split(".").map(Number);
         const pb = b.replace(/^v/, "").split(".").map(Number);

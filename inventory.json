@@ -504,12 +504,12 @@
   {
    "file": "4ndr0tools - Forums++.user.js",
    "name": "4ndr0tools - Forums++",
-   "version": "1.10.1",
+   "version": "1.10.2",
    "description": "Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.",
    "family": "forums",
-   "sha256": "e9547ff6cba044a8627af2e69a9c1148d2088b56b65ced978e20d8edf548ab04",
-   "lines": 4817,
-   "bytes": 228889,
+   "sha256": "16e7c91196bd233337c3f2142805e518ef5d1d30e748d67787d25b3eebb18147",
+   "lines": 4835,
+   "bytes": 229966,
    "matches": [
     "https://simpcity.su/threads/*",
     "https://simpcity.cr/threads/*"
@@ -848,12 +848,12 @@
   {
    "file": "4ndr0tools - LinkMasterΨ.user.js",
    "name": "4ndr0tools - LinkMasterΨ",
-   "version": "6.3.1",
+   "version": "6.3.2",
    "description": "Accurately decodes, previews, exports, validates and scrapes all links. (Dual MPV Support + Ψ IG Harvester + sexyforums premium-link unwrap + GitHub raw-URL harvest + Ψ2 forum deep-scrape engine)",
    "family": "media & links",
-   "sha256": "c0e437f3828953c4d595b8184626598e73f167a994a362785aefc83613898ebd",
-   "lines": 5030,
-   "bytes": 257416,
+   "sha256": "fe9179ec2672cb055d64e9d33932024ac950e3d32b81d78610be342b3e326bb4",
+   "lines": 5036,
+   "bytes": 258079,
    "matches": [
     "*://*/*",
     "*://*.instagram.com/*"
@@ -1084,12 +1084,12 @@
   {
    "file": "4ndr0tools - Pixeldrain++.user.js",
    "name": "4ndr0tools - Pixeldrain++",
-   "version": "1.2.0",
+   "version": "1.2.1",
    "description": "Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.",
    "family": "media & links",
-   "sha256": "d0466d276902caf2651bd6f9e5bc54ee1d33ec1c41487709fb72953226f29209",
-   "lines": 3713,
-   "bytes": 204856,
+   "sha256": "809ccd4e39fdc468cbecc531ed4a2f7527d15e98c96c3aac66eef7ad7aaa2797",
+   "lines": 3716,
+   "bytes": 204999,
    "matches": [
     "https://pixeldrain.com/*",
     "https://pixeldrain.net/*",
@@ -1592,5 +1592,5 @@
    ]
   }
  ],
- "digest": "11cfa2f53939695af22abe7a217a6642c741a519f99b24ea073f12db27ecbd10"
+ "digest": "a4304567f2a4e0740ad60b0eaffa5c2934679ef376c7c767ae177f98cd399c68"
 }

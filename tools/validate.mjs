@@ -495,12 +495,9 @@ async function gateD() {
     } else passes.push(`[D] Images++ configurable hotkey verified`);
 
     const hw = read("HostWarp");
-    if (!hw.includes("imagehosts:imagetwist.com") || !hw.includes("AbsorbedPLR")) {
-        /* AbsorbedPLR is LinkMaster; HostWarp needs its own markers */
-    }
-    if (!hw.includes("imagetwist.com") || !hw.includes("styleid")) {
-        failures.push(`[D] HostWarp: image-host/planetsuzy modules not present`);
-    } else passes.push(`[D] HostWarp modules verified`);
+    if (!hw.includes("imagetwist.com") || !hw.includes("mega.nz/embed/") || !hw.includes("styleid") || !hw.includes("tg4-web-btn") || !hw.includes("searxng:pattern") || !hw.includes("forceImmediateAnswer")) {
+        failures.push(`[D] HostWarp: 6 absorbed host-tool modules not complete`);
+    } else passes.push(`[D] HostWarp 6 absorbed modules verified`);
 
     const pc = read("PageCraft");
     if (!pc.includes("_cache_bust") || !pc.includes("RELOAD_BROKEN_IMAGES")) {
@@ -839,6 +836,23 @@ async function gateD() {
     if (!fpp.includes("function setProcessing")) {
         failures.push(`[D] Forums++: setProcessing restoration not present`);
     } else passes.push(`[D] Forums++ setProcessing restoration verified`);
+
+    const pdDist = read("Pixeldrain++");
+    if (
+        !pdDist.includes("const list = el('div', null, jobs.map(j =>") ||
+        !pdDist.includes("const runNavRefresh = debounce(() => {") ||
+        !pdDist.includes("GM_registerMenuCommand('★ Premium: active', openSettingsPanel);") ||
+        !fpp.includes("if (props?.status !== 'ok' || !props?.data)") ||
+        !fpp.includes("if (requiredPassword && !unlocked)") ||
+        !fpp.includes("clearInterval(requestProgress.intervalId);") ||
+        !lm2.includes("const spoilerCandidates =") ||
+        !lm2.includes("const folderId = matches?.[1] || matches?.[2] || null;") ||
+        !lm2.includes("hasRedirectLink(n)")
+    ) {
+        failures.push(`[D] v1.7.2 stepwise gap mitigations: incomplete in Pixeldrain++ / Forums++ / LinkMasterΨ`);
+    } else {
+        passes.push(`[D] v1.7.2 stepwise gap mitigations verified (Pixeldrain++ DOM-node jobs modal + debounced nav; Forums++ gofile/cyberfile/cyberdrop/GM_download/interval fixes; LinkMasterΨ jpg6/ibb/cyberfile/cyberdrop/m.box/AbsorbedPLR fixes)`);
+    }
 
     const yrvrDist = read("Youtube Removed Video Revealer");
     if (/\b(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*\1\s*;/.test(stripComments(lm2)) ||
@@ -1266,7 +1280,7 @@ async function gateD() {
     if (famSmoke.problems.length) {
         for (const p of famSmoke.problems) failures.push(`[D] family-fixture smoke: ${p}`);
     } else {
-        passes.push(`[D] per-family contract fixture battery verified (${famSmoke.passed}/${famSmoke.total} assertions: Zai Exporter 3-strategy ladder + NetHook v6 family fixtures + red control)`);
+        passes.push(`[D] per-family contract fixture battery verified (${famSmoke.passed}/${famSmoke.total} assertions: Zai Exporter 3-strategy ladder + NetHook v6 family fixtures + v1.7.1/v1.7.2 gap-mitigation fixtures + red control)`);
     }
 
     const flowBrowser = await runFlowChipBrowserBattery();
@@ -1283,7 +1297,7 @@ gateC();
 await gateD();
 
 console.log("╔══════════════════════════════════════════════════════════════╗");
-console.log("║  GUP v6.0.0 SUITE VERIFICATION — " + new Date().toISOString().slice(0, 19) + "        ║");
+console.log("║  GUP v7.0.1 SUITE VERIFICATION — " + new Date().toISOString().slice(0, 19) + "        ║");
 console.log("╚══════════════════════════════════════════════════════════════╝");
 for (const p of passes) console.log("  ✓ " + p);
 if (failures.length > 0) {

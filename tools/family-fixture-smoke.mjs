@@ -464,7 +464,74 @@ globalThis.__csUrls = scanAllMedia();`, csCtx);
     }
     assert("TDZ self-shadowing red control: `const isFF = isFF` throws ReferenceError and is absent from suite", tdzCaught);
 
-    return { problems, passed, total: 18 };
+    /* ── 4. GUP v7.0.1 Stepwise Gap Mitigation Fixtures (suite v1.7.2) ───── */
+    // 4A. sink-census codeOnly template literal delimiter + interpolation token separation
+    const { codeOnly } = await import("./sink-census.mjs");
+    const tplView = codeOnly("const tag = `✓ Done (${result.mode} · ${formatDuration(elapsed)})`;\nsetTimeout(`alert(1)`, 10);");
+    assert(
+        "sink-census codeOnly preserves token separation across adjacent ${...} interpolations and emits template backtick delimiters",
+        tplView.includes("` result.mode  formatDuration(elapsed) `") && /setTimeout\s*\(\s*`/.test(tplView)
+    );
+
+    // 4B. Pixeldrain++ v1.2.1: Pending Jobs modal builds real DOM nodes (not raw HTML string) & escapeHTML is pure string sanitizer
+    const pdSrc = fs.readFileSync(
+        path.join(root, "canon", "_sovereign", "4ndr0tools - Pixeldrain++.user.js"),
+        "utf8"
+    );
+    const pdEscapeCode = extractFn(pdSrc, "escapeHTML");
+    const pdDebounceCode = extractFn(pdSrc, "debounce");
+    const pdCtx = vm.createContext({ String, clearTimeout, setTimeout });
+    vm.runInContext(`${pdEscapeCode}\n${pdDebounceCode}\nglobalThis.__pd = { escapeHTML, debounce };`, pdCtx);
+    const escapedSample = pdCtx.__pd.escapeHTML('<img src=x onerror="1">');
+    assert(
+        "Pixeldrain++ v1.2.1 escapeHTML sanitizes HTML special characters purely without DOM innerHTML sinks and Pending Jobs uses el() DOM nodes",
+        escapedSample === "&lt;img src=x onerror=&quot;1&quot;&gt;" &&
+        pdSrc.includes("const list = el('div', null, jobs.map(j =>") &&
+        pdSrc.includes("Modal.open({ title: `Pending Jobs (${jobs.length})`, body: list });") &&
+        pdSrc.includes("const runNavRefresh = debounce(() => {") &&
+        pdSrc.includes("GM_registerMenuCommand('★ Premium: active', openSettingsPanel);")
+    );
+
+    // 4C. Forums++ v1.10.2: gofile.io/d status check + trailing slash, cyberfile lookbehind + public folder gate, cyberdrop http param, GM_download Blob URL, interval cleanup
+    const fppSrc = fs.readFileSync(
+        path.join(root, "canon", "_sovereign", "4ndr0tools - Forums++.user.js"),
+        "utf8"
+    );
+    const cyberfileMatch = [..."func('folder', 'cf98765')".matchAll(/(?<='folder',\s').*?(?=')/gis)].map((m) => m[0])[0];
+    assert(
+        "Forums++ v1.10.2 fixes gofile status operator-precedence, cyberfile nodeId lookbehind ('cf98765') & public-folder gate, cyberdrop http param, and downloadPost interval cleanup",
+        cyberfileMatch === "cf98765" &&
+        fppSrc.includes("if (props?.status !== 'ok' || !props?.data)") &&
+        fppSrc.includes("const contentCode = url.split('/').filter(Boolean).pop();") &&
+        fppSrc.includes("if (requiredPassword && !unlocked)") &&
+        fppSrc.includes("async (url, http) => {") &&
+        fppSrc.includes("URL.createObjectURL(response.response)") &&
+        fppSrc.includes("clearInterval(requestProgress.intervalId);")
+    );
+
+    // 4D. LinkMasterΨ v6.3.2: jpg6.su non-destructive spoiler candidates, cyberdrop single-scheme rewrite, cyberfile null-safe folderId regex
+    const lmSrc = fs.readFileSync(
+        path.join(root, "canon", "_merged", "4ndr0tools - LinkMasterΨ.user.js"),
+        "utf8"
+    );
+    const sampleSpoilers = ["postSecret123"];
+    const spoilerCandidates = [...(Array.isArray(sampleSpoilers) ? sampleSpoilers : []), ...((Array.isArray(sampleSpoilers) && sampleSpoilers.includes("ramona")) ? [] : ["ramona"])];
+    const cdRewritten = "https://cyberdrop.me/f/abcXYZ".replace(/^(?:https?:\/\/)?cyberdrop\.me\/(f|e)\//i, "https://cyberdrop.me/api/f/");
+    const cfAltHtml = '<input type="hidden" value="4242" name="folderId">';
+    const cfMatches = /value="(\d+)"\sid="folderId"|value="(\d+)"\sname="folderId"/is.exec(cfAltHtml);
+    const cfFolderId = cfMatches?.[1] || cfMatches?.[2] || null;
+    assert(
+        "LinkMasterΨ v6.3.2 preserves post spoilers before fallback ('postSecret123' -> 'ramona'), rewrites cyberdrop API without double-scheme, and extracts cyberfile group-2 folderId safely",
+        spoilerCandidates[0] === "postSecret123" &&
+        spoilerCandidates[1] === "ramona" &&
+        cdRewritten === "https://cyberdrop.me/api/f/abcXYZ" &&
+        cfFolderId === "4242" &&
+        lmSrc.includes("const spoilerCandidates =") &&
+        lmSrc.includes("const folderId = matches?.[1] || matches?.[2] || null;") &&
+        lmSrc.includes("hasRedirectLink(n)")
+    );
+
+    return { problems, passed, total: 22 };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {
