@@ -812,12 +812,12 @@
   {
    "file": "4ndr0tools - Instagram++.user.js",
    "name": "4ndr0tools - Instagram++",
-   "version": "13.2.0",
+   "version": "13.2.1",
    "description": "Tab-Bar + Dock Integration. Hotkey trigger (Alt+I). Ad-Blocking. Deep-Stack Recovery. Resilient cursor-based pagination. Stories support. Image/video download engine.",
    "family": "sovereign platforms",
-   "sha256": "2ae2a72f4a68624dbb889f2fe405679b7e94c0227daf76de805ef760ca570093",
-   "lines": 2447,
-   "bytes": 126403,
+   "sha256": "032248aaed562d675ce4f8ecab45f4e793a826b557e8c544b660c15ef9cae822",
+   "lines": 2523,
+   "bytes": 131204,
    "matches": [
     "*://*.instagram.com/*"
    ],
@@ -1149,12 +1149,12 @@
   {
    "file": "4ndr0tools - Prompt Master.user.js",
    "name": "4ndr0tools - Prompt Master",
-   "version": "28.7.4",
+   "version": "28.7.5",
    "description": "Google Flow prompt manager toolkit (works on any AI, just add url) - persisted unit ledger meters every generation click, organization engine: collections, saved views, favorites, ratings, archive, group-by, and insights for large prompt libraries, dedupe, media slideshow, ai prompt enhancer, auto gist syncing, hotkeys, much more.",
    "family": "sovereign platforms",
-   "sha256": "fd330cfacdf8d101168ed6c43f003feefe56e6168b4a445b85e5f27b0f7b4c2b",
-   "lines": 23157,
-   "bytes": 1127799,
+   "sha256": "df19df03ab3e00bad3e78240cd3679c185c1b3c33326655e596dcf3bae5025a5",
+   "lines": 23189,
+   "bytes": 1130206,
    "matches": [
     "*://geminigen.ai/*",
     "*://gist.github.com/*",
@@ -1592,5 +1592,5 @@
    ]
   }
  ],
- "digest": "a4304567f2a4e0740ad60b0eaffa5c2934679ef376c7c767ae177f98cd399c68"
+ "digest": "3e6d2813a905e49453a163001a35d2a29a7776b180dd2340e8dc66ae3c37b25f"
 }

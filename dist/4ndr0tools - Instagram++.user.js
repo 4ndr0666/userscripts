@@ -2,7 +2,7 @@
 // @name         4ndr0tools - Instagram++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666
-// @version      13.2.0
+// @version      13.2.1
 // @description  Tab-Bar + Dock Integration. Hotkey trigger (Alt+I). Ad-Blocking. Deep-Stack Recovery. Resilient cursor-based pagination. Stories support. Image/video download engine.
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Instagram++.user.js
@@ -1133,6 +1133,27 @@ const __4NDR0_NET_API__ = (function () {
     return api;
 })();
 
+// 13.2.1 (suite v1.7.3, WO-02): the "V-STASIS overlay" field-report fix —
+// virtualization can no longer park media the user is looking at. Root
+// cause: renderBatch's cache-limit head-prune was POSITIONAL — the moment
+// the wall held more than 80 nodes it replaced the OLDEST nodes with
+// placeholder blocks regardless of where they sat, and on a profile the
+// viewport rests at the wall's top, i.e. exactly on the pruned head; with
+// NativeScrollDriver feeding batches in the background the visible head
+// re-pruned faster than scroll-driven hydration could restore it, so the
+// full-viewport wall read as a semi-transparent overlay filled with the
+// placeholder's centered "V-STASIS" label and "would not go away". Fixes:
+// (1) the head-prune is now VIEWPORT-AWARE — NeuralDOM.isOffscreen gates
+// every prune (batch-time and scroll-time), so on-screen media is never
+// replaced while it is visible (a margin of one viewport keeps
+// native-scroll momentum smooth); (2) a hydrate pass runs after every
+// batch (rAF), so a node that was parked while scrolled away restores the
+// moment a new batch lands, not only on the next manual scroll; (3) the
+// cache-limit loop skips nodes that fail the offscreen gate instead of
+// parking them blind. The placeholder itself (V-STASIS) is unchanged — it
+// still marks genuinely off-screen parked nodes — and the SAFE_ZONE tail,
+// prune/hydrate distances, and the dedicated pagination sentinel are all
+// preserved verbatim.
 // 13.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
 
 (function () {
@@ -1855,12 +1876,33 @@ const __4NDR0_NET_API__ = (function () {
     // =========================================================
     // [NEURAL VIRTUALIZATION]
     // Prune off-screen nodes to HTML placeholders; re-hydrate on scroll.
+    // v13.2.1 (WO-02): every prune is gated by isOffscreen — a node that
+    // intersects the viewport (plus one-viewport margin) is NEVER replaced
+    // by a placeholder, no matter how far past the cache limit the wall
+    // has grown. The previous positional head-prune parked the visible
+    // head on profiles (the wall opens at the top, the background driver
+    // keeps growing the list) and the V-STASIS placeholder covered the
+    // screen until a manual scroll happened to hydrate it back.
     // =========================================================
     const NeuralDOM = {
+        // True only when the node's rect sits entirely outside the
+        // viewport plus a one-viewport margin (the same smooth-scroll
+        // buffer the PRUNE_PX distance provided, now in geometry rather
+        // than node order). Detached/hidden nodes count as off-screen so
+        // a batch-time prune can still park them once they scroll away.
+        isOffscreen(item) {
+            if (!item || !item.node || !item.node.isConnected) return true;
+            const rect = item.node.getBoundingClientRect();
+            if (!rect.width && !rect.height) return true;
+            const margin = window.innerHeight;
+            return rect.bottom < -margin || rect.top > window.innerHeight + margin;
+        },
+
         prune(item, container) {
             const idx = STATE.domNodes.indexOf(item);
             if (idx >= STATE.domNodes.length - CFG.SAFE_ZONE) return;
             if (item.isPruned) return;
+            if (!this.isOffscreen(item)) return; // v13.2.1: never park visible media
             const rect = item.node.getBoundingClientRect();
             item.height = rect.height || item.height || 800;
             item.node.querySelectorAll('video').forEach(v => { v.pause(); v.src = ''; });
@@ -1897,6 +1939,17 @@ const __4NDR0_NET_API__ = (function () {
                     });
                 });
             }, { passive: true });
+        },
+
+        // v13.2.1 (WO-02): restore parked nodes near the CURRENT viewport
+        // without waiting for a scroll event. Runs after every rendered
+        // batch (renderBatch) so a node parked while the user was scrolled
+        // away comes back the moment new content arrives — the batch
+        // arrival itself must never leave visible geometry as placeholders.
+        hydrateNear() {
+            STATE.domNodes.forEach(item => {
+                if (item.isPruned && !this.isOffscreen(item)) this.hydrate(item);
+            });
         }
     };
 
@@ -1929,13 +1982,36 @@ const __4NDR0_NET_API__ = (function () {
 
         wall.appendChild(frag);
 
-        // Prune head if over cache limit
+        // Prune head if over cache limit — v13.2.1 (WO-02): the loop is
+        // now VIEWPORT-AWARE. The old positional slice pruned the oldest
+        // nodes unconditionally; on a profile the wall opens at the top,
+        // so those nodes were exactly what the user was looking at, and
+        // each background batch re-pruned them — the wall read as a
+        // full-screen semi-transparent "V-STASIS" overlay that hydration
+        // (scroll-driven only) could not win back. Now: walk from the
+        // head, park only nodes NeuralDOM.isOffscreen confirms are off
+        // screen, stop once the excess is parked; visible media is never
+        // replaced. Memory stays bounded on the same 80-node budget
+        // (on-screen nodes are a handful; the excess still parks), and
+        // the SAFE_ZONE tail guard inside prune() is unchanged.
         if (STATE.domNodes.length > CFG.CACHE_LIMIT) {
-            const container = document.querySelector('#igBigContainer');
-            STATE.domNodes
-                .slice(0, STATE.domNodes.length - CFG.CACHE_LIMIT)
-                .forEach(item => NeuralDOM.prune(item, container));
+            const excess = STATE.domNodes.length - CFG.CACHE_LIMIT;
+            let parked = 0;
+            for (const item of STATE.domNodes) {
+                if (parked >= excess) break;
+                if (item.isPruned) { parked++; continue; }
+                // Prune() re-checks the SAFE_ZONE tail; the offscreen gate
+                // inside prune() skips (and does not count) visible nodes.
+                const before = item.isPruned;
+                NeuralDOM.prune(item);
+                if (!before && item.isPruned) parked++;
+            }
         }
+
+        // v13.2.1 (WO-02): batch arrival is a hydration trigger too — any
+        // node parked earlier that now intersects the viewport comes back
+        // immediately (rAF), so visible geometry is always real media.
+        window.requestAnimationFrame(() => NeuralDOM.hydrateNear());
 
         // Pagination sentinel: a dedicated, non-content node — never registered
         // in STATE.domNodes — so NeuralDOM virtualization can never detach or

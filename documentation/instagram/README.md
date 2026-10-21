@@ -1,4 +1,4 @@
-# Instagram++ · v13.2.0
+# Instagram++ · v13.2.1
 
 > Instagram desktop sovereignty — `sovereign platforms` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ Instagram++ rebuilds the Instagram web surface for power use: tab-bar + dock int
 
 | Dimension | Value |
 |---|---|
-| Version | `13.2.0` |
+| Version | `13.2.1` |
 | Matches | `*://*.instagram.com/*` |
 | Run-at | `document-start` |
-| Size | 123.4 KB · 2447 lines |
+| Size | 128.1 KB · 2523 lines |
 | Install | [dist/4ndr0tools - Instagram++.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Instagram%2B%2B.user.js) |
 
 ## Feature Inventory

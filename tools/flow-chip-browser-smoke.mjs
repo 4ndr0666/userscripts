@@ -339,13 +339,33 @@ export async function runFlowChipBrowserBattery() {
   }
 
   if (!CHROMIUM_BIN) {
-    // Structural/contract fallback on hosts without a local Chromium binary
-    assert("1. Prompt Master v28.7.3 version & FLOW_CREDIT_CSS flexbox contract",
-      distSource.includes("@version             28.7.3") &&
-      distSource.includes("box-sizing:border-box;overflow:hidden") &&
-      distSource.includes("flex:0 1 auto;min-width:44px;max-width:240px") &&
-      distSource.includes("flex:0 0 auto;font-variant-numeric:tabular-nums") &&
-      distSource.includes("min-width:20px;height:4px;border-radius:2px;background:rgba(0,229,255,.14);overflow:hidden;flex:0 1 40px"));
+    // Structural/contract fallback on hosts without a local Chromium binary.
+    // v28.7.5 (suite v1.7.3, WO-02): this fallback used to return
+    // `clean: true, failed: []` UNCONDITIONALLY — a lying gate. Its own
+    // assertion 1 was RED at the time of discovery (it pinned the literal
+    // dist version 28.7.3 while the dist had already moved to 28.7.4 in a
+    // later round), yet the battery reported green and the suite check
+    // printed "11/11 verified". Two repairs, per the battery law
+    // (expectations derive from the artifact, never hardcode; a battery
+    // that cannot fail is not a battery):
+    // (1) the version pin is DERIVED from the dist's own @version header
+    //     and cross-checked for canon/dist parity — it can never go stale
+    //     again;
+    // (2) the return object reports the REAL pass/fail counts and clean
+    //     flag, byte-identical contract to the live-Chromium path below,
+    //     so a red assertion fails the suite check fail-closed.
+    const distVersion =
+      (distSource.match(/^\/\/ @version\s+(\S+)/m) || [])[1] || null;
+    const canonVersion =
+      (canonSource.match(/^\/\/ @version\s+(\S+)/m) || [])[1] || null;
+    assert("1. Prompt Master version header present & canon/dist parity & FLOW_CREDIT_CSS flexbox contract",
+      !!distVersion &&
+        distVersion === canonVersion &&
+        distSource.includes("box-sizing:border-box;overflow:hidden") &&
+        distSource.includes("flex:0 1 auto;min-width:44px;max-width:240px") &&
+        distSource.includes("flex:0 0 auto;font-variant-numeric:tabular-nums") &&
+        distSource.includes("min-width:20px;height:4px;border-radius:2px;background:rgba(0,229,255,.14);overflow:hidden;flex:0 1 40px"),
+      `dist=${distVersion}, canon=${canonVersion}`);
     assert("2. ResizeObserver anchor & dock synchronization present",
       distSource.includes("flowCreditResizeObserver = new ResizeObserver(scheduleFlowCreditPosition)") &&
       distSource.includes("flowCreditResizeObserver.observe(flowCreditResizeEl)"));
@@ -355,6 +375,11 @@ export async function runFlowChipBrowserBattery() {
     assert("4. model-chip left/right/above non-occlusion guard present",
       distSource.includes("else if (r.right + 10 + w <= window.innerWidth - 8)") &&
       distSource.includes("y = r.top - h - 6 >= 8 ? r.top - h - 6 : r.bottom + 6"));
+    assert("4b. editor/composer anchors ride ABOVE the text field (WO-02: chip never mounts inside the input rect)",
+      distSource.includes("y = r.top - h - 6 >= 8 ? r.top - h - 6 : r.bottom + 6;") &&
+      !distSource.includes("y = r.top + 7;") &&
+      !/r\.height >= 160/.test(distSource),
+      "above/below ladder shared with model-chip branch; inside-editor placements removed");
     assert("5. flowCreditTurnsLeft reconnects learned capTurns ceiling & fallback",
       distSource.includes("src: \"learned cap\"") &&
       distSource.includes("left = Math.min(left, Math.max(0, e.capTurns - (e.turnsDay || 0)))"));
@@ -372,13 +397,19 @@ export async function runFlowChipBrowserBattery() {
       distSource.includes("GM_registerMenuCommand(\"📋 Flow Credits: Export Ledger\", () =>\n        exportFlowCreditLedger()"));
     assert("11. red-control: synthetic left-edge model-chip collision is detected and rejected",
       boxesOverlap({ left: 8, top: 720, right: 240, bottom: 742 }, { left: 20, top: 716, right: 180, bottom: 748 }) === true);
+    // v28.7.5 (WO-02): the fallback previously returned
+    // { passed: checks.length, total: checks.length, clean: true, failed: [] }
+    // — a hollow green that ignored its own checks. The contract now
+    // matches the live-Chromium path exactly (see the end of this
+    // function): clean === (failed.length === 0), fail-closed.
+    const failedStructural = checks.filter((c) => !c.pass);
     return {
-      passed: checks.length,
+      passed: checks.length - failedStructural.length,
       total: checks.length,
-      clean: true,
+      clean: failedStructural.length === 0,
       mode: "structural-fallback",
       checks,
-      failed: [],
+      failed: failedStructural,
     };
   }
   try {
@@ -645,7 +676,9 @@ export async function runFlowChipBrowserBattery() {
       return {
         maxWidthStyle: chip.style.maxWidth,
         chipTop: Math.round(cr.top),
-        expectedTallTop: Math.round(er.top + 7),
+        chipBottom: Math.round(cr.bottom),
+        editorTop: Math.round(er.top),
+        editorBottom: Math.round(er.bottom),
         chipWidth: Math.round(cr.width),
         modelClientW: modelEl.clientWidth,
         modelScrollW: modelEl.scrollWidth,
@@ -654,10 +687,15 @@ export async function runFlowChipBrowserBattery() {
       };
     })()`);
 
+    // v28.7.5 (WO-02): the chip rides ABOVE the editor's top edge (its
+    // bottom sits 6px clear of the editor top) — it may never intersect
+    // the editor rect again (the "chip obstructs the input" field
+    // report). ResizeObserver + rAF must still reposition within 120ms.
     assert(
-      "6. (click, wait, get) ResizeObserver tall-editor reposition (top = er.top + 7 within 120ms)",
-      Math.abs(afterResize.chipTop - afterResize.expectedTallTop) <= 1,
-      `chipTop=${afterResize.chipTop}, expected=${afterResize.expectedTallTop}`
+      "6. (click, wait, get) ResizeObserver reposition: chip floats ABOVE the editor, zero overlap, within 120ms",
+      Math.abs(afterResize.chipBottom - (afterResize.editorTop - 6)) <= 2 &&
+        afterResize.chipBottom <= afterResize.editorTop,
+      `chipBottom=${afterResize.chipBottom}, editorTop=${afterResize.editorTop}`
     );
 
     assert(
