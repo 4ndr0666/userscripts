@@ -1026,12 +1026,12 @@
   {
    "file": "4ndr0tools - ModelSearch.user.js",
    "name": "4ndr0tools - ModelSearch",
-   "version": "4.0.1",
+   "version": "4.0.2",
    "description": "Covert SimpCity search UI directly from any website. (Electric-Glass + Alt+S Hotkey Only)",
    "family": "forums",
-   "sha256": "8fc0a5b51b3c2ec60fad83eec238d69aa98ce1361f60785898d7ccc0f75b98ba",
-   "lines": 488,
-   "bytes": 22471,
+   "sha256": "56d3a9d45f8cf516511b90e9a96ef9f2ab385ea191fd3287d064e87aa419e4b6",
+   "lines": 517,
+   "bytes": 24199,
    "matches": [
     "*://*/*"
    ],
@@ -1039,7 +1039,9 @@
    "grants": [
     "GM_openInTab",
     "GM_addStyle",
-    "GM_getValue"
+    "GM_getValue",
+    "GM_setValue",
+    "GM_registerMenuCommand"
    ],
    "requires": [],
    "connects": [],
@@ -1592,5 +1594,5 @@
    ]
   }
  ],
- "digest": "3e6d2813a905e49453a163001a35d2a29a7776b180dd2340e8dc66ae3c37b25f"
+ "digest": "4adc6b925a4e3368587d9f45919c6a0feafa09ed3ab16b32c8fbdfcee756a4a7"
 }

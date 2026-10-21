@@ -1,6 +1,6 @@
 {
   "name": "4ndr0666tools-suite",
-  "version": "1.7.3",
+  "version": "1.7.4",
   "description": "☠ 4ndr0666tools ☠ — consolidated userscript suite for digital sovereignty. Kernel-powered, GUP-governed, 3lectric-Glass native, hotkey-census certified, B.1-census governed (polling/global/cache), production-score gated.",
   "author": "4ndr0666",
   "license": "MIT",
@@ -13,7 +13,7 @@
     "check": "node tools/build.mjs && node tools/inventory.mjs && node tools/qr-verify.mjs && node tools/style-audit.mjs && node tools/validate.mjs",
     "qr": "node tools/qr-verify.mjs",
     "docs": "node tools/gen-docs.mjs",
-    "smoke": "node tools/family-fixture-smoke.mjs && node tools/watermark-batch-smoke.mjs && node tools/kernel-boundary-smoke.mjs && node tools/flow-chip-browser-smoke.mjs"
+    "smoke": "node tools/family-fixture-smoke.mjs && node tools/watermark-batch-smoke.mjs && node tools/kernel-boundary-smoke.mjs && node tools/flow-chip-browser-smoke.mjs && node tools/ig-wall-browser-smoke.mjs"
   },
   "devDependencies": {}
 }
