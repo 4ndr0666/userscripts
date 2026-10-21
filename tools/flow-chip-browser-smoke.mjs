@@ -25,13 +25,35 @@ const ROOT = path.resolve(__dirname, "..");
 const DIST_PM = path.join(ROOT, "dist", "4ndr0tools - Prompt Master.user.js");
 const CANON_PM = path.join(ROOT, "canon", "_sovereign", "4ndr0tools - Prompt Master.user.js");
 
-const CHROMIUM_BIN = fs.existsSync("/usr/lib/chromium/chromium")
-  ? "/usr/lib/chromium/chromium"
-  : fs.existsSync("/usr/bin/chromium")
-    ? "/usr/bin/chromium"
-    : fs.existsSync("/usr/bin/google-chrome")
-      ? "/usr/bin/google-chrome"
-      : null;
+/* v1.7.4 (WO-02 round 2): the probe used to be a fixed 3-path list, which
+ * meant hosts that DO have a Chromium — via the Playwright browser cache —
+ * silently ran the structural fallback instead of the live PoP. The probe
+ * now also derives the newest Playwright-managed Chromium (chrome-linux64
+ * and legacy chrome-linux layouts). Same binaries, strictly more live proof. */
+function probeChromium() {
+  const fixed = [
+    "/usr/lib/chromium/chromium",
+    "/usr/bin/chromium",
+    "/usr/bin/google-chrome",
+  ];
+  for (const p of fixed) if (fs.existsSync(p)) return p;
+  const cache = process.env.PLAYWRIGHT_BROWSERS_PATH ||
+    path.join(process.env.HOME || os.homedir(), ".cache", "ms-playwright");
+  try {
+    const dirs = fs.readdirSync(cache)
+      .filter((d) => /^chromium-\d+$/.test(d))
+      .sort((a, b) => Number(b.split("-")[1]) - Number(a.split("-")[1]));
+    for (const d of dirs) {
+      for (const sub of ["chrome-linux64", "chrome-linux"]) {
+        const bin = path.join(cache, d, sub, "chrome");
+        if (fs.existsSync(bin)) return bin;
+      }
+    }
+  } catch (_) { /* no cache dir — fall through */ }
+  return null;
+}
+
+const CHROMIUM_BIN = probeChromium();
 
 function buildFlowFixtureHtml(scriptSource) {
   return `<!DOCTYPE html>
@@ -466,9 +488,10 @@ export async function runFlowChipBrowserBattery() {
     );
 
     const wsBrowserUrl = await new Promise((resolve, reject) => {
+      // v1.7.4: 10s -> 30s (cold-start jitter under back-to-back battery load).
       const timer = setTimeout(
         () => reject(new Error("Timed out waiting for Chromium DevTools port")),
-        10000
+        30000
       );
       browser.stderr.on("data", (chunk) => {
         const s = chunk.toString();
@@ -486,7 +509,7 @@ export async function runFlowChipBrowserBattery() {
 
     // Wait for page target
     let pageWsUrl = null;
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 120; i++) {
       const targets = await fetchJson(`http://127.0.0.1:${wsBrowserUrl.port}/json/list`);
       const pageTarget = targets.find(
         (t) => t.type === "page" && t.url.includes("flow.google.com")
@@ -495,7 +518,7 @@ export async function runFlowChipBrowserBattery() {
         pageWsUrl = pageTarget.webSocketDebuggerUrl;
         break;
       }
-      await new Promise((r) => setTimeout(r, 100));
+      await new Promise((r) => setTimeout(r, 150));
     }
     if (!pageWsUrl) throw new Error("Could not attach to flow.google.com page target");
 

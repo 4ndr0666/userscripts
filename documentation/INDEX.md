@@ -27,7 +27,7 @@
 | **Login Form Autofiller** | `2.0.3` | ux utilities | kernel-free | [reference](./login-form-autofiller/) |
 | **Maximize_Any_Media** | `2.0.1` | video & players | kernel-free | [reference](./maximize-any-media/) |
 | **Media Player Controller** | `8.1.3` | video & players | kernel-free | [reference](./media-player-controller/) |
-| **ModelSearch** | `4.0.1` | forums | kernel-free | [reference](./modelsearch/) |
+| **ModelSearch** | `4.0.2` | forums | kernel-free | [reference](./modelsearch/) |
 | **PageCraft** | `1.1.3` | ux utilities | build-module (5-kernel) | [reference](./pagecraft/) |
 | **Pixeldrain++** | `1.2.1` | media & links | typeof-guarded + gmFetch fallback | [reference](./pixeldrain/) |
 | **Prompt Master** | `28.7.5` | sovereign platforms | typeof-guarded + gmFetch fallback | [reference](./prompt-master/) |

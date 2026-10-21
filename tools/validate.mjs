@@ -37,6 +37,7 @@ import { runWatermarkBatchSmoke } from "./watermark-batch-smoke.mjs";
 import { runKernelBoundarySmoke } from "./kernel-boundary-smoke.mjs";
 import { runFamilyFixtureSmoke } from "./family-fixture-smoke.mjs";
 import { runFlowChipBrowserBattery } from "./flow-chip-browser-smoke.mjs";
+import { runIgWallBrowserBattery } from "./ig-wall-browser-smoke.mjs";
 import { runProductionScore, SCORE_THRESHOLD } from "./production-score.mjs";
 import { computeInventory, serialize } from "./inventory.mjs";
 
@@ -1288,6 +1289,13 @@ async function gateD() {
         for (const f of flowBrowser.failed) failures.push(`[D] flow-chip browser smoke: ${f.name} (${f.detail})`);
     } else {
         passes.push(`[D] Google Flow token/credit chip browser Proof-of-Possession verified (${flowBrowser.passed}/${flowBrowser.total} click/wait/get assertions + red control)`);
+    }
+
+    const igBrowser = await runIgWallBrowserBattery();
+    if (!igBrowser.clean) {
+        for (const f of igBrowser.failed) failures.push(`[D] ig-wall browser smoke: ${f.name} (${f.detail})`);
+    } else {
+        passes.push(`[D] Instagram++ NeuralDOM V-STASIS browser Proof-of-Possession verified (${igBrowser.passed}/${igBrowser.total} click/wait/get assertions + red control)`);
     }
 }
 

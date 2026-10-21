@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - ModelSearch
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      4.0.1
+// @version      4.0.2
 // @description  Covert SimpCity search UI directly from any website. (Electric-Glass + Alt+S Hotkey Only)
 // @author       4ndr0666
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20ModelSearch.user.js
@@ -11,11 +11,18 @@
 // @grant        GM_openInTab
 // @grant        GM_addStyle
 // @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM_registerMenuCommand
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @run-at       document-start
 // ==/UserScript==
+// 4.0.2 (suite v1.7.4, WO-02 round 2): wired the OPSEC remote-font opt-in —
+//   mst_remote_fonts was read at boot (default OFF) but NO code path anywhere
+//   could ever enable it (no GM_setValue grant, no menu command): the documented
+//   opt-in was unreachable. A Ψ menu toggle now flips the key + reloads.
 // 4.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-// · OPSEC: remote font fetch now opt-in (mst_remote_fonts, default OFF).
+// · OPSEC: remote font fetch is opt-in (mst_remote_fonts, default OFF) —
+//   toggle it from the userscript menu (Ψ ModelSearch — Remote Fonts).
 
 
 /* ═══ SUITE PROMOTION 4.0.0 ═══════════════════════════════════════════
@@ -48,6 +55,12 @@ Changelog:
                     robust against future CSS-class-based show/hide changes.
     [NOTE-1 KEPT]   title.innerHTML SVG: hardcoded static markup, zero XSS surface.
                     Documented as future watch-point in manifest.
+  v4.0.2 — WO-02 round-2 stepwise gap mitigation (suite v1.7.4).
+    [WIRING FIXED]  Remote-font OPSEC opt-in is now reachable: menu command
+                    "Ψ ModelSearch — Remote Fonts: ON/OFF" flips mst_remote_fonts
+                    and reloads. Previously the key was read at boot (default
+                    OFF) with no grant to write it and no UI to change it —
+                    a documented opt-in with no opt-in path.
 ================================================================================
 */
 
@@ -473,6 +486,22 @@ Changelog:
                 this.#inputElement.value = '';
             }
         }
+    }
+
+    // === MENU: OPSEC REMOTE-FONT TOGGLE ===
+    // v4.0.2 (WO-02 round 2): the missing half of the 4.0.1 opt-in. The font
+    // fetch happens in the constructor (document-start), so flipping the key
+    // applies on the next load — the reload IS the honest apply mechanism.
+    // typeof-guards keep the boot sequence alive in hosts that strip grants.
+    if (typeof GM_registerMenuCommand === 'function' && typeof GM_setValue === 'function') {
+        const remoteFontsOn = () => GM_getValue('mst_remote_fonts', false) === true;
+        GM_registerMenuCommand(
+            `Ψ ModelSearch — Remote Fonts: ${remoteFontsOn() ? 'ON' : 'OFF'} (click to toggle)`,
+            () => {
+                GM_setValue('mst_remote_fonts', !remoteFontsOn());
+                location.reload();
+            }
+        );
     }
 
     // === INITIATION SEQUENCE ===
