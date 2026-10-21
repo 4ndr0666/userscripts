@@ -39,13 +39,21 @@ dist/      BUILT INSTALLABLES — install from here
 docs/      consolidation report + migration guide
 documentation/ per-script references (generated: npm run docs) + deep devlogs
            (bunkr · hailuo++ · m3u8++) + INDEX.md master catalog
-tools/     build.mjs · inventory.mjs · validate.mjs · kernel-smoke.mjs · qr-verify.mjs (GUP gates)
-           sink-census.mjs (HTML-string sink + net-tap census, adjudication ledger)
-           canon-xref.mjs · baseline.json · ledger.json (evidence chain)
+tools/     build.mjs · inventory.mjs · validate.mjs · qr-verify.mjs · style-audit.mjs (npm run check)
+           kernel-smoke.mjs (kernel unit smoke) · gen-docs.mjs (npm run docs)
+           censuses — sink-census.mjs (HTML-string sink + net-tap census, adjudication ledger)
+           · transport · connect · domain · hotkey · polling · observer · error · global ·
+           cache · size-budget · canon-xref · production-score.mjs (+ score.json record)
+           smoke batteries (npm run smoke) — family-fixture · watermark-batch ·
+           kernel-boundary · flow-chip-browser (85 runtime assertions, CI-wired since v1.7.4)
+           instruments — tt-smoke.mjs (live Trusted-Types harness) · xref-adjudicate.mjs (flag triage)
+           evidence chain — baseline.json · ledger.json
 ```
 
 `npm run build` → dist. `npm run check` → build + inventory + qr-verify + full validation
-(GUP superset contract, fail-closed). CI runs the same gates on every push.
+(GUP superset contract, fail-closed). `npm run smoke` → the 4 runtime contract batteries.
+CI runs all of these gates on every push, plus a regenerated-reference freshness gate
+(stale committed artifacts fail the build).
 
 ## 🚀 Script Catalog
 

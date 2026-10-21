@@ -26,3 +26,20 @@ jobs:
 
       - name: Kernel smoke tests
         run: node tools/kernel-smoke.mjs
+
+      # v1.7.4 (WO-03 stepwise gap mitigation G-1): the 4 runtime contract
+      # batteries (85 assertions) now run on every push — previously they
+      # only ran when a developer remembered `npm run smoke` locally, which
+      # GUP classifies as "tests not wired into CI" (integration-closure
+      # finding). All four are zero-dependency (node builtins only).
+      - name: Runtime contract smoke batteries
+        run: npm run smoke
+
+      # v1.7.4 (WO-03 stepwise gap mitigation G-3): freshness assertion.
+      # The generators are proven byte-deterministic across environments
+      # (validate's own re-run gates + clean-tree regeneration here), so
+      # any residual diff after regeneration means a committed artifact
+      # (README catalog, inventory.json, documentation/, dist/) is stale —
+      # fail closed instead of letting reference drift ride on main.
+      - name: Regenerated-reference freshness gate
+        run: npm run docs && test -z "$(git status --porcelain)"

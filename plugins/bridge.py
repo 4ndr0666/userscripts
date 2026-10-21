@@ -5,6 +5,9 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 
 PORT = 19999
 ALLOWED_SCHEMES = ('http://', 'https://', 'magnet:', 'rtsp://', 'rtmp://', 'mms://', 'acestream://')
+# v1.7.4 (WO-03 G-4): bound request bodies — the bridge only ever receives
+# one URL; anything larger than 1 MiB is rejected before being read.
+MAX_BODY_BYTES = 1 << 20
 
 
 def is_allowed_target(url: str) -> bool:
@@ -40,7 +43,18 @@ class MPVBridgeHandler(BaseHTTPRequestHandler):
             self._send_cors(200, b"OK")
 
     def do_POST(self):
-        content_length = int(self.headers.get('Content-Length', 0))
+        # v1.7.4 (WO-03 G-4): a malformed/non-numeric Content-Length used to
+        # raise an unhandled ValueError inside the handler (traceback, no
+        # response). Fail closed with a typed 400 instead; oversized bodies
+        # are rejected unread (bounded-operations rule, GUP B.1).
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+        except (TypeError, ValueError):
+            self._send_cors(400, b"BAD_REQUEST")
+            return
+        if content_length < 0 or content_length > MAX_BODY_BYTES:
+            self._send_cors(400, b"BAD_REQUEST")
+            return
         post_data = self.rfile.read(content_length).decode('utf-8', errors='replace')
         params = urllib.parse.parse_qs(post_data)
         target_url = params.get('url', [None])[0]
