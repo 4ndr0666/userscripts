@@ -38,6 +38,7 @@ import { runKernelBoundarySmoke } from "./kernel-boundary-smoke.mjs";
 import { runFamilyFixtureSmoke } from "./family-fixture-smoke.mjs";
 import { runFlowChipBrowserBattery } from "./flow-chip-browser-smoke.mjs";
 import { runIgWallBrowserBattery } from "./ig-wall-browser-smoke.mjs";
+import { runPmGridBrowserBattery } from "./pm-grid-browser-smoke.mjs";
 import { runProductionScore, SCORE_THRESHOLD } from "./production-score.mjs";
 import { computeInventory, serialize } from "./inventory.mjs";
 
@@ -1296,6 +1297,13 @@ async function gateD() {
         for (const f of igBrowser.failed) failures.push(`[D] ig-wall browser smoke: ${f.name} (${f.detail})`);
     } else {
         passes.push(`[D] Instagram++ NeuralDOM V-STASIS browser Proof-of-Possession verified (${igBrowser.passed}/${igBrowser.total} click/wait/get assertions + red control)`);
+    }
+
+    const pmGridBrowser = await runPmGridBrowserBattery();
+    if (!pmGridBrowser.clean) {
+        for (const f of pmGridBrowser.failed) failures.push(`[D] pm-grid browser smoke: ${f.name} (${f.detail})`);
+    } else {
+        passes.push(`[D] Prompt Master expanded-grid card layout browser Proof-of-Possession verified (${pmGridBrowser.passed}/${pmGridBrowser.total} get assertions + red control, mode=${pmGridBrowser.mode})`);
     }
 }
 
