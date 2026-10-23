@@ -772,7 +772,7 @@ const __4NDR0_NET_API__ = (function () {
                                     let t = '';
                                     if (xhr.responseType === '' || xhr.responseType === 'text') t = xhr.responseText;
                                     else if (xhr.responseType === 'json' && xhr.response) t = JSON.stringify(xhr.response);
-                                    if (subs.size && t) dispatch(t);
+                                    if (subs.size && t && t.length <= MAX_BODY) dispatch(t);
                                     if (trafficSubs.size) {
                                         let status = 0; try { const s = xhr.status; if (typeof s === 'number') status = s; } catch (e) { /* locked */ }
                                         let ct = null;
@@ -781,7 +781,7 @@ const __4NDR0_NET_API__ = (function () {
                                             id: stash ? stash.id : 0, url: url, method: stash ? stash.m : 'GET', kind: 'xhr',
                                             phase: 'response', body: t ? String(t).slice(0, MAX_BODY) : '',
                                             status: status, contentType: ct, responseType: xhr.responseType || '',
-                                            truncated: false, source: 'network',
+                                            truncated: t ? String(t).length > MAX_BODY : false, source: 'network',
                                         });
                                     }
                                 } catch (e) { /* responseType-locked body */ }
@@ -974,7 +974,7 @@ const __4NDR0_NET_API__ = (function () {
                     }
                 } catch (e) { /* unreadable slot — fall through to local hub */ }
             }
-            if (subs.size >= MAX_SUBS) return function () {};
+            if (subs.size >= MAX_SUBS) { console.debug('[a4/net] onBody registry full (' + MAX_SUBS + ') — subscription ignored (WO-01 F-14: silent no-op subscriptions concealed registry exhaustion)'); return function () {}; }
             const key = 'nb' + (++seq);
             subs.set(key, fn);
             if (target) {
@@ -997,7 +997,7 @@ const __4NDR0_NET_API__ = (function () {
                     }
                 } catch (e) { /* unreadable slot — fall through to local hub */ }
             }
-            if (reqSubs.size >= MAX_SUBS) return function () {};
+            if (reqSubs.size >= MAX_SUBS) { console.debug('[a4/net] onRequest registry full (' + MAX_SUBS + ') — subscription ignored (WO-01 F-14)'); return function () {}; }
             const key = 'rq' + (++rseq);
             reqSubs.set(key, fn);
             if (target) {
@@ -1022,7 +1022,7 @@ const __4NDR0_NET_API__ = (function () {
                     }
                 } catch (e) { /* unreadable slot — fall through to local hub */ }
             }
-            if (trafficSubs.size >= MAX_SUBS) return function () {};
+            if (trafficSubs.size >= MAX_SUBS) { console.debug('[a4/net] onTraffic registry full (' + MAX_SUBS + ') — subscription ignored (WO-01 F-14)'); return function () {}; }
             const key = 'tf' + (++tseq);
             trafficSubs.set(key, fn);
             if (target) {
@@ -1047,7 +1047,7 @@ const __4NDR0_NET_API__ = (function () {
                     }
                 } catch (e) { /* unreadable slot — fall through to local hub */ }
             }
-            if (errSubs.size >= MAX_SUBS) return function () {};
+            if (errSubs.size >= MAX_SUBS) { console.debug('[a4/net] onError registry full (' + MAX_SUBS + ') — subscription ignored (WO-01 F-14)'); return function () {}; }
             const key = 'er' + (++eseq);
             errSubs.set(key, fn);
             if (target) {
@@ -1073,7 +1073,7 @@ const __4NDR0_NET_API__ = (function () {
                     }
                 } catch (e) { /* unreadable slot — fall through to local hub */ }
             }
-            if (nodeSubs.size >= MAX_SUBS) return function () {};
+            if (nodeSubs.size >= MAX_SUBS) { console.debug('[a4/net] onNode registry full (' + MAX_SUBS + ') — subscription ignored (WO-01 F-14)'); return function () {}; }
             const key = 'nd' + (++nseq);
             nodeSubs.set(key, fn);
             if (target) {

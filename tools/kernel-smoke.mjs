@@ -14,9 +14,15 @@ import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
 import { fileURLToPath } from "node:url";
+import { KERNEL_ORDER } from "./kernel-order.mjs";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const files = ["brand", "core", "store", "glass", "hotkeys", "hosts"].map((m) =>
+/* WO-01 round-1 (F-01): the harness composition is derived from the SAME
+ * module as tools/build.mjs — the two hand-maintained orders had already
+ * diverged (build inlined glass before store, killing HUD position
+ * persistence in shipped builds, while this harness loaded store first and
+ * certified the broken order). They can never diverge again. */
+const files = KERNEL_ORDER.map((m) =>
     fs.readFileSync(path.join(ROOT, "kernel", `${m}.js`), "utf8"));
 
 /* Minimal DOM/browser mock. */
@@ -127,7 +133,10 @@ assert(gSvg.children[3].textContent === "Ψ" && gSvg.children[3].attrs["font-fam
 /* core */
 assert(typeof Ψ.core.$ === "function" && typeof Ψ.core.debounce === "function", "core: helper family");
 assert(Ψ.core.escapeHTML('<img "x">') === "&lt;img &quot;x&quot;&gt;", "core: escapeHTML");
-assert(Ψ.core.normalizeCombo === undefined || true, "core: present");
+/* WO-01 round-1 (2-a F5): the old `=== undefined || true` was tautological —
+ * a certification assertion that could never fail. It now asserts the real
+ * contract: normalizeCombo is the hotkeys module's API, not core's. */
+assert(Ψ.core.normalizeCombo === undefined, "core: normalizeCombo lives in hotkeys, not core (no cross-module bleed)");
 const c = new Ψ.core.FIFOCache(3);
 c.set("a", 1); c.set("b", 2); c.set("c", 3); c.set("d", 4);
 assert(c.size === 3 && !c.has("a") && c.has("d"), "core: FIFOCache evicts oldest at cap");
@@ -189,6 +198,18 @@ const smokeHud2 = Ψ.glass.hud({ id: "smoke-console", title: "SMOKE", tabs: [] }
 assert(smokeHud2 === smokeHud, "glass: reopen dedups to the same instance");
 smokeHud.toggleCollapse();
 assert(smokeHud.isCollapsed() === true, "glass: collapse toggle works");
+/* WO-01 round-1 (F-01) regression tripwires — HUD position persistence.
+ * The shipped KERNEL_ORDER inlined glass before store through v1.8.2, so
+ * glass's store facade bound to null at module-eval and every saved
+ * position was silently ignored; this harness (store-first) never saw the
+ * defect. The harness order now derives from kernel-order.mjs (single
+ * source with the build) and the round-trip is asserted in BOTH
+ * directions: load (here — a pre-seeded position must place the frame) and
+ * save (in the async section — a header pointerup must persist the rect). */
+storageBacking.set("a4:glass::hud:pos:smoke-persist", JSON.stringify({ x: 111, y: 222 }));
+const smokeHudP = Ψ.glass.hud({ id: "smoke-persist", title: "PERSIST", tabs: [] });
+assert(smokeHudP.frame.style.left === "111px" && smokeHudP.frame.style.top === "222px",
+    "glass: saved hud position loaded (store-before-glass load-order contract)");
 let scChange = null;
 const scHost = mkEl("div");
 Ψ.glass.settingsConsole(scHost, "hostwarp", [
@@ -223,6 +244,22 @@ assert(toastDied, "glass: toast returns a disposer");
 const n1 = Ψ.hotkeys.normalizeCombo("alt+shift+s");
 const n2 = Ψ.hotkeys.normalizeCombo("Shift+Alt+S");
 assert(n1 === n2 && n1 === "Alt+Shift+S", "hotkeys: combo normalization order-insensitive");
+/* WO-01 round-1 (F-02) regression tripwires — named-key combos. The old
+ * normalizeCombo/comboFromEvent pair disagreed on every named key
+ * (registered "Ctrl+Enter" → Ctrl+ENTER, real Enter keydown → Ctrl+Enter),
+ * so a whole key class could never fire its own binding. */
+assert(Ψ.hotkeys.normalizeCombo("Ctrl+Enter") === "Ctrl+ENTER"
+    && Ψ.hotkeys.normalizeCombo("alt+escape") === "Alt+ESCAPE"
+    && Ψ.hotkeys.normalizeCombo("Space") === "SPACE"
+    && Ψ.hotkeys.normalizeCombo("Ctrl+ArrowUp") === "Ctrl+ARROWUP",
+    "hotkeys: named keys canonicalize on the registration side");
+let namedFired = 0;
+const unNamed = Ψ.hotkeys.register("Ctrl+Enter", () => { namedFired++; }, { id: "named-test", script: "smoke" });
+for (const l of (listeners.get("keydown") || [])) {
+    l({ key: "Enter", ctrlKey: true, repeat: false, target: { tagName: "BODY" }, preventDefault() {}, stopPropagation() {} });
+}
+assert(namedFired === 1, "hotkeys: named-key binding fires on a real Enter keydown shape");
+unNamed();
 let fired = 0;
 const un = Ψ.hotkeys.register("Ctrl+E", () => { fired++; }, { id: "test", script: "smoke" });
 assert(typeof un === "function", "hotkeys: register returns unsubscribe");
@@ -417,6 +454,20 @@ function runNet(sb, label) {
 }
 
 (async () => {
+    /* WO-01 round-1 (F-01) save-direction — persistPos debounce writes the
+     * frame rect back through the glass store facade after a header
+     * pointerup. Together with the load-direction assertion above, this is
+     * the full HUD position persistence round-trip the v1.8.2 order silently
+     * disabled in every shipped module build. */
+    {
+        const hdr = smokeHudP.frame.children[0]; /* header is the first appended child */
+        for (const f of (hdr.listeners.pointerup || [])) f({});
+        await new Promise((r) => setTimeout(r, 460)); /* persistPos debounce is 400 ms */
+        const savedPos = JSON.parse(storageBacking.get("a4:glass::hud:pos:smoke-persist"));
+        assert(savedPos.x === 10 && savedPos.y === 20,
+            "glass: hud position saved after drag end (debounced persistPos round-trip)");
+    }
+
     const sbNet = makeNetContext();
     const net = runNet(sbNet, "net-primary.js");
     assert(net.version === 6 && typeof net.onBody === "function" && typeof net.onNode === "function", "net: NetHook v6 api exported (incl. onNode)");

@@ -20,7 +20,7 @@
     'use strict';
 
     const { PALETTE, FONTS, TRANSITION } = Ψ.brand;
-    const { $, $new, escapeHTML } = Ψ.core;
+    const { $new } = Ψ.core;
 
     /* v1.3.0 facade repair: Ψ.store is a namespaced-store FACTORY
      * ({ns, hasGM}) — the get/set/getJson/setJson methods live on the
@@ -28,8 +28,22 @@
      * called Ψ.store.getJson(...) directly → TypeError inside hud()
      * construction → every glass settings console (HostWarp, PageCraft)
      * opened to nothing. All glass persistence now goes through one
-     * glass-owned facade. */
-    const glassStore = (Ψ.store && typeof Ψ.store.ns === 'function') ? Ψ.store.ns('a4:glass') : null;
+     * glass-owned facade.
+     *
+     * WO-01 round-1 (F-01): the facade is resolved LAZILY on first use —
+     * the previous module-eval-time const captured Ψ.store as null
+     * whenever glass was inlined before store (the shipped KERNEL_ORDER
+     * through v1.8.2 did exactly that), silently killing hud position
+     * persistence in every module build while the smoke harness — loading
+     * store first — never saw it. Lazy resolution makes the module
+     * load-order-agnostic; tools/kernel-order.mjs keeps the canonical
+     * store-before-glass order anyway. */
+    let glassStore = null;
+    const glassFacade = () => {
+        if (glassStore) return glassStore;
+        glassStore = (Ψ.store && typeof Ψ.store.ns === 'function') ? Ψ.store.ns('a4:glass') : null;
+        return glassStore;
+    };
 
     const STYLE_ID = 'a4-glass-stylesheet-v1';
 
@@ -38,7 +52,7 @@
      * 1:1: panels §4.2/.glass-panel, buttons §4.4–4.5, switches §4.6,
      * popovers §4.7, scrollbars §4.8, notifications §5.0. */
     const COMPONENT_CSS = `
-.a4-scope{--a4-glass-1:${PALETTE.glassL1Window};--a4-glass-2:${PALETTE.glassL2MenuPopup};--a4-glass-3:${PALETTE.glassL3PanelInput};--a4-header:${PALETTE.solidHeader};--a4-cyan:${PALETTE.accentPrimary};--a4-cyan-2:${PALETTE.accentSecondary};--a4-destructive:${PALETTE.destructive};--a4-light:${PALETTE.absoluteLight};--a4-brd-soft:${PALETTE.accentSoftBorder};--a4-brd-mid:${PALETTE.accentMidBorder};--a4-brd-strong:${PALETTE.accentStrongBorder};--a4-wash:${PALETTE.accentWash};--a4-wash-deep:${PALETTE.accentWashDeep};--a4-glow-aura:${PALETTE.glowAura};--a4-glow-mid:${PALETTE.glowMid};--a4-text-dim:${PALETTE.textDim};--a4-font:${FONTS.system};--a4-font-display:${FONTS.display};--a4-transition:${TRANSITION};}
+.a4-scope{--a4-void:${PALETTE.switchTrough};--a4-glass-1:${PALETTE.glassL1Window};--a4-glass-2:${PALETTE.glassL2MenuPopup};--a4-glass-3:${PALETTE.glassL3PanelInput};--a4-header:${PALETTE.solidHeader};--a4-cyan:${PALETTE.accentPrimary};--a4-cyan-2:${PALETTE.accentSecondary};--a4-destructive:${PALETTE.destructive};--a4-light:${PALETTE.absoluteLight};--a4-brd-soft:${PALETTE.accentSoftBorder};--a4-brd-mid:${PALETTE.accentMidBorder};--a4-brd-strong:${PALETTE.accentStrongBorder};--a4-wash:${PALETTE.accentWash};--a4-wash-deep:${PALETTE.accentWashDeep};--a4-glow-aura:${PALETTE.glowAura};--a4-glow-mid:${PALETTE.glowMid};--a4-text-dim:${PALETTE.textDim};--a4-font:${FONTS.system};--a4-font-display:${FONTS.display};--a4-transition:${TRANSITION};}
 .a4-scope *,.a4-scope *::before,.a4-scope *::after{box-sizing:border-box;font-family:var(--a4-font);transition:var(--a4-transition);}
 /* Main window / HUD frame — spec §4.2 */
 .a4-window{background:var(--a4-glass-1);border:1px solid var(--a4-brd-soft);box-shadow:0 0 40px var(--a4-glow-aura);color:var(--a4-cyan);position:fixed;z-index:2147483646;display:flex;flex-direction:column;min-width:220px;}
@@ -272,7 +286,7 @@
          * be undefined in exotic contexts (stubbed windows, some iframes) —
          * the || fallbacks keep the default position a real number instead
          * of NaN (NaNpx leaves the HUD invisible/unrecoverable). */
-        const saved = glassStore ? glassStore.getJson(`hud:pos:${id}`, null) : null;
+        const saved = glassFacade() ? glassFacade().getJson(`hud:pos:${id}`, null) : null;
         const vw = Number(window.innerWidth) || 1024;
         const vh = Number(window.innerHeight) || 768;
         const pos = position || saved || { x: Math.max(8, vw - width - 16), y: 64 };
@@ -280,8 +294,15 @@
         frame.style.top = pos.y + 'px';
 
         const persistPos = Ψ.core.debounce(() => {
-            const r = frame.getBoundingClientRect();
-            if (glassStore) glassStore.setJson(`hud:pos:${id}`, { x: r.left, y: r.top });
+            /* WO-01 round-1 (F-11): a detached frame's getBoundingClientRect
+             * is all zeros — persisting that after hide/destroy would poison
+             * the saved position and park the HUD at (0,0) forever. */
+            if (!frame.isConnected) return;
+            const gs = glassFacade();
+            if (gs) {
+                const r = frame.getBoundingClientRect();
+                gs.setJson(`hud:pos:${id}`, { x: r.left, y: r.top });
+            }
         }, 400);
 
         const api = {

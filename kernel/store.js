@@ -106,13 +106,20 @@
             },
             /** JSON set. */
             setJson(key, value) { return this.set(key, JSON.stringify(value)); },
-            /** Remove key. */
+            /** Remove key. WO-01 round-1 (F-09): removal now notifies local
+             * watchers with (null, oldV, false) — set() notifies, and a
+             * watched key silently reverting to "absent" on remove() was an
+             * observability asymmetry (live-apply consumers kept rendering
+             * the stale value after a remove). */
             remove(key) {
-                memory.delete(fullKey(prefix, key));
+                const full = fullKey(prefix, key);
+                const oldV = readRaw(full);
+                memory.delete(full);
                 if (hasGM) {
-                    try { GM_deleteValue(fullKey(prefix, key)); } catch (e) { console.debug('[a4/store] delete failed:', key, e.message); }
+                    try { GM_deleteValue(full); } catch (e) { console.debug('[a4/store] delete failed:', key, e.message); }
                 }
-                try { localStorage.removeItem('a4:' + fullKey(prefix, key)); } catch (e) { console.debug('[a4/store] localStorage remove skipped:', key, e.message); }
+                try { localStorage.removeItem('a4:' + full); } catch (e) { console.debug('[a4/store] localStorage remove skipped:', key, e.message); }
+                notifyLocal(key, null, oldV);
             },
             /** Subscribe to key changes (local + cross-tab when supported). */
             watch(key, cb) {

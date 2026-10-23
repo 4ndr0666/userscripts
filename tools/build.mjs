@@ -18,6 +18,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { KERNEL_ORDER, KERNEL_DEPENDENCIES, kernelClosure } from "./kernel-order.mjs";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const KERNEL_DIR = path.join(ROOT, "kernel");
@@ -25,7 +26,12 @@ const MODULES_DIR = path.join(ROOT, "modules");
 const CANON_DIR = path.join(ROOT, "canon");
 const DIST_DIR = path.join(ROOT, "dist");
 
-const KERNEL_ORDER = ["brand", "core", "glass", "store", "hotkeys", "hosts"];
+/* Single source of truth: tools/kernel-order.mjs (shared with
+ * kernel-smoke.mjs so the harness can never test a different composition
+ * than the one the build ships — WO-01 round-1 F-01). Order law: store
+ * precedes glass; glass destructures Ψ.brand/Ψ.core at module-eval and
+ * resolves its store facade lazily, but the shipped byte order stays
+ * store-first so any future eager capture is safe by construction. */
 
 /* Canon scripts that consume kernel modules at build time (suite v1.4.3):
  * the file is carried with the listed modules inlined directly after the
@@ -193,7 +199,10 @@ function scanPlaceholders(src, label) {
             .replace(/\/\*.*?\*\//g, "")
             .replace(/(["'`])(?:\\.|(?!\1).)*\1/g, '""');
         for (const pat of PLACEHOLDER_PATTERNS) {
-            if (pat.test(code)) hits.push(`${label}: line ${ln + 1}: ${pat.source}`);
+            /* WO-01 round-1 (F-17): hits are labelled so the exit-code fork can
+             * discriminate validation failures from build failures without
+             * pattern-matching on regex source text. */
+            if (pat.test(code)) hits.push(`placeholder: ${label}: line ${ln + 1}: ${pat.source}`);
         }
     }
     return hits;
@@ -232,14 +241,17 @@ function emitHeader(meta, filename) {
 
 function selectKernel(bodySrc, meta) {
     if (Array.isArray(meta.kernel) && meta.kernel.length > 0) return meta.kernel;
-    const needed = [];
+    const referenced = [];
     for (const mod of KERNEL_ORDER) {
-        if (new RegExp(`Ψ\\.${mod}\\b`).test(bodySrc)) needed.push(mod);
+        if (new RegExp(`Ψ\\.${mod}\\b`).test(bodySrc)) referenced.push(mod);
     }
-    // store is implied by glass (hud position persistence)
-    if (needed.includes("glass") && !needed.includes("store")) needed.push("store");
-    if (needed.includes("hosts") && !needed.includes("core")) needed.push("core");
-    return needed;
+    /* WO-01 round-1 (F-06): complete the kernel-internal dependency closure —
+     * glass destructures Ψ.brand/Ψ.core at module-eval and persists through
+     * Ψ.store; hosts calls Ψ.core.uid at registration. A body referencing
+     * only Ψ.glass previously shipped without brand/core → the dist threw
+     * on load with neither direction of the dead-code check able to see it
+     * (both only scan the body, never kernel-internal dependencies). */
+    return kernelClosure(referenced);
 }
 
 /* ── Module build ────────────────────────────────────────────────────────── */
@@ -252,6 +264,19 @@ function buildModule(dir) {
     const filename = meta.filename || `${meta.name}.user.js`;
 
     const kernelMods = selectKernel(body, meta);
+    /* WO-01 round-1 (F-06): the dead-code check now excuses exactly the
+     * closure-pulled dependencies (glass → brand/core/store, hosts → core)
+     * instead of the old hardcoded brand/store skip — a module included
+     * without a body reference AND without being anyone's dependency is
+     * still dead weight and fails the build. */
+    const directRefs = new Set(KERNEL_ORDER.filter((mod) => new RegExp(`Ψ\\.${mod}\\b`).test(body)));
+    const isDepOfIncluded = (mod) => kernelMods.some((m) => m !== mod && (KERNEL_DEPENDENCIES[m] || []).includes(mod));
+    for (const mod of kernelMods) {
+        if (directRefs.has(mod) || isDepOfIncluded(mod)) continue;
+        if (!new RegExp(`Ψ\\.${mod}\\b`).test(body)) {
+            throw new Error(`${meta.name}: kernel "${mod}" included but never used (dead code)`);
+        }
+    }
     const kernelChunks = [];
     for (const mod of KERNEL_ORDER) {
         if (!kernelMods.includes(mod)) continue;
@@ -260,13 +285,6 @@ function buildModule(dir) {
         kernelChunks.push(`    /* ══ kernel/${mod}.js ══ */\n${fs.readFileSync(p, "utf8").trim()}`);
     }
 
-    /* Every kernel module must actually be referenced after inclusion. */
-    for (const mod of kernelMods) {
-        if (mod === "brand" || mod === "store") continue; // implicit deps
-        if (!new RegExp(`Ψ\\.${mod}\\b`).test(body)) {
-            throw new Error(`${meta.name}: kernel "${mod}" included but never used (dead code)`);
-        }
-    }
     /* No references to kernel modules we did NOT include. */
     for (const mod of KERNEL_ORDER) {
         if (kernelMods.includes(mod)) continue;
@@ -312,13 +330,21 @@ function main() {
             if (!entry.isDirectory()) continue;
             try {
                 const { filename, out } = buildModule(path.join(MODULES_DIR, entry.name));
+                const fileFailures = [];
                 const balanceErr = checkLexicalBalance(out, filename);
-                if (balanceErr) failures.push(balanceErr);
-                const placeholders = scanPlaceholders(out, filename);
-                failures.push(...placeholders);
-                fs.writeFileSync(path.join(DIST_DIR, filename), out);
-                built.push(filename);
-                outputs.add(filename);
+                if (balanceErr) fileFailures.push(balanceErr);
+                fileFailures.push(...scanPlaceholders(out, filename));
+                /* WO-01 round-1 (2-a F19): a failed output is never written —
+                 * the previous flow left the broken artifact in dist/ after
+                 * exit 1, and the stale installable kept answering
+                 * @updateURL checks until the next clean build. */
+                if (fileFailures.length === 0) {
+                    fs.writeFileSync(path.join(DIST_DIR, filename), out);
+                    built.push(filename);
+                    outputs.add(filename);
+                } else {
+                    failures.push(...fileFailures);
+                }
             } catch (e) {
                 failures.push(`module ${entry.name}: ${e.message}`);
             }
@@ -343,6 +369,16 @@ function main() {
                     continue;
                 }
                 const src = fs.readFileSync(path.join(dir, f), "utf8");
+                /* WO-01 round-1 (F-16): a canon source without an ==/UserScript==
+                 * end-marker previously fell through with cut = 0, silently
+                 * prepending the kernel chunk BEFORE the metadata block and
+                 * shipping a corrupted installable. It is now a hard failure
+                 * pushed BEFORE any output is written for that file. */
+                const marker = src.indexOf("==/UserScript==");
+                if (marker === -1) {
+                    failures.push(`canon ${f}: no ==/UserScript== end-marker — refusing to inline kernel before the metadata block`);
+                    continue;
+                }
                 const chunks = [];
                 for (const mod of kernelList) {
                     const p = path.join(KERNEL_DIR, `${mod}.js`);
@@ -352,15 +388,19 @@ function main() {
                     }
                     chunks.push(`/* ══ kernel/${mod}.js (inlined by tools/build.mjs — edit kernel/, not here) ══ */\n${fs.readFileSync(p, "utf8").trim()}`);
                 }
-                const marker = src.indexOf("==/UserScript==");
-                const cut = marker === -1 ? 0 : src.indexOf("\n", marker) + 1;
+                const cut = src.indexOf("\n", marker) + 1;
                 const out = src.slice(0, cut) + "\n" + chunks.join("\n\n") + "\n\n" + src.slice(cut);
+                const fileFailures = [];
                 const balanceErr = checkLexicalBalance(out, f);
-                if (balanceErr) failures.push(balanceErr);
-                failures.push(...scanPlaceholders(out, f));
-                fs.writeFileSync(path.join(DIST_DIR, f), out);
-                outputs.add(f);
-                kernelCarried++;
+                if (balanceErr) fileFailures.push(balanceErr);
+                fileFailures.push(...scanPlaceholders(out, f));
+                if (fileFailures.length === 0) {   /* WO-01 round-1 (2-a F19): never write a failed artifact */
+                    fs.writeFileSync(path.join(DIST_DIR, f), out);
+                    outputs.add(f);
+                    kernelCarried++;
+                } else {
+                    failures.push(...fileFailures);
+                }
             }
         }
     }
@@ -368,11 +408,18 @@ function main() {
     // 3) Prune stale dist artifacts — orphaned installables whose canon
     //    source was retired/merged are dead weight on the install channel
     //    (and would keep answering @updateURL checks after retirement).
+    //    WO-01 round-1 (2-a F19 companion): pruning is skipped entirely on a
+    //    failed build — a file whose output failed validation is absent from
+    //    `outputs`, and pruning then would DELETE the previous good dist
+    //    artifact alongside the refused new one. Fail closed: a failed build
+    //    leaves dist/ exactly as it found it.
     const stale = [];
-    for (const f of fs.readdirSync(DIST_DIR)) {
-        if (f.endsWith(".user.js") && !outputs.has(f)) {
-            fs.rmSync(path.join(DIST_DIR, f));
-            stale.push(f);
+    if (failures.length === 0) {
+        for (const f of fs.readdirSync(DIST_DIR)) {
+            if (f.endsWith(".user.js") && !outputs.has(f)) {
+                fs.rmSync(path.join(DIST_DIR, f));
+                stale.push(f);
+            }
         }
     }
 
@@ -393,10 +440,17 @@ function main() {
         failures.push(`build ledger does not sum: ${built.length} built + ${carried} verbatim + ${kernelCarried} kernel-inlined ≠ ${outputs.size} dist outputs`);
     }
 
+    /* WO-01 round-1 (F-17): exit-code discrimination — placeholder hits are
+     * VALIDATION failures (exit 2), everything else is a build failure
+     * (exit 1). The old `.includes("placeholder")` probe only matched the
+     * one pattern whose regex source happens to contain the word, so a
+     * TODO/FIXME hit exited 1 and broke the documented contract. The
+     * placeholder scanner now labels its own hits. */
     if (failures.length > 0) {
         console.error("\nBUILD FAILURES:");
         for (const f of failures) console.error(`  ✗ ${f}`);
-        process.exit(failures.some((f) => !f.includes("placeholder")) ? 1 : 2);
+        const isValidation = failures.every((f) => f.startsWith("placeholder:"));
+        process.exit(isValidation ? 2 : 1);
     }
     console.log(`\nSuite build complete: ${built.length} built, ${carried} carried verbatim, ${kernelCarried} kernel-inlined (${built.length + carried + kernelCarried} total).`);
     return 0;

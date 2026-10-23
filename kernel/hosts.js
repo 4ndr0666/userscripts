@@ -12,7 +12,7 @@
 Ψ.hosts = (() => {
     'use strict';
 
-    const handlers = new Map();   // "candidshiny.com" -> { id, match, handler, script }
+    const handlers = new Map();   // "candidshiny.com" -> [{ id, handler, script }, …] (arrays: several modules may share a registrable domain)
     const executed = new Set();   // idempotency: one execution per page load
 
     /**
@@ -43,11 +43,15 @@
         };
     }
 
-    /** Longest-suffix match against location.hostname. */
+    /** Longest-suffix match against location.hostname. WO-01 round-1
+     * (F-08): `take >= 1` — single-label hostnames (localhost, intranet
+     * names) were structurally unreachable under the old `take >= 2` floor.
+     * TLD-length probes are harmless: a handler registered on "com" would
+     * be an explicit registration, not an accident this resolver creates. */
     function resolve(hostname = location.hostname) {
         const host = String(hostname).toLowerCase().replace(/^www\./, '');
         const labels = host.split('.');
-        for (let take = labels.length; take >= 2; take--) {
+        for (let take = labels.length; take >= 1; take--) {
             const candidate = labels.slice(labels.length - take).join('.');
             if (handlers.has(candidate)) return { domain: candidate, entries: handlers.get(candidate) };
         }

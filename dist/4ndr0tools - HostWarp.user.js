@@ -421,10 +421,16 @@
      *
      * @param {string} sel CSS selector.
      * @param {{timeout?: number, root?: ParentNode, signal?: AbortSignal}} [opts]
-     * @returns {Promise<Element>} element — call `.dispose()` no; nothing to dispose on success.
+     * @returns {Promise<Element>} resolves with the element; nothing to
+     *          dispose on success — the observer and timer clean themselves up.
      */
     function waitFor(sel, { timeout = 10000, root, signal } = {}) {
         return new Promise((resolve, reject) => {
+            /* WO-01 round-1 (F-24): a pre-aborted signal must reject BEFORE
+             * the existing-element fast path resolves — the old order let a
+             * caller that aborted while the element already existed win the
+             * race against its own cancellation. */
+            if (signal && signal.aborted) { reject(new DOMException('waitFor aborted', 'AbortError')); return; }
             const scope = root || doc();
             const existing = scope.querySelector(sel);
             if (existing) { resolve(existing); return; }
@@ -487,6 +493,173 @@
         waitFor, watchDOM, trustedAppend,
     });
 })();
+    /* ══ kernel/store.js ══ */
+/* ═══════════════════════════════════════════════════════════════════════════
+ * kernel/store.js — resilient, namespaced, collision-free persistence
+ * ----------------------------------------------------------------------------
+ * GUP B.1 "Storage Resilience" institutionalized: values are ingested into
+ * an in-memory snapshot once on boot; all writes are quota-guarded; every
+ * key is namespaced per script so co-installed suite members can never
+ * stomp each other's settings (a real interference class found in audit —
+ * three scripts all using the bare key "settings").
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+Ψ.store = (() => {
+    'use strict';
+
+    const hasGM = typeof GM_getValue === 'function' && typeof GM_setValue === 'function';
+
+    /* In-memory snapshot — the single boot-time ingest (GUP B.1). */
+    const memory = new Map();
+
+    const fullKey = (ns, key) => `${ns}::${key}`;
+
+    function readRaw(key) {
+        if (memory.has(key)) return memory.get(key);
+        let v = undefined;
+        if (hasGM) {
+            try { v = GM_getValue(key, undefined); } catch (e) { console.debug('[a4/store] read failed:', key, e.message); }
+        }
+        if (v === undefined) {
+            try {
+                const raw = localStorage.getItem('a4:' + key);
+                if (raw !== null) v = JSON.parse(raw);
+            } catch (e) { console.debug('[a4/store] localStorage read skipped:', key, e.message); /* quota/private-mode — memory store remains authoritative */ }
+        }
+        memory.set(key, v === undefined ? null : v);
+        return v;
+    }
+
+    function writeRaw(key, value) {
+        memory.set(key, value);
+        if (hasGM) {
+            try { GM_setValue(key, value); return; } catch (e) { console.debug('[a4/store] gm write failed:', key, e.message); }
+        }
+        try { localStorage.setItem('a4:' + key, JSON.stringify(value)); }
+        catch (e) { console.debug('[a4/store] localStorage write failed (quota?):', key, e.message); }
+    }
+
+    /** Create a namespaced store facade. */
+    function ns(prefix) {
+        if (!prefix || typeof prefix !== 'string') throw new Error('store.ns: prefix required');
+        const watchers = [];
+        const gmListenerKeys = new Set();
+
+        /* v1.3.0 watch() repair — two defects fixed:
+         *   (a) the GM cross-tab listener was registered ONCE on the literal
+         *       key `${prefix}::*` — GM_addValueChangeListener matches EXACT
+         *       keys, the `*` is not a wildcard, so remote changes never fired
+         *       any watcher;
+         *   (b) set() never notified local watchers at all, so even same-tab
+         *       live-apply (PageCraft's collapse governor) was dead.
+         * Listeners are now bound per exact key, and set() notifies local
+         * watchers synchronously (remote=false) before returning. */
+        const notifyLocal = (key, newV, oldV) => {
+            for (const w of watchers) {
+                if (w.key === key) {
+                    try { w.cb(newV, oldV, false); }
+                    catch (e) { console.debug('[a4/store] watcher failed:', key, e.message); }
+                }
+            }
+        };
+        const bindValueListener = (fullK) => {
+            if (typeof GM_addValueChangeListener !== 'function' || gmListenerKeys.has(fullK)) return;
+            gmListenerKeys.add(fullK);
+            GM_addValueChangeListener(fullK, (name, oldV, newV, remote) => {
+                memory.set(fullK, newV);
+                const key = name.slice(prefix.length + 2);
+                for (const w of watchers) {
+                    if (w.key === key) {
+                        try { w.cb(newV, oldV, remote); }
+                        catch (e) { console.debug('[a4/store] watcher failed:', key, e.message); }
+                    }
+                }
+            });
+        };
+
+        return {
+            /** Get with default. */
+            get(key, dflt = null) {
+                const v = readRaw(fullKey(prefix, key));
+                return v === null || v === undefined ? dflt : v;
+            },
+            /** Quota-guarded set. Notifies local watchers (v1.3.0). */
+            set(key, value) {
+                const full = fullKey(prefix, key);
+                const oldV = readRaw(full);
+                writeRaw(full, value);
+                notifyLocal(key, value, oldV);
+                return value;
+            },
+            /** JSON get with default (objects/arrays). */
+            getJson(key, dflt) {
+                const v = this.get(key, null);
+                if (v === null) return dflt;
+                if (typeof v === 'string') {
+                    try { return JSON.parse(v); } catch (e) { return dflt; }
+                }
+                return v;
+            },
+            /** JSON set. */
+            setJson(key, value) { return this.set(key, JSON.stringify(value)); },
+            /** Remove key. WO-01 round-1 (F-09): removal now notifies local
+             * watchers with (null, oldV, false) — set() notifies, and a
+             * watched key silently reverting to "absent" on remove() was an
+             * observability asymmetry (live-apply consumers kept rendering
+             * the stale value after a remove). */
+            remove(key) {
+                const full = fullKey(prefix, key);
+                const oldV = readRaw(full);
+                memory.delete(full);
+                if (hasGM) {
+                    try { GM_deleteValue(full); } catch (e) { console.debug('[a4/store] delete failed:', key, e.message); }
+                }
+                try { localStorage.removeItem('a4:' + full); } catch (e) { console.debug('[a4/store] localStorage remove skipped:', key, e.message); }
+                notifyLocal(key, null, oldV);
+            },
+            /** Subscribe to key changes (local + cross-tab when supported). */
+            watch(key, cb) {
+                const entry = { key, cb };
+                watchers.push(entry);
+                bindValueListener(fullKey(prefix, key));
+                return () => {
+                    const i = watchers.indexOf(entry);
+                    if (i >= 0) watchers.splice(i, 1);
+                };
+            },
+            /** Export entire namespace as a JSON string (settings migration). */
+            export() {
+                const out = {};
+                const gmKeys = (hasGM && typeof GM_listValues === 'function') ? GM_listValues() : [];
+                const seen = new Set();
+                const scan = (keys, strip) => {
+                    for (const k of keys) {
+                        if (!k.startsWith(strip)) continue;
+                        const shortKey = k.slice(strip.length);
+                        if (shortKey.includes('::')) continue; // other namespaces
+                        if (!seen.has(shortKey)) { seen.add(shortKey); out[shortKey] = readRaw(k); }
+                    }
+                };
+                scan(gmKeys, `${prefix}::`);
+                try {
+                    scan(Object.keys(localStorage)
+                        .filter((k) => k.startsWith('a4:'))
+                        .map((k) => k.slice(3)), `${prefix}::`);
+                } catch (e) { console.debug('[a4/store] localStorage export skipped:', e.message); }
+                return JSON.stringify(out);
+            },
+            /** Import a namespace export (merge, non-destructive). */
+            import(json) {
+                let obj;
+                try { obj = JSON.parse(json); } catch (e) { throw new Error('store.import: invalid JSON payload'); }
+                for (const k of Object.keys(obj)) this.set(k, obj[k]);
+                return true;
+            },
+        };
+    }
+
+    return Object.freeze({ ns, hasGM });
+})();
     /* ══ kernel/glass.js ══ */
 /* ═══════════════════════════════════════════════════════════════════════════
  * kernel/glass.js — the 3lectric-Glass UI system (web translation)
@@ -510,7 +683,7 @@
     'use strict';
 
     const { PALETTE, FONTS, TRANSITION } = Ψ.brand;
-    const { $, $new, escapeHTML } = Ψ.core;
+    const { $new } = Ψ.core;
 
     /* v1.3.0 facade repair: Ψ.store is a namespaced-store FACTORY
      * ({ns, hasGM}) — the get/set/getJson/setJson methods live on the
@@ -518,8 +691,22 @@
      * called Ψ.store.getJson(...) directly → TypeError inside hud()
      * construction → every glass settings console (HostWarp, PageCraft)
      * opened to nothing. All glass persistence now goes through one
-     * glass-owned facade. */
-    const glassStore = (Ψ.store && typeof Ψ.store.ns === 'function') ? Ψ.store.ns('a4:glass') : null;
+     * glass-owned facade.
+     *
+     * WO-01 round-1 (F-01): the facade is resolved LAZILY on first use —
+     * the previous module-eval-time const captured Ψ.store as null
+     * whenever glass was inlined before store (the shipped KERNEL_ORDER
+     * through v1.8.2 did exactly that), silently killing hud position
+     * persistence in every module build while the smoke harness — loading
+     * store first — never saw it. Lazy resolution makes the module
+     * load-order-agnostic; tools/kernel-order.mjs keeps the canonical
+     * store-before-glass order anyway. */
+    let glassStore = null;
+    const glassFacade = () => {
+        if (glassStore) return glassStore;
+        glassStore = (Ψ.store && typeof Ψ.store.ns === 'function') ? Ψ.store.ns('a4:glass') : null;
+        return glassStore;
+    };
 
     const STYLE_ID = 'a4-glass-stylesheet-v1';
 
@@ -528,7 +715,7 @@
      * 1:1: panels §4.2/.glass-panel, buttons §4.4–4.5, switches §4.6,
      * popovers §4.7, scrollbars §4.8, notifications §5.0. */
     const COMPONENT_CSS = `
-.a4-scope{--a4-glass-1:${PALETTE.glassL1Window};--a4-glass-2:${PALETTE.glassL2MenuPopup};--a4-glass-3:${PALETTE.glassL3PanelInput};--a4-header:${PALETTE.solidHeader};--a4-cyan:${PALETTE.accentPrimary};--a4-cyan-2:${PALETTE.accentSecondary};--a4-destructive:${PALETTE.destructive};--a4-light:${PALETTE.absoluteLight};--a4-brd-soft:${PALETTE.accentSoftBorder};--a4-brd-mid:${PALETTE.accentMidBorder};--a4-brd-strong:${PALETTE.accentStrongBorder};--a4-wash:${PALETTE.accentWash};--a4-wash-deep:${PALETTE.accentWashDeep};--a4-glow-aura:${PALETTE.glowAura};--a4-glow-mid:${PALETTE.glowMid};--a4-text-dim:${PALETTE.textDim};--a4-font:${FONTS.system};--a4-font-display:${FONTS.display};--a4-transition:${TRANSITION};}
+.a4-scope{--a4-void:${PALETTE.switchTrough};--a4-glass-1:${PALETTE.glassL1Window};--a4-glass-2:${PALETTE.glassL2MenuPopup};--a4-glass-3:${PALETTE.glassL3PanelInput};--a4-header:${PALETTE.solidHeader};--a4-cyan:${PALETTE.accentPrimary};--a4-cyan-2:${PALETTE.accentSecondary};--a4-destructive:${PALETTE.destructive};--a4-light:${PALETTE.absoluteLight};--a4-brd-soft:${PALETTE.accentSoftBorder};--a4-brd-mid:${PALETTE.accentMidBorder};--a4-brd-strong:${PALETTE.accentStrongBorder};--a4-wash:${PALETTE.accentWash};--a4-wash-deep:${PALETTE.accentWashDeep};--a4-glow-aura:${PALETTE.glowAura};--a4-glow-mid:${PALETTE.glowMid};--a4-text-dim:${PALETTE.textDim};--a4-font:${FONTS.system};--a4-font-display:${FONTS.display};--a4-transition:${TRANSITION};}
 .a4-scope *,.a4-scope *::before,.a4-scope *::after{box-sizing:border-box;font-family:var(--a4-font);transition:var(--a4-transition);}
 /* Main window / HUD frame — spec §4.2 */
 .a4-window{background:var(--a4-glass-1);border:1px solid var(--a4-brd-soft);box-shadow:0 0 40px var(--a4-glow-aura);color:var(--a4-cyan);position:fixed;z-index:2147483646;display:flex;flex-direction:column;min-width:220px;}
@@ -762,7 +949,7 @@
          * be undefined in exotic contexts (stubbed windows, some iframes) —
          * the || fallbacks keep the default position a real number instead
          * of NaN (NaNpx leaves the HUD invisible/unrecoverable). */
-        const saved = glassStore ? glassStore.getJson(`hud:pos:${id}`, null) : null;
+        const saved = glassFacade() ? glassFacade().getJson(`hud:pos:${id}`, null) : null;
         const vw = Number(window.innerWidth) || 1024;
         const vh = Number(window.innerHeight) || 768;
         const pos = position || saved || { x: Math.max(8, vw - width - 16), y: 64 };
@@ -770,8 +957,15 @@
         frame.style.top = pos.y + 'px';
 
         const persistPos = Ψ.core.debounce(() => {
-            const r = frame.getBoundingClientRect();
-            if (glassStore) glassStore.setJson(`hud:pos:${id}`, { x: r.left, y: r.top });
+            /* WO-01 round-1 (F-11): a detached frame's getBoundingClientRect
+             * is all zeros — persisting that after hide/destroy would poison
+             * the saved position and park the HUD at (0,0) forever. */
+            if (!frame.isConnected) return;
+            const gs = glassFacade();
+            if (gs) {
+                const r = frame.getBoundingClientRect();
+                gs.setJson(`hud:pos:${id}`, { x: r.left, y: r.top });
+            }
         }, 400);
 
         const api = {
@@ -931,166 +1125,6 @@
 
     return Object.freeze({ injectStyles, glyphEl, toast, hud, settingsConsole, consolePane, COMPONENT_CSS });
 })();
-    /* ══ kernel/store.js ══ */
-/* ═══════════════════════════════════════════════════════════════════════════
- * kernel/store.js — resilient, namespaced, collision-free persistence
- * ----------------------------------------------------------------------------
- * GUP B.1 "Storage Resilience" institutionalized: values are ingested into
- * an in-memory snapshot once on boot; all writes are quota-guarded; every
- * key is namespaced per script so co-installed suite members can never
- * stomp each other's settings (a real interference class found in audit —
- * three scripts all using the bare key "settings").
- * ═══════════════════════════════════════════════════════════════════════ */
-
-Ψ.store = (() => {
-    'use strict';
-
-    const hasGM = typeof GM_getValue === 'function' && typeof GM_setValue === 'function';
-
-    /* In-memory snapshot — the single boot-time ingest (GUP B.1). */
-    const memory = new Map();
-
-    const fullKey = (ns, key) => `${ns}::${key}`;
-
-    function readRaw(key) {
-        if (memory.has(key)) return memory.get(key);
-        let v = undefined;
-        if (hasGM) {
-            try { v = GM_getValue(key, undefined); } catch (e) { console.debug('[a4/store] read failed:', key, e.message); }
-        }
-        if (v === undefined) {
-            try {
-                const raw = localStorage.getItem('a4:' + key);
-                if (raw !== null) v = JSON.parse(raw);
-            } catch (e) { console.debug('[a4/store] localStorage read skipped:', key, e.message); /* quota/private-mode — memory store remains authoritative */ }
-        }
-        memory.set(key, v === undefined ? null : v);
-        return v;
-    }
-
-    function writeRaw(key, value) {
-        memory.set(key, value);
-        if (hasGM) {
-            try { GM_setValue(key, value); return; } catch (e) { console.debug('[a4/store] gm write failed:', key, e.message); }
-        }
-        try { localStorage.setItem('a4:' + key, JSON.stringify(value)); }
-        catch (e) { console.debug('[a4/store] localStorage write failed (quota?):', key, e.message); }
-    }
-
-    /** Create a namespaced store facade. */
-    function ns(prefix) {
-        if (!prefix || typeof prefix !== 'string') throw new Error('store.ns: prefix required');
-        const watchers = [];
-        const gmListenerKeys = new Set();
-
-        /* v1.3.0 watch() repair — two defects fixed:
-         *   (a) the GM cross-tab listener was registered ONCE on the literal
-         *       key `${prefix}::*` — GM_addValueChangeListener matches EXACT
-         *       keys, the `*` is not a wildcard, so remote changes never fired
-         *       any watcher;
-         *   (b) set() never notified local watchers at all, so even same-tab
-         *       live-apply (PageCraft's collapse governor) was dead.
-         * Listeners are now bound per exact key, and set() notifies local
-         * watchers synchronously (remote=false) before returning. */
-        const notifyLocal = (key, newV, oldV) => {
-            for (const w of watchers) {
-                if (w.key === key) {
-                    try { w.cb(newV, oldV, false); }
-                    catch (e) { console.debug('[a4/store] watcher failed:', key, e.message); }
-                }
-            }
-        };
-        const bindValueListener = (fullK) => {
-            if (typeof GM_addValueChangeListener !== 'function' || gmListenerKeys.has(fullK)) return;
-            gmListenerKeys.add(fullK);
-            GM_addValueChangeListener(fullK, (name, oldV, newV, remote) => {
-                memory.set(fullK, newV);
-                const key = name.slice(prefix.length + 2);
-                for (const w of watchers) {
-                    if (w.key === key) {
-                        try { w.cb(newV, oldV, remote); }
-                        catch (e) { console.debug('[a4/store] watcher failed:', key, e.message); }
-                    }
-                }
-            });
-        };
-
-        return {
-            /** Get with default. */
-            get(key, dflt = null) {
-                const v = readRaw(fullKey(prefix, key));
-                return v === null || v === undefined ? dflt : v;
-            },
-            /** Quota-guarded set. Notifies local watchers (v1.3.0). */
-            set(key, value) {
-                const full = fullKey(prefix, key);
-                const oldV = readRaw(full);
-                writeRaw(full, value);
-                notifyLocal(key, value, oldV);
-                return value;
-            },
-            /** JSON get with default (objects/arrays). */
-            getJson(key, dflt) {
-                const v = this.get(key, null);
-                if (v === null) return dflt;
-                if (typeof v === 'string') {
-                    try { return JSON.parse(v); } catch (e) { return dflt; }
-                }
-                return v;
-            },
-            /** JSON set. */
-            setJson(key, value) { return this.set(key, JSON.stringify(value)); },
-            /** Remove key. */
-            remove(key) {
-                memory.delete(fullKey(prefix, key));
-                if (hasGM) {
-                    try { GM_deleteValue(fullKey(prefix, key)); } catch (e) { console.debug('[a4/store] delete failed:', key, e.message); }
-                }
-                try { localStorage.removeItem('a4:' + fullKey(prefix, key)); } catch (e) { console.debug('[a4/store] localStorage remove skipped:', key, e.message); }
-            },
-            /** Subscribe to key changes (local + cross-tab when supported). */
-            watch(key, cb) {
-                const entry = { key, cb };
-                watchers.push(entry);
-                bindValueListener(fullKey(prefix, key));
-                return () => {
-                    const i = watchers.indexOf(entry);
-                    if (i >= 0) watchers.splice(i, 1);
-                };
-            },
-            /** Export entire namespace as a JSON string (settings migration). */
-            export() {
-                const out = {};
-                const gmKeys = (hasGM && typeof GM_listValues === 'function') ? GM_listValues() : [];
-                const seen = new Set();
-                const scan = (keys, strip) => {
-                    for (const k of keys) {
-                        if (!k.startsWith(strip)) continue;
-                        const shortKey = k.slice(strip.length);
-                        if (shortKey.includes('::')) continue; // other namespaces
-                        if (!seen.has(shortKey)) { seen.add(shortKey); out[shortKey] = readRaw(k); }
-                    }
-                };
-                scan(gmKeys, `${prefix}::`);
-                try {
-                    scan(Object.keys(localStorage)
-                        .filter((k) => k.startsWith('a4:'))
-                        .map((k) => k.slice(3)), `${prefix}::`);
-                } catch (e) { console.debug('[a4/store] localStorage export skipped:', e.message); }
-                return JSON.stringify(out);
-            },
-            /** Import a namespace export (merge, non-destructive). */
-            import(json) {
-                let obj;
-                try { obj = JSON.parse(json); } catch (e) { throw new Error('store.import: invalid JSON payload'); }
-                for (const k of Object.keys(obj)) this.set(k, obj[k]);
-                return true;
-            },
-        };
-    }
-
-    return Object.freeze({ ns, hasGM });
-})();
     /* ══ kernel/hotkeys.js ══ */
 /* ═══════════════════════════════════════════════════════════════════════════
  * kernel/hotkeys.js — collision-aware keybind registry
@@ -1126,6 +1160,31 @@
         return !!(target.isContentEditable);
     };
 
+    /* WO-01 round-1 (F-02): canonical trigger-key spelling — normalizeCombo
+     * and comboFromEvent MUST agree on every key class or the binding
+     * silently never fires. The old pair uppercased the registered key
+     * ("Ctrl+Enter" → Ctrl+ENTER) while comboFromEvent uppercased only
+     * single-character event keys (real Enter keydowns → "Ctrl+Enter") —
+     * an entire key class (Enter, Tab, Escape, arrows, Space, Home/End…)
+     * could never match its own registration. Both sides now flow through
+     * ONE canonicalizer with a shared alias table. */
+    const KEY_ALIASES = {
+        SPACEBAR: 'SPACE',
+        RETURN: 'ENTER',
+        ESC: 'ESCAPE',
+        DEL: 'DELETE',
+        INS: 'INSERT',
+        PGUP: 'PAGEUP',
+        PGDN: 'PAGEDOWN',
+        UP: 'ARROWUP', DOWN: 'ARROWDOWN', LEFT: 'ARROWLEFT', RIGHT: 'ARROWRIGHT',
+    };
+    const canonicalKey = (raw) => {
+        const up = String(raw).toUpperCase();
+        if (up === ' ') return 'SPACE';
+        if (up.length === 1) return up;
+        return KEY_ALIASES[up] || up;
+    };
+
     /** Normalize a combo string: "alt+shift+s" ≡ "Shift+Alt+S" ≡ "s+alt+shift". */
     function normalizeCombo(combo) {
         const parts = String(combo).split('+').map((p) => p.trim()).filter(Boolean);
@@ -1140,7 +1199,7 @@
             else if (up === 'SHIFT') mods.add('Shift');
             else if (up === 'META' || up === 'CMD' || up === 'SUPER') mods.add('Meta');
             else if (key) throw new Error(`hotkeys: combo "${combo}" has multiple non-modifier keys`);
-            else key = up;
+            else key = canonicalKey(p);
         }
         if (!key) throw new Error(`hotkeys: combo "${combo}" has no trigger key`);
         return [...mods].sort().join('+') + (mods.size ? '+' : '') + key;
@@ -1152,7 +1211,7 @@
         if (e.altKey) mods.push('Alt');
         if (e.shiftKey) mods.push('Shift');
         if (e.metaKey) mods.push('Meta');
-        const key = e.key.length === 1 ? e.key.toUpperCase() : e.key;
+        const key = canonicalKey(e.key);
         return mods.sort().join('+') + (mods.length ? '+' : '') + key;
     };
 
@@ -1187,11 +1246,21 @@
     function ledgerAdd(combo, script, id) {
         const ledger = readLedger();
         const list = ledger[combo] || [];
-        if (!list.some((e) => e.script === script && e.id === id)) {
+        const existing = list.find((e) => e.script === script && e.id === id);
+        if (existing) {
+            /* WO-01 round-1 (F-23): refresh ts on EVERY register — the old
+             * write-only-on-first-add left live entries aging toward the
+             * 45-day prune, dropping still-registered bindings mid-life and
+             * opening transient false no-conflict windows until the next
+             * re-registration. A script that re-registers on every page load
+             * now keeps its ledger entries alive for as long as it is
+             * actually installed. */
+            existing.ts = Date.now();
+        } else {
             list.push({ script, id, ts: Date.now() });
-            ledger[combo] = list;
-            writeLedger(ledger);
         }
+        ledger[combo] = list;
+        writeLedger(ledger);
         return ledger;
     }
 
@@ -1310,7 +1379,7 @@
 Ψ.hosts = (() => {
     'use strict';
 
-    const handlers = new Map();   // "candidshiny.com" -> { id, match, handler, script }
+    const handlers = new Map();   // "candidshiny.com" -> [{ id, handler, script }, …] (arrays: several modules may share a registrable domain)
     const executed = new Set();   // idempotency: one execution per page load
 
     /**
@@ -1341,11 +1410,15 @@
         };
     }
 
-    /** Longest-suffix match against location.hostname. */
+    /** Longest-suffix match against location.hostname. WO-01 round-1
+     * (F-08): `take >= 1` — single-label hostnames (localhost, intranet
+     * names) were structurally unreachable under the old `take >= 2` floor.
+     * TLD-length probes are harmless: a handler registered on "com" would
+     * be an explicit registration, not an accident this resolver creates. */
     function resolve(hostname = location.hostname) {
         const host = String(hostname).toLowerCase().replace(/^www\./, '');
         const labels = host.split('.');
-        for (let take = labels.length; take >= 2; take--) {
+        for (let take = labels.length; take >= 1; take--) {
             const candidate = labels.slice(labels.length - take).join('.');
             if (handlers.has(candidate)) return { domain: candidate, entries: handlers.get(candidate) };
         }

@@ -13,7 +13,7 @@ Akasha Silence is the consolidation of three legacy shields — Anti-detection, 
 | Version | `5.2.1` |
 | Matches | `*://*/*` |
 | Run-at | `document-start` |
-| Size | 109.5 KB · 2090 lines |
+| Size | 110.2 KB · 2090 lines |
 | Install | [dist/4ndr0tools - Akasha Silence.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Akasha%20Silence.user.js) |
 
 ## Feature Inventory

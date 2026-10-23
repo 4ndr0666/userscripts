@@ -244,10 +244,16 @@
      *
      * @param {string} sel CSS selector.
      * @param {{timeout?: number, root?: ParentNode, signal?: AbortSignal}} [opts]
-     * @returns {Promise<Element>} element — call `.dispose()` no; nothing to dispose on success.
+     * @returns {Promise<Element>} resolves with the element; nothing to
+     *          dispose on success — the observer and timer clean themselves up.
      */
     function waitFor(sel, { timeout = 10000, root, signal } = {}) {
         return new Promise((resolve, reject) => {
+            /* WO-01 round-1 (F-24): a pre-aborted signal must reject BEFORE
+             * the existing-element fast path resolves — the old order let a
+             * caller that aborted while the element already existed win the
+             * race against its own cancellation. */
+            if (signal && signal.aborted) { reject(new DOMException('waitFor aborted', 'AbortError')); return; }
             const scope = root || doc();
             const existing = scope.querySelector(sel);
             if (existing) { resolve(existing); return; }

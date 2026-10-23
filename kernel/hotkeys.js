@@ -32,6 +32,31 @@
         return !!(target.isContentEditable);
     };
 
+    /* WO-01 round-1 (F-02): canonical trigger-key spelling — normalizeCombo
+     * and comboFromEvent MUST agree on every key class or the binding
+     * silently never fires. The old pair uppercased the registered key
+     * ("Ctrl+Enter" → Ctrl+ENTER) while comboFromEvent uppercased only
+     * single-character event keys (real Enter keydowns → "Ctrl+Enter") —
+     * an entire key class (Enter, Tab, Escape, arrows, Space, Home/End…)
+     * could never match its own registration. Both sides now flow through
+     * ONE canonicalizer with a shared alias table. */
+    const KEY_ALIASES = {
+        SPACEBAR: 'SPACE',
+        RETURN: 'ENTER',
+        ESC: 'ESCAPE',
+        DEL: 'DELETE',
+        INS: 'INSERT',
+        PGUP: 'PAGEUP',
+        PGDN: 'PAGEDOWN',
+        UP: 'ARROWUP', DOWN: 'ARROWDOWN', LEFT: 'ARROWLEFT', RIGHT: 'ARROWRIGHT',
+    };
+    const canonicalKey = (raw) => {
+        const up = String(raw).toUpperCase();
+        if (up === ' ') return 'SPACE';
+        if (up.length === 1) return up;
+        return KEY_ALIASES[up] || up;
+    };
+
     /** Normalize a combo string: "alt+shift+s" ≡ "Shift+Alt+S" ≡ "s+alt+shift". */
     function normalizeCombo(combo) {
         const parts = String(combo).split('+').map((p) => p.trim()).filter(Boolean);
@@ -46,7 +71,7 @@
             else if (up === 'SHIFT') mods.add('Shift');
             else if (up === 'META' || up === 'CMD' || up === 'SUPER') mods.add('Meta');
             else if (key) throw new Error(`hotkeys: combo "${combo}" has multiple non-modifier keys`);
-            else key = up;
+            else key = canonicalKey(p);
         }
         if (!key) throw new Error(`hotkeys: combo "${combo}" has no trigger key`);
         return [...mods].sort().join('+') + (mods.size ? '+' : '') + key;
@@ -58,7 +83,7 @@
         if (e.altKey) mods.push('Alt');
         if (e.shiftKey) mods.push('Shift');
         if (e.metaKey) mods.push('Meta');
-        const key = e.key.length === 1 ? e.key.toUpperCase() : e.key;
+        const key = canonicalKey(e.key);
         return mods.sort().join('+') + (mods.length ? '+' : '') + key;
     };
 
@@ -93,11 +118,21 @@
     function ledgerAdd(combo, script, id) {
         const ledger = readLedger();
         const list = ledger[combo] || [];
-        if (!list.some((e) => e.script === script && e.id === id)) {
+        const existing = list.find((e) => e.script === script && e.id === id);
+        if (existing) {
+            /* WO-01 round-1 (F-23): refresh ts on EVERY register — the old
+             * write-only-on-first-add left live entries aging toward the
+             * 45-day prune, dropping still-registered bindings mid-life and
+             * opening transient false no-conflict windows until the next
+             * re-registration. A script that re-registers on every page load
+             * now keeps its ledger entries alive for as long as it is
+             * actually installed. */
+            existing.ts = Date.now();
+        } else {
             list.push({ script, id, ts: Date.now() });
-            ledger[combo] = list;
-            writeLedger(ledger);
         }
+        ledger[combo] = list;
+        writeLedger(ledger);
         return ledger;
     }
 
