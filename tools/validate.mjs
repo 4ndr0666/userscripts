@@ -127,6 +127,21 @@ const RECONCILED_NAMES = {
          * remain and are still consumed). */
         "$$": "removed as dead code (WO-01 round-1): the querySelectorAll wrapper had zero call sites in the shipped script — the $ helper it shadowed alongside is the live path",
     },
+    "Bypass Paywalls": {
+        /* WO-01 round-1 (2-c deferred removal, tombstone purge): the BPC
+         * extension-backend tombstone (~573 lines) was REMOVED — every unit
+         * below lived inside `if (typeof extensionApi !== 'undefined')`,
+         * a free variable that can never exist in a userscript realm, or in
+         * the GA beacon that only it called. The live DOM-side paywall chain
+         * (main/matchDomain/removeDOMElement/waitDOMElement/…) is untouched. */
+        "initGA": "removed with the extension-backend tombstone (WO-01 round-1): dead GA beacon (UA-69824169-2) whose only caller lived inside the unreachable extensionApi guard",
+        "isSiteEnabled": "removed with the extension-backend tombstone (WO-01 round-1): consulted only by the guard block's webRequest listeners — unreachable in the userscript realm",
+        "matchUrlDomain": "removed with the extension-backend tombstone (WO-01 round-1): served only the guard block's request classifiers; matchDomain (the live resolver) survives",
+        "urlHost": "removed with the extension-backend tombstone (WO-01 round-1): sole consumer was matchUrlDomain (also removed)",
+        "getBadgeText": "removed with the extension-backend tombstone (WO-01 round-1): chrome.tabs badge helper, defined inside the unreachable guard",
+        "updateBadge": "removed with the extension-backend tombstone (WO-01 round-1): chrome.tabs badge helper, defined inside the unreachable guard",
+        "setDefaultOptions": "removed with the extension-backend tombstone (WO-01 round-1): body is pure extensionApi.storage/runtime calls; sole caller lived inside the unreachable guard",
+    },
     "Watermark++": {
         "handleLoadEnd": "armNetworkHub onTraffic xhr subscriber (NetHook v4 adoption, suite v1.4.7 — the RPC loadend handler became the subscriber's response-phase arm; request bodies joined by hub exchange id, same 2xx + text gates)",
     },

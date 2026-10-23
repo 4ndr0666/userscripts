@@ -214,9 +214,9 @@
    "version": "0.1.6",
    "description": "A way to bypass paywalls for popular news sites",
    "family": "privacy & security",
-   "sha256": "5ece27c77ec9471bcc247390236d06235dbd3262b3b8900f6782d9afe836c4d2",
-   "lines": 1622,
-   "bytes": 75572,
+   "sha256": "5732061923748a31532d7d50778f539d844a7ea0570265ad28f65b911c460349",
+   "lines": 1061,
+   "bytes": 54051,
    "matches": [
     "*://404media.co/*",
     "*://*.adweek.com/*",
@@ -1561,5 +1561,5 @@
    ]
   }
  ],
- "digest": "b02833900274411160f86242496c94623732ec402c06a89f803d0eb8d703d8fc"
+ "digest": "220350a7c717aa2aff23a16c5cb2b060bc42732a85bedebb40c25b305e59efd0"
 }
