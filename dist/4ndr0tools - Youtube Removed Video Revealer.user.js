@@ -11,6 +11,7 @@
 // @match        *://*.youtube.com/*
 // @noframes
 // @grant        GM_xmlhttpRequest
+// @grant        unsafeWindow
 // @connect      web.archive.org
 // @require      https://cdnjs.cloudflare.com/ajax/libs/cash/8.1.5/cash.min.js
 // ==/UserScript==

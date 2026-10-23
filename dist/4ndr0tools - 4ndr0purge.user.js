@@ -46,7 +46,6 @@
      §1  Shared Utilities
      ═══════════════════════════════════════════════════════════ */
   const $ = (s, r = document) => r.querySelector(s);
-  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const onReady = fn => document.body ? fn() : document.addEventListener('DOMContentLoaded', fn, { once: true });
 

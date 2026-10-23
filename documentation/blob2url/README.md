@@ -13,7 +13,7 @@ Blob2URL is the suite's universal media extraction engine: it watches the page's
 | Version | `7.3.0` |
 | Matches | `*://*/*` |
 | Run-at | `document-idle` |
-| Size | 135.9 KB · 2405 lines |
+| Size | 135.9 KB · 2404 lines |
 | Install | [dist/4ndr0tools - Blob2URL.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Blob2URL.user.js) |
 
 ## Feature Inventory
@@ -44,7 +44,7 @@ Vault cap, autosave, and panel hotkeys persist through GM storage.
 
 ## Permissions (OPSEC)
 
-GM grants: `GM_addStyle`, `GM_registerMenuCommand`, `GM_setClipboard`, `GM_xmlhttpRequest`, `GM_download`, `unsafeWindow`.
+GM grants: `GM_addStyle`, `GM_registerMenuCommand`, `GM_setClipboard`, `GM_xmlhttpRequest`, `GM_download`.
 Cross-origin connects: `*`.
 
 > v7.1.2: the DASH manifest parse is Trusted-Types policy-wrapped (suite v1.4.2 class fix) so universal-scope installs survive require-trusted-types-for hosts.

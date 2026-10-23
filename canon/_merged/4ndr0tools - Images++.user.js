@@ -24,6 +24,7 @@
 // @grant        GM.setClipboard
 // @grant        GM.setValue
 // @grant        GM.xmlHttpRequest
+// @grant        unsafeWindow
 // @connect      *
 // @connect      self
 // @connect      github.com

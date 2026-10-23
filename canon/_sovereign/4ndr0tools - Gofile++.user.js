@@ -482,7 +482,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.2.0 —
             Object.keys(settings).forEach((key) => {
                 const setting = settings[key]
                 utils.setValue(setting.key, setting.defaultValue)
-                createNotification(utils.getTranslation('success'), `${utils.getTranslation(setting.i18nKey)} ${utils.getTranslation('successfully_reset')}`)
+                createNotification(utils.getTranslation('success'), `${utils.getTranslation(setting.i18nKey)} ${utils.getTranslation('successfully_reset')}`, 'success')
             })
         },
         initSettings() {
@@ -638,8 +638,6 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.2.0 —
                 }
             })
 
-            // console.log('[GoFile Enhanced] Sending to ABDM:', postDatas)
-
             postDatas.forEach(async (data) => {
                 try {
                     const res = await utils.gmFetch(`http://localhost:${abdmPort}/start-headless-download`, {
@@ -735,7 +733,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.2.0 —
                         if (item.error) {
                             createNotification(utils.getTranslation('error'), `${utils.getTranslation('failed_to_send_to_aria2')} / ${item.error.code} - ${item.error.message}`, 'error')
                         } else {
-                            createNotification(utils.getTranslation('success'), `${utils.getTranslation('successfully_sent_to_aria2')} / ID: ${item.result}`)
+                            createNotification(utils.getTranslation('success'), `${utils.getTranslation('successfully_sent_to_aria2')} / ID: ${item.result}`, 'success')
                         }
                     })
                 } else {

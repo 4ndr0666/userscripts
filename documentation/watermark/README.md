@@ -11,9 +11,9 @@ Watermark++ detects and removes watermarks using perceptual-hash matching agains
 | Dimension | Value |
 |---|---|
 | Version | `2.1.0` |
-| Matches | `https://gemini.google.com/app`, `https://gemini.google.com/app/*`, `https://gemini.google.com/*`, `https://business.gemini.google/app` (+2 more) |
+| Matches | `https://gemini.google.com/*`, `https://business.gemini.google/*` |
 | Run-at | `document-start` |
-| Size | 1257.2 KB · 15443 lines |
+| Size | 1257.0 KB · 15439 lines |
 | Install | [dist/4ndr0tools - Watermark++.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Watermark%2B%2B.user.js) |
 
 ## Feature Inventory

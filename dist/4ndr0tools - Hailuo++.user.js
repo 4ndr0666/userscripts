@@ -225,7 +225,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.0.2 —
         constructor() {
             this.scriptVersion = (typeof GM_info !== 'undefined' && GM_info && GM_info.script && GM_info.script.version)
                 ? GM_info.script.version
-                : "5.4.0";
+                : "6.0.2";
             this.selectors = {
                 videoCardQueries: [
                     "div[class*='group/video-card']",

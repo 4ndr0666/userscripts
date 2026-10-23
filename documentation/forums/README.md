@@ -13,7 +13,7 @@ Forums++ is the heavy machinery for forum work sessions: powerful bulk downloadi
 | Version | `1.10.2` |
 | Matches | `https://simpcity.su/threads/*`, `https://simpcity.cr/threads/*` |
 | Run-at | `document-start` |
-| Size | 225.2 KB · 4835 lines |
+| Size | 225.1 KB · 4832 lines |
 | Install | [dist/4ndr0tools - Forums++.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Forums%2B%2B.user.js) |
 
 ## Feature Inventory
@@ -30,7 +30,7 @@ Queue, index, and archive preferences persist through GM storage.
 
 ## Permissions (OPSEC)
 
-GM grants: `GM_xmlhttpRequest`, `GM_download`, `GM_setValue`, `GM_getValue`, `GM_log`.
+GM grants: `GM_xmlhttpRequest`, `GM_download`, `GM_setValue`, `GM_getValue`.
 Cross-origin connects: `self`, `coomer.su`, `kemono.su`, `github.com`, `big-taco-1img.bunkr.ru`, `i-pizza.bunkr.ru`, `bunkr.ac`, `bunkr.ax`, `bunkr.black`, `bunkr.cat`, `bunkr.ci`, `bunkr.cr`, `bunkr.fi`, `bunkr.is`, `bunkr.media`, `bunkr.nu`, `bunkr.red`, `bunkr.ru`, `bunkr.se`, `bunkr.si`, `bunkr.site`, `bunkr.pk`, `bunkr.ph`, `bunkr.ps`, `bunkr.sk`, `bunkr.ws`, `bunkrr.ru`, `bunkrr.su`, `bunkrrr.org`, `bunkr-cache.se`, `mlk-bk.cdn.gigachad-cdn.ru`, `cyberdrop.me`, `cyberdrop.cc`, `cyberdrop.ch`, `cyberdrop.cloud`, `cyberdrop.nl`, `cyberdrop.to`, `cyberfile.su`, `cyberfile.me`, `saint2.su`, `saint2.pk`, `saint2.cr`, `redd.it`, `i.ibb.co`, `ibb.co`, `imagebam.com`, `jpg.fish`, `jpg.fishing`, `jpg.pet`, `jpeg.pet`, `jpg1.su`, `jpg2.su`, `jpg3.su`, `jpg4.su`, `jpg5.su`, `jpg6.su`, `selti-delivery.ru`, `imgbox.com`, `pixhost.to`, `pornhub.com`, `postimg.cc`, `imgvb.com`, `pixxxels.cc`, `postimg.cc`, `imagevenue.com`, `pbs.twimg.com`, `media.tumblr.com`, `pixeldrain.com`, `redgifs.com`, `noodlemagazine.com`, `pvvstream.pro`, `spankbang.com`, `sb-cd.com`, `gofile.io`, `phncdn.com`, `xvideos.com`, `githubusercontent.com`.
 
 ## Lineage

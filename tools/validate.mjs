@@ -121,6 +121,12 @@ const RECONCILED_NAMES = {
     "Akasha Silence": {
         "applyNetworkHooks": "applyLocalHooks (renamed, suite v1.4.5) — the fetch/XHR/beacon defusing migrated to the NetHook v3 veto (__4NDR0_NET_API__.onRequest, kernel-owned wraps); the local installer keeps the WebSocket/WebRTC/worker pacifiers",
     },
+    "4ndr0purge": {
+        /* WO-01 round-1 (2-c E17): dead helper removed — zero call sites
+         * verified (comment-stripped identifier census; $ / sleep / onReady
+         * remain and are still consumed). */
+        "$$": "removed as dead code (WO-01 round-1): the querySelectorAll wrapper had zero call sites in the shipped script — the $ helper it shadowed alongside is the live path",
+    },
     "Watermark++": {
         "handleLoadEnd": "armNetworkHub onTraffic xhr subscriber (NetHook v4 adoption, suite v1.4.7 — the RPC loadend handler became the subscriber's response-phase arm; request bodies joined by hub exchange id, same 2xx + text gates)",
     },

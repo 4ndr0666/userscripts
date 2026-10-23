@@ -14,7 +14,6 @@
 // @grant        GM_setClipboard
 // @grant        GM_xmlhttpRequest
 // @grant        GM_download
-// @grant        unsafeWindow
 // @connect      *
 // ==/UserScript==
 

@@ -13,7 +13,7 @@ LinkMasterΨ decodes, previews, exports, validates, and scrapes every link on an
 | Version | `6.3.2` |
 | Matches | `*://*/*`, `*://*.instagram.com/*` |
 | Run-at | `document-start` |
-| Size | 252.7 KB · 5036 lines |
+| Size | 252.6 KB · 5034 lines |
 | Install | [dist/4ndr0tools - LinkMasterΨ.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js) |
 
 ## Feature Inventory
@@ -42,7 +42,7 @@ Host/media modes, checker depth, and HUD layout persist through GM storage (lm-p
 
 ## Permissions (OPSEC)
 
-GM grants: `GM_setValue`, `GM_getValue`, `GM_deleteValue`, `GM_xmlhttpRequest`, `GM_registerMenuCommand`, `GM_setClipboard`, `GM_download`, `unsafeWindow`.
+GM grants: `GM_setValue`, `GM_getValue`, `GM_deleteValue`, `GM_xmlhttpRequest`, `GM_registerMenuCommand`, `GM_download`.
 Cross-origin connects: `*`, `127.0.0.1`, `cdninstagram.com`, `fbcdn.net`, `instagram.com`.
 
 > v6.2.2: both parse sites route through the [B5] TTparse policy (suite v1.4.2 class fix) — universal scope means YouTube/Google/GitHub hosts are daily traffic.

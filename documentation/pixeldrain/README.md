@@ -13,7 +13,7 @@ Pixeldrain++ multiplies pixeldrain downloads: multi-proxy parallel transport, st
 | Version | `1.2.1` |
 | Matches | `https://pixeldrain.com/*`, `https://pixeldrain.net/*`, `https://pixeldrain.dev/*`, `https://pixeldra.in/*` |
 | Run-at | `document-start` |
-| Size | 200.8 KB · 3716 lines |
+| Size | 200.8 KB · 3715 lines |
 | Install | [dist/4ndr0tools - Pixeldrain++.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Pixeldrain%2B%2B.user.js) |
 
 ## Feature Inventory
@@ -30,7 +30,7 @@ Transport and proxy preferences persist through GM storage.
 
 ## Permissions (OPSEC)
 
-GM grants: `GM_xmlhttpRequest`, `GM_download`, `GM_openInTab`, `GM_setValue`, `GM_getValue`, `GM_deleteValue`, `GM_listValues`, `GM_registerMenuCommand`, `GM_addStyle`, `GM_notification`, `GM_setClipboard`, `unsafeWindow`.
+GM grants: `GM_xmlhttpRequest`, `GM_download`, `GM_openInTab`, `GM_setValue`, `GM_getValue`, `GM_deleteValue`, `GM_registerMenuCommand`, `GM_addStyle`, `GM_notification`, `GM_setClipboard`, `unsafeWindow`.
 Cross-origin connects: `pixeldrain.com`, `pixeldrain.net`, `pixeldrain.dev`, `pixeldra.in`, `cdn.pixeldrain.eu.cc`, `pixeldrain.eu.cc`, `pd.1drv.eu.org`, `pd.cybar.xyz`, `pd.zeroken.id`, `pd.hakimi.uk`, `pd.512.gay`, `pd.voidnet.tech`, `pd.kanibal.xyz`, `pd.arcjbtc.my.id`, `pd.ramdani.cloud`, `pd.noisyfox.io`, `pd.meridian.pm`, `pd.dwnld.workers.dev`, `pd.itsmeonly.workers.dev`, `pd.blazing.works`, `pd.unblockit.click`, `127.0.0.1`, `localhost`, `*`.
 
 ## Lineage

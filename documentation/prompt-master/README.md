@@ -13,7 +13,7 @@ Prompt Master is a manager's toolkit for AI prompt libraries — originally Goog
 | Version | `28.7.7` |
 | Matches | `*://geminigen.ai/*`, `*://gist.github.com/*`, `*://gemini.google.com/*`, `*://labs.google/fx/*` (+2 more) |
 | Run-at | `document-end` |
-| Size | 1133.1 KB · 23840 lines |
+| Size | 1133.0 KB · 23837 lines |
 | Install | [dist/4ndr0tools - Prompt Master.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Prompt%20Master.user.js) |
 
 ## Feature Inventory
@@ -44,7 +44,7 @@ Library organization and sync preferences persist through GM storage.
 
 ## Permissions (OPSEC)
 
-GM grants: `GM_getValue`, `GM_setValue`, `GM_listValues`, `GM_deleteValue`, `GM_xmlhttpRequest`, `GM_registerMenuCommand`, `GM_setClipboard`, `unsafeWindow`.
+GM grants: `GM_getValue`, `GM_setValue`, `GM_xmlhttpRequest`, `GM_registerMenuCommand`, `GM_setClipboard`.
 Cross-origin connects: `generativelanguage.googleapis.com`, `gist.githubusercontent.com`, `raw.githubusercontent.com`, `router.huggingface.co`, `api.longcat.chat`, `cdn.jsdelivr.net`, `fonts.googleapis.com`, `fonts.gstatic.com`, `gist.github.com`, `api.github.com`, `openrouter.ai`, `api.groq.com`, `gitlab.com`.
 
 > Remote font fetches are manager-level GM_xmlhttpRequest → base64 inline (OPSEC adjudicated exemption). 522-extension accent family is an adjudicated exemption from the strict palette.

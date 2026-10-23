@@ -37,9 +37,7 @@
 // @grant          GM_deleteValue
 // @grant          GM_xmlhttpRequest
 // @grant          GM_registerMenuCommand
-// @grant          GM_setClipboard
 // @grant          GM_download
-// @grant          unsafeWindow
 // @connect        *
 // @connect        127.0.0.1
 // @connect        cdninstagram.com

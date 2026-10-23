@@ -1295,7 +1295,7 @@ const __4NDR0_NET_API__ = (function () {
 
     const CFG = {
         SCRIPT_NAME: 'Ψ Playlist Master',
-        SCRIPT_VERSION: '1.7.1',
+        SCRIPT_VERSION: '1.7.2',
         STORAGE_KEY: 'ytpu.settings',
         SNAPSHOT_KEY: 'ytpu.snapshots',
         SNAPSHOT_CAP: 20,

@@ -182,7 +182,7 @@
 // ==/UserScript==
 // 0.1.4 (suite v1.4.2): Trusted-Types class fix — parseFromString sites policy-wrapped (parse sinks die under require-trusted-types-for 'script').
 // 0.1.3 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: BypassPaywalls.user v0.1.4 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: BypassPaywalls.user v0.1.6 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 (function () {
     'use strict';
@@ -364,18 +364,22 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: BypassPaywalls.user v0.1
         if (articleContent) {
             const articleOffer = document.querySelector('.article-offer');
             if (articleOffer) {
-                const cssSelector = articleContent.querySelectorAll('p')[5].getAttribute('class');
-                const hiddenNotPars = articleContent.querySelectorAll('.' + cssSelector + ':not(p)');
-                for (const hiddenNotPar of hiddenNotPars) {
-                    hiddenNotPar.classList.remove(cssSelector);
-                    hiddenNotPar.removeAttribute('style');
-                }
-                const hiddenPars = articleContent.querySelectorAll('p.' + cssSelector);
-                const parser = new DOMParser();
-                for (const hiddenPar of hiddenPars) {
-                    const parHtml = parser.parseFromString(TTwrap('<div style="margin: 10px 0px; font-size: 17px">' + hiddenPar.innerHTML + '</div>'), 'text/html');
-                    const parDom = parHtml.querySelector('div');
-                    articleContent.insertBefore(parDom, hiddenPar);
+                const articlePars = articleContent.querySelectorAll('p');
+                const markerPar = articlePars.length > 5 ? articlePars[5] : null;
+                const cssSelector = markerPar ? markerPar.getAttribute('class') : null;
+                if (cssSelector) {
+                    const hiddenNotPars = articleContent.querySelectorAll('.' + cssSelector + ':not(p)');
+                    for (const hiddenNotPar of hiddenNotPars) {
+                        hiddenNotPar.classList.remove(cssSelector);
+                        hiddenNotPar.removeAttribute('style');
+                    }
+                    const hiddenPars = articleContent.querySelectorAll('p.' + cssSelector);
+                    const parser = new DOMParser();
+                    for (const hiddenPar of hiddenPars) {
+                        const parHtml = parser.parseFromString(TTwrap('<div style="margin: 10px 0px; font-size: 17px">' + hiddenPar.innerHTML + '</div>'), 'text/html');
+                        const parDom = parHtml.querySelector('div');
+                        articleContent.insertBefore(parDom, hiddenPar);
+                    }
                 }
                 const firstSpan = document.querySelector('p > span');
                 if (firstSpan) { firstSpan.removeAttribute('class'); }

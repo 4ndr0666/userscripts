@@ -6,9 +6,9 @@
    "version": "1.0.2",
    "description": "Universal one-click session reset. Nukes Cookies, Storage, IDB, and SW on ANY site.",
    "family": "privacy & security",
-   "sha256": "42ed3fe902f44c3834107a6f396db53a532f5514a004e8072eb025f2807ae0e0",
-   "lines": 306,
-   "bytes": 13397,
+   "sha256": "b89c4b21a87bfc3f29848f1f8e8b4fad25bc7daad6a2fb96198e23011259539a",
+   "lines": 305,
+   "bytes": 13335,
    "matches": [
     "*://*/*"
    ],
@@ -117,9 +117,9 @@
    "version": "6.0.0",
    "description": "Automatically translates any non-English page into English via translate.goog redirect — layered metadata + text language detection, SPA route watching, session back-loop guard, Ψ glass console. No broken Element API. No cookies. No banners.",
    "family": "ux utilities",
-   "sha256": "cadb5954d8cf3a03b3d812bf5b5eca38703be14c9ef28e1d43a5024e12c60d81",
+   "sha256": "2e2dec911342498175e9e73944f5bd71ff76daa7a831d7220b09b57892b9fac7",
    "lines": 1477,
-   "bytes": 65673,
+   "bytes": 65670,
    "matches": [
     "*://*/*"
    ],
@@ -150,9 +150,9 @@
    "version": "7.3.0",
    "description": "Universal blob exfiltration, universal media URL sniffer + wire capture + URL vault (Alt+Shift+V), interactive asset sniffing, CSP/CORS bypass.",
    "family": "media & links",
-   "sha256": "7cd48162c0c67459eaadf0d69b8b25ee3400253d0eacab7162d0bf8927c47069",
-   "lines": 2405,
-   "bytes": 139209,
+   "sha256": "9496f8c3c8b00e1b36b624013dfabfadd424c64c41f0b3646a605e6e9b65dcb9",
+   "lines": 2404,
+   "bytes": 139179,
    "matches": [
     "*://*/*"
    ],
@@ -162,8 +162,7 @@
     "GM_registerMenuCommand",
     "GM_setClipboard",
     "GM_xmlhttpRequest",
-    "GM_download",
-    "unsafeWindow"
+    "GM_download"
    ],
    "requires": [],
    "connects": [
@@ -215,9 +214,9 @@
    "version": "0.1.6",
    "description": "A way to bypass paywalls for popular news sites",
    "family": "privacy & security",
-   "sha256": "f67606975aa45ed57c7a828bcb7310aabc18b8ff0b63c8ee974e20c6914ca4c1",
-   "lines": 1618,
-   "bytes": 75326,
+   "sha256": "5ece27c77ec9471bcc247390236d06235dbd3262b3b8900f6782d9afe836c4d2",
+   "lines": 1622,
+   "bytes": 75572,
    "matches": [
     "*://404media.co/*",
     "*://*.adweek.com/*",
@@ -507,9 +506,9 @@
    "version": "1.10.2",
    "description": "Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.",
    "family": "forums",
-   "sha256": "c7630f506214b59092c9fbe5c3482dd1cb6ddac6a427fb9db7b2d0da1f385818",
-   "lines": 4835,
-   "bytes": 230634,
+   "sha256": "7fb57ce9c82b0bcd69ad281f1809707409202dacbda1facab5a87ebad6ebe9d4",
+   "lines": 4832,
+   "bytes": 230488,
    "matches": [
     "https://simpcity.su/threads/*",
     "https://simpcity.cr/threads/*"
@@ -519,8 +518,7 @@
     "GM_xmlhttpRequest",
     "GM_download",
     "GM_setValue",
-    "GM_getValue",
-    "GM_log"
+    "GM_getValue"
    ],
    "requires": [
     "https://unpkg.com/@popperjs/core@2",
@@ -621,9 +619,9 @@
    "version": "2.2.0",
    "description": "Directly batch-download GoFiles with a robust UI. Supports recursive folder scans, direct links, and download managers (Aria2, IDM). Fixing SPA persistence and Sandbox access.",
    "family": "media & links",
-   "sha256": "8a4f545f8be3d0158bd63f43070aa06ad030f4ebcde84d06909f5181189fc215",
-   "lines": 2259,
-   "bytes": 117626,
+   "sha256": "b4d09147ac7e14195841a03ecaa2c9bbc86f118ef13a6f23bd0c62d90e6e28cc",
+   "lines": 2257,
+   "bytes": 117571,
    "matches": [
     "*://gofile.io/*"
    ],
@@ -686,7 +684,7 @@
    "version": "6.0.2",
    "description": "Enterprise-grade, idempotent automation engine for HailuoAI featuring automated queue management, asset fetching with tracked-download deduplication, an in-HUD Asset Bay thumbnail gallery (click-to-new-window, hover-playable previews, blob downloads that never navigate the session window) with cross-reload persistence, completion notifications, failure-card masking, API hard purge, and interactive asset links — hardened for the 2026-09 MiniMax H3 site generation and the hailuoai.video/agent chat surface. v5.4: editable-context (Slate) DOM guards, self-healing HUD watchdog, HUD collapse + Ctrl+Alt+H toggle, frame isolation, webp-aware blob transport with retry, and non-destructive title telemetry.",
    "family": "sovereign platforms",
-   "sha256": "25370e44646fb4c7ad01d9a486d700e060533af90b4f85b12637fdaf8b4a3670",
+   "sha256": "a4943a6c1043d7acb03203f9507f6ef1afb372a5acbf5ac692a9c922da06237b",
    "lines": 1905,
    "bytes": 96625,
    "matches": [
@@ -754,9 +752,9 @@
    "version": "4.0.3",
    "description": "Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. Collapse-mode hotkey is configurable.",
    "family": "images",
-   "sha256": "b1d45bd10189adbbe4ec907e9e9684e33f7b9ca887be2fa276f235807b064807",
-   "lines": 4617,
-   "bytes": 137969,
+   "sha256": "7e472103ef7a9729b0155fc40265bce0320154d78c3cbf83f1f2f2c28aef765c",
+   "lines": 4618,
+   "bytes": 137999,
    "matches": [
     "*://*/*"
    ],
@@ -779,7 +777,8 @@
     "GM.unregisterMenuCommand",
     "GM.setClipboard",
     "GM.setValue",
-    "GM.xmlHttpRequest"
+    "GM.xmlHttpRequest",
+    "unsafeWindow"
    ],
    "requires": [],
    "connects": [
@@ -815,16 +814,15 @@
    "version": "13.2.1",
    "description": "Tab-Bar + Dock Integration. Hotkey trigger (Alt+I). Ad-Blocking. Deep-Stack Recovery. Resilient cursor-based pagination. Stories support. Image/video download engine.",
    "family": "sovereign platforms",
-   "sha256": "f83c616014f59ce36dc3c05c5001a8ab45f9ffbd68343453e2c0268f46c042d5",
-   "lines": 2523,
-   "bytes": 131872,
+   "sha256": "e8f15bfcc80a2d4a34fe1f908f1c6e349c318cdaf1326906d8b14efb7bd68184",
+   "lines": 2522,
+   "bytes": 131843,
    "matches": [
     "*://*.instagram.com/*"
    ],
    "excludes": [],
    "grants": [
     "GM_xmlhttpRequest",
-    "GM_addStyle",
     "GM_registerMenuCommand",
     "GM_download",
     "unsafeWindow"
@@ -851,9 +849,9 @@
    "version": "6.3.2",
    "description": "Accurately decodes, previews, exports, validates and scrapes all links. (Dual MPV Support + Ψ IG Harvester + sexyforums premium-link unwrap + GitHub raw-URL harvest + Ψ2 forum deep-scrape engine)",
    "family": "media & links",
-   "sha256": "8e497d88f74ded392cf2021b4fc7080d1685978a9d99af7ace5fabef3a999474",
-   "lines": 5036,
-   "bytes": 258747,
+   "sha256": "36cdf718cfa533afc1891f8e424c86256a17b295b72f0fdeaa046f0fd241f9f4",
+   "lines": 5034,
+   "bytes": 258680,
    "matches": [
     "*://*/*",
     "*://*.instagram.com/*"
@@ -865,9 +863,7 @@
     "GM_deleteValue",
     "GM_xmlhttpRequest",
     "GM_registerMenuCommand",
-    "GM_setClipboard",
-    "GM_download",
-    "unsafeWindow"
+    "GM_download"
    ],
    "requires": [
     "https://unpkg.com/@popperjs/core@2",
@@ -1047,9 +1043,9 @@
    "version": "1.2.1",
    "description": "Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.",
    "family": "media & links",
-   "sha256": "db60de79c2c25dec8713116b5e681ec673cf18f968955d2efd0de4634518de02",
-   "lines": 3716,
-   "bytes": 205667,
+   "sha256": "f8f3ddbfffd267cc0fce190c1897536d84c1548b91edb3e4a309161d60520ee1",
+   "lines": 3715,
+   "bytes": 205633,
    "matches": [
     "https://pixeldrain.com/*",
     "https://pixeldrain.net/*",
@@ -1065,7 +1061,6 @@
     "GM_setValue",
     "GM_getValue",
     "GM_deleteValue",
-    "GM_listValues",
     "GM_registerMenuCommand",
     "GM_addStyle",
     "GM_notification",
@@ -1112,9 +1107,9 @@
    "version": "28.7.7",
    "description": "Google Flow prompt manager toolkit (works on any AI, just add url) - persisted unit ledger meters every generation click, organization engine: collections, saved views, favorites, ratings, archive, group-by, and insights for large prompt libraries, dedupe, media slideshow, ai prompt enhancer, auto gist syncing, hotkeys, much more.",
    "family": "sovereign platforms",
-   "sha256": "1c96a6584f156e411959c3a61116a8008e9d80eb5daa4dd1bb93a683e86e16b7",
-   "lines": 23840,
-   "bytes": 1160311,
+   "sha256": "c787237218f71cbcc0b141c217c552bc3cae34e979e57bc922b67417d85b63d6",
+   "lines": 23837,
+   "bytes": 1160241,
    "matches": [
     "*://geminigen.ai/*",
     "*://gist.github.com/*",
@@ -1127,12 +1122,9 @@
    "grants": [
     "GM_getValue",
     "GM_setValue",
-    "GM_listValues",
-    "GM_deleteValue",
     "GM_xmlhttpRequest",
     "GM_registerMenuCommand",
-    "GM_setClipboard",
-    "unsafeWindow"
+    "GM_setClipboard"
    ],
    "requires": [],
    "connects": [
@@ -1258,15 +1250,11 @@
    "version": "2.1.0",
    "description": "Security research and alignment testing only.",
    "family": "sovereign platforms",
-   "sha256": "1cbe1b2660ad1436d4fe4d3a6c0d39c10082c12a6ccb23ee4f881917e471426d",
-   "lines": 15443,
-   "bytes": 1287334,
+   "sha256": "c5b5367d28a03904ae4c630c8f1167780866b8ca7c40a7db71183e8669fa3693",
+   "lines": 15439,
+   "bytes": 1287132,
    "matches": [
-    "https://gemini.google.com/app",
-    "https://gemini.google.com/app/*",
     "https://gemini.google.com/*",
-    "https://business.gemini.google/app",
-    "https://business.gemini.google/app/*",
     "https://business.gemini.google/*"
    ],
    "excludes": [],
@@ -1344,12 +1332,12 @@
    "version": "0.4.1",
    "description": "Robust, event-driven slideshow, fullscreen preview, and on-screen status for Yandex reverse-image search.",
    "family": "images",
-   "sha256": "38954a7d436835ef5a053be9ada9fbf9b0be13b9bf1c6a7cc52bbd4ff976824b",
+   "sha256": "6322827d4866a6c1405ef6b573984bb6f1650f08f9c700380386552fc0c9aa8b",
    "lines": 277,
-   "bytes": 11638,
+   "bytes": 11630,
    "matches": [
-    "http*://yandex.com/images/*",
-    "http*://yandex.ru/images/*"
+    "*://yandex.com/images/*",
+    "*://yandex.ru/images/*"
    ],
    "excludes": [],
    "grants": [
@@ -1370,7 +1358,7 @@
    "version": "1.7.2",
    "description": "Channel playlist buttons (All / Popular / Videos / Shorts / Streams / Members-only), Random play (prefer newest/oldest), reverse autoplay order, playlist autoplay toggle, duration sort, bulk copy/move/delete, JSON + plaintext export/import, snapshots with deleted-video detection, quick watch_videos playlists, queue & watch-later overlays, playlist close button, date/view metadata, episode auto-expand, huge-playlist browser, live settings (no reload), always-available Ψ deck, playlist row filter, duplicate finder & purge, global hotkeys (Alt+Shift+U/S/X), failsafe deck rescue, 404-proof navigation guards, Trusted-Types-immune rendering, fully-visible fit-content modal dialogs.",
    "family": "video & players",
-   "sha256": "021d0e959e2f9754d2b9d094c8d922f06269ef5b5172d40c6a9209305f3be39d",
+   "sha256": "a531ac1aa84ffb56c48664c22167266bfdc746a668a46f0c51e30ef18d18a539",
    "lines": 6612,
    "bytes": 344008,
    "matches": [
@@ -1426,15 +1414,16 @@
    "version": "2.0.3",
    "description": "Restores titles for removed or private videos in YouTube playlists",
    "family": "video & players",
-   "sha256": "34987329a9821bb6313a9d9f7eeef6c0d3ce0a3580065a0f61ed22285cf04144",
-   "lines": 612,
-   "bytes": 29849,
+   "sha256": "80a1d3775d96aeeda44297850e3237dc2e3f8d1cc592a8570fd34b05501ea1cc",
+   "lines": 613,
+   "bytes": 29879,
    "matches": [
     "*://*.youtube.com/*"
    ],
    "excludes": [],
    "grants": [
-    "GM_xmlhttpRequest"
+    "GM_xmlhttpRequest",
+    "unsafeWindow"
    ],
    "requires": [
     "https://cdnjs.cloudflare.com/ajax/libs/cash/8.1.5/cash.min.js"
@@ -1527,7 +1516,7 @@
  "hotDomains": [
   {
    "domain": "*:",
-   "count": 221,
+   "count": 223,
    "scripts": [
     "4ndr0tools - 4ndr0Purge",
     "4ndr0tools - 4ndr0serviceguard Companion",
@@ -1553,6 +1542,7 @@
     "4ndr0tools - Stream Interceptor",
     "4ndr0tools - Website Control Panel",
     "4ndr0tools - YT Filter",
+    "4ndr0tools - Yandex Image Search++",
     "4ndr0tools - Youtube Removed Video Revealer",
     "4ndr0tools - m3u8++"
    ]
@@ -1565,34 +1555,13 @@
    ]
   },
   {
-   "domain": "gemini.google.com",
-   "count": 3,
-   "scripts": [
-    "4ndr0tools - Watermark++"
-   ]
-  },
-  {
-   "domain": "business.gemini.google",
-   "count": 3,
-   "scripts": [
-    "4ndr0tools - Watermark++"
-   ]
-  },
-  {
    "domain": "youtube.com",
    "count": 3,
    "scripts": [
     "4ndr0tools - YouTube Playlist Master",
     "4ndr0tools - YouTube Embed Redirect Button"
    ]
-  },
-  {
-   "domain": "http*:",
-   "count": 2,
-   "scripts": [
-    "4ndr0tools - Yandex Image Search++"
-   ]
   }
  ],
- "digest": "35b580e8712c52acf8bb1282cdc1a4fe6088ba77a9c461221e97c8ae56fc88a5"
+ "digest": "e96484dd6843f8fb613ee6cf21f5498eaf4c26213750a399c09bf8defa2521ea"
 }

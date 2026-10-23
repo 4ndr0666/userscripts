@@ -30,7 +30,7 @@
     "use strict";
 
     // ─── SCRIPT META ──────────────────────────────────────────────────────────
-    const SCRIPT = { name: "4ndr0tools - AutoTranslate", version: "5.0.0-Ψ", spec: "3lectric-Glass" };
+    const SCRIPT = { name: "4ndr0tools - AutoTranslate", version: "6.0.0", spec: "3lectric-Glass" };
 
     // ─── CONSTANTS ────────────────────────────────────────────────────────────
     const TARGET_LANG        = "en";
