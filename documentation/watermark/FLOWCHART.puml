@@ -1,6 +1,6 @@
 @startuml
 skinparam monochrome true
-title Watermark++ — RPC observation → processing proxy → overlay family (v1.5.0)
+title Watermark++ — RPC observation → processing proxy → overlay family (v2.1.0)
 
 start
 :boot on gemini.google.com (host-gated);

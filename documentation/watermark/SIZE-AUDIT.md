@@ -1,6 +1,6 @@
-# SIZE-AUDIT — 4ndr0tools - Watermark++.user.js (suite v1.5.0, G6 record)
+# SIZE-AUDIT — 4ndr0tools - Watermark++.user.js (suite v1.8.2, G6 record)
 
-**Artifact:** `dist/4ndr0tools - Watermark++.user.js` — 1,279,706 B (measured this round; v1.4.10 baseline 1,279,143 B).
+**Artifact:** `dist/4ndr0tools - Watermark++.user.js` — 1,286,666 B (re-measured 2026-10-23 at suite v1.8.2, script v2.1.0; the v1.5.0-round record below measured 1,279,706 B; v1.4.10 baseline 1,279,143 B).
 **Gate:** tools/size-budget.mjs (1,300,000 B hard budget; 1,000,000 B audit line — this record satisfies the latter).
 
 ## Composition analysis (machine-measured, this round)
@@ -37,7 +37,7 @@ critical path.
 
 ## Justification
 
-Ships as-is at 1,279,706 B: under the 1.3 MB hard budget, above the audit
+Ships as-is at 1,286,666 B (re-measured 2026-10-23, suite v1.8.2): under the 1.3 MB hard budget, above the audit
 line by design, with this record as the audited decision. The watch item for
 the next round: if the engine grows past ~1,290,000 B, the vision core
 becomes a decomposition candidate (observer → overlay split, or a lazily-

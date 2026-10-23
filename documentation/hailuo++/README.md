@@ -1,5 +1,7 @@
 # 4ndr0tools - Hailuo++ (GUP v5.3 Revision)
 
+> **⚠ HISTORICAL DEVLOG — v5.3.0 arc.** This document is the preserved engineering record of the v5.3.0 development cycle; the devlog body below is kept intact as history. The **current shipped script is v6.0.2**, built from `canon/_promoted/4ndr0tools - Hailuo++.user.js` into **`dist/4ndr0tools - Hailuo++.user.js`** — see [`documentation/INDEX.md`](../INDEX.md) for the live reference. Filenames, version stamps and verification steps below refer to the historical v5.3.0 deliverable, not the current release.
+
 ## Deliverable
 
 **`4ndr0tools-HailuoPlusPlus-v5.3.0.user.js`** — revision **v5.3.0**, hardened for the 2026-09 MiniMax H3 site generation and the `hailuoai.video/agent` chat surface, now with the **Asset Bay**: a non-interrupting capture system that replaces the window-hijacking auto-download.
@@ -31,13 +33,17 @@ On `/agent`, assets are plain `cdn.hailuoai.video` images with no rendered downl
 
 ## Install
 
+> **Current release:** install **`dist/4ndr0tools - Hailuo++.user.js`** (v6.0.2) — see [INDEX.md](../INDEX.md). The steps below are the **historical v5.3.0** procedure, retained as part of the devlog record.
+
 1. Open the Tampermonkey dashboard.
 2. If a previous version is installed, open it in the editor, select-all, replace with this file's contents, and save (preserves your GM_setValue state). Otherwise create a new script from this file.
-3. Navigate to `https://hailuoai.video/agent` — the HUD should boot; first console line ends with `Build 5.3.0.`.
+3. Navigate to `https://hailuoai.video/agent` — the HUD should boot; first console line ends with `Build 5.3.0.` (historical v5.3.0 build stamp; the current v6.0.2 release reports its own version).
 
 > If Tampermonkey asks once about cross-domain requests, allow it — the header already declares `@connect cdn.hailuoai.video` (+ sibling hosts) so blob downloads run without further prompts.
 
 ## What to verify while testing
+
+> Version checks below describe the historical v5.3.0 build; for the current release verify `@version 6.0.2` in `dist/4ndr0tools - Hailuo++.user.js`.
 
 - **Version stamp**: first console line ends `Build 5.3.0.`; HUD footer shows `v5.3.0`.
 - **On /agent**: generate an image → the Asset Bay bar appears with a thumbnail + flash; click the thumbnail → new window (session untouched); hover → enlarged preview; expand → SAVE downloads a real file (`hailuo-<name>-<timestamp>.<ext>`); COPY puts the CDN URL on your clipboard.

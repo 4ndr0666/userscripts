@@ -43,11 +43,11 @@ feature was dropped, renamed away, or weakened**.
    jpg6 albums, yandex disk, box.com, redgifs API, pornhub/spankbang/
    noodlemagazine streams) ported verbatim into the merged LinkMasterΨ.
 4. **Micro host-tool janitors** — six single-purpose scripts
-   (BrokenImgFixer-class interstitial bypassers, MegaEmbedRedirector,
+   (HDImgsOnly image-host interstitial bypassers, MegaEmbedRedirector,
    PlanetsuzyMobileSkinRedirect, Telegram Web Redirect, Searxng Sticky
    Settings, Gemini Answer Now) collapsed into **HostWarp** (per-host modules,
    one engine, every module toggleable).
-5. **Page-utility overlap** — SelectAllCheckboxes, Collapse All Images, HDImgsOnly
+5. **Page-utility overlap** — SelectAllCheckboxes, Collapse All Images, BrokenImgFixer
    and Brave-infinite-scroll utilities collapsed into **PageCraft**.
 6. **Co-install interference** (documented, then fixed):
    - `Alt+S` — Maximize_Any_Media console vs ModelSearch overlay (and `Alt+Shift+S` vs YouTube Playlist Master) → console
@@ -149,13 +149,18 @@ YouTubeEmbedRedirectButton, Youtube Removed Video Revealer.
 6. **`Array.prototype.unique` global pollution** (Ψ2) — replaced with inline
    dedupe, identical semantics.
 7. **jsconfig.json referencing nonexistent `codex.user.js`** — legacy repo
-   hygiene issue recorded here; the suite's own `jsconfig.json` is clean.
+   hygiene issue recorded here; the legacy file was pruned at integration and
+   the suite ships no `jsconfig.json` at all.
 
 ## 6. Known, Accepted Trade-offs
 
-- LinkMasterΨ carries five library `@require`s (popper/tippy/FileSaver/JSZip/
-  sha256) inherited from Ψ2's download-packaging feature set. Every other
-  suite script is fully self-contained (kernel inlined at build time).
+- Runtime `@require` dependencies are carried by five scripts — **LinkMasterΨ**
+  and **Forums++** (the same five libraries each: popper/tippy/FileSaver/JSZip/
+  sha256, inherited from Ψ2's download-packaging feature set), **Login Form
+  Autofiller** (gm4-polyfill), **m3u8++** (m3u8-parser, load-failure guarded)
+  and **Youtube Removed Video Revealer** (cash 8.1.5). Every other suite
+  script is fully self-contained (kernel inlined at build time, zero external
+  libraries).
 - Ψ2's per-frame HUD is unified into the top-frame-only LinkMaster dock
   (v5.x frame policy); post *detection* still runs in every frame.
 - The legacy stable/BETA pairs' historical changelogs remain embedded in the

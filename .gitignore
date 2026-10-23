@@ -171,7 +171,6 @@ logs/
 testing/
 backups/
 package-lock.json
-compare
 
 # == 9. 4NDR0666TOOLS SUITE DIST — install channel (@updateURL target) ==
 # The blanket `dist/` rule above targets JS-app build output; the suite dist/

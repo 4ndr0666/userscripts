@@ -27,11 +27,14 @@ jobs:
       - name: Kernel smoke tests
         run: node tools/kernel-smoke.mjs
 
-      # v1.7.4 (WO-03 stepwise gap mitigation G-1): the 4 runtime contract
-      # batteries (85 assertions) now run on every push — previously they
-      # only ran when a developer remembered `npm run smoke` locally, which
-      # GUP classifies as "tests not wired into CI" (integration-closure
-      # finding). All four are zero-dependency (node builtins only).
+      # v1.7.4 (WO-03 stepwise gap mitigation G-1): the runtime contract
+      # batteries behind `npm run smoke` now run on every push — previously
+      # they only ran when a developer remembered `npm run smoke` locally,
+      # which GUP classifies as "tests not wired into CI" (integration-closure
+      # finding). Six batteries run here (family-fixture, watermark-batch,
+      # kernel-boundary, flow-chip-browser, ig-wall-browser, pm-grid-browser);
+      # all are zero-dependency (node builtins only — the browser batteries
+      # spawn an isolated Chromium themselves).
       - name: Runtime contract smoke batteries
         run: npm run smoke
 

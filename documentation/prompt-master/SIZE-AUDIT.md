@@ -1,6 +1,6 @@
-# SIZE-AUDIT — 4ndr0tools - Prompt Master.user.js (suite v1.5.0, G6 record)
+# SIZE-AUDIT — 4ndr0tools - Prompt Master.user.js (suite v1.8.2, G6 record)
 
-**Artifact:** `dist/4ndr0tools - Prompt Master.user.js` — 1,159,643 B (measured v1.8.2; v1.4.10 baseline 1,122,838 B).
+**Artifact:** `dist/4ndr0tools - Prompt Master.user.js` — 1,159,643 B (measured v1.8.2, byte-count re-verified 2026-10-23 — unchanged; header suite-stamp corrected from the stale v1.5.0; v1.4.10 baseline 1,122,838 B).
 **Gate:** tools/size-budget.mjs (1,300,000 B hard budget; 1,000,000 B audit line — this record satisfies the latter).
 
 ## Composition analysis (machine-measured, this round)
@@ -35,7 +35,7 @@ interactive critical path.
 
 ## Justification
 
-Ships as-is at 1,159,643 B: under the 1.3 MB hard budget, above the audit
+Ships as-is at 1,159,643 B (re-verified 2026-10-23, suite v1.8.2): under the 1.3 MB hard budget, above the audit
 line by design, with this record as the audited decision. Watch item: the
 comment mass (~182 KB) is the one *reversible* component if a future round
 needs headroom — moving the v-series changelogs into

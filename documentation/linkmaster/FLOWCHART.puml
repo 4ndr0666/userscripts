@@ -1,6 +1,6 @@
 @startuml
 skinparam monochrome true
-title LinkMasterΨ — capture pipeline → NetHook join (v1.5.0)
+title LinkMasterΨ — capture pipeline → NetHook join (v6.3.2)
 
 start
 :page boot (host-gated);

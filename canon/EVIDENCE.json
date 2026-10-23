@@ -278,33 +278,6 @@
     ]
   },
   {
-    "dest": "4ndr0tools - Anti-detection.user.js",
-    "mode": "carried",
-    "source": "4ndr0tools - Anti-detection.user.js",
-    "source_sha16": "1c1decf9f5adb3a2",
-    "changes": [
-      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-    ]
-  },
-  {
-    "dest": "4ndr0tools - Anti-telemetry (Intelligent Cloud Computing).user.js",
-    "mode": "carried",
-    "source": "4ndr0tools - Anti-telemetry (Intelligent Cloud Computing).user.js",
-    "source_sha16": "220ef6e7bc847c66",
-    "changes": [
-      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-    ]
-  },
-  {
-    "dest": "4ndr0tools - Counter-surveillance.user.js",
-    "mode": "carried",
-    "source": "4ndr0tools - Counter-surveillance.user.js",
-    "source_sha16": "be9fa54837849ef6",
-    "changes": [
-      "metadata normalization only (namespace/URLs/author/license fills); body verbatim"
-    ]
-  },
-  {
     "dest": "4ndr0tools - Maximize_Any_Media.user.js",
     "mode": "carried",
     "source": "4ndr0tools - Maximize_Any_Media.user.js",
@@ -393,7 +366,8 @@
     ],
     "dest_sha16": "f5a71b33bd38750c",
     "version": "5.2.1",
-    "evidence": "Three-way consolidation (user-directed synergy pass): Anti-detection v1.1 (anti-analysis neutralizer) + Counter-surveillance v4.0.0 (telemetry/canvas/Google/site defenses) + Anti-telemetry v3.5.0 (ICC worker pacifier, iframe propagation). All 19 baseline unit names preserved; blocklist and poison-key sets are the union. Engineering upgrades: Proxy-facade native hooks (D1 stealth), session-stable fingerprint values + per-canvas seeded noise (D2), toDataURL/toBlob/WebGL/AudioBuffer coverage (D3), pacified SPOOF WebSocket phantoms (D4), 4ndr0serviceguard interop (D5), async-faithful 40ms XHR mocks (D6), ICC-scoped worker pacifier preserved (D7)."
+    "evidence": "Three-way consolidation (user-directed synergy pass): Anti-detection v1.1 (anti-analysis neutralizer) + Counter-surveillance v4.0.0 (telemetry/canvas/Google/site defenses) + Anti-telemetry v3.5.0 (ICC worker pacifier, iframe propagation). All 19 baseline unit names preserved; blocklist and poison-key sets are the union. Engineering upgrades: Proxy-facade native hooks (D1 stealth), session-stable fingerprint values + per-canvas seeded noise (D2), toDataURL/toBlob/WebGL/AudioBuffer coverage (D3), pacified SPOOF WebSocket phantoms (D4), 4ndr0serviceguard interop (D5), async-faithful 40ms XHR mocks (D6), ICC-scoped worker pacifier preserved (D7).",
+    "historical": "WO-01 round-1 correction: three stale 'carried' entries (Anti-detection sha16 1c1decf9f5adb3a2, Anti-telemetry (ICC) sha16 220ef6e7bc847c66, Counter-surveillance sha16 be9fa54837849ef6) were removed from this file — their dest files never shipped standalone in this repo; all three transforms resolve to this entry (see tools/ledger.json, dest 'Akasha Silence', mode 'merged')."
   },
   {
     "dest": "4ndr0tools - Forum Link Xtractor.user.js",

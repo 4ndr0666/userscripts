@@ -1,6 +1,6 @@
 @startuml
 skinparam monochrome true
-title Prompt Master — boot → observer family → flow-credit pipeline (v1.5.0)
+title Prompt Master — boot → observer family → flow-credit pipeline (v28.7.7)
 
 start
 :Platform detection (currentPlatform);

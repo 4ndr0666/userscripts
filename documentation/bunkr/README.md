@@ -3,6 +3,8 @@
 > **4ndr0tools — Bunkr++ v5.0.1 → v5.5.0**
 > A complete forensic record of the development arc: every failure mode, root cause,
 > architectural decision, and battle-tested resolution uncovered across this session.
+>
+> **⚠ Historical arc v5.0.1 → v5.5.0; current shipped version 7.7.0** (`dist/4ndr0tools - Bunkr++.user.js` — see [INDEX.md](../INDEX.md)).
 
 ---
 
