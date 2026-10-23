@@ -7,8 +7,7 @@
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @match        *://*/*
 // @run-at       document-start
-// @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
-// @grant        GM_addStyle
+// @icon         data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20128%20128%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_registerMenuCommand
@@ -46,9 +45,14 @@
     'use strict';
 
     const SUITE = '4ndr0666tools';
-    const KERNEL_VERSION = '1.0.0';
 
-    /* Ψ branding glyph — inline SVG element factory + data-URI for @icon. */
+
+    /* Ψ branding glyph — inline SVG source constant. The build-time @icon
+     * data-URI (tools/build.mjs) is DERIVED from this constant, so the
+     * glyph has exactly one source of truth (WO-01 round-1, 2-b F-04: the
+     * previous build-local hand-pasted URI copy had already drifted in
+     * attribute order, and brand.js's own GLYPH_ICON_URI export had zero
+     * consumers — removed). */
     const GLYPH_SVG =
         '<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" fill="none" ' +
         'stroke="#00E5FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">' +
@@ -58,10 +62,6 @@
         '<text x="64" y="67" text-anchor="middle" dominant-baseline="middle" fill="#00E5FF" ' +
         'stroke="none" font-size="56" font-weight="700" font-family="Cinzel Decorative, serif">Ψ</text>' +
         '</svg>';
-
-    /** Minimal URI-encoded glyph for userscript @icon headers. */
-    const GLYPH_ICON_URI =
-        'data:image/svg+xml,' + encodeURIComponent(GLYPH_SVG).replace(/%20/g, '%20');
 
     /** Glyph as a live SVG Element, built purely through createElementNS.
      *
@@ -172,7 +172,7 @@
         `--a4-transition:${TRANSITION};` +
         `}`;
 
-    return Object.freeze({ SUITE, KERNEL_VERSION, GLYPH_SVG, GLYPH_ICON_URI, glyphNode, PALETTE, FONTS, TRANSITION, cssVars });
+    return Object.freeze({ SUITE, GLYPH_SVG, glyphNode, PALETTE, FONTS, TRANSITION, cssVars });
 })();
     /* ══ kernel/core.js ══ */
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -249,25 +249,12 @@
         return el;
     }
 
-    /** Read a dataset property up the ancestor chain (event delegation aid). */
-    const $dataset = (el, key) => {
-        for (let n = el; n && n !== doc(); n = n.parentElement) {
-            if (n.dataset && n.dataset[key] !== undefined) return n.dataset[key];
-        }
-        return undefined;
-    };
-
-    /** Locate the nearest ancestor matching `sel` (self-inclusive). */
-    const $propUp = (el, sel) => {
-        for (let n = el; n && n !== doc(); n = n.parentElement) {
-            if (n.matches && n.matches(sel)) return n;
-        }
-        return null;
-    };
 
     /* ── Language primitives ─────────────────────────────────────────────── */
 
-    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    /* WO-01 round-1 (2-b F-07): sleep, once, $dataset, $propUp and
+     * trustedAppend were removed — zero consumers anywhere (canon, modules,
+     * plugins, tools, kernel-internal; verified by identifier census). */
 
     /** Trailing-edge debounce. Returns a cancelable wrapped function. */
     function debounce(fn, wait = 150) {
@@ -302,17 +289,6 @@
         };
         wrapped.cancel = () => { if (t !== null) { clearTimeout(t); t = null; } pending = null; };
         return wrapped;
-    }
-
-    /** Run `fn` exactly once, memoizing result or thrown error. */
-    function once(fn) {
-        let done = false, result;
-        return (...args) => {
-            if (done) return result;
-            done = true;
-            result = fn(...args);
-            return result;
-        };
     }
 
     /** Monotonic-ish unique id: base36 timestamp + counter. */
@@ -478,19 +454,11 @@
         return () => { observer.disconnect(); fire.cancel(); };
     }
 
-    /** Escape hatch for Trusted Types CSP: build DOM without innerHTML. */
-    const trustedAppend = (parent, nodes) => {
-        for (const n of Array.isArray(nodes) ? nodes : [nodes]) {
-            parent.append(n instanceof Node ? n : doc().createTextNode(String(n)));
-        }
-        return parent;
-    };
-
     return Object.freeze({
-        $, $$, $new, $dataset, $propUp,
-        sleep, debounce, throttle, once, uid,
+        $, $$, $new,
+        debounce, throttle, uid,
         FIFOCache, escapeHTML, tt, parseHTML, parseXML,
-        waitFor, watchDOM, trustedAppend,
+        waitFor, watchDOM,
     });
 })();
     /* ══ kernel/store.js ══ */
@@ -658,7 +626,8 @@
         };
     }
 
-    return Object.freeze({ ns, hasGM });
+    return Object.freeze({ ns });
+    /* WO-01 round-1 (2-b F-07): the hasGM export was removed — zero external consumers (the internal capability flag stays); KERNEL_VERSION left brand.js the same round — its only consumer was the removed glass consolePane. */
 })();
     /* ══ kernel/glass.js ══ */
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -686,7 +655,7 @@
     const { $new } = Ψ.core;
 
     /* v1.3.0 facade repair: Ψ.store is a namespaced-store FACTORY
-     * ({ns, hasGM}) — the get/set/getJson/setJson methods live on the
+     * ({ns}) — the get/set/getJson/setJson methods live on the
      * ns() facades, not on the factory. hud()/settingsConsole() previously
      * called Ψ.store.getJson(...) directly → TypeError inside hud()
      * construction → every glass settings console (HostWarp, PageCraft)
@@ -1070,60 +1039,9 @@
         return { refresh: () => settingsConsole(rootEl, ns, schema, onChange) };
     }
 
-    /* ── Floating glass console (log sink) ──────────────────────────────── */
 
-    /**
-     * A small draggable console pane with a bounded log ring buffer.
-     * Returns {log, warn, error, debug, show, hide, toggle, clear, destroy}.
-     */
-    function consolePane({ title = 'Ψ console', capacity = 200 } = {}) {
-        const lines = [];
-        let box = null, listEl = null;
-
-        const render = () => {
-            if (!listEl) return;
-            listEl.replaceChildren(...lines.slice(-50).map((l) =>
-                $new('div', { style: { fontSize: '11px', padding: '2px 0', borderBottom: '1px solid rgba(0,229,255,0.08)', color: l.level === 'error' ? 'var(--a4-destructive)' : l.level === 'warn' ? '#67E8F9' : 'var(--a4-cyan)' } },
-                    `[${l.ts}] ${l.text}`)));
-            listEl.scrollTop = listEl.scrollHeight;
-        };
-
-        const push = (level, text) => {
-            lines.push({ level, text: String(text), ts: new Date().toLocaleTimeString() });
-            if (lines.length > capacity) lines.splice(0, lines.length - capacity);
-            render();
-        };
-
-        const api = {
-            log: (t) => push('log', t),
-            warn: (t) => push('warn', t),
-            error: (t) => push('error', t),
-            debug: (t) => push('debug', t),
-            show() {
-                if (!box) {
-                    box = hud({
-                        id: 'console',
-                        title,
-                        subtitle: Ψ.brand.SUITE + ' kernel ' + Ψ.brand.KERNEL_VERSION,
-                        width: 420, height: 300,
-                        tabs: [{
-                            id: 'log', label: 'LOG',
-                            render: (contentEl) => { listEl = contentEl; render(); },
-                        }],
-                    });
-                }
-                box.show();
-                return api;
-            },
-            hide: () => { if (box) box.hide(); return api; },
-            toggle: () => { if (box) box.toggle(); else api.show(); return api; },
-            clear: () => { lines.length = 0; render(); return api; },
-            destroy: () => { if (box) box.destroy(); box = null; listEl = null; },
-        };
-        return api;
-    }
-
-    return Object.freeze({ injectStyles, glyphEl, toast, hud, settingsConsole, consolePane, COMPONENT_CSS });
+    return Object.freeze({ injectStyles, glyphEl, toast, hud, settingsConsole });
+    /* WO-01 round-1 (2-b F-07): consolePane (~45 LOC) and the COMPONENT_CSS export were removed — zero consumers (the stylesheet constant stays internal to injectStyles/shadow mounting). */
 })();
     /* ══ kernel/hotkeys.js ══ */
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -1590,7 +1508,11 @@ const enabled = (key) => store.get(`mod:${key}`, MODULES.find((m) => m.key === k
     }, { id: 'imgfix-reload', script: 'PageCraft' });
 
     window.addEventListener('message', (e) => {
-        if (e.data === 'RELOAD_BROKEN_IMAGES' && enabled('imgfix')) {
+        /* WO-01 round-1 (2-b F-22): lineage guard — broadcastEvent posts
+         * DOWN to child frames only, so the only legitimate sources for this
+         * message are this window itself and its parent. A hostile embedded
+         * frame posting UP, or any unrelated window, is rejected. */
+        if ((e.source === window || e.source === window.parent) && e.data === 'RELOAD_BROKEN_IMAGES' && enabled('imgfix')) {
             reloadImages();
             broadcastEvent();
         }

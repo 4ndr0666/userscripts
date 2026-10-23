@@ -162,5 +162,6 @@
         };
     }
 
-    return Object.freeze({ ns, hasGM });
+    return Object.freeze({ ns });
+    /* WO-01 round-1 (2-b F-07): the hasGM export was removed — zero external consumers (the internal capability flag stays); KERNEL_VERSION left brand.js the same round — its only consumer was the removed glass consolePane. */
 })();

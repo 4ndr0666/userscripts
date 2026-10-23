@@ -23,7 +23,7 @@
     const { $new } = Ψ.core;
 
     /* v1.3.0 facade repair: Ψ.store is a namespaced-store FACTORY
-     * ({ns, hasGM}) — the get/set/getJson/setJson methods live on the
+     * ({ns}) — the get/set/getJson/setJson methods live on the
      * ns() facades, not on the factory. hud()/settingsConsole() previously
      * called Ψ.store.getJson(...) directly → TypeError inside hud()
      * construction → every glass settings console (HostWarp, PageCraft)
@@ -407,58 +407,7 @@
         return { refresh: () => settingsConsole(rootEl, ns, schema, onChange) };
     }
 
-    /* ── Floating glass console (log sink) ──────────────────────────────── */
 
-    /**
-     * A small draggable console pane with a bounded log ring buffer.
-     * Returns {log, warn, error, debug, show, hide, toggle, clear, destroy}.
-     */
-    function consolePane({ title = 'Ψ console', capacity = 200 } = {}) {
-        const lines = [];
-        let box = null, listEl = null;
-
-        const render = () => {
-            if (!listEl) return;
-            listEl.replaceChildren(...lines.slice(-50).map((l) =>
-                $new('div', { style: { fontSize: '11px', padding: '2px 0', borderBottom: '1px solid rgba(0,229,255,0.08)', color: l.level === 'error' ? 'var(--a4-destructive)' : l.level === 'warn' ? '#67E8F9' : 'var(--a4-cyan)' } },
-                    `[${l.ts}] ${l.text}`)));
-            listEl.scrollTop = listEl.scrollHeight;
-        };
-
-        const push = (level, text) => {
-            lines.push({ level, text: String(text), ts: new Date().toLocaleTimeString() });
-            if (lines.length > capacity) lines.splice(0, lines.length - capacity);
-            render();
-        };
-
-        const api = {
-            log: (t) => push('log', t),
-            warn: (t) => push('warn', t),
-            error: (t) => push('error', t),
-            debug: (t) => push('debug', t),
-            show() {
-                if (!box) {
-                    box = hud({
-                        id: 'console',
-                        title,
-                        subtitle: Ψ.brand.SUITE + ' kernel ' + Ψ.brand.KERNEL_VERSION,
-                        width: 420, height: 300,
-                        tabs: [{
-                            id: 'log', label: 'LOG',
-                            render: (contentEl) => { listEl = contentEl; render(); },
-                        }],
-                    });
-                }
-                box.show();
-                return api;
-            },
-            hide: () => { if (box) box.hide(); return api; },
-            toggle: () => { if (box) box.toggle(); else api.show(); return api; },
-            clear: () => { lines.length = 0; render(); return api; },
-            destroy: () => { if (box) box.destroy(); box = null; listEl = null; },
-        };
-        return api;
-    }
-
-    return Object.freeze({ injectStyles, glyphEl, toast, hud, settingsConsole, consolePane, COMPONENT_CSS });
+    return Object.freeze({ injectStyles, glyphEl, toast, hud, settingsConsole });
+    /* WO-01 round-1 (2-b F-07): consolePane (~45 LOC) and the COMPONENT_CSS export were removed — zero consumers (the stylesheet constant stays internal to injectStyles/shadow mounting). */
 })();

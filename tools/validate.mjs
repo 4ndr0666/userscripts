@@ -167,9 +167,10 @@ function gateB() {
         const key = f.replace(/\.user\.js$/, "").replace(/^4ndr0tools\s*-\s*/, "");
         distByName.set(key, fs.readFileSync(path.join(DIST, f), "utf8"));
     }
-    const pluginSrc = fs.existsSync(path.join(PLUGINS, "candidshiny.user.js"))
-        ? fs.readFileSync(path.join(PLUGINS, "candidshiny.user.js"), "utf8") : "";
-
+    /* WO-01 round-1 (2-b F-05): the plugins/candidshiny.user.js special
+     * case was removed with the plugin's retirement — its only consumer was
+     * the long-retired LinkMasterΨ2; the ledger entry is mode "retired" and
+     * Gate B skips it before any dest lookup. */
     let checked = 0, reconciled = 0;
     for (const [baseFile, info] of Object.entries(baseline)) {
         const key = ledgerKey(baseFile);
@@ -179,7 +180,8 @@ function gateB() {
 
         /* Absorbed-by-PageCraft exceptions: HDImgsOnly units land in HostWarp. */
         let destKey = entry.dest;
-        let destSrc = destKey === "plugins/candidshiny" ? pluginSrc : distByName.get(destKey);
+        if (!destKey) continue;   /* retired in place (e.g. plugins/candidshiny, WO-01 r1) */
+        let destSrc = distByName.get(destKey);
         if (!destSrc) {
             failures.push(`[B] "${key}" -> dest "${destKey}" not found in dist/`);
             continue;

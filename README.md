@@ -36,7 +36,7 @@ the 3lectric-Glass design system.
 kernel/    canonical shared modules (brand · core · glass · store · hotkeys · hosts · net) — every module inlined by at least one dist build (zero dead kernel surface; net is consumed via the canon CANON_KERNEL injection)
 modules/   kernel-powered consolidated scripts (HostWarp, PageCraft)
 canon/     consolidated & promoted sources + EVIDENCE.json (per-script transform evidence)
-plugins/   companion plugins (LinkMaster CandidShiny autopsy, MPV bridge, autopage config)
+plugins/   companion plugins (MPV bridge, autopage config) — candidshiny.user.js retired WO-01 round-1 (orphaned: its only consumer was retired LinkMasterΨ2)
 dist/      BUILT INSTALLABLES — install from here
 docs/      consolidation report + migration guide
 documentation/ per-script references (generated: npm run docs) + deep devlogs

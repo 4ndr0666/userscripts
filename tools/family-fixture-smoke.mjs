@@ -453,24 +453,13 @@ export async function runFamilyFixtureSmoke(root = ROOT) {
 forceImmediateAnswer();`, hwCtx);
     assert("HostWarp Gemini forceImmediateAnswer appends immediate-response prompt to contenteditable div[role=textbox]", mockEditableDiv.textContent.includes("Explain quantum entanglement") && mockEditableDiv.textContent.includes("Answer immediately. No thinking steps.") && mockEditableDiv.dispatched.includes("input"));
 
-    // 3C. CandidShiny plugin scanAllMedia redirect-query unwrapping
-    const csSrc = fs.readFileSync(path.join(root, "plugins", "candidshiny.user.js"), "utf8");
-    const scanFnCode = extractFn(csSrc, "scanAllMedia");
-    const csCtx = vm.createContext({
-        document: {
-            querySelectorAll: (sel) => {
-                if (sel === "a[href]") {
-                    return [{ href: "https://forum.candidshiny.com/redirect?to=https%3A%2F%2Fcdn.example.org%2Fvideo%2Fclip.mp4" }];
-                }
-                return [];
-            },
-        },
-        window: { location: { href: "https://forum.candidshiny.com/threads/1" } },
-        URL, Set, Array, decodeURIComponent, console,
-    });
-    vm.runInContext(`${scanFnCode}
-globalThis.__csUrls = scanAllMedia();`, csCtx);
-    assert("CandidShiny plugin scanAllMedia unwraps percent-encoded redirector target URLs", Array.isArray(csCtx.__csUrls) && csCtx.__csUrls.includes("https://cdn.example.org/video/clip.mp4"));
+    /* 3C. REMOVED with plugins/candidshiny.user.js retirement (WO-01
+     * round-1, 2-b F-05): the plugin's only consumer was the retired
+     * LinkMasterΨ2 — its scanAllMedia redirect-unwrapping fixture tested an
+     * orphan artifact that ran a 3333ms full-document scan interval forever,
+     * outside every census scope. The redirect-unwrapping capability
+     * survives in HostWarp (hosts engine) and Forum Link Xtractor
+     * (candidshiny link aggregation), which carry their own fixtures above. */
 
     // 3D. Red control: verify TDZ self-shadowing (`const isFF = isFF;`) throws ReferenceError in VM
     let tdzCaught = false;
@@ -548,7 +537,7 @@ globalThis.__csUrls = scanAllMedia();`, csCtx);
         lmSrc.includes("hasRedirectLink(n)")
     );
 
-    return { problems, passed, total: 22 };
+    return { problems, passed, total: 21 }; /* WO-01 round-1: 22 -> 21 — fixture 3C (CandidShiny plugin) removed with the plugin retirement */
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {

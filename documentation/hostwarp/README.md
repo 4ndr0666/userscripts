@@ -13,7 +13,7 @@ HostWarp is six legacy micro-tools fused into one per-host engine: image-host in
 | Version | `1.1.4` |
 | Matches | `*://*/*` |
 | Run-at | `document-start` |
-| Size | 94.0 KB · 1908 lines |
+| Size | 91.6 KB · 1834 lines |
 | Install | [dist/4ndr0tools - HostWarp.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20HostWarp.user.js) |
 
 ## Feature Inventory
@@ -32,7 +32,7 @@ Per-module enable/disable + SearXNG pattern/hash in the glass console; toggles a
 
 ## Permissions (OPSEC)
 
-GM grants: `GM_addStyle`, `GM_getValue`, `GM_setValue`, `GM_registerMenuCommand`, `GM_deleteValue`, `GM_addValueChangeListener`, `GM_listValues`.
+GM grants: `GM_getValue`, `GM_setValue`, `GM_registerMenuCommand`, `GM_deleteValue`, `GM_addValueChangeListener`, `GM_listValues`.
 
 > v1.1.2: settings console survives Trusted-Types hosts — the glyph is now built via Ψ.brand.glyphNode (createElementNS) after parseFromString killed the HUD at header construction on TT-enforcing pages (the operator-reported 'Settings console error' class fix, suite v1.4.2).
 

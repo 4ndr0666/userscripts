@@ -13,7 +13,7 @@ PageCraft is the every-page utility belt: bulk checkbox control with range and a
 | Version | `1.1.3` |
 | Matches | `*://*/*` |
 | Run-at | `document-start` |
-| Size | 85.3 KB · 1760 lines |
+| Size | 82.7 KB · 1682 lines |
 | Install | [dist/4ndr0tools - PageCraft.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20PageCraft.user.js) |
 
 ## Feature Inventory
@@ -30,7 +30,7 @@ Module toggles + collapse size in the glass console; collapse applies live, modu
 
 ## Permissions (OPSEC)
 
-GM grants: `GM_addStyle`, `GM_getValue`, `GM_setValue`, `GM_registerMenuCommand`, `GM_deleteValue`, `GM_addValueChangeListener`, `GM_listValues`.
+GM grants: `GM_getValue`, `GM_setValue`, `GM_registerMenuCommand`, `GM_deleteValue`, `GM_addValueChangeListener`, `GM_listValues`.
 
 > v1.1.2: settings console survives Trusted-Types hosts (glyphNode class fix, suite v1.4.2); the Brave fetch-parse routes through Ψ.core.parseHTML.
 

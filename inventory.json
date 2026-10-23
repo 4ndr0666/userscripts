@@ -721,15 +721,14 @@
    "version": "1.1.4",
    "description": "Per-host warp drive: bypasses image-host interstitials (imagetwist/imgspice/turboimagehost/acidimg/imx/pixhost/imagebam/imgbox/kropic/vipr/imagevenue), MEGA embed redirect + autoplay, PlanetSuzy mobile skin, t.me Web button, SearXNG sticky preferences, Gemini Answer Now — one engine, glass settings console, every module toggleable.",
    "family": "ux utilities",
-   "sha256": "f00f2e305e5ffee37e8ce16dc6565bac07eeb07844917f0f1454315e4dca49dd",
-   "lines": 1908,
-   "bytes": 96266,
+   "sha256": "686f533075e0103f922fa21c43d828503c0ca1e3f5f07c812005edf26b171bd7",
+   "lines": 1834,
+   "bytes": 93812,
    "matches": [
     "*://*/*"
    ],
    "excludes": [],
    "grants": [
-    "GM_addStyle",
     "GM_getValue",
     "GM_setValue",
     "GM_registerMenuCommand",
@@ -1012,15 +1011,14 @@
    "version": "1.1.3",
    "description": "All-sites page utility belt: bulk checkbox control with range/alt-hover selection (de-jQueryed), broken-image auto-repair with cache-busting + frame broadcast, hover-collapse image I/O governor, and Brave infinite scroll — one engine, glass settings console, zero runtime dependencies.",
    "family": "ux utilities",
-   "sha256": "239ee7d41d13cc612405aad8ab92233f7e7af06e29fa2bd90537f5b0a5191cfe",
-   "lines": 1760,
-   "bytes": 87325,
+   "sha256": "89a9e1e3fed15e12670c8c05d08c0de6a016711fd35ccf48cd7910ce4babd8d3",
+   "lines": 1682,
+   "bytes": 84719,
    "matches": [
     "*://*/*"
    ],
    "excludes": [],
    "grants": [
-    "GM_addStyle",
     "GM_getValue",
     "GM_setValue",
     "GM_registerMenuCommand",
@@ -1563,5 +1561,5 @@
    ]
   }
  ],
- "digest": "e96484dd6843f8fb613ee6cf21f5498eaf4c26213750a399c09bf8defa2521ea"
+ "digest": "b02833900274411160f86242496c94623732ec402c06a89f803d0eb8d703d8fc"
 }

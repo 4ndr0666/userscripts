@@ -222,7 +222,11 @@ const enabled = (key) => store.get(`mod:${key}`, MODULES.find((m) => m.key === k
     }, { id: 'imgfix-reload', script: 'PageCraft' });
 
     window.addEventListener('message', (e) => {
-        if (e.data === 'RELOAD_BROKEN_IMAGES' && enabled('imgfix')) {
+        /* WO-01 round-1 (2-b F-22): lineage guard — broadcastEvent posts
+         * DOWN to child frames only, so the only legitimate sources for this
+         * message are this window itself and its parent. A hostile embedded
+         * frame posting UP, or any unrelated window, is rejected. */
+        if ((e.source === window || e.source === window.parent) && e.data === 'RELOAD_BROKEN_IMAGES' && enabled('imgfix')) {
             reloadImages();
             broadcastEvent();
         }

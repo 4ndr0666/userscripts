@@ -72,25 +72,12 @@
         return el;
     }
 
-    /** Read a dataset property up the ancestor chain (event delegation aid). */
-    const $dataset = (el, key) => {
-        for (let n = el; n && n !== doc(); n = n.parentElement) {
-            if (n.dataset && n.dataset[key] !== undefined) return n.dataset[key];
-        }
-        return undefined;
-    };
-
-    /** Locate the nearest ancestor matching `sel` (self-inclusive). */
-    const $propUp = (el, sel) => {
-        for (let n = el; n && n !== doc(); n = n.parentElement) {
-            if (n.matches && n.matches(sel)) return n;
-        }
-        return null;
-    };
 
     /* ── Language primitives ─────────────────────────────────────────────── */
 
-    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    /* WO-01 round-1 (2-b F-07): sleep, once, $dataset, $propUp and
+     * trustedAppend were removed — zero consumers anywhere (canon, modules,
+     * plugins, tools, kernel-internal; verified by identifier census). */
 
     /** Trailing-edge debounce. Returns a cancelable wrapped function. */
     function debounce(fn, wait = 150) {
@@ -125,17 +112,6 @@
         };
         wrapped.cancel = () => { if (t !== null) { clearTimeout(t); t = null; } pending = null; };
         return wrapped;
-    }
-
-    /** Run `fn` exactly once, memoizing result or thrown error. */
-    function once(fn) {
-        let done = false, result;
-        return (...args) => {
-            if (done) return result;
-            done = true;
-            result = fn(...args);
-            return result;
-        };
     }
 
     /** Monotonic-ish unique id: base36 timestamp + counter. */
@@ -301,18 +277,10 @@
         return () => { observer.disconnect(); fire.cancel(); };
     }
 
-    /** Escape hatch for Trusted Types CSP: build DOM without innerHTML. */
-    const trustedAppend = (parent, nodes) => {
-        for (const n of Array.isArray(nodes) ? nodes : [nodes]) {
-            parent.append(n instanceof Node ? n : doc().createTextNode(String(n)));
-        }
-        return parent;
-    };
-
     return Object.freeze({
-        $, $$, $new, $dataset, $propUp,
-        sleep, debounce, throttle, once, uid,
+        $, $$, $new,
+        debounce, throttle, uid,
         FIFOCache, escapeHTML, tt, parseHTML, parseXML,
-        waitFor, watchDOM, trustedAppend,
+        waitFor, watchDOM,
     });
 })();

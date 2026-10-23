@@ -277,11 +277,14 @@ function telegramChannelId(url) {
  * first-class persisted settings, editable from the glass console.
  * ═══════════════════════════════════════════════════════════════════════ */
 
-Ψ.hosts.on(window.location.hostname, () => {
-    if (!enabled('searxng')) return;
+/* WO-01 round-1 (2-b F-20): the module no longer registers the literal
+ * current hostname as a hosts handler — that made the searxng body execute
+ * (dormant) on EVERY page and polluted the hosts registry + the settings
+ * console's About tab with every page's own hostname. The module is now
+ * top-level pattern-gated, exactly like its dormant-by-configuration
+ * semantics always were. */
+(() => {
     const patternSrc = store.get('searxng:pattern', String(/^http:\/\/192\.168\.1\.1(:\d+)?\/?$/));
-    const hash = store.get('searxng:hash', '');
-    if (!hash) return; // nothing configured — module dormant
     let pattern;
     try {
         pattern = new RegExp(patternSrc);
@@ -289,12 +292,17 @@ function telegramChannelId(url) {
         console.debug('[HostWarp] searxng pattern invalid:', e.message);
         return;
     }
-    if (pattern.test(window.location.origin + '/') &&
-        !window.location.hash.startsWith('#/preferences?preferences=')) {
-        window.location.hash = hash;
-        window.location.reload();
-    }
-}, { id: 'searxng', script: 'HostWarp' });
+    if (!pattern.test(window.location.origin + '/')) return;   /* not a SearXNG host per the configured pattern */
+    Ψ.hosts.on(window.location.hostname, () => {
+        if (!enabled('searxng')) return;
+        const hash = store.get('searxng:hash', '');
+        if (!hash) return; // nothing configured — module dormant
+        if (!window.location.hash.startsWith('#/preferences?preferences=')) {
+            window.location.hash = hash;
+            window.location.reload();
+        }
+    }, { id: 'searxng', script: 'HostWarp' });
+})();
 
 /* ═══════════════════════════════════════════════════════════════════════
  * MODULE: gemini — superset of Gemini Answer Now v1.0

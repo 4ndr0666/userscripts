@@ -16,9 +16,14 @@
     'use strict';
 
     const SUITE = '4ndr0666tools';
-    const KERNEL_VERSION = '1.0.0';
 
-    /* Ψ branding glyph — inline SVG element factory + data-URI for @icon. */
+
+    /* Ψ branding glyph — inline SVG source constant. The build-time @icon
+     * data-URI (tools/build.mjs) is DERIVED from this constant, so the
+     * glyph has exactly one source of truth (WO-01 round-1, 2-b F-04: the
+     * previous build-local hand-pasted URI copy had already drifted in
+     * attribute order, and brand.js's own GLYPH_ICON_URI export had zero
+     * consumers — removed). */
     const GLYPH_SVG =
         '<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" fill="none" ' +
         'stroke="#00E5FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">' +
@@ -28,10 +33,6 @@
         '<text x="64" y="67" text-anchor="middle" dominant-baseline="middle" fill="#00E5FF" ' +
         'stroke="none" font-size="56" font-weight="700" font-family="Cinzel Decorative, serif">Ψ</text>' +
         '</svg>';
-
-    /** Minimal URI-encoded glyph for userscript @icon headers. */
-    const GLYPH_ICON_URI =
-        'data:image/svg+xml,' + encodeURIComponent(GLYPH_SVG).replace(/%20/g, '%20');
 
     /** Glyph as a live SVG Element, built purely through createElementNS.
      *
@@ -142,5 +143,5 @@
         `--a4-transition:${TRANSITION};` +
         `}`;
 
-    return Object.freeze({ SUITE, KERNEL_VERSION, GLYPH_SVG, GLYPH_ICON_URI, glyphNode, PALETTE, FONTS, TRANSITION, cssVars });
+    return Object.freeze({ SUITE, GLYPH_SVG, glyphNode, PALETTE, FONTS, TRANSITION, cssVars });
 })();
