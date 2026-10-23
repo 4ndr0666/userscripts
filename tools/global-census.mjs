@@ -34,10 +34,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { CURRENT_ROUND } from "./census-round.mjs"; /* WO-01 round-1 (2-a F1): round derives from package.json — the hardcoded
+ * "v1.7.2" left every G9 expiry check inert while the suite reached v1.8.2. */
 import { codeOnly } from "./sink-census.mjs";
 
 const DEFAULT_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const CURRENT_ROUND = "v1.7.2"; /* expiry = the round that must re-adjudicate (v1.6.0: enforcement wired — the fields were carried but unchecked before this round) */
 
 /* v1.6.0 < v1.7.0 (string-aware compare, tolerant of missing segments) */
 function roundLt(a, b) {
@@ -51,31 +52,36 @@ function roundLt(a, b) {
 }
 
 /* ── Adjudication ledger: sanctioned realm writes ─────────────────────────── */
+/* WO-01 round-1 re-adjudication: every entry below was re-verified against
+ * the v1.8.2 tree (census green at counts) and its expiry rolled
+ * v1.8.0 → v1.12.0 — the G9 gate was silently inert because CURRENT_ROUND
+ * stayed hardcoded at v1.7.2 while the suite advanced (see
+ * tools/census-round.mjs; the round now derives from package.json). */
 const SANCTIONED = [
     { file: "canon/_sovereign/4ndr0tools - Bunkr++.user.js", name: "aclib", realm: "unsafeWindow",
-      reason: "defuse mock: the host page's anti-bot gate probes unsafeWindow.aclib for the ad library — the no-op mock IS the feature (synchronous environment mocking, MODULE 0.1)", expiry: "v1.8.0" },
+      reason: "defuse mock: the host page's anti-bot gate probes unsafeWindow.aclib for the ad library — the no-op mock IS the feature (synchronous environment mocking, MODULE 0.1)", expiry: "v1.12.0" },
     { file: "canon/_sovereign/4ndr0tools - Bunkr++.user.js", name: "kxysy", realm: "unsafeWindow",
-      reason: "defuse mock: no-op stand-in for the page's kxysy ad gate (MODULE 0.1)", expiry: "v1.8.0" },
+      reason: "defuse mock: no-op stand-in for the page's kxysy ad gate (MODULE 0.1)", expiry: "v1.12.0" },
     { file: "canon/_sovereign/4ndr0tools - Bunkr++.user.js", name: "ggihyqfb", realm: "unsafeWindow",
-      reason: "defuse mock: no-op stand-in for the page's ggihyqfb ad gate (MODULE 0.1)", expiry: "v1.8.0" },
+      reason: "defuse mock: no-op stand-in for the page's ggihyqfb ad gate (MODULE 0.1)", expiry: "v1.12.0" },
     { file: "canon/_promoted/4ndr0tools - Confirmation Bypass.user.js", name: "__cb4OpenUpload", realm: "window",
-      reason: "cross-context bridge: namespaced opener-side entry point for the turbo.cr upload popup flow (documented 'namespaced global' from the C lineage)", expiry: "v1.8.0" },
+      reason: "cross-context bridge: namespaced opener-side entry point for the turbo.cr upload popup flow (documented 'namespaced global' from the C lineage)", expiry: "v1.12.0" },
     { file: "canon/_promoted/4ndr0tools - Confirmation Bypass.user.js", name: "__turboUploadWin", realm: "window",
-      reason: "cross-context bridge: the upload popup's window handle, validated by the postMessage allowlist flow", expiry: "v1.8.0" },
+      reason: "cross-context bridge: the upload popup's window handle, validated by the postMessage allowlist flow", expiry: "v1.12.0" },
     { file: "canon/_promoted/4ndr0tools - Media Player Controller.user.js", name: "psiMediaControllerLoaded", realm: "window",
-      reason: "double-injection guard: co-install singleton mark — a second copy of the controller (second manager or re-run) must see the first load; closure state would defeat the guard", expiry: "v1.8.0" },
+      reason: "double-injection guard: co-install singleton mark — a second copy of the controller (second manager or re-run) must see the first load; closure state would defeat the guard", expiry: "v1.12.0" },
     { file: "canon/_promoted/4ndr0tools - Media Player Controller.user.js", name: "psiMediaGodmodeLoaded", realm: "window",
-      reason: "double-injection guard: godmode co-install singleton mark (same class as psiMediaControllerLoaded)", expiry: "v1.8.0" },
+      reason: "double-injection guard: godmode co-install singleton mark (same class as psiMediaControllerLoaded)", expiry: "v1.12.0" },
     { file: "canon/_sovereign/4ndr0tools - Recon.user.js", name: "reconEngine", realm: "window",
-      reason: "console C2: the operator drives the recon engine from devtools (documented in the boot log: 'C2 via reconEngine / chimeraRecon / Hook in the console')", expiry: "v1.8.0" },
+      reason: "console C2: the operator drives the recon engine from devtools (documented in the boot log: 'C2 via reconEngine / chimeraRecon / Hook in the console')", expiry: "v1.12.0" },
     { file: "canon/_sovereign/4ndr0tools - Recon.user.js", name: "chimeraRecon", realm: "window",
-      reason: "console C2: chimera session facade exposed for devtools (same documented interface)", expiry: "v1.8.0" },
+      reason: "console C2: chimera session facade exposed for devtools (same documented interface)", expiry: "v1.12.0" },
     { file: "canon/_sovereign/4ndr0tools - Recon.user.js", name: "Hook", realm: "window",
-      reason: "console C2: the intercept Hook handle exposed for devtools (same documented interface)", expiry: "v1.8.0" },
+      reason: "console C2: the intercept Hook handle exposed for devtools (same documented interface)", expiry: "v1.12.0" },
     { file: "canon/_sovereign/4ndr0tools - 4ndr0purge.user.js", name: "name", realm: "window",
-      reason: "page-API wipe: clearing window.name is the anti-tracking feature itself (removes a cross-session tracking vector; writes empty, adds no state)", expiry: "v1.8.0" },
+      reason: "page-API wipe: clearing window.name is the anti-tracking feature itself (removes a cross-session tracking vector; writes empty, adds no state)", expiry: "v1.12.0" },
     { file: "canon/_promoted/4ndr0tools - m3u8++.user.js", name: "fetch", realm: "unsafeWindow",
-      reason: "page-realm interposition: the m3u8 dev-proxy fetch re-dispatcher (custom origin/referer headers via GM transport, non-200 re-proxied) — the fetchWrap class, owned and adjudicated by the sink census (same adjudication family as Watermark++'s processing proxy)", expiry: "v1.8.0" },
+      reason: "page-realm interposition: the m3u8 dev-proxy fetch re-dispatcher (custom origin/referer headers via GM transport, non-200 re-proxied) — the fetchWrap class, owned and adjudicated by the sink census (same adjudication family as Watermark++'s processing proxy)", expiry: "v1.12.0" },
 ];
 
 /* kernel self-assertion: the NetHook realm slot must stay attached via
@@ -146,8 +152,12 @@ export function runGlobalCensus(root = DEFAULT_ROOT) {
             let m;
             while ((m = r.exec(view)) !== null) {
                 /* the realm variable + the written name (defineProperty: 3rd
-                 * group is the name; dot/bracket: last group is the name) */
-                const realm = m[2] || m[1];
+                 * group is the name; dot/bracket: last group is the name).
+                 * WO-01 round-1 (2-a F22): for DEFINEPROP matches m[2] is the
+                 * QUOTE character — the old `m[2] || m[1]` printed `"` as the
+                 * realm in problem messages. The realm is whichever group
+                 * actually matches a realm identifier. */
+                const realm = [m[1], m[2]].find((g) => g && /^(?:window|unsafeWindow|globalThis|self)$/.test(g)) || m[2] || m[1];
                 const name = m[4] || m[3];
                 stats.writes++;
                 const line = lineOf(starts, m.index);

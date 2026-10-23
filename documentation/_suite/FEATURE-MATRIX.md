@@ -26,7 +26,6 @@
 | 4ndr0tools - Instagram++ | `13.2.1` | sovereign | 22 | typeof-guarded + gmFetch fallback | *: |
 | 4ndr0tools - LinkMasterΨ | `6.3.2` | merged | 105 | typeof-guarded (NetHook) | *: |
 | 4ndr0tools - Login Form Autofiller | `2.0.3` | sovereign | 27 | kernel-free | universal (no @match) |
-| 4ndr0tools - m3u8++ | `5.1.0` | promoted | 20 | typeof-guarded (NetHook) | *: |
 | 4ndr0tools - Maximize_Any_Media | `2.0.1` | sovereign | 8 | kernel-free | universal (no @match) |
 | 4ndr0tools - Media Player Controller | `8.1.3` | promoted | 68 | kernel-free | *: |
 | 4ndr0tools - ModelSearch | `4.0.2` | promoted | 2 | kernel-free | *: |
@@ -38,17 +37,18 @@
 | 4ndr0tools - Stream Interceptor | `3.3.0` | promoted | 32 | typeof-guarded (NetHook) | *: |
 | 4ndr0tools - Watermark++ | `2.1.0` | sovereign | 976 | typeof-guarded (NetHook) | gemini.google.com, business.gemini.google |
 | 4ndr0tools - Website Control Panel | `5.3.0` | sovereign | 26 | kernel-free | *: |
+| 4ndr0tools - YT Filter | `2.5` | sovereign | 30 | kernel-free | *: |
 | 4ndr0tools - Yandex Image Search++ | `0.4.1` | sovereign | 5 | kernel-free | http*: |
 | 4ndr0tools - YouTube Playlist Master | `1.7.2` | sovereign | 299 | typeof-guarded (NetHook) | youtube.com |
-| 4ndr0tools - Youtube Removed Video Revealer | `2.0.3` | sovereign | 17 | kernel-free | *: |
 | 4ndr0tools - YouTube Embed Redirect Button | `1.6` | sovereign | 6 | kernel-free | youtube.com |
-| 4ndr0tools - YT Filter | `2.5` | sovereign | 30 | kernel-free | *: |
+| 4ndr0tools - Youtube Removed Video Revealer | `2.0.3` | sovereign | 17 | kernel-free | *: |
 | 4ndr0tools - Zai Exporter | `1.0.0` | sovereign | 26 | kernel-free | chat.z.ai, z.ai |
+| 4ndr0tools - m3u8++ | `5.1.0` | promoted | 20 | typeof-guarded (NetHook) | *: |
 
 ## Suite v1.8.2 Whole-Repo Delegation Highlights
 
-- **Wave 1.1 & 1.2 (v1.7.0 Census-Ledger Wave & Watermark++ Graduation):** All 51 active census-ledger entries reconciled; **Watermark++** delegated-batch observer graduated through Lawful Door 1 to structurally machine-proven `COALESCED` (backed by `tools/watermark-batch-smoke.mjs`, 15/15 assertions + red control); remaining 50 entries re-verified and rolled to `v1.8.0` under Door 2.
-- **Wave 1.3, 1.4 & 3.9 (Per-Family Contract Fixture Battery):** `tools/family-fixture-smoke.mjs` (13/13 assertions + red controls) verifies **Zai Exporter**'s 3-tier extraction ladder (attribute mining + alternation repair + code fencing, region harvest, honest degraded sweep) and the **NetHook v6** script families (veto, phantom respond, structured traffic, `onNode` DOM defusal, and `gmFetch` privileged transport).
+- **Wave 1.1 & 1.2 (v1.7.0 Census-Ledger Wave & Watermark++ Graduation):** All 51 active census-ledger entries reconciled; **Watermark++** delegated-batch observer graduated through Lawful Door 1 to structurally machine-proven `COALESCED` (backed by `tools/watermark-batch-smoke.mjs`, 15/15 assertions + red control); remaining 50 entries re-verified and rolled to `v1.8.0` under Door 2, then re-adjudicated and rolled to `v1.12.0` in WO-01 round-1 (the G9 expiry gate had been silently inert — `CURRENT_ROUND` was hardcoded at `v1.7.2`; it now derives from `package.json`).
+- **Wave 1.3, 1.4 & 3.9 (Per-Family Contract Fixture Battery):** `tools/family-fixture-smoke.mjs` (22/22 assertions + red controls) verifies **Zai Exporter**'s 3-tier extraction ladder (attribute mining + alternation repair + code fencing, region harvest, honest degraded sweep) and the **NetHook v6** script families (veto, phantom respond, structured traffic, `onNode` DOM defusal, and `gmFetch` privileged transport).
 - **Wave 2.5 (Kernel-Boundary Audit ×38):** All 14 remaining `CANON_KERNEL` scripts hardened with `typeof __4NDR0_NET_API__` guards and closure-local `*KernelLessGmFetch` fallbacks (8/8 `gmFetch` consumers covered), enforced by `tools/kernel-boundary-smoke.mjs` in `npm run check`.
 - **Google Flow Token/Credit Chip Counter Hardening & Browser Proof-of-Possession (`Prompt Master` v28.7.3, GUP v6.0.0):** Hardened `FLOW_CREDIT_CSS` flexbox sizing (`box-sizing:border-box`, `min-width:44px` + `flex:0 1 auto` on `.mp-credit-model`, `flex:0 0 auto` on `.mp-credit-values`, `flex:0 1 40px` + `min-width:20px` on `.mp-credit-pool`), added coalesced `ResizeObserver` tracking for `flowCreditAnchorEl` and `#pm-flow-dock`, added dynamic container/viewport `maxWidth` clamping and left/right/above non-occlusion guard around `model-chip` anchors, reconnected learned `capTurns` in `flowCreditTurnsLeft`, prioritized explicit model names in `flowCreditScanLimitNotice`, and wired `tools/flow-chip-browser-smoke.mjs` (11/11 live headless Chromium `click, wait, get` assertions + red control).
 - **GUP v7.0.0 Stepwise Gap Mitigation & Superset Closure (`suite v1.7.1`):** Eliminated TDZ self-shadowing runtime crashes (`const isFF = isFF;` in **LinkMasterΨ** v6.3.1 & **Forums++** v1.10.1, `let deletedIDs` shadowing/self-assignment in **Youtube Removed Video Revealer** v2.0.3), wired `#TitleRestoredBtn` to `ButtonClickActionFullView`, completed Wave 2.8 async Promise `.catch` debug hardening across all 38 scripts with machine enforcement in `tools/error-census.mjs`, hardened **HostWarp** v1.1.4 `forceImmediateAnswer` for `contenteditable` surfaces, implemented redirect unwrapping in `plugins/candidshiny.user.js` v1.1.2 & `GET`/scheme hardening in `plugins/bridge.py`, and closed all 5 `uncategorized` script family classifications.

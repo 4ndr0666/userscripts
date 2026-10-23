@@ -926,48 +926,6 @@
    }
   },
   {
-   "file": "4ndr0tools - m3u8++.user.js",
-   "name": "4ndr0tools - m3u8++",
-   "version": "5.1.0",
-   "description": "Automatically displays the m3u8 url for ANY video playing in the top right corner of the video. Click url to copy or click download to use the webapp \"tools.thatwind.com\". Also injects Play buttons next to magnet links on every page, relaying them to www.diancigaoshou.com.",
-   "family": "media & links",
-   "sha256": "c726f515c49353712c01292b0f5e49a3e67636ff324b321cae7f3645c9d4e795",
-   "lines": 1963,
-   "bytes": 99943,
-   "matches": [
-    "*://*/*"
-   ],
-   "excludes": [
-    "*://www.diancigaoshou.com/*"
-   ],
-   "grants": [
-    "unsafeWindow",
-    "GM_openInTab",
-    "GM.openInTab",
-    "GM_getValue",
-    "GM.getValue",
-    "GM_setValue",
-    "GM.setValue",
-    "GM_deleteValue",
-    "GM.deleteValue",
-    "GM_xmlhttpRequest",
-    "GM.xmlHttpRequest",
-    "GM_download"
-   ],
-   "requires": [
-    "https://cdn.jsdelivr.net/npm/m3u8-parser@4.7.1/dist/m3u8-parser.min.js"
-   ],
-   "connects": [
-    "*"
-   ],
-   "runAt": "document-start",
-   "noframes": false,
-   "urls": {
-    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20m3u8++.user.js",
-    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20m3u8++.user.js"
-   }
-  },
-  {
    "file": "4ndr0tools - Maximize_Any_Media.user.js",
    "name": "4ndr0tools - Maximize_Any_Media",
    "version": "2.0.1",
@@ -1356,6 +1314,31 @@
    }
   },
   {
+   "file": "4ndr0tools - YT Filter.user.js",
+   "name": "4ndr0tools - YT Filter",
+   "version": "2.5",
+   "description": "Electric-Glass YouTube video filter — views, date, duration",
+   "family": "video & players",
+   "sha256": "39ad0114257ed9badf1a15e5b0797699a9288bf68cd746d4ee2d40efb32126ce",
+   "lines": 850,
+   "bytes": 32637,
+   "matches": [
+    "*://*.youtube.com/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "GM_addStyle"
+   ],
+   "requires": [],
+   "connects": [],
+   "runAt": "document-end",
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YT%20Filter.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YT%20Filter.user.js"
+   }
+  },
+  {
    "file": "4ndr0tools - YandexImageSearch++.user.js",
    "name": "4ndr0tools - Yandex Image Search++",
    "version": "0.4.1",
@@ -1413,6 +1396,31 @@
    }
   },
   {
+   "file": "4ndr0tools - YouTubeEmbedRedirectButton.user.js",
+   "name": "4ndr0tools - YouTube Embed Redirect Button",
+   "version": "1.6",
+   "description": "Floating button for redirects to embedded version. Right click it to set a keybind (default Ctrl+E).",
+   "family": "video & players",
+   "sha256": "4ac9ef5dce6ebb18bb76d185b53f96b25b653de6202a6813ed26df813fdf47ec",
+   "lines": 320,
+   "bytes": 13058,
+   "matches": [
+    "https://*.youtube.com/*"
+   ],
+   "excludes": [],
+   "grants": [
+    "none"
+   ],
+   "requires": [],
+   "connects": [],
+   "runAt": "document-end",
+   "noframes": true,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js"
+   }
+  },
+  {
    "file": "4ndr0tools - Youtube Removed Video Revealer.user.js",
    "name": "4ndr0tools - Youtube Removed Video Revealer",
    "version": "2.0.3",
@@ -1439,56 +1447,6 @@
    "urls": {
     "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Youtube%20Removed%20Video%20Revealer.user.js",
     "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Youtube%20Removed%20Video%20Revealer.user.js"
-   }
-  },
-  {
-   "file": "4ndr0tools - YouTubeEmbedRedirectButton.user.js",
-   "name": "4ndr0tools - YouTube Embed Redirect Button",
-   "version": "1.6",
-   "description": "Floating button for redirects to embedded version. Right click it to set a keybind (default Ctrl+E).",
-   "family": "video & players",
-   "sha256": "4ac9ef5dce6ebb18bb76d185b53f96b25b653de6202a6813ed26df813fdf47ec",
-   "lines": 320,
-   "bytes": 13058,
-   "matches": [
-    "https://*.youtube.com/*"
-   ],
-   "excludes": [],
-   "grants": [
-    "none"
-   ],
-   "requires": [],
-   "connects": [],
-   "runAt": "document-end",
-   "noframes": true,
-   "urls": {
-    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js",
-    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js"
-   }
-  },
-  {
-   "file": "4ndr0tools - YT Filter.user.js",
-   "name": "4ndr0tools - YT Filter",
-   "version": "2.5",
-   "description": "Electric-Glass YouTube video filter — views, date, duration",
-   "family": "video & players",
-   "sha256": "39ad0114257ed9badf1a15e5b0797699a9288bf68cd746d4ee2d40efb32126ce",
-   "lines": 850,
-   "bytes": 32637,
-   "matches": [
-    "*://*.youtube.com/*"
-   ],
-   "excludes": [],
-   "grants": [
-    "GM_addStyle"
-   ],
-   "requires": [],
-   "connects": [],
-   "runAt": "document-end",
-   "noframes": false,
-   "urls": {
-    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YT%20Filter.user.js",
-    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YT%20Filter.user.js"
    }
   },
   {
@@ -1520,6 +1478,48 @@
     "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Zai%20Exporter.user.js",
     "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Zai%20Exporter.user.js"
    }
+  },
+  {
+   "file": "4ndr0tools - m3u8++.user.js",
+   "name": "4ndr0tools - m3u8++",
+   "version": "5.1.0",
+   "description": "Automatically displays the m3u8 url for ANY video playing in the top right corner of the video. Click url to copy or click download to use the webapp \"tools.thatwind.com\". Also injects Play buttons next to magnet links on every page, relaying them to www.diancigaoshou.com.",
+   "family": "media & links",
+   "sha256": "c726f515c49353712c01292b0f5e49a3e67636ff324b321cae7f3645c9d4e795",
+   "lines": 1963,
+   "bytes": 99943,
+   "matches": [
+    "*://*/*"
+   ],
+   "excludes": [
+    "*://www.diancigaoshou.com/*"
+   ],
+   "grants": [
+    "unsafeWindow",
+    "GM_openInTab",
+    "GM.openInTab",
+    "GM_getValue",
+    "GM.getValue",
+    "GM_setValue",
+    "GM.setValue",
+    "GM_deleteValue",
+    "GM.deleteValue",
+    "GM_xmlhttpRequest",
+    "GM.xmlHttpRequest",
+    "GM_download"
+   ],
+   "requires": [
+    "https://cdn.jsdelivr.net/npm/m3u8-parser@4.7.1/dist/m3u8-parser.min.js"
+   ],
+   "connects": [
+    "*"
+   ],
+   "runAt": "document-start",
+   "noframes": false,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20m3u8++.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20m3u8++.user.js"
+   }
   }
  ],
  "problems": [],
@@ -1544,7 +1544,6 @@
     "4ndr0tools - Images++",
     "4ndr0tools - Instagram++",
     "4ndr0tools - LinkMasterΨ",
-    "4ndr0tools - m3u8++",
     "4ndr0tools - Media Player Controller",
     "4ndr0tools - ModelSearch",
     "4ndr0tools - PageCraft",
@@ -1553,8 +1552,9 @@
     "4ndr0tools - Redgifs++",
     "4ndr0tools - Stream Interceptor",
     "4ndr0tools - Website Control Panel",
+    "4ndr0tools - YT Filter",
     "4ndr0tools - Youtube Removed Video Revealer",
-    "4ndr0tools - YT Filter"
+    "4ndr0tools - m3u8++"
    ]
   },
   {
@@ -1594,5 +1594,5 @@
    ]
   }
  ],
- "digest": "41d5142f40a232b13fdf992f47c5169c3b922a9a43f9130cc26f8c3215bb8584"
+ "digest": "35b580e8712c52acf8bb1282cdc1a4fe6088ba77a9c461221e97c8ae56fc88a5"
 }

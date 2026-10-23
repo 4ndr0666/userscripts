@@ -3,20 +3,22 @@
  * decoder used for the reference encoder. Proves the embedded copy equals
  * the tested copy — no transcription drift. */
 import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const canon = fs.readFileSync("canon/_sovereign/4ndr0tools - Pixeldrain++.user.js", "utf8");
+/* WO-01 round-1 (2-a F9): ROOT-derived path — the old CWD-relative read
+ * broke when the tool was invoked from any directory other than the repo
+ * root (the only such tool in the suite). */
+const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const canon = fs.readFileSync(path.join(ROOT, "canon", "_sovereign", "4ndr0tools - Pixeldrain++.user.js"), "utf8");
 const start = canon.indexOf("    const QRCode = (() => {");
 const svgStart = canon.indexOf("        function svg(text, size = 220) {", start);
 if (start === -1 || svgStart === -1) throw new Error("QRCode module not found in canon");
 
-/* pull the module body up to (excluding) svg(), then expose qrEncode */
+/* pull the module body up to (excluding) svg(), then expose qrEncode.
+ * (WO-01 round-1, 2-a F8: the old code also built a `moduleSrc` wrapper
+ * string that nothing ever consumed — dead variable, removed.) */
 let body = canon.slice(start + "    const QRCode = (() => {".length, svgStart);
-const moduleSrc = `
-    const api = (() => {
-${body}
-        return { qrEncode };
-    })();
-`;
 
 const mod = await (async () => {
     const blob = `export const qrEncode = (() => {\n${body}\nreturn qrEncode;\n})();`;

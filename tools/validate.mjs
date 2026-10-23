@@ -57,6 +57,15 @@ function ledgerKey(baseFile) {
 /* Some baseline unit names are intentionally renamed in the destination;
  * these are reconciled explicitly (GUP bidirectional alignment). */
 const RECONCILED_NAMES = {
+    /* WO-01 round-1 (2-a F7): the map now contains ONLY entries whose units
+     * are genuinely ABSENT from their dest (verified code-vs-comment:
+     * comment-only mentions — Bunkr++'s retired sniffers, Prompt Master's
+     * WO-001d removals — are kept because the absence is the documented
+     * reconciliation; entries whose units are PRESENT AS CODE (the old
+     * "(kept)" prose entries — 19 of them across PageCraft/HostWarp/
+     * LinkMasterΨ) were purged: a rename that can never fire today would
+     * silently mask exactly the regression it described as "kept". If one
+     * of those units goes missing now, Gate B fails CLOSED, as it should. */
     "Prompt Master": {
         // v28.7.0 — operator-authorized removals (2026-10-13 transmission,
         // WO-001d): "the tools initially used to arrive at the chip counter
@@ -64,43 +73,34 @@ const RECONCILED_NAMES = {
         // production release; Remove them." Each removal's surviving
         // invariants live on in flowCreditIntegrityCheck (boot-time) and
         // exportFlowCreditLedger (the production data surface).
-        "reportFlowCreditTracker": "removed per operator authorization (WO-001d): the Copy Report was dev diagnostics, not production; superseded by exportFlowCreditLedger (machine-exact ledger JSON via the same clipboard path) + flowCreditIntegrityCheck (its self-audit block's seven machine checks live on at boot)",
         "flowCreditDebugSelfTestImpl": "removed per operator authorization (WO-001d): the 44-assertion self-test battery was the arrival tool for the counter; its table-integrity and state-machine pins survive as flowCreditIntegrityCheck's production checks, and the browser battery (scripts/wo001c-battery.py, 20/20) remains the external regression gate",
+        "flowCreditSleep": "removed with the pull's click path (WO-001d): paced the click/close cascade that no longer exists",
+        "reportFlowCreditTracker": "removed per operator authorization (WO-001d): the Copy Report was dev diagnostics, not production; superseded by exportFlowCreditLedger (machine-exact ledger JSON via the same clipboard path) + flowCreditIntegrityCheck (its self-audit block's seven machine checks live on at boot)",
+        /* The three pull-path removals below are comment-only mentions in
+         * the dist changelog today (v28.7.0 banner) — the CODE is gone, so
+         * these entries are the live reconciliation for when that comment
+         * is ever cleaned up (WO-01 round-1, 2-a F7: kept deliberately). */
         "findFlowProfileMenuButton": "removed with the pull's click path (WO-001d): its only caller was the report's manual pull reason; pulls are passive-only now — a wallet-bearing menu already on screen is harvested, never opened",
         "flowCreditDispatchEscape": "removed with the pull's click path (WO-001d): closed the menu the report opened; no code path opens Flow's profile menu anymore",
         "flowCreditAnyDialog": "removed with the pull's click path (WO-001d): verified the report-opened menu's closure; flowCreditDialogWithCredits (branch A, passive harvest) stays",
-        "flowCreditSleep": "removed with the pull's click path (WO-001d): paced the click/close cascade that no longer exists",
     },
     "Recon": {
         "overrideFetch": "armNetworkHub onRequest/onTraffic/onError subscribers (NetHook v4 adoption, suite v1.4.6 — the reconh recorder + MITM blocklist + TypeError→204 pacification ride the shared hub; same surface, no local wrap)",
         "overrideXHR": "armNetworkHub onTraffic response subscriber (NetHook v4 adoption — the XHR recorder twin rides the shared hub)",
     },
     "PageCraft": {
-        "checkElementIfNeeded": "checkElementIfNeeded (kept)",
-        "selectAll": "selectAll (kept)",
-        "selectRange": "selectRange (kept, native commonAncestor replaces jQuery closest)",
         "redirectToImage": "n/a (HDImgsOnly unit — lives in HostWarp)",
-        "isBroken": "isBroken (kept)",
-        "reloadImages": "reloadImages (kept)",
-        "broadcastEvent": "broadcastEvent (kept)",
-        "initialScan": "initialScan (kept)",
         "init": "initialScan on DOMContentLoaded/immediate (same boot orchestration — verified in modules/pagecraft/body.js)",
-        "fetchNextPage": "fetchNextPage (kept)",
-        "dbg": "dbg (kept — debug hook honors __BIF_DEBUG)",
         "GMCommandHandler": "inline typeof GM_registerMenuCommand guard (same GM4 fallback semantics)",
     },
     "HostWarp": {
-        "redirectToImage": "redirectToImage (kept)",
         "getChannelId": "telegramChannelId (renamed, namespace-scoped)",
-        "injectWebButton": "injectWebButton (closure inside telegram module)",
         "hidePreviewBanner": "inlined into injectWebButton (same behavior)",
         "orchestrate": "module boot (hosts.on dispatch)",
         "redirectToEmbed": "inlined into mega module (same regex)",
         "enhanceVideoPlayback": "enhance (same logic)",
         "redirectToMobileSkin": "planetsuzy module body (same flow)",
         "getInputField": "GEMINI_SELECTORS.input inline query (same selector)",
-        "forceImmediateAnswer": "kept (closure inside gemini module)",
-        "createAnswerNowButton": "kept (closure inside gemini module)",
         "startObserver": "watchDOM kernel replacement (same observer semantics)",
         "init": "module boots",
         "tryInject": "injectWebButton + waitFor retry (same flow)",
@@ -113,14 +113,11 @@ const RECONCILED_NAMES = {
         "createCheckbox": "createUIElement('checkbox', …) — unified builder, same options (current-page/sort)",
         "silentScan": "extraction flow redesigned around toggleBtn 'Initialize Extraction Protocol'; same scan semantics",
     },
-    "LinkMasterΨ": {
-        "hasRedirectLink": "kept (AbsorbedPLR closure)",
-        "rewriteRedirectLinks": "kept (AbsorbedPLR closure)",
-        "getFileRows": "kept (AbsorbedGitRaw closure)",
-        "generateRawUrls": "kept (AbsorbedGitRaw closure)",
-        "injectButton": "kept (AbsorbedGitRaw closure)",
-        "tryInject": "kept (AbsorbedGitRaw closure)",
-    },
+    /* LinkMasterΨ section purged (WO-01 round-1, 2-a F7): all six entries
+     * were "kept (AbsorbedPLR/GitRaw closure)" prose for units that are
+     * present AS CODE in the dist — dead weight that would have excused
+     * their disappearance. They are live code now: Gate B verifies them
+     * directly, fail-closed. */
     "Akasha Silence": {
         "applyNetworkHooks": "applyLocalHooks (renamed, suite v1.4.5) — the fetch/XHR/beacon defusing migrated to the NetHook v3 veto (__4NDR0_NET_API__.onRequest, kernel-owned wraps); the local installer keeps the WebSocket/WebRTC/worker pacifiers",
     },
@@ -185,7 +182,11 @@ function gateB() {
         for (const unit of info.units) {
             checked++;
             if (unitPresent(unit, destSrc)) continue;
-            if (renames[unit]) { reconciled++; continue; }
+            /* WO-01 round-1 (2-a F7): hasOwnProperty, NOT truthiness — a unit
+             * named like an Object.prototype member (the baseline carries
+             * "toLocaleString") would be excused by the INHERITED method
+             * through `renames[unit]` truthiness, masking a real regression. */
+            if (Object.prototype.hasOwnProperty.call(renames, unit)) { reconciled++; continue; }
             failures.push(`[B] unit "${unit}" from "${key}" MISSING in dest "${destKey}"`);
         }
     }

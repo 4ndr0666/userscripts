@@ -234,12 +234,38 @@ export function runWatermarkBatchSmoke(root = ROOT) {
     );
     check("childList F1/F2 filter schedules only relevant container and drops text/irrelevant nodes", schedCalls.length === 1 && schedCalls[0] === relevantContainer);
 
-    // 15. RED CONTROL: prove an un-coalesced processor fails the coalescing invariant
-    const redFlushed = [];
-    const brokenProcessor = { schedule: (r) => redFlushed.push(r) };
-    for (let i = 0; i < 10; i++) brokenProcessor.schedule(rootA);
-    const redControlCaught = redFlushed.length > 1;
-    check("red control: un-coalesced synchronous schedule is detected and rejected", redControlCaught);
+    // 15. RED CONTROL (WO-01 round-1, 2-a F3 — the previous control was
+    // vacuous: it pushed items into its own array and asserted length > 1,
+    // which validated Array.push, not the harness). A real control mutates
+    // the EXTRACTED pipeline the way a regression would (the rAF re-arm
+    // guard removed) and proves the coalescing invariant predicate from
+    // check 2 REJECTS the mutant: 50 same-frame schedules must arm more
+    // than one flush on the broken build (exactly one on the healthy build).
+    const mutated = extracted.replace("if (scheduled) return;", "if (false) return; /* red-control mutation */");
+    let redArmed = 0;
+    const redSandbox = {
+        globalThis: null,
+        document: new FakeNode("DOCUMENT"),
+        HTMLImageElement: FakeImage,
+        PAGE_IMAGE_OBJECT_URL_KEY: "gwrPageImageObjectUrl",
+        getGeminiImageContainerSelector: () => "generated-image,.generated-image-container",
+        hasRelevantDescendant: (root) => Boolean(root && typeof root.querySelector === "function" && root.querySelector("img,generated-image")),
+        requestAnimationFrame: (cb) => { rafQueue.push(cb); return rafQueue.length; },
+        requestIdleCallback: (cb) => { timeoutQueue.push(cb); return timeoutQueue.length; },
+        setTimeout: (cb) => { timeoutQueue.push(cb); return timeoutQueue.length; },
+        Set, Array, Object,
+    };
+    redSandbox.globalThis = redSandbox;
+    vm.createContext(redSandbox);
+    vm.runInContext(`${mutated}\nglobalThis.__red = { createRootBatchProcessor };`, redSandbox);
+    const redBp = redSandbox.__red.createRootBatchProcessor({ processRoot: () => {}, scheduleFlush: () => { redArmed++; } });
+    /* Distinct roots: the pending-set dedupe early-returns same-root
+     * repeats, so only DISTINCT schedules exercise the re-arm guard —
+     * healthy pipeline arms ONE flush for all 50, the guard-removed mutant
+     * arms 50. */
+    for (let i = 0; i < 50; i++) redBp.schedule(new FakeNode("DIV"));
+    check("red control: guard-removed mutant fails the coalescing invariant (harness detects un-coalesced schedules)",
+        mutated !== extracted && redArmed > 1);
 
     return { problems, passed, total: 15 };
 }

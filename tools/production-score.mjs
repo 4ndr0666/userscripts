@@ -38,7 +38,7 @@ import { runCacheCensus } from "./cache-census.mjs";
 const DEFAULT_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 export const SCORE_THRESHOLD = 90;
 
-export function runProductionScore(root = DEFAULT_ROOT, ctx = {}) {
+export function runProductionScore(root = DEFAULT_ROOT, ctx = {}, opts = {}) {
     const problems = [];
     const dims = [];
 
@@ -144,15 +144,22 @@ export function runProductionScore(root = DEFAULT_ROOT, ctx = {}) {
      * pins it with its own determinism gate. */
     const record = { round, total, threshold: SCORE_THRESHOLD, dimensions: dims };
     const scorePath = path.join(root, "tools", "score.json");
-    try {
-        fs.writeFileSync(scorePath, JSON.stringify(record, null, 2) + "\n");
-    } catch (e) {
-        problems.push(`score recording failed: ${e.message}`);
+    /* WO-01 round-1 (2-a F6): the write is opt-out — validate.mjs (the
+     * authoritative caller that actually ran every gate) writes by default;
+     * the standalone CLI NEVER writes, because its unverified snapshot
+     * inputs (browser batteries, style/size/ledger/docs freshness) could
+     * otherwise stamp a false CERTIFIED record onto a broken tree. */
+    if (opts.write !== false) {
+        try {
+            fs.writeFileSync(scorePath, JSON.stringify(record, null, 2) + "\n");
+        } catch (e) {
+            problems.push(`score recording failed: ${e.message}`);
+        }
     }
     if (total < SCORE_THRESHOLD) {
         problems.push(`production score ${total}/100 < ${SCORE_THRESHOLD} (§3.5 escalated threshold) — dimensions: ${dims.map((d) => `${d.dimension}=${d.score}/${d.weight}`).join(", ")}`);
     }
-    return { problems, total, dims, scorePath };
+    return { problems, total, dims, scorePath, wrote: opts.write !== false };
 }
 
 /* CLI: node tools/production-score.mjs — recompute from the standing censuses */
@@ -172,7 +179,6 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToP
     const liveCache = runCacheCensus(root);
     const pkgRound = "v" + JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8")).version;
     const r = runProductionScore(root, {
-        smoke: { pass: true, count: 150, floor: 150 },
         otherGateFailures: 0,
         censuses: {
             sink: { clean: true },
@@ -191,9 +197,13 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToP
         ledger: { units: 61, evidenced: 61 },
         qr: true, docsCoverage: { readmes: 38, scripts: 38 },
         round: pkgRound,
-    });
+    }, { write: false }); /* WO-01 round-1 (2-a F6): standalone mode NEVER writes
+     * tools/score.json — the snapshot inputs below are assumptions, not
+     * verified facts, and stamping them into the record on a broken tree
+     * was a false-certification vector. validate.mjs (which runs every
+     * gate for real) is the only legitimate writer. */
     for (const d of r.dims) console.log(`  ${d.dimension.padEnd(15)} ${d.score}/${d.weight}  [${d.inputs.join("; ")}]`);
     console.log(`TOTAL: ${r.total}/100 (threshold ${SCORE_THRESHOLD})`);
     if (r.problems.length) { for (const p of r.problems) console.log(`  ✗ ${p}`); process.exit(1); }
-    console.log(`  ✓ recorded ${r.scorePath}`);
+    console.log("  ✓ standalone report only — tools/score.json NOT written (validate.mjs via `npm run check` is the sole writer; snapshot inputs: smoke/style/size/sink/transport/global/hotkey/connect/domain/ledger/qr/docs are assumed green here, only error/polling/observer/cache ran live)");
 }

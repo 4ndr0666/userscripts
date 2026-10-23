@@ -80,7 +80,12 @@ function inventory() {
     const files = fs.readdirSync(DIST, { withFileTypes: true })
         .filter((d) => d.isFile() && d.name.endsWith(".user.js"))
         .map((d) => d.name)
-        .sort((a, b) => a.localeCompare(b));
+        /* WO-01 round-1 (2-b F-19): codepoint sort — localeCompare is
+         * ICU-collation-dependent (filenames carry Ψ, m3u8 vs Maximize…),
+         * so the same tree can generate different inventory bytes on
+         * differently-built Node runtimes and fail the cross-machine
+         * determinism gate. Codepoint order is byte-stable everywhere. */
+        .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
 
     const scripts = [];
     const problems = [];
@@ -89,12 +94,16 @@ function inventory() {
         const full = path.join(DIST, file);
         const src = fs.readFileSync(full, "utf8");
         const meta = parseMeta(src);
-        const name = first(meta, "name") || file;
 
+        /* WO-01 round-1 (2-a F2): the !meta guard must run BEFORE the
+         * name extraction — `first(null, …)` throws TypeError, so a dist
+         * file without a metadata block crashed the whole inventory run
+         * instead of failing cleanly with the documented problem line. */
         if (!meta) {
             problems.push(`${file}: no ==UserScript== metadata block`);
             continue;
         }
+        const name = first(meta, "name") || file;
 
         /* Gap 2/5: version + required-field validation. */
         for (const key of ["name", "version", "description", "license", "author"]) {
@@ -253,10 +262,12 @@ Upgrading from the old repo? Follow the [**Migration Guide**](./docs/MIGRATION.m
 ## 🏗️ Suite Architecture
 
 This repository is a **build-time kernel suite**: shared modules (\`kernel/\`) are
-inlined into self-contained installables — zero runtime dependencies for every
-script except LinkMasterΨ (which retains Ψ2's library \`@require\`s —
-JSZip/tippy/FileSaver/sha256 — for its download-packaging engine) — single
-source of truth for the 3lectric-Glass design system.
+inlined into self-contained installables. WO-01 round-1 (2-d F4): the runtime
+\`@require\` surface is now derived from the live inventory — currently
+${inv.scripts.filter((s) => (s.requires || []).length > 0).length} script(s) carry
+external libraries (${inv.scripts.filter((s) => (s.requires || []).length > 0).map((s) => s.name).join(" · ")}),
+every other installable is fully self-contained — single source of truth for
+the 3lectric-Glass design system.
 
 \`\`\`
 kernel/    canonical shared modules (brand · core · glass · store · hotkeys · hosts · net) — every module inlined by at least one dist build (zero dead kernel surface; net is consumed via the canon CANON_KERNEL injection)
@@ -273,13 +284,14 @@ tools/     build.mjs · inventory.mjs · validate.mjs · qr-verify.mjs · style-
            · transport · connect · domain · hotkey · polling · observer · error · global ·
            cache · size-budget · canon-xref · production-score.mjs (+ score.json record)
            smoke batteries (npm run smoke) — family-fixture · watermark-batch ·
-           kernel-boundary · flow-chip-browser (85 runtime assertions, CI-wired since v1.7.4)
+           kernel-boundary · flow-chip-browser · ig-wall-browser · pm-grid-browser
+           (six runtime contract batteries, CI-wired since v1.7.4)
            instruments — tt-smoke.mjs (live Trusted-Types harness) · xref-adjudicate.mjs (flag triage)
            evidence chain — baseline.json · ledger.json
 \`\`\`
 
 \`npm run build\` → dist. \`npm run check\` → build + inventory + qr-verify + full validation
-(GUP superset contract, fail-closed). \`npm run smoke\` → the 4 runtime contract batteries.
+(GUP superset contract, fail-closed). \`npm run smoke\` → the six runtime contract batteries.
 CI runs all of these gates on every push, plus a regenerated-reference freshness gate
 (stale committed artifacts fail the build).
 

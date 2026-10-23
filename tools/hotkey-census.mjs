@@ -625,8 +625,6 @@ function collectGates(body, paramRe) {
         const cond = body.slice(open + 1, close);
         if (!/^\s*return\b/.test(body.slice(close + 1, close + 20))) continue; // single-statement return gate only
         const testsEvent = new RegExp(String.raw`\b(?:${paramRe})\s*\.\s*(?:key|code|keyCode|target|repeat|isComposing|ctrlKey|altKey|metaKey|shiftKey)\b`).test(cond);
-        // state var tested: !NAME / NAME alone (NAME not an event alias)
-        const stateVar = cond.match(new RegExp(String.raw`!?\b([a-z_$][\w$]*)\b(?!\s*\()` , "g")) || [];
         const locals = [...cond.matchAll(new RegExp(String.raw`(!?)\b([A-Za-z_$][\w$]*)\b`, "g"))]
             .map((x) => ({ neg: x[1] === "!", name: x[2], idx: x.index }))
             // predicate calls — isEditableTarget(…) — are event hygiene, not state

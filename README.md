@@ -25,10 +25,12 @@ Upgrading from the old repo? Follow the [**Migration Guide**](./docs/MIGRATION.m
 ## 🏗️ Suite Architecture
 
 This repository is a **build-time kernel suite**: shared modules (`kernel/`) are
-inlined into self-contained installables — zero runtime dependencies for every
-script except LinkMasterΨ (which retains Ψ2's library `@require`s —
-JSZip/tippy/FileSaver/sha256 — for its download-packaging engine) — single
-source of truth for the 3lectric-Glass design system.
+inlined into self-contained installables. WO-01 round-1 (2-d F4): the runtime
+`@require` surface is now derived from the live inventory — currently
+5 script(s) carry
+external libraries (4ndr0tools - Forums++ · 4ndr0tools - LinkMasterΨ · 4ndr0tools - Login Form Autofiller · 4ndr0tools - Youtube Removed Video Revealer · 4ndr0tools - m3u8++),
+every other installable is fully self-contained — single source of truth for
+the 3lectric-Glass design system.
 
 ```
 kernel/    canonical shared modules (brand · core · glass · store · hotkeys · hosts · net) — every module inlined by at least one dist build (zero dead kernel surface; net is consumed via the canon CANON_KERNEL injection)
@@ -45,13 +47,14 @@ tools/     build.mjs · inventory.mjs · validate.mjs · qr-verify.mjs · style-
            · transport · connect · domain · hotkey · polling · observer · error · global ·
            cache · size-budget · canon-xref · production-score.mjs (+ score.json record)
            smoke batteries (npm run smoke) — family-fixture · watermark-batch ·
-           kernel-boundary · flow-chip-browser (85 runtime assertions, CI-wired since v1.7.4)
+           kernel-boundary · flow-chip-browser · ig-wall-browser · pm-grid-browser
+           (six runtime contract batteries, CI-wired since v1.7.4)
            instruments — tt-smoke.mjs (live Trusted-Types harness) · xref-adjudicate.mjs (flag triage)
            evidence chain — baseline.json · ledger.json
 ```
 
 `npm run build` → dist. `npm run check` → build + inventory + qr-verify + full validation
-(GUP superset contract, fail-closed). `npm run smoke` → the 4 runtime contract batteries.
+(GUP superset contract, fail-closed). `npm run smoke` → the six runtime contract batteries.
 CI runs all of these gates on every push, plus a regenerated-reference freshness gate
 (stale committed artifacts fail the build).
 
@@ -83,7 +86,6 @@ OPSEC notes, lineage — live in [`documentation/INDEX.md`](./documentation/INDE
 | Instagram++ | v13.2.1 | sovereign platforms | [4ndr0tools - Instagram++.user.js](./dist/4ndr0tools%20-%20Instagram++.user.js) | Tab-Bar + Dock Integration. Hotkey trigger (Alt+I). Ad-Blocking. Deep-Stack Recovery. Resilient cursor-based pagination. Stories support. Image/video download engine. |
 | LinkMasterΨ | v6.3.2 | media & links | [4ndr0tools - LinkMasterΨ.user.js](./dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js) | Accurately decodes, previews, exports, validates and scrapes all links. (Dual MPV Support + Ψ IG Harvester + sexyforums premium-link unwrap + GitHub raw-URL harvest + Ψ2 forum deep-scrape engine) |
 | Login Form Autofiller | v2.0.3 | ux utilities | [4ndr0tools - Login Form Autofiller.user.js](./dist/4ndr0tools%20-%20Login%20Form%20Autofiller.user.js) | It integrates BugMeNot into any login form (it retrieves all matching logins from bugmenot.com and autofills the login form) |
-| m3u8++ | v5.1.0 | media & links | [4ndr0tools - m3u8++.user.js](./dist/4ndr0tools%20-%20m3u8++.user.js) | Automatically displays the m3u8 url for ANY video playing in the top right corner of the video. Click url to copy or click download to use the webapp "tools.thatwind.com". Also injects Play buttons next to magnet links on every page, relaying them to www.diancigaoshou.com. |
 | Maximize_Any_Media | v2.0.1 | video & players | [4ndr0tools - Maximize_Any_Media.user.js](./dist/4ndr0tools%20-%20Maximize_Any_Media.user.js) | Maximize + Pip controls to any media anywhere - video, images, embedded and shadow-DOM players, on any site. 3lectric-Glass spec. Ψ |
 | Media Player Controller | v8.1.3 | video & players | [4ndr0tools - Media Player Controller.user.js](./dist/4ndr0tools%20-%20Media%20Player%20Controller.user.js) | Speed • Fine Rate ±0.1 • Alt+Shift rAF Zoom/Pan • Rotation • Smart Maximize • Native Fullscreen • PiP • Play • DblClick • Pause-on-Acquire • Virtual DOM Nodes • Shadow-DOM Discovery • Cyan-Glass Scrub Bar • Download Button (fetch + blob capture) • Screenshot • Volume/Mute • Frame Step • Seek Hotkeys • IG Story Nav (3-Layer) • Story Repeat (3-Layer) • Active-Media Observer • YouTube Ad Auto-Skip • Toast Feedback • Draggable HUD • Full Hotkey Suite |
 | ModelSearch | v4.0.2 | forums | [4ndr0tools - ModelSearch.user.js](./dist/4ndr0tools%20-%20ModelSearch.user.js) | Covert SimpCity search UI directly from any website. (Electric-Glass + Alt+S Hotkey Only) |
@@ -95,12 +97,13 @@ OPSEC notes, lineage — live in [`documentation/INDEX.md`](./documentation/INDE
 | Stream Interceptor | v3.3.0 | media & links | [4ndr0tools - Stream Interceptor.user.js](./dist/4ndr0tools%20-%20Stream%20Interceptor.user.js) | Intercepts, parses, and extracts stream tokens, manifests, and direct video sources via the suite's shared NetHook hub and DOM inspection. Suite v3.3: the v3.1 dual-realm fetch/XHR hooks ride the shared NetHook singleton (malformed-SVG veto, asset discovery, deep text inspection); ShadowDOM piercing, ReDoS-proof regex, 3lectric-Glass card surface, universal URL registry cap. |
 | Watermark++ | v2.1.0 | sovereign platforms | [4ndr0tools - Watermark++.user.js](./dist/4ndr0tools%20-%20Watermark++.user.js) | Security research and alignment testing only. |
 | Website Control Panel | v5.3.0 | ux utilities | [4ndr0tools - Website Control Panel.user.js](./dist/4ndr0tools%20-%20Website%20Control%20Panel.user.js) | Draggable Cyberdeck HUD, DOM Zapper, Ad suppression, validated-selector compiled deep-cleaning, per-site HUD suppression + Alt+Shift+H hotkey. |
+| YT Filter | v2.5 | video & players | [4ndr0tools - YT Filter.user.js](./dist/4ndr0tools%20-%20YT%20Filter.user.js) | Electric-Glass YouTube video filter — views, date, duration |
 | Yandex Image Search++ | v0.4.1 | images | [4ndr0tools - YandexImageSearch++.user.js](./dist/4ndr0tools%20-%20YandexImageSearch++.user.js) | Robust, event-driven slideshow, fullscreen preview, and on-screen status for Yandex reverse-image search. |
 | YouTube Playlist Master | v1.7.2 | video & players | [4ndr0tools - YouTube Playlist Master.user.js](./dist/4ndr0tools%20-%20YouTube%20Playlist%20Master.user.js) | Channel playlist buttons (All / Popular / Videos / Shorts / Streams / Members-only), Random play (prefer newest/oldest), reverse autoplay order, playlist autoplay toggle, duration sort, bulk copy/move/delete, JSON + plaintext export/import, snapshots with deleted-video detection, quick watch_videos playlists, queue & watch-later overlays, playlist close button, date/view metadata, episode auto-expand, huge-playlist browser, live settings (no reload), always-available Ψ deck, playlist row filter, duplicate finder & purge, global hotkeys (Alt+Shift+U/S/X), failsafe deck rescue, 404-proof navigation guards, Trusted-Types-immune rendering, fully-visible fit-content modal dialogs. |
-| Youtube Removed Video Revealer | v2.0.3 | video & players | [4ndr0tools - Youtube Removed Video Revealer.user.js](./dist/4ndr0tools%20-%20Youtube%20Removed%20Video%20Revealer.user.js) | Restores titles for removed or private videos in YouTube playlists |
 | YouTube Embed Redirect Button | v1.6 | video & players | [4ndr0tools - YouTubeEmbedRedirectButton.user.js](./dist/4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js) | Floating button for redirects to embedded version. Right click it to set a keybind (default Ctrl+E). |
-| YT Filter | v2.5 | video & players | [4ndr0tools - YT Filter.user.js](./dist/4ndr0tools%20-%20YT%20Filter.user.js) | Electric-Glass YouTube video filter — views, date, duration |
+| Youtube Removed Video Revealer | v2.0.3 | video & players | [4ndr0tools - Youtube Removed Video Revealer.user.js](./dist/4ndr0tools%20-%20Youtube%20Removed%20Video%20Revealer.user.js) | Restores titles for removed or private videos in YouTube playlists |
 | Zai Exporter | v1.0.0 | sovereign platforms | [4ndr0tools - Zai Exporter.user.js](./dist/4ndr0tools%20-%20Zai%20Exporter.user.js) | One-click conversation exfiltration for the Z.ai GLM web chat — scrapes the live thread (multi-strategy, no network, no timers) and exports it as Markdown, JSON, or plain text, with metadata and Ψ glass console. Runs entirely page-side: zero privileged transports, zero observers, zero polling. |
+| m3u8++ | v5.1.0 | media & links | [4ndr0tools - m3u8++.user.js](./dist/4ndr0tools%20-%20m3u8++.user.js) | Automatically displays the m3u8 url for ANY video playing in the top right corner of the video. Click url to copy or click download to use the webapp "tools.thatwind.com". Also injects Play buttons next to magnet links on every page, relaying them to www.diancigaoshou.com. |
 <!-- END_CATALOG -->
 
 ## ⚠️ Co-Install Interference Report
@@ -108,7 +111,7 @@ OPSEC notes, lineage — live in [`documentation/INDEX.md`](./documentation/INDE
 Scripts that match the same domains (by design or by overlap). Consult before
 bulk-installing the media family on the same pages:
 
-- `*:` — 221: 4ndr0tools - 4ndr0Purge, 4ndr0tools - 4ndr0serviceguard Companion, 4ndr0tools - Akasha Silence, 4ndr0tools - AlwaysNewWindow, 4ndr0tools - AutoTranslate, 4ndr0tools - Blob2URL, 4ndr0tools - Bypass Paywalls, 4ndr0tools - Confirmation Bypass, 4ndr0tools - Forum Link Xtractor, 4ndr0tools - GoFile++, 4ndr0tools - GooglePhotosandDrive++, 4ndr0tools - HostWarp, 4ndr0tools - Images++, 4ndr0tools - Instagram++, 4ndr0tools - LinkMasterΨ, 4ndr0tools - m3u8++, 4ndr0tools - Media Player Controller, 4ndr0tools - ModelSearch, 4ndr0tools - PageCraft, 4ndr0tools - Prompt Master, 4ndr0tools - Recon, 4ndr0tools - Redgifs++, 4ndr0tools - Stream Interceptor, 4ndr0tools - Website Control Panel, 4ndr0tools - Youtube Removed Video Revealer, 4ndr0tools - YT Filter
+- `*:` — 221: 4ndr0tools - 4ndr0Purge, 4ndr0tools - 4ndr0serviceguard Companion, 4ndr0tools - Akasha Silence, 4ndr0tools - AlwaysNewWindow, 4ndr0tools - AutoTranslate, 4ndr0tools - Blob2URL, 4ndr0tools - Bypass Paywalls, 4ndr0tools - Confirmation Bypass, 4ndr0tools - Forum Link Xtractor, 4ndr0tools - GoFile++, 4ndr0tools - GooglePhotosandDrive++, 4ndr0tools - HostWarp, 4ndr0tools - Images++, 4ndr0tools - Instagram++, 4ndr0tools - LinkMasterΨ, 4ndr0tools - Media Player Controller, 4ndr0tools - ModelSearch, 4ndr0tools - PageCraft, 4ndr0tools - Prompt Master, 4ndr0tools - Recon, 4ndr0tools - Redgifs++, 4ndr0tools - Stream Interceptor, 4ndr0tools - Website Control Panel, 4ndr0tools - YT Filter, 4ndr0tools - Youtube Removed Video Revealer, 4ndr0tools - m3u8++
 - `hailuoai.video` — 3: 4ndr0tools - Hailuo++
 - `gemini.google.com` — 3: 4ndr0tools - Watermark++
 - `business.gemini.google` — 3: 4ndr0tools - Watermark++

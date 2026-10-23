@@ -34,6 +34,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { CURRENT_ROUND } from "./census-round.mjs"; /* WO-01 round-1 (2-a F1): round derives from package.json — the hardcoded
+ * "v1.7.2" left every G9 expiry check inert while the suite reached v1.8.2. */
 import { codeOnly } from "./sink-census.mjs";
 
 const DEFAULT_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -42,6 +44,11 @@ const DEFAULT_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
  * Every entry: file (repo-relative), callText (the dispatch as the scanner
  * normalizes it), reason. A var-passed site with no entry fails the census;
  * an entry with no site fails it too (drift). */
+/* WO-01 round-1 re-adjudication: every entry below was re-verified against
+ * the v1.8.2 tree (census green at counts) and its expiry rolled
+ * v1.8.0 → v1.12.0 — the G9 gate was silently inert because CURRENT_ROUND
+ * stayed hardcoded at v1.7.2 while the suite advanced (see
+ * tools/census-round.mjs; the round now derives from package.json). */
 const ADJUDICATED_VAR_PASSED = [
     /* NOTE on kernel/net.js: its dispatch `transport(req)` is invisible to
      * the alias scanner BY DESIGN — the transport fn is chosen at runtime by
@@ -54,13 +61,13 @@ const ADJUDICATED_VAR_PASSED = [
         file: "canon/_merged/4ndr0tools - LinkMasterΨ.user.js",
         callText: "GM_xmlhttpRequest(opts)",
         reason: "GMapi.xhr util passthrough body (returns the raw control handle) — every GMapi.xhr call site is itself literal-scanned with its own timeout (5/10/12 s)",
-        expiry: "v1.8.0",
+        expiry: "v1.12.0",
     },
     {
         file: "canon/_merged/4ndr0tools - LinkMasterΨ.user.js",
         callText: "xhr(opts)",
         reason: "GMapi.xhr util DEF site (the wrapper name is dispatch-shaped) — the body's own GM_xmlhttpRequest(opts) is the adjacent adjudicated entry; all call sites are literal-bounded",
-        expiry: "v1.8.0",
+        expiry: "v1.12.0",
     },
 ];
 
@@ -90,11 +97,13 @@ function findPassthroughWrappers(codeJoined) {
     while ((m = re.exec(codeJoined)) !== null) {
         const name = m[1];
         const param = m[2];
-        const window = codeJoined.slice(m.index, m.index + 240);
+        /* WO-01 round-1 (2-a F25): renamed — the local `window` shadowed the
+         * global and read as a browser reference in a Node tool. */
+        const snippet = codeJoined.slice(m.index, m.index + 240);
         const inner = new RegExp(
             "(?:GM_xmlhttpRequest|GM\\s*\\.\\s*xmlHttpRequest)\\s*\\(\\s*" + escapeRe(param) + "\\s*\\)"
         );
-        if (inner.test(window)) wrappers.add(name);
+        if (inner.test(snippet)) wrappers.add(name);
     }
     return wrappers;
 }
@@ -237,7 +246,6 @@ export function runTransportCensus(root = DEFAULT_ROOT) {
 
     /* drift: ledger entries whose site no longer exists, or whose expiry
      * round has passed without re-adjudication (G9 ledger hygiene, v1.5.1) */
-    const CURRENT_ROUND = "v1.7.2";
     const roundLt = (a, b) => {
         const pa = a.replace(/^v/, "").split(".").map(Number);
         const pb = b.replace(/^v/, "").split(".").map(Number);

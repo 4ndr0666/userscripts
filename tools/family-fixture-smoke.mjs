@@ -204,9 +204,26 @@ export async function runFamilyFixtureSmoke(root = ROOT) {
     const degTxt = zaiCtx.__zai.compose(convC, "md", true);
     assert("Zai Exporter Strategy C reports degraded mode honestly in header", convC && convC.strategy === "degraded" && convC.degraded === true && degTxt.includes("[DEGRADED EXPORT"));
 
-    // Red Control 1D: verify alternation repair catches un-repaired unknown roles
-    const brokenRoles = ["user", "unknown", "user"];
-    assert("Zai Exporter red control: un-repaired role array is rejected", brokenRoles.includes("unknown") && convA.unknown === 0);
+    // Red Control 1D (WO-01 round-1, 2-a F4 — the previous control asserted a
+    // local literal `.includes("unknown")`, vacuously true: it validated
+    // Array.prototype.includes, not the pipeline). Real control: classifyAll
+    // must (a) REPAIR an unknown gap sandwiched between known roles and
+    // (b) stay HONEST on an unrepairable pure-unknown run — a repair pass
+    // that fabricated roles for the unrepairable case, or failed to repair
+    // the repairable case, fails this assertion.
+    const rcRepairable = [
+        new MockEl("DIV", { attrs: { "data-message-id": "rc1", "data-role": "user" }, text: "known user" }),
+        new MockEl("DIV", { attrs: { "data-message-id": "rc2" }, text: "sandwiched gap" }),
+        new MockEl("DIV", { attrs: { "data-message-id": "rc3", "data-role": "user" }, text: "known user again" }),
+    ];
+    const rcRepaired = zaiCtx.__zai.classifyAll(rcRepairable);
+    const rcUnrepairable = [
+        new MockEl("DIV", { attrs: { "data-message-id": "uc1" }, text: "gap one" }),
+        new MockEl("DIV", { attrs: { "data-message-id": "uc2" }, text: "gap two" }),
+    ];
+    const rcHonest = zaiCtx.__zai.classifyAll(rcUnrepairable);
+    assert("Zai Exporter red control: alternation repair fixes sandwiched gaps AND leaves un-repairable runs honestly unknown",
+        rcRepaired[1] === "assistant" && rcHonest.every((r) => r === "unknown"));
 
     /* ── 2. Kernel NetHook v6 + Consumer Family Contract Fixtures ────────── */
     const netSrc = fs.readFileSync(path.join(root, "kernel", "net.js"), "utf8");
