@@ -86,8 +86,6 @@ function braceSpan(view, from) {
 }
 
 /* body with comments blanked (codeOnly already blanked strings/templates) */
-function arrowFnMatch(m) { return Boolean(m); }
-
 function stripBodyComments(body) {
     return body.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
 }
@@ -189,7 +187,44 @@ export function runErrorCensus(root = DEFAULT_ROOT) {
             const openParen = pm.index + pm[0].length - 1;
             const afterOpen = view.slice(openParen + 1, openParen + 120);
             const arrowOrFn = /^\s*(?:async\s+)?(?:function\s*\([^)]*\)|\([^)]*\)\s*=>|[A-Za-z_$][\w$]*\s*=>)\s*\{/.exec(afterOpen);
-            if (!arrowFnMatch(arrowOrFn)) continue;
+            if (!arrowOrFn) {
+                /* WO-01 round-2 (6-a F07): function-REFERENCE handlers —
+                 * .catch(fnName) — previously escaped the empty-handler scan
+                 * entirely (only inline function/arrow-with-brace forms were
+                 * inspected; the audit's live instance was Images++'s
+                 * .catch(now) with now bound to performance.now — a
+                 * "handler" that returns a timestamp). Resolve the identifier
+                 * ONE level in the same file's code view: function decls and
+                 * const/let/var arrow/function definitions get their bodies
+                 * inspected under the same emptiness rule. Bind expressions
+                 * and cross-file references stay unresolvable (conservative
+                 * no-flag); the two-arg .then(ok, err) form remains out of
+                 * scope — a documented round-3 boundary. */
+                const fnRef = /^\s*([A-Za-z_$][\w$]*)\s*[,)]/.exec(afterOpen);
+                if (fnRef) {
+                    const name = fnRef[1];
+                    const esc = name.replace(/\$/g, "\\$");
+                    let body = null;
+                    const fnDecl = new RegExp(`function\\s+${esc}\\s*\\([^)]*\\)\\s*\\{`).exec(view);
+                    if (fnDecl) {
+                        const sp = braceSpan(view, fnDecl.index + fnDecl[0].length - 1);
+                        if (sp) body = stripBodyComments(view.slice(sp[0] + 1, sp[1]));
+                    }
+                    if (body === null) {
+                        const constDecl = new RegExp(`(?:const|let|var)\\s+${esc}\\s*=\\s*(?:async\\s+)?(?:function\\s*\\([^)]*\\)|\\([^)]*\\)\\s*=>|[A-Za-z_$][\\w$]*\\s*=>)\\s*\\{`).exec(view);
+                        if (constDecl) {
+                            const sp = braceSpan(view, constDecl.index + constDecl[0].length - 1);
+                            if (sp) body = stripBodyComments(view.slice(sp[0] + 1, sp[1]));
+                        }
+                    }
+                    if (body !== null && body.trim().length === 0) {
+                        const line = lineOf(starts, pm.index);
+                        stats.silentPromiseCatches++;
+                        problems.push(`${rel}:${line}: SILENT Promise .catch(${name}) — referenced handler has an empty body (Wave 2.8 / GUP G11: add scoped console.debug or recovery handling)`);
+                    }
+                }
+                continue;
+            }
             const braceAt = openParen + 1 + arrowOrFn[0].lastIndexOf("{");
             const sp = braceSpan(view, braceAt);
             if (!sp) continue;

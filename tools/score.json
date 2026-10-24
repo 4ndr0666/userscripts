@@ -31,7 +31,7 @@
       "weight": 15,
       "score": 15,
       "inputs": [
-        "polling census clean: true (39 sites)",
+        "polling census clean: true (40 sites)",
         "observer census clean: true (57 sites)",
         "cache census clean: true (137 registries)",
         "size budget clean: true"

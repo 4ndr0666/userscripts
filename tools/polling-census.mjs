@@ -361,7 +361,15 @@ export function runPollingCensus(root = DEFAULT_ROOT) {
         stats.filesScanned++;
         const view = codeOnly(fs.readFileSync(abs, "utf8"));
         const starts = lineStartsOf(view);
-        const siteRe = /(^|[^\w$.])setInterval\s*\(/g;
+        /* WO-01 round-2 (6-a F04): the char class dropped the `.` so member-form
+         * `window.setInterval(…)` sites were INVISIBLE to the census — exactly
+         * the class this census exists to catch (the round-2 audit's live
+         * instance: BPP theathletic's no-argument clearInterval() watcher,
+         * which polled forever because clearInterval() without a handle is a
+         * spec no-op). Preceding `.` is now admitted; identifier-word and `$`
+         * boundaries still guard against substring matches inside longer
+         * identifiers. */
+        const siteRe = /(^|[^\w$])setInterval\s*\(/g;
         let m;
         while ((m = siteRe.exec(view)) !== null) {
             stats.sites++;

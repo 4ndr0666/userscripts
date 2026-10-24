@@ -127,19 +127,26 @@ export function codeOnly(src) {
         }
         if (c === "`") { emit("`"); stack.push({ type: "tpl" }); i++; continue; }
 
-        /* regex literal — heuristically: only where a value may start */
+        /* regex literal — heuristically: only where a value may start.
+         * WO-01 round-2 (6-a F06): the BODY is blanked (delimiters kept) —
+         * the round-1 form emitted regex bodies verbatim into the code view,
+         * so a body's braces/brackets corrupted span tracking downstream
+         * (transport-census literalSpan: `/[{]/` inside a call object broke
+         * the argument-span walk → false unbounded OR false bounded = false
+         * certification) and body text could match sink-class regexes that
+         * the string/comment blanking was supposed to prevent. Mirrors
+         * canon-xref skeletonize's blank-first discipline. */
         const prev = out[line].trim().slice(-1) || "";
         if (c === "/" && /[(,=:[!&|?{};+\-*%<>~^]/.test(prev || "(")) {
             emit("/"); i++;
             let inClass = false;
             while (i < n) {
-                if (src[i] === "\\") { emit(src[i]); emit(src[i + 1] || ""); i += 2; continue; }
+                if (src[i] === "\\") { i += 2; continue; }   // escaped body char: blanked with the body
                 if (src[i] === "[") inClass = true;
                 else if (src[i] === "]") inClass = false;
                 else if (src[i] === "/" && !inClass) { emit("/"); i++; break; }
                 else if (src[i] === "\n") break;         // not a regex after all
-                emit(src[i]);
-                i++;
+                i++;                                      // body: BLANKED, not emitted
             }
             continue;
         }
@@ -178,6 +185,52 @@ const CLASSES = {
     xhrWrap:             /\.prototype\.(?:open|send)\s*=(?!=)/g,
     tapOpenSend:         /(?<!prototype\.)\.(?:open|send)\s*=(?!=)/g,
 };
+
+/* WO-01 round-2 (6-a F06): bracket-form tripwires — el["innerHTML"] = … and
+ * window["setInterval"]("…") escape every CLASSES regex because codeOnly
+ * blanks string contents, so the property name becomes invisible. Zero live
+ * occurrences today; these patterns run against a STRING-PRESERVING,
+ * comment-stripped view (so the property name is visible again) and fail
+ * closed on the first hit — write property access in dot form, or in
+ * bracket form only for genuinely dynamic (non-constant) keys. */
+const BRACKET_PROP_WRITES =
+    /\[\s*["'](?:(?:inner|outer)HTML|fetch|open|send|eval|parseFromString)["']\s*\]\s*(?:\+)?=(?!=)/g;
+const BRACKET_TIMER_STRINGS =
+    /\[\s*["']set(?:Timeout|Interval)["']\s*\]\s*\(\s*["'`]/g;
+
+/* String-preserving comment stripper (mirrors validate.mjs's
+ * stripCommentsKeepStrings discipline: comments are documentation, strings
+ * are runtime data — here the runtime data IS the detection surface). */
+function stripCommentsKeepStrings(src) {
+    let out = "";
+    let i = 0;
+    const n = src.length;
+    while (i < n) {
+        const c = src[i];
+        if (c === "/" && src[i + 1] === "/") { while (i < n && src[i] !== "\n") { out += " "; i++; } continue; }
+        if (c === "/" && src[i + 1] === "*") {
+            const end = src.indexOf("*/", i + 2);
+            const stop = end === -1 ? n : end + 2;
+            while (i < stop) { out += src[i] === "\n" ? "\n" : " "; i++; }
+            continue;
+        }
+        if (c === '"' || c === "'" || c === "`") {
+            const q = c;
+            out += c; i++;
+            while (i < n) {
+                if (src[i] === "\\") { out += src[i] + (src[i + 1] || ""); i += 2; continue; }
+                out += src[i];
+                const prev = src[i];
+                i++;
+                if (prev === q) break;
+                if (q !== "`" && prev === "\n") break;
+            }
+            continue;
+        }
+        out += c; i++;
+    }
+    return out;
+}
 
 /* ── Adjudication ledger ──────────────────────────────────────────────────
  * R3 ENDGAME (suite v1.4.4): every class-A UI string sink is migrated to
@@ -352,6 +405,17 @@ export function runSinkCensus() {
     for (const f of files) {
         const src = fs.readFileSync(path.join(DIST, f), "utf8");
         const code = distCodeView(src);
+        /* WO-01 round-2 (6-a F06): bracket-form tripwires (see definitions
+         * above) — fail closed with a prescriptive message; there is no
+         * ledger path: constant-key bracket writes are the dot-form site
+         * wearing a disguise the CLASSES regexes cannot see. */
+        const stringsView = stripCommentsKeepStrings(src);
+        for (const bw of stringsView.match(BRACKET_PROP_WRITES) || []) {
+            problems.push(`${f}: bracket-form property write ${bw.slice(0, 34)}… — constant-key property access must use dot form so the sink classes stay visible (6-a F06 tripwire)`);
+        }
+        for (const bt of stringsView.match(BRACKET_TIMER_STRINGS) || []) {
+            problems.push(`${f}: bracket-form string-arg timer ${bt.slice(0, 34)}… — constant-name timer access must use dot form so the timerString class stays visible (6-a F06 tripwire)`);
+        }
         const counts = scanCode(code);
         const ledger = ADJUDICATED[f] || {};
         const expiry = ledger.expiry; /* per-file re-adjudication round (G9) */

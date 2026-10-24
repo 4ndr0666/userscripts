@@ -48,6 +48,17 @@ const PLUGINS = path.join(ROOT, "plugins");
 
 const baseline = JSON.parse(fs.readFileSync(path.join(ROOT, "tools", "baseline.json"), "utf8"));
 const ledger = JSON.parse(fs.readFileSync(path.join(ROOT, "tools", "ledger.json"), "utf8"));
+/* WO-01 round-2 (6-a F09): single-read JSON cache — inventory.json was
+ * parsed 4×, ledger.json 3× and package.json 2× per validation run on
+ * identical bytes. The byte-parity check below still reads RAW text for
+ * the byte-identity comparison and deliberately bypasses this cache. */
+const jsonCache = new Map();
+function readJsonCached(rel) {
+    if (!jsonCache.has(rel)) {
+        jsonCache.set(rel, JSON.parse(fs.readFileSync(path.join(ROOT, rel), "utf8")));
+    }
+    return jsonCache.get(rel);
+}
 
 /* Baseline keys strip the .user.js suffix + dir prefix for ledger lookup. */
 function ledgerKey(baseFile) {
@@ -94,6 +105,10 @@ const RECONCILED_NAMES = {
         "GMCommandHandler": "inline typeof GM_registerMenuCommand guard (same GM4 fallback semantics)",
     },
     "HostWarp": {
+        /* WO-01 round-2 (6-a F05): surfaced by comment-aware unitPresent —
+         * HDImgsOnly's waitForElement appeared only in the module-header
+         * migration note. */
+        "waitForElement": "kernel Ψ.core.waitFor (HDImgsOnly unit): the 100 ms polling element-wait became the kernel's MutationObserver-based waitFor — identical 3 s budget, zero idle CPU (module-header migration note, machine-anchored here)",
         "getChannelId": "telegramChannelId (renamed, namespace-scoped)",
         "hidePreviewBanner": "inlined into injectWebButton (same behavior)",
         "orchestrate": "module boot (hosts.on dispatch)",
@@ -127,19 +142,50 @@ const RECONCILED_NAMES = {
          * comment-stripped census clean). */
         "escapeHTML": "removed as dead code (WO-01 round-2): the HTML entity escaper had zero call sites in the shipped script and zero in the legacy baseline it was carried verbatim from",
     },
+    "Blob2URL": {
+        /* WO-01 round-2 (6-a F05): surfaced by comment-aware unitPresent —
+         * esc appeared only in the v7.2.0 TT-migration comment; both
+         * baseline files (Blob2URL + Blob2URLBETA) dest here. */
+        "esc": "retired v7.2.0 (suite v1.4.3 TT render class fix): the vault panels render through createElement — attributes via setAttribute, text via textContent; esc()'s HTML-assembly escaping has no assembly left to escape",
+    },
+    "Confirmation Bypass": {
+        /* WO-01 round-2 (6-a F05): surfaced by comment-aware unitPresent —
+         * convertLinks appeared ONLY in the script's own changelog comment
+         * (the G2 note); the capability lives on in appendLinks. */
+        "convertLinks": "appendLinks (v4.0.3 builder form): URL hyperlinking in the View Replies table now assembles text nodes + anchor elements — the G2 \\b word-boundary fix lives in appendLinks' URL_RE; zero HTML-string assembly (TT sink class)",
+    },
+    "LinkMasterΨ": {
+        /* WO-01 round-2 (6-a F05): surfaced by comment-aware unitPresent —
+         * the three units appeared only in the v5.1.0 superset-check
+         * comment; the retirements were already documented as authorized
+         * there ("superseded by the generalized epoch-guarded runCheckQueue
+         * and the GM-transport-first checker; removal documented in the
+         * semantic review record") — this ledger section is that record's
+         * machine-checked anchor. */
+        "checkLinksQueued": "retired v5.1.0 (authorized): superseded by the generalized epoch-guarded runCheckQueue — queue-drain semantics preserved, epoch guards prevent stale-batch application",
+        "nextBulk": "retired v5.1.0 (authorized): the manual bulk-step advancer was folded into runCheckQueue's continuous drain",
+        "getHosterChecker": "retired v5.1.0 (authorized): superseded by the GM-transport-first checker (gmFetch with typed fallbacks)",
+    },
     "4ndr0purge": {
         /* WO-01 round-1 (2-c E17): dead helper removed — zero call sites
          * verified (comment-stripped identifier census; $ / sleep / onReady
          * remain and are still consumed). */
         "$$": "removed as dead code (WO-01 round-1): the querySelectorAll wrapper had zero call sites in the shipped script — the $ helper it shadowed alongside is the live path",
     },
-    "Bypass Paywalls": {
+    "BypassPaywalls": {
         /* WO-01 round-1 (2-c deferred removal, tombstone purge): the BPC
          * extension-backend tombstone (~573 lines) was REMOVED — every unit
          * below lived inside `if (typeof extensionApi !== 'undefined')`,
          * a free variable that can never exist in a userscript realm, or in
          * the GA beacon that only it called. The live DOM-side paywall chain
-         * (main/matchDomain/removeDOMElement/waitDOMElement/…) is untouched. */
+         * (main/matchDomain/removeDOMElement/waitDOMElement/…) is untouched.
+         * WO-01 round-2 (6-a F05): this section was keyed "Bypass Paywalls"
+         * (with a space) while the ledger dest is "BypassPaywalls" — the
+         * lookup returned undefined and NONE of these reconciliations could
+         * ever fire; the gate stayed green only because unitPresent matched
+         * the purge's own changelog comments (comment-only presence). Re-keyed
+         * to the real dest; comment-aware matching + the ledger-dest
+         * self-check below now hold this section to its absence claims. */
         "initGA": "removed with the extension-backend tombstone (WO-01 round-1): dead GA beacon (UA-69824169-2) whose only caller lived inside the unreachable extensionApi guard",
         "isSiteEnabled": "removed with the extension-backend tombstone (WO-01 round-1): consulted only by the guard block's webRequest listeners — unreachable in the userscript realm",
         "matchUrlDomain": "removed with the extension-backend tombstone (WO-01 round-1): served only the guard block's request classifiers; matchDomain (the live resolver) survives",
@@ -149,11 +195,17 @@ const RECONCILED_NAMES = {
         "setDefaultOptions": "removed with the extension-backend tombstone (WO-01 round-1): body is pure extensionApi.storage/runtime calls; sole caller lived inside the unreachable guard",
     },
     "Watermark++": {
-        "handleLoadEnd": "armNetworkHub onTraffic xhr subscriber (NetHook v4 adoption, suite v1.4.7 — the RPC loadend handler became the subscriber's response-phase arm; request bodies joined by hub exchange id, same 2xx + text gates)",
+        /* WO-01 round-2 (6-a F11): prose corrected — the cited helper name
+         * armNetworkHub exists only in Recon; Watermark++ subscribes
+         * directly via the inlined hub identifier. */
+        "handleLoadEnd": "__4NDR0_NET_API__.onTraffic subscriber (NetHook v4 adoption, suite v1.4.7 — the RPC loadend handler became the subscriber's response-phase arm; request bodies joined by hub exchange id, same 2xx + text gates)",
     },
     "Bunkr++": {
-        "installFetchSniff": "armNetworkHub onTraffic subscriber (NetHook v4 adoption, suite v1.4.7 — the fetch sniffer became the subscriber's request/response arms; the hub's page-realm wrap replaces the per-script proxy)",
-        "installXhrSniff": "armNetworkHub onTraffic subscriber + propagate(sandbox) (NetHook v4 adoption, suite v1.4.7 — the XHR sniffer taps became the same subscriber's arms; sandbox-realm coverage via hub propagation)",
+        /* WO-01 round-2 (6-a F11): prose corrected — armNetworkHub is
+         * Recon's local arming helper; Bunkr++ subscribes directly via the
+         * inlined hub identifier. */
+        "installFetchSniff": "__4NDR0_NET_API__.onTraffic subscriber (NetHook v4 adoption, suite v1.4.7 — the fetch sniffer became the subscriber's request/response arms; the hub's page-realm wrap replaces the per-script proxy)",
+        "installXhrSniff": "__4NDR0_NET_API__.onTraffic subscriber + propagate(sandbox) (NetHook v4 adoption, suite v1.4.7 — the XHR sniffer taps became the same subscriber's arms; sandbox-realm coverage via hub propagation)",
     },
 };
 
@@ -173,7 +225,15 @@ function gateA() {
 
 /* ── Gate B: unit identity preservation ───────────────────────────────── */
 /* Unit-name matcher: $-prefixed and other non-word names cannot use \b
- * word boundaries — fall back to plain substring search for them. */
+ * word boundaries — fall back to plain substring search for them.
+ * WO-01 round-2 (6-a F05): matching now runs against a COMMENT-STRIPPED
+ * view (strings KEPT — a unit name in a live string is runtime behavior;
+ * a unit name in a comment is documentation). The round-1 form matched RAW
+ * dist text, so a changelog comment naming a retired unit satisfied Gate B
+ * — the "lesson 7" anti-pattern: the gate was green because the prose
+ * remembered the unit, while the code had none. The pre-existing
+ * stripCommentsKeepStrings helper (below, hoisted) already implements
+ * exactly these semantics for sentinel detection — Gate B now shares it. */
 function unitPresent(unit, src) {
     if (/^\w/.test(unit) && /\w$/.test(unit)) {
         return new RegExp(`\\b${unit.replace(/\$/g, "\\$")}\\b`).test(src);
@@ -184,9 +244,25 @@ function unitPresent(unit, src) {
 function gateB() {
     const distFiles = fs.existsSync(DIST) ? fs.readdirSync(DIST).filter((f) => f.endsWith(".user.js")) : [];
     const distByName = new Map();
+    const distStrippedByName = new Map();
     for (const f of distFiles) {
         const key = f.replace(/\.user\.js$/, "").replace(/^4ndr0tools\s*-\s*/, "");
-        distByName.set(key, fs.readFileSync(path.join(DIST, f), "utf8"));
+        const raw = fs.readFileSync(path.join(DIST, f), "utf8");
+        distByName.set(key, raw);
+        /* WO-01 round-2 (6-a F05): the comment-stripped view is what unit
+         * identity is tested against — comments are documentation, not
+         * code; strings are runtime data and stay. Computed once per file. */
+        distStrippedByName.set(key, stripCommentsKeepStrings(raw));
+    }
+    /* WO-01 round-2 (6-a F05): RECONCILED_NAMES key self-check — every key
+     * must be a live ledger dest. A mis-keyed section (the round-1
+     * "Bypass Paywalls" vs dest "BypassPaywalls" drift) is dead config whose
+     * reconciliations can never fire, and the gate had no way to notice. */
+    const ledgerDests = new Set(Object.values(ledger).map((e) => e.dest).filter(Boolean));
+    for (const rnKey of Object.keys(RECONCILED_NAMES)) {
+        if (!ledgerDests.has(rnKey)) {
+            failures.push(`[B] RECONCILED_NAMES key "${rnKey}" matches no ledger dest — dead reconciliation config (re-key it to the ledger dest)`);
+        }
     }
     /* WO-01 round-1 (2-b F-05): the plugins/candidshiny.user.js special
      * case was removed with the plugin's retirement — its only consumer was
@@ -202,8 +278,8 @@ function gateB() {
         /* Absorbed-by-PageCraft exceptions: HDImgsOnly units land in HostWarp. */
         let destKey = entry.dest;
         if (!destKey) continue;   /* retired in place (e.g. plugins/candidshiny, WO-01 r1) */
-        let destSrc = distByName.get(destKey);
-        if (!destSrc) {
+        let destSrc = distStrippedByName.get(destKey);
+        if (!distByName.has(destKey)) {
             failures.push(`[B] "${key}" -> dest "${destKey}" not found in dist/`);
             continue;
         }
@@ -407,8 +483,7 @@ function gateC() {
         failures.push(`[C] documentation: INDEX.md missing — run \`npm run docs\``);
     } else if (files.length) {
         const idx = fs.readFileSync(docsIndexPath, "utf8");
-        const invPath = path.join(ROOT, "inventory.json");
-        const invScripts = JSON.parse(fs.readFileSync(invPath, "utf8")).scripts;
+        const invScripts = readJsonCached("inventory.json").scripts;   /* WO-01 round-2 (6-a F09): cached single read */
         const drift = [];
         for (const s of invScripts) {
             const short = s.name.replace(/^4ndr0tools\s*-\s*/, "");
@@ -424,7 +499,7 @@ function gateC() {
      * cannot see (the v1.4.6 kit matrix caught exactly this failure
      * class). The stamps must coincide with the live inventory. */
     if (files.length && fs.existsSync(docsIndexPath)) {
-        const invScripts2 = JSON.parse(fs.readFileSync(path.join(ROOT, "inventory.json"), "utf8")).scripts;
+        const invScripts2 = readJsonCached("inventory.json").scripts;
         const readmes = {};
         for (const dir of fs.readdirSync(path.join(ROOT, "documentation"))) {
             const rp = path.join(ROOT, "documentation", dir, "README.md");
@@ -1068,7 +1143,7 @@ async function gateD() {
     // never regress to narrative-only. (Gate A owns coverage; Gate B owns
     // named-unit preservation; this gate owns the evidence trail.)
     try {
-        const led = JSON.parse(fs.readFileSync(path.join(ROOT, "tools", "ledger.json"), "utf8"));
+        const led = ledger;   /* WO-01 round-2 (6-a F09): module-level single read */
         const ledKeys = Object.keys(led).filter((k) => !k.startsWith("_"));
         const unEvidenced = ledKeys.filter((k) => !led[k].evidence && !led[k].note);
         const missingDest = ledKeys.filter((k) => {
@@ -1142,13 +1217,17 @@ async function gateD() {
     // objects above, docs-truthfulness and OPSEC derive from this run's
     // own failure list. Error Handling's input surface is complete since
     // v1.5.1 (the G11 catch census: typed/debug/handled/silent counts).
-    const smokeRes = spawnSync("node", [path.join(ROOT, "tools", "kernel-smoke.mjs")], { encoding: "utf8", timeout: 180000 });
+    /* WO-01 round-2 (6-a F09): process.execPath, not "node" — the spawned
+     * batteries must run under the SAME binary the operator invoked the
+     * gate with, without hoping `node` resolves on PATH (the kernel-boundary
+     * smoke already used execPath; these three now match). */
+    const smokeRes = spawnSync(process.execPath, [path.join(ROOT, "tools", "kernel-smoke.mjs")], { encoding: "utf8", timeout: 180000 });
     const smokeOut = (smokeRes.stdout || "") + (smokeRes.stderr || "");
     const smokePass = smokeRes.status === 0 && /KERNEL SMOKE: ALL PASS/.test(smokeOut);
     const smokeCount = (smokeOut.match(/✓/g) || []).length;
     if (!smokePass) failures.push(`[D] kernel-smoke battery failed inside the production score (status ${smokeRes.status})`);
-    const styleRes = spawnSync("node", [path.join(ROOT, "tools", "style-audit.mjs")], { encoding: "utf8", timeout: 60000 });
-    const qrRes = spawnSync("node", [path.join(ROOT, "tools", "qr-verify.mjs")], { encoding: "utf8", timeout: 60000 });
+    const styleRes = spawnSync(process.execPath, [path.join(ROOT, "tools", "style-audit.mjs")], { encoding: "utf8", timeout: 60000 });
+    const qrRes = spawnSync(process.execPath, [path.join(ROOT, "tools", "qr-verify.mjs")], { encoding: "utf8", timeout: 60000 });
     const stylePass = styleRes.status === 0;
     /* v1.6.2: parse the audit's own verdict line — the score record's
      * style label must cite the live counts, never a hardcoded fraction
@@ -1163,7 +1242,7 @@ async function gateD() {
     const opsecClean = !failures.some((f) => f.includes("OPSEC"));
     let ledgerStats = { units: 0, evidenced: 0 };
     try {
-        const led = JSON.parse(fs.readFileSync(path.join(ROOT, "tools", "ledger.json"), "utf8"));
+        const led = ledger;   /* WO-01 round-2 (6-a F09): module-level single read */
         const ledKeys = Object.keys(led).filter((k) => !k.startsWith("_"));
         ledgerStats = { units: ledKeys.length, evidenced: ledKeys.filter((k) => led[k] && (led[k].evidence || led[k].note)).length };
     } catch (e) { /* scored at 0 coverage */ }
@@ -1172,7 +1251,7 @@ async function gateD() {
     /* v1.6.0: derived, never hardcoded — the suite round from package.json
      * and the NetHook consumer count from the canon surface itself (the
      * canon-kernel wiring gate cross-checks the dist splice separately). */
-    const suiteRound = "v" + JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8")).version;
+    const suiteRound = "v" + readJsonCached("package.json").version;   /* WO-01 round-2 (6-a F09): cached single read */
     let netConsumerCount = 0;
     for (const cd of ["_sovereign", "_promoted", "_merged"]) {
         const dir = path.join(ROOT, "canon", cd);
@@ -1181,6 +1260,35 @@ async function gateD() {
             if (fs.readFileSync(path.join(dir, f), "utf8").includes("__4NDR0_NET_API__")) netConsumerCount++;
         }
     }
+    /* WO-01 round-2 (6-a F09/g): the inventory-parity verdict now computes
+     * BEFORE the production score writes tools/score.json — the round-1
+     * order wrote the score record first, so a DRIFTING tree still recorded
+     * its full inventoryDeterministic points before the drift failure
+     * landed (a false-certification window in the recorded artifact). The
+     * score input is the live verdict, never a hardcoded true. */
+    let invParityOk = false;
+    // Inventory regeneration determinism (suite v1.4.3): the legacy
+    // `generated: <wall clock>` field made every `npm run check` rewrite
+    // inventory.json — kit base detection (content-hash, git-state
+    // agnostic) then failed G1 with "content drift (not base, not
+    // applied)" after any post-apply verification run (operator field
+    // report, v1.4.2 apply). The field is now a content-addressed
+    // digest; a fresh recomputation must be byte-identical to the file
+    // on disk.
+    try {
+        const invOnDisk = fs.readFileSync(path.join(ROOT, "inventory.json"), "utf8");
+        const invFresh = serialize(computeInventory());
+        if (invOnDisk !== invFresh) {
+            failures.push(`[D] inventory regeneration drift — dist and inventory.json are out of sync (run: npm run inventory)`);
+        } else {
+            invParityOk = true;
+            const digest = JSON.parse(invOnDisk).digest;
+            passes.push(`[D] inventory regeneration deterministic (content digest ${String(digest).slice(0, 16)}…)`);
+        }
+    } catch (e) {
+        failures.push(`[D] inventory determinism check failed: ${e.message}`);
+    }
+
     const scoreCtx = { /* v1.6.2: named ctx — the determinism gate below re-runs the scorer with the SAME inputs */
         smoke: { pass: smokePass, count: smokeCount, floor: 150 }, /* floor = v1.6.0 battery size (138 + 12 v6 asserts; re-derive when the battery grows) */
         otherGateFailures: failures.length,
@@ -1199,7 +1307,7 @@ async function gateD() {
         },
         opsec: opsecClean,
         netHook: { consumers: netConsumerCount },
-        inventoryDeterministic: true,
+        inventoryDeterministic: invParityOk,   /* WO-01 round-2 (6-a F09/g): live parity verdict, was hardcoded true */
         style: stylePass,
         styleCounts, /* v1.6.2: derived label — see the audit parse above */
         docsTruthful,
@@ -1207,7 +1315,7 @@ async function gateD() {
         qr: qrPass,
         /* v1.6.1: derived from the live inventory — was hardcoded 37, which
          * silently misreported coverage the moment a 38th script landed. */
-        docsCoverage: { readmes: readmeCount, scripts: JSON.parse(fs.readFileSync(path.join(ROOT, "inventory.json"), "utf8")).scripts.length },
+        docsCoverage: { readmes: readmeCount, scripts: readJsonCached("inventory.json").scripts.length },
         round: suiteRound,
     };
     const score = runProductionScore(ROOT, scoreCtx);
@@ -1247,27 +1355,6 @@ async function gateD() {
         }
     } catch (e) {
         failures.push(`[D] score determinism check failed: ${e.message}`);
-    }
-
-    // Inventory regeneration determinism (suite v1.4.3): the legacy
-    // `generated: <wall clock>` field made every `npm run check` rewrite
-    // inventory.json — kit base detection (content-hash, git-state
-    // agnostic) then failed G1 with "content drift (not base, not
-    // applied)" after any post-apply verification run (operator field
-    // report, v1.4.2 apply). The field is now a content-addressed
-    // digest; a fresh recomputation must be byte-identical to the file
-    // on disk.
-    try {
-        const invOnDisk = fs.readFileSync(path.join(ROOT, "inventory.json"), "utf8");
-        const invFresh = serialize(computeInventory());
-        if (invOnDisk !== invFresh) {
-            failures.push(`[D] inventory regeneration drift — dist and inventory.json are out of sync (run: npm run inventory)`);
-        } else {
-            const digest = JSON.parse(invOnDisk).digest;
-            passes.push(`[D] inventory regeneration deterministic (content digest ${String(digest).slice(0, 16)}…)`);
-        }
-    } catch (e) {
-        failures.push(`[D] inventory determinism check failed: ${e.message}`);
     }
 
     // Canon-kernel wiring (suite v1.4.3): kernel modules consumed by
