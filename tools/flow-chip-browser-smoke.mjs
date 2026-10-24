@@ -980,6 +980,10 @@ export async function runFlowChipBrowserBattery() {
     passed: checks.length - failed.length,
     total: checks.length,
     clean: failed.length === 0,
+    /* WO-01 round-3 (3-a F12): the live run discloses its mode — dist +
+     * canon-parity reload (validate.mjs prints it; a structural fallback
+     * must never present as live browser proof). */
+    mode: "dist+canon",
     checks,
     failed,
   };

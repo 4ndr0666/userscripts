@@ -195,8 +195,11 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToP
             domain: { clean: true },
             error: { clean: !liveErr.problems.length, catchSites: liveErr.catchSites, typed: liveErr.typed, debug: liveErr.debug, handled: liveErr.handled, silent: liveErr.silent },
         },
+        /* WO-01 round-3 (3-a F13): standalone-mode assumptions re-stamped to the
+         * live gate values (write:false display-only — see the note below): the
+         * ledger is 63 units after bridge.py was ledgered (round 3), style 38/38. */
         opsec: true, netHook: { consumers: 16 }, inventoryDeterministic: true, style: true, styleCounts: { pass: 38, total: 38 }, docsTruthful: true,
-        ledger: { units: 61, evidenced: 61 },
+        ledger: { units: 63, evidenced: 63 },
         qr: true, docsCoverage: { readmes: 38, scripts: 38 },
         round: pkgRound,
     }, { write: false }); /* WO-01 round-1 (2-a F6): standalone mode NEVER writes

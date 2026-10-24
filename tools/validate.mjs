@@ -1170,7 +1170,7 @@ async function gateD() {
     }
 
     const scoreCtx = { /* v1.6.2: named ctx — the determinism gate below re-runs the scorer with the SAME inputs */
-        smoke: { pass: smokePass, count: smokeCount, floor: 150 }, /* floor = v1.6.0 battery size (138 + 12 v6 asserts; re-derive when the battery grows) */
+        smoke: { pass: smokePass, count: smokeCount, floor: 157 }, /* floor = shrinkage guard (NOT derived from the battery's self-report — that would make it a tautology); 157 = WO-01 round-3 battery size (156 + the a4-scope toast tripwire). Regex-counting kernel-smoke.mjs assert( sites yields 158 — the 158th is the deliberate unreachable glass-switch guard; the floor is the EXECUTED count. */
         otherGateFailures: failures.length,
         censuses: {
             sink: { clean: !sinks.problems.length },
@@ -1254,7 +1254,12 @@ async function gateD() {
             const distSrc = fs.existsSync(path.join(DIST, f))
                 ? fs.readFileSync(path.join(DIST, f), "utf8") : "";
             const canonUses = canonSrc.includes(NET_ID);
-            const distHas = distSrc.includes(netModule.slice(0, 200));
+            /* WO-01 round-3 (3-a F11): full-module byte identity — the comment
+             * promises it and a 200-byte prefix test delivers only a prefix
+             * presence check (a spliced/truncated kernel passing the prefix
+             * shipped green). The live dist twin carries kernel/net.js
+             * byte-exact (verified), so the strengthening is green-preserving. */
+            const distHas = distSrc.includes(netModule);
             if (canonUses && !distHas) {
                 failures.push(`[D] canon-kernel wiring: ${f} references ${NET_ID} but dist carries no kernel/net.js — add the CANON_KERNEL map entry`);
             } else if (!canonUses && distHas) {
@@ -1274,7 +1279,7 @@ async function gateD() {
     if (kbSmoke.problems.length) {
         for (const p of kbSmoke.problems) failures.push(`[D] kernel-boundary smoke: ${p}`);
     } else {
-        passes.push(`[D] canon kernel-less boundary verified (${kbSmoke.canonFiles} canon scripts: ${kbSmoke.kernelFreeCount} kernel-free, ${kbSmoke.guardedConsumerCount} typeof-guarded across ${kbSmoke.totalGuardedSites} sites, ${kbSmoke.transportFallbacksVerified}/8 kernel-less gmFetch fallbacks, ${kbSmoke.runtimeAssertions}/10 runtime+red-control assertions)`);
+        passes.push(`[D] canon kernel-less boundary verified (${kbSmoke.canonFiles} canon scripts: ${kbSmoke.kernelFreeCount} kernel-free, ${kbSmoke.guardedConsumerCount} typeof-guarded across ${kbSmoke.totalGuardedSites} sites, ${kbSmoke.transportFallbacksVerified}/${kbSmoke.expectedFallbacks} kernel-less gmFetch fallbacks, ${kbSmoke.runtimeAssertions}/${kbSmoke.expectedRuntimeAssertions} runtime+red-control assertions)`); /* WO-01 round-3 (3-a F05): denominators derive from the smoke's own fixture map — the hardcoded /8 /10 go stale the moment a VM fixture is added */
     }
 
     const famSmoke = await runFamilyFixtureSmoke(ROOT);
@@ -1288,14 +1293,14 @@ async function gateD() {
     if (!flowBrowser.clean) {
         for (const f of flowBrowser.failed) failures.push(`[D] flow-chip browser smoke: ${f.name} (${f.detail})`);
     } else {
-        passes.push(`[D] Google Flow token/credit chip browser Proof-of-Possession verified (${flowBrowser.passed}/${flowBrowser.total} click/wait/get assertions + red control)`);
+        passes.push(`[D] Google Flow token/credit chip browser Proof-of-Possession verified (${flowBrowser.passed}/${flowBrowser.total} click/wait/get assertions + red control, mode=${flowBrowser.mode})`); /* WO-01 round-3 (3-a F12): mode disclosed like pm-grid — a structural fallback must never present as live browser proof */
     }
 
     const igBrowser = await runIgWallBrowserBattery();
     if (!igBrowser.clean) {
         for (const f of igBrowser.failed) failures.push(`[D] ig-wall browser smoke: ${f.name} (${f.detail})`);
     } else {
-        passes.push(`[D] Instagram++ NeuralDOM V-STASIS browser Proof-of-Possession verified (${igBrowser.passed}/${igBrowser.total} click/wait/get assertions + red control)`);
+        passes.push(`[D] Instagram++ NeuralDOM V-STASIS browser Proof-of-Possession verified (${igBrowser.passed}/${igBrowser.total} click/wait/get assertions + red control, mode=${igBrowser.mode})`); /* WO-01 round-3 (3-a F12): mode disclosed like pm-grid */
     }
 
     const pmGridBrowser = await runPmGridBrowserBattery();

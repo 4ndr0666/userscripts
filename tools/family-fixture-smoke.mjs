@@ -44,8 +44,16 @@ function extractFn(src, fnName) {
 
 export async function runFamilyFixtureSmoke(root = ROOT) {
     const problems = [];
-    let passed = 0;
+    let passed = 0,
+        total = 0;
+    /* WO-01 round-3 (3-a F01): total derives from EXECUTION (SUK v1.2 Part V:
+     * battery expectations must derive from internal state) — the hardcoded
+     * 21 rode four commits of CERTIFIED output printing an impossible
+     * 23/21 fraction (round-2's searxng pair was added without the bump,
+     * while gen-docs DERIVED 23 into FEATURE-MATRIX and the two artifacts
+     * contradicted each other). */
     const assert = (label, cond) => {
+        total++;
         if (cond) passed++;
         else problems.push(label);
     };
@@ -553,7 +561,7 @@ forceImmediateAnswer();`, hwCtx);
         lmSrc.includes("hasRedirectLink(n)")
     );
 
-    return { problems, passed, total: 21 }; /* WO-01 round-1: 22 -> 21 — fixture 3C (CandidShiny plugin) removed with the plugin retirement */
+    return { problems, passed, total };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {

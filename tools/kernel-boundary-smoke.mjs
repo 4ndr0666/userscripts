@@ -107,12 +107,16 @@ export async function runKernelBoundarySmoke(root = ROOT) {
 
     // Runtime VM test of the kernel-less gmFetch fallback contract (settle-once + typed NetError kinds)
     // Extract bkrKernelLessGmFetch from Bunkr++ and pmKernelLessGmFetch from Prompt Master and run 6 live assertions
-    let runtimeAssertions = 0;
-    for (const [relFile, fnName] of [
+    // WO-01 round-3 (3-a F05): the VM fixture list is hoisted so the expected
+    // assertion count DERIVES from it (3 assertions per file + 1 red control)
+    // — the round-2 form carried a literal 10 mislabeled as "derived".
+    const VM_FALLBACK_FILES = [
         ["canon/_sovereign/4ndr0tools - Prompt Master.user.js", "pmKernelLessGmFetch"],
         ["canon/_sovereign/4ndr0tools - Bunkr++.user.js", "bkrKernelLessGmFetch"],
         ["canon/_sovereign/4ndr0tools - Pixeldrain++.user.js", "pdKernelLessGmFetch"],
-    ]) {
+    ];
+    let runtimeAssertions = 0;
+    for (const [relFile, fnName] of VM_FALLBACK_FILES) {
         const src = fs.readFileSync(path.join(root, relFile), "utf8");
         const startIdx = src.indexOf(`function ${fnName}(`);
         if (startIdx === -1) {
@@ -192,9 +196,11 @@ export async function runKernelBoundarySmoke(root = ROOT) {
         transportFallbacksVerified,
         runtimeAssertions,
         /* WO-01 round-2 (6-a F16): derived denominators for the summary —
-         * expectedFallbacks.size and the runtime-assertion expectation. */
+         * expectedFallbacks.size and the runtime-assertion expectation
+         * (round-3, 3-a F05: the latter is now ACTUALLY derived — 3 per VM
+         * fixture + the red control). */
         expectedFallbacks: expectedFallbacks.size,
-        expectedRuntimeAssertions: 10,
+        expectedRuntimeAssertions: VM_FALLBACK_FILES.length * 3 + 1,
     };
 }
 
@@ -210,5 +216,5 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToP
         for (const p of r.problems) console.error(`  ✗ ${p}`);
         process.exit(1);
     }
-    console.log("  ✓ all 36 canon scripts are kernel-less-safe; 0 bare __4NDR0_NET_API__ sites");
+    console.log(`  \u2713 all ${r.canonFiles} canon scripts are kernel-less-safe; 0 bare __4NDR0_NET_API__ sites`);
 }

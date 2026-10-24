@@ -25,7 +25,8 @@ const mod = await (async () => {
     return import("data:text/javascript;charset=utf-8," + encodeURIComponent(blob));
 })();
 
-/* round-trip decoder (same as qr-roundtrip-test.mjs) */
+/* round-trip decoder (WO-01 round-3, 3-a F13: the stale citation to the
+ * nonexistent qr-roundtrip-test.mjs removed — this file IS the decoder now) */
 const EXP = new Uint8Array(512);
 const LOG = new Uint8Array(256);
 (() => {

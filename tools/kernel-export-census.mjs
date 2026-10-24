@@ -37,6 +37,16 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { codeOnly } from "./sink-census.mjs";
 import { CURRENT_ROUND } from "./census-round.mjs";
+/* WO-01 round-3 (3-a F08): the module list derives from kernel-order.mjs
+ * single-source (+net, which KERNEL_ORDER deliberately excludes because it
+ * is never bundled — it is inlined standalone). A hand-maintained list here
+ * is the round-1 F-01 drift class reborn inside the round-2 census built to
+ * close drift: a new kernel module's exports would never be extracted, and
+ * a reference to a NONEXISTENT module (Ψ.media.x — typo or stale surface)
+ * matches neither the direct nor the bracket regex and escapes the
+ * bidirectional check entirely. The unknown-mod probe below closes that
+ * direction too. */
+import { KERNEL_ORDER } from "./kernel-order.mjs";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const KERNEL_DIR = path.join(ROOT, "kernel");
@@ -169,7 +179,8 @@ function corpusFiles() {
 
 export function runKernelExportCensus() {
     const problems = [];
-    const modules = ["brand", "core", "store", "glass", "hotkeys", "hosts", "net"];
+    const modules = [...KERNEL_ORDER, "net"]; /* 3-a F08: single-sourced — see the import note */
+    const moduleSet = new Set(modules);
     const exportsByMod = {};
     for (const mod of modules) {
         const src = fs.readFileSync(path.join(KERNEL_DIR, `${mod}.js`), "utf8");
@@ -191,6 +202,15 @@ export function runKernelExportCensus() {
     const esc = (s) => s.replace(/\$/g, "\\$");
     for (const { rel, view } of corpus) {
         /* direct member references: Ψ.<mod>.<name> */
+        /* WO-01 round-3 (3-a F08): unknown-module probe — every Ψ.<mod>.<name>
+         * reference whose <mod> is not a kernel module fails closed (typo /
+         * stale surface); previously such refs matched neither regex and were
+         * invisible to the bidirectional check. */
+        for (const um of view.matchAll(/Ψ\s*\.\s*([A-Za-z_$][\w$]*)\s*\./g)) {
+            if (!moduleSet.has(um[1])) {
+                problems.push(`${rel}: references Ψ.${um[1]} — not a kernel module (typo / stale surface; the census covers exactly [${modules.join(", ")}])`);
+            }
+        }
         const directRe = new RegExp(`Ψ\\s*\\.\\s*(${modules.map(esc).join("|")})\\s*\\.\\s*([A-Za-z_$][\\w$]*)`, "g");
         let m;
         while ((m = directRe.exec(view)) !== null) {

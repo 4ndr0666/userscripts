@@ -610,6 +610,8 @@ export async function runIgWallBrowserBattery() {
     passed: checks.length - failed.length,
     total: checks.length,
     clean: failed.length === 0,
+    /* WO-01 round-3 (3-a F12): mode disclosed — dist + canon-parity reload. */
+    mode: "dist+canon",
     checks,
     failed,
   };
