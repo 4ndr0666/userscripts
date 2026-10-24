@@ -76,6 +76,13 @@ function ledgerKey(baseFile) {
 /* Some baseline unit names are intentionally renamed in the destination;
  * these are reconciled explicitly (GUP bidirectional alignment). */
 const RECONCILED_NAMES = {
+    /* WO-01 round-3 (3-a F04): MACHINE ANCHORS — every entry is now an
+     * object { note, anchor } where anchor is { file, mustContain } (the
+     * claimed successor surface, VERIFIED against the comment-stripped file
+     * on every gate run — prose can no longer drift from code) or null
+     * (documented pure removal: the absence itself is the machine-checked
+     * fact, the note carries the provenance). String values remain
+     * accepted by gateB() for back-compat; the map carries none today. */
     /* WO-01 round-1 (2-a F7): the map now contains ONLY entries whose units
      * are genuinely ABSENT from their dest (verified code-vs-comment:
      * comment-only mentions — Bunkr++'s retired sniffers, Prompt Master's
@@ -92,61 +99,61 @@ const RECONCILED_NAMES = {
         // production release; Remove them." Each removal's surviving
         // invariants live on in flowCreditIntegrityCheck (boot-time) and
         // exportFlowCreditLedger (the production data surface).
-        "flowCreditDebugSelfTestImpl": "removed per operator authorization (WO-001d): the 44-assertion self-test battery was the arrival tool for the counter; its table-integrity and state-machine pins survive as flowCreditIntegrityCheck's production checks, and the browser battery (scripts/wo001c-battery.py, 20/20) remains the external regression gate",
-        "flowCreditSleep": "removed with the pull's click path (WO-001d): paced the click/close cascade that no longer exists",
-        "reportFlowCreditTracker": "removed per operator authorization (WO-001d): the Copy Report was dev diagnostics, not production; superseded by exportFlowCreditLedger (machine-exact ledger JSON via the same clipboard path) + flowCreditIntegrityCheck (its self-audit block's seven machine checks live on at boot)",
+        "flowCreditDebugSelfTestImpl": {"note": "removed per operator authorization (WO-001d): the 44-assertion self-test battery was the arrival tool for the counter; its table-integrity and state-machine pins survive as flowCreditIntegrityCheck's production checks, and the browser battery remains the external regression gate", "anchor": {"file": "canon/_sovereign/4ndr0tools - Prompt Master.user.js", "mustContain": ["flowCreditIntegrityCheck"]}},
+        "flowCreditSleep": {"note": "removed with the pull's click path (WO-001d): paced the click/close cascade that no longer exists", "anchor": null},
+        "reportFlowCreditTracker": {"note": "removed per operator authorization (WO-001d): the Copy Report was dev diagnostics, not production; superseded by exportFlowCreditLedger (machine-exact ledger JSON via the same clipboard path) + flowCreditIntegrityCheck (its self-audit block's seven machine checks live on at boot)", "anchor": {"file": "canon/_sovereign/4ndr0tools - Prompt Master.user.js", "mustContain": ["exportFlowCreditLedger", "flowCreditIntegrityCheck"]}},
         /* The three pull-path removals below are comment-only mentions in
          * the dist changelog today (v28.7.0 banner) — the CODE is gone, so
          * these entries are the live reconciliation for when that comment
          * is ever cleaned up (WO-01 round-1, 2-a F7: kept deliberately). */
-        "findFlowProfileMenuButton": "removed with the pull's click path (WO-001d): its only caller was the report's manual pull reason; pulls are passive-only now — a wallet-bearing menu already on screen is harvested, never opened",
-        "flowCreditDispatchEscape": "removed with the pull's click path (WO-001d): closed the menu the report opened; no code path opens Flow's profile menu anymore",
-        "flowCreditAnyDialog": "removed with the pull's click path (WO-001d): verified the report-opened menu's closure; flowCreditDialogWithCredits (branch A, passive harvest) stays",
+        "findFlowProfileMenuButton": {"note": "removed with the pull's click path (WO-001d): its only caller was the report's manual pull reason; pulls are passive-only now — a wallet-bearing menu already on screen is harvested, never opened", "anchor": null},
+        "flowCreditDispatchEscape": {"note": "removed with the pull's click path (WO-001d): closed the menu the report opened; no code path opens Flow's profile menu anymore", "anchor": null},
+        "flowCreditAnyDialog": {"note": "removed with the pull's click path (WO-001d): verified the report-opened menu's closure; flowCreditDialogWithCredits (branch A, passive harvest) stays", "anchor": {"file": "canon/_sovereign/4ndr0tools - Prompt Master.user.js", "mustContain": ["flowCreditDialogWithCredits"]}},
         /* v28.8.0 (WO-01 round 3) — the no-occlusion contract's removals.
          * The operator's field report retired the parked berth ("remains
          * present overlayed on the grid at times and obstructs the prompt
          * input itself"); the counter lives on exclusively through
          * positionFlowCreditChip's berth ladder. */
-        "parkAtFlowDock": "removed with parked mode (WO-01 round 3): the above-the-dock berth put the chip over the composer's right shoulder — the input itself — when the anchor cascade went stale; positionFlowCreditChip's no-occlusion contract (flowCreditRectsOverlap + the B1/B2/B3 berth ladder) is the successor surface",
-        "flowCreditChipHasContent": "removed with parked mode (WO-01 round 3): gated WHICH chip could park; with no parking there is nothing to gate — the chip is visible exactly when a lawful berth exists and hidden otherwise",
+        "parkAtFlowDock": {"note": "removed with parked mode (WO-01 round 3): the above-the-dock berth put the chip over the composer's right shoulder — the input itself — when the anchor cascade went stale; positionFlowCreditChip's no-occlusion contract (flowCreditRectsOverlap + the B1/B2/B3 berth ladder) is the successor surface", "anchor": {"file": "canon/_sovereign/4ndr0tools - Prompt Master.user.js", "mustContain": ["flowCreditRectsOverlap"]}},
+        "flowCreditChipHasContent": {"note": "removed with parked mode (WO-01 round 3): gated WHICH chip could park; with no parking there is nothing to gate — the chip is visible exactly when a lawful berth exists and hidden otherwise", "anchor": null},
         /* v28.8.0 (WO-01 round 3) — the pill's action-surface swap. The
          * operator retired the copy/paste pair ("the unused functions")
          * for Insights (openInsightsModal) + Enhance Prompt
          * (handleInstantPageEnhancement). */
-        "handleInstantPageCopy": "removed with the pill's Copy button (WO-01 round 3): the operator retired the copy/paste pair for the Insights/Enhance pair; the pill's first slot now opens openInsightsModal, and prompt-level copy lives on in the prompt modal's per-item copy actions",
+        "handleInstantPageCopy": {"note": "removed with the pill's Copy button (WO-01 round 3): the operator retired the copy/paste pair for the Insights/Enhance pair; the pill's first slot now opens openInsightsModal, and prompt-level copy lives on in the prompt modal's per-item copy actions", "anchor": {"file": "canon/_sovereign/4ndr0tools - Prompt Master.user.js", "mustContain": ["openInsightsModal", "handleInstantPageEnhancement"]}},
     },
     "Recon": {
-        "overrideFetch": "armNetworkHub onRequest/onTraffic/onError subscribers (NetHook v4 adoption, suite v1.4.6 — the reconh recorder + MITM blocklist + TypeError→204 pacification ride the shared hub; same surface, no local wrap)",
-        "overrideXHR": "armNetworkHub onTraffic response subscriber (NetHook v4 adoption — the XHR recorder twin rides the shared hub)",
+        "overrideFetch": {"note": "armNetworkHub onRequest/onTraffic/onError subscribers (NetHook v4 adoption, suite v1.4.6 — the reconh recorder + MITM blocklist + TypeError→204 pacification ride the shared hub; same surface, no local wrap)", "anchor": {"file": "canon/_sovereign/4ndr0tools - Recon.user.js", "mustContain": ["armNetworkHub"]}},
+        "overrideXHR": {"note": "armNetworkHub onTraffic response subscriber (NetHook v4 adoption — the XHR recorder twin rides the shared hub)", "anchor": {"file": "canon/_sovereign/4ndr0tools - Recon.user.js", "mustContain": ["armNetworkHub"]}},
     },
     "PageCraft": {
-        "redirectToImage": "n/a (HDImgsOnly unit — lives in HostWarp)",
-        "init": "initialScan on DOMContentLoaded/immediate (same boot orchestration — verified in modules/pagecraft/body.js)",
-        "GMCommandHandler": "inline typeof GM_registerMenuCommand guard (same GM4 fallback semantics)",
+        "redirectToImage": {"note": "n/a (HDImgsOnly unit — lives in HostWarp)", "anchor": {"file": "modules/hostwarp/body.js", "mustContain": ["redirectToImage"]}},
+        "init": {"note": "initialScan on DOMContentLoaded/immediate (same boot orchestration — verified in modules/pagecraft/body.js)", "anchor": {"file": "modules/pagecraft/body.js", "mustContain": ["initialScan"]}},
+        "GMCommandHandler": {"note": "inline typeof GM_registerMenuCommand guard (same GM4 fallback semantics)", "anchor": {"file": "modules/pagecraft/body.js", "mustContain": ["typeof GM_registerMenuCommand"]}},
     },
     "HostWarp": {
         /* WO-01 round-2 (6-a F05): surfaced by comment-aware unitPresent —
          * HDImgsOnly's waitForElement appeared only in the module-header
          * migration note. */
-        "waitForElement": "kernel Ψ.core.waitFor (HDImgsOnly unit): the 100 ms polling element-wait became the kernel's MutationObserver-based waitFor — identical 3 s budget, zero idle CPU (module-header migration note, machine-anchored here)",
-        "getChannelId": "telegramChannelId (renamed, namespace-scoped)",
-        "hidePreviewBanner": "inlined into injectWebButton (same behavior)",
-        "orchestrate": "module boot (hosts.on dispatch)",
-        "redirectToEmbed": "inlined into mega module (same regex)",
-        "enhanceVideoPlayback": "enhance (same logic)",
-        "redirectToMobileSkin": "planetsuzy module body (same flow)",
-        "getInputField": "GEMINI_SELECTORS.input inline query (same selector)",
-        "startObserver": "watchDOM kernel replacement (same observer semantics)",
-        "init": "module boots",
-        "tryInject": "injectWebButton + waitFor retry (same flow)",
+        "waitForElement": {"note": "kernel Ψ.core.waitFor (HDImgsOnly unit): the 100 ms polling element-wait became the kernel's MutationObserver-based waitFor — identical 3 s budget, zero idle CPU (module-header migration note, machine-anchored here)", "anchor": {"file": "kernel/core.js", "mustContain": ["waitFor"]}},
+        "getChannelId": {"note": "telegramChannelId (renamed, namespace-scoped)", "anchor": {"file": "modules/hostwarp/body.js", "mustContain": ["telegramChannelId"]}},
+        "hidePreviewBanner": {"note": "inlined into injectWebButton (same behavior)", "anchor": {"file": "modules/hostwarp/body.js", "mustContain": ["injectWebButton"]}},
+        "orchestrate": {"note": "module boot (hosts.on dispatch)", "anchor": {"file": "modules/hostwarp/body.js", "mustContain": ["hosts.on("]}},
+        "redirectToEmbed": {"note": "inlined into mega module (same regex)", "anchor": {"file": "modules/hostwarp/body.js", "mustContain": ["mega"]}},
+        "enhanceVideoPlayback": {"note": "enhance (same logic)", "anchor": {"file": "modules/hostwarp/body.js", "mustContain": ["enhance"]}},
+        "redirectToMobileSkin": {"note": "planetsuzy module body (same flow)", "anchor": {"file": "modules/hostwarp/body.js", "mustContain": ["planetsuzy"]}},
+        "getInputField": {"note": "GEMINI_SELECTORS.input inline query (same selector)", "anchor": {"file": "modules/hostwarp/body.js", "mustContain": ["GEMINI_SELECTORS"]}},
+        "startObserver": {"note": "watchDOM kernel replacement (same observer semantics)", "anchor": {"file": "modules/hostwarp/body.js", "mustContain": ["watchDOM"]}},
+        "init": {"note": "module boots", "anchor": {"file": "modules/hostwarp/body.js", "mustContain": ["hosts.on("]}},
+        "tryInject": {"note": "injectWebButton + waitFor retry (same flow)", "anchor": {"file": "modules/hostwarp/body.js", "mustContain": ["injectWebButton"]}},
     },
     "Pixeldrain++": {
-        "rng": "removed with the decorative pseudo-QR it served (hash-PRNG noise fill that could never scan); superseded by the real RS/mask QR encoder — tools/qr-verify.mjs round-trip proves the replacement",
+        "rng": {"note": "removed with the decorative pseudo-QR it served (hash-PRNG noise fill that could never scan); superseded by the real RS/mask QR encoder — tools/qr-verify.mjs round-trip proves the replacement", "anchor": {"file": "tools/qr-verify.mjs", "mustContain": ["qrEncode"]}},
     },
     "Forum Link Xtractor": {
-        "createRadio": "createUIElement('radio', …) — unified builder, same options (download/copy)",
-        "createCheckbox": "createUIElement('checkbox', …) — unified builder, same options (current-page/sort)",
-        "silentScan": "extraction flow redesigned around toggleBtn 'Initialize Extraction Protocol'; same scan semantics",
+        "createRadio": {"note": "createUIElement('radio', …) — unified builder, same options (download/copy)", "anchor": {"file": "canon/_promoted/4ndr0tools - Forum Link Xtractor.user.js", "mustContain": ["createUIElement"]}},
+        "createCheckbox": {"note": "createUIElement('checkbox', …) — unified builder, same options (current-page/sort)", "anchor": {"file": "canon/_promoted/4ndr0tools - Forum Link Xtractor.user.js", "mustContain": ["createUIElement"]}},
+        "silentScan": {"note": "extraction flow redesigned around toggleBtn 'Initialize Extraction Protocol'; same scan semantics", "anchor": {"file": "canon/_promoted/4ndr0tools - Forum Link Xtractor.user.js", "mustContain": ["toggleBtn"]}},
     },
     /* LinkMasterΨ section purged (WO-01 round-1, 2-a F7): all six entries
      * were "kept (AbsorbedPLR/GitRaw closure)" prose for units that are
@@ -154,25 +161,25 @@ const RECONCILED_NAMES = {
      * their disappearance. They are live code now: Gate B verifies them
      * directly, fail-closed. */
     "Akasha Silence": {
-        "applyNetworkHooks": "applyLocalHooks (renamed, suite v1.4.5) — the fetch/XHR/beacon defusing migrated to the NetHook v3 veto (__4NDR0_NET_API__.onRequest, kernel-owned wraps); the local installer keeps the WebSocket/WebRTC/worker pacifiers",
+        "applyNetworkHooks": {"note": "applyLocalHooks (renamed, suite v1.4.5) — the fetch/XHR/beacon defusing migrated to the NetHook v3 veto (__4NDR0_NET_API__.onRequest, kernel-owned wraps); the local installer keeps the WebSocket/WebRTC/worker pacifiers", "anchor": {"file": "canon/_merged/4ndr0tools - Akasha Silence.user.js", "mustContain": ["applyLocalHooks", "onRequest"]}},
     },
     "Youtube Removed Video Revealer": {
         /* WO-01 round-2 (6-c F05): dead helper removed — zero call sites
          * (the identifier's only occurrence was its own definition;
          * comment-stripped census clean). */
-        "escapeHTML": "removed as dead code (WO-01 round-2): the HTML entity escaper had zero call sites in the shipped script and zero in the legacy baseline it was carried verbatim from",
+        "escapeHTML": {"note": "removed as dead code (WO-01 round-2): the HTML entity escaper had zero call sites in the shipped script and zero in the legacy baseline it was carried verbatim from", "anchor": null},
     },
     "Blob2URL": {
         /* WO-01 round-2 (6-a F05): surfaced by comment-aware unitPresent —
          * esc appeared only in the v7.2.0 TT-migration comment; both
          * baseline files (Blob2URL + Blob2URLBETA) dest here. */
-        "esc": "retired v7.2.0 (suite v1.4.3 TT render class fix): the vault panels render through createElement — attributes via setAttribute, text via textContent; esc()'s HTML-assembly escaping has no assembly left to escape",
+        "esc": {"note": "retired v7.2.0 (suite v1.4.3 TT render class fix): the vault panels render through createElement — attributes via setAttribute, text via textContent; esc()'s HTML-assembly escaping has no assembly left to escape", "anchor": {"file": "canon/_promoted/4ndr0tools - Blob2URL.user.js", "mustContain": ["createElement", "textContent"]}},
     },
     "Confirmation Bypass": {
         /* WO-01 round-2 (6-a F05): surfaced by comment-aware unitPresent —
          * convertLinks appeared ONLY in the script's own changelog comment
          * (the G2 note); the capability lives on in appendLinks. */
-        "convertLinks": "appendLinks (v4.0.3 builder form): URL hyperlinking in the View Replies table now assembles text nodes + anchor elements — the G2 \\b word-boundary fix lives in appendLinks' URL_RE; zero HTML-string assembly (TT sink class)",
+        "convertLinks": {"note": "appendLinks (v4.0.3 builder form): URL hyperlinking in the View Replies table now assembles text nodes + anchor elements — the G2 \\b word-boundary fix lives in appendLinks' URL_RE; zero HTML-string assembly (TT sink class)", "anchor": {"file": "canon/_promoted/4ndr0tools - Confirmation Bypass.user.js", "mustContain": ["appendLinks"]}},
     },
     "LinkMasterΨ": {
         /* WO-01 round-2 (6-a F05): surfaced by comment-aware unitPresent —
@@ -182,15 +189,15 @@ const RECONCILED_NAMES = {
          * and the GM-transport-first checker; removal documented in the
          * semantic review record") — this ledger section is that record's
          * machine-checked anchor. */
-        "checkLinksQueued": "retired v5.1.0 (authorized): superseded by the generalized epoch-guarded runCheckQueue — queue-drain semantics preserved, epoch guards prevent stale-batch application",
-        "nextBulk": "retired v5.1.0 (authorized): the manual bulk-step advancer was folded into runCheckQueue's continuous drain",
-        "getHosterChecker": "retired v5.1.0 (authorized): superseded by the GM-transport-first checker (gmFetch with typed fallbacks)",
+        "checkLinksQueued": {"note": "retired v5.1.0 (authorized): superseded by the generalized epoch-guarded runCheckQueue — queue-drain semantics preserved, epoch guards prevent stale-batch application", "anchor": {"file": "canon/_merged/4ndr0tools - LinkMasterΨ.user.js", "mustContain": ["runCheckQueue"]}},
+        "nextBulk": {"note": "retired v5.1.0 (authorized): the manual bulk-step advancer was folded into runCheckQueue's continuous drain", "anchor": {"file": "canon/_merged/4ndr0tools - LinkMasterΨ.user.js", "mustContain": ["runCheckQueue"]}},
+        "getHosterChecker": {"note": "retired v5.1.0 (authorized): superseded by the GM-transport-first checker (the xhr(opts) GM_xmlhttpRequest transport with typed fallbacks)", "anchor": {"file": "canon/_merged/4ndr0tools - LinkMasterΨ.user.js", "mustContain": ["GM_xmlhttpRequest"]}},
     },
     "4ndr0purge": {
         /* WO-01 round-1 (2-c E17): dead helper removed — zero call sites
          * verified (comment-stripped identifier census; $ / sleep / onReady
          * remain and are still consumed). */
-        "$$": "removed as dead code (WO-01 round-1): the querySelectorAll wrapper had zero call sites in the shipped script — the $ helper it shadowed alongside is the live path",
+        "$$": {"note": "removed as dead code (WO-01 round-1): the querySelectorAll wrapper had zero call sites in the shipped script — the $ helper it shadowed alongside is the live path", "anchor": null},
     },
     "BypassPaywalls": {
         /* WO-01 round-1 (2-c deferred removal, tombstone purge): the BPC
@@ -206,26 +213,26 @@ const RECONCILED_NAMES = {
          * the purge's own changelog comments (comment-only presence). Re-keyed
          * to the real dest; comment-aware matching + the ledger-dest
          * self-check below now hold this section to its absence claims. */
-        "initGA": "removed with the extension-backend tombstone (WO-01 round-1): dead GA beacon (UA-69824169-2) whose only caller lived inside the unreachable extensionApi guard",
-        "isSiteEnabled": "removed with the extension-backend tombstone (WO-01 round-1): consulted only by the guard block's webRequest listeners — unreachable in the userscript realm",
-        "matchUrlDomain": "removed with the extension-backend tombstone (WO-01 round-1): served only the guard block's request classifiers; matchDomain (the live resolver) survives",
-        "urlHost": "removed with the extension-backend tombstone (WO-01 round-1): sole consumer was matchUrlDomain (also removed)",
-        "getBadgeText": "removed with the extension-backend tombstone (WO-01 round-1): chrome.tabs badge helper, defined inside the unreachable guard",
-        "updateBadge": "removed with the extension-backend tombstone (WO-01 round-1): chrome.tabs badge helper, defined inside the unreachable guard",
-        "setDefaultOptions": "removed with the extension-backend tombstone (WO-01 round-1): body is pure extensionApi.storage/runtime calls; sole caller lived inside the unreachable guard",
+        "initGA": {"note": "removed with the extension-backend tombstone (WO-01 round-1): dead GA beacon (UA-69824169-2) whose only caller lived inside the unreachable extensionApi guard", "anchor": null},
+        "isSiteEnabled": {"note": "removed with the extension-backend tombstone (WO-01 round-1): consulted only by the guard block's webRequest listeners — unreachable in the userscript realm", "anchor": null},
+        "matchUrlDomain": {"note": "removed with the extension-backend tombstone (WO-01 round-1): served only the guard block's request classifiers; matchDomain (the live resolver) survives", "anchor": {"file": "canon/_sovereign/4ndr0tools - BypassPaywalls.user.js", "mustContain": ["matchDomain"]}},
+        "urlHost": {"note": "removed with the extension-backend tombstone (WO-01 round-1): sole consumer was matchUrlDomain (also removed)", "anchor": null},
+        "getBadgeText": {"note": "removed with the extension-backend tombstone (WO-01 round-1): chrome.tabs badge helper, defined inside the unreachable guard", "anchor": null},
+        "updateBadge": {"note": "removed with the extension-backend tombstone (WO-01 round-1): chrome.tabs badge helper, defined inside the unreachable guard", "anchor": null},
+        "setDefaultOptions": {"note": "removed with the extension-backend tombstone (WO-01 round-1): body is pure extensionApi.storage/runtime calls; sole caller lived inside the unreachable guard", "anchor": null},
     },
     "Watermark++": {
         /* WO-01 round-2 (6-a F11): prose corrected — the cited helper name
          * armNetworkHub exists only in Recon; Watermark++ subscribes
          * directly via the inlined hub identifier. */
-        "handleLoadEnd": "__4NDR0_NET_API__.onTraffic subscriber (NetHook v4 adoption, suite v1.4.7 — the RPC loadend handler became the subscriber's response-phase arm; request bodies joined by hub exchange id, same 2xx + text gates)",
+        "handleLoadEnd": {"note": "__4NDR0_NET_API__.onTraffic subscriber (NetHook v4 adoption, suite v1.4.7 — the RPC loadend handler became the subscriber's response-phase arm; request bodies joined by hub exchange id, same 2xx + text gates)", "anchor": {"file": "canon/_sovereign/4ndr0tools - Watermark++.user.js", "mustContain": ["onTraffic"]}},
     },
     "Bunkr++": {
         /* WO-01 round-2 (6-a F11): prose corrected — armNetworkHub is
          * Recon's local arming helper; Bunkr++ subscribes directly via the
          * inlined hub identifier. */
-        "installFetchSniff": "__4NDR0_NET_API__.onTraffic subscriber (NetHook v4 adoption, suite v1.4.7 — the fetch sniffer became the subscriber's request/response arms; the hub's page-realm wrap replaces the per-script proxy)",
-        "installXhrSniff": "__4NDR0_NET_API__.onTraffic subscriber + propagate(sandbox) (NetHook v4 adoption, suite v1.4.7 — the XHR sniffer taps became the same subscriber's arms; sandbox-realm coverage via hub propagation)",
+        "installFetchSniff": {"note": "__4NDR0_NET_API__.onTraffic subscriber (NetHook v4 adoption, suite v1.4.7 — the fetch sniffer became the subscriber's request/response arms; the hub's page-realm wrap replaces the per-script proxy)", "anchor": {"file": "canon/_sovereign/4ndr0tools - Bunkr++.user.js", "mustContain": ["__4NDR0_NET_API__.onTraffic"]}},
+        "installXhrSniff": {"note": "__4NDR0_NET_API__.onTraffic subscriber + propagate(sandbox) (NetHook v4 adoption, suite v1.4.7 — the XHR sniffer taps became the same subscriber's arms; sandbox-realm coverage via hub propagation)", "anchor": {"file": "canon/_sovereign/4ndr0tools - Bunkr++.user.js", "mustContain": ["__4NDR0_NET_API__.onTraffic", "propagate"]}},
     },
 };
 
@@ -310,8 +317,34 @@ function gateB() {
             /* WO-01 round-1 (2-a F7): hasOwnProperty, NOT truthiness — a unit
              * named like an Object.prototype member (the baseline carries
              * "toLocaleString") would be excused by the INHERITED method
-             * through `renames[unit]` truthiness, masking a real regression. */
-            if (Object.prototype.hasOwnProperty.call(renames, unit)) { reconciled++; continue; }
+             * through `renames[unit]` truthiness, masking a real regression.
+             * WO-01 round-3 (3-a F04): the value may be a STRING (prose,
+             * back-compat) or an OBJECT with a machine anchor —
+             *   { note, anchor: { file, mustContain } }  → every mustContain
+             *     token is verified against the comment-stripped view of the
+             *     anchored file, so the claimed successor surface is
+             *     machine-checked and prose can no longer drift from code;
+             *   { note, anchor: null }                   → documented pure
+             *     removal (the absence itself is the machine-checked fact —
+             *     unitPresent already proved the name is gone). */
+            if (Object.prototype.hasOwnProperty.call(renames, unit)) {
+                const rn = renames[unit];
+                if (typeof rn === "object" && rn !== null && rn.anchor) {
+                    const anchorFile = path.join(ROOT, rn.anchor.file);
+                    if (!fs.existsSync(anchorFile)) {
+                        failures.push(`[B] unit "${unit}" from "${key}": anchor file missing — ${rn.anchor.file}`);
+                        continue;
+                    }
+                    const anchorView = stripCommentsKeepStrings(fs.readFileSync(anchorFile, "utf8"));
+                    for (const token of rn.anchor.mustContain || []) {
+                        if (!anchorView.includes(token)) {
+                            failures.push(`[B] unit "${unit}" from "${key}": anchor stale — "${token}" not found in ${rn.anchor.file} (the reconciliation's claimed successor is gone — update the anchor or the prose)`);
+                        }
+                    }
+                }
+                reconciled++;
+                continue;
+            }
             failures.push(`[B] unit "${unit}" from "${key}" MISSING in dest "${destKey}"`);
         }
     }
