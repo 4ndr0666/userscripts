@@ -31,14 +31,11 @@ document.addEventListener('yt-navigate-start', handleNavigateStart);
 document.addEventListener('yt-navigate-finish', handleNavigateFinish);
 document.addEventListener('yt-action', handlePageDataLoad);
 
-/* UTILITY */
-function escapeHTML(unsafe) {
-    // REVISION: Arrow function for conciseness.
-    return unsafe.replace(
-        /[\u0000-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u00FF]/g,
-        c => '&#' + ('000' + c.charCodeAt(0)).substr(-4, 4) + ';'
-    );
-}
+/* UTILITY — WO-01 round-2 (6-c F05): escapeHTML removed as dead code. The
+ * HTML entity escaper had zero call sites in this script (identifier census:
+ * its only occurrence was its own definition) and rode along verbatim from
+ * the legacy baseline, where it was equally uncalled. Reconciled in Gate B's
+ * RECONCILED_NAMES ledger. */
 
 function getWaybackVideoAvailabilityCheckURL(videoID) {
     return `https://web.archive.org/cdx/search/cdx?url=wayback-fakeurl.archive.org/yt/${videoID}&fl=timestamp,original&output=json&closest=20050101000000&limit=1`;

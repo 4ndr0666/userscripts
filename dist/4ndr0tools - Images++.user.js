@@ -10,7 +10,10 @@
 // @grant        GM_addStyle
 // @grant        GM_download
 // @grant        GM_getValue
-// @grant        GM_getValues
+/* WO-01 round-2 (6-c F03): @grant GM_getValues removed — zero call sites
+ * in the 4,618-line body (no GM_getValues/GM.getValues usage, no gm4
+ * polyfill @require); a dead grant inflates the permission surface the
+ * manager prompts the user to accept on install. */
 // @grant        GM_openInTab
 // @grant        GM_registerMenuCommand
 // @grant        GM_unregisterMenuCommand
@@ -447,7 +450,14 @@ p.style.backgroundImage = url('${p.src}');
 
 if (ai.preloadStart < 0 && isFunction(p.play))
 
-p.play().catch(now);
+/* WO-01 round-2 (6-a F07): the rejection handler was `now` (a
+ * performance.now binding) — a silent swallow that "handled" autoplay
+ * rejection by returning a timestamp. Autoplay can be legitimately
+ * rejected by browser policy; the preload path does not depend on
+ * playback, so the failure is debug-logged per the script's
+ * interceptor-diagnostics convention instead of vanishing. */
+
+p.play().catch((e) => { console.debug('IMAGES interceptor: autoplay preload rejected', e); });
 
 },
 

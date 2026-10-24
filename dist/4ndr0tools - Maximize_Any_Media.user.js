@@ -23,7 +23,15 @@
   // event listeners (composed-path walking), never through polling loops.
   const SCRIPT = {
     name: "4ndr0tools - Maximize_Any_Media",
-    version: "7.0.0-Ψ",
+    /* WO-01 round-2 (6-c F02): the in-code version was the inherited legacy
+     * "7.0.0-Ψ" while @version reads 2.0.1 — the HUD and the diagnostic
+     * print showed the wrong number on every render. Derived from GM_info
+     * (the userscript manager's own parsed @version) with the header value
+     * as fallback, per the Hailuo++ pattern — the two can never diverge
+     * again. */
+    version: (typeof GM_info !== 'undefined' && GM_info && GM_info.script && GM_info.script.version)
+      ? GM_info.script.version
+      : "2.0.1",
     spec: "3lectric-Glass",
   }
 

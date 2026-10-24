@@ -686,13 +686,25 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: BypassPaywalls.user v0.1
             removeDOMElement(el);
         });
     } else if (matchDomain(['theathletic.com', 'theathletic.co.uk'])) {
-        window.setInterval(function () {
+        /* WO-01 round-2 (6-c F01 / 6-a F04): the watcher now carries a
+         * handle and a retry ceiling. The round-1 form called
+         * window.clearInterval() with NO argument — a spec no-op that
+         * clears nothing (the handle defaults to 0) — and its guard was
+         * presence-POSITIVE (retry-until-found), so the interval polled
+         * every 100 ms for the page lifetime even after removing the
+         * paywall, and forever on pages where no paywall ever appears.
+         * 300 tries × 100 ms = 30 s budget, the suite's B.1 ceiling
+         * pattern; BPP is kernel-less by design, so the budget is local. */
+        let tries = 0;
+        const slideupWatcher = window.setInterval(function () {
             const paywall = document.querySelector('#slideup-paywall');
             const darken = document.querySelector('#darken-overlay');
             if (paywall && darken) {
                 removeDOMElement(paywall);
                 removeDOMElement(darken);
-                window.clearInterval();
+                window.clearInterval(slideupWatcher);
+            } else if (++tries > 300) {
+                window.clearInterval(slideupWatcher);
             }
         }, 100);
 

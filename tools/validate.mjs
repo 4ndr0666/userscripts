@@ -121,6 +121,12 @@ const RECONCILED_NAMES = {
     "Akasha Silence": {
         "applyNetworkHooks": "applyLocalHooks (renamed, suite v1.4.5) — the fetch/XHR/beacon defusing migrated to the NetHook v3 veto (__4NDR0_NET_API__.onRequest, kernel-owned wraps); the local installer keeps the WebSocket/WebRTC/worker pacifiers",
     },
+    "Youtube Removed Video Revealer": {
+        /* WO-01 round-2 (6-c F05): dead helper removed — zero call sites
+         * (the identifier's only occurrence was its own definition;
+         * comment-stripped census clean). */
+        "escapeHTML": "removed as dead code (WO-01 round-2): the HTML entity escaper had zero call sites in the shipped script and zero in the legacy baseline it was carried verbatim from",
+    },
     "4ndr0purge": {
         /* WO-01 round-1 (2-c E17): dead helper removed — zero call sites
          * verified (comment-stripped identifier census; $ / sleep / onReady

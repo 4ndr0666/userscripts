@@ -9,7 +9,7 @@
 | 4ndr0tools - 4ndr0Purge | `1.0.2` | sovereign | 12 | kernel-free | *: |
 | 4ndr0tools - 4ndr0serviceguard Companion | `7.4.1` | sovereign | 38 | kernel-free | *: |
 | 4ndr0tools - Akasha Silence | `5.2.1` | merged | 32 | typeof-guarded (NetHook) | *: |
-| 4ndr0tools - AlwaysNewWindow | `1.0.1` | sovereign | 70 | kernel-free | *: |
+| 4ndr0tools - AlwaysNewWindow | `1.0.1` | sovereign | 71 | kernel-free | *: |
 | 4ndr0tools - AutoTranslate | `6.0.0` | sovereign | 52 | kernel-free | *: |
 | 4ndr0tools - Blob2URL | `7.3.0` | promoted | 38 | typeof-guarded + gmFetch fallback | *: |
 | 4ndr0tools - Bunkr++ | `7.7.0` | sovereign | 82 | typeof-guarded + gmFetch fallback | universal (no @match) |
@@ -41,7 +41,7 @@
 | 4ndr0tools - Yandex Image Search++ | `0.4.1` | sovereign | 5 | kernel-free | *: |
 | 4ndr0tools - YouTube Playlist Master | `1.7.2` | sovereign | 299 | typeof-guarded (NetHook) | youtube.com |
 | 4ndr0tools - YouTube Embed Redirect Button | `1.6` | sovereign | 6 | kernel-free | youtube.com |
-| 4ndr0tools - Youtube Removed Video Revealer | `2.0.3` | sovereign | 17 | kernel-free | *: |
+| 4ndr0tools - Youtube Removed Video Revealer | `2.0.3` | sovereign | 16 | kernel-free | *: |
 | 4ndr0tools - Zai Exporter | `1.0.0` | sovereign | 26 | kernel-free | chat.z.ai, z.ai |
 | 4ndr0tools - m3u8++ | `5.1.0` | promoted | 20 | typeof-guarded (NetHook) | *: |
 

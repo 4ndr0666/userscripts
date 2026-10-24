@@ -88,9 +88,9 @@
    "version": "1.0.1",
    "description": "Open all links into new windows (optional force mode), auto-expand collapsed content, hide banners and consent overlays, neon-glow overlay scrollbar, and right-click scroll-to-top/bottom.",
    "family": "ux utilities",
-   "sha256": "7cb96d701a227191f044ec2d68526d99bc2855afdf82cd8f0003edc7f2cfaa34",
-   "lines": 1567,
-   "bytes": 70585,
+   "sha256": "5d4225f4e75abc38982c3f859988f2ee3b43aa8d88e10b0332c2aeacd8d9bac4",
+   "lines": 1616,
+   "bytes": 73691,
    "matches": [
     "*://*/*"
    ],
@@ -214,9 +214,9 @@
    "version": "0.1.6",
    "description": "A way to bypass paywalls for popular news sites",
    "family": "privacy & security",
-   "sha256": "5732061923748a31532d7d50778f539d844a7ea0570265ad28f65b911c460349",
-   "lines": 1061,
-   "bytes": 54051,
+   "sha256": "a4f3c05192a7b87ea279c95b7db21f8b69483cd04e8f019a7793f3f153c9e72d",
+   "lines": 1073,
+   "bytes": 54850,
    "matches": [
     "*://404media.co/*",
     "*://*.adweek.com/*",
@@ -751,9 +751,9 @@
    "version": "4.0.3",
    "description": "Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. Collapse-mode hotkey is configurable.",
    "family": "images",
-   "sha256": "7e472103ef7a9729b0155fc40265bce0320154d78c3cbf83f1f2f2c28aef765c",
-   "lines": 4618,
-   "bytes": 137999,
+   "sha256": "0634d7acd3eab3ba45b3f70ca9162708d64c8a76ac0ecd98f7e566efef30dfa3",
+   "lines": 4628,
+   "bytes": 138710,
    "matches": [
     "*://*/*"
    ],
@@ -763,7 +763,6 @@
     "GM_addStyle",
     "GM_download",
     "GM_getValue",
-    "GM_getValues",
     "GM_openInTab",
     "GM_registerMenuCommand",
     "GM_unregisterMenuCommand",
@@ -926,9 +925,9 @@
    "version": "2.0.1",
    "description": "Maximize + Pip controls to any media anywhere - video, images, embedded and shadow-DOM players, on any site. 3lectric-Glass spec. Ψ",
    "family": "video & players",
-   "sha256": "1b855794e6f044558d6133d8f6caa7342622806e6e16ccec52e39eef930ceb24",
-   "lines": 1223,
-   "bytes": 49590,
+   "sha256": "b28c57b12c38e3acfae4fa2a5a92629f91d78347d30c2d724c6b16fa29bffda4",
+   "lines": 1231,
+   "bytes": 50110,
    "matches": [],
    "excludes": [
     "*www.w3school.com.*",
@@ -1412,9 +1411,9 @@
    "version": "2.0.3",
    "description": "Restores titles for removed or private videos in YouTube playlists",
    "family": "video & players",
-   "sha256": "80a1d3775d96aeeda44297850e3237dc2e3f8d1cc592a8570fd34b05501ea1cc",
-   "lines": 613,
-   "bytes": 29879,
+   "sha256": "6b0a46bd083f4354c08b658232cd5055b7f8e8684ef4201fb565fd38c472a979",
+   "lines": 610,
+   "bytes": 29957,
    "matches": [
     "*://*.youtube.com/*"
    ],
@@ -1561,5 +1560,5 @@
    ]
   }
  ],
- "digest": "fa3d78fc7c4fc8f4f47dac7f84970e2b62ed0bde4120d810b4a5390cb37bd317"
+ "digest": "dc07a2ec759286492da77a043bb57973c74413ebb5e6bea4e2d29fcfe49daace"
 }

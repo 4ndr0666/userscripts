@@ -107,17 +107,37 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: AlwaysNewWindow.user v1.
         let observer = null;
         // anchor -> { target, rel } captured before first modification so the
         // toggle can restore the page-author state exactly (reversible).
-        const originals = new Map();
+        // WO-01 round-2 (6-c F04): the payload rides a WeakMap (dies with the
+        // anchor object — a detached-and-forgotten anchor no longer pins its
+        // DOM subtree against GC on long-lived SPA pages) while enumeration
+        // rides a pruned Set: the 150 ms observer flush drops anchors whose
+        // isConnected is false, and processAnchor re-registers any anchor it
+        // observes again, so detach/re-attach cycles stay correct (the
+        // modified state lives on the anchor object itself). disable()
+        // iterates the Set + WeakMap.get — the round-1 WeakMap swap was
+        // rightly rejected precisely because it broke that iteration; this
+        // pair preserves it with bounded memory.
+        let originals = new WeakMap();
+        const tracked = new Set();
 
         const processAnchor = (anchor) => {
             if (anchor && anchor.tagName === 'A') {
                 if (!originals.has(anchor)) {
                     originals.set(anchor, { target: anchor.target, rel: anchor.rel });
                 }
+                tracked.add(anchor);   /* always — re-attachment re-registers after a prune */
                 // target=_blank opens in a new window/tab; rel prevents the new
                 // page from accessing window.opener and from sending referrer.
                 anchor.target = '_blank';
                 anchor.rel = 'noopener noreferrer';
+            }
+        };
+
+        /* WO-01 round-2 (6-c F04): flush-time prune — detached anchors leave
+         * the enumeration Set at the next 150 ms flush. */
+        const pruneTracked = () => {
+            for (const a of tracked) {
+                if (!a.isConnected) tracked.delete(a);
             }
         };
 
@@ -150,15 +170,20 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: AlwaysNewWindow.user v1.
             observer = new MutationObserver((mutationsList) => {
                 let queued = false;
                 for (const mutation of mutationsList) {
-                    if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                        mutation.addedNodes.forEach((n) => { pendingNodes.push(n); queued = true; });
-                    }
+                    if (mutation.type !== 'childList') continue;
+                    /* WO-01 round-2 (6-c F04): removal-only batches now reach
+                     * the flush too (previously they returned early), so the
+                     * prune runs on the same 150 ms cadence even on pages
+                     * that only ever remove nodes. */
+                    mutation.addedNodes.forEach((n) => { pendingNodes.push(n); });
+                    queued = true;
                 }
                 if (!queued) return;
                 clearTimeout(processNodesTimer);
                 processNodesTimer = setTimeout(() => {
                     const nodes = pendingNodes.splice(0, pendingNodes.length);
                     nodes.forEach(processNode);
+                    pruneTracked();
                 }, 150);
             });
             observer.observe(document.documentElement, { childList: true, subtree: true });
@@ -169,13 +194,15 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: AlwaysNewWindow.user v1.
         const disable = () => {
             if (!active) return;
             if (observer) { observer.disconnect(); observer = null; }
-            originals.forEach((orig, anchor) => {
-                if (anchor.isConnected) {
+            for (const anchor of tracked) {
+                const orig = originals.get(anchor);
+                if (orig && anchor.isConnected) {
                     anchor.target = orig.target;
                     anchor.rel = orig.rel;
                 }
-            });
-            originals.clear();
+            }
+            tracked.clear();
+            originals = new WeakMap();   /* WeakMap has no .clear() — replace */
             active = false;
         };
 
@@ -331,7 +358,15 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: AlwaysNewWindow.user v1.
         const clickedElements = new WeakSet();
         // element -> original inline display value, captured before hiding so
         // the module toggle can restore the page state exactly.
-        const hiddenElements = new Map();
+        // WO-01 round-2 (6-c F04): same WeakMap+pruned-Set pair as
+        // AlwaysNewWindow's originals — the payload dies with the element
+        // object, enumeration rides a Set pruned of disconnected elements
+        // at every processPage() pass (the debounced observer flush), and
+        // hideElement re-registers any element it hides again. disable()
+        // iterates the Set + WeakMap.get with bounded memory on long-lived
+        // SPA pages.
+        let hiddenDisplays = new WeakMap();
+        const hiddenTracked = new Set();
 
         // Support selectors inside a single shadow host via "shadow:<host-selector> <descendant>".
         function queryAll(selector) {
@@ -345,9 +380,10 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: AlwaysNewWindow.user v1.
         }
 
         function hideElement(element) {
-            if (!hiddenElements.has(element)) {
-                hiddenElements.set(element, element.style.display);
+            if (!hiddenDisplays.has(element)) {
+                hiddenDisplays.set(element, element.style.display);
             }
+            hiddenTracked.add(element);   /* always — re-hide after a prune re-registers */
             element.style.display = 'none';
         }
 
@@ -365,7 +401,10 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: AlwaysNewWindow.user v1.
                 const elements = queryAll(selector);
                 elements.forEach(element => {
                     if (!clickedElements.has(element)) {
-                        console.log('HideBanner clicking element:', element);
+                        /* WO-01 round-2 (6-c F06): console.debug per the script's
+                         * diagnostics discipline — console.log spammed the
+                         * console on every configured click action. */
+                        console.debug(DEBUG_TAG + ' HideBanner clicking element:', element);
                         element.click();
                         clickedElements.add(element);
                     }
@@ -381,7 +420,10 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: AlwaysNewWindow.user v1.
             const elementRect = element.getBoundingClientRect();
             // Only scroll when the target element is below the current viewport.
             if (elementRect.top > 0) {
-                console.log('HideBanner scrolling to element:', element);
+                /* WO-01 round-2 (6-c F06): console.debug per the script's
+                 * diagnostics discipline — console.log spammed the console
+                 * on every configured scroll action. */
+                console.debug(DEBUG_TAG + ' HideBanner scrolling to element:', element);
                 element.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
@@ -390,6 +432,11 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: AlwaysNewWindow.user v1.
             hideElements();
             clickElements();
             scrollToElement();
+            /* WO-01 round-2 (6-c F04): flush-time prune — hidden elements
+             * that left the document stop pinning the enumeration Set. */
+            for (const el of hiddenTracked) {
+                if (!el.isConnected) hiddenTracked.delete(el);
+            }
         }
 
         // Coalesce mutation bursts into one trailing scan (<=100ms latency,
@@ -415,10 +462,12 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: AlwaysNewWindow.user v1.
             if (!active) return;
             if (observer) { observer.disconnect(); observer = null; }
             if (pending) { clearTimeout(pending); pending = 0; }
-            hiddenElements.forEach((display, element) => {
-                if (element.isConnected) element.style.display = display;
-            });
-            hiddenElements.clear();
+            for (const element of hiddenTracked) {
+                const display = hiddenDisplays.get(element);
+                if (display !== undefined && element.isConnected) element.style.display = display;
+            }
+            hiddenTracked.clear();
+            hiddenDisplays = new WeakMap();   /* WeakMap has no .clear() — replace */
             active = false;
         };
 
