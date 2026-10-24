@@ -197,6 +197,19 @@ const BRACKET_PROP_WRITES =
     /\[\s*["'](?:(?:inner|outer)HTML|fetch|open|send|eval|parseFromString)["']\s*\]\s*(?:\+)?=(?!=)/g;
 const BRACKET_TIMER_STRINGS =
     /\[\s*["']set(?:Timeout|Interval)["']\s*\]\s*\(\s*["'`]/g;
+/* WO-01 round-3 (3-a F02): bracket CALL forms — el["insertAdjacentHTML"](…),
+ * window["eval"](…), document["write"](…), new window["Function"](…),
+ * dp["parseFromString"](…), and bracket timer calls with ANY argument type
+ * (function refs included — also invisible to polling-census's member-form
+ * dot receivers) — escape the CLASSES regexes (codeOnly blanks string
+ * contents, so the callee renders as el[""]("")") AND both round-2
+ * tripwires (they require `=` or a string first-arg). insertAdjacentHTML
+ * and document.write are the R3-ENDGAME BANNED classes — the bracket-call
+ * disguise defeated the zero-tolerance ban while the gate stayed GREEN
+ * (node-proven on all five forms, zero live occurrences). Constant-name
+ * sink CALLS must use dot form; dynamic-key bracket access is unaffected. */
+const BRACKET_SINK_CALLS =
+    /\[\s*["'](?:(?:insertAdjacentHTML|parseFromString|write(?:ln)?|eval|Function)|set(?:Timeout|Interval))["']\s*\]\s*\(/g;
 
 /* String-preserving comment stripper (mirrors validate.mjs's
  * stripCommentsKeepStrings discipline: comments are documentation, strings
@@ -415,6 +428,9 @@ export function runSinkCensus() {
         }
         for (const bt of stringsView.match(BRACKET_TIMER_STRINGS) || []) {
             problems.push(`${f}: bracket-form string-arg timer ${bt.slice(0, 34)}… — constant-name timer access must use dot form so the timerString class stays visible (6-a F06 tripwire)`);
+        }
+        for (const bc of stringsView.match(BRACKET_SINK_CALLS) || []) {
+            problems.push(`${f}: bracket-form sink call ${bc.slice(0, 34)}… — constant-name sink calls must use dot form so the CLASSES/polling censuses stay visible (3-a F02 tripwire)`);
         }
         const counts = scanCode(code);
         const ledger = ADJUDICATED[f] || {};

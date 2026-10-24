@@ -55,6 +55,23 @@ const ADJUDICATED = [];
 
 const ledgerKey = (e) => `${e.file}::${e.count}`;
 
+/* WO-01 round-3 (3-a F03): the promise-arm adjudication ledger — sanctioned
+ * deliberate silences in .catch()/ .then(ok, err) handlers, same contract as
+ * ADJUDICATED (count-pinned, expiry-pinned). The one live entry is PM's
+ * write-chain serializer tail: run.then(() => {}, () => {}) swallows the
+ * rejection AFTER it has been delivered to `run`'s real consumer (the
+ * caller of serializePromptsWrite awaits `run`); the tail exists so the
+ * NEXT queued write is not poisoned by the previous failure — the canonical
+ * promise-serializer pattern. Debug-logging there would double-report every
+ * rejection (once at the tail, once at the true consumer). */
+const PROMISE_ADJUDICATED = [
+    {
+        file: "canon/_sovereign/4ndr0tools - Prompt Master.user.js",
+        count: 1,
+        expiry: "1.12.0",
+    },
+];
+
 /* ── helpers ─────────────────────────────────────────────────────────────── */
 
 function lineStartsOf(view) {
@@ -124,7 +141,7 @@ function assertKernelFamily(root, problems) {
 
 export function runErrorCensus(root = DEFAULT_ROOT) {
     const problems = [];
-    const stats = { catchSites: 0, typed: 0, debug: 0, handled: 0, silent: 0, promiseCatchSites: 0, silentPromiseCatches: 0, filesScanned: 0, silentFiles: 0 };
+    const stats = { catchSites: 0, typed: 0, debug: 0, handled: 0, silent: 0, promiseCatchSites: 0, thenArmSites: 0, silentPromiseCatches: 0, ledgeredPromiseArms: 0, filesScanned: 0, silentFiles: 0 };
     const seenLedger = new Set();
     const perFile = {};
 
@@ -152,7 +169,7 @@ export function runErrorCensus(root = DEFAULT_ROOT) {
         stats.filesScanned++;
         const view = codeOnly(fs.readFileSync(abs, "utf8"));
         const starts = lineStartsOf(view);
-        const fileStats = { catches: 0, typed: 0, debug: 0, handled: 0, silent: 0, silentSites: [] };
+        const fileStats = { catches: 0, typed: 0, debug: 0, handled: 0, silent: 0, silentSites: [], silentPromiseSites: [] };
 
         /* catch sites: `catch (e) {` or bare `catch {` */
         const siteRe = /(^|[^\w$.])catch\s*(\(|\{)/g;
@@ -180,6 +197,31 @@ export function runErrorCensus(root = DEFAULT_ROOT) {
         /* Wave 2.8 class-closure: Promise `.catch(...)` handlers — an inline
          * arrow/function handler with an empty `{}` body is a silent async
          * rejection swallow and must fail closed. */
+        /* WO-01 round-2 (6-a F07) + round-3 (3-a F03): function-REFERENCE
+         * handler resolution — ONE helper shared by the .catch() scan and the
+         * .then(ok, err) error-arm scan (the scan-kit lesson: ported copies
+         * drift). Resolve the identifier ONE level in the same file's code
+         * view: function decls and const/let/var arrow/function definitions
+         * get their bodies inspected under the emptiness rule; bind
+         * expressions and cross-file references stay unresolvable
+         * (conservative no-flag). */
+        const resolveRefBody = (name) => {
+            const esc = name.replace(/\$/g, "\\$");
+            let body = null;
+            const fnDecl = new RegExp(`function\\s+${esc}\\s*\\([^)]*\\)\\s*\\{`).exec(view);
+            if (fnDecl) {
+                const sp = braceSpan(view, fnDecl.index + fnDecl[0].length - 1);
+                if (sp) body = stripBodyComments(view.slice(sp[0] + 1, sp[1]));
+            }
+            if (body === null) {
+                const constDecl = new RegExp(`(?:const|let|var)\\s+${esc}\\s*=\\s*(?:async\\s+)?(?:function\\s*\\([^)]*\\)|\\([^)]*\\)\\s*=>|[A-Za-z_$][\\w$]*\\s*=>)\\s*\\{`).exec(view);
+                if (constDecl) {
+                    const sp = braceSpan(view, constDecl.index + constDecl[0].length - 1);
+                    if (sp) body = stripBodyComments(view.slice(sp[0] + 1, sp[1]));
+                }
+            }
+            return body;
+        };
         const pCatchRe = /\.catch\s*\(/g;
         let pm;
         while ((pm = pCatchRe.exec(view)) !== null) {
@@ -202,25 +244,12 @@ export function runErrorCensus(root = DEFAULT_ROOT) {
                  * scope — a documented round-3 boundary. */
                 const fnRef = /^\s*([A-Za-z_$][\w$]*)\s*[,)]/.exec(afterOpen);
                 if (fnRef) {
-                    const name = fnRef[1];
-                    const esc = name.replace(/\$/g, "\\$");
-                    let body = null;
-                    const fnDecl = new RegExp(`function\\s+${esc}\\s*\\([^)]*\\)\\s*\\{`).exec(view);
-                    if (fnDecl) {
-                        const sp = braceSpan(view, fnDecl.index + fnDecl[0].length - 1);
-                        if (sp) body = stripBodyComments(view.slice(sp[0] + 1, sp[1]));
-                    }
-                    if (body === null) {
-                        const constDecl = new RegExp(`(?:const|let|var)\\s+${esc}\\s*=\\s*(?:async\\s+)?(?:function\\s*\\([^)]*\\)|\\([^)]*\\)\\s*=>|[A-Za-z_$][\\w$]*\\s*=>)\\s*\\{`).exec(view);
-                        if (constDecl) {
-                            const sp = braceSpan(view, constDecl.index + constDecl[0].length - 1);
-                            if (sp) body = stripBodyComments(view.slice(sp[0] + 1, sp[1]));
-                        }
-                    }
+                    const body = resolveRefBody(fnRef[1]);
                     if (body !== null && body.trim().length === 0) {
-                        const line = lineOf(starts, pm.index);
+                        /* recorded, not reported — the promise-arm ledger
+                         * loop below owns the fail/ledger decision */
+                        fileStats.silentPromiseSites.push(lineOf(starts, pm.index));
                         stats.silentPromiseCatches++;
-                        problems.push(`${rel}:${line}: SILENT Promise .catch(${name}) — referenced handler has an empty body (Wave 2.8 / GUP G11: add scoped console.debug or recovery handling)`);
                     }
                 }
                 continue;
@@ -232,7 +261,64 @@ export function runErrorCensus(root = DEFAULT_ROOT) {
             if (body.trim().length === 0) {
                 const line = lineOf(starts, pm.index);
                 stats.silentPromiseCatches++;
-                problems.push(`${rel}:${line}: SILENT Promise .catch() handler — empty body (Wave 2.8 / GUP G11: add scoped console.debug or recovery handling)`);
+                fileStats.silentPromiseSites.push(line);
+            }
+        }
+        /* WO-01 round-3 (3-a F03): the two-arg .then(ok, err) form — the
+         * round-2 boundary ("remains out of scope — a documented round-3
+         * boundary") is now CLOSED. The second top-level argument is the
+         * rejection handler and gets exactly the .catch() emptiness rule:
+         * inline arrow/function bodies and one-level fnRef resolution via
+         * the shared resolveRefBody helper; expression-arrows and
+         * unresolvable references stay conservative no-flag. The live tree
+         * carries exactly one such site (PM's write-chain serializer
+         * .then(job, job) — job is the caller's real async function) and
+         * it resolves healthy. */
+        const pThenRe = /\.then\s*\(/g;
+        let tm2;
+        while ((tm2 = pThenRe.exec(view)) !== null) {
+            stats.thenArmSites++;
+            const openParen = tm2.index + tm2[0].length - 1;
+            /* walk the argument list: track depth over ()[]{}; the FIRST
+             * depth-0 comma separates ok from err, the second ends err. */
+            let depth = 0, i = openParen + 1, arg2Start = -1, listEnd = -1;
+            while (i < view.length) {
+                const ch = view[i];
+                if (ch === "(" || ch === "{" || ch === "[") depth++;
+                else if (ch === ")" || ch === "}" || ch === "]") {
+                    if (ch === ")" && depth === 0) { listEnd = i; break; }
+                    depth--;
+                } else if (ch === "," && depth === 0) {
+                    if (arg2Start === -1) arg2Start = i + 1;
+                    else { listEnd = i; break; }
+                }
+                i++;
+            }
+            if (arg2Start === -1) continue; /* one-arg .then(ok) — no error arm */
+            const armEnd = listEnd === -1 ? Math.min(view.length, arg2Start + 160) : listEnd;
+            const arm = view.slice(arg2Start, armEnd).trim();
+            if (!arm) continue; /* degenerate trailing comma — not a handler */
+            const armArrow = /^(?:async\s+)?(?:function\s*\([^)]*\)|\([^)]*\)\s*=>|[A-Za-z_$][\w$]*\s*=>)\s*\{/.exec(arm);
+            if (armArrow) {
+                const braceAt = arm.indexOf("{", armArrow[0].length - 1);
+                const sp = braceSpan(arm, braceAt);
+                if (sp) {
+                    const body = stripBodyComments(arm.slice(sp[0] + 1, sp[1]));
+                    if (body.trim().length === 0) {
+                        fileStats.silentPromiseSites.push(lineOf(starts, tm2.index));
+                        stats.silentPromiseCatches++;
+                    }
+                }
+                continue;
+            }
+            /* fnRef arm — same one-level rule as .catch */
+            const armRef = /^([A-Za-z_$][\w$]*)\s*$/.exec(arm);
+            if (armRef) {
+                const body = resolveRefBody(armRef[1]);
+                if (body !== null && body.trim().length === 0) {
+                    fileStats.silentPromiseSites.push(lineOf(starts, tm2.index));
+                    stats.silentPromiseCatches++;
+                }
             }
         }
         perFile[rel] = fileStats;
@@ -266,6 +352,36 @@ export function runErrorCensus(root = DEFAULT_ROOT) {
         }
     }
 
+    /* WO-01 round-3 (3-a F03): promise-arm ledger — every file with silent
+     * promise handlers must carry a count-pinned PROMISE_ADJUDICATED entry;
+     * drift and expiry fail closed exactly like the catch ledger above. */
+    const seenPromiseLedger = new Set();
+    for (const [rel, fs2] of Object.entries(perFile)) {
+        const silentArms = fs2.silentPromiseSites.length;
+        if (silentArms === 0) continue;
+        const entry = PROMISE_ADJUDICATED.find((e) => e.file === rel);
+        if (entry && entry.count === silentArms) {
+            seenPromiseLedger.add(ledgerKey(entry));
+            stats.ledgeredPromiseArms += silentArms;
+            continue;
+        }
+        if (entry && entry.count !== silentArms) {
+            problems.push(`${rel}: silent-promise drift — ledger sanctions ${entry.count}, machine count is ${silentArms} (update the ledger or fix the swallows)`);
+            continue;
+        }
+        problems.push(
+            `${rel}: ${silentArms} SILENT promise handler(s) — empty body, no debug (lines ${fs2.silentPromiseSites.slice(0, 8).join(", ")}${fs2.silentPromiseSites.length > 8 ? "…" : ""}) (GUP G11: typed errors; add the scoped-interceptor debug line, typed branching, or a PROMISE_ADJUDICATED entry with justification + expiry)`
+        );
+    }
+    for (const e of PROMISE_ADJUDICATED) {
+        if (!seenPromiseLedger.has(ledgerKey(e))) {
+            problems.push(`stale promise-arm ledger entry: ${e.file} :: count ${e.count} — no file at that silent-promise count (remove or update)`);
+        }
+        if (e.expiry && roundLt(CURRENT_ROUND, e.expiry) === false) {
+            problems.push(`expired promise-arm ledger entry: ${e.file} — expiry ${e.expiry} has passed round ${CURRENT_ROUND} without re-adjudication`);
+        }
+    }
+
     /* kernel self-assertion (the typed family the consumers branch on) */
     const kernel = assertKernelFamily(root, problems);
 
@@ -287,7 +403,7 @@ function roundLt(a, b) {
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {
     const root = process.argv[2] ? path.resolve(process.argv[2]) : DEFAULT_ROOT;
     const r = runErrorCensus(root);
-    console.log(`error census: ${r.filesScanned} source files, ${r.catchSites} catch sites (${r.typed} typed, ${r.debug} debug-logged, ${r.handled} handled, ${r.silent} silent) + ${r.promiseCatchSites} Promise .catch sites (${r.silentPromiseCatches} silent)`);
+    console.log(`error census: ${r.filesScanned} source files, ${r.catchSites} catch sites (${r.typed} typed, ${r.debug} debug-logged, ${r.handled} handled, ${r.silent} silent) + ${r.promiseCatchSites} Promise .catch sites + ${r.thenArmSites} .then error arms (${r.ledgeredPromiseArms} ledgered, ${r.silentPromiseCatches - r.ledgeredPromiseArms} silent)`);
     if (r.problems.length) {
         for (const p of r.problems) console.log(`  ✗ ${p}`);
         process.exit(1);

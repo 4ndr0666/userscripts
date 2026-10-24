@@ -182,7 +182,15 @@ export function runTransportCensus(root = DEFAULT_ROOT) {
         for (const w of findPassthroughWrappers(codeJoined)) names.add(w);
 
         for (const name of names) {
-            const dispRe = new RegExp("(^|[^\\w$.])" + escapeRe(name) + "\\s*\\(", "g");
+            /* WO-01 round-3 (3-a F10): the class drops the `.` — the round-2
+             * form `[^\\w$.]` rejected a preceding dot, so direct member-form
+             * dispatch (window.GM_xmlhttpRequest({…}), GMapi.xhr(…)) was
+             * invisible to the very census that exists to catch it; only the
+             * const-alias path was covered. Same defect shape round-2 fixed
+             * in polling-census (6-a F04). The dotted-name entries
+             * (GM.xmlHttpRequest) match via their literal dot inside the
+             * escaped name, unaffected by the boundary class. */
+            const dispRe = new RegExp("(^|[^\\w$])" + escapeRe(name) + "\\s*\\(", "g");
             let m;
             while ((m = dispRe.exec(codeJoined)) !== null) {
                 const openParen = m.index + m[0].length - 1;

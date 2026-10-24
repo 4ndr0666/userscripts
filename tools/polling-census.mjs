@@ -333,7 +333,7 @@ function holdingVar(view, siteIdx) {
 
 export function runPollingCensus(root = DEFAULT_ROOT) {
     const problems = [];
-    const stats = { sites: 0, retryBounded: 0, serviceGuarded: 0, ledgered: 0, filesScanned: 0 };
+    const stats = { sites: 0, retryBounded: 0, serviceGuarded: 0, ledgered: 0, selfRearms: 0, selfRearmBounded: 0, filesScanned: 0 };
     const seenLedger = new Set();
 
     const targets = [];
@@ -462,6 +462,46 @@ export function runPollingCensus(root = DEFAULT_ROOT) {
         }
     }
 
+    /* WO-01 round-3 (3-c F05): setTimeout SELF-RE-ARM coverage — the
+     * setInterval-only instrument could not see the body-wait class (a
+     * setTimeout(main, 50) whose referenced body re-arms itself is an
+     * interval wearing a different hat; three unceilinged sites shipped
+     * through a CERTIFIED gate — Filester bootstrap, Yandex main, WCP init,
+     * all closed this round with 10 s stand-down ceilings). For every
+     * setTimeout(<identifier>, ms) site, resolve the referenced body (the
+     * same one-level machinery the interval scan uses) and if that body
+     * re-arms the same name, demand a ceiling: a counter increment plus a
+     * numeric/ceiling-const comparison, or a clearTimeout, in the resolved
+     * body. The stand-down `return` IS the clear-equivalent here — the
+     * loop dies by not re-arming. */
+    for (const [rel, abs] of targets) {
+        if (!fs.existsSync(abs)) continue;
+        const view = codeOnly(fs.readFileSync(abs, "utf8"));
+        const starts = lineStartsOf(view);
+        const toRe = /(^|[^\w$])setTimeout\s*\(\s*([A-Za-z_$][\w$]*)\s*,/g;
+        let tm3;
+        while ((tm3 = toRe.exec(view)) !== null) {
+            const name = tm3[2];
+            const openParen = tm3.index + tm3[0].length - 1 - (tm3[0].length - tm3[0].indexOf("(") - 1);
+            const bodies = resolveCallbackBodies(view, openParen);
+            const cb = bodies.join("\n");
+            if (!cb) continue;
+            /* does the resolved body re-arm the same name? (setTimeout(name or
+             * window.setTimeout(name) — member-form admitted like 6-a F04) */
+            const rearms = new RegExp("(?:^|[^\\w$])setTimeout\\s*\\(\\s*(?:[A-Za-z_$][\\w$.]*\\s*\\.\\s*)?" + escapeRe(name) + "\\s*[,)]").test(cb);
+            if (!rearms) continue;
+            stats.selfRearms++;
+            const line = lineOf(starts, tm3.index);
+            const inc = cb.match(COUNTER_INC_RE);
+            const ceil = (inc && hasCeilingCompare(cb)) || /clearTimeout\s*\(/.test(cb);
+            if (ceil) { stats.selfRearmBounded++; continue; }
+            const callText = view.slice(tm3.index, tm3.index + 100).replace(/\s+/g, " ").trim().slice(0, 60);
+            problems.push(
+                `${rel}:${line}: UNBOUNDED setTimeout self-re-arm \`${callText}…\` — the referenced body re-arms itself with no ceiling (3-c F05: add an attempt counter + stand-down return, or clearTimeout; the body-wait class must not outlive a non-HTML frame)`
+            );
+        }
+    }
+
     /* ledger drift: an entry whose site no longer matches fails closed */
     for (const e of ADJUDICATED_PAGE_LIFETIME) {
         if (!seenLedger.has(ledgerKey(e))) {
@@ -482,7 +522,7 @@ export function runPollingCensus(root = DEFAULT_ROOT) {
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {
     const root = process.argv[2] ? path.resolve(process.argv[2]) : DEFAULT_ROOT;
     const r = runPollingCensus(root);
-    console.log(`polling census: ${r.filesScanned} source files, ${r.sites} setInterval sites — ${r.retryBounded} retry-bounded, ${r.serviceGuarded} service-guarded, ${r.ledgered} ledgered page-lifetime`);
+    console.log(`polling census: ${r.filesScanned} source files, ${r.sites} setInterval sites — ${r.retryBounded} retry-bounded, ${r.serviceGuarded} service-guarded, ${r.ledgered} ledgered page-lifetime; ${r.selfRearms} setTimeout self-re-arm(s), ${r.selfRearmBounded} ceilinged`);
     if (r.problems.length) {
         for (const p of r.problems) console.log(`  ✗ ${p}`);
         process.exit(1);

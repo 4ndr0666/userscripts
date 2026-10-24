@@ -137,9 +137,16 @@ export function runGlobalCensus(root = DEFAULT_ROOT) {
     }
     targets.push(["kernel/net.js", path.join(root, "kernel", "net.js")]);
 
-    /* realm write: dot assignment, bracket assignment, defineProperty attach */
-    const DOT_RE = /(^|[^\w$])(window|unsafeWindow|globalThis|self)\s*\.\s*([A-Za-z_$][\w$]*)\s*=(?!=)/g;
-    const BRACKET_RE = /(^|[^\w$])(window|unsafeWindow|globalThis)\s*\[\s*(["'])([A-Za-z_$][\w$-]{0,60})\3\s*\]\s*=(?!=)/g;
+    /* realm write: dot assignment, bracket assignment, defineProperty attach.
+     * WO-01 round-3 (3-a F09 — the undelivered round-2 6-a F14): the dot
+     * form now catches COMPOUND assignments (window.x += …, ||=, ??=, &&=)
+     * via an optional operator prefix, and the bracket form admits the
+     * `self` realm (dot form always scanned it; the bracket omission was an
+     * accident of list maintenance). Zero live occurrences of the extended
+     * forms — the gate is armed for the next disguise, not chasing a live
+     * bug. */
+    const DOT_RE = /(^|[^\w$])(window|unsafeWindow|globalThis|self)\s*\.\s*([A-Za-z_$][\w$]*)\s*(?:\+|-|\*|\/|\||&|\?\?|\*\*)?=(?!=)/g;
+    const BRACKET_RE = /(^|[^\w$])(window|unsafeWindow|globalThis|self)\s*\[\s*(["'])([A-Za-z_$][\w$-]{0,60})\3\s*\]\s*(?:\+|-|\*|\/|\||&|\?\?|\*\*)?=(?!=)/g;
     const DEFINEPROP_RE = /Object\.defineProperty\s*\(\s*(window|unsafeWindow|globalThis|self)\s*,\s*(["'])([A-Za-z_$][\w$-]{0,60})\2/g;
 
     for (const [rel, abs] of targets) {
@@ -177,10 +184,11 @@ export function runGlobalCensus(root = DEFAULT_ROOT) {
     /* drift: sanctioned entries whose write disappeared + expiry
      * enforcement (v1.6.0: the expiry fields were previously carried but
      * not enforced here — the G9 gap closed this round; every entry must
-     * carry a re-adjudication round that has not passed). All fourteen
+     * carry a re-adjudication round that has not passed). All twelve
      * entries re-adjudicated v1.6.0 under the operator's standing
      * authorization (GUP §5.3.2.4): write semantics re-verified, expiry
-     * rolled to v1.7.0. */
+     * rolled to v1.7.0. (WO-01 round-3, 3-a F09: count corrected — the
+     * ledger carries twelve entries, not fourteen.) */
     for (const e of SANCTIONED) {
         if (!seen.has(`${e.file}::${e.name}`)) {
             problems.push(`stale global ledger entry: ${e.file} :: ${e.name} — write not found (remove or update)`);

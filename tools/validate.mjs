@@ -939,7 +939,7 @@ async function gateD() {
     if (polling.problems.length) {
         for (const pl of polling.problems) failures.push(`[D] polling census: ${pl}`);
     } else {
-        passes.push(`[D] polling census verified (${polling.sites} setInterval sites across ${polling.filesScanned} source files — ${polling.retryBounded} retry-bounded, ${polling.serviceGuarded} service-guarded, ${polling.ledgered} ledgered page-lifetime; 0 unbounded)`);
+        passes.push(`[D] polling census verified (${polling.sites} setInterval sites across ${polling.filesScanned} source files — ${polling.retryBounded} retry-bounded, ${polling.serviceGuarded} service-guarded, ${polling.ledgered} ledgered page-lifetime; 0 unbounded; ${polling.selfRearms} setTimeout self-re-arm(s) all ceilinged)`);
     }
 
     // Observer discipline census (suite v1.5.1, GUP B.1 "Observer
@@ -979,7 +979,7 @@ async function gateD() {
     if (errors.problems.length) {
         for (const er of errors.problems) failures.push(`[D] error census: ${er}`);
     } else {
-        passes.push(`[D] error census verified (${errors.catchSites} catch sites + ${errors.promiseCatchSites} Promise .catch sites across ${errors.filesScanned} source files — ${errors.typed} typed, ${errors.debug} debug-logged, ${errors.handled} handled, ${errors.silent} silent, ${errors.silentPromiseCatches} silent Promise .catch; kernel NetError family asserted, ${errors.kernelClasses} classes)`);
+        passes.push(`[D] error census verified (${errors.catchSites} catch sites + ${errors.promiseCatchSites} Promise .catch sites + ${errors.thenArmSites} .then error arms across ${errors.filesScanned} source files — ${errors.typed} typed, ${errors.debug} debug-logged, ${errors.handled} handled, ${errors.silent} silent, ${errors.silentPromiseCatches - errors.ledgeredPromiseArms} silent promise handlers (${errors.ledgeredPromiseArms} ledgered); kernel NetError family asserted, ${errors.kernelClasses} classes)`);
     }
 
     // Minimal-privilege connect census (suite v1.5.1, GUP G7 — v1.5.0
