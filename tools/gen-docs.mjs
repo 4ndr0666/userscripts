@@ -555,10 +555,15 @@ function censusFor(invName) {
     }
 }
 
-function evidenceFor(invName) {
-    const file = invName.replace(/^4ndr0tools\s*-\s*/, "4ndr0tools - ") + ".user.js";
-    const altFile = invName + ".user.js";
-    return EVIDENCE.filter((e) => e.dest === file || e.dest === altFile);
+function evidenceFor(s) {
+    /* WO-01 round-3 (3-d F3): match on the inventory's OWN dist filename
+     * (s.file == EVIDENCE dest for every entry — verified) — the @name
+     * reconstruction missed 5 scripts whose @names differ from their
+     * filenames (spaces/case: "Bypass Paywalls" → BypassPaywalls.user.js,
+     * "GoFile++" → Gofile++.user.js, YERB, Yandex, 4ndr0Purge), so their
+     * READMEs silently had NO Lineage section at all. */
+    const file = typeof s === "string" ? s : s.file;
+    return EVIDENCE.filter((e) => e.dest === file);
 }
 
 const esc = (s) => String(s).replace(/\|/g, "\\|");
@@ -620,7 +625,7 @@ function renderScript(s) {
         : "No GM grants — runs purely in page context.");
     if ((s.connects || []).length) L.push(`Cross-origin connects: ${s.connects.map((c) => `\`${c}\``).join(", ")}.`);
     if (k.notes) { L.push(""); L.push(`> ${k.notes}`); }
-    const ev = evidenceFor(s.name);
+    const ev = evidenceFor(s);
     if (ev.length) {
         L.push("");
         L.push(`## Lineage`);
@@ -631,10 +636,18 @@ function renderScript(s) {
      * literal "(from `undefined`, …)". Render whichever shape the entry
      * carries. */
     for (const e of ev.slice(0, 3)) {
+        /* WO-01 round-3 (3-d F3): three render defects closed — (a) carried
+         * entries ship changes[] instead of version/evidence, so 17 READMEs
+         * ended with literal "(from \`X\`, vundefined): undefined"; (b) the
+         * Akasha merged entry carries sources as an array of STRINGS (the
+         * round-2 fix covered only the object shape); (c) both fields are
+         * now conditional, falling back to the changes summary. */
         const origin = e.sources && e.sources.length
-            ? e.sources.map((s) => s.file).join(", ")
+            ? e.sources.map((x) => (typeof x === "string" ? x : x.file)).join(", ")
             : e.source;
-        L.push(`- **${e.mode}** → \`${e.dest}\` (from \`${origin}\`, v${e.version}): ${e.evidence}`);
+        const verPart = e.version ? `, v${e.version}` : "";
+        const evPart = e.evidence || (e.changes || []).join("; ");
+        L.push(`- **${e.mode}** → \`${e.dest}\` (from \`${origin}\`${verPart}): ${evPart}`);
     }
     }
     L.push("");
@@ -683,10 +696,22 @@ function renderFeatureMatrix(scripts) {
     for (const s of scripts) {
         const meta = resolveSourceMeta(s);
         totalUnits += meta.units;
-        const doms = (s.matches || []).map((m) => m.replace(/^\w+:\/\//, "").split("/")[0].replace(/^\*\./, ""));
+        /* WO-01 round-3 (3-d F2): the scheme strip handles `*://` (the ^\w+
+         * form could not, so 10 domain-scoped scripts — Redgifs++, YT Filter,
+         * BPP, Instagram++, … — rendered `*:` (universal) in the OPSEC-relevant
+         * §4.1 capability column); universal-only scripts render `*` explicitly
+         * instead of a misleading host. */
+        const doms = (s.matches || [])
+            .map((m) => m.replace(/^\*:/, "").replace(/^\w+:/, "").replace(/^\/\//, "").split("/")[0].replace(/^\*\./, "").replace(/\*$/, ""))
+            .filter((d) => d && d !== "*");
+        const universal = (s.matches || []).some((m) => {
+            const d = m.replace(/^\*:/, "").replace(/^\w+:/, "").replace(/^\/\//, "").split("/")[0].replace(/^\*\./, "").replace(/\*$/, "");
+            return !d || d === "*";
+        });
         const uniqDoms = [...new Set(doms)];
-        const cap = uniqDoms.length === 0 ? "universal (no @match)" :
-            uniqDoms.slice(0, 4).join(", ") + (uniqDoms.length > 4 ? ` (+${uniqDoms.length - 4})` : "");
+        const cap = uniqDoms.length === 0
+            ? (universal ? "universal (*)" : "universal (no @match)")
+            : uniqDoms.slice(0, 4).join(", ") + (uniqDoms.length > 4 ? ` (+${uniqDoms.length - 4})` : "") + (universal ? " + *" : "");
         rows.push({ name: s.name, version: s.version, tier: meta.tier, units: meta.units, kb: meta.kb, cap });
     }
     /* WO-01 round-1 (2-a F12): canon count is DERIVED (walk canon/ counting

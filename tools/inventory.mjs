@@ -73,7 +73,16 @@ function familyOf(name) {
 }
 
 function domainOf(match) {
-    return match.replace(/^\w+:/, "").replace(/^\/\//, "").split("/")[0].replace(/^\*\./, "").replace(/\*$/, "");
+    /* WO-01 round-3 (3-d F1): the scheme strip now handles `*://` — the
+     * ^\w+: form could not, so 206 host-specific patterns (BPP alone: 170
+     * news domains) poured into the universal `*` bucket and the README's
+     * Co-Install Interference Report printed `*: — 223` (meaningless),
+     * listed 10 scripts as site-universal that have ZERO universal patterns,
+     * missed 5 of 6 real collision domains, and counted a single-script
+     * domain (hailuoai.video) as interference (patterns counted, not
+     * scripts). Host-specific patterns now land on their real domains;
+     * true universal patterns return "" and ride the star-family note. */
+    return match.replace(/^\*:/, "").replace(/^\w+:/, "").replace(/^\/\//, "").split("/")[0].replace(/^\*\./, "").replace(/\*$/, "");
 }
 
 function inventory() {
@@ -202,10 +211,14 @@ function inventory() {
             domainMap.get(d).push(s.name);
         }
     }
+    /* WO-01 round-3 (3-d F1): interference = more than one DISTINCT script
+     * on the domain (the old form counted patterns, so a script with two
+     * @match rules on one host read as its own interferer) and the count
+     * is the distinct-script count. */
     const hotDomains = [...domainMap.entries()]
-        .filter(([, v]) => v.length > 1)
-        .map(([domain, scripts]) => ({ domain, count: scripts.length, scripts: [...new Set(scripts)] }))
-        .sort((a, b) => b.count - a.count);
+        .filter(([, v]) => new Set(v).size > 1)
+        .map(([domain, scripts]) => ({ domain, count: new Set(scripts).size, scripts: [...new Set(scripts)] }))
+        .sort((a, b) => b.count - a.count || a.domain.localeCompare(b.domain));
 
     /* Suite v1.4.3: this object is byte-reproducible. The legacy
      * `generated: new Date().toISOString()` wall-clock field made every
@@ -216,7 +229,13 @@ function inventory() {
      * The digest replaces the clock: a content-addressed fingerprint
      * of everything above, so drift is still detectable while
      * regeneration is deterministic (validate.mjs enforces byte parity). */
-    const stable = { scripts, problems, pairs, hotDomains };
+    /* WO-01 round-3 (3-d F1): the universal-pattern family — scripts whose
+     * @match set includes a true every-site pattern (domainOf → ""), so the
+     * interference report can name them instead of a polluted `*` bucket. */
+    const starFamily = scripts
+        .filter((s) => s.matches.some((m) => !domainOf(m)))
+        .map((s) => s.name);
+    const stable = { scripts, problems, pairs, hotDomains, starFamily };
     const digest = crypto.createHash("sha256").update(JSON.stringify(stable)).digest("hex");
     return { ...stable, digest };
 }
@@ -289,6 +308,7 @@ tools/     build.mjs · inventory.mjs · validate.mjs · qr-verify.mjs · style-
            · transport · connect · domain · hotkey · polling · observer · error · global ·
            cache · size-budget · canon-xref · production-score.mjs (+ score.json record)
            · kernel-export-census.mjs (export surface × consumer, bidirectional)
+           · scan-kit.mjs (the shared lexical-balance + placeholder scanner behind build and validate)
            smoke batteries (npm run smoke) — family-fixture · watermark-batch ·
            kernel-boundary · flow-chip-browser · ig-wall-browser · pm-grid-browser
            (six runtime contract batteries, CI-wired since v1.7.4)
@@ -316,6 +336,8 @@ Scripts that match the same domains (by design or by overlap). Consult before
 bulk-installing the media family on the same pages:
 
 ${inv.hotDomains.slice(0, 12).map((d) => `- \`${d.domain}\` — ${d.count}: ${d.scripts.join(", ")}`).join("\n")}
+
+${inv.starFamily.length ? `Universal-pattern scripts (match every site — they co-install with everything above): ${inv.starFamily.join(", ")}.` : ""}
 
 ---
 

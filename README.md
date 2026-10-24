@@ -52,6 +52,7 @@ tools/     build.mjs · inventory.mjs · validate.mjs · qr-verify.mjs · style-
            · transport · connect · domain · hotkey · polling · observer · error · global ·
            cache · size-budget · canon-xref · production-score.mjs (+ score.json record)
            · kernel-export-census.mjs (export surface × consumer, bidirectional)
+           · scan-kit.mjs (the shared lexical-balance + placeholder scanner behind build and validate)
            smoke batteries (npm run smoke) — family-fixture · watermark-batch ·
            kernel-boundary · flow-chip-browser · ig-wall-browser · pm-grid-browser
            (six runtime contract batteries, CI-wired since v1.7.4)
@@ -117,9 +118,14 @@ OPSEC notes, lineage — live in [`documentation/INDEX.md`](./documentation/INDE
 Scripts that match the same domains (by design or by overlap). Consult before
 bulk-installing the media family on the same pages:
 
-- `*:` — 223: 4ndr0tools - 4ndr0Purge, 4ndr0tools - 4ndr0serviceguard Companion, 4ndr0tools - Akasha Silence, 4ndr0tools - AlwaysNewWindow, 4ndr0tools - AutoTranslate, 4ndr0tools - Blob2URL, 4ndr0tools - Bypass Paywalls, 4ndr0tools - Confirmation Bypass, 4ndr0tools - Forum Link Xtractor, 4ndr0tools - GoFile++, 4ndr0tools - GooglePhotosandDrive++, 4ndr0tools - HostWarp, 4ndr0tools - Images++, 4ndr0tools - Instagram++, 4ndr0tools - LinkMasterΨ, 4ndr0tools - Media Player Controller, 4ndr0tools - ModelSearch, 4ndr0tools - PageCraft, 4ndr0tools - Prompt Master, 4ndr0tools - Recon, 4ndr0tools - Redgifs++, 4ndr0tools - Stream Interceptor, 4ndr0tools - Website Control Panel, 4ndr0tools - YT Filter, 4ndr0tools - Yandex Image Search++, 4ndr0tools - Youtube Removed Video Revealer, 4ndr0tools - m3u8++
-- `hailuoai.video` — 3: 4ndr0tools - Hailuo++
-- `youtube.com` — 3: 4ndr0tools - YouTube Playlist Master, 4ndr0tools - YouTube Embed Redirect Button
+- `youtube.com` — 4: 4ndr0tools - YT Filter, 4ndr0tools - YouTube Playlist Master, 4ndr0tools - YouTube Embed Redirect Button, 4ndr0tools - Youtube Removed Video Revealer
+- `simpcity.cr` — 3: 4ndr0tools - Confirmation Bypass, 4ndr0tools - Forum Link Xtractor, 4ndr0tools - Forums++
+- `forums.socialmediagirls.com` — 2: 4ndr0tools - Confirmation Bypass, 4ndr0tools - Forum Link Xtractor
+- `gemini.google.com` — 2: 4ndr0tools - Prompt Master, 4ndr0tools - Watermark++
+- `instagram.com` — 2: 4ndr0tools - Instagram++, 4ndr0tools - LinkMasterΨ
+- `simpcity.su` — 2: 4ndr0tools - Forum Link Xtractor, 4ndr0tools - Forums++
+
+Universal-pattern scripts (match every site — they co-install with everything above): 4ndr0tools - 4ndr0Purge, 4ndr0tools - 4ndr0serviceguard Companion, 4ndr0tools - Akasha Silence, 4ndr0tools - AlwaysNewWindow, 4ndr0tools - AutoTranslate, 4ndr0tools - Blob2URL, 4ndr0tools - Confirmation Bypass, 4ndr0tools - HostWarp, 4ndr0tools - Images++, 4ndr0tools - LinkMasterΨ, 4ndr0tools - Media Player Controller, 4ndr0tools - ModelSearch, 4ndr0tools - PageCraft, 4ndr0tools - Recon, 4ndr0tools - Stream Interceptor, 4ndr0tools - Website Control Panel, 4ndr0tools - m3u8++.
 
 ---
 

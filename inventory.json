@@ -1512,53 +1512,75 @@
  "pairs": [],
  "hotDomains": [
   {
-   "domain": "*:",
-   "count": 223,
+   "domain": "youtube.com",
+   "count": 4,
    "scripts": [
-    "4ndr0tools - 4ndr0Purge",
-    "4ndr0tools - 4ndr0serviceguard Companion",
-    "4ndr0tools - Akasha Silence",
-    "4ndr0tools - AlwaysNewWindow",
-    "4ndr0tools - AutoTranslate",
-    "4ndr0tools - Blob2URL",
-    "4ndr0tools - Bypass Paywalls",
+    "4ndr0tools - YT Filter",
+    "4ndr0tools - YouTube Playlist Master",
+    "4ndr0tools - YouTube Embed Redirect Button",
+    "4ndr0tools - Youtube Removed Video Revealer"
+   ]
+  },
+  {
+   "domain": "simpcity.cr",
+   "count": 3,
+   "scripts": [
     "4ndr0tools - Confirmation Bypass",
     "4ndr0tools - Forum Link Xtractor",
-    "4ndr0tools - GoFile++",
-    "4ndr0tools - GooglePhotosandDrive++",
-    "4ndr0tools - HostWarp",
-    "4ndr0tools - Images++",
-    "4ndr0tools - Instagram++",
-    "4ndr0tools - LinkMasterΨ",
-    "4ndr0tools - Media Player Controller",
-    "4ndr0tools - ModelSearch",
-    "4ndr0tools - PageCraft",
+    "4ndr0tools - Forums++"
+   ]
+  },
+  {
+   "domain": "forums.socialmediagirls.com",
+   "count": 2,
+   "scripts": [
+    "4ndr0tools - Confirmation Bypass",
+    "4ndr0tools - Forum Link Xtractor"
+   ]
+  },
+  {
+   "domain": "gemini.google.com",
+   "count": 2,
+   "scripts": [
     "4ndr0tools - Prompt Master",
-    "4ndr0tools - Recon",
-    "4ndr0tools - Redgifs++",
-    "4ndr0tools - Stream Interceptor",
-    "4ndr0tools - Website Control Panel",
-    "4ndr0tools - YT Filter",
-    "4ndr0tools - Yandex Image Search++",
-    "4ndr0tools - Youtube Removed Video Revealer",
-    "4ndr0tools - m3u8++"
+    "4ndr0tools - Watermark++"
    ]
   },
   {
-   "domain": "hailuoai.video",
-   "count": 3,
+   "domain": "instagram.com",
+   "count": 2,
    "scripts": [
-    "4ndr0tools - Hailuo++"
+    "4ndr0tools - Instagram++",
+    "4ndr0tools - LinkMasterΨ"
    ]
   },
   {
-   "domain": "youtube.com",
-   "count": 3,
+   "domain": "simpcity.su",
+   "count": 2,
    "scripts": [
-    "4ndr0tools - YouTube Playlist Master",
-    "4ndr0tools - YouTube Embed Redirect Button"
+    "4ndr0tools - Forum Link Xtractor",
+    "4ndr0tools - Forums++"
    ]
   }
  ],
- "digest": "c946e48fbbd9a0cbdaeeb802349f0a9263ee4fafa1b83abc6eb2e7f90923d41e"
+ "starFamily": [
+  "4ndr0tools - 4ndr0Purge",
+  "4ndr0tools - 4ndr0serviceguard Companion",
+  "4ndr0tools - Akasha Silence",
+  "4ndr0tools - AlwaysNewWindow",
+  "4ndr0tools - AutoTranslate",
+  "4ndr0tools - Blob2URL",
+  "4ndr0tools - Confirmation Bypass",
+  "4ndr0tools - HostWarp",
+  "4ndr0tools - Images++",
+  "4ndr0tools - LinkMasterΨ",
+  "4ndr0tools - Media Player Controller",
+  "4ndr0tools - ModelSearch",
+  "4ndr0tools - PageCraft",
+  "4ndr0tools - Recon",
+  "4ndr0tools - Stream Interceptor",
+  "4ndr0tools - Website Control Panel",
+  "4ndr0tools - m3u8++"
+ ],
+ "digest": "e89b3bd2ff777db56f4c05a33995e5cdc894df7001951a78181ca21c0b1dbcd6"
 }
