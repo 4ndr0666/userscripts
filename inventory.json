@@ -721,9 +721,9 @@
    "version": "1.1.4",
    "description": "Per-host warp drive: bypasses image-host interstitials (imagetwist/imgspice/turboimagehost/acidimg/imx/pixhost/imagebam/imgbox/kropic/vipr/imagevenue), MEGA embed redirect + autoplay, PlanetSuzy mobile skin, t.me Web button, SearXNG sticky preferences, Gemini Answer Now — one engine, glass settings console, every module toggleable.",
    "family": "ux utilities",
-   "sha256": "686f533075e0103f922fa21c43d828503c0ca1e3f5f07c812005edf26b171bd7",
-   "lines": 1834,
-   "bytes": 93812,
+   "sha256": "4f78b9cbb126e48ea2b8b9a069a56e10e73f7c3100077e2352725b464ea20ba4",
+   "lines": 1844,
+   "bytes": 94435,
    "matches": [
     "*://*/*"
    ],
@@ -1561,5 +1561,5 @@
    ]
   }
  ],
- "digest": "b5bbab53dfede170c4d93c705674a1726205c4e0eac87a57f2c22ca12606951e"
+ "digest": "fa3d78fc7c4fc8f4f47dac7f84970e2b62ed0bde4120d810b4a5390cb37bd317"
 }

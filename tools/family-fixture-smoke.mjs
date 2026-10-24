@@ -453,6 +453,22 @@ export async function runFamilyFixtureSmoke(root = ROOT) {
 forceImmediateAnswer();`, hwCtx);
     assert("HostWarp Gemini forceImmediateAnswer appends immediate-response prompt to contenteditable div[role=textbox]", mockEditableDiv.textContent.includes("Explain quantum entanglement") && mockEditableDiv.textContent.includes("Answer immediately. No thinking steps.") && mockEditableDiv.dispatched.includes("input"));
 
+    // 3B-2. HostWarp searxng default pattern (WO-01 round-2, 6-b F1): the
+    // default must be a DELIMITER-FREE RegExp source that compiles and
+    // matches the default origin form. The round-1 default wrapped a regex
+    // literal in String(...), carrying the regex delimiters into
+    // new RegExp(...), producing a pattern with a literal leading "/" and a
+    // mid-pattern "^" that could never match — the module was dead under
+    // default configuration. The literal is EVALUATED (not raw-extracted) so
+    // JS escape sequences resolve exactly as the runtime sees them.
+    assert("HostWarp searxng pattern default is the single SEARXNG_PATTERN_DEFAULT constant (no delimited regex-literal copies remain)",
+        hwSrc.includes("SEARXNG_PATTERN_DEFAULT = ") && !hwSrc.includes("String(/^http"));
+    const searxDefaultLit = hwSrc.match(/SEARXNG_PATTERN_DEFAULT = ('[^']*')/)[1];
+    const searxDefaultSrc = new Function("return " + searxDefaultLit)();   /* evaluate the literal — escapes resolve as the runtime resolves them */
+    const searxDefaultRe = new RegExp(searxDefaultSrc);
+    assert("HostWarp searxng default pattern matches the default host (port and portless) and rejects foreign hosts",
+        searxDefaultRe.test("http://192.168.1.1/") && searxDefaultRe.test("http://192.168.1.1:8080/") && !searxDefaultRe.test("http://example.com/"));
+
     /* 3C. REMOVED with plugins/candidshiny.user.js retirement (WO-01
      * round-1, 2-b F-05): the plugin's only consumer was the retired
      * LinkMasterΨ2 — its scanAllMedia redirect-unwrapping fixture tested an

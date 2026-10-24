@@ -251,10 +251,31 @@ function emitHeader(meta, filename) {
 /* ── Kernel selection ────────────────────────────────────────────────────── */
 
 function selectKernel(bodySrc, meta) {
-    if (Array.isArray(meta.kernel) && meta.kernel.length > 0) return meta.kernel;
-    const referenced = [];
-    for (const mod of KERNEL_ORDER) {
-        if (new RegExp(`Ψ\\.${mod}\\b`).test(bodySrc)) referenced.push(mod);
+    let base;
+    if (Array.isArray(meta.kernel) && meta.kernel.length > 0) {
+        /* WO-01 round-2 (6-b F2): explicit meta.kernel lists get the same
+         * F-06 dependency closure as auto-detected ones — the closure used
+         * to run only on the auto path, so a hand-written ["glass"] could
+         * still ship a dist that throws at module-eval (missing
+         * brand/core/store) while passing every build check. */
+        base = meta.kernel;
+    } else {
+        const referenced = [];
+        for (const mod of KERNEL_ORDER) {
+            if (new RegExp(`Ψ\\.${mod}\\b`).test(bodySrc)) referenced.push(mod);
+        }
+        base = referenced;
+    }
+    /* WO-01 round-2 (6-a F03): every name must be a KERNEL_ORDER member.
+     * The module pipeline emits chunks and runs BOTH reference checks by
+     * iterating KERNEL_ORDER — a name outside it (e.g. "net", which canon
+     * scripts consume via the CANON_KERNEL __4NDR0_NET_API__ path)
+     * previously built a kernel-LESS dist with a lying "+ kernel {net}"
+     * banner and exit 0. Fail closed with the lawful surface named. */
+    for (const mod of base) {
+        if (!KERNEL_ORDER.includes(mod)) {
+            throw new Error(`${meta.name}: meta.kernel lists "${mod}" — module builds support only [${KERNEL_ORDER.join(", ")}] (net rides the canon CANON_KERNEL path)`);
+        }
     }
     /* WO-01 round-1 (F-06): complete the kernel-internal dependency closure —
      * glass destructures Ψ.brand/Ψ.core at module-eval and persists through
@@ -262,7 +283,7 @@ function selectKernel(bodySrc, meta) {
      * only Ψ.glass previously shipped without brand/core → the dist threw
      * on load with neither direction of the dead-code check able to see it
      * (both only scan the body, never kernel-internal dependencies). */
-    return kernelClosure(referenced);
+    return kernelClosure(base);
 }
 
 /* ── Module build ────────────────────────────────────────────────────────── */
@@ -391,14 +412,24 @@ function main() {
                     continue;
                 }
                 const chunks = [];
+                let moduleMissing = false;
                 for (const mod of kernelList) {
                     const p = path.join(KERNEL_DIR, `${mod}.js`);
                     if (!fs.existsSync(p)) {
+                        /* WO-01 round-2 (6-a F02): a missing kernel module must
+                         * fail this FILE, not just the build — the round-1
+                         * form pushed the error to the global failure list
+                         * but fell through and wrote the kernel-less
+                         * artifact over the previous good dist output,
+                         * violating the 2-a F19 never-write-a-failed-output
+                         * contract this very message cites. */
                         failures.push(`canon ${f}: kernel module "${mod}" not found`);
+                        moduleMissing = true;
                         continue;
                     }
                     chunks.push(`/* ══ kernel/${mod}.js (inlined by tools/build.mjs — edit kernel/, not here) ══ */\n${fs.readFileSync(p, "utf8").trim()}`);
                 }
+                if (moduleMissing) continue;   /* never write a kernel-less artifact for this file */
                 const cut = src.indexOf("\n", marker) + 1;
                 const out = src.slice(0, cut) + "\n" + chunks.join("\n\n") + "\n\n" + src.slice(cut);
                 const fileFailures = [];

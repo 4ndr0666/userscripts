@@ -1398,6 +1398,16 @@
 const store = Ψ.store.ns('hostwarp');
 const { $, $$, $new, waitFor } = Ψ.core;
 
+/* WO-01 round-2 (6-b F1): the searxng default pattern is a DELIMITER-FREE
+ * RegExp source, defined once for both the runtime gate and the settings
+ * console. The round-1 default wrapped a regex literal in String(...),
+ * carrying the two slash delimiters into new RegExp(...), producing a
+ * pattern with a literal leading "/" and a mid-pattern "^" assertion that
+ * can never match any string — the module was dead under the default
+ * configuration, the exact legacy "PLACEHOLDER never-works-out-of-the-box"
+ * defect one layer deeper. Regression-pinned in family-fixture-smoke 3B-2. */
+const SEARXNG_PATTERN_DEFAULT = '^http://192\\.168\\.1\\.1(:\\d+)?/?$';
+
 const MODULES = [
     { key: 'imagehosts', label: 'Image-host interstitial bypass', dflt: true,
       hint: 'imagetwist, imgspice, turboimagehost, acidimg, imx.to, pixhost, imagebam, imgbox, kropic, vipr.im, imagevenue' },
@@ -1660,7 +1670,7 @@ function telegramChannelId(url) {
  * top-level pattern-gated, exactly like its dormant-by-configuration
  * semantics always were. */
 (() => {
-    const patternSrc = store.get('searxng:pattern', String(/^http:\/\/192\.168\.1\.1(:\d+)?\/?$/));
+    const patternSrc = store.get('searxng:pattern', SEARXNG_PATTERN_DEFAULT);
     let pattern;
     try {
         pattern = new RegExp(patternSrc);
@@ -1792,7 +1802,7 @@ function openSettings() {
                 render: (contentEl) => {
                     Ψ.glass.settingsConsole(contentEl, 'hostwarp', [
                         { key: 'searxng:pattern', type: 'text', label: 'Host pattern (RegExp source)',
-                          default: String(/^http:\/\/192\.168\.1\.1(:\d+)?\/?$/),
+                          default: SEARXNG_PATTERN_DEFAULT,
                           hint: 'Tested against location.origin + "/"' },
                         { key: 'searxng:hash', type: 'text', label: 'Preferences hash',
                           default: '', hint: 'e.g. #/preferences?preferences=…' },

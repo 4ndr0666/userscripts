@@ -178,6 +178,21 @@ unwatch();
 s1.set("mod:live", false);
 assert(watchHits === 2, "store: unsubscribed watcher stays silent");
 
+/* WO-01 round-2 (6-b F5): remove() must notify watchers with the null
+ * sentinel — round-1 shipped the F-09 notify fix on a surface with zero
+ * production consumers AND zero coverage. This pins the contract: the
+ * watcher sees (newV=null, oldV, remote=false) and the removed key reads
+ * back as absent (stored null ≡ absent per the store sentinel law). */
+let removeSeen = null;
+const unwatchRemove = s1.watch("mod:live", (newV, oldV, remote) => { removeSeen = [newV, oldV, remote]; });
+s1.set("mod:live", "keep");
+assert(removeSeen[0] === "keep" && removeSeen[2] === false, "store: set() watcher payload (value, oldV, remote=false)");
+s1.remove("mod:live");
+assert(removeSeen[0] === null && removeSeen[1] === "keep" && removeSeen[2] === false,
+    "store: remove() notifies watchers with (null, oldV, false) sentinel");
+assert(s1.get("mod:live", "fallback") === "fallback", "store: removed key reads back as absent (null ≡ absent)");
+unwatchRemove();
+
 /* glass — HUD + settings console (the v1.2 dead-console regression class) */
 assert(typeof Ψ.glass.hud === "function" && typeof Ψ.glass.settingsConsole === "function",
     "glass: hud + settingsConsole exported");
