@@ -2,7 +2,7 @@
 // @name         4ndr0tools - Yandex Image Search++ 
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666 
-// @version      0.4.1
+// @version      0.4.2
 // @description  Robust, event-driven slideshow, fullscreen preview, and on-screen status for Yandex reverse-image search.
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YandexImageSearch++.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YandexImageSearch++.user.js
@@ -13,7 +13,7 @@
 // @grant        none
 // ==/UserScript==
 // 0.4.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: YandexImageSearch++.user v0.4.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: YandexImageSearch++.user v0.4.2 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 (() => {
     'use strict';
@@ -211,10 +211,21 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: YandexImageSearch++.user
      * Main execution logic.
      * Sets up a MutationObserver to watch for when the Yandex image viewer is opened or closed.
      */
+    let bodyWaitTries = 0;
+
     function main() {
         // v0.4: body readiness guard — observer.observe(null) throws, and the
         // script can execute before body exists on slow parses.
+        // v0.4.2 (WO-01 round 3, 3-c F05): the re-arm now has a ceiling —
+        // no @noframes means the script runs in every same-origin frame,
+        // and in XML/SVG/plain frames document.body NEVER materializes:
+        // the old form re-armed every 50 ms for the frame's lifetime.
+        // 200 tries = 10 s, then a loud stand-down.
         if (!document.body) {
+            if (++bodyWaitTries > 200) {
+                console.warn('[Ψ-4NDR0666] Yandex Image Search++ stood down — document.body never appeared (non-HTML frame).');
+                return;
+            }
             setTimeout(main, 50);
             return;
         }

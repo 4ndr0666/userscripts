@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Filester++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      7.6.0
+// @version      7.6.1
 // @author       4ndr0666
 // @description  Dynamic stream extraction + folder enumeration for any media on Filester.me. Network proxy + glyph injection.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -1180,7 +1180,7 @@ const __4NDR0_NET_API__ = (function () {
 (function () {
     'use strict';
 
-    console.log('%c[4NDR0tools] Filester Universal Liberator v7.6.0-Ψ', 'color:#00E5FF; font-family:monospace; font-weight:bold;');
+    console.log('%c[4NDR0tools] Filester Universal Liberator v7.6.1-Ψ', 'color:#00E5FF; font-family:monospace; font-weight:bold;');
 
     const API_BASE = 'https://u1.filester.me';
     const mediaCache = new Map(); // id/slug → {type, streamUrl, directUrl}
@@ -1342,7 +1342,18 @@ const __4NDR0_NET_API__ = (function () {
     function injectLiberatorGlyphs() {
         // Files / Media items
         document.querySelectorAll('a[href*="/file/"], a[href*="/d/"], .file-item, [data-file-id], video, img').forEach(el => {
-            if (el.querySelector('.psi-liberator-glyph')) return;
+            const wrapper = el.closest('div, figure, .item') || el.parentElement;
+            if (!wrapper) return;
+            // v7.6.1 (WO-01 round 3, 3-c F02 — CRITICAL): the guard used
+            // to query INSIDE el while the glyph lands in an ANCESTOR
+            // wrapper — for anchors/img/video the glyph is el's SIBLING,
+            // never el's descendant, so the guard could never match and
+            // every 400 ms rescan appended another glyph (each append
+            // re-triggered the script's own MutationObserver — a
+            // self-feeding unbounded DOM-growth loop at ~2.5 nodes/s per
+            // element). Resolve the wrapper FIRST and guard where the
+            // glyph actually lands.
+            if (wrapper.querySelector('.psi-liberator-glyph')) return;
 
             const id = el.getAttribute('data-file-id') ||
                       el.href?.match(/\/(?:file|d)\/([^/?#]+)/)?.[1] ||
@@ -1373,16 +1384,17 @@ const __4NDR0_NET_API__ = (function () {
                 }
             };
 
-            const wrapper = el.closest('div, figure, .item') || el.parentElement;
-            if (wrapper) {
-                wrapper.style.position = 'relative';
-                wrapper.appendChild(glyph);
-            }
+            wrapper.style.position = 'relative';
+            wrapper.appendChild(glyph);
         });
 
         // Folder items
         document.querySelectorAll('a[href*="/folder/"], .folder-item, [data-folder-id]').forEach(el => {
-            if (el.querySelector('.psi-folder-glyph')) return;
+            const w = el.closest('div') || el;
+            // v7.6.1 (WO-01 round 3, 3-c F02): same wrapper-level guard —
+            // the folder glyph also lands in an ancestor, so the el-scoped
+            // guard never matched it either.
+            if (w.querySelector('.psi-folder-glyph')) return;
 
             const folderId = el.getAttribute('data-folder-id') || el.href?.match(/\/folder\/([^/?#]+)/)?.[1];
 
@@ -1401,7 +1413,6 @@ const __4NDR0_NET_API__ = (function () {
                 }
             };
 
-            const w = el.closest('div') || el;
             w.style.position = 'relative';
             w.appendChild(fg);
         });
@@ -1410,7 +1421,8 @@ const __4NDR0_NET_API__ = (function () {
     // =========================================================================
     // BOOTSTRAP
     // =========================================================================
-    let rescanTimer = null;
+    let rescanTimer = null,
+        bodyWaitTries = 0;
 
     function scheduleRescan() {
         // v7.5: one in-flight timer — the old one-setTimeout-per-batch
@@ -1423,7 +1435,18 @@ const __4NDR0_NET_API__ = (function () {
     }
 
     function bootstrap() {
-        if (!document.body) return setTimeout(bootstrap, 100);
+        // v7.6.1 (WO-01 round 3, 3-c F05): the body-wait re-arm now has a
+        // ceiling — the script has no @noframes, so it runs in every
+        // same-origin frame, and in XML/SVG/plain frames document.body
+        // NEVER materializes: the old form re-armed every 100 ms for the
+        // frame's lifetime. 100 tries = 10 s, then a loud stand-down.
+        if (!document.body) {
+            if (++bodyWaitTries > 100) {
+                console.warn('[Ψ-4NDR0666] document.body never appeared — Liberator stood down (non-HTML frame).');
+                return;
+            }
+            return setTimeout(bootstrap, 100);
+        }
 
         console.log('[Ψ-4NDR0666] Universal Liberator online — any media / folder');
         injectLiberatorGlyphs();

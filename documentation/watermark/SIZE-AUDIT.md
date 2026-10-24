@@ -1,6 +1,6 @@
 # SIZE-AUDIT — 4ndr0tools - Watermark++.user.js (suite v1.10.0, G6 record)
 
-**Artifact:** `dist/4ndr0tools - Watermark++.user.js` — 1,289,547 B (re-measured 2026-10-24 at suite v1.10.0, script v2.1.0; the v1.8.2-round claim of 1,286,666 B was the pre-round-1 baseline number recorded in error — the WO-01 round-1 tree already measured 1,287,132 B; the v1.5.0-round record below measured 1,279,706 B; v1.4.10 baseline 1,279,143 B). The byte count in this line is machine-verified by tools/size-budget.mjs since WO-01 round-2.
+**Artifact:** `dist/4ndr0tools - Watermark++.user.js` — 1,290,512 B (re-measured 2026-10-24 at suite v1.10.0, script v2.1.1 — the originalAssetUrlRegistry FIFO cap; prior re-measure 1,289,547 B at v2.1.0; the v1.8.2-round claim of 1,286,666 B was the pre-round-1 baseline number recorded in error — the WO-01 round-1 tree already measured 1,287,132 B; the v1.5.0-round record below measured 1,279,706 B; v1.4.10 baseline 1,279,143 B). The byte count in this line is machine-verified by tools/size-budget.mjs since WO-01 round-2.
 **Gate:** tools/size-budget.mjs (1,300,000 B hard budget; 1,000,000 B audit line — this record satisfies the latter; byte count VERIFIED against the live artifact).
 
 ## Composition analysis (machine-measured, this round — partitions exactly)
@@ -9,9 +9,9 @@
 |---|---|---|
 | Embedded base64/data-URI payloads | **0 B** (0 blobs) | nothing to externalize on the asset axis |
 | Embedded fonts / images | **0 B** | none present |
-| Comment mass | ~29 KB across 478 comment lines | headers, changelogs, algorithm notes |
-| Application code | ~1.26 MB across 14,994 lines (avg 86 B/line) | the Gemini image watermark-removal engine |
-| **Total** | **1,289,547 B / 15,472 lines** | 478 comment + 14,994 code = 15,472 ✓ |
+| Comment mass | ~26 KB across 487 comment lines (scan-kit stripper-diff method — the shared scanner's own comment-blanked chars; the engine's mass is code, not prose) | headers, banners, algorithm notes |
+| Application code | ~1,264 KB across 15,000 lines (avg 84 B/line) | the Gemini image watermark-removal engine |
+| **Total** | **1,290,512 B / 15,487 lines** | 487 comment + 15,000 code = 15,487 ✓ (byte partition: 26,426 comment + 1,264,086 code = 1,290,512 ✓) |
 
 ## What the weight IS
 
@@ -38,7 +38,7 @@ critical path.
 
 ## Justification
 
-Ships as-is at 1,286,666 B (re-measured 2026-10-23, suite v1.8.2): under the 1.3 MB hard budget, above the audit
+Ships as-is at 1,290,512 B (re-verified 2026-10-24, suite v1.10.0): under the 1.3 MB hard budget, above the audit
 line by design, with this record as the audited decision. The watch item for
 the next round: if the engine grows past ~1,290,000 B, the vision core
 becomes a decomposition candidate (observer → overlay split, or a lazily-

@@ -1,4 +1,4 @@
-# AlwaysNewWindow · v1.0.1
+# AlwaysNewWindow · v1.0.2
 
 > Link-flow and page-hygiene governor — `ux utilities` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ AlwaysNewWindow enforces the operator's preferred link topology: every link open
 
 | Dimension | Value |
 |---|---|
-| Version | `1.0.1` |
+| Version | `1.0.2` |
 | Matches | `*://*/*` |
 | Run-at | `document-start` |
-| Size | 72.0 KB · 1616 lines |
+| Size | 72.9 KB · 1630 lines |
 | Install | [dist/4ndr0tools - AlwaysNewWindow.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20AlwaysNewWindow.user.js) |
 
 ## Feature Inventory

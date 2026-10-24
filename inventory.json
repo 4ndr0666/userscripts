@@ -85,12 +85,12 @@
   {
    "file": "4ndr0tools - AlwaysNewWindow.user.js",
    "name": "4ndr0tools - AlwaysNewWindow",
-   "version": "1.0.1",
+   "version": "1.0.2",
    "description": "Open all links into new windows (optional force mode), auto-expand collapsed content, hide banners and consent overlays, neon-glow overlay scrollbar, and right-click scroll-to-top/bottom.",
    "family": "ux utilities",
-   "sha256": "5d4225f4e75abc38982c3f859988f2ee3b43aa8d88e10b0332c2aeacd8d9bac4",
-   "lines": 1616,
-   "bytes": 73691,
+   "sha256": "cd7c0d2b27bd588bb54f7021b11d4a5fbf9a35fbd3300b20d0ee03cad88a2040",
+   "lines": 1630,
+   "bytes": 74654,
    "matches": [
     "*://*/*"
    ],
@@ -439,12 +439,12 @@
   {
    "file": "4ndr0tools - Filester++.user.js",
    "name": "4ndr0tools - Filester++",
-   "version": "7.6.0",
+   "version": "7.6.1",
    "description": "Dynamic stream extraction + folder enumeration for any media on Filester.me. Network proxy + glyph injection.",
    "family": "media & links",
-   "sha256": "bcb76d1ea2b7b2f7b1e54c0d15432b7b56e28ba4b09be7ae65b1801cfaa994a3",
-   "lines": 1445,
-   "bytes": 80566,
+   "sha256": "4c6d019550593e9f343d41698ec5205d961c8b73d32286b968b1cfbea2c5fbbe",
+   "lines": 1468,
+   "bytes": 81984,
    "matches": [],
    "excludes": [],
    "grants": [
@@ -503,12 +503,12 @@
   {
    "file": "4ndr0tools - Forums++.user.js",
    "name": "4ndr0tools - Forums++",
-   "version": "1.10.2",
+   "version": "1.11.0",
    "description": "Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.",
    "family": "forums",
-   "sha256": "b2f8caa4f6f840b286c01cbdcbdf7199c0c05252a86ad597557453f0531dcedf",
-   "lines": 4865,
-   "bytes": 232903,
+   "sha256": "1ebff17f82d4062bf18a77fe450cb0c9654bd2168f36e4da9ffd697d9405ac61",
+   "lines": 4880,
+   "bytes": 233907,
    "matches": [
     "https://simpcity.su/threads/*",
     "https://simpcity.cr/threads/*"
@@ -809,12 +809,12 @@
   {
    "file": "4ndr0tools - Instagram++.user.js",
    "name": "4ndr0tools - Instagram++",
-   "version": "13.2.1",
+   "version": "13.2.2",
    "description": "Tab-Bar + Dock Integration. Hotkey trigger (Alt+I). Ad-Blocking. Deep-Stack Recovery. Resilient cursor-based pagination. Stories support. Image/video download engine.",
    "family": "sovereign platforms",
-   "sha256": "82ac5db1ce09f1816a180581db7301411678b1fcf3015e366de918e74d3403b3",
-   "lines": 2555,
-   "bytes": 134258,
+   "sha256": "1ebb21f054909d6e35a8455c08a25aa2935c28abe5673b3065bf0702f8a5aa2e",
+   "lines": 2564,
+   "bytes": 134795,
    "matches": [
     "*://*.instagram.com/*"
    ],
@@ -887,12 +887,12 @@
   {
    "file": "4ndr0tools - Login Form Autofiller.user.js",
    "name": "4ndr0tools - Login Form Autofiller",
-   "version": "2.0.3",
+   "version": "2.0.4",
    "description": "It integrates BugMeNot into any login form (it retrieves all matching logins from bugmenot.com and autofills the login form)",
    "family": "ux utilities",
-   "sha256": "d2046039665e4b07529a93534dfa126ad4c0cd51abb9c4c5815673988d6c2a34",
-   "lines": 1013,
-   "bytes": 44221,
+   "sha256": "b507c5886e6debf0fc01779879bc8d6a60a1808d7c8aa3eb75ea50429b44aa1a",
+   "lines": 1015,
+   "bytes": 44530,
    "matches": [],
    "excludes": [
     "http://bugmenot.com/*",
@@ -1101,10 +1101,10 @@
   {
    "file": "4ndr0tools - Prompt Master.user.js",
    "name": "4ndr0tools - Prompt Master",
-   "version": "28.7.7",
+   "version": "28.8.0",
    "description": "Google Flow prompt manager toolkit (works on any AI, just add url) - persisted unit ledger meters every generation click, organization engine: collections, saved views, favorites, ratings, archive, group-by, and insights for large prompt libraries, dedupe, media slideshow, ai prompt enhancer, auto gist syncing, hotkeys, much more.",
    "family": "sovereign platforms",
-   "sha256": "467da9f8365c03770f272bdb9c0c678dccf5f23fd9cd9a896d7d6b4caecf5ea4",
+   "sha256": "83b4fe42837650b4f4e98f1d4a38817725e2d5544f5b9b2ee058780fea12aaec",
    "lines": 23936,
    "bytes": 1166174,
    "matches": [
@@ -1175,12 +1175,12 @@
   {
    "file": "4ndr0tools - Redgifs++.user.js",
    "name": "4ndr0tools - Redgifs++",
-   "version": "5.3",
+   "version": "5.3.1",
    "description": "Intercepts Redgifs links on Reddit for a cinematic overlay. On Redgifs itself, enters focused video-only mode. Falls back to JSON.parse intercept for direct /watch/ loads before SPA hydration.",
    "family": "video & players",
-   "sha256": "c6bc70044f1ad8ed6a079d694ec7cdca176d9029a7cf1f424d0e7721a6508b78",
-   "lines": 374,
-   "bytes": 18077,
+   "sha256": "7d9f0a2b09fb131f95106ee82918e2f295525bcc8e900498d9e07020f73a152a",
+   "lines": 391,
+   "bytes": 19027,
    "matches": [
     "*://*.redgifs.com/watch/*",
     "*://*.redgifs.com/ifr/*",
@@ -1244,12 +1244,12 @@
   {
    "file": "4ndr0tools - Watermark++.user.js",
    "name": "4ndr0tools - Watermark++",
-   "version": "2.1.0",
+   "version": "2.1.1",
    "description": "Security research and alignment testing only.",
    "family": "sovereign platforms",
-   "sha256": "3271515c3141ae0d50b7a7b70eff71f538fddef703771bcf25f049233aa1621f",
-   "lines": 15472,
-   "bytes": 1289547,
+   "sha256": "a7a02e7ebe18861b339e5b7fed17f3852af1548eb25f1e65214eb265c9412dbe",
+   "lines": 15488,
+   "bytes": 1290512,
    "matches": [
     "https://gemini.google.com/*",
     "https://business.gemini.google/*"
@@ -1273,12 +1273,12 @@
   {
    "file": "4ndr0tools - Website Control Panel.user.js",
    "name": "4ndr0tools - Website Control Panel",
-   "version": "5.3.0",
+   "version": "5.3.1",
    "description": "Draggable Cyberdeck HUD, DOM Zapper, Ad suppression, validated-selector compiled deep-cleaning, per-site HUD suppression + Alt+Shift+H hotkey.",
    "family": "ux utilities",
-   "sha256": "ce25ca1ce6ae5655d877743d9629aaa2ee577654c05090a3b5022bf0efd1ae83",
-   "lines": 585,
-   "bytes": 27708,
+   "sha256": "ca3897fd2dec2ae50bc5932ae27f2bef79d104b9b4b18ba5196fe827bcf9449a",
+   "lines": 596,
+   "bytes": 28323,
    "matches": [
     "*://*/*"
    ],
@@ -1326,12 +1326,12 @@
   {
    "file": "4ndr0tools - YandexImageSearch++.user.js",
    "name": "4ndr0tools - Yandex Image Search++",
-   "version": "0.4.1",
+   "version": "0.4.2",
    "description": "Robust, event-driven slideshow, fullscreen preview, and on-screen status for Yandex reverse-image search.",
    "family": "images",
-   "sha256": "6322827d4866a6c1405ef6b573984bb6f1650f08f9c700380386552fc0c9aa8b",
-   "lines": 277,
-   "bytes": 11630,
+   "sha256": "f212b800260ac764f074464a1663960e400d102e58176c6b54909e85b11ea6b5",
+   "lines": 288,
+   "bytes": 12216,
    "matches": [
     "*://yandex.com/images/*",
     "*://yandex.ru/images/*"
@@ -1383,12 +1383,12 @@
   {
    "file": "4ndr0tools - YouTubeEmbedRedirectButton.user.js",
    "name": "4ndr0tools - YouTube Embed Redirect Button",
-   "version": "1.6",
+   "version": "1.6.1",
    "description": "Floating button for redirects to embedded version. Right click it to set a keybind (default Ctrl+E).",
    "family": "video & players",
-   "sha256": "4ac9ef5dce6ebb18bb76d185b53f96b25b653de6202a6813ed26df813fdf47ec",
-   "lines": 320,
-   "bytes": 13058,
+   "sha256": "38d126155112ee3fa55ca75be2cc55d903a5fd00a09a8603e6c638ca9b45fd5e",
+   "lines": 328,
+   "bytes": 13623,
    "matches": [
     "https://*.youtube.com/*"
    ],
@@ -1560,5 +1560,5 @@
    ]
   }
  ],
- "digest": "c6d3f92ead8ab2a86970ef43052b3bf190216142809f52dfef45e8142baa6d05"
+ "digest": "1f0628fede872daf07d9e925252ee4a962816fe7d0e715457f31d99797937d8e"
 }

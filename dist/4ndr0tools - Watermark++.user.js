@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Watermark++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      2.1.0
+// @version      2.1.1
 // @description  Security research and alignment testing only.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @author       4ndr0666
@@ -1160,7 +1160,7 @@ const __4NDR0_NET_API__ = (function () {
 })();
 
 // 2.0.2 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.1.0 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.1.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 (() => {
   // src/shared/actionContextCompat.js
@@ -10897,6 +10897,15 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.1.0 
   var originalAssetUrlRegistry = /* @__PURE__ */ new Map();
   var previewProcessedResultRegistry = /* @__PURE__ */ new Map();
   var MAX_REMEMBERED_PREVIEW_RESULT_REGISTRY_SIZE = 32;
+  // v2.1.1 (WO-01 round 3, 3-c F03): the original-URL registry is now
+  // FIFO-capped exactly like its sibling three lines up — Gemini
+  // conversations are long-lived single-page sessions and every distinct
+  // generated image writes up to two entries (draft: + response:), so
+  // the uncapped Map grew for the page lifetime. 64 entries ≈ 32 images,
+  // matching the preview window; a re-encounter re-registers through
+  // rememberOriginalAssetUrlBinding (the session store carries the
+  // authoritative source too).
+  var MAX_REMEMBERED_ORIGINAL_ASSET_REGISTRY_SIZE = 64;
   function appendLog(onLog, type, payload = {}) {
     if (typeof onLog === "function") {
       onLog(type, payload);
@@ -11102,10 +11111,17 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.1.0 
     const draftKey = getDraftAssetRegistryKey(assetIds);
     const responseKey = getResponseAssetRegistryKey(assetIds);
     if (draftKey) {
+      originalAssetUrlRegistry.delete(draftKey);
       originalAssetUrlRegistry.set(draftKey, normalizedSourceUrl);
     }
     if (responseKey) {
+      originalAssetUrlRegistry.delete(responseKey);
       originalAssetUrlRegistry.set(responseKey, normalizedSourceUrl);
+    }
+    while (originalAssetUrlRegistry.size > MAX_REMEMBERED_ORIGINAL_ASSET_REGISTRY_SIZE) {
+      const oldestKey = originalAssetUrlRegistry.keys().next().value;
+      if (typeof oldestKey !== "string" || !oldestKey) break;
+      originalAssetUrlRegistry.delete(oldestKey);
     }
     const sessionKey = imageSessionStore?.getOrCreateByAssetIds?.(assetIds) || "";
     if (sessionKey) {

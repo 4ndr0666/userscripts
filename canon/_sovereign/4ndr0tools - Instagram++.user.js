@@ -2,7 +2,7 @@
 // @name         4ndr0tools - Instagram++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666
-// @version      13.2.1
+// @version      13.2.2
 // @description  Tab-Bar + Dock Integration. Hotkey trigger (Alt+I). Ad-Blocking. Deep-Stack Recovery. Resilient cursor-based pagination. Stories support. Image/video download engine.
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Instagram++.user.js
@@ -300,10 +300,19 @@
         }
 
         // Deduplicate
+        // v13.2.2 (WO-01 round 3, 3-c F11): the _seen registry is FIFO-capped
+        // at 10,000 (the Bunkr++ MAX_VISITED precedent) — an hours-long
+        // profile crawl accumulates thousands of string entries for the
+        // page lifetime otherwise. Insertion order is the eviction order;
+        // a re-encounter past the cap simply re-harvests, bounded.
         items = items.filter(item => {
             const id = item.pk || item.id || item.code;
             if (!id || STATE._seen.has(id)) return false;
             STATE._seen.add(id);
+            if (STATE._seen.size > 10000) {
+                const [oldest] = STATE._seen;   // FIFO eviction
+                STATE._seen.delete(oldest);
+            }
             return true;
         });
 

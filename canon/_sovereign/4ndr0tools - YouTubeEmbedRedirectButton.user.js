@@ -2,7 +2,7 @@
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @name         4ndr0tools - YouTube Embed Redirect Button
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.6
+// @version      1.6.1
 // @description  Floating button for redirects to embedded version. Right click it to set a keybind (default Ctrl+E).
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YouTubeEmbedRedirectButton.user.js
@@ -15,7 +15,7 @@
 // @noframes
 // ==/UserScript==
 // 1.5 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: YouTubeEmbedRedirectButton.user v1.6 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: YouTubeEmbedRedirectButton.user v1.6.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 (function() {
   'use strict';
@@ -61,12 +61,20 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: YouTubeEmbedRedirectButt
    * @param {string} hk - The hotkey string to set.
    */
   function setHotkey(hk) {
-    const normalizedHotkey = hk.split('+')
-                               .map(part => {
-                                 const lowerPart = part.trim().toLowerCase();
-                                 return lowerPart === 'ctrl' ? 'control' : lowerPart;
-                               })
-                               .join('+');
+    // v1.6.1 (WO-01 round 3, 3-c F10): meta/cmd validation — the keydown
+    // matcher only recognizes control/alt/shift (KeyboardEvent.metaKey),
+    // so a stored 'Meta+E'/'Cmd+E' could never fire: a dead store the
+    // user believes is armed. setHotkey now rejects the unrepresentable
+    // modifier families at capture time instead of accepting them
+    // silently. ctrl-aliases ('ctrl'/'control') keep normalizing.
+    const rawParts = hk.split('+').map(part => part.trim().toLowerCase());
+    const rejected = rawParts.filter(part =>
+      ['meta', 'cmd', 'command', 'super', 'os'].includes(part));
+    if (rejected.length > 0) {
+      alert('This script\'s hotkey engine cannot represent the Meta/Cmd (⌘) modifier — use Ctrl, Alt and/or Shift instead.');
+      return;
+    }
+    const normalizedHotkey = rawParts.map(part => part === 'ctrl' ? 'control' : part).join('+');
     localStorage.setItem(STORAGE_KEY_HOTKEY, normalizedHotkey);
     alert(`Hotkey set to ${formatHotkeyForDisplay(normalizedHotkey)}`);
     // Update the menu item text to reflect the new hotkey

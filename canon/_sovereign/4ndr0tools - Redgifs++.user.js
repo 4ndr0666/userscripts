@@ -2,7 +2,7 @@
 // @name            4ndr0tools - Redgifs++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author          4ndr0666 
-// @version         5.3
+// @version         5.3.1
 // @description     Intercepts Redgifs links on Reddit for a cinematic overlay. On Redgifs itself, enters focused video-only mode. Falls back to JSON.parse intercept for direct /watch/ loads before SPA hydration.
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Redgifs++.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Redgifs++.user.js
@@ -18,7 +18,7 @@
 // @grant           GM_addStyle
 // ==/UserScript==
 // 5.2 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Redgifs++.user v5.3 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Redgifs++.user v5.3.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 'use strict';
 
@@ -241,6 +241,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Redgifs++.user v5.3 — 
     let originalParent        = null;
     let videoPlayerContainer  = null;
     let observerRef           = null; // Keep reference so navigation cleanup is possible.
+    let exitHandlers          = null; // v5.3.1 (3-c F09): the stashed video-only exit pair (see enterVideoOnlyMode).
 
     const addStyles = () => {
         GM_addStyle(`
@@ -298,16 +299,24 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Redgifs++.user v5.3 — 
         document.body.classList.add(VIDEO_ONLY_CLASS);
 
         // Exit listeners only needed when the user is viewing directly (not via iframe).
-        // They are self-removing to avoid listener accumulation across SPA navigations.
+        // v5.3.1 (WO-01 round 3, 3-c F09): the pair is STASHED now — they
+        // self-remove only when their own trigger fires (Escape / outside
+        // click); a route-change exit (navObserver -> exitVideoOnlyMode)
+        // left them bound, and re-entering bound a fresh pair. Both
+        // handlers are idempotent (guarded exitVideoOnlyMode), so this was
+        // bounded listener growth, not a bug — but the stash removes the
+        // growth and makes the exit path own its listeners.
         if (!inIframe) {
-            const onKey = (e) => {
-                if (e.key === 'Escape') { exitVideoOnlyMode(); document.removeEventListener('keydown', onKey); }
+            exitHandlers = {
+                onKey: (e) => {
+                    if (e.key === 'Escape') { exitVideoOnlyMode(); }
+                },
+                onClick: (e) => {
+                    if (!e.target.closest('video')) { exitVideoOnlyMode(); }
+                },
             };
-            const onClick = (e) => {
-                if (!e.target.closest('video')) { exitVideoOnlyMode(); document.body.removeEventListener('click', onClick); }
-            };
-            document.addEventListener('keydown', onKey);
-            document.body.addEventListener('click', onClick);
+            document.addEventListener('keydown', exitHandlers.onKey);
+            document.body.addEventListener('click', exitHandlers.onClick);
         }
     };
 
@@ -317,6 +326,14 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Redgifs++.user v5.3 — 
         videoPlayerContainer.classList.remove(PLAYER_CLASS);
         document.body.classList.remove(VIDEO_ONLY_CLASS);
         document.body.style.removeProperty('--rgpp-blur-bg-url');
+        // v5.3.1 (3-c F09): the exit path removes the stashed pair — every
+        // exit route (Escape, outside click, route change) now clears the
+        // listeners, not just the pair's own trigger.
+        if (exitHandlers) {
+            document.removeEventListener('keydown', exitHandlers.onKey);
+            document.body.removeEventListener('click', exitHandlers.onClick);
+            exitHandlers = null;
+        }
     };
 
     const disconnectObserver = () => {

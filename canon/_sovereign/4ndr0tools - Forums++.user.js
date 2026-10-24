@@ -3,7 +3,7 @@
 // @name        4ndr0tools - Forums++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     1.10.2
+// @version     1.11.0
 // @description Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @match       https://simpcity.su/threads/*
@@ -100,7 +100,7 @@
 // @license      UNLICENSED - RED TEAM USE ONLY
 // ==/UserScript==
 // 1.9.2 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Forums++.user v1.10.2 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Forums++.user v1.11.0 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 /* global JSZip, tippy, GM_xmlhttpRequest, saveAs, sha256, GM_download, GM_getValue, GM_setValue */
 
@@ -313,6 +313,21 @@ const h = {
      * @returns {string}
      */
     limit: (string, maxLength = 20) => (string.length > maxLength ? `${string.substring(0, maxLength - 1)}...` : string),
+    /**
+     * v1.11.0 (WO-01 round 3, 3-c F01 — CRITICAL): the forms module
+     * interpolates post text (innerText) and page-derived ids into
+     * HTML-string templates rendered by tippy with allowHTML:true +
+     * interactive:true — a post whose first 20 characters are a complete
+     * handler tag (`<b onclick=alert(1)>` is exactly 20 chars, so h.limit
+     * passes it whole) executed in every viewer's page. Port of the
+     * merged twin LinkMasterΨ's escapeHTML (the twin was hardened in its
+     * merge; the sovereign never received the fix). Escaping AFTER
+     * h.limit keeps the visible ≤20 chars intact.
+     *
+     * @param {string} str
+     * @returns {string}
+     */
+    escapeHTML: (str) => String(str ?? '').replace(/[&<>'"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[ch])),
     /**
      * @param {string} selector
      * @param {ParentNode} [container=document]
@@ -888,10 +903,10 @@ const ui = {
             return `
                 <div class="menu-row" style="margin-top: -5px;">
                     <label class="iconic" style="user-select: none">
-                        <input type="checkbox" ${checked ? 'checked="checked"' : ''} id="${id}" />
+                        <input type="checkbox" ${checked ? 'checked="checked"' : ''} id="${h.escapeHTML(id)}" />
                         <i aria-hidden="true"></i>
                         <span class="iconic-label" style="font-weight: bold; margin-left: -7px">
-                            <span id="${id}-label">${label}</span>
+                            <span id="${h.escapeHTML(id)}-label">${h.escapeHTML(label)}</span>
                         </span>
                     </label>
                 </div>
@@ -915,7 +930,7 @@ const ui = {
         createLabel: label => {
             return `
                 <div style="font-weight: bold; margin-top:5px; margin-bottom: 8px; color: #00E5FF;">
-                    ${label}
+                    ${h.escapeHTML(label)}
                 </div>
             `;
         },
@@ -970,15 +985,15 @@ const ui = {
                                 File / Archive Name
                             </div>
                             <input
-                                id="filename-input-${postId}"
+                                id="filename-input-${h.escapeHTML(postId)}"
                                 type="text"
                                 style="background: ${backgroundColor};"
                                 class="archive-name input"
                                 autocomplete="off"
                                 name="keywords"
-                                placeholder="${placeholder}"
+                                placeholder="${h.escapeHTML(placeholder)}"
                                 aria-label="Search"
-                                value="${currentValue}"
+                                value="${h.escapeHTML(currentValue)}"
                             />
                         </div>
                     `;
@@ -3651,10 +3666,10 @@ const selectedPosts = [];
                 const threadTitle = parsers.thread.parseTitle();
                 let defaultPostContent = textContent.trim().replace('​', ''); // Remove zero-width space if present
 
-                const ellipsedText = h.limit(defaultPostContent === '' ? threadTitle : defaultPostContent, 20);
+                const ellipsedText = h.escapeHTML(h.limit(defaultPostContent === '' ? threadTitle : defaultPostContent, 20));
 
-                const summary = `<a id="post-content-${postId}" href="#post-${postId}" style="color: #00E5FF"> ${ellipsedText} </a>`;
-                html += ui.forms.createCheckbox(`config-download-post-${postId}`, `Post #${postNumber} ${summary}`, false);
+                const summary = `<a id="post-content-${h.escapeHTML(postId)}" href="#post-${h.escapeHTML(postId)}" style="color: #00E5FF"> ${ellipsedText} </a>`;
+                html += ui.forms.createCheckbox(`config-download-post-${postId}`, `Post #${h.escapeHTML(postNumber)} ${summary}`, false);
             });
 
             html = `${ui.forms.createRow(ui.forms.createLabel('Post Selection'))} ${html}`;

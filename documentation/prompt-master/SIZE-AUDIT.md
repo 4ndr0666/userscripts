@@ -9,9 +9,9 @@
 |---|---|---|
 | Embedded base64/data-URI payloads | **0 B** (0 blobs — the @icon SVG is the only data URI, ~2 KB) | nothing material to externalize on the asset axis |
 | Embedded fonts / images | **0 B** | WCP-local font stack; no font payloads |
-| Comment mass | ~196 KB across 2,964 line-comment lines (v-series changelogs + per-feature rationale; `^\s*//` method) | dense documentation-in-source is deliberate |
-| Application code | ~966 KB across 20,971 lines (avg 46 B/line) | the prompt-management application |
-| **Total** | **1,166,174 B / 23,935 lines** | 2,964 comment + 20,971 code = 23,935 ✓ (byte partition: 200,437 + 965,737 = 1,166,174 ✓) |
+| Comment mass | ~156 KB across 3,030 comment lines (scan-kit stripper-diff method — the shared scanner's own comment-blanked chars) | dense documentation-in-source is deliberate |
+| Application code | ~1,006 KB across 20,905 lines (avg 48 B/line) | the prompt-management application |
+| **Total** | **1,166,174 B / 23,935 lines** | 3,030 comment + 20,905 code = 23,935 ✓ (byte partition: 160,021 comment + 1,006,153 code = 1,166,174 ✓) |
 
 ## What the weight IS
 
@@ -21,7 +21,7 @@ video-aware dwell, the AI prompt enhancer, auto-gist syncing, the Flow
 credit meter (official unit ledger, day rolling, wall reconciliation — the
 flow-credit observer/tick pipeline gained the B.1 idle-park wiring this
 round), the manager hotkeys, and the 3lectric-Glass UI family. The v-series
-changelog comments (~196 KB) are retained deliberately: they are the
+changelog comments (~156 KB) are retained deliberately: they are the
 operator's audit trail for every integrated candidate, and removing them
 would save mass at the cost of the suite's provenance discipline.
 
@@ -38,7 +38,7 @@ interactive critical path.
 
 Ships as-is at 1,166,174 B (re-verified 2026-10-24, suite v1.10.0): under the 1.3 MB hard budget, above the audit
 line by design, with this record as the audited decision. Watch item: the
-comment mass (~190 KB) is the one *reversible* component if a future round
+comment mass (~156 KB) is the one *reversible* component if a future round
 needs headroom — moving the v-series changelogs into
 `documentation/prompt-master/CHANGELOG.md` and keeping per-feature notes in
 source would reclaim the mass without any asset externalization.

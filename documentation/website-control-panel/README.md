@@ -1,4 +1,4 @@
-# Website Control Panel · v5.3.0
+# Website Control Panel · v5.3.1
 
 > Per-site sovereign control surface — `ux utilities` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ WCP is the per-site control panel: a glass HUD that exposes the toggles a hostil
 
 | Dimension | Value |
 |---|---|
-| Version | `5.3.0` |
+| Version | `5.3.1` |
 | Matches | `*://*/*` |
 | Run-at | `document-idle` |
-| Size | 27.1 KB · 585 lines |
+| Size | 27.7 KB · 596 lines |
 | Install | [dist/4ndr0tools - Website Control Panel.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Website%20Control%20Panel.user.js) |
 
 ## Feature Inventory

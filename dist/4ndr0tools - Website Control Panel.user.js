@@ -2,7 +2,7 @@
 // @name         4ndr0tools - Website Control Panel
 // @namespace    https://github.com/4ndr0666/userscripts
 // @description  Draggable Cyberdeck HUD, DOM Zapper, Ad suppression, validated-selector compiled deep-cleaning, per-site HUD suppression + Alt+Shift+H hotkey.
-// @version      5.3.0
+// @version      5.3.1
 // @author       4ndr0666
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Website%20Control%20Panel.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Website%20Control%20Panel.user.js
@@ -49,7 +49,7 @@
 (function () {
   'use strict';
 
-  const WCP_VERSION = '5.3.0';
+  const WCP_VERSION = '5.3.1';
   const DEBUG = (() => { try { return localStorage.getItem('psi_wcp_debug') === '1'; } catch (e) { return false; } })();
   const dbg = (...args) => { if (DEBUG) console.log('%c[4NDR0666OS] WCP v' + WCP_VERSION, 'color:#00E5FF;font-family:monospace;font-weight:bold;', ...args); };
   dbg('CYBERDECK HUD INITIATING');
@@ -519,7 +519,12 @@
   // ==========================================
   // MODULE 6: OBSERVER ORCHESTRATION
   // ==========================================
-  let _debounceTimer = null;
+  let _debounceTimer = null,
+      // v5.3.1 (WO-01 round 3, 3-c F05): the init re-arm counter — WCP has
+      // no @noframes and @match *://*/*, so a body-less same-origin frame
+      // re-armed init every 50 ms for the frame's lifetime; 200 tries =
+      // 10 s, then a loud stand-down.
+      _bodyWaitTries = 0;
 
   const processAll = () => {
     blockAds(); autoSkip(); bypassAge(); deepClean(); killNags();
@@ -547,6 +552,12 @@
       // Failsafe garbage collection
       window.addEventListener('beforeunload', () => observer.disconnect(), { once: true });
     } else {
+      // v5.3.1 (WO-01 round 3, 3-c F05): ceilinged re-arm — see the
+      // _bodyWaitTries declaration for the frame-lifetime rationale.
+      if (++_bodyWaitTries > 200) {
+        console.warn('[Ψ-4NDR0666] Website Control Panel stood down — document.body never appeared (non-HTML frame).');
+        return;
+      }
       setTimeout(init, 50);
     }
   };
