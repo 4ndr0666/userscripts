@@ -65,7 +65,7 @@
       "inputs": [
         "style audit 38/38: true",
         "docs truthfulness (0 drift): true",
-        "identity-ledger evidence coverage: 61/61"
+        "identity-ledger evidence coverage: 62/62"
       ]
     },
     {

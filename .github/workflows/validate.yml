@@ -17,11 +17,15 @@ jobs:
           node-version: 22
 
       # Zero-dependency pipeline: no npm install needed. Gates (fail closed):
-      #   build     — kernel inliner + §1.1 lexical scan + placeholder scan
-      #   inventory — catalog/JSON regeneration (README + inventory.json)
-      #   validate  — GUP superset contract: coverage, unit identity,
+      #   build      — kernel inliner + §1.1 lexical scan + placeholder scan
+      #   inventory  — catalog/JSON regeneration (README + inventory.json)
+      #   qr-verify  — Pixeldrain++ RS/mask QR encoder round-trip (8/8)
+      #   style-audit— 3lectric-Glass universality gate (foreign-font leads)
+      #   validate   — GUP superset contract: coverage, unit identity,
       #               V8 parse, metadata self-consistency, interference ledger
-      - name: Build + inventory + GUP validation
+      #               (WO-01 round-2, 6-d F6: enumeration previously omitted
+      #               the qr-verify and style-audit stages)
+      - name: Build + inventory + qr-verify + style-audit + GUP validation
         run: npm run check
 
       - name: Kernel smoke tests

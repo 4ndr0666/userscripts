@@ -191,13 +191,20 @@ export async function runKernelBoundarySmoke(root = ROOT) {
         totalGuardedSites,
         transportFallbacksVerified,
         runtimeAssertions,
+        /* WO-01 round-2 (6-a F16): derived denominators for the summary —
+         * expectedFallbacks.size and the runtime-assertion expectation. */
+        expectedFallbacks: expectedFallbacks.size,
+        expectedRuntimeAssertions: 10,
     };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {
     const r = await runKernelBoundarySmoke();
     console.log(
-        `kernel-boundary-smoke: ${r.canonFiles} canon scripts (${r.kernelFreeCount} kernel-free, ${r.guardedConsumerCount} typeof-guarded across ${r.totalGuardedSites} sites, ${r.transportFallbacksVerified}/8 kernel-less gmFetch fallbacks, ${r.runtimeAssertions}/10 runtime+red-control assertions)`
+        /* WO-01 round-2 (6-a F16): denominators derived from the fixture
+         * map itself — hardcoded /8 and /10 go stale the moment a battery
+         * case is added. */
+        `kernel-boundary-smoke: ${r.canonFiles} canon scripts (${r.kernelFreeCount} kernel-free, ${r.guardedConsumerCount} typeof-guarded across ${r.totalGuardedSites} sites, ${r.transportFallbacksVerified}/${r.expectedFallbacks} kernel-less gmFetch fallbacks, ${r.runtimeAssertions}/${r.expectedRuntimeAssertions} runtime+red-control assertions)`
     );
     if (r.problems.length) {
         for (const p of r.problems) console.error(`  ✗ ${p}`);

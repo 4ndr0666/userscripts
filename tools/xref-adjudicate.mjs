@@ -19,7 +19,10 @@ for (const [rel, names] of Object.entries(targets)) {
     const lines = fs.readFileSync(file, "utf8").split("\n");
     console.log(`\n════ ${path.basename(rel)} ════`);
     for (const name of names) {
-        const re = new RegExp(`[\\w$.]${name}\\b|\\b${name}\\b`);
+        /* WO-01 round-2 (6-a F16): escape the interpolated name — $ in a
+         * unit name would otherwise inject end-of-string anchors into the
+         * pattern. */
+        const re = new RegExp(`[\\w$.]${name.replace(/\$/g, "\\$")}\\b|\\b${name.replace(/\$/g, "\\$")}\\b`);
         const hits = [];
         lines.forEach((ln, i) => { if (re.test(ln)) hits.push(`  L${i + 1}: ${ln.trim().slice(0, 150)}`); });
         console.log(`── ${name} (${hits.length} occurrence${hits.length === 1 ? "" : "s"})`);

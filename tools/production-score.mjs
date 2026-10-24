@@ -170,7 +170,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToP
      * fresh; this snapshot is refreshed each round so standalone reruns
      * do not cite stale counts. v1.6.1: 38 scripts (Zai Exporter lands
      * gate-born), error census 839 sites (+27, all debug/handled), cache
-     * 133 registries (one call-scoped Set), docs coverage derived 38/38.
+     * 133 registries (one call-scoped Set; the live count is derived at
+     * runtime — the snapshot comment cites the v1.6.2 state), docs
+     * coverage derived 38/38.
      * v1.6.2: counts unchanged — the round is the determinism contract
      * itself: score.json round-addressed, style label 38/38.) */
     const liveErr = runErrorCensus(root);

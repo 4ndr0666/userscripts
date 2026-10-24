@@ -19,6 +19,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { KERNEL_ORDER, KERNEL_DEPENDENCIES, kernelClosure } from "./kernel-order.mjs";
+/* WO-01 round-2 (6-a F08 / round-1 deferred item d): the §1.1 lexical
+ * scanner and the placeholder scan now live in tools/scan-kit.mjs — the
+ * ~120-line port pair between build.mjs and validate.mjs had already
+ * drifted in BOTH directions (build alone caught pass#todo + quoted
+ * placeholder values; validate alone caught =STUB/=PENDING sentinels). */
+import { checkLexicalBalance, scanPlaceholders } from "./scan-kit.mjs";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const KERNEL_DIR = path.join(ROOT, "kernel");
@@ -74,150 +80,7 @@ function deriveGlyphIcon() {
 }
 const GLYPH_ICON = deriveGlyphIcon();
 
-/* ── §1.1-aware lexical scanner (JS: comments, strings, templates, regex) ── */
-
-/** Returns null when balanced, or a descriptive error string.
- * v1.4.5: ported the v1.3.0 lastSig fix from validate.mjs — the old
- * backward prevSignificant() walk stopped at a block-comment terminator's
- * slash, so a regex literal directly after a closing comment token was
- * scanned as division, and a slash inside its first character class
- * (e.g. Akasha's /(?:^|[?&/._-])track…/ after the ampersand) then opened
- * a PHANTOM regex that swallowed live parens. lastSig is tracked FORWARD
- * (last significant CODE character, comments and strings excluded by
- * construction). */
-function checkLexicalBalance(src, label) {
-    let i = 0, line = 1;
-    const n = src.length;
-    const stack = [];
-    let lastSig = "";
-    const skipTemplate = (start) => {
-        let k = start + 1;
-        while (k < n) {
-            if (src[k] === "\\") { k += 2; continue; }
-            if (src[k] === "`") return k + 1;
-            k++;
-        }
-        return -1;
-    };
-    while (i < n) {
-        const c = src[i];
-        if (c === "\n") { line++; i++; continue; }
-        if (c === "/" && src[i + 1] === "/") { while (i < n && src[i] !== "\n") i++; continue; }
-        if (c === "/" && src[i + 1] === "*") {
-            const end = src.indexOf("*/", i + 2);
-            if (end === -1) return `${label}: unterminated block comment at line ${line}`;
-            line += src.slice(i, end).split("\n").length - 1; i = end + 2; continue;
-        }
-        if (c === '"' || c === "'") {
-            i++;
-            while (i < n) {
-                if (src[i] === "\\") { i += 2; continue; }
-                if (src[i] === c) { i++; break; }
-                if (src[i] === "\n") return `${label}: unterminated ${c} string at line ${line}`;
-                i++;
-            }
-            lastSig = c;
-            continue;
-        }
-        if (c === "`") {
-            i++;
-            while (i < n) {
-                if (src[i] === "\\") { i += 2; continue; }
-                if (src[i] === "`") { i++; break; }
-                if (src[i] === "$" && src[i + 1] === "{") {
-                    // template interpolation: structurally live braces
-                    let depth = 1; i += 2;
-                    while (i < n && depth > 0) {
-                        if (src[i] === "{") depth++;
-                        else if (src[i] === "}") depth--;
-                        else if (src[i] === "`") { // nested template
-                            /* v1.4.7: fixed the v1.4.5 port drift — this call
-                             * passed (src, i) into the one-argument
-                             * skipTemplate(start), so `start` received the
-                             * whole source STRING, `start + 1` concatenated,
-                             * and every nested-template-in-interpolation
-                             * returned -1 ("unterminated nested template").
-                             * Latent until Prompt Master (dense `${…`…`…}`
-                             * nesting) became a kernel consumer this round;
-                             * validate.mjs's v1.3.0 original always had the
-                             * correct one-argument form. */
-                            const r = skipTemplate(i);
-                            if (r === -1) return `${label}: unterminated nested template at line ${line}`;
-                            i = r;
-                            continue;
-                        }
-                        i++;
-                    }
-                    continue;
-                }
-                i++;
-            }
-            lastSig = c;
-            continue;
-        }
-        if (c === "/" && /[(,=:[!&|?{};+\-*%<>~^]/.test(lastSig || "(")) {
-            // regex literal (heuristic per §1.1: only where a value may start)
-            i++;
-            let inClass = false;
-            while (i < n) {
-                if (src[i] === "\\") { i += 2; continue; }
-                if (src[i] === "[") inClass = true;
-                else if (src[i] === "]") inClass = false;
-                else if (src[i] === "/" && !inClass) { i++; break; }
-                else if (src[i] === "\n") break; // not a regex after all
-                i++;
-            }
-            lastSig = "/";
-            continue;
-        }
-        if (c === "(" || c === "[" || c === "{") {
-            stack.push({ ch: c, line });
-            lastSig = c; i++; continue;
-        }
-        if (c === ")" || c === "]" || c === "}") {
-            const top = stack.pop();
-            if (!top) return `${label}: unmatched "${c}" at line ${line}`;
-            const pairs = { "(": ")", "[": "]", "{": "}" };
-            if (pairs[top.ch] !== c) return `${label}: "${c}" at line ${line} closes "${top.ch}" opened at line ${top.line}`;
-            lastSig = c; i++; continue;
-        }
-        if (!/\s/.test(c)) lastSig = c;
-        i++;
-    }
-    if (stack.length > 0) return `${label}: unclosed "${stack[stack.length - 1].ch}" opened at line ${stack[stack.length - 1].line}`;
-    return null;
-}
-
-/* ── Placeholder scan (GUP §7.3 zero-placeholder rule) ─────────────────── */
-
-const PLACEHOLDER_PATTERNS = [
-    /\bTODO[:\s]/, /\bFIXME\b/, /\bXXX\b/, /\bHACK\b/,
-    /["'`]PLACEHOLDER["'`]/i,            // quoted placeholder VALUE (legacy bug class)
-    /=\s*["']TODO["']/,
-    /\.\.\.\s*existing\s+code/i,
-    /\/\/\s*\.\.\.\s*$/,
-    /\bpass\s*#\s*todo\b/i,
-    /\/\*\s*implementation\s+pending\s*\*\//i,
-];
-
-function scanPlaceholders(src, label) {
-    const hits = [];
-    const lines = src.split("\n");
-    for (let ln = 0; ln < lines.length; ln++) {
-        // Strip strings/comments crudely per line to avoid false positives
-        const code = lines[ln]
-            .replace(/\/\/.*$/, "")
-            .replace(/\/\*.*?\*\//g, "")
-            .replace(/(["'`])(?:\\.|(?!\1).)*\1/g, '""');
-        for (const pat of PLACEHOLDER_PATTERNS) {
-            /* WO-01 round-1 (F-17): hits are labelled so the exit-code fork can
-             * discriminate validation failures from build failures without
-             * pattern-matching on regex source text. */
-            if (pat.test(code)) hits.push(`placeholder: ${label}: line ${ln + 1}: ${pat.source}`);
-        }
-    }
-    return hits;
-}
+/* §1.1-aware lexical scanner + placeholder scan: imported from tools/scan-kit.mjs (WO-01 round-2, 6-a F08). */
 
 /* ── Header emission ─────────────────────────────────────────────────────── */
 

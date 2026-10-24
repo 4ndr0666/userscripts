@@ -273,16 +273,22 @@ the 3lectric-Glass design system.
 kernel/    canonical shared modules (brand · core · glass · store · hotkeys · hosts · net) — every module inlined by at least one dist build (zero dead kernel surface; net is consumed via the canon CANON_KERNEL injection)
 modules/   kernel-powered consolidated scripts (HostWarp, PageCraft)
 canon/     consolidated & promoted sources + EVIDENCE.json (per-script transform evidence)
-plugins/   companion plugins (MPV bridge, autopage config) — candidshiny.user.js retired WO-01 round-1 (orphaned: its only consumer was retired LinkMasterΨ2)
+plugins/   companion plugins (MPV bridge; autopage.json = external-consumer data,
+           fetched from the raw repo URL by out-of-repo autopagers — ledgered
+           mode external-data) — candidshiny.user.js retired WO-01 round-1
+           (orphaned: its only consumer was retired LinkMasterΨ2)
 dist/      BUILT INSTALLABLES — install from here
 docs/      consolidation report + migration guide
 documentation/ per-script references (generated: npm run docs) + deep devlogs
-           (bunkr · hailuo++ · m3u8++) + INDEX.md master catalog
+           (bunkr · hailuo++ · m3u8++) + INDEX.md master catalog +
+           _suite/FEATURE-MATRIX.md (§4.1 feature→function artifact)
 tools/     build.mjs · inventory.mjs · validate.mjs · qr-verify.mjs · style-audit.mjs (npm run check)
+           kernel-order.mjs (kernel assembly single source) · census-round.mjs (G9 round derivation)
            kernel-smoke.mjs (kernel unit smoke) · gen-docs.mjs (npm run docs)
            censuses — sink-census.mjs (HTML-string sink + net-tap census, adjudication ledger)
            · transport · connect · domain · hotkey · polling · observer · error · global ·
            cache · size-budget · canon-xref · production-score.mjs (+ score.json record)
+           · kernel-export-census.mjs (export surface × consumer, bidirectional)
            smoke batteries (npm run smoke) — family-fixture · watermark-batch ·
            kernel-boundary · flow-chip-browser · ig-wall-browser · pm-grid-browser
            (six runtime contract batteries, CI-wired since v1.7.4)
@@ -290,7 +296,7 @@ tools/     build.mjs · inventory.mjs · validate.mjs · qr-verify.mjs · style-
            evidence chain — baseline.json · ledger.json
 \`\`\`
 
-\`npm run build\` → dist. \`npm run check\` → build + inventory + qr-verify + full validation
+\`npm run build\` → dist. \`npm run check\` → build + inventory + qr-verify + style-audit + full validation
 (GUP superset contract, fail-closed). \`npm run smoke\` → the six runtime contract batteries.
 CI runs all of these gates on every push, plus a regenerated-reference freshness gate
 (stale committed artifacts fail the build).

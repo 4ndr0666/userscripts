@@ -48,4 +48,4 @@
 - `shownUrls` grows unboundedly for the page lifetime — by design: FIFO eviction would re-duplicate long-running feeds (dedup correctness > memory; entries are ~100 B).
 - The top-title relay answers any window that posts the magic string (cross-origin `document.title` exposure) — legacy protocol, low sensitivity, unchanged.
 - Proxy 300 s timeout is a compromise: strictly better than hang-forever, still permissive for big segments.
-- Evidence set: `gup-m3u8/` (baseline, candidate, atomize result, semantic-review.json, alignment-record.json, candidate-validation.json, inventory.json).
+- Evidence set: the suite's canonical chain — `tools/baseline.json` + `tools/ledger.json` + `canon/EVIDENCE.json` + the Gate A–D machine checks in `tools/validate.mjs` (WO-01 round-2, 6-d F12: this line previously cited a `gup-m3u8/` directory that does not exist in the repository).

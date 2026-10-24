@@ -122,5 +122,5 @@ All other hotkeys are unchanged.
 
 Suite `@downloadURL`/`@updateURL` point at `dist/` on `main`. If you fork the
 suite, run `npm run check` before pushing — CI runs the same gates
-(build → inventory → GUP validation) and fails closed on any regression the
+(build → inventory → qr-verify → style-audit → GUP validation) and fails closed on any regression the
 superset contract can detect.

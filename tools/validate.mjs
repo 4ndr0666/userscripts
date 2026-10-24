@@ -27,6 +27,11 @@ import { fileURLToPath } from "node:url";
 import { runCensus, stripComments } from "./hotkey-census.mjs";
 import { runSinkCensus } from "./sink-census.mjs";
 import { runKernelExportCensus } from "./kernel-export-census.mjs";
+/* WO-01 round-2 (6-a F08 / round-1 deferred item d): the §1.1 lexical
+ * scanner, the three-layer placeholder scan and stripCommentsKeepStrings
+ * now live in tools/scan-kit.mjs — shared with build.mjs so the two
+ * scanner ports can never drift apart again. */
+import { checkLexicalBalance, scanPlaceholders, stripCommentsKeepStrings } from "./scan-kit.mjs";
 import { runTransportCensus } from "./transport-census.mjs";
 import { runPollingCensus } from "./polling-census.mjs";
 import { runObserverCensus } from "./observer-census.mjs";
@@ -301,106 +306,10 @@ function gateB() {
     passes.push(`[B] identity: ${checked} baseline units checked, ${reconciled} explicitly reconciled`);
 }
 
-/* ── Gate C: structural integrity of dist ─────────────────────────────── */
-/* §1.1-aware lexical scanner (JS: comments, strings, templates, regex).
- * Handles nested templates + ${} interpolation braces — the crude variant
- * false-positived on template-in-template literals (LinkMasterΨ / Pixeldrain++
- / Prompt Master all V8-clean but flagged). */
-function checkLexicalBalance(src) {
-    let i = 0, line = 1;
-    const stack = [];
-    const n = src.length;
-    /* v1.3.0: prevSig() used to walk BACKWARDS over whitespace to decide
-     * regex-vs-division — but a block comment terminator directly before
-     * a regex literal made the walk stop at the comment's slash, which is
-     * not a regex preceder, so the literal was scanned as division and its
-     * parens corrupted the brace ledger (Akasha's commented blocklist
-     * regexes tripped this). lastSig is now tracked FORWARD: the last
-     * significant CODE character, with comments and string contents
-     * excluded by construction. */
-    let lastSig = "";
-    const skipTemplate = (start) => {
-        let k = start + 1;
-        while (k < n) {
-            if (src[k] === "\\") { k += 2; continue; }
-            if (src[k] === "`") return k + 1;
-            k++;
-        }
-        return -1;
-    };
-    while (i < n) {
-        const c = src[i];
-        if (c === "\n") { line++; i++; continue; }
-        if (c === "/" && src[i + 1] === "/") { while (i < n && src[i] !== "\n") i++; continue; }
-        if (c === "/" && src[i + 1] === "*") {
-            const end = src.indexOf("*/", i + 2);
-            if (end === -1) return `unterminated comment at line ${line}`;
-            line += src.slice(i, end).split("\n").length - 1; i = end + 2; continue;
-        }
-        if (c === '"' || c === "'") {
-            i++;
-            while (i < n) {
-                if (src[i] === "\\") { i += 2; continue; }
-                if (src[i] === c) { i++; break; }
-                if (src[i] === "\n") return `unterminated string at line ${line}`;
-                i++;
-            }
-            lastSig = c;
-            continue;
-        }
-        if (c === "`") {
-            i++;
-            while (i < n) {
-                if (src[i] === "\\") { i += 2; continue; }
-                if (src[i] === "`") { i++; break; }
-                if (src[i] === "$" && src[i + 1] === "{") {
-                    let depth = 1; i += 2;
-                    while (i < n && depth > 0) {
-                        if (src[i] === "{") depth++;
-                        else if (src[i] === "}") depth--;
-                        else if (src[i] === "`") {
-                            const r = skipTemplate(i);
-                            if (r === -1) return `unterminated nested template at line ${line}`;
-                            i = r;
-                            continue;
-                        }
-                        i++;
-                    }
-                    continue;
-                }
-                i++;
-            }
-            lastSig = c;
-            continue;
-        }
-        if (c === "/" && /[(,=:[!&|?{};+\-*%<>~^]/.test(lastSig || "(")) {
-            i++;
-            let inClass = false;
-            while (i < n) {
-                if (src[i] === "\\") { i += 2; continue; }
-                if (src[i] === "[") inClass = true;
-                else if (src[i] === "]") inClass = false;
-                else if (src[i] === "/" && !inClass) { i++; break; }
-                else if (src[i] === "\n") break;
-                i++;
-            }
-            lastSig = "/";
-            continue;
-        }
-        if ("([{".includes(c)) { stack.push({ c, line }); lastSig = c; i++; continue; }
-        else if (")]}".includes(c)) {
-            const top = stack.pop();
-            if (!top) return `unmatched "${c}" at line ${line}`;
-            const pairs = { "(": ")", "[": "]", "{": "}" };
-            if (pairs[top.c] !== c) return `"${c}" at line ${line} closes "${top.c}" from line ${top.line}`;
-            lastSig = c; i++; continue;
-        }
-        if (!/\s/.test(c)) lastSig = c;
-        i++;
-    }
-    if (stack.length) return `unclosed "${stack[stack.length - 1].c}" from line ${stack[stack.length - 1].line}`;
-    return null;
-}
+/* ── Gate C: structural integrity of dist ──
+ * §1.1-aware lexical scanner: imported from tools/scan-kit.mjs (WO-01
+ * round-2, 6-a F08 — build.mjs's v1.4.7 lineage was strictly newer: the
+ * forward lastSig + nested-template fixes this local v1.3.0 copy lacked). */
 
 /* Placeholder scan, two layers:
  *  (a) WORD markers (TODO/FIXME/XXX/HACK/…): matched against code with
@@ -413,64 +322,9 @@ function checkLexicalBalance(src) {
  *      script could never work out of the box. The assignment anchor
  *      ([\w$)]] before =) keeps CSS attribute selectors like
  *      [class*="placeholder"] out of scope. */
-const WORD_MARKERS = [/\bTODO[:\s]/, /\bFIXME\b/, /\bXXX\b/, /\bHACK\b/, /\.\.\.\s*existing\s+code/i, /\/\*\s*implementation\s+pending\s*\*\//i];
-const SENTINEL_ASSIGN = /[\w$\)\]]\s*=\s*["'`](?:PLACEHOLDER|TODO|FIXME|STUB|PENDING)["`']/i;
+/* stripCommentsKeepStrings: imported from tools/scan-kit.mjs (WO-01 round-2, 6-a F08). */
 
-/* Blank line-comment and block-comment contents (newlines preserved, strings
- * kept) so sentinel detection sees code, not documentation. */
-function stripCommentsKeepStrings(src) {
-    let out = "";
-    let i = 0;
-    const n = src.length;
-    while (i < n) {
-        const c = src[i];
-        if (c === "/" && src[i + 1] === "/") {
-            while (i < n && src[i] !== "\n") { out += " "; i++; }
-            continue;
-        }
-        if (c === "/" && src[i + 1] === "*") {
-            const end = src.indexOf("*/", i + 2);
-            const stop = end === -1 ? n : end + 2;
-            while (i < stop) { out += src[i] === "\n" ? "\n" : " "; i++; }
-            continue;
-        }
-        if (c === '"' || c === "'" || c === "`") {
-            const q = c;
-            out += c; i++;
-            while (i < n) {
-                if (src[i] === "\\") { out += src[i] + (src[i + 1] || ""); i += 2; continue; }
-                out += src[i];
-                const prev = src[i];
-                i++;
-                if (prev === q) break;
-                if (q !== "`" && prev === "\n") break; // unterminated guard: bail, let the main scanner report it
-            }
-            continue;
-        }
-        out += c; i++;
-    }
-    return out;
-}
-
-function scanPlaceholders(src) {
-    const hits = [];
-    // layer (a): comment-stripped, string-blanked code
-    const codeLines = src.split("\n").map((ln) => ln
-        .replace(/\/\/.*$/, "")
-        .replace(/\/\*.*?\*\//g, "")
-        .replace(/(["'`])(?:\\.|(?!\1).)*\1/g, '""'));
-    for (let ln = 0; ln < codeLines.length; ln++) {
-        for (const pat of WORD_MARKERS) {
-            if (pat.test(codeLines[ln])) hits.push(`line ${ln + 1}: word marker ${pat.source}`);
-        }
-    }
-    // layer (b): sentinel assignment in comment-stripped source (strings kept)
-    const stripped = stripCommentsKeepStrings(src).split("\n");
-    for (let ln = 0; ln < stripped.length; ln++) {
-        if (SENTINEL_ASSIGN.test(stripped[ln])) hits.push(`line ${ln + 1}: sentinel value assignment`);
-    }
-    return hits;
-}
+/* scanPlaceholders (three-layer union): imported from tools/scan-kit.mjs. */
 
 function gateC() {
     if (!fs.existsSync(DIST)) { failures.push("[C] dist/ not built"); return; }
@@ -531,8 +385,8 @@ function gateC() {
     for (const f of files) {
         n++;
         const src = fs.readFileSync(path.join(DIST, f), "utf8");
-        const bal = checkLexicalBalance(src);
-        if (bal) failures.push(`[C] ${f}: lexical imbalance — ${bal}`);
+        const bal = checkLexicalBalance(src, f);
+        if (bal) failures.push(`[C] lexical imbalance — ${bal}`);
 
         /* V8 authoritative parse — the §1.1 scanner is a heuristic; V8 is
          * ground truth (same engine family that executes the script). */

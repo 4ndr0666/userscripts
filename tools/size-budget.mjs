@@ -42,6 +42,24 @@ export function runSizeBudget(root = DEFAULT_ROOT) {
             if (!auditPath || !fs.existsSync(auditPath)) {
                 problems.push(`dist/${f}: ${bytes.toLocaleString()} B is over the 1,000,000 B audit line with NO decomposed-asset audit record (expected documentation/<script>/SIZE-AUDIT.md)`);
             } else {
+                /* WO-01 round-2 (6-d F1): the record's byte count is now
+                 * VERIFIED, not merely present — round-1's "re-measured"
+                 * watermark record carried the pre-round baseline number
+                 * (1,286,666 B vs the actual 1,287,132 B) and its
+                 * composition table did not even partition; existence-only
+                 * checking let the drift ride a CERTIFIED gate. The verifiable
+                 * anchor is the FIRST "<number> B" in the **Artifact:** line —
+                 * the current measurement (historical values follow it). */
+                const record = fs.readFileSync(auditPath, "utf8");
+                const art = /\*\*Artifact:\*\*[^\n]*—\s*([\d,]+)\s*B/.exec(record);
+                if (!art) {
+                    problems.push(`documentation/${path.basename(docDir)}/SIZE-AUDIT.md: no "**Artifact:** … — <number> B" anchor — the record's current byte count is not machine-verifiable`);
+                } else {
+                    const recorded = Number(art[1].replace(/,/g, ""));
+                    if (recorded !== bytes) {
+                        problems.push(`documentation/${path.basename(docDir)}/SIZE-AUDIT.md: recorded ${recorded.toLocaleString()} B but dist/${f} measures ${bytes.toLocaleString()} B — re-measure the record (the gate verifies byte counts now)`);
+                    }
+                }
                 stats.auditRecords++;
             }
         }

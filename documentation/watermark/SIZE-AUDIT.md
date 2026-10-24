@@ -1,16 +1,17 @@
-# SIZE-AUDIT — 4ndr0tools - Watermark++.user.js (suite v1.8.2, G6 record)
+# SIZE-AUDIT — 4ndr0tools - Watermark++.user.js (suite v2.0.0, G6 record)
 
-**Artifact:** `dist/4ndr0tools - Watermark++.user.js` — 1,286,666 B (re-measured 2026-10-23 at suite v1.8.2, script v2.1.0; the v1.5.0-round record below measured 1,279,706 B; v1.4.10 baseline 1,279,143 B).
-**Gate:** tools/size-budget.mjs (1,300,000 B hard budget; 1,000,000 B audit line — this record satisfies the latter).
+**Artifact:** `dist/4ndr0tools - Watermark++.user.js` — 1,289,547 B (re-measured 2026-10-24 at suite v2.0.0, script v2.1.0; the v1.8.2-round claim of 1,286,666 B was the pre-round-1 baseline number recorded in error — the WO-01 round-1 tree already measured 1,287,132 B; the v1.5.0-round record below measured 1,279,706 B; v1.4.10 baseline 1,279,143 B). The byte count in this line is machine-verified by tools/size-budget.mjs since WO-01 round-2.
+**Gate:** tools/size-budget.mjs (1,300,000 B hard budget; 1,000,000 B audit line — this record satisfies the latter; byte count VERIFIED against the live artifact).
 
-## Composition analysis (machine-measured, this round)
+## Composition analysis (machine-measured, this round — partitions exactly)
 
 | Component | Share | Notes |
 |---|---|---|
 | Embedded base64/data-URI payloads | **0 B** (0 blobs) | nothing to externalize on the asset axis |
 | Embedded fonts / images | **0 B** | none present |
-| Comment mass | ~25 KB across 409 comment lines | headers, changelogs, algorithm notes |
-| Application code | ~1.25 MB across 15,326 lines (avg 83 B/line) | the Gemini image watermark-removal engine |
+| Comment mass | ~29 KB across 478 comment lines | headers, changelogs, algorithm notes |
+| Application code | ~1.26 MB across 14,994 lines (avg 86 B/line) | the Gemini image watermark-removal engine |
+| **Total** | **1,289,547 B / 15,472 lines** | 478 comment + 14,994 code = 15,472 ✓ |
 
 ## What the weight IS
 

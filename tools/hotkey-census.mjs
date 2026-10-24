@@ -469,7 +469,6 @@ function parseHandlerValue(code, i) {
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
-/* ──────────────────────────────────────────────────────────────────────────
  * §5 Combo mining + §6 classification
  *
  * The mining model is PER-CLAIM: every key literal a handler tests becomes a

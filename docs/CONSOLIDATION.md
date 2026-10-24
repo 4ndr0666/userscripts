@@ -1,5 +1,17 @@
 # 4ndr0666tools — Consolidation Report
 
+> **AS-OF STAMP (WO-01 round-2, 6-d F2): this report describes the v1.1.0
+> consolidation EVENT — its counts were true on the day it was written and
+> are preserved verbatim as the historical record (the superset law forbids
+> rewriting history). Numbers that moved since: 24 sovereign carries (the
+> three Anti-* ICC scripts folded into Akasha Silence at merge; Zai Exporter
+> arrived later), 9 BETA promotions (Stream Interceptor v1.3.0; Forum Link
+> Xtractor's second candidate promotion), 3 merges (Akasha Silence), 38
+> dist installables at 111,973 lines, 2,464 baseline units checked with 46
+> reconciled renames, and `npm run check` = build → inventory → qr-verify →
+> style-audit → validate. The machine-checked truth is always the gate; this
+> prose is the story of how the suite came to be.**
+>
 > GUP v5.3 verification artifact. Evidence chain: `tools/baseline.json` (frozen
 > legacy inventories) → `tools/ledger.json` (consolidation map) →
 > `canon/EVIDENCE.json` (per-script transform evidence) → `tools/validate.mjs`
@@ -130,8 +142,10 @@ YouTubeEmbedRedirectButton, Youtube Removed Video Revealer.
   like the legacy `settingsHash = "PLACEHOLDER"` ship-stopper bug class).
 - **Gate D (interference)** — every documented collision fix is verified
   present in dist output.
-- `npm run check` runs build → inventory → validate; CI runs it on every
-  push (`.github/workflows/validate.yml`).
+- `npm run check` runs build → inventory → qr-verify → style-audit →
+  validate (WO-01 round-2, 6-d F6: the enumeration previously omitted the
+  qr-verify and style-audit stages); CI runs it on every push
+  (`.github/workflows/validate.yml`).
 
 ## 5. Defects Fixed During Absorption
 
@@ -144,7 +158,11 @@ YouTubeEmbedRedirectButton, Youtube Removed Video Revealer.
    `const settingsHash = "PLACEHOLDER"` (never worked out of the box); the
    HostWarp module computes the real hash.
 4. **candidshiny plugin invalid selectors** (`'aref]'`, `'a.attachmentref]'`)
-   — corrected in the plugin autopsy copy under `plugins/`.
+   — corrected in the plugin autopsy copy under `plugins/` at the time;
+   the plugin was RETIRED outright in WO-01 round-1 (2-b F-05: orphaned —
+   its only consumer was the long-retired LinkMasterΨ2, and it ran a
+   3333 ms full-document scan forever outside every census scope;
+   `plugins/` now holds the MPV bridge + autopage config only).
 5. **Ψ2 dead `@require`** (m3u8-parser, never referenced) — dropped.
 6. **`Array.prototype.unique` global pollution** (Ψ2) — replaced with inline
    dedupe, identical semantics.

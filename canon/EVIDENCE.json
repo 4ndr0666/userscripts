@@ -46,7 +46,7 @@
     "source_sha16": "539d70f04768c048",
     "retired": "4ndr0tools - ModelSearch.user.js",
     "retired_sha16": "1a15bc13ce185c5d",
-    "version": "4.0.1",
+    "version": "4.0.2",
     "evidence": "ModelSearchBETA v3.2.0-Ψ promoted: Superset Protocol audit pass (BUG-1/2/3 fixes), Electric-Glass covert UI; supersedes stable v2.1 (Alt+S retained; legacy @updateURL pointing at the STABLE filename — a self-downgrade bug — corrected by the suite build)."
   },
   {
@@ -377,7 +377,7 @@
     "retired": "4ndr0tools - Forum Link Xtractor.user.js (canon v3.1.0)",
     "retired_sha16": "36f9f7019a56fdaf",
     "version": "3.2.3",
-    "evidence": "User's Forum Link Xtractor BETA (LUCASD FIX v2) promoted to canon v3.2.0: real-URL aggregation for candidshiny.com/lucasd-* links (network resolver with bounded concurrency, psi_lucasd_cache, progress toast, unresolved-preservation), candidshiny @match pair, viderea/vidara exclusion terms, Clear-Cache menu command, suite update channel added. The BETA had been built from the v3.0.0 base and regressed the v3.1.0 hardenings — GM_xmlhttpRequest native timeout re-ported (the AbortController shim left hung requests unsettled) and the dropped explanatory comments restored; redColor kept at the author's #FF4C4C. Superset verified: all canon v3.1.0 units present."
+    "evidence": "User's Forum Link Xtractor BETA (LUCASD FIX v2) promoted to canon (at v3.2.0 — the dest has since advanced; the version field tracks current): real-URL aggregation for candidshiny.com/lucasd-* links (network resolver with bounded concurrency, psi_lucasd_cache, progress toast, unresolved-preservation), candidshiny @match pair, viderea/vidara exclusion terms, Clear-Cache menu command, suite update channel added. The BETA had been built from the v3.0.0 base and regressed the v3.1.0 hardenings — GM_xmlhttpRequest native timeout re-ported (the AbortController shim left hung requests unsettled) and the dropped explanatory comments restored; redColor kept at the author's #FF4C4C. Superset verified: all canon v3.1.0 units present."
   },
   {
     "dest": "4ndr0tools - Stream Interceptor.user.js",
