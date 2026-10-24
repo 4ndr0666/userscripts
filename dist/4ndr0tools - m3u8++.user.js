@@ -828,12 +828,45 @@ const __4NDR0_NET_API__ = (function () {
                 const wrappedBeacon = function () {
                     try {
                         if (reqSubs.size || trafficSubs.size) {
-                            const req = { url: String(arguments[0] || ''), method: 'POST', kind: 'beacon', body: arguments.length > 1 ? arguments[1] : null };
-                            if (consult(req)) return true;
-                            if (trafficSubs.size) {
-                                dispatchTraffic({ id: ++trafficSeq, url: req.url, method: 'POST', kind: 'beacon', phase: 'request', body: req.body });
+                            /* WO-01 round-2 (6-b F3): the request event carries
+                             * the PRE-rewrite body — the same forensic contract
+                             * as fetch and XHR request events (the event shows
+                             * what the page SENT; a rewrite's wire effect is
+                             * the response phase's story). The round-1 form
+                             * dispatched req.body AFTER the consult mutation. */
+                            const origBody = arguments.length > 1 ? arguments[1] : null;
+                            const req = { url: String(arguments[0] || ''), method: 'POST', kind: 'beacon', body: origBody };
+                            const verdict = consult(req);
+                            if (verdict) {
+                                /* WO-01 round-2 (6-b F3): a respond verdict now
+                                 * fans the phantom response event the v4 header
+                                 * contract promises (phase 'response', source
+                                 * 'respond') — fetch and the XHR mock path
+                                 * already fan it; the beacon path swallowed
+                                 * the verdict with no forensic trace. A veto
+                                 * stays a silent drop (return true = "queued")
+                                 * — the defusal contract itself. */
+                                if (verdict.respond && trafficSubs.size) {
+                                    const r = verdict.respond;
+                                    dispatchTraffic({
+                                        id: ++trafficSeq, url: req.url, method: 'POST', kind: 'beacon', phase: 'response',
+                                        body: r.body != null ? String(r.body).slice(0, MAX_BODY) : '',
+                                        status: r.status || 200, contentType: r.contentType || null,
+                                        truncated: false, source: 'respond',
+                                    });
+                                }
+                                return true;
                             }
-                            if (arguments.length > 1 && req.body !== arguments[1]) {
+                            if (trafficSubs.size) {
+                                dispatchTraffic({ id: ++trafficSeq, url: req.url, method: 'POST', kind: 'beacon', phase: 'request', body: origBody });
+                            }
+                            /* Body rewrites reach the wire only when the caller
+                             * supplied a body to rewrite (boundary documented
+                             * WO-01 round-2, 6-b F3/j): a {body} verdict on a
+                             * bodyless beacon call is dropped at this boundary
+                             * — the same class as fetch's init.body != null
+                             * guard; rewrites never INVENT wire payloads. */
+                            if (arguments.length > 1 && req.body !== origBody) {
                                 return origBeacon.call(this, arguments[0], req.body);
                             }
                         }
@@ -981,7 +1014,7 @@ const __4NDR0_NET_API__ = (function () {
                     }
                 } catch (e) { /* unreadable slot — fall through to local hub */ }
             }
-            if (subs.size >= MAX_SUBS) { console.debug('[a4/net] onBody registry full (' + MAX_SUBS + ') — subscription ignored (WO-01 F-14: silent no-op subscriptions concealed registry exhaustion)'); return function () {}; }
+            if (subs.size >= MAX_SUBS) { console.warn('[a4/net] onBody registry full (' + MAX_SUBS + ') — subscription ignored (WO-01 F-14: silent no-op subscriptions concealed registry exhaustion)'); return function () {}; }
             const key = 'nb' + (++seq);
             subs.set(key, fn);
             if (target) {
@@ -1004,7 +1037,7 @@ const __4NDR0_NET_API__ = (function () {
                     }
                 } catch (e) { /* unreadable slot — fall through to local hub */ }
             }
-            if (reqSubs.size >= MAX_SUBS) { console.debug('[a4/net] onRequest registry full (' + MAX_SUBS + ') — subscription ignored (WO-01 F-14)'); return function () {}; }
+            if (reqSubs.size >= MAX_SUBS) { console.warn('[a4/net] onRequest registry full (' + MAX_SUBS + ') — subscription ignored (WO-01 F-14)'); return function () {}; }
             const key = 'rq' + (++rseq);
             reqSubs.set(key, fn);
             if (target) {
@@ -1029,7 +1062,7 @@ const __4NDR0_NET_API__ = (function () {
                     }
                 } catch (e) { /* unreadable slot — fall through to local hub */ }
             }
-            if (trafficSubs.size >= MAX_SUBS) { console.debug('[a4/net] onTraffic registry full (' + MAX_SUBS + ') — subscription ignored (WO-01 F-14)'); return function () {}; }
+            if (trafficSubs.size >= MAX_SUBS) { console.warn('[a4/net] onTraffic registry full (' + MAX_SUBS + ') — subscription ignored (WO-01 F-14)'); return function () {}; }
             const key = 'tf' + (++tseq);
             trafficSubs.set(key, fn);
             if (target) {
@@ -1054,7 +1087,7 @@ const __4NDR0_NET_API__ = (function () {
                     }
                 } catch (e) { /* unreadable slot — fall through to local hub */ }
             }
-            if (errSubs.size >= MAX_SUBS) { console.debug('[a4/net] onError registry full (' + MAX_SUBS + ') — subscription ignored (WO-01 F-14)'); return function () {}; }
+            if (errSubs.size >= MAX_SUBS) { console.warn('[a4/net] onError registry full (' + MAX_SUBS + ') — subscription ignored (WO-01 F-14)'); return function () {}; }
             const key = 'er' + (++eseq);
             errSubs.set(key, fn);
             if (target) {
@@ -1080,7 +1113,7 @@ const __4NDR0_NET_API__ = (function () {
                     }
                 } catch (e) { /* unreadable slot — fall through to local hub */ }
             }
-            if (nodeSubs.size >= MAX_SUBS) { console.debug('[a4/net] onNode registry full (' + MAX_SUBS + ') — subscription ignored (WO-01 F-14)'); return function () {}; }
+            if (nodeSubs.size >= MAX_SUBS) { console.warn('[a4/net] onNode registry full (' + MAX_SUBS + ') — subscription ignored (WO-01 F-14)'); return function () {}; }
             const key = 'nd' + (++nseq);
             nodeSubs.set(key, fn);
             if (target) {

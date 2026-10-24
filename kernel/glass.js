@@ -192,8 +192,11 @@
      * @param {number} [opts.height]        content max-height px (default 420)
      * @param {boolean} [opts.shadow]       mount inside closed shadow root (hostile pages)
      * @param {(hudApi:object)=>void} [opts.onReady]
-     * @returns {object} hudApi {root, show, hide, toggle, collapse, isCollapsed,
-     *                           addTab, selectTab, content, destroy, toast}
+     * @returns {object} hudApi {root, frame, content, addTab, selectTab, show,
+     *                           hide, toggle, toggleCollapse, isCollapsed, destroy}
+     * WO-01 round-2 (6-b F9): the JSDoc promised collapse and toast members
+     * that do not exist — the collapse control is toggleCollapse(), and
+     * toasts fire through the module-level Ψ.glass.toast(), not the hudApi.
      */
     function hud(opts) {
         const {

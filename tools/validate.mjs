@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 /* ═══════════════════════════════════════════════════════════════════════════
- * tools/validate.mjs — GUP v5.3 verification gate for the consolidated suite
+ * tools/validate.mjs — GUP v7.0.2 verification gate for the consolidated suite
+ * (WO-01 round-2, 6-a F16: header said v5.3 while the banner printed v7.0.1
+ * and the governing skill is v7.0.2 — one label, the real one.)
  * ----------------------------------------------------------------------------
  * Machine-checks the superset contract over the frozen baseline
  * (tools/baseline.json) and the consolidation map (tools/ledger.json):
@@ -1432,7 +1434,7 @@ gateC();
 await gateD();
 
 console.log("╔══════════════════════════════════════════════════════════════╗");
-console.log("║  GUP v7.0.1 SUITE VERIFICATION — " + new Date().toISOString().slice(0, 19) + "        ║");
+console.log("║  GUP v7.0.2 SUITE VERIFICATION — " + new Date().toISOString().slice(0, 19) + "        ║");
 console.log("╚══════════════════════════════════════════════════════════════╝");
 for (const p of passes) console.log("  ✓ " + p);
 if (failures.length > 0) {

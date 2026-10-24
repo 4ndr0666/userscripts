@@ -13,7 +13,7 @@ Forums++ is the heavy machinery for forum work sessions: powerful bulk downloadi
 | Version | `1.10.2` |
 | Matches | `https://simpcity.su/threads/*`, `https://simpcity.cr/threads/*` |
 | Run-at | `document-start` |
-| Size | 225.1 KB · 4832 lines |
+| Size | 227.4 KB · 4865 lines |
 | Install | [dist/4ndr0tools - Forums++.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Forums%2B%2B.user.js) |
 
 ## Feature Inventory

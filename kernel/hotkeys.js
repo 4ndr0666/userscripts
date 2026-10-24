@@ -49,6 +49,15 @@
         PGUP: 'PAGEUP',
         PGDN: 'PAGEDOWN',
         UP: 'ARROWUP', DOWN: 'ARROWDOWN', LEFT: 'ARROWLEFT', RIGHT: 'ARROWRIGHT',
+        /* WO-01 round-2 (6-b F8): named-form +/- registrations now match
+         * their real event keys — KeyboardEvent.key is '+' / '-' on every
+         * layout, so a registration written as "Plus"/"Minus" previously
+         * normalized to PLUS/MINUS and could never match. NumpadEnter
+         * (reported by some engines for the keypad Enter) joins the ENTER
+         * class. NOTE: a literal '+' cannot appear as a normalizeCombo
+         * token ('+' is the separator — "ctrl++" splits to ctrl plus two
+         * empties); the representable form is the NAME: "ctrl+plus". */
+        PLUS: '+', MINUS: '-', NUMPADENTER: 'ENTER',
     };
     const canonicalKey = (raw) => {
         const up = String(raw).toUpperCase();

@@ -18,7 +18,9 @@
     /**
      * Register a host handler.
      * @param {string|string[]} domains registrable domains, e.g. "t.me" or ["simpcity.cr", "simpcity.su"]
-     * @param {function(ctx:{hostname:string, enabled:function():boolean}): void} handler
+     * @param {function(ctx:{hostname:string, domain:string}): void} handler
+     * WO-01 round-2 (6-b F10): the JSDoc promised ctx.enabled — run() passes
+     * {hostname, domain} (the registrable domain that matched).
      * @param {{id?: string, script?: string}} [opts]
      * @returns {function()} unregister
      */

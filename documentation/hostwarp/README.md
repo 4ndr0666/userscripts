@@ -13,7 +13,7 @@ HostWarp is six legacy micro-tools fused into one per-host engine: image-host in
 | Version | `1.1.4` |
 | Matches | `*://*/*` |
 | Run-at | `document-start` |
-| Size | 92.2 KB · 1844 lines |
+| Size | 94.6 KB · 1877 lines |
 | Install | [dist/4ndr0tools - HostWarp.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20HostWarp.user.js) |
 
 ## Feature Inventory

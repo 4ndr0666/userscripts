@@ -146,8 +146,13 @@
     /* Global transition contract — spec §2.2. */
     const TRANSITION = 'all 150ms ease-in-out';
 
-    /* CSS custom properties derived from the palette. Injected once per
-     * document by Ψ.glass.inject() and consumed by every glass surface. */
+    /* CSS custom properties derived from the palette. WO-01 round-2
+     * (6-b F11): this is the brand layer's MACHINE-CHECK derivation surface —
+     * kernel-smoke asserts palette derivation through it; it is NOT injected
+     * by anyone. The operative vars glass surfaces consume live in glass.js's
+     * COMPONENT_CSS, scoped under .a4-scope (glass's no-:root law — page-wide
+     * :root clobbering is exactly what the scoping prevents); the :root form
+     * below exists so the derivation contract stays string-comparable. */
     const cssVars = () =>
         `:root{` +
         `--a4-base-0:${PALETTE.matrixDeepBase};` +
@@ -574,7 +579,21 @@
              * watchers with (null, oldV, false) — set() notifies, and a
              * watched key silently reverting to "absent" on remove() was an
              * observability asymmetry (live-apply consumers kept rendering
-             * the stale value after a remove). */
+             * the stale value after a remove).
+             *
+             * WO-01 round-2 (6-b F4) — the SENTINEL LAW, documented: stored
+             * null ≡ absent. readRaw caches null as the absent sentinel, so
+             * set(k, null) is reader-equivalent to remove(k) (get() maps
+             * null/undefined → default in both cases); the ONLY observable
+             * difference is watcher traffic (set notifies (null, oldV, false)
+             * synchronously; remove notifies the same triple after deleting —
+             * byte-identical payloads). Consumers therefore cannot and do not
+             * distinguish the two (enumerated round-2: hostwarp enabled,
+             * pattern and hash keys, pagecraft mod-wildcard plus collapse
+             * size/watch keys, glass hud:pos). One edge stays deliberate: if GM_deleteValue throws
+             * AFTER memory.delete, the next readRaw resurrects the stale GM
+             * value while watchers were already told null — the debug line
+             * below is the audit trail for that window. */
             remove(key) {
                 const full = fullKey(prefix, key);
                 const oldV = readRaw(full);
@@ -824,8 +843,11 @@
      * @param {number} [opts.height]        content max-height px (default 420)
      * @param {boolean} [opts.shadow]       mount inside closed shadow root (hostile pages)
      * @param {(hudApi:object)=>void} [opts.onReady]
-     * @returns {object} hudApi {root, show, hide, toggle, collapse, isCollapsed,
-     *                           addTab, selectTab, content, destroy, toast}
+     * @returns {object} hudApi {root, frame, content, addTab, selectTab, show,
+     *                           hide, toggle, toggleCollapse, isCollapsed, destroy}
+     * WO-01 round-2 (6-b F9): the JSDoc promised collapse and toast members
+     * that do not exist — the collapse control is toggleCollapse(), and
+     * toasts fire through the module-level Ψ.glass.toast(), not the hudApi.
      */
     function hud(opts) {
         const {
@@ -1095,6 +1117,15 @@
         PGUP: 'PAGEUP',
         PGDN: 'PAGEDOWN',
         UP: 'ARROWUP', DOWN: 'ARROWDOWN', LEFT: 'ARROWLEFT', RIGHT: 'ARROWRIGHT',
+        /* WO-01 round-2 (6-b F8): named-form +/- registrations now match
+         * their real event keys — KeyboardEvent.key is '+' / '-' on every
+         * layout, so a registration written as "Plus"/"Minus" previously
+         * normalized to PLUS/MINUS and could never match. NumpadEnter
+         * (reported by some engines for the keypad Enter) joins the ENTER
+         * class. NOTE: a literal '+' cannot appear as a normalizeCombo
+         * token ('+' is the separator — "ctrl++" splits to ctrl plus two
+         * empties); the representable form is the NAME: "ctrl+plus". */
+        PLUS: '+', MINUS: '-', NUMPADENTER: 'ENTER',
     };
     const canonicalKey = (raw) => {
         const up = String(raw).toUpperCase();
@@ -1303,7 +1334,9 @@
     /**
      * Register a host handler.
      * @param {string|string[]} domains registrable domains, e.g. "t.me" or ["simpcity.cr", "simpcity.su"]
-     * @param {function(ctx:{hostname:string, enabled:function():boolean}): void} handler
+     * @param {function(ctx:{hostname:string, domain:string}): void} handler
+     * WO-01 round-2 (6-b F10): the JSDoc promised ctx.enabled — run() passes
+     * {hostname, domain} (the registrable domain that matched).
      * @param {{id?: string, script?: string}} [opts]
      * @returns {function()} unregister
      */

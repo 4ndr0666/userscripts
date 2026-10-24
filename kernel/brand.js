@@ -117,8 +117,13 @@
     /* Global transition contract — spec §2.2. */
     const TRANSITION = 'all 150ms ease-in-out';
 
-    /* CSS custom properties derived from the palette. Injected once per
-     * document by Ψ.glass.inject() and consumed by every glass surface. */
+    /* CSS custom properties derived from the palette. WO-01 round-2
+     * (6-b F11): this is the brand layer's MACHINE-CHECK derivation surface —
+     * kernel-smoke asserts palette derivation through it; it is NOT injected
+     * by anyone. The operative vars glass surfaces consume live in glass.js's
+     * COMPONENT_CSS, scoped under .a4-scope (glass's no-:root law — page-wide
+     * :root clobbering is exactly what the scoping prevents); the :root form
+     * below exists so the derivation contract stays string-comparable. */
     const cssVars = () =>
         `:root{` +
         `--a4-base-0:${PALETTE.matrixDeepBase};` +

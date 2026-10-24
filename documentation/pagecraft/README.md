@@ -13,7 +13,7 @@ PageCraft is the every-page utility belt: bulk checkbox control with range and a
 | Version | `1.1.3` |
 | Matches | `*://*/*` |
 | Run-at | `document-start` |
-| Size | 82.7 KB · 1682 lines |
+| Size | 85.0 KB · 1713 lines |
 | Install | [dist/4ndr0tools - PageCraft.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20PageCraft.user.js) |
 
 ## Feature Inventory

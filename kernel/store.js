@@ -110,7 +110,21 @@
              * watchers with (null, oldV, false) — set() notifies, and a
              * watched key silently reverting to "absent" on remove() was an
              * observability asymmetry (live-apply consumers kept rendering
-             * the stale value after a remove). */
+             * the stale value after a remove).
+             *
+             * WO-01 round-2 (6-b F4) — the SENTINEL LAW, documented: stored
+             * null ≡ absent. readRaw caches null as the absent sentinel, so
+             * set(k, null) is reader-equivalent to remove(k) (get() maps
+             * null/undefined → default in both cases); the ONLY observable
+             * difference is watcher traffic (set notifies (null, oldV, false)
+             * synchronously; remove notifies the same triple after deleting —
+             * byte-identical payloads). Consumers therefore cannot and do not
+             * distinguish the two (enumerated round-2: hostwarp enabled,
+             * pattern and hash keys, pagecraft mod-wildcard plus collapse
+             * size/watch keys, glass hud:pos). One edge stays deliberate: if GM_deleteValue throws
+             * AFTER memory.delete, the next readRaw resurrects the stale GM
+             * value while watchers were already told null — the debug line
+             * below is the audit trail for that window. */
             remove(key) {
                 const full = fullKey(prefix, key);
                 const oldV = readRaw(full);

@@ -63,9 +63,9 @@
    "version": "5.2.1",
    "description": "Unified counter-surveillance defense layer with a three-stage strictness valve (full / core / off via Ctrl+Alt+Shift+K). Three-way consolidation of Anti-detection + Counter-surveillance + Anti-telemetry (ICC): anti-analysis script neutralization, telemetry sinkholing (fetch/XHR/beacon/WebSocket), WebRTC blinding, session-stable fingerprint spoofing (hardware/canvas/WebGL/audio), identifier poisoning, Google link-tracking sanitization and hostile-UI countermeasures.",
    "family": "privacy & security",
-   "sha256": "04375c2cf90fe181ed51a72bfcc7dac19772026ac4e7aa0498ec839707d96ad4",
-   "lines": 2090,
-   "bytes": 112844,
+   "sha256": "b605bcab56df17e91a89801e8e92efe1a217786765ba49ec42f12b98d235a006",
+   "lines": 2123,
+   "bytes": 115259,
    "matches": [
     "*://*/*"
    ],
@@ -150,9 +150,9 @@
    "version": "7.3.0",
    "description": "Universal blob exfiltration, universal media URL sniffer + wire capture + URL vault (Alt+Shift+V), interactive asset sniffing, CSP/CORS bypass.",
    "family": "media & links",
-   "sha256": "9496f8c3c8b00e1b36b624013dfabfadd424c64c41f0b3646a605e6e9b65dcb9",
-   "lines": 2404,
-   "bytes": 139179,
+   "sha256": "5724baa4274efda5afaaec1f0e0c5636f9d59f86f34af4acf7cfb972e41cbce0",
+   "lines": 2437,
+   "bytes": 141594,
    "matches": [
     "*://*/*"
    ],
@@ -181,9 +181,9 @@
    "version": "7.7.0",
    "description": "Direct URL routing, auto-sort, hide visited, bypass dl gateway, bulk download, m3u8/CDN URL aggregation (page-context net-hook + per-item stream glyphs + album-wide STREAMS aggregation), broken-link repair, power-user hotkeys, LinkMaster-grade m3u8 stream resolution with gateway fallback, MPV dispatch (URI/bridge), web-archive dead-CDN resurrection (archive.org / archive.is), captcha-aware transport retry",
    "family": "media & links",
-   "sha256": "3def4ff7c6d91036cb41e7f90e74c67b84390e6cc0f2b65b0aa0cc067c96f7ec",
-   "lines": 5024,
-   "bytes": 265696,
+   "sha256": "084382de14387932ada4a1ce2e924aa3ab7e54dffa4d2d63d70ec3de407b476b",
+   "lines": 5057,
+   "bytes": 268111,
    "matches": [],
    "excludes": [],
    "grants": [
@@ -442,9 +442,9 @@
    "version": "7.6.0",
    "description": "Dynamic stream extraction + folder enumeration for any media on Filester.me. Network proxy + glyph injection.",
    "family": "media & links",
-   "sha256": "9784e72721b34b7ac025b4788a45038683f6d9ba2e1746e260434c98f29cfd8f",
-   "lines": 1412,
-   "bytes": 78151,
+   "sha256": "bcb76d1ea2b7b2f7b1e54c0d15432b7b56e28ba4b09be7ae65b1801cfaa994a3",
+   "lines": 1445,
+   "bytes": 80566,
    "matches": [],
    "excludes": [],
    "grants": [
@@ -506,9 +506,9 @@
    "version": "1.10.2",
    "description": "Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.",
    "family": "forums",
-   "sha256": "7fb57ce9c82b0bcd69ad281f1809707409202dacbda1facab5a87ebad6ebe9d4",
-   "lines": 4832,
-   "bytes": 230488,
+   "sha256": "b2f8caa4f6f840b286c01cbdcbdf7199c0c05252a86ad597557453f0531dcedf",
+   "lines": 4865,
+   "bytes": 232903,
    "matches": [
     "https://simpcity.su/threads/*",
     "https://simpcity.cr/threads/*"
@@ -619,9 +619,9 @@
    "version": "2.2.0",
    "description": "Directly batch-download GoFiles with a robust UI. Supports recursive folder scans, direct links, and download managers (Aria2, IDM). Fixing SPA persistence and Sandbox access.",
    "family": "media & links",
-   "sha256": "b4d09147ac7e14195841a03ecaa2c9bbc86f118ef13a6f23bd0c62d90e6e28cc",
-   "lines": 2257,
-   "bytes": 117571,
+   "sha256": "0c456e8aa0b955169af9fcd825a0812d451e13ba64e4ab9cf8fee7780a6e2f77",
+   "lines": 2290,
+   "bytes": 119986,
    "matches": [
     "*://gofile.io/*"
    ],
@@ -650,9 +650,9 @@
    "version": "8.1.0",
    "description": "Restores context menus, exposes direct links, adds reverse image search, Drive direct-download resolution, Photos full-res extraction, power-user hotkeys, drag persistence and a settings console. 3lectric-Glass paradigm.",
    "family": "images",
-   "sha256": "2344d0a82dd34817e19585e99633fd5dbf43ba5117d9ffccc09a159682f49e68",
-   "lines": 2772,
-   "bytes": 138808,
+   "sha256": "0be9879f79aa73c602605d716f0108f734aadcdb0a2dab0e52024d38e56b5b5c",
+   "lines": 2805,
+   "bytes": 141223,
    "matches": [
     "*://*.googleusercontent.com/*",
     "*://photos.google.com/*",
@@ -721,9 +721,9 @@
    "version": "1.1.4",
    "description": "Per-host warp drive: bypasses image-host interstitials (imagetwist/imgspice/turboimagehost/acidimg/imx/pixhost/imagebam/imgbox/kropic/vipr/imagevenue), MEGA embed redirect + autoplay, PlanetSuzy mobile skin, t.me Web button, SearXNG sticky preferences, Gemini Answer Now — one engine, glass settings console, every module toggleable.",
    "family": "ux utilities",
-   "sha256": "4f78b9cbb126e48ea2b8b9a069a56e10e73f7c3100077e2352725b464ea20ba4",
-   "lines": 1844,
-   "bytes": 94435,
+   "sha256": "f6bf17c7d33a379facb80bd6a06bf179f5ea03a936ab487529f09f1dd5f7e507",
+   "lines": 1877,
+   "bytes": 96864,
    "matches": [
     "*://*/*"
    ],
@@ -812,9 +812,9 @@
    "version": "13.2.1",
    "description": "Tab-Bar + Dock Integration. Hotkey trigger (Alt+I). Ad-Blocking. Deep-Stack Recovery. Resilient cursor-based pagination. Stories support. Image/video download engine.",
    "family": "sovereign platforms",
-   "sha256": "e8f15bfcc80a2d4a34fe1f908f1c6e349c318cdaf1326906d8b14efb7bd68184",
-   "lines": 2522,
-   "bytes": 131843,
+   "sha256": "82ac5db1ce09f1816a180581db7301411678b1fcf3015e366de918e74d3403b3",
+   "lines": 2555,
+   "bytes": 134258,
    "matches": [
     "*://*.instagram.com/*"
    ],
@@ -847,9 +847,9 @@
    "version": "6.3.2",
    "description": "Accurately decodes, previews, exports, validates and scrapes all links. (Dual MPV Support + Ψ IG Harvester + sexyforums premium-link unwrap + GitHub raw-URL harvest + Ψ2 forum deep-scrape engine)",
    "family": "media & links",
-   "sha256": "36cdf718cfa533afc1891f8e424c86256a17b295b72f0fdeaa046f0fd241f9f4",
-   "lines": 5034,
-   "bytes": 258680,
+   "sha256": "cbe99b8c036e6f37d6cfacd2859e296eb40847114c3bd38808b5bc8057c6ffa7",
+   "lines": 5067,
+   "bytes": 261095,
    "matches": [
     "*://*/*",
     "*://*.instagram.com/*"
@@ -1010,9 +1010,9 @@
    "version": "1.1.3",
    "description": "All-sites page utility belt: bulk checkbox control with range/alt-hover selection (de-jQueryed), broken-image auto-repair with cache-busting + frame broadcast, hover-collapse image I/O governor, and Brave infinite scroll — one engine, glass settings console, zero runtime dependencies.",
    "family": "ux utilities",
-   "sha256": "89a9e1e3fed15e12670c8c05d08c0de6a016711fd35ccf48cd7910ce4babd8d3",
-   "lines": 1682,
-   "bytes": 84719,
+   "sha256": "70a1ddfa58221516665cee8edb26983317124aa25d1f0db54cf8d23d4beee9bf",
+   "lines": 1713,
+   "bytes": 87016,
    "matches": [
     "*://*/*"
    ],
@@ -1040,9 +1040,9 @@
    "version": "1.2.1",
    "description": "Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.",
    "family": "media & links",
-   "sha256": "f8f3ddbfffd267cc0fce190c1897536d84c1548b91edb3e4a309161d60520ee1",
-   "lines": 3715,
-   "bytes": 205633,
+   "sha256": "8a5c936b4aa896f9e37c36e3bf5a4a01bf07da1a51d01e697e7fd341467626a3",
+   "lines": 3748,
+   "bytes": 208048,
    "matches": [
     "https://pixeldrain.com/*",
     "https://pixeldrain.net/*",
@@ -1104,9 +1104,9 @@
    "version": "28.7.7",
    "description": "Google Flow prompt manager toolkit (works on any AI, just add url) - persisted unit ledger meters every generation click, organization engine: collections, saved views, favorites, ratings, archive, group-by, and insights for large prompt libraries, dedupe, media slideshow, ai prompt enhancer, auto gist syncing, hotkeys, much more.",
    "family": "sovereign platforms",
-   "sha256": "096d193b3acb0d4840e8ee88e3ae9f40858e7bdf6d3970d2f82d3ba44e23d95c",
-   "lines": 23837,
-   "bytes": 1158212,
+   "sha256": "87cad29aac52939ed08a7915e3b77f52f140299cb5c2fb8be8290d3c6b221706",
+   "lines": 23870,
+   "bytes": 1160627,
    "matches": [
     "*://geminigen.ai/*",
     "*://gist.github.com/*",
@@ -1152,9 +1152,9 @@
    "version": "9.1.0",
    "description": "Alt+Shift+R hotkey — unified forensic recon platform: hardened XHR/fetch/beacon interception through the suite's shared NetHook hub with MITM block & mute rules and failure pacification, console harvesting, WebSocket + postMessage bridge capture, JWT identity harvesting, headless C2 API (reconEngine / chimeraRecon / Hook) and a moveable Shadow-DOM glass dock with full markdown reporting. For security research only.",
    "family": "privacy & security",
-   "sha256": "1145c54a739b237f0ddabbe7e5c7887eeece28d1b654b779260cb9d745c4cf0a",
-   "lines": 2146,
-   "bytes": 119072,
+   "sha256": "06f72012c7474f67f3d988b3d22a3eb867001ab1737b786a0016aaf0892f8b21",
+   "lines": 2179,
+   "bytes": 121487,
    "matches": [
     "*://*/*"
    ],
@@ -1208,9 +1208,9 @@
    "version": "3.3.0",
    "description": "Intercepts, parses, and extracts stream tokens, manifests, and direct video sources via the suite's shared NetHook hub and DOM inspection. Suite v3.3: the v3.1 dual-realm fetch/XHR hooks ride the shared NetHook singleton (malformed-SVG veto, asset discovery, deep text inspection); ShadowDOM piercing, ReDoS-proof regex, 3lectric-Glass card surface, universal URL registry cap.",
    "family": "media & links",
-   "sha256": "9d8bff1975bf91dec3deab7010db1ea433a9d983c07ae75612109c95ed8d5a89",
-   "lines": 1943,
-   "bytes": 102077,
+   "sha256": "0c0d23d673f45e20a49c3c5f0ad9facd6a3552e195dcfaf723967501e824ab54",
+   "lines": 1976,
+   "bytes": 104492,
    "matches": [
     "*://*/*"
    ],
@@ -1247,9 +1247,9 @@
    "version": "2.1.0",
    "description": "Security research and alignment testing only.",
    "family": "sovereign platforms",
-   "sha256": "c5b5367d28a03904ae4c630c8f1167780866b8ca7c40a7db71183e8669fa3693",
-   "lines": 15439,
-   "bytes": 1287132,
+   "sha256": "3271515c3141ae0d50b7a7b70eff71f538fddef703771bcf25f049233aa1621f",
+   "lines": 15472,
+   "bytes": 1289547,
    "matches": [
     "https://gemini.google.com/*",
     "https://business.gemini.google/*"
@@ -1355,9 +1355,9 @@
    "version": "1.7.2",
    "description": "Channel playlist buttons (All / Popular / Videos / Shorts / Streams / Members-only), Random play (prefer newest/oldest), reverse autoplay order, playlist autoplay toggle, duration sort, bulk copy/move/delete, JSON + plaintext export/import, snapshots with deleted-video detection, quick watch_videos playlists, queue & watch-later overlays, playlist close button, date/view metadata, episode auto-expand, huge-playlist browser, live settings (no reload), always-available Ψ deck, playlist row filter, duplicate finder & purge, global hotkeys (Alt+Shift+U/S/X), failsafe deck rescue, 404-proof navigation guards, Trusted-Types-immune rendering, fully-visible fit-content modal dialogs.",
    "family": "video & players",
-   "sha256": "a531ac1aa84ffb56c48664c22167266bfdc746a668a46f0c51e30ef18d18a539",
-   "lines": 6612,
-   "bytes": 344008,
+   "sha256": "fb35a533dbf6b4a41a27751ed6fcd15b7bd799d5f962caf9c0ca3d5fb8cf0840",
+   "lines": 6645,
+   "bytes": 346423,
    "matches": [
     "https://*.youtube.com/*",
     "https://youtube.com/*"
@@ -1471,9 +1471,9 @@
    "version": "5.1.0",
    "description": "Automatically displays the m3u8 url for ANY video playing in the top right corner of the video. Click url to copy or click download to use the webapp \"tools.thatwind.com\". Also injects Play buttons next to magnet links on every page, relaying them to www.diancigaoshou.com.",
    "family": "media & links",
-   "sha256": "c726f515c49353712c01292b0f5e49a3e67636ff324b321cae7f3645c9d4e795",
-   "lines": 1963,
-   "bytes": 99943,
+   "sha256": "13acf1342512d2451740dc0110c8c7212f6eee38871773f5d5ca5865e46437e2",
+   "lines": 1996,
+   "bytes": 102358,
    "matches": [
     "*://*/*"
    ],
@@ -1560,5 +1560,5 @@
    ]
   }
  ],
- "digest": "0d71276e5e32a2eeec2d0bccf115061fd3ddb92739c6b5b08b379c712065c678"
+ "digest": "6e6d79d359a1599020898d018b88dcc4dd41166213da191f77795e7eacb69287"
 }
