@@ -26,6 +26,7 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { runCensus, stripComments } from "./hotkey-census.mjs";
 import { runSinkCensus } from "./sink-census.mjs";
+import { runKernelExportCensus } from "./kernel-export-census.mjs";
 import { runTransportCensus } from "./transport-census.mjs";
 import { runPollingCensus } from "./polling-census.mjs";
 import { runObserverCensus } from "./observer-census.mjs";
@@ -1030,6 +1031,17 @@ async function gateD() {
         for (const sk of sinks.problems) failures.push(`[D] sink census: ${sk}`);
     } else {
         passes.push(`[D] sink census verified (${sinks.totalSites} HTML-string/net-tap sites across ${sinks.fileCount} dist files, all adjudicated; FLX/CB/BPW at zero, NetHook owns the ψ-family wraps)`);
+    }
+
+    /* WO-01 round-2 (6-a F10 / round-1 deferred item c): the kernel-export
+     * census — round-1's dead-export prune was manual; this check keeps the
+     * export surface × consumer contract machine-enforced so dead surface
+     * cannot re-accumulate and orphaned Ψ-references fail closed. */
+    const kexports = runKernelExportCensus();
+    if (kexports.problems.length) {
+        for (const ke of kexports.problems) failures.push(`[D] kernel-export census: ${ke}`);
+    } else {
+        passes.push(`[D] kernel-export census verified (${kexports.summary.exports} exports across ${kexports.summary.modules} modules — ${kexports.summary.live} code-consumed, ${kexports.summary.kept} ledgered, ${kexports.summary.refs} references checked bidirectionally)`);
     }
 
     // Transport boundedness census (suite v1.4.10, round mandate): every

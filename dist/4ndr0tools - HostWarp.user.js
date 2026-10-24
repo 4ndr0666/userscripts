@@ -1062,7 +1062,11 @@
     }
 
 
-    return Object.freeze({ injectStyles, glyphEl, toast, hud, settingsConsole });
+    /* WO-01 round-2 (6-a F10): glyphEl pruned from the export surface —
+     * the kernel-export census proved zero external consumers (internal use
+     * at the settings-console glyph only; brand.glyphNode is the live
+     * clonable-glyph API). The function stays; the export does not. */
+    return Object.freeze({ injectStyles, toast, hud, settingsConsole });
     /* WO-01 round-1 (2-b F-07): consolePane (~45 LOC) and the COMPONENT_CSS export were removed — zero consumers (the stylesheet constant stays internal to injectStyles/shadow mounting). */
 })();
     /* ══ kernel/hotkeys.js ══ */

@@ -721,9 +721,9 @@
    "version": "1.1.4",
    "description": "Per-host warp drive: bypasses image-host interstitials (imagetwist/imgspice/turboimagehost/acidimg/imx/pixhost/imagebam/imgbox/kropic/vipr/imagevenue), MEGA embed redirect + autoplay, PlanetSuzy mobile skin, t.me Web button, SearXNG sticky preferences, Gemini Answer Now — one engine, glass settings console, every module toggleable.",
    "family": "ux utilities",
-   "sha256": "f6bf17c7d33a379facb80bd6a06bf179f5ea03a936ab487529f09f1dd5f7e507",
-   "lines": 1877,
-   "bytes": 96864,
+   "sha256": "6f7d725088e3672a62c04dbded70276fb06d2b6c7d96ca1910ac6242fa6dce25",
+   "lines": 1881,
+   "bytes": 97150,
    "matches": [
     "*://*/*"
    ],
@@ -1010,9 +1010,9 @@
    "version": "1.1.3",
    "description": "All-sites page utility belt: bulk checkbox control with range/alt-hover selection (de-jQueryed), broken-image auto-repair with cache-busting + frame broadcast, hover-collapse image I/O governor, and Brave infinite scroll — one engine, glass settings console, zero runtime dependencies.",
    "family": "ux utilities",
-   "sha256": "70a1ddfa58221516665cee8edb26983317124aa25d1f0db54cf8d23d4beee9bf",
-   "lines": 1713,
-   "bytes": 87016,
+   "sha256": "064ff85ab16350c42aab770f0b0d004c3c3efd15668bdb81dfa7fb2750ce5c54",
+   "lines": 1717,
+   "bytes": 87302,
    "matches": [
     "*://*/*"
    ],
@@ -1560,5 +1560,5 @@
    ]
   }
  ],
- "digest": "6e6d79d359a1599020898d018b88dcc4dd41166213da191f77795e7eacb69287"
+ "digest": "89f7605c9e09b0647ec70c031d4cb7fefc24bd354ea77870033feade445393a3"
 }
