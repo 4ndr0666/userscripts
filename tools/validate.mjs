@@ -102,6 +102,18 @@ const RECONCILED_NAMES = {
         "findFlowProfileMenuButton": "removed with the pull's click path (WO-001d): its only caller was the report's manual pull reason; pulls are passive-only now — a wallet-bearing menu already on screen is harvested, never opened",
         "flowCreditDispatchEscape": "removed with the pull's click path (WO-001d): closed the menu the report opened; no code path opens Flow's profile menu anymore",
         "flowCreditAnyDialog": "removed with the pull's click path (WO-001d): verified the report-opened menu's closure; flowCreditDialogWithCredits (branch A, passive harvest) stays",
+        /* v28.8.0 (WO-01 round 3) — the no-occlusion contract's removals.
+         * The operator's field report retired the parked berth ("remains
+         * present overlayed on the grid at times and obstructs the prompt
+         * input itself"); the counter lives on exclusively through
+         * positionFlowCreditChip's berth ladder. */
+        "parkAtFlowDock": "removed with parked mode (WO-01 round 3): the above-the-dock berth put the chip over the composer's right shoulder — the input itself — when the anchor cascade went stale; positionFlowCreditChip's no-occlusion contract (flowCreditRectsOverlap + the B1/B2/B3 berth ladder) is the successor surface",
+        "flowCreditChipHasContent": "removed with parked mode (WO-01 round 3): gated WHICH chip could park; with no parking there is nothing to gate — the chip is visible exactly when a lawful berth exists and hidden otherwise",
+        /* v28.8.0 (WO-01 round 3) — the pill's action-surface swap. The
+         * operator retired the copy/paste pair ("the unused functions")
+         * for Insights (openInsightsModal) + Enhance Prompt
+         * (handleInstantPageEnhancement). */
+        "handleInstantPageCopy": "removed with the pill's Copy button (WO-01 round 3): the operator retired the copy/paste pair for the Insights/Enhance pair; the pill's first slot now opens openInsightsModal, and prompt-level copy lives on in the prompt modal's per-item copy actions",
     },
     "Recon": {
         "overrideFetch": "armNetworkHub onRequest/onTraffic/onError subscribers (NetHook v4 adoption, suite v1.4.6 — the reconh recorder + MITM blocklist + TypeError→204 pacification ride the shared hub; same surface, no local wrap)",

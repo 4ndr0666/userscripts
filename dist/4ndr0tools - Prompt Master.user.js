@@ -1254,6 +1254,52 @@ const __4NDR0_NET_API__ = (function () {
 // range syntax. Tooltips are unaffected: they mount on
 // document.body, never inside a row, so the containment's containing-
 // block change touches nothing.
+// 28.8.0 (suite v1.11.0, WO-01 round 3): the operator's three field
+// reports closed. (1) THE CHIP'S NO-OCCLUSION CONTRACT — the v28.7.5
+// above-the-anchor ladder still put the chip on the results grid (an
+// editor at the composer's top has nothing between it and the grid, so
+// "above the anchor's top edge" IS grid territory), and v28.2.0's parked
+// berth put it over the composer's right shoulder — the input itself —
+// whenever the anchor cascade went stale. positionFlowCreditChip now
+// wins a berth ONLY by proving the final rect occludes NOTHING: the
+// editor (+6px), the composer (+6px), the Flow dock (+6px) and any open
+// popout are all hard-forbidden rects, validated AFTER the chip's
+// maxWidth flexes into the berth (maxWidth derives from the BERTH's
+// own width — the v28.7.3 anchor-width derivation could not see what
+// the chip was about to overlap). The berth ladder: below the composer
+// (attached, centered, when the viewport gap fits) -> the composer's
+// right shoulder stacked above the dock -> the left shoulder. No lawful
+// berth -> mp-credit-hidden. Parked mode is RETIRED — no anchor means
+// HIDDEN, not parked over the grid (the operator's words: "does not
+// reliably resize/flexbox or hide when needed and remains present
+// overlayed on the grid at times"); parkAtFlowDock,
+// flowCreditChipHasContent and flowCreditAnchorMissSince are removed
+// with it, and the export payload's chipParked field is replaced by
+// chipHidden (the live diagnostic of the same surface). The engine
+// stashes the editor and composer elements during anchor resolution so
+// the collision rects are measured, not assumed. (2) THE PILL'S ACTION
+// SURFACE — the main slide-out's Copy and Paste buttons (v27.0.8's
+// swap) are removed and replaced by Insights (opens the Ψ Insights
+// modal — the organization engine's stats/dedupe surface, previously
+// reachable only from the expanded view's toolbar) and Enhance Prompt
+// (the AI enhancer, wired to the exact handleInstantPageEnhancement
+// path behind Alt+E — the v27.0.8 note "the AI enhancement workflow
+// remains reachable via the modal, the toolbar and the shortcut" made
+// the pill itself the one surface without it; the operator called the
+// copy/paste pair "the unused functions"). handleInstantPageCopy is
+// removed with its button (zero remaining callers); the Enhance button
+// reuses the external stylesheet's .mp-btn-ai collapse/expand mechanics
+// (its pre-v27.0.8 home) and the Insights button rides the injected
+// mirror rules under the new .mp-btn-insights class; FLOW_DOCK_CSS's
+// hover-expansion selectors follow the rename. (3) ENHANCE WIRING —
+// handleInstantPageEnhancement's silent no-editor return now surfaces
+// a notification ("No prompt input found on this page — type something
+// first") instead of a dead click; the chain pill -> editor discovery
+// -> triggerAIEnhancement -> processAIEnhancementFlow -> callAI_API
+// (all four providers, kernel gmFetch + kernel-less fallback) -> diff
+// modal -> Use Enhanced -> robustClearEditor + insertPrompt is verified
+// end-to-end and now has a first-class pill entry point on every
+// platform.
 // 28.7.5 (suite v1.7.3, WO-02): the token-chip obstruction + vertical-title
 // field-report fixes. (1) positionFlowCreditChip no longer mounts the chip
 // INSIDE the composer/editor rect — the v27.3–v28.7.3 editor placement
@@ -3255,17 +3301,22 @@ const __4NDR0_NET_API__ = (function () {
       g.textContent = `.modal-title{font-family:'Orbitron',sans-serif;font-weight:700;color:var(--mp-text-secondary);}.mp-dialogo-title{font-family:'Orbitron',sans-serif;font-weight:700;}.save-button,.mp-overlay button,.mp-dialogo button,.mp-expanded-modal button,#prompt-menu-container button,.mp-inline-menu button,.mp-org-sidebar button,.mp-action-btn-full,.mp-btn-part{border-radius:0!important;transition:all 150ms ease-in-out;}.mp-btn-part,.action-btn,.menu-header-btn,.menu-footer-btn,.mp-pinned-action-btn,.mp-modal-close-btn,.mp-modal-expand-btn,.mp-modal-info-btn,.mp-org-icon-btn,.mp-org-node-op,.mp-org-caret,.mp-org-star-btn,.mp-org-archive-btn,.mp-nav-btn,.mp-pin-btn,.mp-tag-action-btn,.mp-filter-btn,.mp-filter-manage-btn,.mp-filter-clear-btn{color:var(--mp-text-secondary,#67E8F9)!important;}.mp-btn-part:hover,.action-btn:hover,.menu-header-btn:hover,.mp-modal-expand-btn:hover,.mp-modal-info-btn:hover,.mp-org-node-op:hover,.mp-nav-btn:hover,.mp-filter-btn:hover{color:var(--mp-accent-primary,#00E5FF)!important;}.mp-modal-close-btn:hover,.action-btn.delete:hover,.mp-tag-action-btn.delete:hover,.mp-filter-clear-btn:hover{color:var(--mp-accent-close,#ff0055)!important;}.mp-btn-part svg,.action-btn svg,.menu-header-btn svg,.menu-footer-btn svg,.mp-pinned-action-btn svg,.mp-modal-close-btn svg,.mp-modal-expand-btn svg,.mp-modal-info-btn svg,.mp-org-icon-btn svg,.mp-org-node-op svg,.mp-org-caret svg,.mp-org-star-btn svg,.mp-org-archive-btn svg,.mp-nav-btn svg,.mp-pin-btn svg,.mp-tag-action-btn svg,.mp-filter-btn svg,.mp-filter-manage-btn svg,.mp-filter-clear-btn svg{color:inherit!important;}.mp-enhance-ai-btn svg{fill:none!important;stroke:currentColor!important;}.save-button:hover,.mp-action-btn-full:hover,.mp-btn-part:hover{box-shadow:0 0 20px rgba(0,229,255,0.5);}.save-button.mp-btn-secondary.destructive,.mp-dialogo-btn-danger{border-color:var(--mp-error)!important;color:var(--mp-error)!important;}.save-button.mp-btn-secondary.destructive:hover,.mp-dialogo-btn-danger:hover{box-shadow:0 0 25px var(--mp-error);background:rgba(255,0,85,0.3)!important;}.mp-switch input:checked+label{box-shadow:0 0 12px rgba(0,229,255,0.8);}.mp-tooltip-content{background-color:rgba(10,19,26,0.65)!important;color:var(--mp-text-primary)!important;border:1px solid rgba(0,229,255,0.3)!important;box-shadow:0 0 20px rgba(0,229,255,0.15)!important;backdrop-filter:blur(6px);}.mp-tooltip-preview-text{background-color:rgba(10,19,26,0.4)!important;color:var(--mp-text-primary)!important;border:1px solid rgba(0,229,255,0.2)!important;}.mp-tooltip-top .mp-tooltip-arrow{border-top-color:rgba(10,19,26,0.65)!important;}.mp-tooltip-bottom .mp-tooltip-arrow{border-bottom-color:rgba(10,19,26,0.65)!important;}.mp-tooltip-left .mp-tooltip-arrow{border-left-color:rgba(10,19,26,0.65)!important;}.mp-tooltip-right .mp-tooltip-arrow{border-right-color:rgba(10,19,26,0.65)!important;}.mp-tooltip-btn:focus,.mp-tooltip-btn:hover{background-color:rgba(0,229,255,0.2)!important;color:var(--mp-text-secondary)!important;}.mp-brand-glyph{filter:drop-shadow(0 0 6px rgba(0,229,255,0.35));display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;}.mp-brand-glyph .mp-glyph-ring-1,.mp-brand-glyph .mp-glyph-ring-2{transform-box:fill-box;transform-origin:center;}.mp-brand-glyph .mp-glyph-ring-1{animation:mp-glyph-spin 24s linear infinite;}.mp-brand-glyph .mp-glyph-ring-2{animation:mp-glyph-spin-rev 36s linear infinite;}@keyframes mp-glyph-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}@keyframes mp-glyph-spin-rev{from{transform:rotate(0)}to{transform:rotate(-360deg)}}@media (prefers-reduced-motion:reduce){.mp-brand-glyph .mp-glyph-ring-1,.mp-brand-glyph .mp-glyph-ring-2{animation:none;}}`;
       document.head.appendChild(g);
     }
-    if (!document.getElementById("mp-pill-copy-btn-style")) {
+    if (!document.getElementById("mp-pill-insights-btn-style")) {
       const h = document.createElement("style");
-      h.id = "mp-pill-copy-btn-style";
-      // v27.0.8: collapse/expand mechanics for the pill's Copy button — a
-      // faithful mirror of the external stylesheet's .mp-btn-ai/.mp-btn-paste
-      // rules (the Copy button replaced the Enhance button as the pill's
-      // first action; the external CSS resource cannot grow new classes, so
-      // the equivalent rules are injected here, keeping the slide animation
-      // identical on every platform and in every mp-dir-* direction).
+      h.id = "mp-pill-insights-btn-style";
+      // v28.8.0 (WO-01 round 3): collapse/expand mechanics for the pill's
+      // Insights button — a faithful mirror of the external stylesheet's
+      // .mp-btn-ai/.mp-btn-paste rules (the Insights button replaced the
+      // Copy button as the pill's first action; the external CSS resource
+      // cannot grow new classes, so the equivalent rules are injected
+      // here, keeping the slide animation identical on every platform and
+      // in every mp-dir-* direction; the Enhance button that replaced
+      // Paste reuses .mp-btn-ai itself and needs no mirror). The style
+      // element id renames with the class (mp-pill-copy-btn-style died
+      // with the Copy button — a stale id would silently no-op the
+      // injection on upgrades that keep the old element).
       h.textContent =
-        ".mp-btn-copy{flex:0 0 0;width:0;height:0;opacity:0;overflow:hidden;transition:flex-basis var(--mp-transition-fast),width var(--mp-transition-fast),height var(--mp-transition-fast),opacity var(--mp-transition-fast),transform var(--mp-transition-fast);}.mp-sliding-pill-container:hover .mp-btn-copy{flex:0 0 34px;width:34px;height:34px;opacity:1;transform:translate(0);}.mp-dir-top .mp-btn-copy{transform:translateY(10px);}.mp-dir-bottom .mp-btn-copy{transform:translateY(-10px);}.mp-dir-left .mp-btn-copy{transform:translateX(10px);}.mp-dir-right .mp-btn-copy{transform:translateX(-10px);}";
+        ".mp-btn-insights{flex:0 0 0;width:0;height:0;opacity:0;overflow:hidden;transition:flex-basis var(--mp-transition-fast),width var(--mp-transition-fast),height var(--mp-transition-fast),opacity var(--mp-transition-fast),transform var(--mp-transition-fast);}.mp-sliding-pill-container:hover .mp-btn-insights{flex:0 0 34px;width:34px;height:34px;opacity:1;transform:translate(0);}.mp-dir-top .mp-btn-insights{transform:translateY(10px);}.mp-dir-bottom .mp-btn-insights{transform:translateY(-10px);}.mp-dir-left .mp-btn-insights{transform:translateX(10px);}.mp-dir-right .mp-btn-insights{transform:translateX(-10px);}";
       document.head.appendChild(h);
     }
     // v28.0.0-Ψ: the organization-engine stylesheet rides the same
@@ -3724,58 +3775,42 @@ const __4NDR0_NET_API__ = (function () {
     const n = document.createElement("div");
     n.className = `mp-sliding-pill-container mp-dir-${e}`;
     const a = "left" === e || "right" === e ? "top" : "left",
-      // v27.0.8: the pill's first button is now Copy (editor -> clipboard),
-      // a symmetric companion to the Paste button below (clipboard ->
-      // editor). It replaces the old AI-Enhance shortcut button. The AI
-      // enhancement workflow itself is unchanged and remains reachable via
-      // the prompt modal's magic button, the editor toolbar enhance
-      // buttons and the 'enhancePrompt' keyboard shortcut. The mp-btn-copy
-      // class mirrors the external stylesheet's .mp-btn-ai/.mp-btn-paste
-      // collapse/expand mechanics via rules injected in
-      // injectGlobalStyles() (the external CSS cannot grow new classes).
+      // v28.8.0 (WO-01 round 3): the pill's first action is now INSIGHTS —
+      // it opens the organization engine's Ψ Insights modal (library
+      // stats, dedupe groups, storage truth), previously reachable only
+      // from the expanded view's toolbar, so the pill finally carries it
+      // on every platform. The operator retired the Copy button this
+      // slot held since v27.0.8 ("the unused functions"). The
+      // .mp-btn-insights class mirrors the external stylesheet's
+      // .mp-btn-ai/.mp-btn-paste collapse/expand mechanics via rules
+      // injected in injectGlobalStyles() (the external CSS cannot grow
+      // new classes).
       o = document.createElement("button");
     ((o.type = "button"),
-      (o.className = "mp-btn-part mp-btn-copy"),
-      o.setAttribute("data-testid", "composer-button-copy"),
-      setSafeInnerHTML(o, ICONS.copy),
-      createCustomTooltip(o, "Copy", a),
+      (o.className = "mp-btn-part mp-btn-insights"),
+      o.setAttribute("data-testid", "composer-button-insights"),
+      setSafeInnerHTML(o, ICONS.insights),
+      createCustomTooltip(o, "Insights", a),
       o.addEventListener("click", (e) => {
-        (e.stopPropagation(), handleInstantPageCopy());
+        (e.stopPropagation(), openInsightsModal());
       }));
     const r = document.createElement("button");
+    // v28.8.0: the second action is now ENHANCE PROMPT — the AI enhancer
+    // rides the pill again (its pre-v27.0.8 home: the external
+    // stylesheet's .mp-btn-ai collapse/expand rules still carry the
+    // class verbatim, so no mirror rules are needed for this one). It
+    // calls the exact handleInstantPageEnhancement path behind the
+    // 'enhancePrompt' shortcut (Alt+E): editor discovery ->
+    // triggerAIEnhancement -> diff modal -> Use Enhanced writes back to
+    // the editor. The operator retired the Paste button this slot held
+    // since v27.0.6 ("the unused functions").
     ((r.type = "button"),
-      (r.className = "mp-btn-part mp-btn-paste"),
-      r.setAttribute("data-testid", "composer-button-paste"),
-      setSafeInnerHTML(r, ICONS.paste),
-      createCustomTooltip(r, "Paste", a),
-      r.addEventListener("click", async (e) => {
-        e.stopPropagation();
-        try {
-          let e = "";
-          const t = [];
-          try {
-            const n = await navigator.clipboard.read();
-            for (const a of n)
-              for (const n of a.types)
-                if ("text/plain" === n) {
-                  const t = await a.getType(n);
-                  e = await t.text();
-                } else if (!n.startsWith("text/")) {
-                  const e = await a.getType(n),
-                    o = n.split("/")[1] || "bin",
-                    r = new File([e], `clipboard-${Date.now()}.${o}`, {
-                      type: n,
-                    });
-                  t.push(r);
-                }
-          } catch (t) {
-            try {
-              e = await navigator.clipboard.readText();
-            } catch (e) { console.debug("PM interceptor:", e);}
-          }
-          (e || t.length > 0) &&
-            (await insertPrompt({ text: e, dynamicFiles: t }, !0, !0));
-        } catch (e) { console.debug("PM interceptor:", e);}
+      (r.className = "mp-btn-part mp-btn-ai"),
+      r.setAttribute("data-testid", "composer-button-enhance"),
+      setSafeInnerHTML(r, ICONS.magic),
+      createCustomTooltip(r, "Enhance Prompt with AI", a),
+      r.addEventListener("click", (e) => {
+        (e.stopPropagation(), handleInstantPageEnhancement());
       }));
     const s = document.createElement("button");
     return (
@@ -3805,9 +3840,11 @@ const __4NDR0_NET_API__ = (function () {
   // dock-scoped height/color rules in FLOW_DOCK_CSS. v27.0.10: the gear is
   // no longer the pill's static parked face — the dock-scoped
   // .mp-btn-settings rules in FLOW_DOCK_CSS give it the exact collapse/
-  // expand choreography the external stylesheet gives .mp-btn-ai and
-  // .mp-btn-paste, so all three pill buttons park collapsed (0 width,
-  // hidden, translated 10px) and slide out together on pill hover.
+  // expand choreography the external stylesheet gives .mp-btn-ai, so all
+  // three pill buttons park collapsed (0 width, hidden, translated 10px)
+  // and slide out together on pill hover. v28.8.0: the other two slots are
+  // Insights (.mp-btn-insights) and Enhance Prompt (.mp-btn-ai) per the
+  // operator's round-3 action-surface swap.
   function createDockSettingsButton() {
     const e = document.createElement("button");
     return (
@@ -3960,12 +3997,14 @@ const __4NDR0_NET_API__ = (function () {
     // its timing; the base collapsed rule keeps its delay-free shorthand,
     // so collapse and all non-hover paths remain instant.
     "#pm-flow-dock .mp-sliding-pill-container:hover{transition:width var(--mp-transition-fast) var(--mp-pill-intent-ms,950ms),height var(--mp-transition-fast),background-color var(--mp-transition-fast) var(--mp-pill-reveal-ms,250ms),border-color var(--mp-transition-fast),backdrop-filter 280ms ease var(--mp-pill-reveal-ms,250ms),-webkit-backdrop-filter 280ms ease var(--mp-pill-reveal-ms,250ms);}" +
-    "#pm-flow-dock .mp-sliding-pill-container:hover .mp-btn-copy," +
-    "#pm-flow-dock .mp-sliding-pill-container:hover .mp-btn-paste," +
+    "#pm-flow-dock .mp-sliding-pill-container:hover .mp-btn-insights," +
+    "#pm-flow-dock .mp-sliding-pill-container:hover .mp-btn-ai," +
     // The buttons MUST share the width's intent delay: they animate
     // through the overflow:hidden window, so any earlier delay animates
-    // them clipped — and the left-anchored copy would stack under the
-    // parked chevron (the beta's interim glyph ambiguity).
+    // them clipped — and the left-anchored insights would stack under the
+    // parked chevron (the beta's interim glyph ambiguity). v28.8.0: the
+    // selector pair renames with the pill's action swap (copy/paste ->
+    // insights/enhance; the .mp-btn-ai class is the enhancer's own).
     "#pm-flow-dock .mp-sliding-pill-container:hover .mp-btn-settings{transition-delay:var(--mp-pill-intent-ms,950ms);}" +
     "#pm-flow-dock .mp-prompt-wrapper::before{content:'';position:absolute;z-index:1002;pointer-events:none;right:10px;top:50%;width:16px;height:16px;transform:translateY(-50%);background-color:#ffffff;background-image:linear-gradient(90deg,transparent 0%,transparent 42%,rgba(103,232,249,.95) 50%,transparent 58%,transparent 100%);background-size:280% 100%;animation:mp-chevron-flash 2.6s linear infinite;opacity:.9;transition:opacity var(--mp-transition-fast),background-color var(--mp-transition-fast),filter var(--mp-transition-fast);-webkit-mask-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M14.5 5.5 8 12 14.5 18.5' fill='none' stroke='white' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\");-webkit-mask-position:center;-webkit-mask-repeat:no-repeat;-webkit-mask-size:16px 16px;mask-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M14.5 5.5 8 12 14.5 18.5' fill='none' stroke='white' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\");mask-position:center;mask-repeat:no-repeat;mask-size:16px 16px;}" +
     "#pm-flow-dock .mp-prompt-wrapper:has(.mp-sliding-pill-container:hover)::before{opacity:0;background-color:#67E8F9;filter:drop-shadow(0 0 6px rgba(103,232,249,.85)) drop-shadow(0 0 14px rgba(103,232,249,.45));animation-play-state:paused;transition:opacity var(--mp-transition-fast) var(--mp-pill-intent-ms,950ms),background-color var(--mp-transition-fast),filter var(--mp-transition-fast);}" +
@@ -12092,12 +12131,13 @@ const __4NDR0_NET_API__ = (function () {
   // label/values ride the spec's subtitle rgba(0,229,255,.7) and primary
   // #00E5FF roles. The low/zero turns-left states (classes toggled on
   // the model slot since v27.3.10) finally have rules — the spec's
-  // alert #ff0055, zero with the glow. Parked mode adds its berth glow.
+  // alert #ff0055, zero with the glow. v28.8.0: the parked-mode berth
+  // glow rule was removed with parked mode itself (the chip never
+  // parks — it holds a validated berth or hides).
   const FLOW_CREDIT_CSS =
     "#pm-flow-credit-chip{position:fixed;left:-9999px;top:-9999px;z-index:2147483645;display:inline-flex;align-items:center;gap:7px;height:22px;min-height:22px;max-width:calc(100vw - 16px);box-sizing:border-box;overflow:hidden;padding:0 10px;border-radius:4px;font:600 10.5px/1 'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;letter-spacing:.02em;color:#00E5FF;background:linear-gradient(160deg,rgba(10,19,26,.65) 0%,rgba(10,19,26,.72) 100%);backdrop-filter:blur(16px) saturate(1.45);-webkit-backdrop-filter:blur(16px) saturate(1.45);border:1px solid rgba(0,229,255,.3);box-shadow:0 0 20px rgba(0,229,255,.15),inset 0 1px 0 rgba(0,229,255,.14),-4px 6px 18px rgba(0,0,0,.42);cursor:default;user-select:none;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.35);transition:opacity var(--mp-transition-fast,150ms),transform var(--mp-transition-fast,150ms);}" +
     "#pm-flow-credit-chip.mp-credit-pending{opacity:.72;}" +
     "#pm-flow-credit-chip.mp-credit-hidden{opacity:0;pointer-events:none;transform:translateY(4px);}" +
-    "#pm-flow-credit-chip.mp-credit-parked{box-shadow:0 0 20px rgba(0,229,255,.15),0 0 34px rgba(0,229,255,.25),inset 0 1px 0 rgba(0,229,255,.14),-4px 6px 18px rgba(0,0,0,.42);}" +
     "#pm-flow-credit-chip .mp-credit-glyph{width:12px;height:12px;display:block;flex:0 0 auto;color:rgba(0,229,255,.85);}" +
     "#pm-flow-credit-chip .mp-credit-model{color:rgba(0,229,255,.7);flex:0 1 auto;min-width:44px;max-width:240px;overflow:hidden;text-overflow:ellipsis;}" +
     "#pm-flow-credit-chip .mp-credit-sep{width:1px;height:10px;background:rgba(0,229,255,.35);flex:0 0 1px;}" +
@@ -12143,14 +12183,19 @@ const __4NDR0_NET_API__ = (function () {
     flowCreditLastSig = "",
     flowCreditAnchorEl = null,
     flowCreditAnchorSrc = "",
+    // v28.8.0 (WO-01 round 3): the no-occlusion contract's measured
+    // collision rects — resolveFlowCreditAnchor stashes the editor and
+    // composer elements it walked (regardless of which became the
+    // anchor) so positionFlowCreditChip validates every berth against
+    // the REAL text field and prompt box instead of assuming the
+    // anchor's neighborhood is clear. flowCreditAnchorMissSince (the
+    // v28.2.0 parked-mode bookkeeping) was retired with parked mode —
+    // a cascade miss now hides the chip, it does not schedule a berth.
+    flowCreditEditorEl = null,
+    flowCreditComposerEl = null,
     flowCreditResizeObserver = null,
     flowCreditResizeEl = null,
     flowCreditResizeDock = null,
-    // v28.2.0: parked-mode state — the first moment the anchor cascade
-    // failed (0 = an anchor is resolved). positionFlowCreditChip parks
-    // the chip above the Flow dock once the miss outlives the 15s grace;
-    // resolveFlowCreditAnchor resets it on every successful resolve.
-    flowCreditAnchorMissSince = 0,
     // v27.3.2: passive-observer state — pending network/storage
     // readings (drained by the tick), cumulative counters for the
     // settled status line, and the storage sweep timer.
@@ -15191,37 +15236,46 @@ const __4NDR0_NET_API__ = (function () {
   function resolveFlowCreditAnchor() {
     flowCreditAnchorEl = null;
     flowCreditAnchorSrc = "";
-    // v28.2.0: parked-mode bookkeeping — remember the first moment the
-    // cascade failed; positionFlowCreditChip parks the chip above the
-    // Flow dock once that miss outlives the 15s grace, and every
-    // successful resolve zeroes it (normal anchoring resumes).
+    // v28.8.0 (WO-01 round 3): the no-occlusion contract stashes the
+    // editor and composer elements the cascade walks — even when
+    // neither becomes the anchor (the model-chip rung) — so
+    // positionFlowCreditChip validates berths against the measured
+    // rects of the text field and the prompt box. The elements are
+    // re-stashed every resolve (SPA redraws swap them); a stale stash
+    // is filtered by isConnected at read time. The v28.2.0
+    // miss-bookkeeping (flowCreditAnchorMissSince) is retired with
+    // parked mode — a miss now means HIDDEN, not a scheduled berth.
     const ed = findPlatformEditor("flow");
+    flowCreditEditorEl = ed && ed.isConnected ? ed : null;
     if (ed) {
       const er = flowCreditSaneAnchorRect(ed);
       if (er && er.top + er.height / 2 > window.innerHeight * 0.5) {
         flowCreditAnchorEl = ed;
         flowCreditAnchorSrc = "editor";
-        flowCreditAnchorMissSince = 0;
       }
     }
     if (!flowCreditAnchorEl) {
       const comp = findFlowComposerContainer();
+      flowCreditComposerEl = comp && comp.isConnected ? comp : null;
       if (comp && flowCreditSaneAnchorRect(comp)) {
         flowCreditAnchorEl = comp;
         flowCreditAnchorSrc = "composer";
-        flowCreditAnchorMissSince = 0;
       }
+    } else {
+      // The editor won the anchor race — still resolve the composer for
+      // the collision rects (the anchor above already stashed null when
+      // the editor was missing, so only the editor-anchor path lands
+      // here and the composer has not been walked yet).
+      const comp = findFlowComposerContainer();
+      flowCreditComposerEl = comp && comp.isConnected ? comp : null;
     }
     if (!flowCreditAnchorEl) {
       const chipEl = flowCreditModelChipElement();
       if (chipEl && flowCreditSaneAnchorRect(chipEl)) {
         flowCreditAnchorEl = chipEl;
         flowCreditAnchorSrc = "model-chip";
-        flowCreditAnchorMissSince = 0;
       }
     }
-    if (!flowCreditAnchorEl && !flowCreditAnchorMissSince)
-      flowCreditAnchorMissSince = Date.now();
     // v28.7.3: synchronize ResizeObserver with the active anchor and dock
     // so textarea auto-grow or flexbox container resizing triggers an
     // immediate rAF reposition without waiting for the 1s poll.
@@ -15245,57 +15299,53 @@ const __4NDR0_NET_API__ = (function () {
       } catch (e) { console.debug("PM interceptor:", e);}
     }
   }
-  // v28.2.0: does the chip have anything worth parking? A display
-  // model (selected or any fallback rung) or a known wallet reading —
-  // parked mode is for a counter with numbers, not for dashes.
-  function flowCreditChipHasContent() {
-    if (flowCreditDisplayModel()) return !0;
-    const w = flowCreditState && flowCreditState.wallet;
-    return !!(w && (w.left != null || w.total != null));
-  }
-  // v28.2.0: the parked berth — above the script's Flow dock, clear of
-  // its hover expansion (offsetWidth is the layout width the CSS
-  // transform slides, so the berth is hover-stable), 8px clear of the
-  // dock's top edge; no dock on screen falls back to the viewport's
-  // bottom-right corner. Yields to the dock's own popouts (the filter
-  // dropdown / menu container clamp above the dock too — the v28.1.1
-  // occlusion lesson applied to the chip's berth).
-  function parkAtFlowDock(chip) {
-    chip.style.maxWidth = Math.max(140, window.innerWidth - 24) + "px";
-    const w = chip.offsetWidth,
-      h = chip.offsetHeight;
-    let x = window.innerWidth - 12 - w,
-      y = window.innerHeight - 64 - h;
-    const dock = document.getElementById("pm-flow-dock");
-    if (dock && dock.isConnected) {
-      const dr = dock.getBoundingClientRect();
-      if (dr.width && dr.height && dock.offsetWidth) {
-        x = window.innerWidth - dock.offsetWidth - w - 10;
-        y = dr.top - h - 8;
-      }
-    }
-    const pop = document.querySelector(
-      ".mp-filter-dropdown, #prompt-menu-container",
+  // v28.8.0 (WO-01 round 3): the no-occlusion contract's rect math —
+  // an overlap test with a per-side margin (a berth must CLEAR every
+  // forbidden rect by the margin, not merely avoid its interior).
+  function flowCreditRectsOverlap(x, y, w, h, b, m) {
+    return !!(
+      b &&
+      w > 0 &&
+      h > 0 &&
+      x < b.right + m &&
+      x + w > b.left - m &&
+      y < b.bottom + m &&
+      y + h > b.top - m
     );
-    if (pop && pop.isConnected) {
-      const pr = pop.getBoundingClientRect();
-      if (
-        pr.width &&
-        pr.height &&
-        x + w > pr.left - 6 &&
-        x < pr.right &&
-        y + h > pr.top &&
-        y < pr.bottom
-      )
-        y = Math.max(8, pr.top - h - 8);
-    }
-    if (x < 8) x = 8;
-    if (y < 8) y = 8;
-    if (x + w > window.innerWidth - 8) x = window.innerWidth - 8 - w;
-    if (y + h > window.innerHeight - 8) y = window.innerHeight - 8 - h;
-    chip.style.left = Math.round(x) + "px";
-    chip.style.top = Math.round(y) + "px";
   }
+  // v28.8.0 (WO-01 round 3): THE CHIP'S NO-OCCLUSION CONTRACT. The
+  // operator's round-3 field report closed the v28.7.5 ladder for good:
+  // "the chip counter remains an issue in obstruction of the input
+  // field, hiding and dynamic resizing. It does not reliably
+  // resize/flexbox or hide when needed and remains present overlayed
+  // on the grid at times and obstructs the prompt input itself."
+  // Root causes, decoded: (1) "above the anchor's top edge" put the
+  // chip on the results grid — an editor at the composer's top has
+  // nothing between it and the grid, so above-the-editor IS grid
+  // territory; (2) the v28.2.0 parked berth (above the Flow dock) put
+  // the chip over the composer's right shoulder — the input itself —
+  // whenever the anchor cascade went stale, and kept it visible over
+  // the grid on composer-less views; (3) no branch ever VALIDATED the
+  // final rect against the page it was about to cover, and maxWidth
+  // derived from the ANCHOR's width, which says nothing about the
+  // space the chip was about to overlap. The contract: the chip wins a
+  // berth only by proving the placed rect occludes NOTHING. Forbidden
+  // rects, measured on every pass: the editor (the text field) + 6px,
+  // the composer (the prompt box, toolbar included) + 6px, the Flow
+  // dock + 6px (its hover expansion is reserved via offsetWidth), and
+  // any open popout (.mp-filter-dropdown / #prompt-menu-container).
+  // Berth ladder, first fit wins:
+  //   B1: below the composer — attached, centered under the prompt box
+  //       (fits only when the viewport gap under the composer is tall
+  //       enough; bottom-anchored composers rarely offer it).
+  //   B2: the composer's right shoulder, stacked above the Flow dock —
+  //       the chip's maxWidth FLEXES to the shoulder's width so the
+  //       model slot ellipsizes into the space instead of overlapping
+  //       it (the "reliably resize/flexbox" half of the report).
+  //   B3: the composer's left shoulder, mirrored flex-fit.
+  // No lawful berth -> mp-credit-hidden (hide-when-needed, verbatim).
+  // parkAtFlowDock and flowCreditChipHasContent were removed with the
+  // parked mode they served.
   function positionFlowCreditChip() {
     const chip = flowCreditChip;
     if (!chip || !chip.isConnected) return;
@@ -15308,96 +15358,122 @@ const __4NDR0_NET_API__ = (function () {
       r = flowCreditAnchorEl ? flowCreditSaneAnchorRect(flowCreditAnchorEl) : null;
     }
     if (!r) {
-      // v28.2.0: PARKED MODE. An anchor that resolved but scrolled out
-      // of view keeps hiding exactly as before (the designed behavior);
-      // a cascade that found NOTHING for longer than the 15s grace
-      // parks the chip above the Flow dock — the counter stays
-      // readable with no composer on screen (bare project views, DOM
-      // drift, the field report's "anchor: none" state). A chip with
-      // nothing to show still hides. The berth re-tracks on the same
-      // 1s poll + mutation debounce + scroll/resize rAF cadence.
-      if (
-        !flowCreditAnchorSrc &&
-        flowCreditAnchorMissSince &&
-        Date.now() - flowCreditAnchorMissSince > 15000 &&
-        flowCreditChipHasContent()
-      ) {
-        chip.classList.remove("mp-credit-hidden");
-        chip.classList.add("mp-credit-parked");
-        parkAtFlowDock(chip);
-        return;
-      }
-      chip.classList.remove("mp-credit-parked");
+      // v28.8.0: parked mode RETIRED. An anchor that resolved but
+      // scrolled out of view, or a cascade that found nothing, now
+      // HIDES the chip — full stop. The v28.2.0 parked berth kept the
+      // counter readable on bare project views, but the operator's
+      // round-3 report reads that exact behavior as the defect
+      // ("remains present overlayed on the grid at times"). The
+      // counter returns the moment an anchor resolves again; the 1s
+      // poll + mutation debounce + scroll/resize rAF cadence is
+      // unchanged.
       chip.classList.add("mp-credit-hidden");
       return;
     }
     chip.classList.remove("mp-credit-hidden");
-    chip.classList.remove("mp-credit-parked");
-    // v28.7.3: dynamic flexbox width clamping — constrain chip.style.maxWidth
-    // to the active container/viewport BEFORE reading offsetWidth/offsetHeight
-    // so .mp-credit-model truncates cleanly and .mp-credit-values never clips.
-    const vwMax = Math.max(140, window.innerWidth - 16);
-    if (flowCreditAnchorSrc === "model-chip") {
-      const sideBudget = Math.max(r.left - 18, window.innerWidth - r.right - 18);
-      chip.style.maxWidth =
-        Math.max(140, Math.min(vwMax, sideBudget >= 140 ? Math.round(sideBudget) : vwMax)) +
-        "px";
-    } else {
-      chip.style.maxWidth =
-        Math.max(140, Math.min(vwMax, Math.round(r.width - 16))) + "px";
-    }
-    const w = chip.offsetWidth,
+    const vw = window.innerWidth,
+      vh = window.innerHeight;
+    const edR =
+      flowCreditEditorEl && flowCreditEditorEl.isConnected
+        ? flowCreditSaneAnchorRect(flowCreditEditorEl)
+        : null;
+    let coR =
+      flowCreditComposerEl && flowCreditComposerEl.isConnected
+        ? flowCreditSaneAnchorRect(flowCreditComposerEl)
+        : null;
+    if (!coR && flowCreditAnchorSrc === "composer") coR = r;
+    // The berth base: the composer when measured, else the anchor rect
+    // (the model-chip rung proxies the composer's neighborhood; the
+    // occlusion checks below still hold the line against every
+    // measured rect, so the proxy can only cost us a berth, never buy
+    // an obstruction).
+    const baseR = coR || r;
+    const dockEl = document.getElementById("pm-flow-dock");
+    const dockR =
+      dockEl && dockEl.isConnected && dockEl.offsetWidth
+        ? dockEl.getBoundingClientRect()
+        : null;
+    const popEl = document.querySelector(
+      ".mp-filter-dropdown, #prompt-menu-container",
+    );
+    const popR = popEl && popEl.isConnected ? popEl.getBoundingClientRect() : null;
+    const occluded = function (x, y, w, h) {
+      return (
+        flowCreditRectsOverlap(x, y, w, h, edR, 6) ||
+        flowCreditRectsOverlap(x, y, w, h, coR, 6) ||
+        flowCreditRectsOverlap(x, y, w, h, dockR, 6) ||
+        flowCreditRectsOverlap(x, y, w, h, popR, 6)
+      );
+    };
+    // Natural size first (maxWidth at the viewport clamp) so B1 places
+    // at content width; the shoulder berths re-clamp maxWidth to the
+    // berth's own width and re-measure — the dynamic-flexbox half of
+    // the contract: the chip resizes INTO its berth, never across it.
+    const vwMax = Math.max(140, vw - 16);
+    chip.style.maxWidth = vwMax + "px";
+    let w = chip.offsetWidth,
       h = chip.offsetHeight;
-    let x = r.right - w - 10,
-      y = null;
-    if (flowCreditAnchorSrc === "model-chip") {
-      // v28.7.3: beside the selector when room exists on the left; if the
-      // model chip sits near the left edge of the composer, prefer its right
-      // side or directly above it so clamping at x=8 never occludes the picker.
-      if (r.left - w - 10 >= 8) {
-        x = r.left - w - 10;
-        y = r.top + (r.height - h) / 2;
-      } else if (r.right + 10 + w <= window.innerWidth - 8) {
-        x = r.right + 10;
-        y = r.top + (r.height - h) / 2;
-      } else {
-        x = Math.max(8, Math.min(window.innerWidth - 8 - w, r.left));
-        y = r.top - h - 6 >= 8 ? r.top - h - 6 : r.bottom + 6;
+    const place = function (x, y) {
+      chip.style.left = Math.round(x) + "px";
+      chip.style.top = Math.round(y) + "px";
+    };
+    // B1: below the composer, centered under it.
+    if (baseR.bottom + 8 + h <= vh - 8) {
+      let x1 = baseR.left + (baseR.width - w) / 2;
+      if (x1 < 8) x1 = 8;
+      if (x1 + w > vw - 8) x1 = vw - 8 - w;
+      const y1 = baseR.bottom + 8;
+      if (!occluded(x1, y1, w, h)) {
+        place(x1, y1);
+        return;
       }
-    } else {
-      // v28.7.5 (WO-02): the chip rides ABOVE the composer/editor's top
-      // edge — never inside the text field. The v27.3–v28.7.3 editor
-      // placement (tall: pinned just below the anchor top; short:
-      // vertical center) put the chip directly over the input text the
-      // user is typing ("ALWAYS obstructs the text input field"). Above-placement mirrors the
-      // model-chip branch's own above/below ladder; when the anchor hugs
-      // the viewport top, the chip drops BELOW the anchor's bottom edge
-      // (a composer at the top of the screen has its toolbar above the
-      // text, so below never covers the field either). Width clamping,
-      // dock avoidance, popout yield and viewport clamps below are
-      // unchanged.
-      y = r.top - h - 6 >= 8 ? r.top - h - 6 : r.bottom + 6;
     }
-    // Keep clear of the dock trigger strip hugging the right edge.
-    const dock = document.getElementById("pm-flow-dock");
-    if (dock && dock.isConnected) {
-      const dr = dock.getBoundingClientRect();
-      if (
-        dr.width &&
-        dr.height &&
-        x + w > dr.left - 6 &&
-        x < dr.right &&
-        y + h > dr.top &&
-        y < dr.bottom
-      )
-        x = dr.left - w - 10;
+    // B2: the composer's right shoulder. rightLim reserves the dock's
+    // hover expansion (offsetWidth is the layout width the CSS
+    // transform slides, so the reservation is hover-stable — the same
+    // discipline the retired parked berth used).
+    const rightLim = dockR
+      ? Math.min(vw - 8, vw - dockEl.offsetWidth - 10)
+      : vw - 8;
+    const x2 = baseR.right + 10;
+    const avail2 = rightLim - x2;
+    if (avail2 >= 140) {
+      chip.style.maxWidth = Math.min(vwMax, Math.round(avail2)) + "px";
+      w = chip.offsetWidth;
+      h = chip.offsetHeight;
+      let y2 = Math.min(
+        baseR.bottom - h,
+        dockR ? dockR.top - h - 8 : vh - 8 - h,
+      );
+      if (y2 < 8) y2 = 8;
+      if (!occluded(x2, y2, w, h) && x2 + w <= rightLim && y2 + h <= vh - 8) {
+        place(x2, y2);
+        return;
+      }
     }
-    if (x < 8) x = 8;
-    if (y < 8) y = 8;
-    if (x + w > window.innerWidth - 8) x = window.innerWidth - 8 - w;
-    if (y + h > window.innerHeight - 8) y = window.innerHeight - 8 - h;
-    chip.style.left = Math.round(x) + "px";
-    chip.style.top = Math.round(y) + "px";
+    // B3: the composer's left shoulder, mirrored.
+    const avail3 = baseR.left - 10 - 8;
+    if (avail3 >= 140) {
+      chip.style.maxWidth = Math.min(vwMax, Math.round(avail3)) + "px";
+      w = chip.offsetWidth;
+      h = chip.offsetHeight;
+      let y3 = Math.min(
+        baseR.bottom - h,
+        dockR ? dockR.top - h - 8 : vh - 8 - h,
+      );
+      if (y3 < 8) y3 = 8;
+      const x3 = baseR.left - 10 - w;
+      if (!occluded(x3, y3, w, h) && x3 >= 8 && y3 + h <= vh - 8) {
+        place(x3, y3);
+        return;
+      }
+    }
+    // No lawful berth: hide. The chip keeps its DOM (the engine keeps
+    // rendering numbers into it) and re-arms on the next position pass
+    // — the 1s poll guarantees every berth is retried within a second,
+    // so a hidden chip is one layout change away from a lawful berth,
+    // never a dead surface.
+    chip.classList.add("mp-credit-hidden");
   }
   function scheduleFlowCreditPosition() {
     if (flowCreditPosPending) return;
@@ -16157,9 +16233,14 @@ const __4NDR0_NET_API__ = (function () {
         engine: {
           active: !!flowCreditEngineActive,
           anchor: flowCreditAnchorSrc || "none",
-          chipParked: !!(
+          // v28.8.0 (WO-01 round 3): chipParked (the v28.2.0 parked-mode
+          // diagnostic) is replaced by chipHidden — the live state of
+          // the no-occlusion contract's fallback. Parked mode is
+          // retired; a hidden chip is the designed no-lawful-berth /
+          // no-anchor state, and the export now reports exactly that.
+          chipHidden: !!(
             flowCreditChip &&
-            flowCreditChip.classList.contains("mp-credit-parked")
+            flowCreditChip.classList.contains("mp-credit-hidden")
           ),
           displayModel: disp
             ? { key: disp.m.key, label: disp.m.label, src: disp.src }
@@ -16547,7 +16628,20 @@ const __4NDR0_NET_API__ = (function () {
     const e =
       getEditableRoot(findPlatformEditor()) ||
       getEditableRoot(document.querySelector(platformSelectors[currentPlatform]));
-    if (!e) return;
+    // v28.8.0 (WO-01 round 3): the no-editor return is no longer silent —
+    // the pill's new Enhance Prompt button funnels here, and a click that
+    // does nothing with no feedback reads as a broken feature (the
+    // operator's "completely wired up and integrated"). The same
+    // notification contract the empty-prompt path already carries in
+    // triggerAIEnhancement now covers the discovery failure too.
+    if (!e) {
+      "function" == typeof showNotification &&
+        showNotification(
+          "No prompt input found on this page - click into the prompt box first",
+          "error",
+        );
+      return;
+    }
     let t = "";
     t =
       "TEXTAREA" === e.tagName || "INPUT" === e.tagName
@@ -16571,40 +16665,12 @@ const __4NDR0_NET_API__ = (function () {
       null,
     );
   }
-  // v27.0.8: Copy counterpart to the pill's Paste button (and to
-  // handleInstantPageEnhancement's editor discovery above): reads the
-  // current platform editor through the exact same cascade (dedicated
-  // findPlatformEditor() -> platform selector fallback), then writes its
-  // trimmed text to the system clipboard. Trims so transient whitespace
-  // artifacts of contenteditable editors do not end up on the clipboard;
-  // empty text and clipboard rejections surface as notifications instead
-  // of failing silently.
-  async function handleInstantPageCopy() {
-    const e =
-      currentPlatform && platformSelectors[currentPlatform]
-        ? getEditableRoot(findPlatformEditor()) ||
-          getEditableRoot(
-            document.querySelector(platformSelectors[currentPlatform]),
-          )
-        : null;
-    const t = e
-        ? "TEXTAREA" === e.tagName || "INPUT" === e.tagName
-          ? e.value
-          : e.innerText || e.textContent || ""
-        : "",
-      n = (t || "").trim();
-    if (!n)
-      return void ("function" == typeof showNotification &&
-        showNotification("Nothing to copy - the prompt box is empty", "error"));
-    try {
-      await navigator.clipboard.writeText(n);
-      "function" == typeof showNotification &&
-        showNotification("Copied Successfully!", "success");
-    } catch (e) {
-      "function" == typeof showNotification &&
-        showNotification("Could not copy to the clipboard", "error");
-    }
-  }
+  // v28.8.0 (WO-01 round 3): handleInstantPageCopy was removed with the
+  // pill's Copy button — the operator retired the copy/paste pair for the
+  // Insights/Enhance pair, and this function's only caller was that
+  // button's click handler (zero remaining references, verified by sweep
+  // before removal). The clipboard write path for prompts lives on in the
+  // prompt modal's per-item copy actions, which never routed through here.
   async function handleTextareaEnhancement(e, t) {
     triggerAIEnhancement(
       e.value,

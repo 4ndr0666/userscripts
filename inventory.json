@@ -1104,9 +1104,9 @@
    "version": "28.7.7",
    "description": "Google Flow prompt manager toolkit (works on any AI, just add url) - persisted unit ledger meters every generation click, organization engine: collections, saved views, favorites, ratings, archive, group-by, and insights for large prompt libraries, dedupe, media slideshow, ai prompt enhancer, auto gist syncing, hotkeys, much more.",
    "family": "sovereign platforms",
-   "sha256": "87cad29aac52939ed08a7915e3b77f52f140299cb5c2fb8be8290d3c6b221706",
-   "lines": 23870,
-   "bytes": 1160627,
+   "sha256": "467da9f8365c03770f272bdb9c0c678dccf5f23fd9cd9a896d7d6b4caecf5ea4",
+   "lines": 23936,
+   "bytes": 1166174,
    "matches": [
     "*://geminigen.ai/*",
     "*://gist.github.com/*",
@@ -1560,5 +1560,5 @@
    ]
   }
  ],
- "digest": "89f7605c9e09b0647ec70c031d4cb7fefc24bd354ea77870033feade445393a3"
+ "digest": "c6d3f92ead8ab2a86970ef43052b3bf190216142809f52dfef45e8142baa6d05"
 }

@@ -337,12 +337,17 @@ function fetchJson(url) {
   });
 }
 
-function boxesOverlap(a, b) {
+// v28.8.0 (WO-01 round 3): margin-aware form — margin inflates b on
+// every side, so boxesOverlap(chip, forbidden, 6) is true when the chip
+// is INSIDE forbidden or within 6px of it (the no-occlusion contract's
+// clearance). Default 0 keeps the v28.7.5 two-arg red-control behavior
+// byte-identical.
+function boxesOverlap(a, b, margin = 0) {
   return !(
-    a.right <= b.left ||
-    a.left >= b.right ||
-    a.bottom <= b.top ||
-    a.top >= b.bottom
+    a.right <= b.left - margin ||
+    a.left >= b.right + margin ||
+    a.bottom <= b.top - margin ||
+    a.top >= b.bottom + margin
   );
 }
 
@@ -393,15 +398,21 @@ export async function runFlowChipBrowserBattery() {
       distSource.includes("flowCreditResizeObserver.observe(flowCreditResizeEl)"));
     assert("3. positionFlowCreditChip re-resolves invisible anchor & dynamic maxWidth clamping",
       distSource.includes("chip.style.maxWidth =") &&
-      distSource.includes("sideBudget >= 140 ? Math.round(sideBudget) : vwMax"));
-    assert("4. model-chip left/right/above non-occlusion guard present",
-      distSource.includes("else if (r.right + 10 + w <= window.innerWidth - 8)") &&
-      distSource.includes("y = r.top - h - 6 >= 8 ? r.top - h - 6 : r.bottom + 6"));
-    assert("4b. editor/composer anchors ride ABOVE the text field (WO-02: chip never mounts inside the input rect)",
-      distSource.includes("y = r.top - h - 6 >= 8 ? r.top - h - 6 : r.bottom + 6;") &&
-      !distSource.includes("y = r.top + 7;") &&
-      !/r\.height >= 160/.test(distSource),
-      "above/below ladder shared with model-chip branch; inside-editor placements removed");
+      distSource.includes("const vwMax = Math.max(140, vw - 16);") &&
+      distSource.includes("chip.style.maxWidth = Math.min(vwMax, Math.round(avail2)) + \"px\";") &&
+      distSource.includes("chip.style.maxWidth = Math.min(vwMax, Math.round(avail3)) + \"px\";"));
+    assert("4. no-occlusion contract: measured forbidden rects + berth ladder + hide fallback (WO-01 round 3)",
+      distSource.includes("flowCreditRectsOverlap") &&
+      distSource.includes("const occluded = function (x, y, w, h)") &&
+      distSource.includes("flowCreditEditorEl && flowCreditEditorEl.isConnected") &&
+      distSource.includes("flowCreditComposerEl && flowCreditComposerEl.isConnected") &&
+      distSource.includes("chip.classList.add(\"mp-credit-hidden\")"));
+    assert("4b. parked mode retired: no parkAtFlowDock code, no parked class toggle, hide-when-needed verbatim",
+      !distSource.includes("function parkAtFlowDock(") &&
+      !distSource.includes("flowCreditChipHasContent()") &&
+      !distSource.includes("classList.add(\"mp-credit-parked\")") &&
+      !distSource.includes("mp-credit-parked{box-shadow"),
+      "the v28.2.0 parked berth was the grid/input obstruction the operator reported");
     assert("5. flowCreditTurnsLeft reconnects learned capTurns ceiling & fallback",
       distSource.includes("src: \"learned cap\"") &&
       distSource.includes("left = Math.min(left, Math.max(0, e.capTurns - (e.turnsDay || 0)))"));
@@ -590,6 +601,11 @@ export async function runFlowChipBrowserBattery() {
         },
         chipRect: chip.getBoundingClientRect().toJSON(),
         editorRect: document.getElementById("PINHOLE_TEXT_AREA_ELEMENT_ID").getBoundingClientRect().toJSON(),
+        composerRect: document.getElementById("flow-composer").getBoundingClientRect().toJSON(),
+        dockRect: (function () {
+          const d = document.getElementById("pm-flow-dock");
+          return d ? d.getBoundingClientRect().toJSON() : null;
+        })(),
         ledger,
       };
     })()`);
@@ -627,6 +643,24 @@ export async function runFlowChipBrowserBattery() {
         !bootState.pending &&
         !bootState.hidden,
       `${bootState.modelText} | ${bootState.valText} | fill=${bootState.poolFillWidth}`
+    );
+
+    // v28.8.0 (WO-01 round 3): the no-occlusion contract at boot — the
+    // chip's placed rect must clear the editor (the text field), the
+    // composer (the prompt box) AND the dock (with the 6px contract
+    // margin) on the live Chromium layout. This is the machine proof of
+    // the operator's "obstructs the prompt input itself" report staying
+    // closed.
+    const bootNoOcclusion =
+      !boxesOverlap(bootState.chipRect, bootState.editorRect, 6) &&
+      !boxesOverlap(bootState.chipRect, bootState.composerRect, 6) &&
+      (bootState.dockRect
+        ? !boxesOverlap(bootState.chipRect, bootState.dockRect, 6)
+        : true);
+    assert(
+      "3b. no-occlusion contract at boot: chip clears editor, composer and dock rects (6px margin)",
+      bootNoOcclusion,
+      `chip=${JSON.stringify(bootState.chipRect)} editor=${JSON.stringify(bootState.editorRect)} composer=${JSON.stringify(bootState.composerRect)} dock=${bootState.dockRect ? JSON.stringify(bootState.dockRect) : "none"}`
     );
 
     // Step 2: (click, wait, get) — Click #flow-start-gen with x4 batch hint + append 4 images
@@ -684,6 +718,12 @@ export async function runFlowChipBrowserBattery() {
     );
 
     // Step 4: (click, wait, get) — Dynamic flexbox & ResizeObserver test (expand editor height to 180px, shrink width to 210px)
+    // v28.8.0 (WO-01 round 3): the step now proves the no-occlusion
+    // contract through a layout change — the editor grows to 180px tall
+    // (the composer follows) and the ResizeObserver must re-place the
+    // chip into a berth that still clears the editor, composer and dock
+    // rects within 120ms, with maxWidth derived from the BERTH (the
+    // right shoulder's measured available width), not the editor width.
     const afterResize = await evalInPage(`(async function() {
       const ed = document.getElementById("PINHOLE_TEXT_AREA_ELEMENT_ID");
       ed.style.width = "210px";
@@ -696,12 +736,23 @@ export async function runFlowChipBrowserBattery() {
       const valEl = chip.querySelector(".mp-credit-values");
       const cr = chip.getBoundingClientRect();
       const er = ed.getBoundingClientRect();
+      const comp = document.getElementById("flow-composer");
+      const cor = comp.getBoundingClientRect();
+      const dock = document.getElementById("pm-flow-dock");
+      const dr = dock ? dock.getBoundingClientRect() : null;
+      // The B2 right-shoulder berth the contract should have chosen:
+      // x from composer.right+10 to min(vw-8, vw-dock.offsetWidth-10).
+      const vw = window.innerWidth;
+      const rightLim = dock ? Math.min(vw - 8, vw - dock.offsetWidth - 10) : vw - 8;
+      const berthAvail = Math.round(rightLim - (cor.right + 10));
       return {
         maxWidthStyle: chip.style.maxWidth,
-        chipTop: Math.round(cr.top),
-        chipBottom: Math.round(cr.bottom),
-        editorTop: Math.round(er.top),
-        editorBottom: Math.round(er.bottom),
+        hidden: chip.classList.contains("mp-credit-hidden"),
+        chipRect: cr.toJSON(),
+        editorRect: er.toJSON(),
+        composerRect: cor.toJSON(),
+        dockRect: dr ? dr.toJSON() : null,
+        berthAvail: berthAvail >= 140 ? berthAvail : null,
         chipWidth: Math.round(cr.width),
         modelClientW: modelEl.clientWidth,
         modelScrollW: modelEl.scrollWidth,
@@ -710,24 +761,46 @@ export async function runFlowChipBrowserBattery() {
       };
     })()`);
 
-    // v28.7.5 (WO-02): the chip rides ABOVE the editor's top edge (its
-    // bottom sits 6px clear of the editor top) — it may never intersect
-    // the editor rect again (the "chip obstructs the input" field
-    // report). ResizeObserver + rAF must still reposition within 120ms.
+    // v28.8.0 (WO-01 round 3): the reposition proof is the CONTRACT —
+    // within 120ms of the editor resize the chip's placed rect clears
+    // the editor (text field), the composer (prompt box) and the dock by
+    // the 6px margin, and it is VISIBLE (a lawful berth existed: the
+    // right shoulder). "Obstructs the prompt input itself" stays closed
+    // by machine, not by ladder arithmetic.
     assert(
-      "6. (click, wait, get) ResizeObserver reposition: chip floats ABOVE the editor, zero overlap, within 120ms",
-      Math.abs(afterResize.chipBottom - (afterResize.editorTop - 6)) <= 2 &&
-        afterResize.chipBottom <= afterResize.editorTop,
-      `chipBottom=${afterResize.chipBottom}, editorTop=${afterResize.editorTop}`
+      "6. (click, wait, get) ResizeObserver reposition within 120ms: chip holds a lawful berth, zero overlap with editor/composer/dock",
+      !afterResize.hidden &&
+        !boxesOverlap(afterResize.chipRect, afterResize.editorRect, 6) &&
+        !boxesOverlap(afterResize.chipRect, afterResize.composerRect, 6) &&
+        (afterResize.dockRect
+          ? !boxesOverlap(afterResize.chipRect, afterResize.dockRect, 6)
+          : true),
+      `chip=${JSON.stringify(afterResize.chipRect)} editor=${JSON.stringify(afterResize.editorRect)} composer=${JSON.stringify(afterResize.composerRect)} hidden=${afterResize.hidden}`
     );
 
+    // v28.8.0 (WO-01 round 3): maxWidth derives from the BERTH, not the
+    // editor — the chip flexes into the right shoulder's measured width
+    // (maxWidth === the shoulder's available width clamped to vwMax) and
+    // the values slot never clips (clientWidth === scrollWidth) while the
+    // model slot carries the ellipsis burden (scrollWidth > clientWidth
+    // proves the flexbox actually squeezed rather than overflowed).
     assert(
-      "7. (click, wait, get) dynamic flexbox width clamping (210px editor -> maxWidth 194px, values unclipped)",
-      afterResize.maxWidthStyle === "194px" &&
-        afterResize.chipWidth <= 194 &&
+      "7. (click, wait, get) dynamic flexbox berth clamping (maxWidth = right-shoulder width, values unclipped, model ellipsized)",
+      afterResize.berthAvail !== null &&
+        afterResize.maxWidthStyle === afterResize.berthAvail + "px" &&
+        afterResize.chipWidth <= afterResize.berthAvail &&
         afterResize.valClientW === afterResize.valScrollW &&
-        afterResize.valClientW > 0,
-      JSON.stringify(afterResize)
+        afterResize.valClientW > 0 &&
+        afterResize.modelScrollW > afterResize.modelClientW,
+      JSON.stringify({
+        maxWidthStyle: afterResize.maxWidthStyle,
+        berthAvail: afterResize.berthAvail,
+        chipWidth: afterResize.chipWidth,
+        modelClientW: afterResize.modelClientW,
+        modelScrollW: afterResize.modelScrollW,
+        valClientW: afterResize.valClientW,
+        valScrollW: afterResize.valScrollW,
+      })
     );
 
     // Restore editor size and test model-chip anchor cascade near left viewport edge
@@ -762,6 +835,36 @@ export async function runFlowChipBrowserBattery() {
       `anchor=${afterModelChipAnchor.anchor}, chipLeft=${afterModelChipAnchor.chipRect.left}, modelRight=${afterModelChipAnchor.modelChipRect.right}`
     );
 
+    // Step 4b: (wait, get) — v28.8.0 (WO-01 round 3) hide-when-needed
+    // proof: with the model chip hidden too, NOTHING anchorable remains
+    // on the page — the retired parked mode would have kept the chip
+    // visible above the dock ("remains present overlayed on the grid at
+    // times"); the no-occlusion contract HIDES it instead. Wait past the
+    // 1s poll so the hide is proven on the engine's own cadence.
+    const afterAllAnchorsGone = await evalInPage(`(async function() {
+      const mChip = document.getElementById("flow-model-chip");
+      mChip.style.display = "none";
+      await new Promise(r => setTimeout(r, 1400));
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const chip = document.getElementById("pm-flow-credit-chip");
+      const exportFn = window.__gmMenu["\ud83d\udccb Flow Credits: Export Ledger"];
+      const ledger = exportFn ? await exportFn() : null;
+      return {
+        hidden: chip.classList.contains("mp-credit-hidden"),
+        parkedClass: chip.classList.contains("mp-credit-parked"),
+        chipHiddenField: ledger ? ledger.engine.chipHidden : null,
+        anchor: ledger ? ledger.engine.anchor : null,
+      };
+    })()`);
+
+    assert(
+      "8b. (wait, get) hide-when-needed: no anchor on page -> chip hidden (parked mode retired), export reports chipHidden=true",
+      afterAllAnchorsGone.hidden === true &&
+        afterAllAnchorsGone.parkedClass === false &&
+        afterAllAnchorsGone.chipHiddenField === true,
+      JSON.stringify(afterAllAnchorsGone)
+    );
+
     // Step 5: Restore composer, trigger limit-notice toast, and verify wall charge + learned capTurns + reset reposition
     const afterLimitNotice = await evalInPage(`(async function() {
       const ed = document.getElementById("PINHOLE_TEXT_AREA_ELEMENT_ID");
@@ -771,6 +874,7 @@ export async function runFlowChipBrowserBattery() {
       mChip.style.position = "";
       mChip.style.left = "";
       mChip.style.bottom = "";
+      mChip.style.display = "";
       toolbar.insertBefore(mChip, toolbar.firstChild);
       comp.style.display = "flex";
       ed.style.display = "block";
