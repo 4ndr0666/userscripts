@@ -61,9 +61,17 @@ const RE = {
   jbm:    /['"]JetBrains Mono['"]/,
 };
 
-// foreign font LEADS (spec: JetBrains Mono data · Orbitron 700 display)
+// foreign font LEADS (spec: JetBrains Mono data · Orbitron 700 display).
+// WO-01 round-2 (6-a F01): 'Cinzel Decorative' REMOVED from this list — it
+// is the suite's own brand-glyph typeface: kernel/brand.js renders the Ψ
+// core in "Cinzel Decorative, serif" and kernel-smoke machine-asserts
+// exactly that ("brand: glyphNode Ψ core with Cinzel glyph font"); Prompt
+// Master loads the real WOFF2 for the flow-dock brand surface. A list that
+// flags the suite's own identity font is a list error — the round-1 list
+// carried it only because the lead detector below was dead and could never
+// fire on anything.
 const FOREIGN_FONTS = [
-  'Roboto Mono', 'Consolas', 'Arial Black', 'Segoe UI', 'Inter', 'Cinzel Decorative',
+  'Roboto Mono', 'Consolas', 'Arial Black', 'Segoe UI', 'Inter',
   'Helvetica', 'Verdana', 'Tahoma', 'Ubuntu', 'Menlo', 'Fira Code',
   'Cascadia Mono', 'DejaVu Sans', 'Noto Sans',
 ];
@@ -83,8 +91,32 @@ function auditFile(name, raw) {
     if (!exempt) {
       cssDecls += (L.match(/[a-z-]+\s*:\s*[^;{}]+;/g) || []).length;
       paints += (L.match(/(?:color|background|font-family)\s*:/g) || []).length;
-      const m = L.match(/(?:font-family|font\s*:)\s*([^;]+)/i);
-      if (m && /['"]/.test(m[1])) fontLines.push({ line: i + 1, decl: m[1].trim() });
+      /* WO-01 round-2 (6-a F01): the round-1 alternation
+       * `/(?:font-family|font\s*:)\s*([^;]+)/` never consumed the colon for
+       * the font-family branch — the captured value STARTED with ":", so
+       * every startsWith(...) lead test was dead on arrival and NO
+       * font-family declaration could ever fail (a false-certification
+       * vector: quoted 'Roboto Mono' leads shipped in dist). The detector
+       * now: (1) consumes the colon in BOTH branches; (2) matches leads
+       * QUOTED OR UNQUOTED (the old value-side /['"] quote requirement
+       * made unquoted Consolas leads invisible); (3) extracts the family
+       * list from `font:` SHORTHAND declarations (size/line-height precede
+       * the family — the lead test must run on the family part, not on
+       * "11px/1.25 Consolas"); (4) skips @font-face FAMILY DEFINITIONS
+       * (a definition is not a usage lead — the usage line is the one that
+       * matters). */
+      if (!/@font-face/.test(L)) {
+        const mFam = L.match(/font-family\s*:\s*([^;]+)/i);
+        const mShort = L.match(/\bfont\s*:\s*([^;]+)/i);
+        if (mFam) fontLines.push({ line: i + 1, decl: mFam[1].trim(), prop: 'font-family' });
+        else if (mShort) {
+          /* strip the shorthand's style/variant/weight/size[/lh] prefix —
+           * the family list is what follows the last metric token. */
+          const family = mShort[1].trim()
+            .replace(/^[^,]*?(?:\d+(?:\.\d+)?(?:px|pt|em|rem|%|vh|vw|ch|ex|q|mm|cm|in)?(?:\s*\/\s*\d+(?:\.\d+)?(?:px|pt|em|rem|%|vh|vw|ch|ex|q|mm|cm|in)?)?)\s+/i, '');
+          fontLines.push({ line: i + 1, decl: family.trim(), prop: 'font' });
+        }
+      }
     }
   }
 
@@ -105,11 +137,21 @@ function auditFile(name, raw) {
   if (!RE.psi.test(stripped)) gaps.push('Ψ branding glyph absent from runtime surfaces');
 
   const foreign = [];
+  /* WO-01 round-2 (6-a F01): lead extraction is now positional + normalized —
+   * first comma-separated family token, quotes AND escape backslashes
+   * stripped, case-insensitive — so `font-family: 'Roboto Mono', monospace`,
+   * `font: 11px/1.25 Consolas, monospace`, and escaped \'…\' variants all
+   * resolve to the same lead, while JBM-lead lists with foreign FALLBACKS
+   * (Akasha, Prompt Master) stay legal: only the LEAD fails. */
+  const leadOf = (familyList) => {
+    const first = String(familyList).split(',')[0].trim();
+    return first.replace(/^[\\'"]+|[\\'"]+$/g, '').trim().toLowerCase();
+  };
   for (const fl of fontLines) {
+    const lead = leadOf(fl.decl);
     for (const f of FOREIGN_FONTS) {
-      if (fl.decl.startsWith(`'${f}'`) || fl.decl.startsWith(`"${f}"`) ||
-          fl.decl.startsWith(`\\'${f}'`) || fl.decl.startsWith(`\\"${f}"`)) {
-        foreign.push(`${f} (line ${fl.line})`);
+      if (lead === f.toLowerCase()) {
+        foreign.push(`${f} (${fl.prop} lead, line ${fl.line})`);
       }
     }
   }

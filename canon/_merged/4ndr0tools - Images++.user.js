@@ -3885,7 +3885,7 @@ const CSS_SETUP = /*language=css*/ `
   textarea {
     resize: vertical;
     margin: 1px 0;
-    font: 11px/1.25 Consolas, monospace;
+    font: 11px/1.25 'JetBrains Mono', Consolas, monospace;   /* WO-01 round-2 (6-a F01): suite data font leads the shorthand family; Consolas kept as fallback so rendering is unchanged where JetBrains Mono is absent */
   }
   :invalid {
     background-color: #f002;

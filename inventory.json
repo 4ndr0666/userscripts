@@ -684,9 +684,9 @@
    "version": "6.0.2",
    "description": "Enterprise-grade, idempotent automation engine for HailuoAI featuring automated queue management, asset fetching with tracked-download deduplication, an in-HUD Asset Bay thumbnail gallery (click-to-new-window, hover-playable previews, blob downloads that never navigate the session window) with cross-reload persistence, completion notifications, failure-card masking, API hard purge, and interactive asset links — hardened for the 2026-09 MiniMax H3 site generation and the hailuoai.video/agent chat surface. v5.4: editable-context (Slate) DOM guards, self-healing HUD watchdog, HUD collapse + Ctrl+Alt+H toggle, frame isolation, webp-aware blob transport with retry, and non-destructive title telemetry.",
    "family": "sovereign platforms",
-   "sha256": "a4943a6c1043d7acb03203f9507f6ef1afb372a5acbf5ac692a9c922da06237b",
+   "sha256": "80e4bf5472787e6360228f352eceeab55ca96a14838ac3d5d1f368c6d62a127f",
    "lines": 1905,
-   "bytes": 96625,
+   "bytes": 96785,
    "matches": [
     "https://hailuoai.com/video*",
     "https://hailuoai.video/*",
@@ -751,9 +751,9 @@
    "version": "4.0.3",
    "description": "Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. Collapse-mode hotkey is configurable.",
    "family": "images",
-   "sha256": "0634d7acd3eab3ba45b3f70ca9162708d64c8a76ac0ecd98f7e566efef30dfa3",
+   "sha256": "8c9fa7c5ffd896a51c3410d17502c26a9d956292e8101ab288eff527734280ea",
    "lines": 4628,
-   "bytes": 138710,
+   "bytes": 138888,
    "matches": [
     "*://*/*"
    ],
@@ -1560,5 +1560,5 @@
    ]
   }
  ],
- "digest": "dc07a2ec759286492da77a043bb57973c74413ebb5e6bea4e2d29fcfe49daace"
+ "digest": "0d71276e5e32a2eeec2d0bccf115061fd3ddb92739c6b5b08b379c712065c678"
 }
