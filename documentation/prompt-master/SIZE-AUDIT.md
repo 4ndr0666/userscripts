@@ -1,6 +1,6 @@
-# SIZE-AUDIT — 4ndr0tools - Prompt Master.user.js (suite v2.0.0, G6 record)
+# SIZE-AUDIT — 4ndr0tools - Prompt Master.user.js (suite v1.10.0, G6 record)
 
-**Artifact:** `dist/4ndr0tools - Prompt Master.user.js` — 1,160,627 B (re-measured 2026-10-24 at suite v2.0.0, script v28.7.7; the v1.8.2-round "unchanged" claim was already wrong at its own commit — the tree measured 1,160,241 B that day; v1.4.10 baseline 1,122,838 B). The byte count in this line is machine-verified by tools/size-budget.mjs since WO-01 round-2.
+**Artifact:** `dist/4ndr0tools - Prompt Master.user.js` — 1,160,627 B (re-measured 2026-10-24 at suite v1.10.0, script v28.7.7; the v1.8.2-round "unchanged" claim was already wrong at its own commit — the tree measured 1,160,241 B that day; v1.4.10 baseline 1,122,838 B). The byte count in this line is machine-verified by tools/size-budget.mjs since WO-01 round-2.
 **Gate:** tools/size-budget.mjs (1,300,000 B hard budget; 1,000,000 B audit line — this record satisfies the latter; byte count VERIFIED against the live artifact).
 
 ## Composition analysis (machine-measured, this round — partitions exactly)
