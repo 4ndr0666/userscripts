@@ -9,8 +9,15 @@
  * Pipeline:
  *   1. modules/<name>/meta.json + body.js  →  kernel-inlined dist outputs
  *   2. canon/<name>/<file>.user.js         →  carried verbatim to dist
+ *      (WO-01 round 3, 3-b F2: verbatim carries are scan-checked too —
+ *      checkLexicalBalance + scanPlaceholders run on every carry before
+ *      the copy, so a standalone `npm run build` can no longer ship a
+ *      sentinel the full gate would have caught; previously only the
+ *      BUILT/inlined outputs were scanned at build time and the banner
+ *      overstated the coverage)
  *   3. Lexical validation on every output (§1.1-aware brace accounting,
- *      placeholder scan, unresolved-Ψ-reference scan).
+ *      placeholder scan; Ψ-reference discipline is enforced by the
+ *      kernel-export census — 3-a F14 header truth).
  *
  * Exit codes: 0 = clean, 1 = build failure, 2 = validation failure.
  * ═══════════════════════════════════════════════════════════════════════ */
@@ -168,9 +175,12 @@ function buildModule(dir) {
     const isDepOfIncluded = (mod) => kernelMods.some((m) => m !== mod && (KERNEL_DEPENDENCIES[m] || []).includes(mod));
     for (const mod of kernelMods) {
         if (directRefs.has(mod) || isDepOfIncluded(mod)) continue;
-        if (!new RegExp(`Ψ\\.${mod}\\b`).test(body)) {
-            throw new Error(`${meta.name}: kernel "${mod}" included but never used (dead code)`);
-        }
+        /* WO-01 round 3 (3-b F11): the inner regex re-test was dead code —
+         * directRefs is DEFINED as the KERNEL_ORDER members matching that
+         * exact regex on the same body, so reaching this point means the
+         * test is necessarily false; the throw fired on every path that
+         * reached it and the regex was re-compiled for nothing. */
+        throw new Error(`${meta.name}: kernel "${mod}" included but never used (dead code)`);
     }
     const kernelChunks = [];
     for (const mod of KERNEL_ORDER) {
@@ -258,9 +268,23 @@ function main() {
                 if (!f.endsWith(".user.js")) continue;
                 const kernelList = CANON_KERNEL[f];
                 if (!kernelList) {
-                    fs.copyFileSync(path.join(dir, f), path.join(DIST_DIR, f));
-                    outputs.add(f);
-                    carried++;
+                    /* WO-01 round 3 (3-b F2): verbatim carries get the same
+                     * build-time scans as inlined outputs — the round-2 banner
+                     * said "every output" while this branch copied blind (a
+                     * `= "PLACEHOLDER"` sentinel in a carry shipped to dist
+                     * with exit 0; validate.mjs Gate C caught it only in the
+                     * full check chain). Scan first, copy only when clean. */
+                    const carrySrc = fs.readFileSync(path.join(dir, f), "utf8");
+                    const carryFailures = scanPlaceholders(carrySrc, f);
+                    const carryBalance = checkLexicalBalance(carrySrc, f);
+                    if (carryBalance) carryFailures.push(carryBalance);
+                    if (carryFailures.length === 0) {
+                        fs.copyFileSync(path.join(dir, f), path.join(DIST_DIR, f));
+                        outputs.add(f);
+                        carried++;
+                    } else {
+                        failures.push(...carryFailures);
+                    }
                     continue;
                 }
                 const src = fs.readFileSync(path.join(dir, f), "utf8");
@@ -293,7 +317,18 @@ function main() {
                     chunks.push(`/* ══ kernel/${mod}.js (inlined by tools/build.mjs — edit kernel/, not here) ══ */\n${fs.readFileSync(p, "utf8").trim()}`);
                 }
                 if (moduleMissing) continue;   /* never write a kernel-less artifact for this file */
-                const cut = src.indexOf("\n", marker) + 1;
+                /* WO-01 round 3 (3-b F10): the F-16 guard checked only that the
+                 * marker EXISTS — a file ending AT the marker with no trailing
+                 * newline made indexOf return -1 → cut = 0 → the kernel chunk
+                 * prepended BEFORE the metadata block (the exact corruption
+                 * class F-16 was installed to prevent). Fail closed on the
+                 * degenerate form instead. */
+                const nl = src.indexOf("\n", marker);
+                if (nl === -1) {
+                    failures.push(`canon ${f}: no newline after ==/UserScript== end-marker — refusing to inline kernel before the metadata block`);
+                    continue;
+                }
+                const cut = nl + 1;
                 const out = src.slice(0, cut) + "\n" + chunks.join("\n\n") + "\n\n" + src.slice(cut);
                 const fileFailures = [];
                 const balanceErr = checkLexicalBalance(out, f);
@@ -316,8 +351,14 @@ function main() {
     //    WO-01 round-1 (2-a F19 companion): pruning is skipped entirely on a
     //    failed build — a file whose output failed validation is absent from
     //    `outputs`, and pruning then would DELETE the previous good dist
-    //    artifact alongside the refused new one. Fail closed: a failed build
-    //    leaves dist/ exactly as it found it.
+    //    artifact alongside the refused new one. Fail closed (3-b F3
+    //    truth, WO-01 round 3): a failed build never writes the FAILED
+    //    artifact and never prunes; outputs that already passed validation
+    //    EARLIER IN THE SAME RUN are written, so a failing run can leave
+    //    dist/ mixed-generation (staging all writes to a post-validation
+    //    commit would make the run atomic — optional hardening, not
+    //    required by F-19; the full `npm run check` chain re-validates
+    //    every artifact either way).
     const stale = [];
     if (failures.length === 0) {
         for (const f of fs.readdirSync(DIST_DIR)) {

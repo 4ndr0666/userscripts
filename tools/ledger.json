@@ -1,9 +1,14 @@
 {
-  "_comment": "GUP superset ledger — maps every legacy baseline artifact to its suite destination. modes: promoted (BETA became canonical), merged (hand-merge base), carried (verbatim + header normalization), absorbed (feature set lives inside dest), retired (kept only in legacy archive). evidence = human-readable superset argument.",
+  "_comment": "GUP superset ledger — maps every legacy baseline artifact to its suite destination. modes: promoted (BETA became canonical), merged (hand-merge base), carried (verbatim + header normalization), absorbed (feature set lives inside dest), retired (kept only in legacy archive), external-data (in-repo file consumed only by out-of-repo users — kept, not retired). evidence = human-readable superset argument.",
   "autopage.json": {
     "dest": "plugins/autopage.json",
     "mode": "external-data",
     "note": "WO-01 round-2 (6-b F6): 251 KB of autopager site rules carried from the legacy baseline — zero in-repo consumers by design (the readers are external userscripts that fetch this file from the raw repo URL, the WildFire-style autopager family). LEDGERED rather than retired precisely because retirement would break out-of-repo consumers; the file is inert data on every code census surface (no code, no grants, no matches). Reviewed each round with the rest of the ledger."
+  },
+  "bridge.py": {
+    "dest": "plugins/bridge.py",
+    "mode": "external-data",
+    "note": "WO-01 round-3 (3-d F6): the MPV-bridge local companion — Bunkr++'s module 6.7 actively POSTs stream URLs to its 127.0.0.1:19999 listener (5 s hard bound), and README advertises the companion plugins channel, so it is LIVE despite being invisible to every JS census (it is Python, outside the 39-file scanning surface). LEDGERED so no future orphan sweep retires the dispatch target — the autopage.json rationale applied to executable code. v1.7.4 hardening verified in round-2 (bounded bodies, typed 400s, the -- argument-injection guard, the scheme allowlist); round-3 adds the typed 500 for the mpv-absent Popen path (3-b F4)."
   },
   "4ndr0purge": {
     "dest": "4ndr0purge",

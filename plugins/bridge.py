@@ -62,7 +62,18 @@ class MPVBridgeHandler(BaseHTTPRequestHandler):
 
     def _dispatch_mpv(self, target_url):
         if is_allowed_target(target_url):
-            subprocess.Popen(['mpv', '--force-window=yes', '--', target_url.strip()])
+            # WO-01 round 3 (3-b F4): mpv-absent is the DEFAULT state on
+            # hosts that install the userscript suite without the player —
+            # subprocess.Popen raises FileNotFoundError (PermissionError /
+            # OSError variants otherwise), socketserver prints a raw
+            # traceback, and the HTTP client gets NO response: the exact
+            # unhandled-error class v1.7.4 closed for malformed
+            # Content-Length. Typed 500, the v1.7.4 discipline.
+            try:
+                subprocess.Popen(['mpv', '--force-window=yes', '--', target_url.strip()])
+            except OSError as exc:
+                self._send_cors(500, f"MPV_BRIDGE_ERROR: {exc}".encode('utf-8'))
+                return
             self._send_cors(200, b"OK")
         else:
             self._send_cors(400, b"BAD_REQUEST")
