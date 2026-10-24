@@ -120,7 +120,12 @@
         return (prefix = 'a4') => `${prefix}-${Date.now().toString(36)}-${(n++).toString(36)}`;
     })();
 
-    /* ── Bounded caches (GUP B.1: FIFO eviction, O(1) ops) ───────────────── */
+    /* ── Bounded caches (GUP B.1: LRU eviction via recency-refresh on get(),
+       O(1) ops — WO-01 round 3, 3-b F7: the class NAME says FIFO but get()
+       re-inserts to refresh recency, so eviction removes the
+       least-recently-USED key; the name is kept for surface stability, the
+       behavior is the more useful of the two and kernel-smoke pins the
+       set-path) ───────────────────────────── */
 
     class FIFOCache {
         constructor(max = 512) {
@@ -253,7 +258,11 @@
             }
             timer = setTimeout(() => {
                 cleanup();
-                reject(new Error(`waitFor: "${sel}" not found within ${timeout}ms`));
+                // WO-01 round 3 (3-b F6): TimeoutError, matching the JSDoc's
+                // promise and the abort-path idiom (DOMException + name) —
+                // a consumer branching on e.name === 'TimeoutError' now
+                // matches instead of silently falling through.
+                reject(new DOMException(`waitFor: "${sel}" not found within ${timeout}ms`, 'TimeoutError'));
             }, timeout);
         });
     }

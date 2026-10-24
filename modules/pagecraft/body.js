@@ -20,7 +20,11 @@
  * ═══════════════════════════════════════════════════════════════════════ */
 
 const store = Ψ.store.ns('pagecraft');
-const { $, $$, $new } = Ψ.core;
+// WO-01 round 3 (3-b F9): $ and $$ pruned from the destructure — zero
+// call sites in this module (every query goes through document.querySelector
+// / querySelectorAll or $new); the dead bindings inflated the kernel-export
+// census's consumer picture by two.
+const { $new } = Ψ.core;
 
 const MODULES = [
     { key: 'checkboxes', label: 'Bulk checkbox control', dflt: true,

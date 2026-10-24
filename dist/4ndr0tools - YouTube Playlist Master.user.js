@@ -48,7 +48,10 @@
  *                        mocked surface (readyState/status/statusText/
  *                        responseText/response/responseURL +
  *                        readystatechange/load/loadend, responseType
- *                        'json' parsed); beacons swallow;
+ *                        'json' parsed — WO-01 round 3, 3-b F12 truth:
+ *                        binary responseTypes receive the body as a STRING
+ *                        on the phantom path, the only live verdict surface
+ *                        being text/json); beacons swallow;
  *       { body: <new> }   rewrite the outgoing body (identifier
  *                        poisoning) — later subscribers see earlier
  *                        rewrites; the last rewrite wins.

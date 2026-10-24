@@ -147,7 +147,16 @@
      */
     function toast(text, { type = 'info', duration = 3500 } = {}) {
         const host = document.body || document.documentElement;
-        const el = $new('div', { class: `a4-toast a4-toast--${type}`, role: 'status' },
+        // WO-01 round 3 (3-b F1): the toast carries a4-scope — every CSS
+        // var it consumes (--a4-glass-2, --a4-brd-mid, --a4-cyan, --a4-font,
+        // --a4-glow-aura, --a4-light, --a4-text-dim) is declared ONLY on
+        // .a4-scope (the no-:root law), and a body-level toast is never a
+        // descendant of a scoped element: headless-Chromium proof showed
+        // computed background rgba(0,0,0,0) / border none / host-inherited
+        // color+font — every kernel toast rendered as ghost text. The
+        // element-class form matches the module-side idiom (hostwarp's
+        // body-level Gemini button already does classList.add('a4-scope')).
+        const el = $new('div', { class: `a4-toast a4-toast--${type} a4-scope`, role: 'status' },
             $new('span', { class: 'a4-toast-text' }, String(text)));
         el.style.opacity = '0';
         el.style.transform = 'translateX(12px)';
@@ -212,6 +221,10 @@
             return existing;
         }
 
+        // WO-01 round 3 (3-b F8): this light-DOM sheet is load-bearing even
+        // for shadow-mounted HUDs — body-level surfaces (glass.toast) consume
+        // its global rules, and the shadow root's innerStyle copy scopes only
+        // the HUD's own vars. Do not "optimize" it away.
         injectStyles();
 
         /* Mount strategy: closed shadow root (hostile pages) or light DOM. */

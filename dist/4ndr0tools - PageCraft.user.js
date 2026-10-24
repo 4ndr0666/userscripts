@@ -302,7 +302,12 @@
         return (prefix = 'a4') => `${prefix}-${Date.now().toString(36)}-${(n++).toString(36)}`;
     })();
 
-    /* ── Bounded caches (GUP B.1: FIFO eviction, O(1) ops) ───────────────── */
+    /* ── Bounded caches (GUP B.1: LRU eviction via recency-refresh on get(),
+       O(1) ops — WO-01 round 3, 3-b F7: the class NAME says FIFO but get()
+       re-inserts to refresh recency, so eviction removes the
+       least-recently-USED key; the name is kept for surface stability, the
+       behavior is the more useful of the two and kernel-smoke pins the
+       set-path) ───────────────────────────── */
 
     class FIFOCache {
         constructor(max = 512) {
@@ -435,7 +440,11 @@
             }
             timer = setTimeout(() => {
                 cleanup();
-                reject(new Error(`waitFor: "${sel}" not found within ${timeout}ms`));
+                // WO-01 round 3 (3-b F6): TimeoutError, matching the JSDoc's
+                // promise and the abort-path idiom (DOMException + name) —
+                // a consumer branching on e.name === 'TimeoutError' now
+                // matches instead of silently falling through.
+                reject(new DOMException(`waitFor: "${sel}" not found within ${timeout}ms`, 'TimeoutError'));
             }, timeout);
         });
     }
@@ -798,7 +807,16 @@
      */
     function toast(text, { type = 'info', duration = 3500 } = {}) {
         const host = document.body || document.documentElement;
-        const el = $new('div', { class: `a4-toast a4-toast--${type}`, role: 'status' },
+        // WO-01 round 3 (3-b F1): the toast carries a4-scope — every CSS
+        // var it consumes (--a4-glass-2, --a4-brd-mid, --a4-cyan, --a4-font,
+        // --a4-glow-aura, --a4-light, --a4-text-dim) is declared ONLY on
+        // .a4-scope (the no-:root law), and a body-level toast is never a
+        // descendant of a scoped element: headless-Chromium proof showed
+        // computed background rgba(0,0,0,0) / border none / host-inherited
+        // color+font — every kernel toast rendered as ghost text. The
+        // element-class form matches the module-side idiom (hostwarp's
+        // body-level Gemini button already does classList.add('a4-scope')).
+        const el = $new('div', { class: `a4-toast a4-toast--${type} a4-scope`, role: 'status' },
             $new('span', { class: 'a4-toast-text' }, String(text)));
         el.style.opacity = '0';
         el.style.transform = 'translateX(12px)';
@@ -863,6 +881,10 @@
             return existing;
         }
 
+        // WO-01 round 3 (3-b F8): this light-DOM sheet is load-bearing even
+        // for shadow-mounted HUDs — body-level surfaces (glass.toast) consume
+        // its global rules, and the shadow root's innerStyle copy scopes only
+        // the HUD's own vars. Do not "optimize" it away.
         injectStyles();
 
         /* Mount strategy: closed shadow root (hostile pages) or light DOM. */
@@ -1341,7 +1363,11 @@
  * ═══════════════════════════════════════════════════════════════════════ */
 
 const store = Ψ.store.ns('pagecraft');
-const { $, $$, $new } = Ψ.core;
+// WO-01 round 3 (3-b F9): $ and $$ pruned from the destructure — zero
+// call sites in this module (every query goes through document.querySelector
+// / querySelectorAll or $new); the dead bindings inflated the kernel-export
+// census's consumer picture by two.
+const { $new } = Ψ.core;
 
 const MODULES = [
     { key: 'checkboxes', label: 'Bulk checkbox control', dflt: true,

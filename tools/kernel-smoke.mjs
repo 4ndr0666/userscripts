@@ -254,6 +254,24 @@ const dieToast = Ψ.glass.toast("smoke", { duration: 0 });
 dieToast();
 toastDied = true;
 assert(toastDied, "glass: toast returns a disposer");
+/* WO-01 round-3 (3-b F1) regression tripwire: the toast element must carry
+ * a4-scope — every CSS var the toast rules consume is declared only on
+ * .a4-scope (the no-:root law), so a body-level toast without the class
+ * renders as ghost text (computed background transparent, border none,
+ * host-inherited font — headless-Chromium-proven broken in both directions).
+ * The mock body accumulates appended children (remove() is a no-op), so the
+ * probe walks body.children for the class pair directly. */
+{
+    const probeToast = Ψ.glass.toast("scope-probe", { duration: 0 });
+    /* $new applies the class attr via setAttribute (string value), which the
+     * mock stores in attrs — classList is not populated, so read the attr. */
+    const scopeEl = documentMock.body.children.find((c) => {
+        const cls = String((c.getAttribute && c.getAttribute("class")) || "");
+        return cls.split(/\s+/).includes("a4-toast") && cls.split(/\s+/).includes("a4-scope");
+    });
+    assert(!!scopeEl, "glass: toast carries a4-scope (body-level vars resolve — 3-b F1)");
+    probeToast();
+}
 
 /* hotkeys */
 const n1 = Ψ.hotkeys.normalizeCombo("alt+shift+s");
