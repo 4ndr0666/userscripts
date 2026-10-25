@@ -3,7 +3,7 @@
 // @name        4ndr0tools - Forums++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     1.11.1
+// @version     1.11.2
 // @description Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @match       https://simpcity.su/threads/*
@@ -1267,12 +1267,16 @@ const __4NDR0_NET_API__ = (function () {
     return api;
 })();
 
+// 1.11.2 (suite v1.12.0, WO-01 round 5): the ibb.co data-object decode joins
+// the guarded family (5-c F01 — the 1.11.1 line below claimed "both sites"
+// while only the Content-Disposition filename site had shipped the guard;
+// this is the second site, error-path-only, identical on well-formed input).
 // 1.11.1 (suite v1.12.0, WO-01 round 4): hardening batch — createForm's
-// form-id now escapes postId like every sibling sink (4-c F07); both
-// decodeURIComponent sites degrade losslessly on malformed input instead
-// of throwing (Content-Disposition filename + download URL params; 4-c F05).
+// form-id now escapes postId like every sibling sink (4-c F07); the
+// Content-Disposition filename decodeURIComponent site degrades losslessly
+// on malformed input instead of throwing (4-c F05).
 // 1.9.2 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Forums++.user v1.11.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Forums++.user v1.11.2 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 /* global JSZip, tippy, GM_xmlhttpRequest, saveAs, sha256, GM_download, GM_getValue, GM_setValue */
 
@@ -2851,6 +2855,13 @@ const resolvers = [
 
                 const fetchPageData = async (albId, page, seekEnd, token) => {
                     const seek = seekEnd || '';
+                    /* WO-01 round-5 (5-c F01): the ibb.co data-object URL decode now
+                     * degrades losslessly like its disposition-filename sibling
+                     * (the 1.11.1 changelog claimed "both sites" but only the
+                     * disposition site had shipped the guard — this was the raw
+                     * one; a bare '%' previously aborted the whole album page
+                     * into the error-logged drop below). */
+                    const safeDecode = (s) => { try { return decodeURIComponent(s); } catch { return s; } };
                     const data = `action=list&list=images&sort=date_desc&page=${page}&from=album&albumid=${albId}&params_hidden%5Blist%5D=images&params_hidden%5Bfrom%5D=album&params_hidden%5Balbumid%5D=${albId}&auth_token=${token}&seek=${seek}&items_per_page=32`;
                     const { source: response } = await http.post(
                         'https://ibb.co/json',
@@ -2864,7 +2875,7 @@ const resolvers = [
                         if (parsed && parsed.status_code === 200) {
                             const html = parsed.html;
                             const urls = h.re.matchAll(/(?<=data-object=').*?(?=')/gi, html)
-                                .map(o => JSON.parse(decodeURIComponent(o))?.url)
+                                .map(o => JSON.parse(safeDecode(o))?.url)
                                 .filter(Boolean);
                             return { urls, parsed };
                         }

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Images++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      4.0.4
+// @version      4.0.5
 // @description  Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. Collapse-mode hotkey is configurable.
 // @author       4ndr0666
 // @match        *://*/*
@@ -51,11 +51,14 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Images++.user.js
 // @license      MIT
 // ==/UserScript==
+// 4.0.5 (suite v1.12.0, WO-01 round 5): the googleusercontent proxy rule's
+// s-callback and Util.decodeUrl join the guarded family (5-c F02) — a bare
+// '%' in a proxy URL no longer throws out of the rule matcher's pipeline.
 // 4.0.4 (suite v1.12.0, WO-01 round 4): error-path hardening — the fastpic
 // rule and getFileName decodes degrade losslessly on malformed
 // percent-escapes instead of throwing inside the mpiv engine (4-c F05).
 // 4.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Images++.user v4.0.4 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Images++.user v4.0.5 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 /* ═══ v4.0.0 — SUITE CONSOLIDATION MERGE (GUP superset gate) ═════════════════
    Base:      Images++ v3.0.0 stable — the universal mouseover-preview lineage
@@ -2189,7 +2192,9 @@ const Ruler = {
           '||googleusercontent.com/gadgets/proxy',
         ],
         r: /\.com\/(proxy|gadgets\/proxy.+?(http.+?)&)/,
-        s: m => m[2] ? decodeURIComponent(m[2]) : m.input.replace(/w\d+-h\d+($|-p)/, 'w0-h0'),
+        /* v4.0.5 (5-c F02): a bare '%' in the proxied URL must not abort the
+         * rule — degrade to the raw token (the fastpic/getFileName precedent). */
+      s: m => m[2] ? ((v) => { try { return decodeURIComponent(v); } catch { return v; } })(m[2]) : m.input.replace(/w\d+-h\d+($|-p)/, 'w0-h0'),
       },
       {
         u: [
@@ -3194,9 +3199,13 @@ const Util = {
     if (!url || typeof url !== 'string') return url;
     const iPct = url.indexOf('%');
     const iColon = url.indexOf(':');
-    return iPct >= 0 && (iPct < iColon || iColon < 0) ?
-      decodeURIComponent(url) :
-      url;
+    // v4.0.5 (5-c F02): a bare '%' in a googleusercontent proxy URL must not
+    // throw out of the rule matcher (the engine's rule loop aborted for that
+    // hover) — degrade to the raw URL (the fastpic/getFileName precedent).
+    if (iPct >= 0 && (iPct < iColon || iColon < 0)) {
+      try { return decodeURIComponent(url); } catch { return url; }
+    }
+    return url;
   },
 
   deepEqual(a, b) {

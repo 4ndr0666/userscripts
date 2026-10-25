@@ -62,12 +62,12 @@
   {
    "file": "4ndr0tools - Akasha Silence.user.js",
    "name": "4ndr0tools - Akasha Silence",
-   "version": "5.2.2",
+   "version": "5.2.3",
    "description": "Unified counter-surveillance defense layer with a three-stage strictness valve (full / core / off via Ctrl+Alt+Shift+K). Three-way consolidation of Anti-detection + Counter-surveillance + Anti-telemetry (ICC): anti-analysis script neutralization, telemetry sinkholing (fetch/XHR/beacon/WebSocket), WebRTC blinding, session-stable fingerprint spoofing (hardware/canvas/WebGL/audio), identifier poisoning, Google link-tracking sanitization and hostile-UI countermeasures.",
    "family": "privacy & security",
-   "sha256": "cb54afe1c44a8bd5313574215fa9d508d52df4eab695f8d3bcfc610c50db117f",
-   "lines": 2151,
-   "bytes": 117395,
+   "sha256": "a0edfe8c0657a84e9d5a3d94c6fe02a190387ae5d101a35fa129b89f9aa13201",
+   "lines": 2164,
+   "bytes": 118250,
    "matches": [
     "*://*/*"
    ],
@@ -522,12 +522,12 @@
   {
    "file": "4ndr0tools - Forums++.user.js",
    "name": "4ndr0tools - Forums++",
-   "version": "1.11.1",
+   "version": "1.11.2",
    "description": "Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.",
    "family": "forums",
-   "sha256": "84f80246b1cd80623fb6c6a6c3ce965a2f868a697372b0c37afe8876d7a395be",
-   "lines": 4911,
-   "bytes": 236346,
+   "sha256": "214af90eca96889da955650ef98d29bac4aba62a1fc4c6b7d126fa83e3bed250",
+   "lines": 4922,
+   "bytes": 237201,
    "matches": [
     "https://simpcity.su/threads/*",
     "https://simpcity.cr/threads/*"
@@ -772,12 +772,12 @@
   {
    "file": "4ndr0tools - Images++.user.js",
    "name": "4ndr0tools - Images++",
-   "version": "4.0.4",
+   "version": "4.0.5",
    "description": "Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. Collapse-mode hotkey is configurable.",
    "family": "images",
-   "sha256": "0e0e01f80cd47a7f120d5afd0c2deb1869af999d19cef58c1807ff9c76f80844",
-   "lines": 4636,
-   "bytes": 139517,
+   "sha256": "e62972656994f472b16659982c3abca26cabc696c90f54571ac977d382a5a9f6",
+   "lines": 4645,
+   "bytes": 140238,
    "matches": [
     "*://*/*"
    ],
@@ -914,12 +914,12 @@
   {
    "file": "4ndr0tools - Login Form Autofiller.user.js",
    "name": "4ndr0tools - Login Form Autofiller",
-   "version": "2.0.5",
+   "version": "2.0.6",
    "description": "It integrates BugMeNot into any login form (it retrieves all matching logins from bugmenot.com and autofills the login form)",
    "family": "ux utilities",
-   "sha256": "66d90df783263ce2fd363409713c802be2abfd3969a23858ae5b1108c0d537c1",
-   "lines": 1017,
-   "bytes": 44860,
+   "sha256": "7d5378e07224b021416ce8ced64d48ad6987e02da852a5451302dc8177ad4530",
+   "lines": 1020,
+   "bytes": 45049,
    "matches": [],
    "includes": [
     "http://*",
@@ -1628,5 +1628,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "68bff9a1a46178d94e6550f8cbb58c28f1846d73556c4a3113b7c30da18cfc18"
+ "digest": "69746aee4cf62fd24ebe6dd23517275154202381752a28849a2c2d533bdb01ae"
 }

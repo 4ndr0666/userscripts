@@ -54,8 +54,8 @@ check-scraped flow; paste-to-check remains at the top of the Check tab.
 
 | You had | Install instead | Then uninstall |
 |---|---|---|
-| Images++ v3.0.0 (universal) | [Images++ v4.0.4](../dist/4ndr0tools%20-%20Images%2B%2B.user.js) | Images++ (old) |
-| Images++BETA v2.1.0 (IG-scoped) | [Images++ v4.0.4](../dist/4ndr0tools%20-%20Images%2B%2B.user.js) — see note | Images++BETA |
+| Images++ v3.0.0 (universal) | [Images++ v4.0.5](../dist/4ndr0tools%20-%20Images%2B%2B.user.js) | Images++ (old) |
+| Images++BETA v2.1.0 (IG-scoped) | [Images++ v4.0.5](../dist/4ndr0tools%20-%20Images%2B%2B.user.js) — see note | Images++BETA |
 
 Note: the BETA was a divergent IG/imagefap-scoped branch. Its one unique
 feature — configurable collapse hotkey — is in v4.0.3. If you relied on the
@@ -66,9 +66,9 @@ v4.0.3) covers it; Instagram++ remains the dedicated IG tool.
 
 | You had | Install instead | Then uninstall |
 |---|---|---|
-| Anti-detection v1.1 | [Akasha Silence v5.2.2](../dist/4ndr0tools%20-%20Akasha%20Silence.user.js) | Anti-detection |
-| Counter-surveillance v4.0.0 | [Akasha Silence v5.2.2](../dist/4ndr0tools%20-%20Akasha%20Silence.user.js) | Counter-surveillance |
-| Anti-telemetry (ICC) v3.5.0 | [Akasha Silence v5.2.2](../dist/4ndr0tools%20-%20Akasha%20Silence.user.js) | Anti-telemetry (ICC) |
+| Anti-detection v1.1 | [Akasha Silence v5.2.3](../dist/4ndr0tools%20-%20Akasha%20Silence.user.js) | Anti-detection |
+| Counter-surveillance v4.0.0 | [Akasha Silence v5.2.3](../dist/4ndr0tools%20-%20Akasha%20Silence.user.js) | Counter-surveillance |
+| Anti-telemetry (ICC) v3.5.0 | [Akasha Silence v5.2.3](../dist/4ndr0tools%20-%20Akasha%20Silence.user.js) | Anti-telemetry (ICC) |
 
 The three scripts shared ~70% of their core (hardware shroud, canvas
 blinding, network nullification) — running two of them together double-hooked
