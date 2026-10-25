@@ -85,6 +85,11 @@ function auditFile(name, raw) {
 
   let cssDecls = 0, paints = 0;
   const fontLines = [];
+  /* WO-01 round-5 (5-a F06 / 4-a F07 leftover): multi-line @font-face blocks —
+   * enter on `@font-face … {` with no same-line `}`, exit on the closing `}`;
+   * family DEFINITIONS inside are not usage leads. Zero live in the corpus
+   * (PM's is single-line), but the exemption is now shape-correct. */
+  let inFontFaceBlock = false;
   for (let i = 0; i < lines.length; i++) {
     const L = lines[i];
     const exempt = EXEMPT_LINE.test(L);
@@ -105,7 +110,9 @@ function auditFile(name, raw) {
        * "11px/1.25 Consolas"); (4) skips @font-face FAMILY DEFINITIONS
        * (a definition is not a usage lead — the usage line is the one that
        * matters). */
-      if (!/@font-face/.test(L)) {
+      if (/@font-face/.test(L) && !/\}/.test(L)) inFontFaceBlock = true;
+      else if (inFontFaceBlock && /\}/.test(L)) inFontFaceBlock = false;
+      if (!/@font-face/.test(L) && !inFontFaceBlock) {
         const mFam = L.match(/font-family\s*:\s*([^;]+)/i);
         const mShort = L.match(/\bfont\s*:\s*([^;]+)/i);
         if (mFam) fontLines.push({ line: i + 1, decl: mFam[1].trim(), prop: 'font-family' });

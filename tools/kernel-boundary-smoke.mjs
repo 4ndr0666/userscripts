@@ -13,12 +13,12 @@ import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
 import { fileURLToPath } from "node:url";
-import { codeOnly } from "./sink-census.mjs";
+import { codeOnly, codeOnlyCached } from "./scan-kit.mjs"; /* WO-01 round-5 (5-a F08): the 9th codeOnly importer joins the shared per-file memo — the 36 canon files were re-lexed bare inside the same validate process that already memoized them (~0.3 s/check). The red control below masks its synthetic sample directly (it is not a file). */
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
-export function scanKernelBoundarySource(src, relPath) {
-    const clean = codeOnly(src);
+export function scanKernelBoundarySource(maskedSrc, relPath) {
+    const clean = maskedSrc;
     const lines = clean.split("\n");
     const bareSites = [];
     let guardedSites = 0;
@@ -81,7 +81,7 @@ export async function runKernelBoundarySmoke(root = ROOT) {
             canonFiles++;
             const rel = `${d}/${f}`;
             const src = fs.readFileSync(path.join(absDir, f), "utf8");
-            const { bareSites, guardedSites } = scanKernelBoundarySource(src, rel);
+            const { bareSites, guardedSites } = scanKernelBoundarySource(codeOnlyCached(path.join(absDir, f)), rel);
             if (bareSites.length > 0) {
                 for (const b of bareSites) {
                     problems.push(`${b.file}:${b.line}: unguarded bare __4NDR0_NET_API__ reference: \`${b.text}\``);
@@ -179,7 +179,7 @@ export async function runKernelBoundarySmoke(root = ROOT) {
 
     // RED CONTROL: verify scanKernelBoundarySource flags an unguarded bare __4NDR0_NET_API__ call
     const redSample = `(function() {\n  __4NDR0_NET_API__.onTraffic((ev) => {});\n})();`;
-    const redRes = scanKernelBoundarySource(redSample, "red-control.user.js");
+    const redRes = scanKernelBoundarySource(codeOnly(redSample), "red-control.user.js");
     const redControlCaught = redRes.bareSites.length === 1 && redRes.bareSites[0].line === 2;
     if (!redControlCaught) {
         problems.push("kernel-boundary red control failed to flag unguarded bare __4NDR0_NET_API__ reference");

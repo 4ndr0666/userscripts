@@ -35,7 +35,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { codeOnly } from "./sink-census.mjs";
 import { codeOnlyCached } from "./scan-kit.mjs"; /* WO-01 round-4 (4-a F04): shared per-file memo */
 import { CURRENT_ROUND, roundLt } from "./census-round.mjs";
 /* WO-01 round-3 (3-a F08): the module list derives from kernel-order.mjs

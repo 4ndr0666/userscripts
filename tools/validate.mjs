@@ -173,7 +173,7 @@ const RECONCILED_NAMES = {
         /* WO-01 round-4 (4-c F06): dead helper removed — zero call sites
          * (showVideo renders through createElement/textContent since the TT
          * migration; comment-stripped census clean). */
-        "escapeHtml": {"note": "removed as dead code (WO-01 round-4): the G8 string-escaper had zero call sites — showVideo's item rendering is element-built (createElement/textContent), so the mitigation outlived its consumer", "anchor": null},
+        "escapeHtml": {"note": "removed as dead code (WO-01 round-4): the G8 string-escaper had zero call sites — showVideo's item rendering is element-built (createElement/textContent), so the mitigation outlived its consumer", "anchor": { "file": "canon/_promoted/4ndr0tools - m3u8++.user.js", "mustContain": ["showVideo", "createElement"] }},
     },
     "Blob2URL": {
         /* WO-01 round-2 (6-a F05): surfaced by comment-aware unitPresent —

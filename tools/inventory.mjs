@@ -250,7 +250,7 @@ function inventory() {
      * WO-01 round-4 (4-c F01/4-d F1): GLOB-universal @include forms (*,
      * http://*, https://*) are admitted too — converges with the
      * domain-census ledger's 19-script star family (was 17 here). */
-    const globInclude = (inc) => inc === "*" || /^https?:\/\/\*\/?$/.test(inc) || /^\*$/.test(inc);
+    const globInclude = (inc) => inc === "*" || /^https?:\/\/\*\/?$/.test(inc); /* WO-01 round-5 (5-d F04): the /^\*$/ third clause duplicated inc === "*" — dropped (gen-docs.mjs's incGlob carries the same two-form shape). */
     const starFamily = scripts
         .filter((s) => s.matches.some((m) => !domainOf(m)) || (s.includes || []).some(globInclude))
         .map((s) => s.name);

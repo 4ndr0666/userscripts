@@ -60,6 +60,32 @@ export function runSizeBudget(root = DEFAULT_ROOT) {
                         problems.push(`documentation/${path.basename(docDir)}/SIZE-AUDIT.md: recorded ${recorded.toLocaleString()} B but dist/${f} measures ${bytes.toLocaleString()} B — re-measure the record (the gate verifies byte counts now)`);
                     }
                 }
+                /* WO-01 round-5 (5-a F02 / watch-list iii): the suite stamp is
+                 * machine-verified too — the byte count has been since round-2
+                 * (6-d F1), but the H1's "(suite vX)" stamp could trail a pin
+                 * while the artifact's bytes happened not to change (tools-only
+                 * rounds; proven live by the round-5 pin-only clone probe).
+                 * Fail-closed at the pin. */
+                const stamp = /\(suite v(\d+\.\d+\.\d+),/.exec(record.split("\n")[0]);
+                const live = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8")).version;
+                if (!stamp) {
+                    problems.push(`documentation/${path.basename(docDir)}/SIZE-AUDIT.md: no "(suite v<version>, G6 record)" stamp on the H1 — the measured-at round is not machine-verifiable`);
+                } else if (stamp[1] !== live) {
+                    problems.push(`documentation/${path.basename(docDir)}/SIZE-AUDIT.md: stamped suite v${stamp[1]} but the tree pins v${live} — re-measure the record at the current round (the gate verifies suite stamps now)`);
+                }
+                /* WO-01 round-5 rider (5-a F02): the artifact-intrinsic anchor —
+                 * the FIRST "script vX.Y.Z" token on the Artifact line vs the
+                 * dist file's own @version meta (first 4000 B). Catches
+                 * intra-round script bumps that don't move the suite round;
+                 * historical prior-measure prose carries no earlier "script v"
+                 * token, so history cannot trip it. */
+                const artLine = record.split("\n").find((l) => l.startsWith("**Artifact:**"));
+                const sv = /script v(\d+(?:\.\d+)+)/.exec(artLine || "");
+                const distHead = fs.readFileSync(path.join(dist, f), "utf8").slice(0, 4000);
+                const dv = /@version\s+(\d+(?:\.\d+)+)/.exec(distHead);
+                if (sv && dv && sv[1] !== dv[1]) {
+                    problems.push(`documentation/${path.basename(docDir)}/SIZE-AUDIT.md: artifact line says script v${sv[1]} but dist/${f} carries @version ${dv[1]} — re-measure the record at the script's current version`);
+                }
                 stats.auditRecords++;
             }
         }
