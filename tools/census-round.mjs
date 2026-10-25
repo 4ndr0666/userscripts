@@ -24,3 +24,20 @@ const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const pkgVersion = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8")).version;
 
 export const CURRENT_ROUND = `v${pkgVersion}`;
+
+/* WO-01 round-4 (4-a F02): the version comparison itself is single-sourced
+ * here too — nine byte-identical copies lived across the censuses (the
+ * port-drift class round-2's scan-kit unification closed for scanners: a
+ * future semantic change — pre-release tags, 2-segment rounds — must reach
+ * ONE site, not nine). Strict component-wise compare; equality is NOT
+ * less-than (the G9 gates fire AT expiry via `roundLt(round, expiry) ===
+ * false`). */
+export function roundLt(a, b) {
+    const pa = a.replace(/^v/, "").split(".").map(Number);
+    const pb = b.replace(/^v/, "").split(".").map(Number);
+    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+        const x = pa[i] || 0, y = pb[i] || 0;
+        if (x !== y) return x < y;
+    }
+    return false;
+}

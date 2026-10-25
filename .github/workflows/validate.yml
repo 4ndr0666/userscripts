@@ -39,6 +39,19 @@ jobs:
       # kernel-boundary, flow-chip-browser, ig-wall-browser, pm-grid-browser);
       # all are zero-dependency (node builtins only — the browser batteries
       # spawn an isolated Chromium themselves).
+      #
+      # WO-01 round-4 (deferred item (b), adjudicated): the six batteries
+      # ALSO run inside `npm run check`'s validate gate (gateD), so this step
+      # is a deliberate DOUBLE RUN — the redundancy is the belt-and-suspenders
+      # design, not an accident: it exercises the `npm run smoke` SCRIPT
+      # PLUMBING itself (package.json script composition, which `npm run
+      # check` never touches — a broken smoke-script chain would still fail
+      # the push) and gives each battery an invocation decoupled from the
+      # production-score machinery. Deterministic batteries: the second run
+      # adds zero detection power for tree defects and ~2× browser-battery
+      # wall time on a low-frequency push cadence. If CI wall time ever
+      # matters, fold the standalone kernel-smoke step above first (its
+      # battery already runs inside the production score).
       - name: Runtime contract smoke batteries
         run: npm run smoke
 

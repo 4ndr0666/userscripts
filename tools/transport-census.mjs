@@ -34,7 +34,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { CURRENT_ROUND } from "./census-round.mjs"; /* WO-01 round-1 (2-a F1): round derives from package.json — the hardcoded
+import { CURRENT_ROUND, roundLt } from "./census-round.mjs"; /* WO-01 round-1 (2-a F1): round derives from package.json — the hardcoded
  * "v1.7.2" left every G9 expiry check inert while the suite reached v1.8.2. */
 import { codeOnly } from "./sink-census.mjs";
 import { codeOnlyCached } from "./scan-kit.mjs"; /* WO-01 round-4 (4-a F04): shared per-file memo */
@@ -253,16 +253,8 @@ export function runTransportCensus(root = DEFAULT_ROOT) {
     }
 
     /* drift: ledger entries whose site no longer exists, or whose expiry
-     * round has passed without re-adjudication (G9 ledger hygiene, v1.5.1) */
-    const roundLt = (a, b) => {
-        const pa = a.replace(/^v/, "").split(".").map(Number);
-        const pb = b.replace(/^v/, "").split(".").map(Number);
-        for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-            const x = pa[i] || 0, y = pb[i] || 0;
-            if (x !== y) return x < y;
-        }
-        return false;
-    };
+     * round has passed without re-adjudication (G9 ledger hygiene, v1.5.1;
+     * roundLt single-sourced from census-round.mjs since WO-01 round-4) */
     for (const e of ADJUDICATED_VAR_PASSED) {
         const key = `${e.file}::${e.callText}`;
         if (!seenAdjudications.has(key)) {

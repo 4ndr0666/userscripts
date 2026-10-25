@@ -37,7 +37,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { codeOnly } from "./sink-census.mjs";
 import { codeOnlyCached } from "./scan-kit.mjs"; /* WO-01 round-4 (4-a F04): shared per-file memo */
-import { CURRENT_ROUND } from "./census-round.mjs";
+import { CURRENT_ROUND, roundLt } from "./census-round.mjs";
 /* WO-01 round-3 (3-a F08): the module list derives from kernel-order.mjs
  * single-source (+net, which KERNEL_ORDER deliberately excludes because it
  * is never bundled — it is inlined standalone). A hand-maintained list here
@@ -138,15 +138,7 @@ const KEEP_LEDGER = {
 
 /* ── Census core ─────────────────────────────────────────────────────────── */
 
-const roundLt = (a, b) => {
-    const pa = a.replace(/^v/, "").split(".").map(Number);
-    const pb = b.replace(/^v/, "").split(".").map(Number);
-    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-        const x = pa[i] || 0, y = pb[i] || 0;
-        if (x !== y) return x < y;
-    }
-    return false;
-};
+/* WO-01 round-4 (4-a F02): roundLt is single-sourced from census-round.mjs now — the nine byte-identical copies are gone (port-drift class closed). */
 
 /** All consumer corpus files (code views). Kernel cross-module use counts. */
 function corpusFiles() {

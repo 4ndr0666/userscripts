@@ -100,7 +100,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { CURRENT_ROUND } from "./census-round.mjs"; /* WO-01 round-1 (2-a F1): round derives from package.json — the hardcoded
+import { CURRENT_ROUND, roundLt } from "./census-round.mjs"; /* WO-01 round-1 (2-a F1): round derives from package.json — the hardcoded
  * "v1.7.2" left every G9 expiry check inert while the suite reached v1.8.2. */
 import { codeOnly } from "./sink-census.mjs";
 import { codeOnlyCached } from "./scan-kit.mjs"; /* WO-01 round-4 (4-a F04): shared per-file memo */
@@ -314,7 +314,12 @@ const F3_RE = /if\s*\([^)]{0,160}(?:querySelector|getElementById|\.contains\s*\(
 const LOOP_RE = /for\s*\(|while\s*\(|\.forEach\s*\(|\.map\s*\(|\.some\s*\(|\.every\s*\(|\.reduce\s*\(|\.filter\s*\(|for\s+await/;
 const DOMWRITE_RE = /appendChild|\.append\s*\(|insertAdjacentHTML|innerHTML|outerHTML|removeChild|replaceChild|insertBefore|createElement|setAttribute|parseFromString|\.remove\s*\(\)|\.after\s*\(|\.before\s*\(|\.replaceWith/;
 const NET_RE = /gmFetch|GM_xmlhttpRequest|GM\.xmlHttpRequest|fetch\s*\(|XMLHttpRequest|\.send\s*\(/;
-const EVAL_RE = /(?:^|[^\w$.])eval\s*\(|new\s+Function/;
+/* WO-01 round-4 (4-a F07): the `.` dropped from the class — `window.eval(`
+ * was invisible to the cheap-body classifier (the identical one-character
+ * precedent already landed twice: polling 6-a F04, transport 3-a F10).
+ * Zero live today (the only window.eval site is Images++'s page-$ bridge,
+ * not an observer body) — the member form fails closed from now on. */
+const EVAL_RE = /(?:^|[^\w$])eval\s*\(|new\s+Function/;
 const COALESCE_STRUCT_RE = /setTimeout\s*\(|clearTimeout|requestAnimationFrame|cancelAnimationFrame/;
 const THROTTLE_RE = /(?:Date|performance)\s*\.\s*now\s*\(\s*\)\s*-\s*[A-Za-z_$][\w$]*\s*</;
 const CHEAP_MAX_BODY = 500;
@@ -589,16 +594,7 @@ export function runObserverCensus(root = DEFAULT_ROOT) {
     return { problems, ...stats };
 }
 
-/* v1.6.0 < v1.7.0 (string-aware compare, tolerant of missing segments) */
-function roundLt(a, b) {
-    const pa = a.replace(/^v/, "").split(".").map(Number);
-    const pb = b.replace(/^v/, "").split(".").map(Number);
-    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-        const x = pa[i] || 0, y = pb[i] || 0;
-        if (x !== y) return x < y;
-    }
-    return false;
-}
+/* WO-01 round-4 (4-a F02): roundLt is single-sourced from census-round.mjs now — the nine byte-identical copies are gone (port-drift class closed). */
 
 /* CLI: node tools/observer-census.mjs [root] */
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {

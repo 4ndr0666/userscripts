@@ -34,23 +34,14 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { CURRENT_ROUND } from "./census-round.mjs"; /* WO-01 round-1 (2-a F1): round derives from package.json — the hardcoded
+import { CURRENT_ROUND, roundLt } from "./census-round.mjs"; /* WO-01 round-1 (2-a F1): round derives from package.json — the hardcoded
  * "v1.7.2" left every G9 expiry check inert while the suite reached v1.8.2. */
 import { codeOnly } from "./sink-census.mjs";
 import { codeOnlyCached } from "./scan-kit.mjs"; /* WO-01 round-4 (4-a F04): shared per-file memo */
 
 const DEFAULT_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
-/* v1.6.0 < v1.7.0 (string-aware compare, tolerant of missing segments) */
-function roundLt(a, b) {
-    const pa = a.replace(/^v/, "").split(".").map(Number);
-    const pb = b.replace(/^v/, "").split(".").map(Number);
-    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-        const x = pa[i] || 0, y = pb[i] || 0;
-        if (x !== y) return x < y;
-    }
-    return false;
-}
+/* WO-01 round-4 (4-a F02): roundLt is single-sourced from census-round.mjs now — the nine byte-identical copies are gone (port-drift class closed). */
 
 /* ── Adjudication ledger: sanctioned realm writes ─────────────────────────── */
 /* WO-01 round-1 re-adjudication: every entry below was re-verified against

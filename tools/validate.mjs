@@ -300,6 +300,30 @@ function gateB() {
             failures.push(`[B] RECONCILED_NAMES key "${rnKey}" matches no ledger dest — dead reconciliation config (re-key it to the ledger dest)`);
         }
     }
+    /* WO-01 round-4 (4-a F06): UNCONDITIONAL anchor self-check — the
+     * per-unit path below only verifies anchors whose units are ABSENT
+     * from the dest (the unitPresent short-circuit runs first), so an
+     * anchor whose claimed successor disappeared while the unit name
+     * coincidentally (re)appeared in the dest was never checked — a
+     * dormant-anchor class. Every anchor is now verified on EVERY run,
+     * independent of unit presence: drift in either direction fails. */
+    for (const [destKeySelf, renamesSelf] of Object.entries(RECONCILED_NAMES)) {
+        for (const unitSelf of Object.keys(renamesSelf)) {
+            const rnSelf = renamesSelf[unitSelf];
+            if (typeof rnSelf !== "object" || rnSelf === null || !rnSelf.anchor) continue;
+            const anchorFileSelf = path.join(ROOT, rnSelf.anchor.file);
+            if (!fs.existsSync(anchorFileSelf)) {
+                failures.push(`[B] anchor self-check: "${unitSelf}" (${destKeySelf}) — anchor file missing: ${rnSelf.anchor.file}`);
+                continue;
+            }
+            const anchorViewSelf = stripCommentsKeepStrings(fs.readFileSync(anchorFileSelf, "utf8"));
+            for (const tokenSelf of rnSelf.anchor.mustContain || []) {
+                if (!anchorViewSelf.includes(tokenSelf)) {
+                    failures.push(`[B] anchor self-check: "${unitSelf}" (${destKeySelf}) — anchor stale: "${tokenSelf}" not found in ${rnSelf.anchor.file}`);
+                }
+            }
+        }
+    }
     /* WO-01 round-1 (2-b F-05): the plugins/candidshiny.user.js special
      * case was removed with the plugin's retirement — its only consumer was
      * the long-retired LinkMasterΨ2; the ledger entry is mode "retired" and
@@ -981,7 +1005,7 @@ async function gateD() {
     if (polling.problems.length) {
         for (const pl of polling.problems) failures.push(`[D] polling census: ${pl}`);
     } else {
-        passes.push(`[D] polling census verified (${polling.sites} setInterval sites across ${polling.filesScanned} source files — ${polling.retryBounded} retry-bounded, ${polling.serviceGuarded} service-guarded, ${polling.ledgered} ledgered page-lifetime; 0 unbounded; ${polling.selfRearms} setTimeout self-re-arm(s) all ceilinged)`);
+        passes.push(`[D] polling census verified (${polling.sites} setInterval sites across ${polling.filesScanned} source files — ${polling.retryBounded} retry-bounded, ${polling.serviceGuarded} service-guarded, ${polling.ledgered} ledgered page-lifetime; 0 unbounded; ${polling.selfRearms} setTimeout self-re-arm(s): ${polling.selfRearmBounded} block-scoped ceilinged + ${polling.selfRearmStateGated} state-gated under @noframes — the WO-01 round-4 scoping closed the vacuous-pass class: the ceiling proof now reads the re-arm's own basic block, not the whole resolved body)`);
     }
 
     // Observer discipline census (suite v1.5.1, GUP B.1 "Observer
@@ -1082,7 +1106,7 @@ async function gateD() {
             for (const d of missingDest) failures.push(`[D] identity ledger: unit "${d}" → destination "${led[d].dest}" missing from dist (GUP G8: update the ledger)`);
         }
         if (!unEvidenced.length && !missingDest.length) {
-            passes.push(`[D] identity ledger verified (${ledKeys.length} units, ${ledKeys.length} evidenced, all destinations present in dist — evidence coverage 100%)`);
+            passes.push(`[D] identity ledger verified (${ledKeys.length} units, ${ledKeys.length} evidenced, all destinations present (dist/ — plus the two plugins/ external-data dests exempt by design; WO-01 round-4, 4-d F7 wording) — evidence coverage 100%)`);
         }
     } catch (e) {
         failures.push(`[D] identity ledger unreadable: ${e.message}`);
@@ -1212,7 +1236,7 @@ async function gateD() {
     }
 
     const scoreCtx = { /* v1.6.2: named ctx — the determinism gate below re-runs the scorer with the SAME inputs */
-        smoke: { pass: smokePass, count: smokeCount, floor: 157 }, /* floor = shrinkage guard (NOT derived from the battery's self-report — that would make it a tautology); 157 = WO-01 round-3 battery size (156 + the a4-scope toast tripwire). Regex-counting kernel-smoke.mjs assert( sites yields 158 — the 158th is the deliberate unreachable glass-switch guard; the floor is the EXECUTED count. */
+        smoke: { pass: smokePass, count: smokeCount, floor: 160 }, /* floor = shrinkage guard (NOT derived from the battery's self-report — that would make it a tautology); 160 = WO-01 round-4 executed size (157 pre-round-3 + the a4-scope toast tripwire, f73a7e0, + the waitFor timeout/abort pins, this round). Regex-counting kernel-smoke.mjs assert( sites yields 161 — the extra one is the deliberate unreachable glass-switch guard; the floor is the EXECUTED count. */
         otherGateFailures: failures.length,
         censuses: {
             sink: { clean: !sinks.problems.length },

@@ -48,7 +48,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { CURRENT_ROUND } from "./census-round.mjs"; /* WO-01 round-1 (2-a F1): round derives from package.json — the hardcoded
+import { CURRENT_ROUND, roundLt } from "./census-round.mjs"; /* WO-01 round-1 (2-a F1): round derives from package.json — the hardcoded
  * "v1.7.2" left every G9 expiry check inert while the suite reached v1.8.2. */
 /* WO-01 round-4 (4-a F06/F07): the masked-view primitives live in scan-kit.mjs
  * now (the shared home) — codeOnly is RE-EXPORTED so the nine census/battery
@@ -300,15 +300,6 @@ export function runSinkCensus() {
     const registrations = [];   /* per-file per-class sites (report mode) */
     let totalSites = 0;
     let adjudicatedSites = 0;
-    const roundLt = (a, b) => {
-        const pa = a.replace(/^v/, "").split(".").map(Number);
-        const pb = b.replace(/^v/, "").split(".").map(Number);
-        for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-            const x = pa[i] || 0, y = pb[i] || 0;
-            if (x !== y) return x < y;
-        }
-        return false;
-    };
 
     const files = fs.existsSync(DIST)
         ? fs.readdirSync(DIST).filter((f) => f.endsWith(".user.js")).sort()

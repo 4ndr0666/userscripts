@@ -46,7 +46,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { CURRENT_ROUND } from "./census-round.mjs"; /* WO-01 round-1 (2-a F1): round derives from package.json — the hardcoded
+import { CURRENT_ROUND, roundLt } from "./census-round.mjs"; /* WO-01 round-1 (2-a F1): round derives from package.json — the hardcoded
  * "v1.7.2" left every G9 expiry check inert while the suite reached v1.8.2. */
 import { codeOnly } from "./sink-census.mjs";
 import { codeOnlyCached } from "./scan-kit.mjs"; /* WO-01 round-4 (4-a F04): shared per-file memo */
@@ -54,15 +54,7 @@ import { codeOnlyCached } from "./scan-kit.mjs"; /* WO-01 round-4 (4-a F04): sha
 const DEFAULT_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
 /* v1.6.0 < v1.7.0 (string-aware compare, tolerant of missing segments) */
-function roundLt(a, b) {
-    const pa = a.replace(/^v/, "").split(".").map(Number);
-    const pb = b.replace(/^v/, "").split(".").map(Number);
-    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-        const x = pa[i] || 0, y = pb[i] || 0;
-        if (x !== y) return x < y;
-    }
-    return false;
-}
+/* WO-01 round-4 (4-a F02): roundLt is single-sourced from census-round.mjs now — the nine byte-identical copies are gone (port-drift class closed). */
 
 /* ── Adjudication ledger: page-lifetime watchers without machine-provable
  * bounds. Every entry: file, callText (as the scanner normalizes it),
@@ -334,7 +326,7 @@ function holdingVar(view, siteIdx) {
 
 export function runPollingCensus(root = DEFAULT_ROOT) {
     const problems = [];
-    const stats = { sites: 0, retryBounded: 0, serviceGuarded: 0, ledgered: 0, selfRearms: 0, selfRearmBounded: 0, filesScanned: 0 };
+    const stats = { sites: 0, retryBounded: 0, serviceGuarded: 0, ledgered: 0, selfRearms: 0, selfRearmBounded: 0, selfRearmStateGated: 0, filesScanned: 0 };
     const seenLedger = new Set();
 
     const targets = [];
@@ -489,13 +481,51 @@ export function runPollingCensus(root = DEFAULT_ROOT) {
             if (!cb) continue;
             /* does the resolved body re-arm the same name? (setTimeout(name or
              * window.setTimeout(name) — member-form admitted like 6-a F04) */
-            const rearms = new RegExp("(?:^|[^\\w$])setTimeout\\s*\\(\\s*(?:[A-Za-z_$][\\w$.]*\\s*\\.\\s*)?" + escapeRe(name) + "\\s*[,)]").test(cb);
-            if (!rearms) continue;
+            const rearmsRe = new RegExp("(?:^|[^\\w$])setTimeout\\s*\\(\\s*(?:[A-Za-z_$][\\w$.]*\\s*\\.\\s*)?" + escapeRe(name) + "\\s*[,)]");
+            const rm = rearmsRe.exec(cb);
+            if (!rm) continue;
             stats.selfRearms++;
             const line = lineOf(starts, tm3.index);
-            const inc = cb.match(COUNTER_INC_RE);
-            const ceil = (inc && hasCeilingCompare(cb)) || /clearTimeout\s*\(/.test(cb);
+            /* WO-01 round-4 (4-c F04): the ceiling proof is SCOPED to the
+             * re-arm's basic block (+ everything lexically before it in the
+             * body — counter declarations and stand-down returns live there).
+             * The old form accepted a counter/compare or clearTimeout
+             * ANYWHERE in the resolved body: FLX/Bunkr's document.body
+             * bootstraps passed via unrelated debounce clearTimeouts, and
+             * PM's fire deferral passed via the pull-budget counter that
+             * guards a different branch — vacuous passes on a CERTIFIED
+             * gate. The brace walk is reliable on the masked view (string
+             * contents are blanked, so braces are structural). */
+            const rearmIdx = rm.index;
+            /* everything up to AND INCLUDING the re-arm's enclosing block:
+             * declarations/stand-downs before it + the block's own statements
+             * (an increment before the re-arm inside the block counts); later
+             * UNRELATED siblings after the block's closing brace do not. */
+            const blockEnd = (() => {
+                let depth = 0, k = rearmIdx;
+                for (; k < cb.length; k++) {
+                    if (cb[k] === "{") depth++;
+                    else if (cb[k] === "}") { if (depth === 0) return k + 1; depth--; }
+                }
+                return cb.length;
+            })();
+            const scoped = cb.slice(0, Math.max(blockEnd, rearmIdx + 1));
+            const inc = scoped.match(COUNTER_INC_RE);
+            const ceil = (inc && hasCeilingCompare(scoped)) || /clearTimeout\s*\(/.test(scoped);
             if (ceil) { stats.selfRearmBounded++; continue; }
+            /* WO-01 round-4 (4-c F04) admission: state-gated deferral under
+             * @noframes — the re-arm fires only while a BROWSER-MANAGED page
+             * state holds (!document.body during load / document.hidden while
+             * backgrounded). The state resolves by construction in the TOP
+             * document (body appears at DOM construction; visibility restores
+             * on activation), and @noframes removes the non-HTML-frame class
+             * entirely — a frame whose body never appears (the 3-c F05
+             * concern) cannot exist. FLX/Bunkr bootstrap waits and PM's
+             * visibility deferral are the live members; each ALSO carries its
+             * own stand-down/one-in-flight guard at function entry. */
+            const noframes = /^\/\/\s*@noframes\b/m.test(fs.readFileSync(abs, "utf8").slice(0, 4000));
+            const stateGated = /\bdocument\s*\.\s*(?:body|hidden)\b/.test(scoped);
+            if (noframes && stateGated) { stats.selfRearmStateGated++; continue; }
             const callText = view.slice(tm3.index, tm3.index + 100).replace(/\s+/g, " ").trim().slice(0, 60);
             problems.push(
                 `${rel}:${line}: UNBOUNDED setTimeout self-re-arm \`${callText}…\` — the referenced body re-arms itself with no ceiling (3-c F05: add an attempt counter + stand-down return, or clearTimeout; the body-wait class must not outlive a non-HTML frame)`
@@ -523,7 +553,7 @@ export function runPollingCensus(root = DEFAULT_ROOT) {
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {
     const root = process.argv[2] ? path.resolve(process.argv[2]) : DEFAULT_ROOT;
     const r = runPollingCensus(root);
-    console.log(`polling census: ${r.filesScanned} source files, ${r.sites} setInterval sites — ${r.retryBounded} retry-bounded, ${r.serviceGuarded} service-guarded, ${r.ledgered} ledgered page-lifetime; ${r.selfRearms} setTimeout self-re-arm(s), ${r.selfRearmBounded} ceilinged`);
+    console.log(`polling census: ${r.filesScanned} source files, ${r.sites} setInterval sites — ${r.retryBounded} retry-bounded, ${r.serviceGuarded} service-guarded, ${r.ledgered} ledgered page-lifetime; ${r.selfRearms} setTimeout self-re-arm(s), ${r.selfRearmBounded} ceilinged, ${r.selfRearmStateGated} state-gated+noframes`);
     if (r.problems.length) {
         for (const p of r.problems) console.log(`  ✗ ${p}`);
         process.exit(1);
