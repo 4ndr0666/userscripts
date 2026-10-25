@@ -169,6 +169,12 @@ const RECONCILED_NAMES = {
          * comment-stripped census clean). */
         "escapeHTML": {"note": "removed as dead code (WO-01 round-2): the HTML entity escaper had zero call sites in the shipped script and zero in the legacy baseline it was carried verbatim from", "anchor": null},
     },
+    "m3u8++": {
+        /* WO-01 round-4 (4-c F06): dead helper removed — zero call sites
+         * (showVideo renders through createElement/textContent since the TT
+         * migration; comment-stripped census clean). */
+        "escapeHtml": {"note": "removed as dead code (WO-01 round-4): the G8 string-escaper had zero call sites — showVideo's item rendering is element-built (createElement/textContent), so the mitigation outlived its consumer", "anchor": null},
+    },
     "Blob2URL": {
         /* WO-01 round-2 (6-a F05): surfaced by comment-aware unitPresent —
          * esc appeared only in the v7.2.0 TT-migration comment; both
@@ -192,6 +198,9 @@ const RECONCILED_NAMES = {
         "checkLinksQueued": {"note": "retired v5.1.0 (authorized): superseded by the generalized epoch-guarded runCheckQueue — queue-drain semantics preserved, epoch guards prevent stale-batch application", "anchor": {"file": "canon/_merged/4ndr0tools - LinkMasterΨ.user.js", "mustContain": ["runCheckQueue"]}},
         "nextBulk": {"note": "retired v5.1.0 (authorized): the manual bulk-step advancer was folded into runCheckQueue's continuous drain", "anchor": {"file": "canon/_merged/4ndr0tools - LinkMasterΨ.user.js", "mustContain": ["runCheckQueue"]}},
         "getHosterChecker": {"note": "retired v5.1.0 (authorized): superseded by the GM-transport-first checker (the xhr(opts) GM_xmlhttpRequest transport with typed fallbacks)", "anchor": {"file": "canon/_merged/4ndr0tools - LinkMasterΨ.user.js", "mustContain": ["GM_xmlhttpRequest"]}},
+        /* WO-01 round-4 (4-c F06): dead helper removed — zero call sites since
+         * the v6.2.3 element-built twin (comment-stripped census clean). */
+        "getPsiGlyphSVG": {"note": "removed as dead code (WO-01 round-4): the string-built SVG had zero call sites since buildPsiGlyphEl (v6.2.3) replaced the dock button's TT-hostile innerHTML render", "anchor": {"file": "canon/_merged/4ndr0tools - LinkMasterΨ.user.js", "mustContain": ["buildPsiGlyphEl"]}},
     },
     "4ndr0purge": {
         /* WO-01 round-1 (2-c E17): dead helper removed — zero call sites

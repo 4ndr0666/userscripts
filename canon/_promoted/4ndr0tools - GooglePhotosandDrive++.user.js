@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - GooglePhotosandDrive++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      8.1.0
+// @version      8.1.1
 // @description  Restores context menus, exposes direct links, adds reverse image search, Drive direct-download resolution, Photos full-res extraction, power-user hotkeys, drag persistence and a settings console. 3lectric-Glass paradigm.
 // @author       4ndr0666
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -20,6 +20,10 @@
 // @connect       drive.usercontent.google.com
 // @connect       googleusercontent.com
 // ==/UserScript==
+// 8.1.1 (suite v1.12.0, WO-01 round 4): banner-truth — SCRIPT_VERSION now
+// derives from GM_info (the MAM precedent) instead of a hand-synced
+// '8.1.0-Ψ' literal that had already drifted from the @version 8.1.0
+// header and every docs surface (4-d F06).
 // 8.1.0 (suite v1.4.8): TRUE-DIRECT RESOLUTION — the Drive HUD's direct
 // link was the uc?export=download hop, which large or unscannable files
 // answer with Google's confirm interstitial (the button's own tooltip
@@ -81,7 +85,11 @@
      * MODULE 0 — CONFIG, STATE, TELEMETRY
      * ==================================================================== */
 
-    const SCRIPT_VERSION = '8.1.0-Ψ';
+    // v8.1.1 (WO-01 round 4, 4-d F06): derived from GM_info (MAM precedent) —
+    // the banner can no longer drift from the @version header.
+    const SCRIPT_VERSION = (typeof GM_info !== 'undefined' && GM_info && GM_info.script && GM_info.script.version)
+        ? GM_info.script.version
+        : '8.1.1';
     const STYLE_ELEMENT_ID = '4ndr0-glass-styles';
     /* [v8.1.0 fix — caught by the first GUP live smoke of this script]
      * SVG_NS was const-declared inside the OSINT glyph builder while

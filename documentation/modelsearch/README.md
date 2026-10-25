@@ -1,4 +1,4 @@
-# ModelSearch · v4.0.2
+# ModelSearch · v4.0.3
 
 > Covert cross-site forum search — `forums` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ ModelSearch is a covert SimpCity search UI usable from any website — one Alt+S
 
 | Dimension | Value |
 |---|---|
-| Version | `4.0.2` |
+| Version | `4.0.3` |
 | Matches | `*://*/*` |
 | Run-at | `document-start` |
-| Size | 23.6 KB · 517 lines |
+| Size | 23.8 KB · 519 lines |
 | Install | [dist/4ndr0tools - ModelSearch.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20ModelSearch.user.js) |
 
 ## Feature Inventory
@@ -38,7 +38,7 @@ Remote fonts are opt-in (default local stack) per the suite OPSEC policy.
 
 ## Permissions (OPSEC)
 
-GM grants: `GM_openInTab`, `GM_addStyle`, `GM_getValue`, `GM_setValue`, `GM_registerMenuCommand`.
+GM grants: `GM_openInTab`, `GM_getValue`, `GM_setValue`, `GM_registerMenuCommand`.
 
 > Alt+S is ModelSearch's suite-wide claim; site-specific tools win disputes per suite precedent.
 

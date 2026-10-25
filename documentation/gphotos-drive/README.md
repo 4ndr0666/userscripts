@@ -1,4 +1,4 @@
-# GooglePhotosandDrive++ · v8.1.0
+# GooglePhotosandDrive++ · v8.1.1
 
 > Google media sovereignty — `images` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ GPhotos/Drive++ restores the controls Google removed from its media surfaces: co
 
 | Dimension | Value |
 |---|---|
-| Version | `8.1.0` |
+| Version | `8.1.1` |
 | Matches | `*://*.googleusercontent.com/*`, `*://photos.google.com/*`, `*://drive.google.com/*` |
 | Run-at | `document-start` |
-| Size | 138.1 KB · 2808 lines |
+| Size | 138.7 KB · 2816 lines |
 | Install | [dist/4ndr0tools - GooglePhotosandDrive++.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20GooglePhotosandDrive%2B%2B.user.js) |
 
 ## Feature Inventory

@@ -2,7 +2,7 @@
 // @name           4ndr0tools - LinkMasterΨ
 // @namespace      https://github.com/4ndr0666/userscripts
 // @author         4ndr0666
-// @version      6.3.2
+// @version      6.3.3
 // @description    Accurately decodes, previews, exports, validates and scrapes all links. (Dual MPV Support + Ψ IG Harvester + sexyforums premium-link unwrap + GitHub raw-URL harvest + Ψ2 forum deep-scrape engine)
 // @downloadURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
 // @updateURL      https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
@@ -44,6 +44,10 @@
 // @connect        fbcdn.net
 // @connect        instagram.com
 // ==/UserScript==
+// 6.3.3 (suite v1.12.0, WO-01 round 4): truth batch — getPsiGlyphSVG
+// removed as dead code (zero call sites since the v6.2.3 element-built
+// twin; 4-c F06, reconciled in RECONCILED_NAMES) and the three decodeURI
+// filename sites degrade losslessly on malformed input (4-c F05).
 // 6.2.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
 // · OPSEC: remote display fonts now default OFF (Settings toggle remains; local stacks always degrade).
 
@@ -507,7 +511,10 @@
     return svg;
   };
 
-  const getPsiGlyphSVG = (className) => `<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" class="${className}" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M 64,12 A 52,52 0 1 1 63.9,12 Z" stroke-dasharray="21.78 21.78" stroke-width="2" /><path d="M 64,20 A 44,44 0 1 1 63.9,20 Z" stroke-dasharray="10 10" stroke-width="1.5" opacity="0.7" /><path d="M64 30 L91.3 47 L91.3 81 L64 98 L36.7 81 L36.7 47 Z" /><text x="64" y="68" text-anchor="middle" dominant-baseline="middle" fill="currentColor" stroke="none" font-size="56" font-weight="700" font-family="'Cinzel Decorative', serif">Ψ</text></svg>`;
+  /* v6.3.3 (WO-01 round 4, 4-c F06): the string-built getPsiGlyphSVG that
+   * used to live here was removed as dead code — zero call sites since the
+   * v6.2.3 element-built twin above replaced the dock button's render; the
+   * removal is reconciled in tools/validate.mjs RECONCILED_NAMES. */
 
   function injectHudStyles() {
     try {
@@ -2116,8 +2123,11 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
       let dispositionMatch;
 
       dispositionMatch = responseHeaders.match(/(?<=filename=")([^"]+)|(?<=filename=)([^;]+)/i);
+      // v6.3.3 (4-c F05): a bare '%' in a Content-Disposition filename must
+      // not abort filename extraction — degrade to the raw token.
+      const safeDecodeURI = (s) => { try { return decodeURI(s); } catch { return s; } };
       if (dispositionMatch) {
-        return decodeURI(dispositionMatch[1] || dispositionMatch[2]);
+        return safeDecodeURI(dispositionMatch[1] || dispositionMatch[2]);
       }
 
       if (url.includes("pixeldrain.com")) {
@@ -2127,7 +2137,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
       } else if (url.includes("kemono.su")) {
         basename = new URL(url).searchParams.get("f") || h.basename(url);
       } else if (url.includes("cyberdrop")) {
-        basename = decodeURI(h.basename(url));
+        basename = safeDecodeURI(h.basename(url));
         const extMatch = basename.match(/\.\w{3,6}$/);
         if (extMatch) {
           basename = basename.replace(extMatch[0], "").replace(/(\.\w{3,6}-\w{8}$)|(-\w{8}$)/, "") + extMatch[0];
@@ -2135,7 +2145,7 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
       } else {
         basename = h.basename(url).replace(/\?.*/, "").replace(/#.*/, "");
       }
-      return decodeURI(basename);
+      return safeDecodeURI(basename);
     },
     prettyBytes: (number) => {
       const BYTE_UNITS = ["B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];

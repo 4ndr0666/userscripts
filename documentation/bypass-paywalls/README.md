@@ -1,4 +1,4 @@
-# Bypass Paywalls · v0.1.6
+# Bypass Paywalls · v0.1.7
 
 > Metered-content liberation across the news web — `privacy & security` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ BypassPaywalls restores access to metered and hard-paywalled news content across
 
 | Dimension | Value |
 |---|---|
-| Version | `0.1.6` |
+| Version | `0.1.7` |
 | Matches | `*://404media.co/*`, `*://*.adweek.com/*`, `*://*.ad.nl/*`, `*://*.americanbanker.com/*` (+166 more) |
 | Run-at | `document-end` |
-| Size | 53.6 KB · 1073 lines |
+| Size | 54.0 KB · 1079 lines |
 | Install | [dist/4ndr0tools - BypassPaywalls.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20BypassPaywalls.user.js) |
 
 ## Feature Inventory

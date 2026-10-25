@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Images++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      4.0.3
+// @version      4.0.4
 // @description  Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. Collapse-mode hotkey is configurable.
 // @author       4ndr0666
 // @match        *://*/*
@@ -51,8 +51,11 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Images++.user.js
 // @license      UNLICENSED - RED TEAM USE ONLY
 // ==/UserScript==
+// 4.0.4 (suite v1.12.0, WO-01 round 4): error-path hardening — the fastpic
+// rule and getFileName decodes degrade losslessly on malformed
+// percent-escapes instead of throwing inside the mpiv engine (4-c F05).
 // 4.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Images++.user v4.0.3 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Images++.user v4.0.4 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 /* ═══ v4.0.0 — SUITE CONSOLIDATION MERGE (GUP superset gate) ═════════════════
    Base:      Images++ v3.0.0 stable — the universal mouseover-preview lineage
@@ -2144,7 +2147,10 @@ const Ruler = {
         u: '||fastpic.',
         s: (m, node, rule) => {
           const a = node.closest('a');
-          const url = decodeURIComponent(Req.findImageUrl(a || node))
+          // v4.0.4 (4-c F05): a bare '%' in the image URL must not abort the
+          // fastpic rewrite — degrade to the raw token.
+          const safeDecodeURIComponent = (s) => { try { return decodeURIComponent(s); } catch { return s; } };
+          const url = safeDecodeURIComponent(Req.findImageUrl(a || node))
             .replace(/\/i(\d+)\.(\w+\.\w+\/)\w+/, '/$2$1')
             .replace(/^\w+:\/\/fastpic[^/]+((?:\/\d+){3})\/\w+(\/\w+\.\w+).*/,
               'https://fastpic.org/view$1$2.html');
@@ -2958,7 +2964,9 @@ const Req = {
   },
 
   getFileName(url) {
-    return decodeURIComponent(url).split(/[#?&]/, 1)[0].split('/').pop();
+    // v4.0.4 (4-c F05): same malformed-escape degradation as the fastpic rule.
+    const safeDecodeURIComponent = (s) => { try { return decodeURIComponent(s); } catch { return s; } };
+    return safeDecodeURIComponent(url).split(/[#?&]/, 1)[0].split('/').pop();
   },
 
   blobToDataUrl(blob) {

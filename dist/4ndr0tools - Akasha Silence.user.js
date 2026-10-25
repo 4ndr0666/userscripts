@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Akasha Silence
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      5.2.1
+// @version      5.2.2
 // @description  Unified counter-surveillance defense layer with a three-stage strictness valve (full / core / off via Ctrl+Alt+Shift+K). Three-way consolidation of Anti-detection + Counter-surveillance + Anti-telemetry (ICC): anti-analysis script neutralization, telemetry sinkholing (fetch/XHR/beacon/WebSocket), WebRTC blinding, session-stable fingerprint spoofing (hardware/canvas/WebGL/audio), identifier poisoning, Google link-tracking sanitization and hostile-UI countermeasures.
 // @author       4ndr0666
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -1161,7 +1161,7 @@ const __4NDR0_NET_API__ = (function () {
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * 4ndr0tools - Akasha Silence v5.2.0 — unified counter-surveillance layer
+ * 4ndr0tools - Akasha Silence v5.2.2 — unified counter-surveillance layer
  * ─────────────────────────────────────────────────────────────────────────
  * CONSOLIDATION (three → one):
  *   • Anti-detection v1.1            — anti-analysis script neutralizer
@@ -1230,6 +1230,9 @@ const __4NDR0_NET_API__ = (function () {
  * were being mocked dead) and the blanket 'g.alicdn.com' CDN entry is
  * narrowed to its known tracker artifacts (awsc/aplus/alidt paths).
  *
+ * v5.2.2 (suite v1.12.0, WO-01 round 4): banner-truth sync — both boot
+ * banners now interpolate the single SCRIPT_VERSION const (the stale
+ * v5.2.0 literals rode a CERTIFIED gate since the 5.2.1 bump; 4-c F04).
  * v5.2.0 (suite v1.4.5) — NETHOOK VETO MIGRATION. The fetch/XHR/beacon
  * tracker nullifiers no longer install their own Proxy facades — they
  * ride the suite's shared NetHook singleton (kernel/net.js v3, inlined
@@ -1305,8 +1308,9 @@ const __4NDR0_NET_API__ = (function () {
         }
     }, true);
 
+    const SCRIPT_VERSION = '5.2.2'; // v5.2.2: single source — both boot banners interpolate this
     if (AKASHA_PROFILE === 'off') {
-        console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: AKASHA_SILENCE v5.2.0 profile=OFF — INERT. Ctrl+Alt+Shift+K cycles the profile. ', 'background: #000; color: #00ff00; font-weight: bold; font-family: monospace; padding: 4px;');
+        console.log(`%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: AKASHA_SILENCE v${SCRIPT_VERSION} profile=OFF — INERT. Ctrl+Alt+Shift+K cycles the profile. `, 'background: #000; color: #00ff00; font-weight: bold; font-family: monospace; padding: 4px;');
         return;
     }
 
@@ -2120,6 +2124,6 @@ const __4NDR0_NET_API__ = (function () {
 
     /* ══ §10 BOOT ══════════════════════════════════════════════════════ */
 
-    console.log(`%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: AKASHA_SILENCE v5.2.0 ACTIVE — profile=${AKASHA_PROFILE.toUpperCase()}. SURVEILLANCE COUNTERMEASURES DEPLOYED. Ctrl+Alt+Shift+K cycles strictness. `, "background: #000; color: #00ff00; font-weight: bold; font-family: monospace; padding: 4px; border: 1px solid #00ff00;");
+    console.log(`%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: AKASHA_SILENCE v${SCRIPT_VERSION} ACTIVE — profile=${AKASHA_PROFILE.toUpperCase()}. SURVEILLANCE COUNTERMEASURES DEPLOYED. Ctrl+Alt+Shift+K cycles strictness. `, "background: #000; color: #00ff00; font-weight: bold; font-family: monospace; padding: 4px; border: 1px solid #00ff00;");
     console.log("%c [4NDR0TOOLS] Initialization complete. Core shielded. ", "background: #000; color: #00ff00; font-weight: bold; padding: 4px; border: 1px solid #00ff00;");
 })();

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - ModelSearch
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      4.0.2
+// @version      4.0.3
 // @description  Covert SimpCity search UI directly from any website. (Electric-Glass + Alt+S Hotkey Only)
 // @author       4ndr0666
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20ModelSearch.user.js
@@ -9,13 +9,15 @@
 // @match        *://*/*
 // @icon         https://img.icons8.com/?size=30&id=44045&format=png
 // @grant        GM_openInTab
-// @grant        GM_addStyle
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_registerMenuCommand
 // @license      UNLICENSED - RED TEAM USE ONLY
 // @run-at       document-start
 // ==/UserScript==
+// 4.0.3 (suite v1.12.0, WO-01 round 4): meta-truth — the dead GM_addStyle
+// grant removed (zero call sites since the v3.2.0 BUG-3 font fix replaced
+// its only consumer; the round-2 Images++ 6-c F03 class, not propagated; 4-c F07).
 // 4.0.2 (suite v1.7.4, WO-02 round 2): wired the OPSEC remote-font opt-in —
 //   mst_remote_fonts was read at boot (default OFF) but NO code path anywhere
 //   could ever enable it (no GM_setValue grant, no menu command): the documented

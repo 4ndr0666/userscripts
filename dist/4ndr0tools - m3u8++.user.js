@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - m3u8++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      5.1.0
+// @version      5.1.1
 // @author       4ndr0666
 // @description  Automatically displays the m3u8 url for ANY video playing in the top right corner of the video. Click url to copy or click download to use the webapp "tools.thatwind.com". Also injects Play buttons next to magnet links on every page, relaying them to www.diancigaoshou.com.
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -1173,6 +1173,10 @@ const __4NDR0_NET_API__ = (function () {
     return api;
 })();
 
+// 5.1.1 (suite v1.12.0, WO-01 round 4): truth batch — the escapeHtml
+// helper removed as dead code (zero call sites: showVideo renders through
+// createElement/textContent since the TT migration; the G8 mitigation had
+// no consumer left; 4-c F06, reconciled in RECONCILED_NAMES).
 // 5.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
 
 
@@ -1768,16 +1772,11 @@ const __4NDR0_NET_API__ = (function () {
 
     }
 
-    // G8 (audit v4.5): HTML-escape every runtime value interpolated into the item template.
-    // URL normalization already percent-encodes the dangerous characters for http(s) URLs, so this
-    // is defense-in-depth for non-special-scheme or future call paths — display is byte-identical
-    // for all normal URLs (verified by the A3/A5/A6/A7 exact-path assertions).
-    const escapeHtml = (s) => String(s)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/\"/g, "&quot;")
-        .replace(/'/g, "&#39;");
+    // v5.1.1 (WO-01 round 4, 4-c F06): the escapeHtml helper + its G8 comment
+    // that used to live here were removed as dead code — showVideo builds
+    // items through createElement/textContent (the TT-safe path), so the
+    // string-escaper had zero call sites; the removal is reconciled in
+    // tools/validate.mjs RECONCILED_NAMES.
 
     async function showVideo({
         type,

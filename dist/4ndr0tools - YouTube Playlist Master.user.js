@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - YouTube Playlist Master
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.7.2
+// @version      1.7.3
 // @description  Channel playlist buttons (All / Popular / Videos / Shorts / Streams / Members-only), Random play (prefer newest/oldest), reverse autoplay order, playlist autoplay toggle, duration sort, bulk copy/move/delete, JSON + plaintext export/import, snapshots with deleted-video detection, quick watch_videos playlists, queue & watch-later overlays, playlist close button, date/view metadata, episode auto-expand, huge-playlist browser, live settings (no reload), always-available Ψ deck, playlist row filter, duplicate finder & purge, global hotkeys (Alt+Shift+U/S/X), failsafe deck rescue, 404-proof navigation guards, Trusted-Types-immune rendering, fully-visible fit-content modal dialogs.
 // @author       4ndr0666
 // @license      UNLICENSED REDTEAM ONLY
@@ -1166,6 +1166,10 @@ const __4NDR0_NET_API__ = (function () {
     return api;
 })();
 
+// 1.7.3 (suite v1.12.0, WO-01 round 4): error-path hardening — getQueryArgs
+// degrades losslessly on malformed percent-escapes (a literal '%' in a
+// search value no longer throws inside the CLOSE button's param strip;
+// 4-c F05).
 
 /* ============================================================================
  *                           VERSION HISTORY (GUP-superset)
@@ -1331,7 +1335,7 @@ const __4NDR0_NET_API__ = (function () {
 
     const CFG = {
         SCRIPT_NAME: 'Ψ Playlist Master',
-        SCRIPT_VERSION: '1.7.2',
+        SCRIPT_VERSION: '1.7.3',
         STORAGE_KEY: 'ytpu.settings',
         SNAPSHOT_KEY: 'ytpu.snapshots',
         SNAPSHOT_CAP: 20,
@@ -5786,9 +5790,12 @@ shuffleButtonActive: "path[d='M18.51,13.29l4.21,4.21l-4.21,4.21l-1.41-1.41l1.8-1
         function getQueryArgs(query) {
             query = (query || window.location.search).substring(1);
             if (!query) return {};
+            // v1.7.3 (4-c F05): a literal '%' in a query value must not throw —
+            // degrade to the raw token (contained per-callback otherwise).
+            const safeDecodeURIComponent = (s) => { try { return decodeURIComponent(s); } catch { return s; } };
             return query.split('&').reduce((prev, curr) => {
                 const p = curr.split('=');
-                prev[decodeURIComponent(p[0])] = p[1] ? decodeURIComponent(p[1]) : p[1];
+                prev[safeDecodeURIComponent(p[0])] = p[1] ? safeDecodeURIComponent(p[1]) : p[1];
                 return prev;
             }, {});
         }

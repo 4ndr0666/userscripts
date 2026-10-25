@@ -60,12 +60,12 @@
   {
    "file": "4ndr0tools - Akasha Silence.user.js",
    "name": "4ndr0tools - Akasha Silence",
-   "version": "5.2.1",
+   "version": "5.2.2",
    "description": "Unified counter-surveillance defense layer with a three-stage strictness valve (full / core / off via Ctrl+Alt+Shift+K). Three-way consolidation of Anti-detection + Counter-surveillance + Anti-telemetry (ICC): anti-analysis script neutralization, telemetry sinkholing (fetch/XHR/beacon/WebSocket), WebRTC blinding, session-stable fingerprint spoofing (hardware/canvas/WebGL/audio), identifier poisoning, Google link-tracking sanitization and hostile-UI countermeasures.",
    "family": "privacy & security",
-   "sha256": "9bcddceba43b1b4c1ece05737dbf131120e88a2aab613bc3624fb0267cb84e53",
-   "lines": 2126,
-   "bytes": 115488,
+   "sha256": "5dc9e80994190a162cd95ddc37e2a008cf418163ddf5dc0cf507469c6b6d40c4",
+   "lines": 2130,
+   "bytes": 115829,
    "matches": [
     "*://*/*"
    ],
@@ -211,12 +211,12 @@
   {
    "file": "4ndr0tools - BypassPaywalls.user.js",
    "name": "4ndr0tools - Bypass Paywalls",
-   "version": "0.1.6",
+   "version": "0.1.7",
    "description": "A way to bypass paywalls for popular news sites",
    "family": "privacy & security",
-   "sha256": "a4f3c05192a7b87ea279c95b7db21f8b69483cd04e8f019a7793f3f153c9e72d",
-   "lines": 1073,
-   "bytes": 54850,
+   "sha256": "aa7153243ce78bf1397eea9473429e873a01ce7d3073fad9f6a21485cbabbf91",
+   "lines": 1079,
+   "bytes": 55328,
    "matches": [
     "*://404media.co/*",
     "*://*.adweek.com/*",
@@ -403,12 +403,12 @@
   {
    "file": "4ndr0tools - Confirmation Bypass.user.js",
    "name": "4ndr0tools - Confirmation Bypass",
-   "version": "4.0.3",
+   "version": "4.0.4",
    "description": "Reveals forum invisi-text, view all replies, rewrite redirect links. Download Gate: bypass all confirmation pages on all sites, glass overlay copy/download URL (incl. vidara embeds on xcandid), auto-solve Altcha, auto-click download. Turbo: embed routing, upload injector. Util: external link safety, right-click scrollbar to top.",
    "family": "forums",
-   "sha256": "0b77ef71df4af0fb879af229338d90d458e038bb64599069b243daa9dbdd8bc5",
-   "lines": 1187,
-   "bytes": 62616,
+   "sha256": "21136bdb2543b0d8552eb2dccf44c14020bc86f81518df2016e65dcb2d9300a1",
+   "lines": 1193,
+   "bytes": 62950,
    "matches": [
     "*://forums.socialmediagirls.com/*",
     "*://forums.socialmediagirls.com/goto/link-confirmation*",
@@ -503,12 +503,12 @@
   {
    "file": "4ndr0tools - Forums++.user.js",
    "name": "4ndr0tools - Forums++",
-   "version": "1.11.0",
+   "version": "1.11.1",
    "description": "Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.",
    "family": "forums",
-   "sha256": "c7ce249c7efeec0b8b988ece69879815bf9bb355a0440277b5b35dfb2243508e",
-   "lines": 4883,
-   "bytes": 234136,
+   "sha256": "092ce1a8eb5ecd0fb9c9dbfa2afb5d460bc7faa694252e63fad4e89dc56bb913",
+   "lines": 4890,
+   "bytes": 234780,
    "matches": [
     "https://simpcity.su/threads/*",
     "https://simpcity.cr/threads/*"
@@ -647,12 +647,12 @@
   {
    "file": "4ndr0tools - GooglePhotosandDrive++.user.js",
    "name": "4ndr0tools - GooglePhotosandDrive++",
-   "version": "8.1.0",
+   "version": "8.1.1",
    "description": "Restores context menus, exposes direct links, adds reverse image search, Drive direct-download resolution, Photos full-res extraction, power-user hotkeys, drag persistence and a settings console. 3lectric-Glass paradigm.",
    "family": "images",
-   "sha256": "b48fa4ea00d8ec74ef2e9627caf7fabd6780ae1215ccaac975ac68e57a8eb3e5",
-   "lines": 2808,
-   "bytes": 141452,
+   "sha256": "75644df731aca7c8d4b2727d32b8277c066f6ec0a4a590b02f344bc43f2739b4",
+   "lines": 2816,
+   "bytes": 141986,
    "matches": [
     "*://*.googleusercontent.com/*",
     "*://photos.google.com/*",
@@ -748,12 +748,12 @@
   {
    "file": "4ndr0tools - Images++.user.js",
    "name": "4ndr0tools - Images++",
-   "version": "4.0.3",
+   "version": "4.0.4",
    "description": "Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. Collapse-mode hotkey is configurable.",
    "family": "images",
-   "sha256": "8c9fa7c5ffd896a51c3410d17502c26a9d956292e8101ab288eff527734280ea",
-   "lines": 4628,
-   "bytes": 138888,
+   "sha256": "e42a095d803250a2514737c1b6f21a1115c6c93e67c8bfa61fdb5f1a68d5a3f5",
+   "lines": 4636,
+   "bytes": 139544,
    "matches": [
     "*://*/*"
    ],
@@ -844,12 +844,12 @@
   {
    "file": "4ndr0tools - LinkMasterΨ.user.js",
    "name": "4ndr0tools - LinkMasterΨ",
-   "version": "6.3.2",
+   "version": "6.3.3",
    "description": "Accurately decodes, previews, exports, validates and scrapes all links. (Dual MPV Support + Ψ IG Harvester + sexyforums premium-link unwrap + GitHub raw-URL harvest + Ψ2 forum deep-scrape engine)",
    "family": "media & links",
-   "sha256": "cb1e48d4ddd0d9fa7adfc29dfaa217639c82afd1034d614c358008b395a0c514",
-   "lines": 5070,
-   "bytes": 261324,
+   "sha256": "b7892f436d495015494529eb9e9f629db0d5c64f301acc8d44db27ac54875131",
+   "lines": 5080,
+   "bytes": 261481,
    "matches": [
     "*://*/*",
     "*://*.instagram.com/*"
@@ -978,19 +978,18 @@
   {
    "file": "4ndr0tools - ModelSearch.user.js",
    "name": "4ndr0tools - ModelSearch",
-   "version": "4.0.2",
+   "version": "4.0.3",
    "description": "Covert SimpCity search UI directly from any website. (Electric-Glass + Alt+S Hotkey Only)",
    "family": "forums",
-   "sha256": "56d3a9d45f8cf516511b90e9a96ef9f2ab385ea191fd3287d064e87aa419e4b6",
-   "lines": 517,
-   "bytes": 24199,
+   "sha256": "e92751f67582ea23b71b2e7e140df3cf42457d9e582f6ad86449d34605fdb54d",
+   "lines": 519,
+   "bytes": 24406,
    "matches": [
     "*://*/*"
    ],
    "excludes": [],
    "grants": [
     "GM_openInTab",
-    "GM_addStyle",
     "GM_getValue",
     "GM_setValue",
     "GM_registerMenuCommand"
@@ -1037,12 +1036,12 @@
   {
    "file": "4ndr0tools - Pixeldrain++.user.js",
    "name": "4ndr0tools - Pixeldrain++",
-   "version": "1.2.1",
+   "version": "1.2.2",
    "description": "Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.",
    "family": "media & links",
-   "sha256": "1cd495137ad82ccafd4749bf5ba1ae78fa17d61a070b646e6adf436b52a5227b",
-   "lines": 3751,
-   "bytes": 208277,
+   "sha256": "0ffa47c3985101eed3430e8e7b8b70e1805e2c027cdc7c28b2097c28d9d70193",
+   "lines": 3757,
+   "bytes": 208722,
    "matches": [
     "https://pixeldrain.com/*",
     "https://pixeldrain.net/*",
@@ -1149,12 +1148,12 @@
   {
    "file": "4ndr0tools - Recon.user.js",
    "name": "4ndr0tools - Recon",
-   "version": "9.1.0",
+   "version": "9.1.1",
    "description": "Alt+Shift+R hotkey — unified forensic recon platform: hardened XHR/fetch/beacon interception through the suite's shared NetHook hub with MITM block & mute rules and failure pacification, console harvesting, WebSocket + postMessage bridge capture, JWT identity harvesting, headless C2 API (reconEngine / chimeraRecon / Hook) and a moveable Shadow-DOM glass dock with full markdown reporting. For security research only.",
    "family": "privacy & security",
-   "sha256": "befd121edc47de1c2fd97b284a6d12497601ab1eabf3eeb275ee434cc2756626",
-   "lines": 2182,
-   "bytes": 121716,
+   "sha256": "f42d6d091ad090a98e57d41ea8b08947af8be9dc114c88bdfe5e3cec13b32512",
+   "lines": 2185,
+   "bytes": 121950,
    "matches": [
     "*://*/*"
    ],
@@ -1175,12 +1174,12 @@
   {
    "file": "4ndr0tools - Redgifs++.user.js",
    "name": "4ndr0tools - Redgifs++",
-   "version": "5.3.1",
+   "version": "5.3.2",
    "description": "Intercepts Redgifs links on Reddit for a cinematic overlay. On Redgifs itself, enters focused video-only mode. Falls back to JSON.parse intercept for direct /watch/ loads before SPA hydration.",
    "family": "video & players",
-   "sha256": "7d9f0a2b09fb131f95106ee82918e2f295525bcc8e900498d9e07020f73a152a",
-   "lines": 391,
-   "bytes": 19027,
+   "sha256": "5b83182113d5f95e33805c42e93c37d055a878ad25d739310a822a6a06f8937c",
+   "lines": 404,
+   "bytes": 19835,
    "matches": [
     "*://*.redgifs.com/watch/*",
     "*://*.redgifs.com/ifr/*",
@@ -1352,12 +1351,12 @@
   {
    "file": "4ndr0tools - YouTube Playlist Master.user.js",
    "name": "4ndr0tools - YouTube Playlist Master",
-   "version": "1.7.2",
+   "version": "1.7.3",
    "description": "Channel playlist buttons (All / Popular / Videos / Shorts / Streams / Members-only), Random play (prefer newest/oldest), reverse autoplay order, playlist autoplay toggle, duration sort, bulk copy/move/delete, JSON + plaintext export/import, snapshots with deleted-video detection, quick watch_videos playlists, queue & watch-later overlays, playlist close button, date/view metadata, episode auto-expand, huge-playlist browser, live settings (no reload), always-available Ψ deck, playlist row filter, duplicate finder & purge, global hotkeys (Alt+Shift+U/S/X), failsafe deck rescue, 404-proof navigation guards, Trusted-Types-immune rendering, fully-visible fit-content modal dialogs.",
    "family": "video & players",
-   "sha256": "6654d794ac0d7758c390fa953d06b60394a31dc73f21ce9a3c6455db86e3610b",
-   "lines": 6648,
-   "bytes": 346652,
+   "sha256": "4faacc4889c8538512290705add8de67e20a7f05475c3830144e3450fe64abc2",
+   "lines": 6655,
+   "bytes": 347168,
    "matches": [
     "https://*.youtube.com/*",
     "https://youtube.com/*"
@@ -1468,12 +1467,12 @@
   {
    "file": "4ndr0tools - m3u8++.user.js",
    "name": "4ndr0tools - m3u8++",
-   "version": "5.1.0",
+   "version": "5.1.1",
    "description": "Automatically displays the m3u8 url for ANY video playing in the top right corner of the video. Click url to copy or click download to use the webapp \"tools.thatwind.com\". Also injects Play buttons next to magnet links on every page, relaying them to www.diancigaoshou.com.",
    "family": "media & links",
-   "sha256": "0a0636edd9edfd151011c591747e55bdd09afd8621cff6eef4cd99348754484b",
-   "lines": 1999,
-   "bytes": 102587,
+   "sha256": "0574931cb839a01bf1c9068283ab7ccf2ae4c319743c0c122870add0eab6ff37",
+   "lines": 1998,
+   "bytes": 102643,
    "matches": [
     "*://*/*"
    ],
@@ -1582,5 +1581,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "e89b3bd2ff777db56f4c05a33995e5cdc894df7001951a78181ca21c0b1dbcd6"
+ "digest": "b29a426c0c45af8c987401fd98ab618134b14b72c318d1e2bbde36c4d9bfd5f4"
 }

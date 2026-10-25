@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Pixeldrain++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.2.1
+// @version      1.2.2
 // @description  Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.
 // @author       4ndr0666
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -1197,8 +1197,12 @@ const __4NDR0_NET_API__ = (function () {
     return api;
 })();
 
+// 1.2.2 (suite v1.12.0, WO-01 round 4): error-path hardening — fsPath()'s
+// decode degrades losslessly on malformed percent-escapes (a bare '%' in a
+// /d/ pathname no longer aborts the setTimeout callback before the
+// fs-fallback injector and auto-trigger block; 4-c F05).
 // 1.1.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.2 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 /* eslint-disable no-undef */
 (function () {
@@ -1207,7 +1211,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.1
     // ================================================================
     // 0. CONFIG & CONSTANTS
     // ================================================================
-    const VERSION = '1.2.1';
+    const VERSION = '1.2.2';
     const NS = 'pdbp';
 
     /* [R3 createElement migration — suite v1.4.4] Local element builder:
@@ -3078,7 +3082,9 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.1
             return 'other';
         },
         id() { const m = location.pathname.match(/^\/(?:u|l|file)\/([\w-]+)/); return m ? m[1] : null; },
-        fsPath() { const m = location.pathname.match(/^\/d\/(.+)/); return m ? decodeURIComponent(m[1]) : null; }
+        // v1.2.2 (4-c F05): a bare '%' in a /d/ pathname must not throw — degrade
+        // to the raw token.
+        fsPath() { const m = location.pathname.match(/^\/d\/(.+)/); return m ? ((s) => { try { return decodeURIComponent(s); } catch { return s; } })(m[1]) : null; }
     };
 
     function getViewerData() {
