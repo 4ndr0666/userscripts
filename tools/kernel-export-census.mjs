@@ -132,7 +132,7 @@ function extractExports(src, mod) {
  * zero-consumer export: ledger it here with a reason and an expiry round,
  * or remove it — there is no third state. */
 const KEEP_LEDGER = {
-    /* "core": { expiry: "v1.13.0", "SomeExport": "reason" }, */
+    /* "core": { expiry: "v1.14.0", "SomeExport": "reason" }, */
 };
 
 /* ── Census core ─────────────────────────────────────────────────────────── */

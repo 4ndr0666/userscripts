@@ -1,6 +1,6 @@
-# SIZE-AUDIT — 4ndr0tools - Prompt Master.user.js (suite v1.12.0, G6 record)
+# SIZE-AUDIT — 4ndr0tools - Prompt Master.user.js (suite v1.13.0, G6 record)
 
-**Artifact:** `dist/4ndr0tools - Prompt Master.user.js` — 1,167,969 B (re-measured 2026-10-25 at suite v1.12.0, script v28.8.0 — the WO-01 round-5 MIT license adoption re-measure: the @license meta value flip (−27 B; partition: −22 comment-mass by stripper-diff + −5 in-comment spaces), prior re-measure 1,167,996 B at suite v1.12.0 with the round-4 kernel truth batch riding the inlined kernel chunk; prior 1,166,403 B at suite v1.10.0; the v1.8.2-round "unchanged" claim was already wrong at its own commit — the tree measured 1,160,241 B that day; v1.4.10 baseline 1,122,838 B). The byte count in this line is machine-verified by tools/size-budget.mjs since WO-01 round-2.
+**Artifact:** `dist/4ndr0tools - Prompt Master.user.js` — 1,167,969 B (re-measured 2026-10-25 at suite v1.13.0, script v28.8.0 — the WO-01 round-5 MIT license adoption re-measure: the @license meta value flip (−27 B; partition: −22 comment-mass by stripper-diff + −5 in-comment spaces), prior re-measure 1,167,996 B at suite v1.12.0 with the round-4 kernel truth batch riding the inlined kernel chunk; prior 1,166,403 B at suite v1.10.0; the v1.8.2-round "unchanged" claim was already wrong at its own commit — the tree measured 1,160,241 B that day; v1.4.10 baseline 1,122,838 B). The byte count in this line is machine-verified by tools/size-budget.mjs since WO-01 round-2.
 **Gate:** tools/size-budget.mjs (1,300,000 B hard budget; 1,000,000 B audit line — this record satisfies the latter; byte count VERIFIED against the live artifact).
 
 ## Composition analysis (machine-measured, this round — partitions exactly)
@@ -36,7 +36,7 @@ interactive critical path.
 
 ## Justification
 
-Ships as-is at 1,167,969 B (re-verified 2026-10-25, suite v1.12.0): under the 1.3 MB hard budget, above the audit
+Ships as-is at 1,167,969 B (re-verified 2026-10-25, suite v1.13.0): under the 1.3 MB hard budget, above the audit
 line by design, with this record as the audited decision. Watch item: the
 comment mass (~156 KB) is the one *reversible* component if a future round
 needs headroom — moving the v-series changelogs into

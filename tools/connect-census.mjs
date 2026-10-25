@@ -49,47 +49,47 @@ const ADJUDICATED_WILDCARD = [
     {
         file: "canon/_merged/4ndr0tools - Images++.user.js",
         reason: "page-content-driven resolution: the redirect-following parser resolves image URLs found ON THE PAGE — 17 known hosts are declared, the wildcard is the long tail of page-embedded redirect targets (not script-authored endpoints); burn-down: the declared list grows as hosts stabilize, the * tracks page content by construction",
-        expiry: "v1.13.0",
+        expiry: "v1.14.0",
     },
     {
         file: "canon/_merged/4ndr0tools - LinkMasterΨ.user.js",
         reason: "user-content-driven: LinkMaster captures arbitrary links/media from the page and fetches THOSE (thumbnails, direct media, resolver hops) — the endpoint set is the page's own content; 127.0.0.1 declared for the local companion; burn-down: none possible without breaking the capture-the-link feature itself",
-        expiry: "v1.13.0",
+        expiry: "v1.14.0",
     },
     {
         file: "canon/_promoted/4ndr0tools - Blob2URL.user.js",
         reason: "user-directed: the vault processes user-provided/pasted URLs into blobs — arbitrary hosts BY DESIGN (the feature is 'any URL → blob'); burn-down: none — the wildcard IS the feature surface",
-        expiry: "v1.13.0",
+        expiry: "v1.14.0",
     },
     {
         file: "canon/_promoted/4ndr0tools - Forum Link Xtractor.user.js",
         reason: "page-content-driven: link extraction fetches media/hotlink URLs discovered in forum posts — arbitrary hosts by construction (the post content defines the endpoint set); burn-down: none without breaking extraction",
-        expiry: "v1.13.0",
+        expiry: "v1.14.0",
     },
     {
         file: "canon/_promoted/4ndr0tools - Stream Interceptor.user.js",
         reason: "stream-discovery: the interceptor fetches media manifest/segment URLs observed in page traffic — 9 player CDN families declared, the wildcard covers unknown player CDNs; burn-down: declare hosts as they stabilize, the * is the observed-traffic long tail",
-        expiry: "v1.13.0",
+        expiry: "v1.14.0",
     },
     {
         file: "canon/_promoted/4ndr0tools - m3u8++.user.js",
         reason: "stream-playback: fetches the page's own m3u8 manifests and their segments — the manifest's segment hosts are page/server-defined at runtime, arbitrary by construction; burn-down: none — the endpoint set belongs to the stream, not the script",
-        expiry: "v1.13.0",
+        expiry: "v1.14.0",
     },
     {
         file: "canon/_sovereign/4ndr0tools - Bunkr++.user.js",
         reason: "download engine: bunkr file downloads resolve through page redirects to arbitrary CDN hosts at runtime; 127.0.0.1 declared for the local companion API; burn-down: declare observed CDN hosts as they stabilize",
-        expiry: "v1.13.0",
+        expiry: "v1.14.0",
     },
     {
         file: "canon/_sovereign/4ndr0tools - Gofile++.user.js",
         reason: "api + download: api.gofile.io and localhost declared; file downloads redirect to gofile CDN nodes assigned by the server per download — arbitrary at runtime; burn-down: none — the CDN node set is server-assigned per session",
-        expiry: "v1.13.0",
+        expiry: "v1.14.0",
     },
     {
         file: "canon/_sovereign/4ndr0tools - Pixeldrain++.user.js",
         reason: "mirror surface: 24 official/community mirrors declared; the wildcard covers user-configured custom download endpoints (the settings panel accepts arbitrary proxy/mirror URLs — operator-supplied, not script-authored); burn-down: configurable-host surface by design",
-        expiry: "v1.13.0",
+        expiry: "v1.14.0",
     },
 ];
 
