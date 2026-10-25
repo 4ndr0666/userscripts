@@ -18,6 +18,12 @@
  *   3. Lexical validation on every output (§1.1-aware brace accounting,
  *      placeholder scan; Ψ-reference discipline is enforced by the
  *      kernel-export census — 3-a F14 header truth).
+ *   4. (WO-01 round 4, 4-b F2) Atomic flush — every write is staged during
+ *      the scan pass and lands on disk only after the WHOLE run validated
+ *      clean and the ledger sums, so a failing build leaves dist/ exactly
+ *      as it found it (no mixed-generation window; dist is the live
+ *      @updateURL channel). Carry-side IO errors report as typed BUILD
+ *      FAILURES instead of raw crashes (4-b F1).
  *
  * Exit codes: 0 = clean, 1 = build failure, 2 = validation failure.
  * ═══════════════════════════════════════════════════════════════════════ */
@@ -224,10 +230,24 @@ function buildModule(dir) {
 /* ── Main ────────────────────────────────────────────────────────────────── */
 
 function main() {
-    fs.mkdirSync(DIST_DIR, { recursive: true });
+    /* WO-01 round 4 (4-b F1): dist creation is part of the typed failure
+     * contract too — a read-only parent must report as a BUILD FAILURE,
+     * not a raw stack with no enumeration. */
+    try {
+        fs.mkdirSync(DIST_DIR, { recursive: true });
+    } catch (e) {
+        console.error(`\nBUILD FAILURES:\n  dist mkdir: ${e.code || e.message}\n`);
+        process.exit(1);
+    }
     const failures = [];
     const built = [];
     const outputs = new Set();
+    /* WO-01 round 4 (4-b F2): ALL dist writes are STAGED and flushed only
+     * after the whole run validates clean — a failing build now leaves
+     * dist/ exactly as it found it (true atomicity; the round-3 comment's
+     * mixed-generation caveat is retired). Verbatim carries stage their
+     * SOURCE path so the flush keeps copyFileSync byte-copy semantics. */
+    const staged = [];
 
     // 1) Kernel-powered modules
     if (fs.existsSync(MODULES_DIR)) {
@@ -239,12 +259,11 @@ function main() {
                 const balanceErr = checkLexicalBalance(out, filename);
                 if (balanceErr) fileFailures.push(balanceErr);
                 fileFailures.push(...scanPlaceholders(out, filename));
-                /* WO-01 round-1 (2-a F19): a failed output is never written —
-                 * the previous flow left the broken artifact in dist/ after
-                 * exit 1, and the stale installable kept answering
-                 * @updateURL checks until the next clean build. */
                 if (fileFailures.length === 0) {
-                    fs.writeFileSync(path.join(DIST_DIR, filename), out);
+                    /* WO-01 round-1 (2-a F19) + round-4 (4-b F2): a failed output is
+                     * never written — and a clean one is only STAGED here; the
+                     * write lands at flush time, after the whole run validates. */
+                    staged.push({ dest: path.join(DIST_DIR, filename), data: out });
                     built.push(filename);
                     outputs.add(filename);
                 } else {
@@ -273,13 +292,23 @@ function main() {
                      * said "every output" while this branch copied blind (a
                      * `= "PLACEHOLDER"` sentinel in a carry shipped to dist
                      * with exit 0; validate.mjs Gate C caught it only in the
-                     * full check chain). Scan first, copy only when clean. */
-                    const carrySrc = fs.readFileSync(path.join(dir, f), "utf8");
+                     * full check chain). Scan first, copy only when clean.
+                     * WO-01 round 4 (4-b F1): the read itself is typed — a
+                     * vanished/unreadable canon source reports, not crashes. */
+                    let carrySrc;
+                    try {
+                        carrySrc = fs.readFileSync(path.join(dir, f), "utf8");
+                    } catch (e) {
+                        failures.push(`canon ${f}: ${e.code || e.message}`);
+                        continue;
+                    }
                     const carryFailures = scanPlaceholders(carrySrc, f);
                     const carryBalance = checkLexicalBalance(carrySrc, f);
                     if (carryBalance) carryFailures.push(carryBalance);
                     if (carryFailures.length === 0) {
-                        fs.copyFileSync(path.join(dir, f), path.join(DIST_DIR, f));
+                        /* WO-01 round 4 (4-b F2): staged — the byte-copy lands at
+                         * flush time, after the whole run validates clean. */
+                        staged.push({ dest: path.join(DIST_DIR, f), src: path.join(dir, f) });
                         outputs.add(f);
                         carried++;
                     } else {
@@ -287,7 +316,14 @@ function main() {
                     }
                     continue;
                 }
-                const src = fs.readFileSync(path.join(dir, f), "utf8");
+                let src;
+                try {
+                    src = fs.readFileSync(path.join(dir, f), "utf8");
+                } catch (e) {
+                    /* WO-01 round 4 (4-b F1): typed canon-source read failure. */
+                    failures.push(`canon ${f}: ${e.code || e.message}`);
+                    continue;
+                }
                 /* WO-01 round-1 (F-16): a canon source without an ==/UserScript==
                  * end-marker previously fell through with cut = 0, silently
                  * prepending the kernel chunk BEFORE the metadata block and
@@ -314,7 +350,18 @@ function main() {
                         moduleMissing = true;
                         continue;
                     }
-                    chunks.push(`/* ══ kernel/${mod}.js (inlined by tools/build.mjs — edit kernel/, not here) ══ */\n${fs.readFileSync(p, "utf8").trim()}`);
+                    let kernelSrc;
+                    try {
+                        kernelSrc = fs.readFileSync(p, "utf8").trim();
+                    } catch (e) {
+                        /* WO-01 round 4 (4-b F1): a kernel module that vanishes
+                         * between the existsSync probe and the read reports
+                         * typed, like every other carry-side IO path. */
+                        failures.push(`canon ${f}: kernel module "${mod}" unreadable: ${e.code || e.message}`);
+                        moduleMissing = true;
+                        continue;
+                    }
+                    chunks.push(`/* ══ kernel/${mod}.js (inlined by tools/build.mjs — edit kernel/, not here) ══ */\n${kernelSrc}`);
                 }
                 if (moduleMissing) continue;   /* never write a kernel-less artifact for this file */
                 /* WO-01 round 3 (3-b F10): the F-16 guard checked only that the
@@ -334,8 +381,8 @@ function main() {
                 const balanceErr = checkLexicalBalance(out, f);
                 if (balanceErr) fileFailures.push(balanceErr);
                 fileFailures.push(...scanPlaceholders(out, f));
-                if (fileFailures.length === 0) {   /* WO-01 round-1 (2-a F19): never write a failed artifact */
-                    fs.writeFileSync(path.join(DIST_DIR, f), out);
+                if (fileFailures.length === 0) {   /* WO-01 round-1 (2-a F19): never write a failed artifact; round-4 (4-b F2): stage the clean one */
+                    staged.push({ dest: path.join(DIST_DIR, f), data: out });
                     outputs.add(f);
                     kernelCarried++;
                 } else {
@@ -345,27 +392,51 @@ function main() {
         }
     }
 
-    // 3) Prune stale dist artifacts — orphaned installables whose canon
-    //    source was retired/merged are dead weight on the install channel
-    //    (and would keep answering @updateURL checks after retirement).
+    /* v1.6.2: the build ledger must account for every dist installable —
+     * built + verbatim carries + kernel-inlined carries == outputs. The
+     * v1.6.1 summary said only "2 built, 20 carried" and left the 16
+     * kernel-inlined carries out of the arithmetic, which reads as a
+     * missing script against a 38-file inventory. WO-01 round 4 (4-b F2):
+     * the check runs BEFORE the flush — a ledger that does not sum must
+     * not touch dist either. */
+    if (built.length + carried + kernelCarried !== outputs.size) {
+        failures.push(`build ledger does not sum: ${built.length} built + ${carried} verbatim + ${kernelCarried} kernel-inlined ≠ ${outputs.size} dist outputs`);
+    }
+
+    // 3) Flush + prune — BOTH run only after the whole run validated clean
+    //    AND the ledger sums.
     //    WO-01 round-1 (2-a F19 companion): pruning is skipped entirely on a
     //    failed build — a file whose output failed validation is absent from
     //    `outputs`, and pruning then would DELETE the previous good dist
-    //    artifact alongside the refused new one. Fail closed (3-b F3
-    //    truth, WO-01 round 3): a failed build never writes the FAILED
-    //    artifact and never prunes; outputs that already passed validation
-    //    EARLIER IN THE SAME RUN are written, so a failing run can leave
-    //    dist/ mixed-generation (staging all writes to a post-validation
-    //    commit would make the run atomic — optional hardening, not
-    //    required by F-19; the full `npm run check` chain re-validates
-    //    every artifact either way).
+    //    artifact alongside the refused new one.
+    //    WO-01 round 4 (4-b F2 — the atomicity hardening the round-3 comment
+    //    deferred): every write is staged above and flushed HERE, after the
+    //    ledger-sum check, so a failing build leaves dist/ EXACTLY as it
+    //    found it — no mixed-generation window, even for a
+    //    `npm run build || true` deploy wrapper (dist is the live
+    //    @updateURL channel). A flush-time IO error (read-only dist, disk
+    //    full) degrades to the typed failure report per-entry (4-b F1).
     const stale = [];
     if (failures.length === 0) {
-        for (const f of fs.readdirSync(DIST_DIR)) {
-            if (f.endsWith(".user.js") && !outputs.has(f)) {
-                fs.rmSync(path.join(DIST_DIR, f));
-                stale.push(f);
+        for (const s of staged) {
+            try {
+                if (s.src !== undefined) fs.copyFileSync(s.src, s.dest);
+                else fs.writeFileSync(s.dest, s.data);
+            } catch (e) {
+                failures.push(`dist write ${path.basename(s.dest)}: ${e.code || e.message}`);
             }
+        }
+    }
+    if (failures.length === 0) {
+        try {
+            for (const f of fs.readdirSync(DIST_DIR)) {
+                if (f.endsWith(".user.js") && !outputs.has(f)) {
+                    fs.rmSync(path.join(DIST_DIR, f));
+                    stale.push(f);
+                }
+            }
+        } catch (e) {
+            failures.push(`dist prune: ${e.code || e.message}`);
         }
     }
 
@@ -376,15 +447,6 @@ function main() {
         if (outputs.has(f)) console.log(`  ✓ carried ${f} + kernel {${CANON_KERNEL[f].join(", ")}}`);
     }
     for (const f of stale) console.log(`  − pruned  ${f} (no canon source)`);
-
-    /* v1.6.2: the build ledger must account for every dist installable —
-     * built + verbatim carries + kernel-inlined carries == outputs. The
-     * v1.6.1 summary said only "2 built, 20 carried" and left the 16
-     * kernel-inlined carries out of the arithmetic, which reads as a
-     * missing script against a 38-file inventory. */
-    if (built.length + carried + kernelCarried !== outputs.size) {
-        failures.push(`build ledger does not sum: ${built.length} built + ${carried} verbatim + ${kernelCarried} kernel-inlined ≠ ${outputs.size} dist outputs`);
-    }
 
     /* WO-01 round-1 (F-17): exit-code discrimination — placeholder hits are
      * VALIDATION failures (exit 2), everything else is a build failure
