@@ -32,6 +32,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { codeOnly } from "./sink-census.mjs";
+import { codeOnlyCached } from "./scan-kit.mjs"; /* WO-01 round-4 (4-a F04): shared per-file memo */
 
 const DEFAULT_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
@@ -157,7 +158,7 @@ export function runCacheCensus(root = DEFAULT_ROOT) {
     for (const [rel, abs] of targets) {
         if (!fs.existsSync(abs)) continue;
         stats.filesScanned++;
-        const view = codeOnly(fs.readFileSync(abs, "utf8"));
+        const view = codeOnlyCached(abs);
         const starts = lineStartsOf(view);
 
         const declRe = /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*new\s+(Map|Set|WeakMap|WeakSet)\s*\(/g;

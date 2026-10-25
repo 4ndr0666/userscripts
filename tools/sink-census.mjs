@@ -50,6 +50,14 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { CURRENT_ROUND } from "./census-round.mjs"; /* WO-01 round-1 (2-a F1): round derives from package.json — the hardcoded
  * "v1.7.2" left every G9 expiry check inert while the suite reached v1.8.2. */
+/* WO-01 round-4 (4-a F06/F07): the masked-view primitives live in scan-kit.mjs
+ * now (the shared home) — codeOnly is RE-EXPORTED so the nine census/battery
+ * importers keep their `from "./sink-census.mjs"` surface unchanged, and the
+ * byte-identical third stripCommentsKeepStrings copy that lived here is
+ * deleted (the round-2 header comment claimed it "mirrors validate.mjs's
+ * stripCommentsKeepStrings discipline" — it is literally the same code now). */
+import { codeOnly, codeOnlyCached, stripCommentsKeepStrings } from "./scan-kit.mjs";
+export { codeOnly };
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const DIST = path.join(ROOT, "dist");
@@ -72,96 +80,6 @@ function distCodeView(src) {
         if (view.includes(kv)) view = view.split(kv).join("");
     }
     return view;
-}
-
-/* ── String- and comment-aware code view ──────────────────────────────────
- * Blanks line/block comment bodies and string CONTENTS (delimiter kept),
- * preserves ${} interpolation code inside template literals (nested
- * templates + comments inside interpolations included — a stack-based
- * 3-state machine, not ad-hoc recursion; the recursive draft misdrifted
- * line numbers on Prompt Master's modal templates, caught in calibration).
- * Line numbers are preserved 1:1 with the source so census hits point at
- * real lines. Regex literals are consumed as units so their metacharacters
- * never leak into the code view. */
-export function codeOnly(src) {
-    const out = src.split("\n").map(() => "");
-    let i = 0, line = 0;
-    const n = src.length;
-    const emit = (ch) => { out[line] += ch; };
-    /* state stack: {type:"tpl"} while inside a template literal,
-     * {type:"interp", depth} while inside its ${…} interpolation. Code
-     * states (top-level or interpolation) share one scanner body. */
-    const stack = [];
-    while (i < n) {
-        const c = src[i];
-        if (c === "\n") { line++; i++; continue; }
-        const st = stack.length ? stack[stack.length - 1].type : "code";
-
-        if (st === "tpl") {
-            if (c === "\\") { i += 2; continue; }          // escaped content
-            if (c === "`") { emit("`"); stack.pop(); i++; continue; } // template closes
-            if (c === "$" && src[i + 1] === "{") { emit(" "); stack.push({ type: "interp", depth: 0 }); i += 2; continue; }
-            i++; continue;                                  // content: blanked
-        }
-
-        /* st === "code" or "interp": one shared code scanner */
-        if (c === "/" && src[i + 1] === "/") {
-            while (i < n && src[i] !== "\n") i++;
-            continue;
-        }
-        if (c === "/" && src[i + 1] === "*") {
-            const end = src.indexOf("*/", i + 2);
-            const stop = end === -1 ? n : end + 2;
-            while (i < stop) { if (src[i] === "\n") line++; i++; }
-            continue;
-        }
-        if (c === '"' || c === "'") {
-            emit(c); emit(c); i++;                       // "" / '' — contents blanked
-            while (i < n) {
-                if (src[i] === "\\") { i += 2; continue; }
-                if (src[i] === c) { i++; break; }
-                if (src[i] === "\n") break;              // unterminated: main gates report it
-                i++;
-            }
-            continue;
-        }
-        if (c === "`") { emit("`"); stack.push({ type: "tpl" }); i++; continue; }
-
-        /* regex literal — heuristically: only where a value may start.
-         * WO-01 round-2 (6-a F06): the BODY is blanked (delimiters kept) —
-         * the round-1 form emitted regex bodies verbatim into the code view,
-         * so a body's braces/brackets corrupted span tracking downstream
-         * (transport-census literalSpan: `/[{]/` inside a call object broke
-         * the argument-span walk → false unbounded OR false bounded = false
-         * certification) and body text could match sink-class regexes that
-         * the string/comment blanking was supposed to prevent. Mirrors
-         * canon-xref skeletonize's blank-first discipline. */
-        const prev = out[line].trim().slice(-1) || "";
-        if (c === "/" && /[(,=:[!&|?{};+\-*%<>~^]/.test(prev || "(")) {
-            emit("/"); i++;
-            let inClass = false;
-            while (i < n) {
-                if (src[i] === "\\") { i += 2; continue; }   // escaped body char: blanked with the body
-                if (src[i] === "[") inClass = true;
-                else if (src[i] === "]") inClass = false;
-                else if (src[i] === "/" && !inClass) { emit("/"); i++; break; }
-                else if (src[i] === "\n") break;         // not a regex after all
-                i++;                                      // body: BLANKED, not emitted
-            }
-            continue;
-        }
-
-        if (st === "interp") {
-            const f = stack[stack.length - 1];
-            if (c === "{") { f.depth++; emit(c); i++; continue; }
-            if (c === "}") {
-                if (f.depth === 0) { emit(" "); stack.pop(); i++; continue; } // ${…} closes
-                f.depth--; emit(c); i++; continue;
-            }
-        }
-        emit(c); i++;
-    }
-    return out.join("\n");
 }
 
 /* ── Sink classes ───────────────────────────────────────────────────────── */
@@ -211,39 +129,20 @@ const BRACKET_TIMER_STRINGS =
 const BRACKET_SINK_CALLS =
     /\[\s*["'](?:(?:insertAdjacentHTML|parseFromString|write(?:ln)?|eval|Function)|set(?:Timeout|Interval))["']\s*\]\s*\(/g;
 
-/* String-preserving comment stripper (mirrors validate.mjs's
- * stripCommentsKeepStrings discipline: comments are documentation, strings
- * are runtime data — here the runtime data IS the detection surface). */
-function stripCommentsKeepStrings(src) {
-    let out = "";
-    let i = 0;
-    const n = src.length;
-    while (i < n) {
-        const c = src[i];
-        if (c === "/" && src[i + 1] === "/") { while (i < n && src[i] !== "\n") { out += " "; i++; } continue; }
-        if (c === "/" && src[i + 1] === "*") {
-            const end = src.indexOf("*/", i + 2);
-            const stop = end === -1 ? n : end + 2;
-            while (i < stop) { out += src[i] === "\n" ? "\n" : " "; i++; }
-            continue;
-        }
-        if (c === '"' || c === "'" || c === "`") {
-            const q = c;
-            out += c; i++;
-            while (i < n) {
-                if (src[i] === "\\") { out += src[i] + (src[i + 1] || ""); i += 2; continue; }
-                out += src[i];
-                const prev = src[i];
-                i++;
-                if (prev === q) break;
-                if (q !== "`" && prev === "\n") break;
-            }
-            continue;
-        }
-        out += c; i++;
-    }
-    return out;
-}
+/* WO-01 round-4 (4-a F07 — the round-3 recommendation, delivered): the
+ * ACCEPTED RESIDUALS of the sink-detection surface, enumerated in one place
+ * so the next auditor reads the boundary without re-deriving it. All three
+ * are zero-live across canon/modules/kernel/dist (re-proven rounds 3 AND 4)
+ * and documented-only BY VERDICT (closure cost exceeds the value of a class
+ * with zero live occurrences):
+ *   • Reflect.apply-form sink dispatch — `Reflect.apply(el.insertAdjacentHTML, el, [...])`;
+ *     the tree's live Reflect.apply sites are Akasha's dynamic-target
+ *     proxy-forwarding arms, a different shape.
+ *   • Unicode-escaped identifiers — `eval`, `\u0069nnerHTML` spellings; every
+ *     \u00XX hit in the corpus is a string-literal entity table or regex
+ *     class, and closure needs an identifier-unescaping lexer pass.
+ *   • Whitespace-after-dot member access — `el. innerHTML =` (zero live);
+ *     closure would widen ~10 CLASSES regexes for a class nothing uses. */
 
 /* ── Adjudication ledger ──────────────────────────────────────────────────
  * R3 ENDGAME (suite v1.4.4): every class-A UI string sink is migrated to
@@ -485,7 +384,7 @@ export function runSinkCensus() {
      * policy-wrapped parse pair is the sanctioned exception. */
     if (fs.existsSync(KERNEL)) {
         for (const f of fs.readdirSync(KERNEL).filter((f) => f.endsWith(".js")).sort()) {
-            const code = codeOnly(fs.readFileSync(path.join(KERNEL, f), "utf8"));
+            const code = codeOnlyCached(path.join(KERNEL, f));
             const counts = scanCode(code);
             const allowed = f === "core.js" ? counts.parseFromString || 0 : 0;
             /* net.js is the SANCTIONED wrap owner: its class-B sites are

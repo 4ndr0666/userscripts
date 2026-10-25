@@ -36,6 +36,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { codeOnly } from "./sink-census.mjs";
+import { codeOnlyCached } from "./scan-kit.mjs"; /* WO-01 round-4 (4-a F04): shared per-file memo */
 import { CURRENT_ROUND } from "./census-round.mjs";
 /* WO-01 round-3 (3-a F08): the module list derives from kernel-order.mjs
  * single-source (+net, which KERNEL_ORDER deliberately excludes because it
@@ -191,7 +192,7 @@ export function runKernelExportCensus() {
         exportsByMod[mod] = new Set(names);
     }
 
-    const corpus = corpusFiles().map(({ rel, abs }) => ({ rel, view: codeOnly(fs.readFileSync(abs, "utf8")) }));
+    const corpus = corpusFiles().map(({ rel, abs }) => ({ rel, view: codeOnlyCached(abs) })); /* WO-01 round-4 (4-a F04): shared per-file memo */
 
     /* consumer accounting */
     const consumed = {};       /* mod -> Set(names code-consumed) */

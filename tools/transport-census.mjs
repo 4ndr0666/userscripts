@@ -37,6 +37,7 @@ import { fileURLToPath } from "node:url";
 import { CURRENT_ROUND } from "./census-round.mjs"; /* WO-01 round-1 (2-a F1): round derives from package.json — the hardcoded
  * "v1.7.2" left every G9 expiry check inert while the suite reached v1.8.2. */
 import { codeOnly } from "./sink-census.mjs";
+import { codeOnlyCached } from "./scan-kit.mjs"; /* WO-01 round-4 (4-a F04): shared per-file memo */
 
 const DEFAULT_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
@@ -167,8 +168,7 @@ export function runTransportCensus(root = DEFAULT_ROOT) {
     for (const [rel, abs] of targets) {
         if (!fs.existsSync(abs)) continue;
         filesScanned++;
-        const src = fs.readFileSync(abs, "utf8");
-        const codeJoined = codeOnly(src);
+        const codeJoined = codeOnlyCached(abs);
         const lineStarts = [0];
         for (let i = 0; i < codeJoined.length; i++) if (codeJoined[i] === "\n") lineStarts.push(i + 1);
 

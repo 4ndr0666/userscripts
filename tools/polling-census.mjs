@@ -49,6 +49,7 @@ import { fileURLToPath } from "node:url";
 import { CURRENT_ROUND } from "./census-round.mjs"; /* WO-01 round-1 (2-a F1): round derives from package.json — the hardcoded
  * "v1.7.2" left every G9 expiry check inert while the suite reached v1.8.2. */
 import { codeOnly } from "./sink-census.mjs";
+import { codeOnlyCached } from "./scan-kit.mjs"; /* WO-01 round-4 (4-a F04): shared per-file memo */
 
 const DEFAULT_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
@@ -359,7 +360,7 @@ export function runPollingCensus(root = DEFAULT_ROOT) {
     for (const [rel, abs] of targets) {
         if (!fs.existsSync(abs)) continue;
         stats.filesScanned++;
-        const view = codeOnly(fs.readFileSync(abs, "utf8"));
+        const view = codeOnlyCached(abs);
         const starts = lineStartsOf(view);
         /* WO-01 round-2 (6-a F04): the char class dropped the `.` so member-form
          * `window.setInterval(…)` sites were INVISIBLE to the census — exactly
@@ -476,7 +477,7 @@ export function runPollingCensus(root = DEFAULT_ROOT) {
      * loop dies by not re-arming. */
     for (const [rel, abs] of targets) {
         if (!fs.existsSync(abs)) continue;
-        const view = codeOnly(fs.readFileSync(abs, "utf8"));
+        const view = codeOnlyCached(abs);
         const starts = lineStartsOf(view);
         const toRe = /(^|[^\w$])setTimeout\s*\(\s*([A-Za-z_$][\w$]*)\s*,/g;
         let tm3;

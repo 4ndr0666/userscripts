@@ -1,7 +1,11 @@
 #!/usr/bin/env node
+import fs from "node:fs";
 /* ═══════════════════════════════════════════════════════════════════════════
  * tools/scan-kit.mjs — shared §1.1 lexical scanner + placeholder scan (WO-01
- * round-2, 6-a F08 / 6-b F7 / round-1 deferred item d)
+ * round-2, 6-a F08 / 6-b F7 / round-1 deferred item d; WO-01 round-4,
+ * 4-a F06/F07 — the masked-view home: codeOnly hoisted here from
+ * sink-census.mjs so layer A builds from the SAME full-file masked-source
+ * primitive the censuses use, and the third stripper copy is deleted)
  * ─────────────────────────────────────────────────────────────────────────────
  * build.mjs and validate.mjs each carried a ~120-line port of the same two
  * scanners, and the ports had ALREADY drifted in both directions: build's
@@ -19,6 +23,17 @@
  *   layer C — raw text: the trailing `// …` comment ellipsis (the stub
  *             idiom in prose form; comments are documentation, and a
  *             documentation ellipsis that marks elided CODE is a stub).
+ *
+ * WO-01 round-4 (4-a F06): layer A now derives from the full-file codeOnly
+ * masked view instead of a per-line three-replace stripper — closing all
+ * three per-line confusion classes at once: (P1) a TODO: inside a
+ * multi-line block comment false-FAILED (the gate's own contract says a
+ * TODO note in a comment is documentation, not a defect); (P2) a `//`
+ * inside a URL string truncated the line mid-string, false-PASSING live
+ * markers after it; (P4) a TODO: inside a multi-line template interior
+ * false-FAILED the same way as P1. Zero hits on the tree under both
+ * implementations — behavior-neutral today, tighter in BOTH directions
+ * tomorrow.
  *
  * Zero hits on the current tree — the unification is behavior-neutral today
  * and a strictly tighter net tomorrow.
@@ -134,11 +149,15 @@ export function checkLexicalBalance(src, label = "source") {
 
 /* layer A: word markers in live CODE (comments stripped, strings blanked).
  * The union of the round-1 build set and the validate set: `pass # todo`
- * was build-only. */
+ * was build-only. WO-01 round-4 (4-a F05): the block-comment-shaped
+ * implementation-pending marker is GONE from this layer — in a
+ * comment-stripped view a comment-shaped token can only ever match inside
+ * a string/template (blanked) or as template-text leakage; the P4-class
+ * leak is covered by codeOnly's template blanking, so the marker was
+ * structurally unmatchable dead weight. */
 export const PLACEHOLDER_WORD_MARKERS = [
     /\bTODO[:\s]/, /\bFIXME\b/, /\bXXX\b/, /\bHACK\b/,
     /\.\.\.\s*existing\s+code/i,
-    /\/\*\s*implementation\s+pending\s*\*\//i,
     /\bpass\s*#\s*todo\b/i,
 ];
 
@@ -195,16 +214,126 @@ export function stripCommentsKeepStrings(src) {
     return out;
 }
 
+/* ── String- and comment-aware code view ──────────────────────────────────
+ * WO-01 round-4 (4-a F06/F07): hoisted here from sink-census.mjs — the
+ * masked-source primitive the whole toolchain shares (censuses via the
+ * sink-census re-export, layer A above directly). Blanks line/block comment
+ * bodies and string CONTENTS (delimiter kept), preserves ${} interpolation
+ * code inside template literals (nested templates + comments inside
+ * interpolations included — a stack-based 3-state machine, not ad-hoc
+ * recursion; the recursive draft misdrifted line numbers on Prompt Master's
+ * modal templates, caught in calibration). Line numbers are preserved 1:1
+ * with the source so census hits point at real lines. Regex literals are
+ * consumed as units so their metacharacters never leak into the code view.
+ * scan-kit imports no REPO modules — it stays at the bottom of the tools
+ * DAG (node builtins only, for the codeOnlyCached file memo). */
+export function codeOnly(src) {
+    const out = src.split("\n").map(() => "");
+    let i = 0, line = 0;
+    const n = src.length;
+    const emit = (ch) => { out[line] += ch; };
+    /* state stack: {type:"tpl"} while inside a template literal,
+     * {type:"interp", depth} while inside its ${…} interpolation. Code
+     * states (top-level or interpolation) share one scanner body. */
+    const stack = [];
+    while (i < n) {
+        const c = src[i];
+        if (c === "\n") { line++; i++; continue; }
+        const st = stack.length ? stack[stack.length - 1].type : "code";
+
+        if (st === "tpl") {
+            if (c === "\\") { i += 2; continue; }          // escaped content
+            if (c === "`") { emit("`"); stack.pop(); i++; continue; } // template closes
+            if (c === "$" && src[i + 1] === "{") { emit(" "); stack.push({ type: "interp", depth: 0 }); i += 2; continue; }
+            i++; continue;                                  // content: blanked
+        }
+
+        /* st === "code" or "interp": one shared code scanner */
+        if (c === "/" && src[i + 1] === "/") {
+            while (i < n && src[i] !== "\n") i++;
+            continue;
+        }
+        if (c === "/" && src[i + 1] === "*") {
+            const end = src.indexOf("*/", i + 2);
+            const stop = end === -1 ? n : end + 2;
+            while (i < stop) { if (src[i] === "\n") line++; i++; }
+            continue;
+        }
+        if (c === '"' || c === "'") {
+            emit(c); emit(c); i++;                       // "" / '' — contents blanked
+            while (i < n) {
+                if (src[i] === "\\") { i += 2; continue; }
+                if (src[i] === c) { i++; break; }
+                if (src[i] === "\n") break;              // unterminated: main gates report it
+                i++;
+            }
+            continue;
+        }
+        if (c === "`") { emit("`"); stack.push({ type: "tpl" }); i++; continue; }
+
+        /* regex literal — heuristically: only where a value may start.
+         * WO-01 round-2 (6-a F06): the BODY is blanked (delimiters kept) —
+         * the round-1 form emitted regex bodies verbatim into the code view,
+         * so a body's braces/brackets corrupted span tracking downstream
+         * (transport-census literalSpan: `/[{]/` inside a call object broke
+         * the argument-span walk → false unbounded OR false bounded = false
+         * certification) and body text could match sink-class regexes that
+         * the string/comment blanking was supposed to prevent. Mirrors
+         * canon-xref skeletonize's blank-first discipline. */
+        const prev = out[line].trim().slice(-1) || "";
+        if (c === "/" && /[(,=:[!&|?{};+\-*%<>~^]/.test(prev || "(")) {
+            emit("/"); i++;
+            let inClass = false;
+            while (i < n) {
+                if (src[i] === "\\") { i += 2; continue; }   // escaped body char: blanked with the body
+                if (src[i] === "[") inClass = true;
+                else if (src[i] === "]") inClass = false;
+                else if (src[i] === "/" && !inClass) { emit("/"); i++; break; }
+                else if (src[i] === "\n") break;         // not a regex after all
+                i++;                                      // body: BLANKED, not emitted
+            }
+            continue;
+        }
+
+        if (st === "interp") {
+            const f = stack[stack.length - 1];
+            if (c === "{") { f.depth++; emit(c); i++; continue; }
+            if (c === "}") {
+                if (f.depth === 0) { emit(" "); stack.pop(); i++; continue; } // ${…} closes
+                f.depth--; emit(c); i++; continue;
+            }
+        }
+        emit(c); i++;
+    }
+    return out.join("\n");
+}
+
+/* WO-01 round-4 (4-a F04): per-file memo — the corpus was re-read and
+ * re-lexed ~9-10× per full check (~4.0-4.5 s at v1.11.0; polling-census
+ * lexed each file TWICE inside its own run). The censuses all run in ONE
+ * process (validate.mjs imports them), so a module-level Map amortizes
+ * every duplicate: the first caller lexes, the rest reuse. Views are pure
+ * functions of file bytes; the tree is static within a validate run. */
+const codeOnlyCache = new Map();
+export function codeOnlyCached(absPath) {
+    let v = codeOnlyCache.get(absPath);
+    if (v === undefined) {
+        v = codeOnly(fs.readFileSync(absPath, "utf8"));
+        codeOnlyCache.set(absPath, v);
+    }
+    return v;
+}
+
 /** Three-layer placeholder scan. Hits are labelled `placeholder:` so
  * exit-code forks can discriminate validation failures from build failures
  * without pattern-matching on regex source text (WO-01 round-1 F-17). */
 export function scanPlaceholders(src, label = "source") {
     const hits = [];
-    // layer (a): comment-stripped, string-blanked code
-    const codeLines = src.split("\n").map((ln) => ln
-        .replace(/\/\/.*$/, "")
-        .replace(/\/\*.*?\*\//g, "")
-        .replace(/(["'`])(?:\\.|(?!\1).)*\1/g, '""'));
+    // layer (a): full-file masked view — comments stripped, string CONTENTS
+    // blanked, 1:1 line preservation (WO-01 round-4, 4-a F06: the per-line
+    // three-replace stripper is retired; see the header for the three closed
+    // confusion classes)
+    const codeLines = codeOnly(src).split("\n");
     for (let ln = 0; ln < codeLines.length; ln++) {
         for (const pat of PLACEHOLDER_WORD_MARKERS) {
             if (pat.test(codeLines[ln])) hits.push(`placeholder: ${label}: line ${ln + 1}: word marker ${pat.source}`);

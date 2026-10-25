@@ -31,6 +31,7 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { stripCommentsKeepStrings } from "./scan-kit.mjs"; /* WO-01 round-4 (4-a deferred-(a) step 3): the crude `//`-truncating stripper is retired — see the body view below */
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const DIST = path.join(ROOT, "dist");
@@ -144,9 +145,15 @@ function inventory() {
          * when the grant exists, so an ungranted consumer can never
          * raise a ReferenceError. Any other occurrence is use and still
          * requires the grant. */
-        const body = src.replace(/==UserScript==[\s\S]*?==\/UserScript==/, "")
-            .replace(/\/\*[\s\S]*?\*\//g, "")
-            .replace(/\/\/[^\n]*/g, "");
+        /* WO-01 round-4 (4-a deferred-(a) step 3): the strings-kept masked view
+         * from scan-kit replaces the crude per-line stripper — a `//` inside a
+         * URL string used to truncate the line mid-string, so an ungranted
+         * GM_xxx( call after a URL-containing string on the same line was
+         * INVISIBLE to this grant-enforcement check (the F06-P2 class,
+         * /tmp-proven). NOT codeOnly: the sanctioned pickup-idiom strip below
+         * matches the literal 'function' STRING CONTENT, which codeOnly blanks
+         * (probe-proven — five false ungranted-use problems). */
+        const body = stripCommentsKeepStrings(src).replace(/==UserScript==[\s\S]*?==\/UserScript==/, "");
         const CANONICAL_GM = new Set([
             "GM_xmlhttpRequest", "GM_download", "GM_addStyle", "GM_addElement",
             "GM_setClipboard", "GM_setValue", "GM_getValue", "GM_getValues",
