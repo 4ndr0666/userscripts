@@ -1,6 +1,6 @@
 # 4ndr0tools - m3u8++ v4.5 (GUP v5.3 audited)
 
-> **⚠ HISTORICAL DEVLOG — v4.5 arc.** This document is the preserved engineering record of the v4.5 audit cycle; the devlog body below is kept intact as history. The **current shipped script is v5.1.0**, built from `canon/_promoted/4ndr0tools - m3u8++.user.js` into **`dist/4ndr0tools - m3u8++.user.js`** — see [`documentation/INDEX.md`](../INDEX.md) for the live reference. Filenames, version stamps and install-verification steps below refer to the historical v4.5 deliverable, not the current release.
+> **⚠ HISTORICAL DEVLOG — v4.5 arc.** This document is the preserved engineering record of the v4.5 audit cycle; the devlog body below is kept intact as history. The **current shipped script is v5.1.1**, built from `canon/_promoted/4ndr0tools - m3u8++.user.js` into **`dist/4ndr0tools - m3u8++.user.js`** — see [`documentation/INDEX.md`](../INDEX.md) for the live reference. Filenames, version stamps and install-verification steps below refer to the historical v4.5 deliverable, not the current release.
 
 **File:** `4ndr0tools-m3u8PlusPlus-v4.5.user.js` — 801 lines, md5 `648ef361c35bc852d9965ef4ab7182a8`
 **Baseline:** your uploaded v4.4 (byte-identical to upstream stable — the audit superset contract is v4.5 ⊇ v4.4)
@@ -8,10 +8,10 @@
 
 ## Install
 
-> **Current release:** install **`dist/4ndr0tools - m3u8++.user.js`** (`@version 5.1.0`) — see [INDEX.md](../INDEX.md). The steps below are the **historical v4.5** procedure, retained as part of the devlog record.
+> **Current release:** install **`dist/4ndr0tools - m3u8++.user.js`** (`@version 5.1.1`) — see [INDEX.md](../INDEX.md). The steps below are the **historical v4.5** procedure, retained as part of the devlog record.
 
 1. Tampermonkey → Dashboard → Utilities → Import, or simply create a new userscript and paste the file contents, or drag the file onto the browser.
-2. Confirm the header shows `@version 4.5` (historical v4.5 deliverable; the current release shows `@version 5.1.0`). The internal `@name` is unchanged (`4ndr0tools - m3u8++`), so Tampermonkey treats it as an update of v4.4 — no duplicate install.
+2. Confirm the header shows `@version 4.5` (historical v4.5 deliverable; the current release shows `@version 5.1.1`). The internal `@name` is unchanged (`4ndr0tools - m3u8++`), so Tampermonkey treats it as an update of v4.4 — no duplicate install.
 
 ## What v4.5 fixes (audit register G1–G10)
 
