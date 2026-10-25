@@ -741,12 +741,12 @@
   {
    "file": "4ndr0tools - HostWarp.user.js",
    "name": "4ndr0tools - HostWarp",
-   "version": "1.1.5",
+   "version": "1.1.6",
    "description": "Per-host warp drive: bypasses image-host interstitials (imagetwist/imgspice/turboimagehost/acidimg/imx/pixhost/imagebam/imgbox/kropic/vipr/imagevenue), MEGA embed redirect + autoplay, PlanetSuzy mobile skin, t.me Web button, SearXNG sticky preferences, Gemini Answer Now — one engine, glass settings console, every module toggleable.",
    "family": "ux utilities",
-   "sha256": "5813fa905e3f102c31f01d075ed0127da0105a0943549dc8895a2905e983a285",
-   "lines": 1907,
-   "bytes": 99165,
+   "sha256": "6f483cd446709812a13351382e5de95e0507e391befd7cba3ed7dfeb94f61349",
+   "lines": 1914,
+   "bytes": 99885,
    "matches": [
     "*://*/*"
    ],
@@ -1628,5 +1628,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "a4cf3e77bc50a931af978e697e7a793a584c26ea3282f7e8925b949ecf19a2ce"
+ "digest": "7c37cecd887997129177135a06dd14cb22636eb1727d1ae06c8f461503287f7b"
 }

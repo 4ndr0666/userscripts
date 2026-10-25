@@ -151,10 +151,17 @@ for (const [domain, handler] of IMAGE_HOST_HANDLERS) {
             const playPromise = video.play();
             if (playPromise === undefined) return;
             playPromise.then(() => {
-                if (video.requestFullscreen) video.requestFullscreen();
-                else if (video.mozRequestFullScreen) video.mozRequestFullScreen();
-                else if (video.webkitRequestFullscreen) video.webkitRequestFullscreen();
-                else if (video.msRequestFullscreen) video.msRequestFullscreen();
+                /* WO-01 round-5 (5-b F01): the 1.1.5 commit message claimed this
+                 * catch but only its toast half landed — requestFullscreen()
+                 * rejects without user activation on every muted-autoplay embed
+                 * and the dropped promise surfaced as uncaught-in-promise console
+                 * noise per page-load. Every vendor form now routes through tryFs
+                 * (legacy non-promise forms return undefined and pass through). */
+                const tryFs = (p) => { if (p && typeof p.catch === 'function') p.catch(function (e) { console.debug('[HostWarp] fullscreen request deferred:', e && e.message ? e.message : e); }); };
+                if (video.requestFullscreen) tryFs(video.requestFullscreen());
+                else if (video.mozRequestFullScreen) tryFs(video.mozRequestFullScreen());
+                else if (video.webkitRequestFullscreen) tryFs(video.webkitRequestFullscreen());
+                else if (video.msRequestFullscreen) tryFs(video.msRequestFullscreen());
             }).catch((e) => { console.debug('[HostWarp] autoplay deferred until user gesture:', e && e.message ? e.message : e); });
         });
         return true;
