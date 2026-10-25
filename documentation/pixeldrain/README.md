@@ -30,7 +30,7 @@ Transport and proxy preferences persist through GM storage.
 
 ## Permissions (OPSEC)
 
-GM grants: `GM_xmlhttpRequest`, `GM_download`, `GM_openInTab`, `GM_setValue`, `GM_getValue`, `GM_deleteValue`, `GM_registerMenuCommand`, `GM_addStyle`, `GM_notification`, `GM_setClipboard`, `unsafeWindow`.
+GM grants: `GM_xmlhttpRequest`, `GM.xmlHttpRequest`, `GM_download`, `GM_openInTab`, `GM_setValue`, `GM_getValue`, `GM_deleteValue`, `GM_registerMenuCommand`, `GM_addStyle`, `GM_notification`, `GM_setClipboard`, `unsafeWindow`.
 Cross-origin connects: `pixeldrain.com`, `pixeldrain.net`, `pixeldrain.dev`, `pixeldra.in`, `cdn.pixeldrain.eu.cc`, `pixeldrain.eu.cc`, `pd.1drv.eu.org`, `pd.cybar.xyz`, `pd.zeroken.id`, `pd.hakimi.uk`, `pd.512.gay`, `pd.voidnet.tech`, `pd.kanibal.xyz`, `pd.arcjbtc.my.id`, `pd.ramdani.cloud`, `pd.noisyfox.io`, `pd.meridian.pm`, `pd.dwnld.workers.dev`, `pd.itsmeonly.workers.dev`, `pd.blazing.works`, `pd.unblockit.click`, `127.0.0.1`, `localhost`, `*`.
 
 ## Lineage

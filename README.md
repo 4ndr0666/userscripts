@@ -27,8 +27,8 @@ Upgrading from the old repo? Follow the [**Migration Guide**](./docs/MIGRATION.m
 This repository is a **build-time kernel suite**: shared modules (`kernel/`) are
 inlined into self-contained installables. WO-01 round-1 (2-d F4): the runtime
 `@require` surface is now derived from the live inventory — currently
-5 script(s) carry
-external libraries (4ndr0tools - Forums++ · 4ndr0tools - LinkMasterΨ · 4ndr0tools - Login Form Autofiller · 4ndr0tools - Youtube Removed Video Revealer · 4ndr0tools - m3u8++),
+4 script(s) carry
+external libraries (4ndr0tools - Forums++ · 4ndr0tools - LinkMasterΨ · 4ndr0tools - Youtube Removed Video Revealer · 4ndr0tools - m3u8++),
 every other installable is fully self-contained — single source of truth for
 the 3lectric-Glass design system.
 
@@ -92,7 +92,7 @@ OPSEC notes, lineage — live in [`documentation/INDEX.md`](./documentation/INDE
 | Images++ | v4.0.4 | images | [4ndr0tools - Images++.user.js](./dist/4ndr0tools%20-%20Images++.user.js) | Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. Collapse-mode hotkey is configurable. |
 | Instagram++ | v13.2.2 | sovereign platforms | [4ndr0tools - Instagram++.user.js](./dist/4ndr0tools%20-%20Instagram++.user.js) | Tab-Bar + Dock Integration. Hotkey trigger (Alt+I). Ad-Blocking. Deep-Stack Recovery. Resilient cursor-based pagination. Stories support. Image/video download engine. |
 | LinkMasterΨ | v6.3.3 | media & links | [4ndr0tools - LinkMasterΨ.user.js](./dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js) | Accurately decodes, previews, exports, validates and scrapes all links. (Dual MPV Support + Ψ IG Harvester + sexyforums premium-link unwrap + GitHub raw-URL harvest + Ψ2 forum deep-scrape engine) |
-| Login Form Autofiller | v2.0.4 | ux utilities | [4ndr0tools - Login Form Autofiller.user.js](./dist/4ndr0tools%20-%20Login%20Form%20Autofiller.user.js) | It integrates BugMeNot into any login form (it retrieves all matching logins from bugmenot.com and autofills the login form) |
+| Login Form Autofiller | v2.0.5 | ux utilities | [4ndr0tools - Login Form Autofiller.user.js](./dist/4ndr0tools%20-%20Login%20Form%20Autofiller.user.js) | It integrates BugMeNot into any login form (it retrieves all matching logins from bugmenot.com and autofills the login form) |
 | Maximize_Any_Media | v2.0.1 | video & players | [4ndr0tools - Maximize_Any_Media.user.js](./dist/4ndr0tools%20-%20Maximize_Any_Media.user.js) | Maximize + Pip controls to any media anywhere - video, images, embedded and shadow-DOM players, on any site. 3lectric-Glass spec. Ψ |
 | Media Player Controller | v8.1.3 | video & players | [4ndr0tools - Media Player Controller.user.js](./dist/4ndr0tools%20-%20Media%20Player%20Controller.user.js) | Speed • Fine Rate ±0.1 • Alt+Shift rAF Zoom/Pan • Rotation • Smart Maximize • Native Fullscreen • PiP • Play • DblClick • Pause-on-Acquire • Virtual DOM Nodes • Shadow-DOM Discovery • Cyan-Glass Scrub Bar • Download Button (fetch + blob capture) • Screenshot • Volume/Mute • Frame Step • Seek Hotkeys • IG Story Nav (3-Layer) • Story Repeat (3-Layer) • Active-Media Observer • YouTube Ad Auto-Skip • Toast Feedback • Draggable HUD • Full Hotkey Suite |
 | ModelSearch | v4.0.3 | forums | [4ndr0tools - ModelSearch.user.js](./dist/4ndr0tools%20-%20ModelSearch.user.js) | Covert SimpCity search UI directly from any website. (Electric-Glass + Alt+S Hotkey Only) |

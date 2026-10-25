@@ -617,7 +617,11 @@ function renderScript(s) {
     L.push("");
     L.push(k.settings);
     L.push("");
-    const grants = (s.grants || []).filter((g) => !g.startsWith("GM."));
+    // WO-01 round-4 (4-c F03 companion): render ALL grants — the old
+    // underscore-only filter would have flipped LFA's row to a false "No GM
+    // grants — runs purely in page context" the moment its dead underscore
+    // grants were removed; dot-form grants are real grants and render now.
+    const grants = s.grants || [];
     L.push(`## Permissions (OPSEC)`);
     L.push("");
     L.push(grants.length

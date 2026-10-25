@@ -2,7 +2,7 @@
 // @author       4ndr0666
 // @name        4ndr0tools - Login Form Autofiller
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version     2.0.4
+// @version     2.0.5
 // @description It integrates BugMeNot into any login form (it retrieves all matching logins from bugmenot.com and autofills the login form)
 // @authors     4ndr0666
 // @icon        data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -14,19 +14,21 @@
 // @exclude     http://bugmenot.com/*
 // @exclude     https://bugmenot.com/*
 // @grant       GM.getValue
-// @grant       GM_getValue
 // @grant       GM.setValue
-// @grant       GM_setValue
 // @grant       GM.openInTab
-// @grant       GM_openInTab
 // @grant       GM.xmlHttpRequest
-// @grant       GM_xmlhttpRequest
-// @require     https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js
 // @noframes
 // @run-at      document-idle
 // ==/UserScript==
+// 2.0.5 (suite v1.12.0, WO-01 round 4): GM3-era bridge retired — the four
+// underscore grants (GM_getValue/GM_setValue/GM_openInTab/GM_xmlhttpRequest,
+// zero call sites: the body is solely dot-form, 16 sites) and the gm4-polyfill
+// @require removed. The polyfill defines GM-dot FROM GM-underscore for engines
+// lacking dot APIs — inert on TM/VM (both native) and GM4 (dot native); only
+// GM3-era engines (EOL 2017) lose support. Pure attack-surface removal: no
+// third-party remote code executing with the script's grants (3-c F08, closed).
 // 2.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Login Form Autofiller.user v2.0.4 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Login Form Autofiller.user v2.0.5 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 /* global GM */
 

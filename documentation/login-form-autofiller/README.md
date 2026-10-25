@@ -1,4 +1,4 @@
-# Login Form Autofiller · v2.0.4
+# Login Form Autofiller · v2.0.5
 
 > BugMeNot integration for any login form — `ux utilities` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,11 +10,11 @@ Login Form Autofiller wires BugMeNot into every login form on the web: it detect
 
 | Dimension | Value |
 |---|---|
-| Version | `2.0.4` |
+| Version | `2.0.5` |
 | Matches | universal (no @match) |
 | Excludes | `http://bugmenot.com/*`, `https://bugmenot.com/*` |
 | Run-at | `document-idle` |
-| Size | 43.5 KB · 1015 lines |
+| Size | 43.8 KB · 1017 lines |
 | Install | [dist/4ndr0tools - Login Form Autofiller.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Login%20Form%20Autofiller.user.js) |
 
 ## Feature Inventory
@@ -31,7 +31,7 @@ bugmenot.com itself is excluded; everything else is in scope by default.
 
 ## Permissions (OPSEC)
 
-GM grants: `GM_getValue`, `GM_setValue`, `GM_openInTab`, `GM_xmlhttpRequest`.
+GM grants: `GM.getValue`, `GM.setValue`, `GM.openInTab`, `GM.xmlHttpRequest`.
 
 > v2.0.2: textToXml policy-wrapped for TT-enforcing login pages (suite v1.4.2 class fix).
 

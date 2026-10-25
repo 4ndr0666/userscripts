@@ -24,7 +24,7 @@
 | **Images++** | `4.0.4` | images | kernel-free | [reference](./images/) |
 | **Instagram++** | `13.2.2` | sovereign platforms | typeof-guarded + gmFetch fallback | [reference](./instagram/) |
 | **LinkMasterΨ** | `6.3.3` | media & links | typeof-guarded (NetHook) | [reference](./linkmaster/) |
-| **Login Form Autofiller** | `2.0.4` | ux utilities | kernel-free | [reference](./login-form-autofiller/) |
+| **Login Form Autofiller** | `2.0.5` | ux utilities | kernel-free | [reference](./login-form-autofiller/) |
 | **Maximize_Any_Media** | `2.0.1` | video & players | kernel-free | [reference](./maximize-any-media/) |
 | **Media Player Controller** | `8.1.3` | video & players | kernel-free | [reference](./media-player-controller/) |
 | **ModelSearch** | `4.0.3` | forums | kernel-free | [reference](./modelsearch/) |

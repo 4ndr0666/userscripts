@@ -311,8 +311,13 @@ for (const file of files.sort()) {
     while ((m = grantRe.exec(src)) !== null) grants.add(m[1]);
     const allGranted = grants.has("none") || [...grants].some((g) => g.includes("*"));
     if (!allGranted) {
-        for (const api of ["GM_addStyle", "GM_setClipboard", "GM_xmlhttpRequest", "GM_registerMenuCommand", "GM_getValue", "GM_setValue", "GM_notification", "GM_download", "GM_openInTab", "GM_addElement"]) {
-            if (new RegExp(`(?<![\\w$.])${api}\\s*\\(`).test(noStrings) && !grants.has(api)) {
+        // WO-01 round-4 (4-c F09): dot spellings join the list — the suite's
+        // dot-form consumers (LFA solely dot; Pixeldrain/m3u8++ dual-form)
+        // were invisible to this cross-reference; removing a dot grant now
+        // trips the check exactly like its underscore twin.
+        for (const api of ["GM_addStyle", "GM_setClipboard", "GM_xmlhttpRequest", "GM_registerMenuCommand", "GM_getValue", "GM_setValue", "GM_notification", "GM_download", "GM_openInTab", "GM_addElement",
+                           "GM.getValue", "GM.setValue", "GM.xmlHttpRequest", "GM.openInTab", "GM.download", "GM.setClipboard", "GM.registerMenuCommand", "GM.notification"]) {
+            if (new RegExp(`(?<![\\w$.])${api.replace(/\./g, "\\.")}\\s*\\(`).test(noStrings) && !grants.has(api)) {
                 hits.push(`(3) ${api} used but not @grant'd`);
             }
         }

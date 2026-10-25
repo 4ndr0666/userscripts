@@ -887,12 +887,12 @@
   {
    "file": "4ndr0tools - Login Form Autofiller.user.js",
    "name": "4ndr0tools - Login Form Autofiller",
-   "version": "2.0.4",
+   "version": "2.0.5",
    "description": "It integrates BugMeNot into any login form (it retrieves all matching logins from bugmenot.com and autofills the login form)",
    "family": "ux utilities",
-   "sha256": "b507c5886e6debf0fc01779879bc8d6a60a1808d7c8aa3eb75ea50429b44aa1a",
-   "lines": 1015,
-   "bytes": 44530,
+   "sha256": "b49cd45081dd1aaad45683be16f1ec233a380278db16e3b057dccd83d87cdd51",
+   "lines": 1017,
+   "bytes": 44887,
    "matches": [],
    "excludes": [
     "http://bugmenot.com/*",
@@ -900,17 +900,11 @@
    ],
    "grants": [
     "GM.getValue",
-    "GM_getValue",
     "GM.setValue",
-    "GM_setValue",
     "GM.openInTab",
-    "GM_openInTab",
-    "GM.xmlHttpRequest",
-    "GM_xmlhttpRequest"
+    "GM.xmlHttpRequest"
    ],
-   "requires": [
-    "https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js"
-   ],
+   "requires": [],
    "connects": [],
    "runAt": "document-idle",
    "noframes": true,
@@ -1581,5 +1575,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "b29a426c0c45af8c987401fd98ab618134b14b72c318d1e2bbde36c4d9bfd5f4"
+ "digest": "3f13f5e6af907c049d744b42a22121b90a2906da6a1e548d665d2187db287f0d"
 }

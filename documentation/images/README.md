@@ -38,7 +38,7 @@ Full settings console: preview behavior, collapse size, hotkey remap with modifi
 
 ## Permissions (OPSEC)
 
-GM grants: `GM_addElement`, `GM_addStyle`, `GM_download`, `GM_getValue`, `GM_openInTab`, `GM_registerMenuCommand`, `GM_unregisterMenuCommand`, `GM_setClipboard`, `GM_setValue`, `GM_xmlhttpRequest`, `unsafeWindow`.
+GM grants: `GM_addElement`, `GM_addStyle`, `GM_download`, `GM_getValue`, `GM_openInTab`, `GM_registerMenuCommand`, `GM_unregisterMenuCommand`, `GM_setClipboard`, `GM_setValue`, `GM_xmlhttpRequest`, `GM.getValue`, `GM.openInTab`, `GM.registerMenuCommand`, `GM.unregisterMenuCommand`, `GM.setClipboard`, `GM.setValue`, `GM.xmlHttpRequest`, `unsafeWindow`.
 Cross-origin connects: `*`, `self`, `github.com`, `deviantart.com`, `facebook.com`, `fbcdn.com`, `flickr.com`, `simp6.jp5.su`, `jp5.su`, `jp6.su`, `googleusercontent.com`, `gyazo.com`, `imgur.com`, `instagr.am`, `instagram.com`, `prnt.sc`, `prntscr.com`, `user-images.githubusercontent.com`.
 
 > v4.0.3: $parseHtml routes through the page-policy capture on TT hosts (suite v1.4.2 class fix).

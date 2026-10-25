@@ -25,7 +25,7 @@
 | 4ndr0tools - Images++ | `4.0.4` | merged | 81 | kernel-free | universal (*) |
 | 4ndr0tools - Instagram++ | `13.2.2` | sovereign | 22 | typeof-guarded + gmFetch fallback | instagram.com |
 | 4ndr0tools - LinkMasterΨ | `6.3.3` | merged | 105 | typeof-guarded (NetHook) | instagram.com + * |
-| 4ndr0tools - Login Form Autofiller | `2.0.4` | sovereign | 27 | kernel-free | universal (no @match) |
+| 4ndr0tools - Login Form Autofiller | `2.0.5` | sovereign | 27 | kernel-free | universal (no @match) |
 | 4ndr0tools - Maximize_Any_Media | `2.0.1` | sovereign | 8 | kernel-free | universal (no @match) |
 | 4ndr0tools - Media Player Controller | `8.1.3` | promoted | 68 | kernel-free | universal (*) |
 | 4ndr0tools - ModelSearch | `4.0.3` | promoted | 2 | kernel-free | universal (*) |

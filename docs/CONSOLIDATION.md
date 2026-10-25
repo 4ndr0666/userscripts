@@ -172,11 +172,15 @@ YouTubeEmbedRedirectButton, Youtube Removed Video Revealer.
 
 ## 6. Known, Accepted Trade-offs
 
-- Runtime `@require` dependencies are carried by five scripts — **LinkMasterΨ**
+- Runtime `@require` dependencies are carried by four scripts — **LinkMasterΨ**
   and **Forums++** (the same five libraries each: popper/tippy/FileSaver/JSZip/
-  sha256, inherited from Ψ2's download-packaging feature set), **Login Form
-  Autofiller** (gm4-polyfill), **m3u8++** (m3u8-parser, load-failure guarded)
-  and **Youtube Removed Video Revealer** (cash 8.1.5). Every other suite
+  sha256, inherited from Ψ2's download-packaging feature set), **m3u8++**
+  (m3u8-parser, load-failure guarded) and **Youtube Removed Video Revealer**
+  (cash 8.1.5). **Login Form Autofiller's** gm4-polyfill @require was retired
+  at v2.0.5 (WO-01 round 4, 3-c F08): its body is solely dot-form, so the
+  GM3-era bridge (underscore→dot shim) was inert on every current engine —
+  its removal drops the last third-party remote-code fetch that served zero
+  function. Every other suite
   script is fully self-contained (kernel inlined at build time, zero external
   libraries).
 - Ψ2's per-frame HUD is unified into the top-frame-only LinkMaster dock
