@@ -20,10 +20,14 @@
  *      kernel-export census — 3-a F14 header truth).
  *   4. (WO-01 round 4, 4-b F2) Atomic flush — every write is staged during
  *      the scan pass and lands on disk only after the WHOLE run validated
- *      clean and the ledger sums, so a failing build leaves dist/ exactly
- *      as it found it (no mixed-generation window; dist is the live
- *      @updateURL channel). Carry-side IO errors report as typed BUILD
- *      FAILURES instead of raw crashes (4-b F1).
+ *      clean and the ledger sums, so a build that fails VALIDATION leaves
+ *      dist/ exactly as it found it (no mixed-generation window; dist is the
+ *      live @updateURL channel). WO-01 round 5 (5-b F02): a FLUSH-time IO
+ *      error (read-only dist, disk full mid-run) reports typed per-entry but
+ *      may leave partial writes — earlier entries in the flush loop are
+ *      already on disk — so the deploy contract is the EXIT CODE, never
+ *      `|| true`. Enumeration/brand IO errors report as typed BUILD FAILURES
+ *      instead of raw crashes (4-b F1 + round-5 5-b F03 completion).
  *
  * Exit codes: 0 = clean, 1 = build failure, 2 = validation failure.
  * ═══════════════════════════════════════════════════════════════════════ */
@@ -91,7 +95,19 @@ function deriveGlyphIcon() {
     const svg = new Function(`return (${m[1]});`)();   /* pure string concatenation, build-time only */
     return "data:image/svg+xml," + encodeURIComponent(svg);
 }
-const GLYPH_ICON = deriveGlyphIcon();
+/* WO-01 round 5 (5-b F03): the brand read/parse runs at module top level —
+ * an unreadable brand.js or a missing GLYPH_SVG previously crashed with a
+ * raw stack before main() could report anything. It now fails in the typed
+ * BUILD FAILURES shape with exit 1 (the same contract every carry-side IO
+ * error follows). */
+let GLYPH_ICON = null;
+try {
+    GLYPH_ICON = deriveGlyphIcon();
+} catch (e) {
+    console.error("\nBUILD FAILURES:");
+    console.error(`  ✗ ${e.code ? `kernel/brand.js: ${e.code}` : e.message}`);
+    process.exit(1);
+}
 
 /* §1.1-aware lexical scanner + placeholder scan: imported from tools/scan-kit.mjs (WO-01 round-2, 6-a F08). */
 
@@ -243,15 +259,27 @@ function main() {
     const built = [];
     const outputs = new Set();
     /* WO-01 round 4 (4-b F2): ALL dist writes are STAGED and flushed only
-     * after the whole run validates clean — a failing build now leaves
-     * dist/ exactly as it found it (true atomicity; the round-3 comment's
-     * mixed-generation caveat is retired). Verbatim carries stage their
-     * SOURCE path so the flush keeps copyFileSync byte-copy semantics. */
+     * after the whole run validates clean — a build that fails VALIDATION
+     * leaves dist/ exactly as it found it. WO-01 round 5 (5-b F02): a
+     * flush-time IO error can still leave PARTIAL writes (the loop reports
+     * typed per-entry and continues) — atomicity is against validation
+     * failures; the exit code is the deploy contract. Verbatim carries stage
+     * their SOURCE path so the flush keeps copyFileSync byte-copy semantics. */
     const staged = [];
 
     // 1) Kernel-powered modules
     if (fs.existsSync(MODULES_DIR)) {
-        for (const entry of fs.readdirSync(MODULES_DIR, { withFileTypes: true })) {
+        /* WO-01 round 5 (5-b F03): enumeration IO is typed — an unreadable
+         * modules/ directory reports as a BUILD FAILURE instead of a raw
+         * crash, and must NOT silently skip the 2 built modules. */
+        let moduleEntries;
+        try {
+            moduleEntries = fs.readdirSync(MODULES_DIR, { withFileTypes: true });
+        } catch (e) {
+            failures.push(`modules enumerate: ${e.code || e.message}`);
+            moduleEntries = [];
+        }
+        for (const entry of moduleEntries) {
             if (!entry.isDirectory()) continue;
             try {
                 const { filename, out } = buildModule(path.join(MODULES_DIR, entry.name));
@@ -280,10 +308,28 @@ function main() {
     let carried = 0;
     let kernelCarried = 0; /* v1.6.2: counted separately — the summary must sum to the dist total (an unaccounted ledger line reads as a missing script) */
     if (fs.existsSync(CANON_DIR)) {
-        for (const entry of fs.readdirSync(CANON_DIR, { withFileTypes: true })) {
+        /* WO-01 round 5 (5-b F03): canon enumeration IO is typed — an
+         * unreadable canon/ root or tier directory reports as a BUILD
+         * FAILURE instead of a raw crash (probe-proven: EACCES on the canon
+         * readdir previously died with an uncaught stack at this line). */
+        let canonEntries;
+        try {
+            canonEntries = fs.readdirSync(CANON_DIR, { withFileTypes: true });
+        } catch (e) {
+            failures.push(`canon enumerate: ${e.code || e.message}`);
+            canonEntries = [];
+        }
+        for (const entry of canonEntries) {
             if (!entry.isDirectory()) continue;
             const dir = path.join(CANON_DIR, entry.name);
-            for (const f of fs.readdirSync(dir)) {
+            let tierFiles;
+            try {
+                tierFiles = fs.readdirSync(dir);
+            } catch (e) {
+                failures.push(`canon ${entry.name} enumerate: ${e.code || e.message}`);
+                continue;
+            }
+            for (const f of tierFiles) {
                 if (!f.endsWith(".user.js")) continue;
                 const kernelList = CANON_KERNEL[f];
                 if (!kernelList) {
@@ -411,11 +457,16 @@ function main() {
     //    artifact alongside the refused new one.
     //    WO-01 round 4 (4-b F2 — the atomicity hardening the round-3 comment
     //    deferred): every write is staged above and flushed HERE, after the
-    //    ledger-sum check, so a failing build leaves dist/ EXACTLY as it
-    //    found it — no mixed-generation window, even for a
+    //    ledger-sum check, so a build that fails VALIDATION leaves dist/
+    //    EXACTLY as it found it — no mixed-generation window, even for a
     //    `npm run build || true` deploy wrapper (dist is the live
-    //    @updateURL channel). A flush-time IO error (read-only dist, disk
-    //    full) degrades to the typed failure report per-entry (4-b F1).
+    //    @updateURL channel). WO-01 round 5 (5-b F02, probe-proven): a
+    //    FLUSH-time IO error is the one boundary that breaks that guarantee
+    //    — the loop below reports typed per-entry and CONTINUES, so earlier
+    //    entries are already on disk (mixed-generation). The deploy contract
+    //    is therefore the EXIT CODE (1 = do not serve dist), never `|| true`;
+    //    full flush atomicity would need a staging-dir + directory swap,
+    //    adjudicated heavier than the class warrants.
     const stale = [];
     if (failures.length === 0) {
         for (const s of staged) {
@@ -440,11 +491,16 @@ function main() {
         }
     }
 
-    // 4) Report
-    for (const f of built) console.log(`  ✓ built  ${f}`);
-    if (carried) console.log(`  ✓ carried ${carried} canon script(s) verbatim`);
+    // 4) Report — WO-01 round 5 (5-b F02): on a failed run nothing landed
+    //    on disk (or, after a partial flush failure, only some entries did),
+    //    so the ✓ glyph would overstate staged-but-unwritten outputs; they
+    //    report with ⧗ until the run is clean, and the failures list carries
+    //    the per-entry truth.
+    const clean = failures.length === 0;
+    for (const f of built) console.log(clean ? `  ✓ built  ${f}` : `  ⧗ staged ${f}`);
+    if (carried) console.log(clean ? `  ✓ carried ${carried} canon script(s) verbatim` : `  ⧗ staged ${carried} canon script(s) verbatim`);
     for (const f of Object.keys(CANON_KERNEL)) {
-        if (outputs.has(f)) console.log(`  ✓ carried ${f} + kernel {${CANON_KERNEL[f].join(", ")}}`);
+        if (outputs.has(f)) console.log(clean ? `  ✓ carried ${f} + kernel {${CANON_KERNEL[f].join(", ")}}` : `  ⧗ staged ${f} + kernel {${CANON_KERNEL[f].join(", ")}}`);
     }
     for (const f of stale) console.log(`  − pruned  ${f} (no canon source)`);
 
