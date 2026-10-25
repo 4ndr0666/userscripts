@@ -11,7 +11,7 @@ Maximize_Any_Media gives any media — video, images, embedded and shadow-DOM pl
 | Dimension | Value |
 |---|---|
 | Version | `2.0.1` |
-| Matches | universal (no @match) |
+| Matches | @include: `*` |
 | Excludes | `*www.w3school.com.*`, `*www.w3schools.com.*` |
 | Run-at | `document-end` |
 | Size | 48.9 KB · 1231 lines |

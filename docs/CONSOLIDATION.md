@@ -7,7 +7,7 @@
 > three Anti-* ICC scripts folded into Akasha Silence at merge; Zai Exporter
 > arrived later), 9 BETA promotions (Stream Interceptor v1.3.0; Forum Link
 > Xtractor's second candidate promotion), 3 merges (Akasha Silence), 38
-> dist installables at 111,973 lines, 2,464 baseline units checked with 46
+> dist installables at 112,724 lines, 2,464 baseline units checked with 52
 > reconciled renames, and `npm run check` = build → inventory → qr-verify →
 > style-audit → validate. The machine-checked truth is always the gate; this
 > prose is the story of how the suite came to be.**

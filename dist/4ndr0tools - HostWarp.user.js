@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - HostWarp
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.1.4
+// @version      1.1.5
 // @description  Per-host warp drive: bypasses image-host interstitials (imagetwist/imgspice/turboimagehost/acidimg/imx/pixhost/imagebam/imgbox/kropic/vipr/imagevenue), MEGA embed redirect + autoplay, PlanetSuzy mobile skin, t.me Web button, SearXNG sticky preferences, Gemini Answer Now — one engine, glass settings console, every module toggleable.
 // @author       4ndr0666
 // @license      UNLICENSED - RED TEAM USE ONLY
@@ -18,7 +18,7 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20HostWarp.user.js
 // ==/UserScript==
 
-/* 4ndr0tools - HostWarp v1.1.4 — built from modules/hostwarp + kernel {brand, core, glass, store, hotkeys, hosts}
+/* 4ndr0tools - HostWarp v1.1.5 — built from modules/hostwarp + kernel {brand, core, glass, store, hotkeys, hosts}
  * Per-host warp drive: bypasses image-host interstitials (imagetwist/imgspice/turboimagehost/acidimg/imx/pixhost/imagebam/imgbox/kropic/vipr/imagevenue), MEGA embed redirect + autoplay, PlanetSuzy mobile skin, t.me Web button, SearXNG sticky preferences, Gemini Answer Now — one engine, glass settings console, every module toggleable.
  * This is a generated file; edit modules/ and run `npm run build`.
  */
@@ -1869,7 +1869,7 @@ function openSettings() {
                           hint: 'Tested against location.origin + "/"' },
                         { key: 'searxng:hash', type: 'text', label: 'Preferences hash',
                           default: '', hint: 'e.g. #/preferences?preferences=…' },
-                    ], () => Ψ.glass.toast('SearXNG settings saved', { type: 'success' }));
+                    ], () => Ψ.glass.toast('SearXNG settings saved — reload to apply the host pattern', { type: 'success' }));
                 },
             },
             {

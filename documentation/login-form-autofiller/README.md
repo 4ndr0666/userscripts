@@ -11,7 +11,7 @@ Login Form Autofiller wires BugMeNot into every login form on the web: it detect
 | Dimension | Value |
 |---|---|
 | Version | `2.0.5` |
-| Matches | universal (no @match) |
+| Matches | @include: `http://*`, `https://*` |
 | Excludes | `http://bugmenot.com/*`, `https://bugmenot.com/*` |
 | Run-at | `document-idle` |
 | Size | 43.8 KB · 1017 lines |

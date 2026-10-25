@@ -12,6 +12,7 @@
    "matches": [
     "*://*/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "GM_getValue",
@@ -40,6 +41,7 @@
    "matches": [
     "*://*/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "unsafeWindow",
@@ -69,6 +71,7 @@
    "matches": [
     "*://*/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "none"
@@ -94,6 +97,7 @@
    "matches": [
     "*://*/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "GM_registerMenuCommand",
@@ -123,6 +127,7 @@
    "matches": [
     "*://*/*"
    ],
+   "includes": [],
    "excludes": [
     "*://translate.google.com/*",
     "*://translate.googleapis.com/*"
@@ -156,6 +161,7 @@
    "matches": [
     "*://*/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "GM_addStyle",
@@ -185,6 +191,12 @@
    "lines": 5081,
    "bytes": 269933,
    "matches": [],
+   "includes": [
+    "/^[^:]*?:\\/\\/bunkr{1,3}\\.[^/]*?\\/.*?$/",
+    "/^[^:]*?:\\/\\/[^/]*?\\.bunkr{1,3}\\.[^/]*?\\/.*?$/",
+    "/^[^:]*?:\\/\\/bunker\\.[^/]*?\\/.*?$/",
+    "/^[^:]*?:\\/\\/[^/]*?\\.bunker\\.[^/]*?\\/.*?$/"
+   ],
    "excludes": [],
    "grants": [
     "GM_xmlhttpRequest",
@@ -389,6 +401,7 @@
     "*://*.worldpoliticsreview.com/*",
     "*://*.zeit.de/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [],
    "requires": [],
@@ -419,6 +432,7 @@
     "*://*.xcandid.vip/*",
     "*://*/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "GM_addStyle",
@@ -446,6 +460,10 @@
    "lines": 1492,
    "bytes": 83806,
    "matches": [],
+   "includes": [
+    "/^[^:]*?://filester\\.me/.*?$/",
+    "/^[^:]*?://.*?\\.filester\\.me/.*?$/"
+   ],
    "excludes": [],
    "grants": [
     "GM_addStyle",
@@ -482,6 +500,7 @@
     "*://*.candidshiny.com/*",
     "*://start.me/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "GM_addStyle",
@@ -513,6 +532,7 @@
     "https://simpcity.su/threads/*",
     "https://simpcity.cr/threads/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "GM_xmlhttpRequest",
@@ -625,6 +645,7 @@
    "matches": [
     "*://gofile.io/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "GM_getValue",
@@ -658,6 +679,7 @@
     "*://photos.google.com/*",
     "*://drive.google.com/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "GM_getValue",
@@ -693,6 +715,7 @@
     "https://hailuoai.video/create*",
     "https://hailuoai.video/agent*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "GM_getValue",
@@ -718,15 +741,16 @@
   {
    "file": "4ndr0tools - HostWarp.user.js",
    "name": "4ndr0tools - HostWarp",
-   "version": "1.1.4",
+   "version": "1.1.5",
    "description": "Per-host warp drive: bypasses image-host interstitials (imagetwist/imgspice/turboimagehost/acidimg/imx/pixhost/imagebam/imgbox/kropic/vipr/imagevenue), MEGA embed redirect + autoplay, PlanetSuzy mobile skin, t.me Web button, SearXNG sticky preferences, Gemini Answer Now — one engine, glass settings console, every module toggleable.",
    "family": "ux utilities",
-   "sha256": "1b481f83a239c32c7f805cce32285132288d13caa8e3b378dfedcd0ca9304885",
+   "sha256": "5813fa905e3f102c31f01d075ed0127da0105a0943549dc8895a2905e983a285",
    "lines": 1907,
-   "bytes": 99128,
+   "bytes": 99165,
    "matches": [
     "*://*/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "GM_getValue",
@@ -757,6 +781,7 @@
    "matches": [
     "*://*/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "GM_addElement",
@@ -818,6 +843,7 @@
    "matches": [
     "*://*.instagram.com/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "GM_xmlhttpRequest",
@@ -854,6 +880,7 @@
     "*://*/*",
     "*://*.instagram.com/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "GM_setValue",
@@ -894,6 +921,10 @@
    "lines": 1017,
    "bytes": 44887,
    "matches": [],
+   "includes": [
+    "http://*",
+    "https://*"
+   ],
    "excludes": [
     "http://bugmenot.com/*",
     "https://bugmenot.com/*"
@@ -923,6 +954,9 @@
    "lines": 1231,
    "bytes": 50110,
    "matches": [],
+   "includes": [
+    "*"
+   ],
    "excludes": [
     "*www.w3school.com.*",
     "*www.w3schools.com.*"
@@ -953,6 +987,7 @@
    "matches": [
     "*://*/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "GM_setValue",
@@ -981,6 +1016,7 @@
    "matches": [
     "*://*/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "GM_openInTab",
@@ -1009,6 +1045,7 @@
    "matches": [
     "*://*/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "GM_getValue",
@@ -1042,6 +1079,7 @@
     "https://pixeldrain.dev/*",
     "https://pixeldra.in/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "GM_xmlhttpRequest",
@@ -1108,6 +1146,7 @@
     "*://flow.google.com/*",
     "*://*.google.com/search?*udm=50*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "GM_getValue",
@@ -1151,6 +1190,7 @@
    "matches": [
     "*://*/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "GM_setClipboard",
@@ -1181,6 +1221,7 @@
     "*://redgifs.com/*",
     "*://*.reddit.com/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "GM_addElement",
@@ -1207,6 +1248,7 @@
    "matches": [
     "*://*/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "GM_setClipboard",
@@ -1247,6 +1289,7 @@
     "https://gemini.google.com/*",
     "https://business.gemini.google/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "unsafeWindow",
@@ -1275,6 +1318,7 @@
    "matches": [
     "*://*/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "GM_addStyle",
@@ -1303,6 +1347,7 @@
    "matches": [
     "*://*.youtube.com/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "GM_addStyle"
@@ -1329,6 +1374,7 @@
     "*://yandex.com/images/*",
     "*://yandex.ru/images/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "none"
@@ -1355,6 +1401,7 @@
     "https://*.youtube.com/*",
     "https://youtube.com/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "GM_getValue",
@@ -1385,6 +1432,7 @@
    "matches": [
     "https://*.youtube.com/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "none"
@@ -1410,6 +1458,7 @@
    "matches": [
     "*://*.youtube.com/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "GM_xmlhttpRequest",
@@ -1441,6 +1490,7 @@
     "https://chat.z.ai/*",
     "https://z.ai/*"
    ],
+   "includes": [],
    "excludes": [],
    "grants": [
     "GM_getValue",
@@ -1470,6 +1520,7 @@
    "matches": [
     "*://*/*"
    ],
+   "includes": [],
    "excludes": [
     "*://www.diancigaoshou.com/*"
    ],
@@ -1567,6 +1618,8 @@
   "4ndr0tools - HostWarp",
   "4ndr0tools - Images++",
   "4ndr0tools - LinkMasterΨ",
+  "4ndr0tools - Login Form Autofiller",
+  "4ndr0tools - Maximize_Any_Media",
   "4ndr0tools - Media Player Controller",
   "4ndr0tools - ModelSearch",
   "4ndr0tools - PageCraft",
@@ -1575,5 +1628,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "89b982fe4caf28632dddb9f42d074e86bd7d8a659922a0c9d252492027813876"
+ "digest": "a4cf3e77bc50a931af978e697e7a793a584c26ea3282f7e8925b949ecf19a2ce"
 }

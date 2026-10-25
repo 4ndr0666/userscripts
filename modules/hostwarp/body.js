@@ -430,7 +430,7 @@ function openSettings() {
                           hint: 'Tested against location.origin + "/"' },
                         { key: 'searxng:hash', type: 'text', label: 'Preferences hash',
                           default: '', hint: 'e.g. #/preferences?preferences=…' },
-                    ], () => Ψ.glass.toast('SearXNG settings saved', { type: 'success' }));
+                    ], () => Ψ.glass.toast('SearXNG settings saved — reload to apply the host pattern', { type: 'success' }));
                 },
             },
             {

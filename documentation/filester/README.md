@@ -11,7 +11,7 @@ Filester++ weaponizes the Filester.me hosting surface: it enumerates folder tree
 | Dimension | Value |
 |---|---|
 | Version | `7.6.1` |
-| Matches | universal (no @match) |
+| Matches | @include: `/^[^:]*?://filester\.me/.*?$/`, `/^[^:]*?://.*?\.filester\.me/.*?$/` |
 | Run-at | `document-start` |
 | Size | 81.8 KB · 1492 lines |
 | Install | [dist/4ndr0tools - Filester++.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Filester%2B%2B.user.js) |

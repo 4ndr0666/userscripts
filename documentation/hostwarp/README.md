@@ -1,4 +1,4 @@
-# HostWarp · v1.1.4
+# HostWarp · v1.1.5
 
 > Per-host warp drive — `ux utilities` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,7 +10,7 @@ HostWarp is six legacy micro-tools fused into one per-host engine: image-host in
 
 | Dimension | Value |
 |---|---|
-| Version | `1.1.4` |
+| Version | `1.1.5` |
 | Matches | `*://*/*` |
 | Run-at | `document-start` |
 | Size | 96.8 KB · 1907 lines |

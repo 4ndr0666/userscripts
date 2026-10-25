@@ -12,21 +12,21 @@
 | 4ndr0tools - AlwaysNewWindow | `1.0.2` | sovereign | 71 | kernel-free | universal (*) |
 | 4ndr0tools - AutoTranslate | `6.0.0` | sovereign | 52 | kernel-free | universal (*) |
 | 4ndr0tools - Blob2URL | `7.3.0` | promoted | 38 | typeof-guarded + gmFetch fallback | universal (*) |
-| 4ndr0tools - Bunkr++ | `7.7.0` | sovereign | 97 | typeof-guarded + gmFetch fallback | universal (no @match) |
+| 4ndr0tools - Bunkr++ | `7.7.0` | sovereign | 97 | typeof-guarded + gmFetch fallback | scoped via @include: bunkr, bunker |
 | 4ndr0tools - Bypass Paywalls | `0.1.7` | sovereign | 10 | kernel-free | 404media.co, adweek.com, ad.nl, americanbanker.com (+166) |
 | 4ndr0tools - Confirmation Bypass | `4.0.4` | promoted | 39 | kernel-free | forums.socialmediagirls.com, simpcity.cr, turbo.cr, xcandid.vip + * |
-| 4ndr0tools - Filester++ | `7.6.1` | sovereign | 6 | typeof-guarded (NetHook) | universal (no @match) |
+| 4ndr0tools - Filester++ | `7.6.1` | sovereign | 6 | typeof-guarded (NetHook) | scoped via @include: filester |
 | 4ndr0tools - Forum Link Xtractor | `3.2.3` | promoted | 22 | kernel-free | forums.socialmediagirls.com, simpcity.su, simpcity.cr, candidshiny.com (+1) |
 | 4ndr0tools - Forums++ | `1.11.1` | sovereign | 35 | typeof-guarded + gmFetch fallback | simpcity.su, simpcity.cr |
 | 4ndr0tools - GoFile++ | `2.2.0` | sovereign | 11 | typeof-guarded + gmFetch fallback | gofile.io |
 | 4ndr0tools - GooglePhotosandDrive++ | `8.1.1` | promoted | 55 | typeof-guarded + gmFetch fallback | googleusercontent.com, photos.google.com, drive.google.com |
 | 4ndr0tools - Hailuo++ | `6.0.2` | promoted | 17 | kernel-free | hailuoai.com, hailuoai.video |
-| 4ndr0tools - HostWarp | `1.1.4` | module:hostwarp | 8 | build-module (6-kernel) | universal (*) |
+| 4ndr0tools - HostWarp | `1.1.5` | module:hostwarp | 8 | build-module (6-kernel) | universal (*) |
 | 4ndr0tools - Images++ | `4.0.4` | merged | 80 | kernel-free | universal (*) |
 | 4ndr0tools - Instagram++ | `13.2.2` | sovereign | 33 | typeof-guarded + gmFetch fallback | instagram.com |
 | 4ndr0tools - LinkMasterΨ | `6.3.3` | merged | 105 | typeof-guarded (NetHook) | instagram.com + * |
-| 4ndr0tools - Login Form Autofiller | `2.0.5` | sovereign | 27 | kernel-free | universal (no @match) |
-| 4ndr0tools - Maximize_Any_Media | `2.0.1` | sovereign | 8 | kernel-free | universal (no @match) |
+| 4ndr0tools - Login Form Autofiller | `2.0.5` | sovereign | 27 | kernel-free | universal (@include) |
+| 4ndr0tools - Maximize_Any_Media | `2.0.1` | sovereign | 8 | kernel-free | universal (@include) |
 | 4ndr0tools - Media Player Controller | `8.1.3` | promoted | 68 | kernel-free | universal (*) |
 | 4ndr0tools - ModelSearch | `4.0.3` | promoted | 2 | kernel-free | universal (*) |
 | 4ndr0tools - PageCraft | `1.1.3` | module:pagecraft | 18 | build-module (5-kernel) | universal (*) |

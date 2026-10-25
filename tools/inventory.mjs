@@ -187,6 +187,14 @@ function inventory() {
             lines: src.split("\n").length,
             bytes: Buffer.byteLength(src),
             matches: meta.match || [],
+            /* WO-01 round-4 (4-c F01/4-d F1): @include is STORED now — the
+             * model discarded it entirely, so the co-install report
+             * under-counted the universal family by 2 true members (LFA
+             * @include http(s)://*, MAM @include * — the machine ledger,
+             * domain-census, has adjudicated a 19-script star family all
+             * along) while gen-docs rendered two DOMAIN-scoped regex-include
+             * scripts as "universal (no @match)". */
+            includes: meta.include || [],
             excludes: meta.exclude || [],
             grants: meta.grant || [],
             requires: meta.require || [],
@@ -238,9 +246,13 @@ function inventory() {
      * regeneration is deterministic (validate.mjs enforces byte parity). */
     /* WO-01 round-3 (3-d F1): the universal-pattern family — scripts whose
      * @match set includes a true every-site pattern (domainOf → ""), so the
-     * interference report can name them instead of a polluted `*` bucket. */
+     * interference report can name them instead of a polluted `*` bucket.
+     * WO-01 round-4 (4-c F01/4-d F1): GLOB-universal @include forms (*,
+     * http://*, https://*) are admitted too — converges with the
+     * domain-census ledger's 19-script star family (was 17 here). */
+    const globInclude = (inc) => inc === "*" || /^https?:\/\/\*\/?$/.test(inc) || /^\*$/.test(inc);
     const starFamily = scripts
-        .filter((s) => s.matches.some((m) => !domainOf(m)))
+        .filter((s) => s.matches.some((m) => !domainOf(m)) || (s.includes || []).some(globInclude))
         .map((s) => s.name);
     const stable = { scripts, problems, pairs, hotDomains, starFamily };
     const digest = crypto.createHash("sha256").update(JSON.stringify(stable)).digest("hex");

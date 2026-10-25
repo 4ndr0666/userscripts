@@ -588,7 +588,16 @@ function renderScript(s) {
     L.push("|---|---|");
     L.push(`| Version | \`${s.version}\` |`);
     const matches = (s.matches || []).slice(0, 4);
-    L.push(`| Matches | ${matches.length ? matches.map((m) => `\`${esc(m)}\``).join(", ") + ((s.matches || []).length > 4 ? ` (+${s.matches.length - 4} more)` : "") : "universal (no @match)" } |`);
+    /* WO-01 round-4 (4-c F01/4-d F1): the Matches row renders @include too —
+     * @include-only scripts used to render "universal (no @match)" while two
+     * of them are DOMAIN-scoped via regex includes (Bunkr++/Filester++). */
+    const incs = s.includes || [];
+    const matchCell = matches.length
+        ? matches.map((m) => `\`${esc(m)}\``).join(", ") + ((s.matches || []).length > 4 ? ` (+${s.matches.length - 4} more)` : "")
+        : incs.length
+            ? `@include: ${incs.slice(0, 4).map((m) => `\`${esc(m)}\``).join(", ")}${incs.length > 4 ? ` (+${incs.length - 4} more)` : ""}`
+            : "universal (no @match)";
+    L.push(`| Matches | ${matchCell} |`);
     if (s.excludes && s.excludes.length) L.push(`| Excludes | ${s.excludes.slice(0, 4).map((m) => `\`${esc(m)}\``).join(", ")} |`);
     L.push(`| Run-at | \`${s.runAt || "document-idle"}\` |`);
     L.push(`| Size | ${(s.bytes / 1024).toFixed(1)} KB · ${s.lines} lines |`);
@@ -721,9 +730,27 @@ function renderFeatureMatrix(scripts) {
             return !d || d === "*";
         });
         const uniqDoms = [...new Set(doms)];
-        const cap = uniqDoms.length === 0
-            ? (universal ? "universal (*)" : "universal (no @match)")
-            : uniqDoms.slice(0, 4).join(", ") + (uniqDoms.length > 4 ? ` (+${uniqDoms.length - 4})` : "") + (universal ? " + *" : "");
+        /* WO-01 round-4 (4-c F01/4-d F1): the capability column is
+         * include-aware — glob-universal @include forms (*, http://*, https://*)
+         * render "universal (@include)" (LFA, MAM — previously invisible);
+         * regex includes render their distinguishing host anchors instead of
+         * a false "universal (no @match)" (Bunkr++ bunkr/bunker family,
+         * Filester++ filester.me). */
+        const incs2 = s.includes || [];
+        const incGlob = incs2.some((i) => i === "*" || /^https?:\/\/\*\/?$/.test(i));
+        const incAnchors = [...new Set(incs2
+            .filter((i) => i !== "*" && !/^https?:\/\/\*\/?$/.test(i))
+            .flatMap((i) => [...i.matchAll(/[A-Za-z][A-Za-z0-9-]{3,}/g)].map((m) => m[0].toLowerCase()))
+            .filter((w) => !["http", "https", "www"].includes(w)))];
+        let cap;
+        if (uniqDoms.length === 0) {
+            if (universal) cap = "universal (*)";
+            else if (incGlob) cap = "universal (@include)";
+            else if (incAnchors.length) cap = `scoped via @include: ${incAnchors.slice(0, 4).join(", ")}` + (incAnchors.length > 4 ? ` (+${incAnchors.length - 4})` : "");
+            else cap = "universal (no @match)";
+        } else {
+            cap = uniqDoms.slice(0, 4).join(", ") + (uniqDoms.length > 4 ? ` (+${uniqDoms.length - 4})` : "") + (universal ? " + *" : "") + (incGlob ? " + * (@include)" : "");
+        }
         rows.push({ name: s.name, version: s.version, tier: meta.tier, units: meta.units, kb: meta.kb, cap });
     }
     /* WO-01 round-1 (2-a F12): canon count is DERIVED (walk canon/ counting
@@ -811,6 +838,7 @@ function renderIndex(scripts) {
     L.push(`[Consolidation Report](../docs/CONSOLIDATION.md) · [Migration Guide](../docs/MIGRATION.md) · [Feature Matrix](./_suite/FEATURE-MATRIX.md).`);
     L.push("- **WO-01 Round-1 Stepwise Gap Mitigation (`suite v1.9.0`, 8 commits):** Four-agent full-repo audit (tools · kernel/build · canon · consistency) → 7 mitigation commits + the version pin: kernel load-order repair (HUD position persistence restored — `tools/kernel-order.mjs` single source shared by build and smoke; hotkeys named-key canonicalization; net.js real-XHR 4 MB cap; hosts single-label reachability; store remove() watcher notification), gate re-arming (G9 expiry enforcement derives from `package.json` — 50 adjudications re-rolled to v1.12.0 with red-control proof; Gate B prototype-chain hazard + 19 dead rename entries purged; vacuous red controls replaced with mutation-injected ones; production-score standalone never writes), canon source gaps (YTRVR + Images++ `@grant unsafeWindow` feature-dead paths, Forums++ Violentmonkey transport crash, BPP nzherald guard, 5 version syncs, 8 dead grants), docs truthfulness (hailuo++/m3u8++ devlog banners, EVIDENCE.json ghost trio, MIGRATION labels), orphan sweep (candidshiny plugin retired, brand glyph single-sourced, dead kernel exports pruned with census proof, searxng hostname-handler abuse fixed, imgfix lineage guard), and two deep purges (BPP 573-line extension-backend tombstone + its medium.com live ReferenceError; Prompt Master dead-CSS families). Gate CERTIFIED 100/100 throughout; every browser PoP battery green.");
     L.push("- **WO-01 Round-2 Stepwise Gap Mitigation (`suite v1.10.0`):** Four-agent re-audit of the round-1 tree (tools · kernel/build · canon · consistency — every round-1 fix re-verified HOLDING first) → build-contract batch (HostWarp searxng default pattern un-deadened — String(regexLiteral) delimiters made it permanently unmatchable; selectKernel closure + lawful-surface validation; CANON_KERNEL missing-module fails the file; store.remove() watcher contract pinned), canon source batch (BPP theathletic no-arg clearInterval() watcher bounded with handle + 30 s ceiling; Maximize_Any_Media version GM_info-derived; Images++ dead grant + .catch(now) timestamp-swallow honest; AlwaysNewWindow/HideBanner enumeration registries WeakMap+pruned-Set bounded; YTRVR dead escapeHTML reconciled), style-audit foreign-font-lead detector un-deadened (CRITICAL false-certification closed — colon never consumed, quoted-or-unquoted leads, font: shorthand family extraction; Cinzel Decorative recognized as the kernel-asserted brand-glyph typeface; Hailuo++/Images++ migrated to JetBrains Mono leads with rendering preserved), gate-integrity batch (polling census sees member-form intervals; Gate B comment-aware + RECONCILED_NAMES self-check — the mis-keyed BypassPaywalls section was dead config; codeOnly blanks regex bodies; bracket-form tripwires; error census resolves .catch(fnRef) one level; validate single-read/execPath/parity-before-score), kernel truth batch (hotkeys Plus/Minus/NumpadEnter aliases; beacon forensic channel aligned to the v4 contract — pre-rewrite request bodies + respond-verdict phantom fan; registry-full console.warn; SENTINEL LAW documented; JSDocs truthful), and the kernel-export census gate-wired (round-1 deferred item delivered: mechanical extraction, alias-aware consumers, bidirectional drift, G9 keep-ledger — 48 exports × 220 references machine-checked; glass.glyphEl pruned as the one true dead export, Ψ.core.$$ proved LIVE correcting the audit). Gate CERTIFIED at every commit; GUP v7.0.2 banner.");
+    L.push("- **WO-01 Round-3 Stepwise Gap Mitigation (`suite v1.11.0`, 8 commits):** Four-agent re-audit of the round-2 tree → the operator's three Prompt Master field reports closed (chip no-occlusion contract with measured forbidden rects + berth ladder + parked-mode retirement + chipHidden export, proven by a rewritten 13/13 live Chromium battery; pill Copy/Paste retired for Insights/Enhance; enhance prompt fully wired incl. the no-editor notification), two CRITICAL canon fixes (Forums++ tippy DOM XSS — escapeHTML ported to every sink site; Filester++ self-feeding glyph observer loop — wrapper resolved first), the glass toast un-ghosted (browser-proven: every kernel toast rendered as host-styled ghost text because none of its CSS custom properties resolve at document.body — a4-scope class + smoke tripwire), build-contract batch (verbatim carries scan-checked; the F-16 cut===0 guard; bridge.py typed 500), census-integrity batch (bracket-CALL banned-sink tripwires; transport member-form dispatch; global compound+self realm writes; .then error arms with the PROMISE_ADJUDICATED ledger; setTimeout self-rearm coverage), battery-truth batch (family-fixture 23/23 derived; boundary denominators derived; wiring gate full-module byte identity; mode disclosure; export census single-sourced from KERNEL_ORDER + unknown-mod probe), docs truthfulness (co-install 6 TRUE collision domains; capability column real domains; 5 missing Lineage sections restored; scan-kit in the tools map), and RECONCILED_NAMES machine anchors (49 entries, every claimed successor machine-verified against the comment-stripped file each run — the mechanism's red control fired organically on the author's own stale tokens). Gate CERTIFIED at every commit; zero regressions across all round-1/round-2 holdings.");
     L.push("");
     return L.join("\n");
 }
