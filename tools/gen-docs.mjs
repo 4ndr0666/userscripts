@@ -20,6 +20,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { runCensus } from "./hotkey-census.mjs";
+import { codeOnly } from "./scan-kit.mjs"; /* WO-01 round-4 (4-a deferred-(a) step 4): truthful unit counts */
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const INV = JSON.parse(fs.readFileSync(path.join(ROOT, "inventory.json"), "utf8"));
@@ -667,7 +668,14 @@ function resolveSourceMeta(s) {
         const p = path.join(ROOT, "canon", tier, s.file);
         if (fs.existsSync(p)) {
             const src = fs.readFileSync(p, "utf8");
-            const clean = src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+            /* WO-01 round-4 (4-a deferred-(a) step 4): the unit count now
+             * derives from the shared codeOnly masked view — the crude
+             * `//`-truncating stripper under-counted real units behind URL
+             * strings (PM: +42) and over-counted string pseudo-units
+             * (WM++: -355 escape-sequence 'functions' inside string
+             * literals). Unit counts are TRUTH now, not approximations;
+             * the docs bytes change honestly where the old numbers lied. */
+            const clean = codeOnly(src);
             const fns = new Set([
                 ...[...clean.matchAll(/\bfunction\s+([A-Za-z_$][\w$]*)\s*\(/g)].map(m => m[1]),
                 ...[...clean.matchAll(/\bclass\s+([A-Za-z_$][\w$]*)\b/g)].map(m => m[1]),
