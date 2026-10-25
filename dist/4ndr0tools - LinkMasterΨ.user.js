@@ -26,7 +26,7 @@
 // @match          *://*/*
 // @match          *://*.instagram.com/*
 // @run-at         document-start
-// @license        UNLICENSED - RED TEAM USE ONLY
+// @license        MIT
 // @require      https://unpkg.com/@popperjs/core@2
 // @require      https://unpkg.com/tippy.js@6
 // @require      https://unpkg.com/file-saver@2.0.4/dist/FileSaver.min.js

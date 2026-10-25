@@ -25,7 +25,7 @@
 // @run-at       document-start
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Bunkr++.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Bunkr++.user.js
-// @license      UNLICENSED - RED TEAM USE ONLY
+// @license      MIT
 // ==/UserScript==
 // v7.0.0-Ψ superset revision (GUP v5.3 audited).
 // GAP 17 fix: the baseline @require of jquery-3.6.0.min.js is removed — a

@@ -97,7 +97,7 @@
 // @grant GM_getValue
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Forums++.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Forums++.user.js
-// @license      UNLICENSED - RED TEAM USE ONLY
+// @license      MIT
 // ==/UserScript==
 // 1.11.1 (suite v1.12.0, WO-01 round 4): hardening batch — createForm's
 // form-id now escapes postId like every sibling sink (4-c F07); both

@@ -4,7 +4,7 @@
     "version": "1.1.6",
     "description": "Per-host warp drive: bypasses image-host interstitials (imagetwist/imgspice/turboimagehost/acidimg/imx/pixhost/imagebam/imgbox/kropic/vipr/imagevenue), MEGA embed redirect + autoplay, PlanetSuzy mobile skin, t.me Web button, SearXNG sticky preferences, Gemini Answer Now — one engine, glass settings console, every module toggleable.",
     "author": "4ndr0666",
-    "license": "UNLICENSED - RED TEAM USE ONLY",
+    "license": "MIT",
     "filename": "4ndr0tools - HostWarp.user.js",
     "match": [
         "*://*/*"

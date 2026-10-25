@@ -13,7 +13,7 @@ WCP is the per-site control panel: a glass HUD that exposes the toggles a hostil
 | Version | `5.3.1` |
 | Matches | `*://*/*` |
 | Run-at | `document-idle` |
-| Size | 27.7 KB · 596 lines |
+| Size | 27.6 KB · 596 lines |
 | Install | [dist/4ndr0tools - Website Control Panel.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Website%20Control%20Panel.user.js) |
 
 ## Feature Inventory

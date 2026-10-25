@@ -131,6 +131,6 @@ Universal-pattern scripts (match every site — they co-install with everything 
 
 <div align="center">
 
-Ψ UNLICENSED - RED TEAM USE ONLY © 4ndr0666
+Ψ MIT LICENSED © 4ndr0666
 
 </div>

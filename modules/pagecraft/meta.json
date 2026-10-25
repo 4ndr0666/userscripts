@@ -4,7 +4,7 @@
     "version": "1.1.3",
     "description": "All-sites page utility belt: bulk checkbox control with range/alt-hover selection (de-jQueryed), broken-image auto-repair with cache-busting + frame broadcast, hover-collapse image I/O governor, and Brave infinite scroll — one engine, glass settings console, zero runtime dependencies.",
     "author": "4ndr0666",
-    "license": "UNLICENSED - RED TEAM USE ONLY",
+    "license": "MIT",
     "filename": "4ndr0tools - PageCraft.user.js",
     "match": [
         "*://*/*"

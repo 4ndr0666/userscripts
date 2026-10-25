@@ -13,7 +13,7 @@ Redgifs++ intercepts Redgifs links on Reddit and renders them in a cinematic ove
 | Version | `5.3.2` |
 | Matches | `*://*.redgifs.com/watch/*`, `*://*.redgifs.com/ifr/*`, `*://*.redgifs.com/*`, `*://redgifs.com/*` (+1 more) |
 | Run-at | `document-start` |
-| Size | 19.4 KB · 404 lines |
+| Size | 19.3 KB · 404 lines |
 | Install | [dist/4ndr0tools - Redgifs++.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Redgifs%2B%2B.user.js) |
 
 ## Feature Inventory

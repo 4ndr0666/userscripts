@@ -12,7 +12,7 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_registerMenuCommand
-// @license      UNLICENSED - RED TEAM USE ONLY
+// @license      MIT
 // @run-at       document-start
 // ==/UserScript==
 // 4.0.3 (suite v1.12.0, WO-01 round 4): meta-truth — the dead GM_addStyle

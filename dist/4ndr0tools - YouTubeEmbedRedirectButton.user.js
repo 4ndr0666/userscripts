@@ -1,5 +1,5 @@
 // ==UserScript==
-// @license      UNLICENSED - RED TEAM USE ONLY
+// @license      MIT
 // @name         4ndr0tools - YouTube Embed Redirect Button
 // @namespace    https://github.com/4ndr0666/userscripts
 // @version      1.6.1

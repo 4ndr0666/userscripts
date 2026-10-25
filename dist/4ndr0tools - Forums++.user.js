@@ -97,7 +97,7 @@
 // @grant GM_getValue
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Forums++.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Forums++.user.js
-// @license      UNLICENSED - RED TEAM USE ONLY
+// @license      MIT
 // ==/UserScript==
 
 /* ══ kernel/net.js (inlined by tools/build.mjs — edit kernel/, not here) ══ */

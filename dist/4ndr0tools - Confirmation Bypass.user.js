@@ -21,7 +21,7 @@
 // @connect      simpcity.cr
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Confirmation%20Bypass.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Confirmation%20Bypass.user.js
-// @license      UNLICENSED - RED TEAM USE ONLY
+// @license      MIT
 // ==/UserScript==
 // 4.0.4 (suite v1.12.0, WO-01 round 4): banner-truth sync — the BETA-era
 // 'Unified Pipeline v3.6.2 — SECURED' duplicate boot line removed (two

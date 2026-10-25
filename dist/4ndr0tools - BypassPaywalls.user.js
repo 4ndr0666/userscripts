@@ -178,7 +178,7 @@
 // @match        *://*.zeit.de/*
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20BypassPaywalls.user.js
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20BypassPaywalls.user.js
-// @license      UNLICENSED - RED TEAM USE ONLY
+// @license      MIT
 // ==/UserScript==
 // 0.1.7 (suite v1.12.0, WO-01 round 4): error-path hardening — the barrons
 // signin target decode degrades losslessly on malformed percent-escapes

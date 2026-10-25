@@ -4,7 +4,7 @@
 // @version      2.0.1
 // @author       4ndr0666
 // @description  Maximize + Pip controls to any media anywhere - video, images, embedded and shadow-DOM players, on any site. 3lectric-Glass spec. Ψ
-// @license      UNLICENSED - RED TEAM USE ONLY
+// @license      MIT
 // @include      *
 // @exclude      *www.w3school.com.*
 // @exclude      *www.w3schools.com.*

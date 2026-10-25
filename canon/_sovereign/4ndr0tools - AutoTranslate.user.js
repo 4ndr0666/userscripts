@@ -18,7 +18,7 @@
 // @grant        GM_unregisterMenuCommand
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20AutoTranslate.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20AutoTranslate.user.js
-// @license      UNLICENSED - RED TEAM USE ONLY
+// @license      MIT
 // ==/UserScript==
 
 // Paradigm: Event-Driven Redirect Orchestrator — passive document/history listeners drive a
