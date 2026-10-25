@@ -75,6 +75,12 @@ const sandbox = {
     console, Date, Math, JSON, Map, Set, Promise, Array, Object, String, Number, Symbol,
     setTimeout, clearTimeout, setInterval, clearInterval,
     Node: FakeNode,
+    /* WO-01 round-4 (4-b F4): DOMException joins the sandbox — the 3-b F6
+     * waitFor fix constructs one, and the smoke's VM context is isolated
+     * from the host globals (the gap's own first run PROVED the fix was
+     * never exercised here: 'DOMException is not defined' fired the moment
+     * waitFor was finally called). */
+    DOMException,
     MutationObserver: class { observe() {} disconnect() {} },
     DOMParser: class { parseFromString(v, m) { mockLastParse = { v, m }; return { documentElement: mkEl("svg") }; } },
     document: documentMock,
@@ -142,6 +148,24 @@ c.set("a", 1); c.set("b", 2); c.set("c", 3); c.set("d", 4);
 assert(c.size === 3 && !c.has("a") && c.has("d"), "core: FIFOCache evicts oldest at cap");
 assert(Ψ.core.uid("t") !== Ψ.core.uid("t"), "core: uid uniqueness");
 assert(Ψ.core.hotkeys === undefined, "core: no cross-module bleed");
+/* WO-01 round-4 (4-b F4): the 3-b F6 fix (waitFor TimeoutError as
+ * DOMException) landed unpinned — a revert to a plain Error would pass
+ * every gate. The toast tripwire landed with its fix; the asymmetry was
+ * the gap. Two asserts: the timeout path (DOMException + TimeoutError name)
+ * and the abort path (DOMException + AbortError name — its own form). */
+{
+    let timeoutErr = null, abortErr = null;
+    Ψ.core.waitFor(".never-matches", { timeout: 5 }).catch((e) => { timeoutErr = e; });
+    /* a real abort: capture the listener the signal contract registers, then
+     * fire it — the abort path rejects AbortError (its own DOMException form) */
+    let fireAbort = () => {};
+    const ac = { aborted: false, addEventListener: (t, fn) => { fireAbort = fn; }, removeEventListener: () => {} };
+    Ψ.core.waitFor(".also-never", { timeout: 5000, signal: ac }).catch((e) => { abortErr = e; });
+    fireAbort();
+    await new Promise((r) => setTimeout(r, 20));
+    assert(timeoutErr instanceof DOMException && timeoutErr.name === "TimeoutError", "core: waitFor timeout rejects DOMException TimeoutError (3-b F6 pinned)");
+    assert(abortErr instanceof DOMException && abortErr.name === "AbortError", "core: waitFor abort-path rejects DOMException AbortError");
+}
 /* core.parseHTML/parseXML — v1.4.2 TT-safe parsing (raw path: this sandbox
  * has no trustedTypes, so the policy probe degrades to the raw string) */
 assert(typeof Ψ.core.parseHTML === "function" && typeof Ψ.core.parseXML === "function",

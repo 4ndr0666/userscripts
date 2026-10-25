@@ -13,7 +13,7 @@ GoFile++ turns gofile.io folders into batch downloads: recursive folder scans, d
 | Version | `2.2.0` |
 | Matches | `*://gofile.io/*` |
 | Run-at | `document-idle` |
-| Size | 117.4 KB · 2293 lines |
+| Size | 119.0 KB · 2314 lines |
 | Install | [dist/4ndr0tools - Gofile++.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Gofile%2B%2B.user.js) |
 
 ## Feature Inventory

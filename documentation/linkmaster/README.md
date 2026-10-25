@@ -13,7 +13,7 @@ LinkMasterΨ decodes, previews, exports, validates, and scrapes every link on an
 | Version | `6.3.3` |
 | Matches | `*://*/*`, `*://*.instagram.com/*` |
 | Run-at | `document-start` |
-| Size | 255.4 KB · 5080 lines |
+| Size | 256.9 KB · 5101 lines |
 | Install | [dist/4ndr0tools - LinkMasterΨ.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js) |
 
 ## Feature Inventory

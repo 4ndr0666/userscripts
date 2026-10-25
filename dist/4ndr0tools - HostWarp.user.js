@@ -1280,7 +1280,11 @@
             console.warn(
                 `[a4/hotkeys] CONFLICT: "${norm}" is also bound by ` +
                 conflicts.map((c) => `${c.script}#${c.id}`).join(', ') +
-                ' — only the first handler to call stopPropagation will win. Rebind one of them.');
+                // WO-01 round-4 (4-b F3): stopPropagation cannot cancel SAME-NODE
+                // sibling listeners (only stopImmediatePropagation can, and it
+                // would add cross-script registration-order nondeterminism) —
+                // co-installed suite scripts both run while the combo collides.
+                ' — BOTH bound handlers will fire while the combo collides; rebind one of them.');
             registerConflictMenu();
         }
 

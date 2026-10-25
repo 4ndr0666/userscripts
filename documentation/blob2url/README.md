@@ -13,7 +13,7 @@ Blob2URL is the suite's universal media extraction engine: it watches the page's
 | Version | `7.3.0` |
 | Matches | `*://*/*` |
 | Run-at | `document-idle` |
-| Size | 138.5 KB · 2440 lines |
+| Size | 140.1 KB · 2461 lines |
 | Install | [dist/4ndr0tools - Blob2URL.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Blob2URL.user.js) |
 
 ## Feature Inventory

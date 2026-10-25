@@ -8,7 +8,7 @@
       "weight": 20,
       "score": 20,
       "inputs": [
-        "kernel-smoke: 158/157 ALL PASS",
+        "kernel-smoke: 160/157 ALL PASS",
         "check-gate failures: 0"
       ]
     },

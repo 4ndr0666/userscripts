@@ -13,7 +13,7 @@ YTPM is the playlist command deck for YouTube: channel playlist buttons (All/Pop
 | Version | `1.7.3` |
 | Matches | `https://*.youtube.com/*`, `https://youtube.com/*` |
 | Run-at | `document-idle` |
-| Size | 339.0 KB · 6655 lines |
+| Size | 340.6 KB · 6676 lines |
 | Install | [dist/4ndr0tools - YouTube Playlist Master.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YouTube%20Playlist%20Master.user.js) |
 
 ## Feature Inventory

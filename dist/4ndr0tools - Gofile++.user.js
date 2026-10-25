@@ -186,6 +186,12 @@
  *     iframe observer made per-site. Realm propagation is hub
  *     infrastructure, not script surface; script-side propagators keep
  *     working (idempotent double-arm is a no-op).
+ *     (WO-01 round-4, 4-b F5 — realm-coverage truth: the node channel
+ *     observes the hub's HOME realm document only; propagate() arms wraps
+ *     — not a node observer — in additional realms, and a MutationObserver
+ *     subtree does not cross iframe document boundaries. Nested-frame
+ *     defusal stays script-side, as Akasha's per-site propagators already
+ *     do.)
  *   - Bounded registry (MAX_SUBS), versioned slot: isFullHub now requires
  *     the onNode surface, so a v5-or-older slot owner is wrapped above by
  *     a v6 copy (transitional chaining, as before).
@@ -477,7 +483,11 @@ const __4NDR0_NET_API__ = (function () {
     function fire(xhr, type) {
         try {
             const h = xhr['on' + type];
-            if (typeof h === 'function') { try { h.call(xhr, { type: type }); } catch (e) { /* page handler */ } }
+            // WO-01 round-4 (4-b F8): the on-property phantom path now carries
+            // target/currentTarget — a page handler reading e.target on an
+            // on* property got undefined while addEventListener handlers got
+            // the real Event surface. Duck-typed two tokens, no realm crossing.
+            if (typeof h === 'function') { try { h.call(xhr, { type: type, target: xhr, currentTarget: xhr }); } catch (e) { /* page handler */ } }
         } catch (e) { /* property read locked */ }
         try {
             if (typeof xhr.dispatchEvent === 'function' && typeof Event === 'function') {
@@ -695,20 +705,31 @@ const __4NDR0_NET_API__ = (function () {
                                     return Promise.reject(new TypeError('Failed to fetch'));
                                 }
                             }
-                            /* No decisive verdict — the exchange is real: the
-                             * complete request event fires (body may be null;
-                             * subscribers apply policy), then the tee. */
-                            dispatchTraffic({ id: meta.id, url: url, method: method, kind: 'fetch', phase: 'request', body: body });
                             /* body rewrite — only the init.body path is
                              * rewritable (Request objects are immutable; the
                              * per-script facades had the same boundary). A
                              * shallow init copy keeps the caller's object
                              * untouched (the v1.4.4-and-older facades mutated
                              * it in place). */
-                            if (init && typeof init === 'object' && init.body != null && req.body !== init.body) {
-                                return tee(origFetch.call(this, arguments[0], Object.assign({}, init, { body: req.body })), meta);
-                            }
-                            return tee(origFetch.apply(this, arguments), meta);
+                            /* WO-01 round-4 (4-b F7): the native call is hoisted
+                             * ABOVE the request event — a fetch invoked with
+                             * invalid arguments throws SYNCHRONOUSLY (WebIDL
+                             * TypeError), and the old order emitted a phantom
+                             * request event for an exchange that never existed
+                             * before the throw reached the caller (the catch's
+                             * fallback path preserves native parity). Event
+                             * order is unchanged for real exchanges: the
+                             * response event only fires inside the tee's
+                             * promise chain, and dispatchTraffic is
+                             * per-subscriber-guarded so it cannot throw. */
+                            const nativeP = (init && typeof init === 'object' && init.body != null && req.body !== init.body)
+                                ? origFetch.call(this, arguments[0], Object.assign({}, init, { body: req.body }))
+                                : origFetch.apply(this, arguments);
+                            /* No decisive verdict — the exchange is real: the
+                             * complete request event fires (body may be null;
+                             * subscribers apply policy), then the tee. */
+                            dispatchTraffic({ id: meta.id, url: url, method: method, kind: 'fetch', phase: 'request', body: body });
+                            return tee(nativeP, meta);
                         }
                     } catch (e) { /* hostile args — defusing must never break the page */ }
                     return tee(origFetch.apply(this, arguments), null);
