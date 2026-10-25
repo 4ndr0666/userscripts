@@ -65,31 +65,31 @@ const SANCTIONED_CO_INSTALL = [
             "4ndr0tools - PageCraft.user.js",
         ],
         reason: "suite-wide utility surface: every member is a global utility (counter-surveillance defuse, media control, page hygiene, vault, recon, autofill...) whose activation on any given page is feature-gated in code rather than by match — the star match is the product decision (these tools follow the operator across the web). CB's bare @match is the goto-confirmation watcher: the bypass engine arms wherever a link-confirmation interstitial appears (documented v3.6.2) while its forum features stay host-gated. The hotkey census governs the behavioral collision class (68 combos, 19 scripts, 0 collisions); the sink census governs the injection surfaces",
-        expiry: "v1.12.0",
+        expiry: "v1.13.0",
     },
     {
         domain: "instagram.com",
         scripts: ["4ndr0tools - LinkMasterΨ.user.js", "4ndr0tools - Instagram++.user.js"],
         reason: "capture pipeline × feed augmenter: LMΨ harvests links/thumbnails for the ψ-suite, IG++ injects download badges on feed media — disjoint DOM surfaces, disjoint activation (capture panel vs automatic badges); hotkey census green",
-        expiry: "v1.12.0",
+        expiry: "v1.13.0",
     },
     {
         domain: "forums.socialmediagirls.com",
         scripts: ["4ndr0tools - Confirmation Bypass.user.js", "4ndr0tools - Forum Link Xtractor.user.js"],
         reason: "interaction bypass × link extraction: the sibling forum pair since v2.x — CB owns confirmation bypass/reply injection, FLX owns link harvest/export; disjoint features, hotkey census green",
-        expiry: "v1.12.0",
+        expiry: "v1.13.0",
     },
     {
         domain: "simpcity.cr",
         scripts: ["4ndr0tools - Confirmation Bypass.user.js", "4ndr0tools - Forum Link Xtractor.user.js", "4ndr0tools - Forums++.user.js"],
         reason: "the forum trio: CB (interaction bypass, whole forum), FLX (link extraction, whole forum), Forums++ (media embeds + bulk download, /threads paths only) — the documented co-install family; hotkey census green; sink census governs the injection surfaces",
-        expiry: "v1.12.0",
+        expiry: "v1.13.0",
     },
     {
         domain: "simpcity.su",
         scripts: ["4ndr0tools - Forum Link Xtractor.user.js", "4ndr0tools - Forums++.user.js"],
         reason: "the su-mirror of the simpcity.cr pair (FLX × Forums++) — same coordination argument, same disjoint surfaces",
-        expiry: "v1.12.0",
+        expiry: "v1.13.0",
     },
     {
         domain: "youtube.com",
@@ -100,13 +100,13 @@ const SANCTIONED_CO_INSTALL = [
             "4ndr0tools - YouTubeEmbedRedirectButton.user.js",
         ],
         reason: "the YT quartet: YTF (feed/search filtering), YTPM (playlist panel), YTERB (removed-video revealer in search), YERB (embed redirect) — each owns a distinct page region; hotkey census governs keys (0 collisions across the 19-script registry); documented co-install family since v1.x",
-        expiry: "v1.12.0",
+        expiry: "v1.13.0",
     },
     {
         domain: "gemini.google.com",
         scripts: ["4ndr0tools - Prompt Master.user.js", "4ndr0tools - Watermark++.user.js"],
         reason: "prompt engine × watermark remover: PM owns the chat/prompt/flow UI, WM++ owns the generated-image overlay pipeline — disjoint DOM surfaces; both ride the shared kernel NetHook (single page-realm wrap, the singleton wiring gate)",
-        expiry: "v1.12.0",
+        expiry: "v1.13.0",
     },
 ];
 
