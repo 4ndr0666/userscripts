@@ -522,12 +522,12 @@
   {
    "file": "4ndr0tools - Forums++.user.js",
    "name": "4ndr0tools - Forums++",
-   "version": "1.13.2",
+   "version": "1.13.3",
    "description": "Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.",
    "family": "forums",
-   "sha256": "ba6132561e11fcf78ff2cab73eae3486d458e3b1dee902e8861bd525132ff051",
-   "lines": 8330,
-   "bytes": 396257,
+   "sha256": "e10a6fc8b7e802723f899a5e6d6ab5516d5b43c4b8a862385a228280a9aa940a",
+   "lines": 8409,
+   "bytes": 402175,
    "matches": [
     "https://simpcity.su/threads/*",
     "https://simpcity.cr/threads/*",
@@ -589,6 +589,7 @@
     "bunkr.ru",
     "bunkr.se",
     "bunkr.si",
+    "bunkr.su",
     "bunkr.site",
     "bunkr.pk",
     "bunkr.ph",
@@ -1678,5 +1679,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "6d695771fc8ac358bb966a0d06e8a4193115312b7622208505fc3e8d14779c52"
+ "digest": "657f86d95247a389af486fc03e6d460ca3d80d8f987c9e6be5b0b2f03a2b8175"
 }

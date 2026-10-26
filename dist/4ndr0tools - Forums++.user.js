@@ -3,7 +3,7 @@
 // @name        4ndr0tools - Forums++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     1.13.2
+// @version     1.13.3
 // @description Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @match       https://simpcity.su/threads/*
@@ -50,6 +50,7 @@
 // @connect bunkr.ru
 // @connect bunkr.se
 // @connect bunkr.si
+// @connect bunkr.su
 // @connect bunkr.site
 // @connect bunkr.pk
 // @connect bunkr.ph
@@ -1453,7 +1454,7 @@ const __4NDR0_NET_API__ = (function () {
 // Content-Disposition filename decodeURIComponent site degrades losslessly
 // on malformed input instead of throwing (4-c F05).
 // 1.9.2 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Forums++.user v1.13.2 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Forums++.user v1.13.3 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 /* global JSZip, tippy, GM_xmlhttpRequest, saveAs, sha256, GM_download, GM_getValue, GM_setValue, GM_addValueChangeListener, GM_openInTab, GM_cookie, GM_deleteValue */
 
@@ -3928,10 +3929,10 @@ const hosts = [
     ['Redgifs:user', [/redgifs\.com\/users\//]],
     ['Bunkr:',
         [
-            /!!(?<=href=")https:\/\/((stream|cdn(\d+)?)\.)?bunkrr?r?\.(ac|at|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org)(?!(\/a\/)).*?(?=")|(?<=(href=")|(src="))https:\/\/((i|cdn|i-pizza|big-taco-1img)(\d+)?\.)?bunkrr?r?\.(ac|at|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org)(?!(\/a\/))\/(v\/)?.*?(?=")/,
+            /!!(?<=href=")https:\/\/((stream|cdn(\d+)?)\.)?bunkrr?r?\.(ac|at|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|su|org)(?!(\/a\/)).*?(?=")|(?<=(href=")|(src="))https:\/\/((i|cdn|i-pizza|big-taco-1img)(\d+)?\.)?bunkrr?r?\.(ac|at|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|su|org)(?!(\/a\/))\/(v\/)?.*?(?=")/,
         ]
     ],
-    ['Bunkr:Albums', [/bunkrr?r?\.(ac|at|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org)\/a\//]],
+    ['Bunkr:Albums', [/bunkrr?r?\.(ac|at|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|su|org)\/a\//]],
     ['Give.xxx:Profiles', [/give.xxx\/[~an@_-]+/]],
     ['Pixeldrain:', [/(focus\.)?(pixeldrain.com|pixeldrain.net|pixeldra.in)\/[lu]\//]],
     ['Gofile:', [/gofile.io\/d/]],
@@ -4402,7 +4403,7 @@ const resolvers = [
      * maps. The legacy /api/v2/file/{id} decrypt is kept as the fallback when
      * the /f/ page yields no data-file-id. */
     [
-        [/((stream|cdn(\d+)?)\.)?bunkrr?r?\.(ac|at|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org).*?\.|((i|cdn)(\d+)?\.)?bunkrr?r?\.(ac|at|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org)\/(v\/)?/i, /:!bunkrr?r?\.(ac|at|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org)\/a\//],
+        [/((stream|cdn(\d+)?)\.)?bunkrr?r?\.(ac|at|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|su|org).*?\.|((i|cdn)(\d+)?\.)?bunkrr?r?\.(ac|at|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|su|org)\/(v\/)?/i, /:!bunkrr?r?\.(ac|at|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|su|org)\/a\//],
         async (url, http, _, postId) => {
             try {
                 const { pathname } = new URL(url);
@@ -4505,7 +4506,7 @@ const resolvers = [
         },
     ],
     [
-        [/bunkrr?r?\.(ac|at|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org)\/a\//],
+        [/bunkrr?r?\.(ac|at|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|su|org)\/a\//],
         async (url, http, _, ___, ____, progressCB) => {
             try {
                 const cleanUrl = String(url || '').split('#')[0];
@@ -6747,7 +6748,7 @@ const ThreadCache = (() => {
             // Only fetch if not already in cache
             if (!cachedData[pageNum]) {
                 const pageUrl = pageNum === 1 ? baseUrl : `${baseUrl}page-${pageNum}`;
-                console.log(`ThreadCache: Fetching page ${pageNum} for caching...`);
+                console.debug(`ThreadCache: Fetching page ${pageNum} for caching...`);
                 fetchPromises.push(
                     fetchAndParsePage(pageUrl).then(posts => {
                         if (posts) cachedData[pageNum] = posts; // 7d F07: never store a failed fetch
@@ -6759,7 +6760,7 @@ const ThreadCache = (() => {
         }
         await Promise.all(fetchPromises);
         await setCachedThreadData(threadId, cachedData);
-        console.log(`ThreadCache: Finished caching pages for thread ${threadId}. Cached pages: ${Object.keys(cachedData).length}`);
+        console.debug(`ThreadCache: Finished caching pages for thread ${threadId}. Cached pages: ${Object.keys(cachedData).length}`);
     };
 
     return {
@@ -7040,6 +7041,7 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
     };
     const sanitizeWinPath = pth => String(pth || '').split('/').map(sanitizeWinSegment).join('/');
     const safeThreadTitle = sanitizeWinSegment(threadTitle);
+    let saveFallbackWarned = false; // v1.13.3 (8b F12): one-shot log for the URL.createObjectURL compat arm
 
     // Deduplicate resolved URLs based on their final filename AFTER stripping query strings/hashes
     if (postSettings.skipDuplicates) {
@@ -7085,7 +7087,13 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
          * batch (the gate-spam / soft-block cascade). v1.13.1 (7d F14): the
          * rule is PER-BATCH now — see the builder below. */
         const isTurboFamilyUrl = u => /(turbocdn\.st|turbo\.cr|turbovid\.cr|saint2\.(su|pk|cr))/i.test(String(u || ''));
-        const isBunkrUrl = u => /(bunkrr?\.\w+)|(bunkr-cache)/.test(String(u || ''));
+        /* v1.13.3 (8b F02): the classifier now carries the FULL family the hosts
+         * table collects — 'bunkrr?\.' missed bunkrrr.org (three r's) and the
+         * gigachad-cdn CDN host entirely, so the rate-defense serialization
+         * (7d F14), the maint.mp4 guards (7d F01), the 500 MB DIRECT switch and
+         * the tiny-sniff were ALL inoperative on the flagship bunkr CDN URLs
+         * (a 200 maintenance placeholder got saved as a real file). */
+        const isBunkrUrl = u => /(bunkrr?r?\.)|(bunkr-cache)|(gigachad-cdn)/i.test(String(u || ''));
         const isGoFileUrl = u => /gofile\.io/i.test(String(u || ''));
         const isPixeldrainUrl = u => /pixeldrain\.(com|net)|pixeldra\.in/i.test(String(u || ''));
 
@@ -7358,9 +7366,22 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                     /* Chrome AND Firefox: per-file GM_download of the blob URL
                      * (2e-F08 — Firefox honors the Zipped checkbox now; the
                      * always-zip behavior was the lost lineage shape). */
-                    const blobUrl = typeof URL !== 'undefined' && URL.createObjectURL && response.response instanceof Blob
-                        ? URL.createObjectURL(response.response)
-                        : response.response;
+                    /* v1.13.3 (8b F12): the compat arm is duck-typed (instanceof Blob
+                     * is cross-realm fragile for manager-minted blobs — the 7b F06
+                     * class) and observable now (logged once) — every modern manager
+                     * has URL.createObjectURL; this arm is a managed-environment
+                     * fallback, not dead code. */
+                    const blobIsAttachable = response.response && typeof response.response.size === 'number' && typeof response.response.slice === 'function';
+                    let blobUrl;
+                    if (typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function' && blobIsAttachable) {
+                        blobUrl = URL.createObjectURL(response.response);
+                    } else {
+                        if (!saveFallbackWarned) {
+                            saveFallbackWarned = true;
+                            console.warn('[Forums++] URL.createObjectURL unavailable — the save arm receives the raw blob.');
+                        }
+                        blobUrl = response.response;
+                    }
                     const revokeBlobUrl = () => {
                         if (typeof blobUrl === 'string' && blobUrl.startsWith('blob:') && typeof URL.revokeObjectURL === 'function') {
                             URL.revokeObjectURL(blobUrl);
@@ -7369,19 +7390,28 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                     const saveName = isFF
                         ? `${safeThreadTitle} #${postNumber} - ${sanitizeWinSegment(finalBasename)}`
                         : `${safeThreadTitle}/${finalPathInZip}`;
-                    GM_download({
-                        url: blobUrl,
-                        name: saveName,
-                        onload: () => {
-                            revokeBlobUrl();
-                            resolve();
-                        },
-                        onerror: err => {
-                            revokeBlobUrl();
-                            log.post.error(postId, `Error writing file ${finalPathInZip} to disk: ${err.error} - ${err.details}`, postNumber);
-                            resolve();
-                        },
-                    });
+                    /* v1.13.3 (8b F04): a synchronous dispatch throw (blocked
+                     * manager API, revoked grant) counts and settles — the
+                     * per-file promise must not hang on the save arm. */
+                    try {
+                        GM_download({
+                            url: blobUrl,
+                            name: saveName,
+                            onload: () => {
+                                revokeBlobUrl();
+                                resolve();
+                            },
+                            onerror: err => {
+                                revokeBlobUrl();
+                                log.post.error(postId, `Error writing file ${finalPathInZip} to disk: ${err.error} - ${err.details}`, postNumber);
+                                resolve();
+                            },
+                        });
+                    } catch (saveDispatchError) {
+                        revokeBlobUrl();
+                        log.post.error(postId, `Save dispatch failed for ${finalPathInZip}: ${saveDispatchError && saveDispatchError.message}`, postNumber);
+                        resolve();
+                    }
                 } else {
                     // Add to zip
                     zip.file(finalPathInZip, response.response);
@@ -7433,6 +7463,22 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                                     abortReason = 'bunkr_maint';
                                     recoveryArmed = true; // the onabort arm below owns the count
                                     try { request.abort(); } catch (e) { console.debug('[Forums++] maint abort rejected:', e && e.message); }
+                                    /* v1.13.3 (8b F03): the silent-abort deadline — a manager
+                                     * that fires NEITHER onabort NOR onload after abort() wedged
+                                     * the per-file promise forever (the watchdog stands down on
+                                     * recoveryArmed, so the F24 ceiling was unreachable);
+                                     * maintSettled keeps this single-shot across all three
+                                     * arms. */
+                                    window.setTimeout(() => {
+                                        if (maintSettled) return;
+                                        maintSettled = true;
+                                        completed++;
+                                        h.ui.setElProps(statusLabel.el, { color: '#ff0055' });
+                                        h.ui.setText(statusLabel.el, `${completed} / ${totalDownloadable} 🢒 ${ellipsedUrl}`);
+                                        h.ui.setElProps(totalPB, { width: `${(completed / totalDownloadable) * 100}%` });
+                                        log.post.error(postId, `::Bunkr skipped (maintenance redirect; abort callback missing)::: ${url}`, postNumber);
+                                        resolve();
+                                    }, 2000);
                                 }
                             }
                         }
@@ -7554,7 +7600,11 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                              * of a suspiciously small non-HTML body for placeholder
                              * markers before trusting it (async continuation owns
                              * the settle). */
-                            if (postSettings.verifyBunkrLinks && size > 0 && size <= tinyLimit) {
+                            /* v1.13.3 (8b F13): a body with NO content-type header
+                             * escapes the isHtml guard above (contentType ''), so
+                             * the sniff admits the headerless class too — the
+                             * verifyBunkrLinks checkbox is opt-in and cheap. */
+                            if (postSettings.verifyBunkrLinks && size > 0 && (size <= tinyLimit || !contentType)) {
                                 recoveryArmed = true;
                                 blob.text().then(t => {
                                     const head = String(t || '').slice(0, 2048).toLowerCase();
@@ -7574,11 +7624,29 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                                     } else {
                                         finishSuccessfulLoad(response);
                                     }
+                                }).catch(sniffChainError => {
+                                    /* v1.13.3 (8b F04): the sniff chain's terminal
+                                     * continuation threw (finishSuccessfulLoad's save
+                                     * arm, a manager API rejection) — count and settle
+                                     * instead of surfacing an unhandled rejection
+                                     * that wedges the per-file promise. */
+                                    console.debug('[Forums++] bunkr sniff chain rejected:', sniffChainError && sniffChainError.message);
+                                    countFailure(`::Bunkr sniff chain rejected; counting as failure::: ${url}`);
                                 });
                                 return;
                             }
 
                             finishSuccessfulLoad(response);
+                            return;
+                        }
+
+                        /* v1.13.3 (8b F18): a 200 HTML body on a non-bunkr host is a
+                         * soft-error page — the bunkr arm has guarded this class
+                         * since v1.12.1 and gofile since v1.12.0; the generic path
+                         * counted it a success and staged an HTML file into the
+                         * zip. Fail visibly instead. */
+                        if (isHtml) {
+                            countFailure(`::Download failed (HTML response)::: ${url}`);
                             return;
                         }
 
@@ -7779,7 +7847,11 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
     const needZipBlob = postSettings.generateLog || postSettings.generateLinks || (postSettings.zipped && zipFileCount > 0);
 
     if (totalDownloadable > 0 && needZipBlob) {
-        let title = threadTitle.replace(/[\\\/]/g, settings.naming.invalidCharSubstitute);
+        /* v1.13.3 (8b F01): safeThreadTitle at the zip gate too — the old
+         * slash-only replace left ': ? *' in the GM_download names, the exact
+         * GM_download name-validation failure 7d F22 was filed for (it landed
+         * at the per-file arm only). */
+        let title = safeThreadTitle;
         const filename = customFilename || `${title} #${postNumber}.zip`;
 
         log.separator(postId);
@@ -7816,7 +7888,7 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
             log.post.error(postId, `Zip assembly failed: ${zipError.message}`, postNumber);
         }
 
-            if (blob) {
+        if (blob) {
             if (isFF) {
                 saveAs(blob, filename);
             } else if (postSettings.zipped && zipFileCount > 0) {
@@ -7845,11 +7917,16 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                     onload: () => URL.revokeObjectURL(genUrl),
                     onerror: response => {
                         log.post.error(postId, `Error writing generated.zip to disk: ${response.error} - ${response.details}`, postNumber);
+                        /* v1.13.3 (8b F01): the generated.zip arm gains the FileSaver
+                         * fallback its sibling has had since v1.12.1 — a GM_download
+                         * error silently dropped the log/links artifacts before. */
+                        console.log('Trying to write using FileSaver.js...');
+                        saveAs(blob, `${title} #${postNumber} - generated.zip`);
                         URL.revokeObjectURL(genUrl);
                     },
                 });
             }
-            }
+        }
     }
 
     if (totalDownloadable > 0) {
@@ -8025,7 +8102,9 @@ const selectedPosts = [];
 
         // Initialize Thread Page Caching
         await ThreadCache.init();
-        // Example of accessing cached data (for future search/navigation UI)
+        // The cached-post search consumes this data (v1.13.2 wired the read
+        // side — the in-thread search over ThreadCache pages; 7a F17's stale
+        // 'future search/navigation UI' pointer is retired).
 
         h.elements('.message-attribution-opposite').forEach(post => {
             // Default settings for each post's download configuration
