@@ -3,7 +3,7 @@
 // @name        4ndr0tools - Forums++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     1.13.0
+// @version     1.13.1
 // @description Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @match       https://simpcity.su/threads/*
@@ -140,6 +140,38 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Forums++.user.js
 // @license      MIT
 // ==/UserScript==
+// 1.13.1 (suite v1.15.0, WO-01 round 7): the pipeline settlement pass —
+// every per-file promise now settles on every exit path. The bunkr maint
+// abort wedged the whole post forever (7d F01: the onabort arm's comment
+// claimed it owned the count, but the recoveryArmed early-return swallowed
+// it and onload never fires after abort — Promise.all hung, the in-flight
+// guard pinned, no zip, no summary; the maint branch now counts+settles
+// single-shot in onabort with an onload fallback for managers whose abort()
+// throws). The turbo re-sign ladder never advanced (7d F02: retry state was
+// keyed by the MUTABLE url, so every successful re-sign handed the retried
+// download a fresh {resign:0} — a permanently-stalling turbo file cycled
+// forever; the state now keys the RESOURCE object in a WeakMap). The stall
+// watchdog stood armed across the post-onload save window (7d F03: no
+// onprogress after onload — a slow disk write or an ask-where-to-save prompt
+// past 30 s double-counted the file or re-downloaded it entirely for turbo;
+// onload/onerror/ontimeout now set transferDone and the watchdog stands
+// down). The 2h watchdog ceiling now settles instead of silently relying on
+// the transport bound (7d F24). Lifecycle: downloadPostGuarded arms the
+// in-flight guard at ENTRY — before the minutes-long resolver walk, where a
+// navigate used to kill the run with the guard unarmed (7d F13) — and a
+// try/catch/finally restores it on EVERY exit path (7d F04: any throw below
+// resolution leaked the flag, pinned beforeunload, skipped the summary/zip/
+// log cleanup and surfaced as an unhandled rejection at both call sites);
+// re-entry guards at both download buttons stop a double-click stacking a
+// second pipeline over the same resources (7d F05). Batch composition is
+// per-batch now (7d F14: one bunkr link no longer serializes fifty
+// pixeldrain links — rate-defense items ride alone, others keep 2-slot
+// batches, ≤1 GoFile per batch still holds). DIRECT switches also fire on
+// accumulated bytes when Content-Length is absent (7d F15); every recovery
+// arm settles on rejection too (7d F16: a synchronous dispatch throw or a
+// rejected .then no longer hangs the per-file promise); the turbo re-sign
+// passes the EMBED page as referer like the resolvers do — the CDN URL was
+// being sent, defaulting saint2 re-signs to the turbo.cr origin (7d F17).
 // 1.13.0 (suite v1.15.0, WO-01 round 7): the resolution-layer truth pass —
 // every host the widened v1.12.0 tables collect is now actually resolvable
 // (the matcher-widening asymmetry class: hosts/@connect were widened but the
@@ -223,7 +255,7 @@
 // Content-Disposition filename decodeURIComponent site degrades losslessly
 // on malformed input instead of throwing (4-c F05).
 // 1.9.2 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Forums++.user v1.13.0 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Forums++.user v1.13.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 /* global JSZip, tippy, GM_xmlhttpRequest, saveAs, sha256, GM_download, GM_getValue, GM_setValue, GM_addValueChangeListener, GM_openInTab, GM_cookie */
 
@@ -5726,8 +5758,6 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
 
     const downloadedFilenames = new Set(); // To track actual filenames saved, including deduplication renaming
 
-    setProcessing(true, postId);
-
     log.separator(postId);
     log.post.info(postId, `::Found ${totalDownloadable} resource(s)::`, postNumber);
     log.separator(postId);
@@ -5779,22 +5809,31 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
         totalDownloadable = resourcesToDownload.length;
 
         /* v1.12.1 (round 6, 2e-F01/F03): lineage batch rules — turbo-family
-         * hosts and bunkr serialize to ONE concurrent download (parallel
-         * connections trip their rate defenses), 2 otherwise, and never more
-         * than ONE GoFile item per batch (the gate-spam / soft-block cascade). */
+         * hosts and bunkr serialize (parallel connections trip their rate
+         * defenses), 2 otherwise, and never more than ONE GoFile item per
+         * batch (the gate-spam / soft-block cascade). v1.13.1 (7d F14): the
+         * rule is PER-BATCH now — see the builder below. */
         const isTurboFamilyUrl = u => /(turbocdn\.st|turbo\.cr|turbovid\.cr|saint2\.(su|pk|cr))/i.test(String(u || ''));
         const isBunkrUrl = u => /(bunkrr?\.\w+)|(bunkr-cache)/.test(String(u || ''));
         const isGoFileUrl = u => /gofile\.io/i.test(String(u || ''));
         const isPixeldrainUrl = u => /pixeldrain\.(com|net)|pixeldra\.in/i.test(String(u || ''));
-        const batchLength = resourcesToDownload.some(file => isTurboFamilyUrl(file.url) || isBunkrUrl(file.url)) ? 1 : 2;
 
-        // Build batches: cap concurrent slots, ≤1 GoFile item per batch.
+        /* v1.13.1 (7d F14): per-batch composition — the old whole-post rule
+         * (batchLength=1 if ANY resource was turbo/bunkr) serialized fifty
+         * pixeldrain links behind one bunkr link; the lineage rule is
+         * per-batch: a rate-defense item rides ALONE, everything else keeps
+         * the 2-slot batches, and ≤1 GoFile per batch still holds. */
         const batches = [];
         let tmp = [];
         let tmpHasGoFile = false;
         for (const item of resourcesToDownload) {
             const isGF = isGoFileUrl(item.url);
-            if (tmp.length >= batchLength || (tmpHasGoFile && isGF)) {
+            if (isTurboFamilyUrl(item.url) || isBunkrUrl(item.url)) {
+                if (tmp.length) { batches.push(tmp); tmp = []; tmpHasGoFile = false; }
+                batches.push([item]); // rate-defense hosts ride alone
+                continue;
+            }
+            if (tmp.length >= 2 || (tmpHasGoFile && isGF)) {
                 batches.push(tmp);
                 tmp = [];
                 tmpHasGoFile = false;
@@ -5837,7 +5876,12 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
         const TURBO_RESIGN_RETRIES = 3;
         const TURBO_DIRECT_FALLBACKS = 1;
         const TURBO_RETRY_DELAY_MS = 600;
-        const turboRetryState = new Map(); // url -> { resign, direct }
+        /* v1.13.1 (7d F02): keyed by the RESOURCE object — url-keyed state
+         * reset on every successful re-sign (the rewrite gives the retry a
+         * fresh url, so the ≤3/≤1 ladder never advanced while re-signs kept
+         * succeeding — an unbounded 5 s-cadence retry loop). WeakMap: the
+         * state dies with the per-run resource objects. */
+        const turboRetryState = new WeakMap(); // resource -> { resign, direct }
 
         const gofileWarmupAttempted = new Set();
         const gofileWarmupOpenTab = gfUrl => {
@@ -5933,6 +5977,8 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
             let switchedToDirect = false;
             let recoveryArmed = false;
             let abortReason = null;
+            let maintSettled = false; // 7d F01: the maint settle is single-shot across onabort/onload
+            let transferDone = false; // 7d F03: onload/onerror/ontimeout stand the watchdog down
             const progress = { old: 0, updated: 0, intervalId: null, armedAt: Date.now() };
 
             log.post.info(postId, `::Downloading::: ${url}`, postNumber);
@@ -6067,7 +6113,9 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
             };
 
             const downloadPromise = new Promise(resolve => {
-                const request = GM_xmlhttpRequest({
+                let request = null;
+                try {
+                request = GM_xmlhttpRequest({
                     url,
                     headers: { Referer: reflink },
                     responseType: 'blob',
@@ -6132,30 +6180,54 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
 
                         /* v1.12.1 (2e-F04): large-file DIRECT switches — the size
                          * surfacing mid-download (GoFile/Pixeldrain/Filester) or the
-                         * Bunkr port-killer threshold hand off to GM_download. */
-                        if (!switchedToDirect && (isGoFile || isPixeldrain || isFilester) && response.total && response.total > BLOB_MAX_BYTES) {
+                         * Bunkr port-killer threshold hand off to GM_download.
+                         * v1.13.1 (7d F15): accumulated bytes also switch when
+                         * Content-Length is absent (chunked/no-length responses
+                         * never tripped the total-based check — a >1.6 GB blob
+                         * rode the MV3 transport to the 2 h kill). */
+                        if (!switchedToDirect && (isGoFile || isPixeldrain || isFilester) && ((response.total && response.total > BLOB_MAX_BYTES) || response.loaded > BLOB_MAX_BYTES)) {
                             switchedToDirect = true;
                             recoveryArmed = true;
                             log.post.info(postId, `::Large file (${response.total} bytes > ~1.6GB) detected -> switch to DIRECT::: ${url}`, postNumber);
                             try { request.abort(); } catch (e) { console.debug('[Forums++] large-file abort rejected:', e && e.message); }
-                            startDirectDownload(resource, response.total).then(() => resolve());
+                            startDirectDownload(resource, response.total).then(() => resolve(), () => resolve());
                             return;
                         }
-                        if (!switchedToDirect && isBunkr && response.total && response.total > BUNKR_DIRECT_MIN_BYTES) {
+                        if (!switchedToDirect && isBunkr && ((response.total && response.total > BUNKR_DIRECT_MIN_BYTES) || response.loaded > BUNKR_DIRECT_MIN_BYTES)) {
                             switchedToDirect = true;
                             recoveryArmed = true;
                             log.post.info(postId, `::Bunkr large file (${response.total} bytes > 500MB) -> switch to DIRECT::: ${url}`, postNumber);
                             try { request.abort(); } catch (e) { console.debug('[Forums++] bunkr-large abort rejected:', e && e.message); }
-                            startDirectDownload(resource, response.total).then(() => resolve());
+                            startDirectDownload(resource, response.total).then(() => resolve(), () => resolve());
                             return;
                         }
                     },
                     onload: response => {
+                        /* v1.13.1 (7d F03): the transfer is COMPLETE — the save
+                         * window (ask-where-to-save prompt, slow disk, the
+                         * bunkr tiny-sniff chain) can take longer than stallMs
+                         * with zero onprogress; the watchdog stands down so a
+                         * completed file cannot be double-counted (or fully
+                         * re-downloaded, for turbo). */
+                        transferDone = true;
                         /* v1.12.1 (2e-F05): the onload guards — bad status,
                          * HTML/maintenance bodies, and the verifyBunkrLinks
                          * tiny-sniff (the checkbox's FIRST consumer — it was
                          * rendered+tracked but never read before this round). */
-                        if (abortReason === 'bunkr_maint') return; // the onabort arm counted it
+                        if (abortReason === 'bunkr_maint') {
+                            /* v1.13.1 (7d F01): abort() threw — onload carries
+                             * the settle the onabort arm would have owned. */
+                            if (!maintSettled) {
+                                maintSettled = true;
+                                completed++;
+                                h.ui.setElProps(statusLabel.el, { color: '#ff0055' });
+                                h.ui.setText(statusLabel.el, `${completed} / ${totalDownloadable} 🢒 ${ellipsedUrl}`);
+                                h.ui.setElProps(totalPB, { width: `${(completed / totalDownloadable) * 100}%` });
+                                log.post.error(postId, `::Bunkr skipped (maintenance redirect)::: ${url}`, postNumber);
+                                resolve();
+                            }
+                            return;
+                        }
 
                         const contentType = String((response.responseHeaders || '').match(/(?<=content-type:\s)[^\r\n]+/i)?.[0] || '');
                         const isHtml = /text\/html|application\/xhtml\+xml/i.test(contentType);
@@ -6179,7 +6251,7 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                                 recoveryArmed = true;
                                 log.post.info(postId, `::GoFile gate -> warm-up tab (3s) then retry [1/2]::: ${url}`, postNumber);
                                 gofileWarmupOpenTab(url);
-                                setTimeout(() => { startDownload(resource).then(() => resolve()); }, 3000);
+                                setTimeout(() => { startDownload(resource).then(() => resolve(), () => resolve()); }, 3000);
                                 return;
                             }
                             countFailure(`::GoFile failed (gate persisted after retry)::: ${url}`);
@@ -6240,6 +6312,7 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                         finishSuccessfulLoad(response);
                     },
                     onerror: err => {
+                        transferDone = true; // 7d F03: the watchdog stands down
                         completed++;
                         log.post.error(postId, `Download failed for ${url}: ${err.error} - ${err.details}`, postNumber);
                         resolve();
@@ -6248,20 +6321,51 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                         /* v1.12.1: the 2 h ultimate bound fired — count it like
                          * any other failure (the stall watchdog should have
                          * caught genuinely dead transfers long before). */
+                        transferDone = true; // 7d F03: the watchdog stands down
                         completed++;
                         log.post.error(postId, `Download timed out (2h hard bound) for ${url}`, postNumber);
                         resolve();
                     },
                     /* v1.12.1 (2e-F05): abort completion handler — recovery-owned
                      * aborts (DIRECT switch, maint, retries) are counted by their
-                     * own arms; a stray abort counts as a failure. */
+                     * own arms; a stray abort counts as a failure.
+                     * v1.13.1 (7d F01): the maint arm's comment claimed THIS arm
+                     * owns the count — it never did (the recoveryArmed early
+                     * return swallowed it; onload never fires after abort; the
+                     * watchdog stands down on recoveryArmed) — the per-file
+                     * promise hung and Promise.all wedged the whole post with
+                     * the guard armed forever. The maint branch counts+settles
+                     * here, single-shot (maintSettled guards the both-arms edge
+                     * some managers produce). */
                     onabort: () => {
+                        if (abortReason === 'bunkr_maint') {
+                            if (!maintSettled) {
+                                maintSettled = true;
+                                completed++;
+                                h.ui.setElProps(statusLabel.el, { color: '#ff0055' });
+                                h.ui.setText(statusLabel.el, `${completed} / ${totalDownloadable} 🢒 ${ellipsedUrl}`);
+                                h.ui.setElProps(totalPB, { width: `${(completed / totalDownloadable) * 100}%` });
+                                log.post.error(postId, `::Bunkr skipped (maintenance redirect)::: ${url}`, postNumber);
+                                resolve();
+                            }
+                            return;
+                        }
                         if (recoveryArmed || switchedToDirect) return;
                         completed++;
                         log.post.error(postId, `Download aborted for ${url}`, postNumber);
                         resolve();
                     },
                 });
+                } catch (e) {
+                    /* v1.13.1 (7d F16): a synchronous dispatch throw (revoked
+                     * grant, blocked manager API) counts and settles instead
+                     * of hanging the per-file promise on an unhandled
+                     * rejection — request stays null and every request.abort()
+                     * site is already try-guarded. */
+                    completed++;
+                    log.post.error(postId, `Download dispatch failed for ${url}: ${e && e.message}`, postNumber);
+                    resolve();
+                }
 
                 /* v1.12.1 (2e-F02): the no-progress stall watchdog — aborts when
                  * the byte counter stalls for stallMs; turbo URLs re-sign and
@@ -6273,12 +6377,18 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                  * from outliving a wedged request handle. */
                 const WATCHDOG_MAX_MS = 7260000; // 2 h + 1 min > the transport bound
                 progress.intervalId = setInterval(async () => {
-                    if (switchedToDirect || recoveryArmed) {
+                    if (switchedToDirect || recoveryArmed || transferDone) {
                         clearInterval(progress.intervalId);
                         return;
                     }
                     if (Date.now() - progress.armedAt > WATCHDOG_MAX_MS) {
                         clearInterval(progress.intervalId);
+                        /* v1.13.1 (7d F24): settle at the ceiling — if the
+                         * manager ignores the transport's 2 h bound the
+                         * per-file promise must not hang past it. */
+                        completed++;
+                        log.post.error(postId, `Download watchdog ceiling reached for ${url}`, postNumber);
+                        resolve();
                         return;
                     }
                     if (progress.old === progress.updated) {
@@ -6288,15 +6398,21 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
 
                         if (isTurbo) {
                             const turboId = turboIdBySignedUrl.get(url) || turboIdBySignedUrl.get(String(url).split('?')[0]);
-                            const st = turboRetryState.get(url) || { resign: 0, direct: 0 };
+                            const st = turboRetryState.get(resource) || { resign: 0, direct: 0 };
 
                             if (turboId && st.resign < TURBO_RESIGN_RETRIES) {
                                 st.resign++;
-                                turboRetryState.set(url, st);
+                                turboRetryState.set(resource, st);
                                 log.post.info(postId, `::Turbo stalled (no progress for ${Math.round(stallMs / 1000)}s) -> re-sign + retry [${st.resign}/${TURBO_RESIGN_RETRIES}]::: ${url}`, postNumber);
 
                                 try {
-                                    const newUrl = await xfpdTurboSignUrlWithTimeout(turboId, url, null);
+                                    /* v1.13.1 (7d F17): the EMBED page is the
+                                     * referer, like the resolvers pass it — the
+                                     * signed CDN URL was being sent, so the
+                                     * origin derivation defaulted saint2
+                                     * re-signs to turbo.cr (wrong origin →
+                                     * sign failure → plain retry). */
+                                    const newUrl = await xfpdTurboSignUrlWithTimeout(turboId, resource.original || reflink, null);
                                     if (newUrl) {
                                         resource.url = newUrl;
                                         turboIdBySignedUrl.set(newUrl, turboId);
@@ -6306,15 +6422,15 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                                 }
 
                                 // Retry (even a plain retry sometimes works when re-sign failed).
-                                setTimeout(() => { startDownload(resource).then(() => resolve()); }, TURBO_RETRY_DELAY_MS);
+                                setTimeout(() => { startDownload(resource).then(() => resolve(), () => resolve()); }, TURBO_RETRY_DELAY_MS);
                                 return;
                             }
 
                             if (st.direct < TURBO_DIRECT_FALLBACKS) {
                                 st.direct++;
-                                turboRetryState.set(url, st);
+                                turboRetryState.set(resource, st);
                                 log.post.info(postId, `::Turbo stalled (no progress for ${Math.round(stallMs / 1000)}s) -> DIRECT fallback (outside ZIP) [${st.direct}/${TURBO_DIRECT_FALLBACKS}]::: ${url}`, postNumber);
-                                startDirectDownload(resource).then(() => resolve());
+                                startDirectDownload(resource).then(() => resolve(), () => resolve());
                                 return;
                             }
 
@@ -6378,13 +6494,9 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
         h.hide(statusLabel.container);
     }
 
-    setProcessing(false, postId);
-
-    /* v1.12.1 (2e-F29): restore the operator's own gofile.io accountToken
-     * cookie once no post is still processing (the guest mirror is undone). */
-    if (!processing.find(p => p.processing)) {
-        await gofileRestoreCookie();
-    }
+    /* v1.12.1 (2e-F29): the gofile cookie restore + the processing-flag
+     * clear ride downloadPostGuarded's finally now (7d F04) — they run on
+     * every exit path, not just the happy one. */
 
     /* v1.12.1 (2e-F07): the zip gate — needZipBlob is true only when the zip
      * actually carries files, or the log/links artifacts were requested; an
@@ -6455,8 +6567,6 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                 });
             }
         }
-    } else {
-        setProcessing(false, postId); // Ensure processing flag is reset even if no files were downloaded
     }
 
     if (totalDownloadable > 0) {
@@ -6470,6 +6580,33 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
 
     // Clear logs for this post after completion
     logs = logs.filter(l => l.postId !== postId);
+};
+
+/* v1.13.1 (7d F04/F13): the settlement wrapper — owns the per-post
+ * lifecycle around downloadPost: the in-flight guard arms at ENTRY (before
+ * the minutes-long resolver walk — a navigate during resolution used to
+ * kill the run with the guard unarmed), and the try/catch/finally restores
+ * it on EVERY exit path (a throw anywhere in the pipeline used to leak the
+ * processing flag, pin the beforeunload guard, skip the summary/zip/log
+ * cleanup, and surface as an unhandled rejection at the call sites). The
+ * gofile cookie restore rides the finally (re-checked inside the restore
+ * for the start-again race — 7d F27). Adjudicated window (lineage parity):
+ * the guard drops when downloadPost returns; the zip's GM_download is
+ * fire-and-forget by design and FileSaver's saveAs arm offers no completion
+ * signal at all — holding the guard through a save that may never signal
+ * trades a bounded window for a potential forever-flag. */
+const downloadPostGuarded = async (parsedPost, parsedHosts, enabledHostsCB, resolversArg, getSettingsCB, statusUI, callbacks) => {
+    setProcessing(true, parsedPost.postId);
+    try {
+        await downloadPost(parsedPost, parsedHosts, enabledHostsCB, resolversArg, getSettingsCB, statusUI, callbacks);
+    } catch (e) {
+        console.debug('[Forums++] downloadPost threw:', e && (e.message || e));
+    } finally {
+        setProcessing(false, parsedPost.postId);
+        if (!processing.find(p => p.processing)) {
+            gofileRestoreCookie().catch(e => console.debug('[Forums++] gofile cookie restore rejected:', e && e.message));
+        }
+    }
 };
 
 /**
@@ -6701,7 +6838,12 @@ const selectedPosts = [];
 
             btnDownloadPost.addEventListener('click', e => {
                 e.preventDefault();
-                downloadPost(parsedPost, parsedHosts, getEnabledHostsCB, resolvers, getSettingsCB, statusUI, postDownloadCallbacks);
+                /* v1.13.1 (7d F05): re-entry guard — a double-click (or a
+                 * Download-Page launch) while a run is active must not stack
+                 * a second pipeline over the same resources (double
+                 * downloads, torn progress bars, double auto-reaction). */
+                if (processing.find(p => p.postId === postId && p.processing)) return;
+                downloadPostGuarded(parsedPost, parsedHosts, getEnabledHostsCB, resolvers, getSettingsCB, statusUI, postDownloadCallbacks);
             });
         });
 
@@ -6715,7 +6857,10 @@ const selectedPosts = [];
                 selectedPosts
                     .filter(s => s.enabled)
                     .forEach(s => {
-                    downloadPost(
+                    /* v1.13.1 (7d F05): re-entry guard — see the per-post
+                     * button above. */
+                    if (processing.find(p => p.postId === s.post.parsedPost.postId && p.processing)) return;
+                    downloadPostGuarded(
                         s.post.parsedPost,
                         s.post.parsedHosts,
                         s.post.enabledHostsCB,
