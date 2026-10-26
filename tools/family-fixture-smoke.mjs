@@ -536,7 +536,7 @@ forceImmediateAnswer();`, hwCtx);
         fppSrc.includes("if (requiredPassword && !unlocked)") &&
         fppSrc.includes("async (url, http) => {") &&
         fppSrc.includes("URL.createObjectURL(response.response)") &&
-        fppSrc.includes("clearInterval(requestProgress.intervalId);")
+        fppSrc.includes("if (progress.intervalId) clearInterval(progress.intervalId);")
     );
 
     // 4D. LinkMasterΨ v6.3.2: jpg6.su non-destructive spoiler candidates, cyberdrop single-scheme rewrite, cyberfile null-safe folderId regex

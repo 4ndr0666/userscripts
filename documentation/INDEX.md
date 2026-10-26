@@ -16,7 +16,7 @@
 | **Confirmation Bypass** | `4.1.0` | forums | kernel-free | [reference](./confirmation-bypass/) |
 | **Filester++** | `7.6.1` | media & links | typeof-guarded (NetHook) | [reference](./filester/) |
 | **Forum Link Xtractor** | `3.2.3` | forums | kernel-free | [reference](./forum-link-xtractor/) |
-| **Forums++** | `1.12.0` | forums | typeof-guarded + gmFetch fallback | [reference](./forums/) |
+| **Forums++** | `1.12.1` | forums | typeof-guarded + gmFetch fallback | [reference](./forums/) |
 | **GoFile++** | `2.2.0` | media & links | typeof-guarded + gmFetch fallback | [reference](./gofile/) |
 | **GooglePhotosandDrive++** | `8.1.1` | images | typeof-guarded + gmFetch fallback | [reference](./gphotos-drive/) |
 | **Hailuo++** | `6.1.0` | sovereign platforms | kernel-free | [devlog](./hailuo++/) |

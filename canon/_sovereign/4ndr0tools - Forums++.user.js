@@ -3,7 +3,7 @@
 // @name        4ndr0tools - Forums++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     1.12.0
+// @version     1.12.1
 // @description Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @match       https://simpcity.su/threads/*
@@ -135,6 +135,29 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Forums++.user.js
 // @license      MIT
 // ==/UserScript==
+// 1.12.1 (suite v1.14.0, WO-01 round 6): the lineage restoration, segment 2 —
+// the download pipeline + UI/storage layer. PIPELINE: lineage batch rules
+// (turbo-family/bunkr serialize to 1, else 2, ≤1 GoFile per batch — the
+// gate-spam cascade); the hard 60 s timeout and the dead interval are replaced
+// by the no-progress stall watchdog (turbo 5 s else 30 s) with the turbo
+// re-sign ladder (≤3 re-signs → 1 DIRECT fallback); DIRECT raw-URL fallback
+// above 1.6 GB (gofile/pixeldrain/filester) and 500 MB (bunkr); maint.mp4
+// early abort; onload guards (bad status, HTML gates, the verifyBunkrLinks
+// tiny-sniff — the checkbox's FIRST consumer); the GoFile warm-up-tab retry;
+// onabort completion arm; resource-keyed tracking (duplicate URLs no longer
+// collapse, the Promise.race deref can't throw); folder-aware dedup naming;
+// awaited GM_download completions; the zip gate (no empty archive on
+// all-DIRECT/all-failed runs) + caught JSZip assembly; the amber X/Y final
+// summary; gofile cookie restore when the last post goes idle; resolving
+// counter + per-resolver progress callback. UI/STORAGE: the Zipped checkbox
+// renders on Firefox too (per-file blob-URL GM_download makes it meaningful
+// there — the always-zip behavior was the lost lineage shape); 'Toggle All'
+// label (was EMPTY on both forms — an inherited lineage defect); theme-aware
+// tooltip colors (the no-op ternary gone; light keeps the lineage light
+// surface, dark keeps 3lectric-Glass); Duplicate Tab keeps the post anchor's
+// href; ThreadCache bounded (MRU thread registry, ≤12 threads) with its read
+// side's FIRST consumer — the in-thread cached-post search box in the Post
+// Selection form (getAllCachedPosts/getCachedPage/listCachedPageNumbers).
 // 1.12.0 (suite v1.14.0, WO-01 round 6): the lineage restoration, segment 1 — the
 // resolution layer is restored to XenForoPostDownloader v3.23 feature parity
 // (the operator's Forums++ directive; every port below carries its machinery
@@ -177,7 +200,7 @@
 // Content-Disposition filename decodeURIComponent site degrades losslessly
 // on malformed input instead of throwing (4-c F05).
 // 1.9.2 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Forums++.user v1.12.0 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Forums++.user v1.12.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 /* global JSZip, tippy, GM_xmlhttpRequest, saveAs, sha256, GM_download, GM_getValue, GM_setValue, GM_addValueChangeListener, GM_openInTab, GM_cookie */
 
@@ -286,7 +309,10 @@ const settings = {
     },
     ui: {
         checkboxes: {
-            toggleAllCheckboxLabel: '',
+            /* v1.12.1 (2e-F15): 'Toggle All' — the label was empty on BOTH the
+             * per-host and page-level forms (an inherited lineage defect: a
+             * checkbox rendered with no accessible name). */
+            toggleAllCheckboxLabel: 'Toggle All',
         },
     },
     extensions: {
@@ -851,9 +877,24 @@ const ui = {
     /**
      * @returns {string}
      */
+    /* v1.12.1 (2e-F16): theme-aware tooltip colors — the old body was a no-op
+     * ternary returning the same 3lectric dark value on BOTH branches (the
+     * site's light theme got dark-translucent panels). Dark keeps the
+     * 3lectric-Glass palette; light gets the lineage's light surface. */
     getTooltipBackgroundColor: () => {
-        // Determine theme based on body dataset/class without full-DOM innerHTML serialization
-        return document.body?.dataset?.theme === '__&s=11' ? 'rgba(10,19,26,0.85)' : 'rgba(10,19,26,0.85)';
+        const lightTheme = (() => {
+            try {
+                const scheme = document.documentElement?.dataset?.colorScheme
+                    || document.documentElement?.getAttribute('data-color-scheme')
+                    || document.body?.dataset?.colorScheme
+                    || document.body?.getAttribute('data-color-scheme');
+                if (scheme) return String(scheme).toLowerCase().includes('light');
+            } catch (e) {
+                console.debug('[Forums++] color-scheme probe rejected:', e && e.message);
+            }
+            return false;
+        })();
+        return lightTheme ? '#EDF0F3' : 'rgba(10,19,26,0.85)';
     },
     /**
      * @param {HTMLElement|string} target
@@ -1222,7 +1263,11 @@ const ui = {
                     const formHtml = [
                         isFF ? ui.forms.config.post.createFilenameInput(customFilename, postId, color, defaultFilename) : null,
                         settingsHeading,
-                        !isFF ? ui.forms.config.post.createZippedCheckbox(postId, currentSettings.zipped) : null,
+                        /* v1.12.1 (2e-F14): rendered on Firefox too — the
+                         * per-file blob-URL GM_download arm makes the toggle
+                         * meaningful there now (the always-zip behavior was the
+                         * lost lineage shape). */
+                        ui.forms.config.post.createZippedCheckbox(postId, currentSettings.zipped),
                         ui.forms.config.post.createFlattenCheckbox(postId, currentSettings.flatten),
                         ui.forms.config.post.createSkipDuplicatesCheckbox(postId, currentSettings.skipDuplicates),
                         ui.forms.config.post.createGenerateLinksCheckbox(postId, currentSettings.generateLinks),
@@ -5288,9 +5333,16 @@ const resolvers = [
 /**
  * Manages caching and retrieval of forum thread pages using GM_setValue.
  * Stores minimal data (postId, postNumber, textContent) for search/navigation.
+ * v1.12.1 (round 6, 2e-F24/2d-K02): the write side gained a thread registry
+ * (XFPD_ThreadCache_Index, MRU-first, capped at MAX_CACHED_THREADS — the
+ * per-thread keys were unbounded GM-storage growth before), and the read side
+ * (getAllCachedPosts/getCachedPage) gained its FIRST consumer: the cached-post
+ * search box in the page-level Post Selection form (below).
  */
 const ThreadCache = (() => {
     const CACHE_KEY_PREFIX = 'XFPD_ThreadCache_'; // Prefix for GM_setValue keys
+    const INDEX_KEY = 'XFPD_ThreadCache_Index'; // MRU-first thread id registry
+    const MAX_CACHED_THREADS = 12; // prune beyond this many threads
 
     /**
      * Extracts thread ID from the current URL.
@@ -5347,6 +5399,21 @@ const ThreadCache = (() => {
      */
     const setCachedThreadData = async (threadId, dataToCache) => {
         await GM_setValue(`${CACHE_KEY_PREFIX}${threadId}`, dataToCache);
+
+        // v1.12.1: MRU register + prune — the thread keys were unbounded before.
+        try {
+            const index = Array.isArray(GM_getValue(INDEX_KEY, [])) ? GM_getValue(INDEX_KEY, []) : [];
+            const next = [String(threadId), ...index.filter(id => id !== String(threadId))];
+            const pruned = next.slice(0, MAX_CACHED_THREADS);
+            for (const staleId of next.slice(MAX_CACHED_THREADS)) {
+                await GM_setValue(`${CACHE_KEY_PREFIX}${staleId}`, {});
+            }
+            if (JSON.stringify(pruned) !== JSON.stringify(index)) {
+                await GM_setValue(INDEX_KEY, pruned);
+            }
+        } catch (e) {
+            console.debug('ThreadCache: index register rejected:', e && e.message);
+        }
     };
 
     /**
@@ -5457,6 +5524,13 @@ const ThreadCache = (() => {
             if (!threadId) return [];
             const cachedData = await getCachedThreadData(threadId);
             return cachedData[pageNumber] || [];
+        },
+        /* v1.12.1: the search panel's page counter + per-page grouping source. */
+        listCachedPageNumbers: async () => {
+            const threadId = getThreadIdFromUrl();
+            if (!threadId) return [];
+            const cachedData = await getCachedThreadData(threadId);
+            return Object.keys(cachedData).map(Number).filter(n => Number.isFinite(n) && n > 0).sort((a, b) => a - b);
         }
     };
 })();
@@ -5516,12 +5590,19 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
 
     log.post.info(postId, '::Url resolution started::', postNumber);
 
+    /* v1.12.1 (round 6, 2e-F18): resolving counter + per-resolver progress
+     * callback — long walkers (bunkr albums, redgifs users, cyberdrop ladders)
+     * now update the status label instead of a bare URL. */
+    let resolveIndex = 0;
+    const totalResolveTargets = enabledHosts.filter(host => host.resources.length).reduce((acc, host) => acc + host.resources.length, 0);
+
     for (const host of enabledHosts.filter(host => host.resources.length)) {
         const resources = host.resources;
 
         for (const resource of resources) {
+            resolveIndex++;
             h.ui.setElProps(statusLabel.el, { color: '#00E5FF', fontWeight: 'bold' });
-            h.ui.setText(statusLabel.el, `Resolving: ${h.limit(resource, 80)}`);
+            h.ui.setText(statusLabel.el, `Resolving: ${resolveIndex} / ${totalResolveTargets} 🢒 ${h.limit(resource, 80)}`);
 
             let r = null; // Resolved data for the current resource
 
@@ -5552,7 +5633,9 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                 const passwords = parsedPost.spoilers.concat(parsedPost.spoilers.map(s => s.toLowerCase()));
 
                 try {
-                    r = await resolverCB(resource, h.http, passwords, postId, postSettings);
+                    r = await resolverCB(resource, h.http, passwords, postId, postSettings, progressText => {
+                        h.ui.setText(statusLabel.el, String(progressText || '').slice(0, 120));
+                    });
                     if (r !== null) { // If resolver successfully returned something, stop trying other resolvers
                         break;
                     }
@@ -5659,241 +5742,633 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
 
     // v1.10.1: removed TDZ self-shadowing `const isFF = isFF;` (uses script-scope isFF)
 
+    /* v1.12.1 (round 6, 2e-F07): the pipeline promise — awaited before the zip
+     * assembly so the in-flight guard and the file-count gate see the truth. */
+    let pipelinePromise = Promise.resolve();
+
     if (!postSettings.skipDownload) {
         const resourcesToDownload = resolved.filter(r => r.url);
         totalDownloadable = resourcesToDownload.length;
 
-        // Limit bunkr links to a single concurrent download, otherwise 2 concurrent downloads
-        let batchSize = resourcesToDownload.some(file => /(bunkrr?\.\w+)|(bunkr-cache)/.test(file.url)) ? 1 : 2;
+        /* v1.12.1 (round 6, 2e-F01/F03): lineage batch rules — turbo-family
+         * hosts and bunkr serialize to ONE concurrent download (parallel
+         * connections trip their rate defenses), 2 otherwise, and never more
+         * than ONE GoFile item per batch (the gate-spam / soft-block cascade). */
+        const isTurboFamilyUrl = u => /(turbocdn\.st|turbo\.cr|turbovid\.cr|saint2\.(su|pk|cr))/i.test(String(u || ''));
+        const isBunkrUrl = u => /(bunkrr?\.\w+)|(bunkr-cache)/.test(String(u || ''));
+        const isGoFileUrl = u => /gofile\.io/i.test(String(u || ''));
+        const isPixeldrainUrl = u => /pixeldrain\.(com|net)|pixeldra\.in/i.test(String(u || ''));
+        const batchLength = resourcesToDownload.some(file => isTurboFamilyUrl(file.url) || isBunkrUrl(file.url)) ? 1 : 2;
 
-        const downloadQueue = [...resourcesToDownload];
-        const activeDownloads = new Set();
+        // Build batches: cap concurrent slots, ≤1 GoFile item per batch.
+        const batches = [];
+        let tmp = [];
+        let tmpHasGoFile = false;
+        for (const item of resourcesToDownload) {
+            const isGF = isGoFileUrl(item.url);
+            if (tmp.length >= batchLength || (tmpHasGoFile && isGF)) {
+                batches.push(tmp);
+                tmp = [];
+                tmpHasGoFile = false;
+            }
+            tmp.push(item);
+            if (isGF) tmpHasGoFile = true;
+        }
+        if (tmp.length) batches.push(tmp);
 
-        const processQueue = async () => {
-            while (downloadQueue.length > 0 || activeDownloads.size > 0) {
-                // Add new downloads to activeDownloads if there's capacity
-                while (activeDownloads.size < batchSize && downloadQueue.length > 0) {
-                    const resource = downloadQueue.shift();
-                    if (!resource) continue;
-
-                    activeDownloads.add(resource.url);
-
-                    const ellipsedUrl = h.limit(resource.url, 80);
-                    log.post.info(postId, `::Downloading::: ${resource.url}`, postNumber);
-
-                    let reflink = resource.original;
-                    // Specific referer handling
-                    if (resource.url.includes('bunkr')) {
-                        reflink = "https://bunkr.si";
-                    } else if (resource.url.includes('pomf2')) {
-                        reflink = "https://pomf2.lain.la";
-                    }
-
-                    const downloadPromise = new Promise((resolve, reject) => {
-                        const requestProgress = { loaded: 0, total: 0, intervalId: null };
-                        const request = GM_xmlhttpRequest({
-                            url: resource.url,
-                            headers: { Referer: reflink },
-                            responseType: 'blob',
-                            // v1.10.0: hard 60 s bound (Pixeldrain++ download
-                            // precedent) — the ontimeout handler below existed
-                            // but could never fire without this bound.
-                            timeout: 60000,
-                            onreadystatechange: response => {
-                                if (response.readyState === 2) {
-                                    // Extract filename from headers early
-                                    let filenameMatch = response.responseHeaders.match(/(?<=filename\*?=([^;]+'')?").*?(?=")/i);
-                                    if (!filenameMatch) { // Fallback for basic filename detection
-                                        filenameMatch = response.responseHeaders.match(/(?<=filename=").*?(?=")/i);
-                                    }
-                                    // v1.11.1 (4-c F05): a bare '%' in the header value must not
-                                    // abort filename detection — degrade to the raw token.
-                                    const safeDecodeURIComponent = (s) => { try { return decodeURIComponent(s); } catch { return s; } };
-                                    const dispositionFilename = filenameMatch ? safeDecodeURIComponent(filenameMatch[0]) : null;
-
-                                    // Extract MIME type
-                                    const mimeTypeMatch = response.responseHeaders.match(/(?<=content-type:\s).*$/i);
-                                    const mimeType = mimeTypeMatch ? mimeTypeMatch[0] : null;
-
-                                    if (!resource._filename) resource._filename = dispositionFilename;
-                                    if (!resource._mimeType) resource._mimeType = mimeType;
-                                }
-                            },
-                            onprogress: response => {
-                                requestProgress.loaded = response.loaded;
-                                requestProgress.total = response.total;
-
-                                h.ui.setElProps(statusLabel.el, { color: '#00E5FF', fontWeight: 'normal' });
-                                const downloadedSizeInMB = (response.loaded / (1024 * 1024)).toFixed(2);
-                                const totalSizeInMB = (response.total !== -1 && response.total !== 0) ? (response.total / (1024 * 1024)).toFixed(2) : 'Unknown';
-
-                                h.ui.setText(
-                                    statusLabel.el,
-                                    `${completed + 1} / ${totalDownloadable} 🢒 ${resource.host.name} 🢒 ${downloadedSizeInMB} MB / ${totalSizeInMB} MB  🢒 ${ellipsedUrl}`,
-                                );
-                                if (response.total !== -1 && response.total !== 0) {
-                                    h.show(filePB);
-                                    h.ui.setElProps(filePB, {
-                                        width: `${(response.loaded / response.total) * 100}%`,
-                                    });
-                                } else {
-                                    h.ui.setElProps(filePB, { width: '0%' }); // Hide or reset if total is unknown
-                                }
-                            },
-                            onload: response => {
-                                completed++;
-                                h.ui.setText(statusLabel.el, `${completed} / ${totalDownloadable} 🢒 ${ellipsedUrl}`);
-                                h.ui.setElProps(statusLabel.el, { color: '#00E5FF' });
-                                h.ui.setElProps(totalPB, { width: `${(completed / totalDownloadable) * 100}%` });
-
-                                // Determine filename
-                                let basename = resource._filename || h.basename(resource.url).replace(/\?.*/, '').replace(/#.*/, '');
-
-                                // Specific filename processing for certain hosts
-                                if (resource.url.includes('https://simpcity.su/attachments/')) {
-                                    // Simplified regex for attachments if original basename contains extra numbers
-                                    basename = basename.replace(/(.*)-(.{3,4})\.\d*$/i, '$1.$2');
-                                } else if (resource.url.includes('kemono.su')) {
-                                    basename = basename.replace(/(.*)\?f=(.*)/, '$2').replace('%20', ' ');
-                                } else if (resource.url.includes('cyberdrop')) {
-                                    // Cyberdrop filenames can have random hashes, try to remove them
-                                    let ext = h.ext(basename);
-                                    if (ext) {
-                                        basename = h.fnNoExt(basename).replace(/(\.\w{3,6}-\w{8}$)|(-\w{8}$)/, '') + `.${ext}`;
-                                    }
-                                }
-
-                                let ext = h.ext(basename);
-                                if (!ext && resource._mimeType) {
-                                    switch (resource._mimeType.split(';')[0].trim()) {
-                                        case 'image/jpeg':
-                                            ext = 'jpg'; break;
-                                        case 'image/png':
-                                            ext = 'png'; break;
-                                        case 'image/gif':
-                                            ext = 'gif'; break;
-                                        case 'video/mp4':
-                                            ext = 'mp4'; break;
-                                        // Add more cases as needed
-                                        default:
-                                            ext = 'unknown';
-                                    }
-                                    if (ext !== 'unknown') {
-                                        basename = `${h.fnNoExt(basename)}.${ext}`;
-                                    }
-                                }
-
-                                // Handle duplicate filenames by appending a number
-                                let finalBasename = basename;
-                                let counter = 1;
-                                while (downloadedFilenames.has(finalBasename.toLowerCase())) {
-                                    finalBasename = `${h.fnNoExt(basename)} (${counter}).${ext}`;
-                                    counter++;
-                                }
-                                downloadedFilenames.add(finalBasename.toLowerCase());
-
-                                const folder = resource.folderName || '';
-                                let finalPathInZip = finalBasename;
-                                if (!postSettings.flatten && folder && folder.trim() !== '') {
-                                    finalPathInZip = `${folder}/${finalBasename}`;
-                                }
-
-                                log.separator(postId);
-                                log.post.info(postId, `::Completed::: ${resource.url}`, postNumber);
-                                if (folder && folder.trim() !== '') {
-                                    log.post.info(postId, `::Saving as::: ${finalBasename} ::to:: ${folder}`, postNumber);
-                                } else {
-                                    log.post.info(postId, `::Saving as::: ${finalBasename}`, postNumber);
-                                }
-
-                                // Sanitize filename for various OS
-                                finalPathInZip = finalPathInZip.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\uFFFF]/g, '').replace(/[\\\/:\*?"<>|]/g, settings.naming.invalidCharSubstitute);
-
-
-                                if (!isFF && !postSettings.zipped) {
-                                    // Directly download for Chrome if not zipped via object URL
-                                    const blobUrl = typeof URL !== 'undefined' && URL.createObjectURL && response.response instanceof Blob
-                                        ? URL.createObjectURL(response.response)
-                                        : response.response;
-                                    const revokeBlobUrl = () => {
-                                        if (typeof blobUrl === 'string' && blobUrl.startsWith('blob:') && typeof URL.revokeObjectURL === 'function') {
-                                            URL.revokeObjectURL(blobUrl);
-                                        }
-                                    };
-                                    GM_download({
-                                        url: blobUrl,
-                                        name: `${threadTitle.replace(/[\\\/]/g, settings.naming.invalidCharSubstitute)}/${finalPathInZip}`,
-                                        onload: () => {
-                                            revokeBlobUrl();
-                                            resolve();
-                                        },
-                                        onerror: err => {
-                                            revokeBlobUrl();
-                                            log.post.error(postId, `Error writing file ${finalPathInZip} to disk: ${err.error} - ${err.details}`, postNumber);
-                                            resolve();
-                                        },
-                                    });
-                                } else {
-                                    // Add to zip for Firefox or if zipping is enabled
-                                    zip.file(finalPathInZip, response.response);
-                                    resolve();
-                                }
-                            },
-                            onerror: err => {
-                                completed++;
-                                log.post.error(postId, `Download failed for ${resource.url}: ${err.error} - ${err.details}`, postNumber);
-                                resolve();
-                            },
-                            ontimeout: () => {
-                                completed++;
-                                log.post.error(postId, `Download timed out for ${resource.url}`, postNumber);
-                                resolve();
-                            }
-                        });
-
-                        // Set up a timeout check for the request
-                        requestProgress.intervalId = setInterval(() => {
-                            if (requestProgress.total > 0 && requestProgress.loaded === 0 && activeDownloads.has(resource.url)) {
-                                log.warn(postId, `Download stalled for ${resource.url}. Aborting.`, postNumber);
-                                request.abort(); // Abort the stalled request
-                                clearInterval(requestProgress.intervalId);
-                                completed++; // Mark as completed (failed)
-                                resolve();
-                            }
-                        }, 60000); // 1 minute timeout check
-                    }).finally(() => {
-                        clearInterval(requestProgress.intervalId);
-                        activeDownloads.delete(resource.url);
-                    });
-                    resource._downloadPromise = downloadPromise; // Attach promise to resource for tracking
+        /* v1.12.1 (2e-F04): DIRECT fallback thresholds — blobs >1.6 GB blow MV3
+         * message ports (GoFile/Pixeldrain/Filester sizes surface mid-download),
+         * and Bunkr's CDN rejects blob transfers above 500 MB; those download
+         * raw-URL through GM_download, outside the zip, Windows-safe names. */
+        const BLOB_MAX_BYTES = Math.floor(1.6 * 1024 * 1024 * 1024);
+        const BUNKR_DIRECT_MIN_BYTES = 500 * 1024 * 1024;
+        const WIN_ILLEGAL_RE = /[<>:"\/\\|?*\x00-\x1F]/g;
+        const sanitizeWinSegment = s => {
+            const sub = (settings && settings.naming && settings.naming.invalidCharSubstitute) ? settings.naming.invalidCharSubstitute : '_';
+            let out = String(s || '');
+            if (settings?.naming?.allowEmojis === false) {
+                try {
+                    out = out.replace(/\p{Extended_Pictographic}/gu, '');
+                } catch (e) {
+                    out = out.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '');
                 }
+                out = out.replace(/[\uFE0E\uFE0F\u200D]/g, '');
+            }
+            out = out.replace(WIN_ILLEGAL_RE, sub);
+            out = out.replace(/[\x00-\x08\x0E-\x1F\x7F]/g, '');
+            out = out.replace(/[\. ]+$/g, '').replace(/^[\. ]+/g, '');
+            if (!out) out = '_';
+            if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(out)) out = '_' + out;
+            return out;
+        };
+        const sanitizeWinPath = pth => String(pth || '').split('/').map(sanitizeWinSegment).join('/');
 
-                // Wait for any active downloads to finish before processing more
-                if (activeDownloads.size > 0) {
-                    await Promise.race(Array.from(activeDownloads).map(url => resolved.find(r => r.url === url)._downloadPromise));
-                } else if (downloadQueue.length > 0) {
-                    await h.delayedResolve(100); // Small delay to prevent busy-waiting if queue has new items
-                }
+        /* v1.12.1 (2e-F03): turbo stall re-sign — a signed URL that stops
+         * progressing is re-signed (≤3) before ONE direct fallback. */
+        const TURBO_STALL_MS = 5000;
+        const TURBO_RESIGN_RETRIES = 3;
+        const TURBO_DIRECT_FALLBACKS = 1;
+        const TURBO_RETRY_DELAY_MS = 600;
+        const turboRetryState = new Map(); // url -> { resign, direct }
+
+        const gofileWarmupAttempted = new Set();
+        const gofileWarmupOpenTab = gfUrl => {
+            try {
+                const tab = GM_openInTab(gfUrl, { active: false, insert: true, setParent: true });
+                setTimeout(() => { xfpdCloseTabHandle(tab); }, 3000);
+            } catch (e) {
+                console.debug('[Forums++] gofile warm-up tab rejected:', e && e.message);
             }
         };
 
-        await processQueue(); // Start processing the download queue
+        const reflinkFor = resource => {
+            if (resource.url.includes('bunkr')) {
+                return 'https://bunkr.si';
+            }
+            if (resource.url.includes('pomf2')) {
+                return 'https://pomf2.lain.la';
+            }
+            if (isFilesterUrl(resource.url)) {
+                return filesterRefByUrl.get(resource.url) || resource.original;
+            }
+            return resource.original;
+        };
+
+        let successful = 0;      // actually-saved count (summary + zip gating)
+        let zipFileCount = 0;    // files staged into the zip (2e-F07)
+
+        /* The DIRECT path: raw-URL GM_download outside the zip. Returns a
+         * promise that settles when the download completes (2e-F07: awaited,
+         * not fire-and-forget). */
+        const startDirectDownload = (resource, sizeHint) => {
+            const folder = resource.folderName || '';
+            let name = resource._filename
+                || bunkrNameByUrl.get(resource.url)
+                || cyberdropNameByUrl.get(resource.url)
+                || gofileNameByUrl.get(resource.url)
+                || filesterNameByUrl.get(resource.url)
+                || h.basename(resource.url).replace(/\?.*/, '').replace(/#.*/, '');
+            const relative = (!postSettings.flatten && folder && folder.trim() !== '') ? `${folder}/${name}` : name;
+            const winPath = sanitizeWinPath(`${threadTitle}/${relative}`);
+            resource._direct = true;
+            log.post.info(postId, `::DIRECT download${sizeHint ? ` (${(sizeHint / 1024 / 1024).toFixed(0)} MB)` : ''}::: ${resource.url} ::as:: ${winPath}`, postNumber);
+            return new Promise(resolve => {
+                try {
+                    GM_download({
+                        url: resource.url,
+                        name: winPath,
+                        headers: { Referer: reflinkFor(resource) },
+                        onload: () => {
+                            successful++;
+                            completed++;
+                            h.ui.setElProps(totalPB, { width: `${(completed / totalDownloadable) * 100}%` });
+                            log.post.info(postId, `::Completed (direct)::: ${resource.url}`, postNumber);
+                            resolve(true);
+                        },
+                        onerror: err => {
+                            completed++;
+                            log.post.error(postId, `DIRECT download failed for ${resource.url}: ${err?.error} - ${err?.details}`, postNumber);
+                            resolve(false);
+                        },
+                        ontimeout: () => {
+                            completed++;
+                            log.post.error(postId, `DIRECT download timed out for ${resource.url}`, postNumber);
+                            resolve(false);
+                        },
+                    });
+                } catch (e) {
+                    completed++;
+                    log.post.error(postId, `DIRECT download dispatch failed for ${resource.url}: ${e.message}`, postNumber);
+                    resolve(false);
+                }
+            });
+        };
+
+        /* v1.12.1 (2e-F13): activeDownloads keys RESOURCES (objects), not URL
+         * strings — duplicate URLs across hosts no longer collapse. */
+        const activeDownloads = new Set();
+
+        const startDownload = resource => {
+            const url = resource.url;
+            const ellipsedUrl = h.limit(url, 80);
+            const host = resource.host;
+            const isTurbo = isTurboFamilyUrl(url);
+            const isBunkr = isBunkrUrl(url);
+            const isGoFile = isGoFileUrl(url);
+            const isPixeldrain = isPixeldrainUrl(url);
+            const isFilester = isFilesterUrl(url);
+            /* v1.12.1 (2e-F02): the no-progress stall threshold replaces the
+             * hard 60 s timeout (which killed every transfer slower than 60 s —
+             * 500 MB–1.6 GB files) and the dead interval (which could never
+             * fire before that timeout). */
+            const stallMs = isTurbo ? TURBO_STALL_MS : 30000;
+            let switchedToDirect = false;
+            let recoveryArmed = false;
+            let abortReason = null;
+            const progress = { old: 0, updated: 0, intervalId: null, armedAt: Date.now() };
+
+            log.post.info(postId, `::Downloading::: ${url}`, postNumber);
+
+            const reflink = reflinkFor(resource);
+
+            /* The success path — filename derivation (host hint maps ride the
+             * segment-1 registries), folder-aware dedup naming (2e-F06), and
+             * the per-browser save arms (2e-F08: Firefox honors the Zipped
+             * checkbox now — per-file GM_download of the blob URL instead of
+             * the old always-zip behavior). */
+            const finishSuccessfulLoad = response => {
+                completed++;
+                successful++;
+                h.ui.setText(statusLabel.el, `${completed} / ${totalDownloadable} 🢒 ${ellipsedUrl}`);
+                h.ui.setElProps(statusLabel.el, { color: '#67E8F9' });
+                h.ui.setElProps(totalPB, { width: `${(completed / totalDownloadable) * 100}%` });
+
+                // Determine filename
+                let basename = resource._filename || h.basename(resource.url).replace(/\?.*/, '').replace(/#.*/, '');
+
+                // Host-specific filename processing
+                if (resource.url.includes('https://simpcity.su/attachments/')) {
+                    basename = basename.replace(/(.*)-(.{3,4})\.\d*$/i, '$1.$2');
+                } else if (resource.url.includes('kemono.su') || resource.url.includes('kemono.cr')) {
+                    basename = basename.replace(/(.*)\?f=(.*)/, '$2').replace('%20', ' ');
+                } else if (resource.url.includes('cyberdrop')) {
+                    const hint = cyberdropNameByUrl.get(resource.url);
+                    if (hint) {
+                        basename = hint;
+                    } else {
+                        let cext = h.ext(basename);
+                        if (cext) {
+                            basename = h.fnNoExt(basename).replace(/(\.\w{3,6}-\w{8}$)|(-\w{8}$)/, '') + `.${cext}`;
+                        }
+                    }
+                } else if (resource.url.includes('bunkr')) {
+                    const hint = bunkrNameByUrl.get(resource.url) || bunkrNameByUrl.get(String(resource.url).split('?')[0]);
+                    if (hint) {
+                        const hintExt = h.ext(hint);
+                        const baseExt = h.ext(basename);
+                        basename = hintExt ? hint : `${hint}${baseExt ? `.${baseExt}` : ''}`;
+                    }
+                } else if (isFilester) {
+                    const hint = filesterNameByUrl.get(resource.url);
+                    if (hint) basename = hint;
+                }
+
+                let ext = h.ext(basename);
+                if (!ext && resource._mimeType) {
+                    switch (resource._mimeType.split(';')[0].trim()) {
+                        case 'image/jpeg':
+                            ext = 'jpg'; break;
+                        case 'image/png':
+                            ext = 'png'; break;
+                        case 'image/gif':
+                            ext = 'gif'; break;
+                        case 'video/mp4':
+                            ext = 'mp4'; break;
+                        default:
+                            ext = 'unknown';
+                    }
+                    if (ext !== 'unknown') {
+                        basename = `${h.fnNoExt(basename)}.${ext}`;
+                    }
+                }
+
+                /* v1.12.1 (2e-F06): folder-aware duplicate naming — the old
+                 * basename-only Set false-suffixed (n) across DIFFERENT folders;
+                 * the key is now the in-zip path. */
+                const folder = resource.folderName || '';
+                const inFolder = !postSettings.flatten && folder && folder.trim() !== '';
+                const pathKeyOf = name => (inFolder ? `${folder}/${name}` : name).toLowerCase();
+                let finalBasename = basename;
+                let counter = 1;
+                while (downloadedFilenames.has(pathKeyOf(finalBasename))) {
+                    finalBasename = `${h.fnNoExt(basename)} (${counter}).${ext}`;
+                    counter++;
+                }
+                downloadedFilenames.add(pathKeyOf(finalBasename));
+
+                let finalPathInZip = finalBasename;
+                if (inFolder) {
+                    finalPathInZip = `${folder}/${finalBasename}`;
+                }
+
+                log.separator(postId);
+                log.post.info(postId, `::Completed::: ${resource.url}`, postNumber);
+                if (inFolder) {
+                    log.post.info(postId, `::Saving as::: ${finalBasename} ::to:: ${folder}`, postNumber);
+                } else {
+                    log.post.info(postId, `::Saving as::: ${finalBasename}`, postNumber);
+                }
+
+                // Sanitize filename for various OS
+                finalPathInZip = finalPathInZip.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\uFFFF]/g, '').replace(/[\\\/:\*?"<>|]/g, settings.naming.invalidCharSubstitute);
+
+                if (!postSettings.zipped) {
+                    /* Chrome AND Firefox: per-file GM_download of the blob URL
+                     * (2e-F08 — Firefox honors the Zipped checkbox now; the
+                     * always-zip behavior was the lost lineage shape). */
+                    const blobUrl = typeof URL !== 'undefined' && URL.createObjectURL && response.response instanceof Blob
+                        ? URL.createObjectURL(response.response)
+                        : response.response;
+                    const revokeBlobUrl = () => {
+                        if (typeof blobUrl === 'string' && blobUrl.startsWith('blob:') && typeof URL.revokeObjectURL === 'function') {
+                            URL.revokeObjectURL(blobUrl);
+                        }
+                    };
+                    const saveName = isFF
+                        ? `${threadTitle.replace(/[\\\/]/g, settings.naming.invalidCharSubstitute)} #${postNumber} - ${finalBasename}`
+                        : `${threadTitle.replace(/[\\\/]/g, settings.naming.invalidCharSubstitute)}/${finalPathInZip}`;
+                    GM_download({
+                        url: blobUrl,
+                        name: saveName,
+                        onload: () => {
+                            revokeBlobUrl();
+                            resolve();
+                        },
+                        onerror: err => {
+                            revokeBlobUrl();
+                            log.post.error(postId, `Error writing file ${finalPathInZip} to disk: ${err.error} - ${err.details}`, postNumber);
+                            resolve();
+                        },
+                    });
+                } else {
+                    // Add to zip
+                    zip.file(finalPathInZip, response.response);
+                    zipFileCount++;
+                    resolve();
+                }
+            };
+
+            const downloadPromise = new Promise(resolve => {
+                const request = GM_xmlhttpRequest({
+                    url,
+                    headers: { Referer: reflink },
+                    responseType: 'blob',
+                    timeout: 7200000, // 2 h ultimate bound (see the comment below)
+                    /* v1.12.1 (2e-F02): the stall watchdog below owns PRIMARY
+                     * liveness (a fixed 60 s cap failed slow-but-healthy
+                     * transfers; the no-progress abort fails only dead ones).
+                     * The 2 h hard bound is the transport census's ultimate
+                     * ceiling: blob transfers are capped at ~1.6 GB by the
+                     * DIRECT switch (larger files never ride this transport),
+                     * and 1.6 GB at 2 Mbps completes inside the bound. */
+                    onreadystatechange: response => {
+                        if (response.readyState === 2) {
+                            // Extract filename from headers early
+                            let filenameMatch = response.responseHeaders.match(/(?<=filename\*?=([^;]+'')?").*?(?=")/i);
+                            if (!filenameMatch) { // Fallback for basic filename detection
+                                filenameMatch = response.responseHeaders.match(/(?<=filename=").*?(?=")/i);
+                            }
+                            // v1.11.1 (4-c F05): a bare '%' in the header value must not
+                            // abort filename detection — degrade to the raw token.
+                            const safeDecodeURIComponent = (s) => { try { return decodeURIComponent(s); } catch { return s; } };
+                            const dispositionFilename = filenameMatch ? safeDecodeURIComponent(filenameMatch[0]) : null;
+
+                            // Extract MIME type
+                            const mimeTypeMatch = response.responseHeaders.match(/(?<=content-type:\s).*$/i);
+                            const mimeType = mimeTypeMatch ? mimeTypeMatch[0] : null;
+
+                            if (!resource._filename) resource._filename = dispositionFilename;
+                            if (!resource._mimeType) resource._mimeType = mimeType;
+
+                            /* v1.12.1 (2e-F05): Bunkr maintenance placeholder
+                             * redirect — abort BEFORE the body lands. */
+                            if (isBunkr && !abortReason) {
+                                const loc = (response.responseHeaders.match(/(?<=location:\s)[^\r\n]+/i) || [''])[0].trim();
+                                const fu = String(response.finalUrl || '');
+                                if (/\/maint\.mp4(\?|$)/i.test(loc) || /\/maint\.mp4(\?|$)/i.test(fu)) {
+                                    abortReason = 'bunkr_maint';
+                                    recoveryArmed = true; // the onabort arm below owns the count
+                                    try { request.abort(); } catch (e) { console.debug('[Forums++] maint abort rejected:', e && e.message); }
+                                }
+                            }
+                        }
+                    },
+                    onprogress: response => {
+                        progress.updated = response.loaded;
+                        h.ui.setElProps(statusLabel.el, { color: '#00E5FF', fontWeight: 'normal' });
+                        const downloadedSizeInMB = (response.loaded / (1024 * 1024)).toFixed(2);
+                        const totalSizeInMB = (response.total !== -1 && response.total !== 0) ? (response.total / (1024 * 1024)).toFixed(2) : 'Unknown';
+
+                        h.ui.setText(
+                            statusLabel.el,
+                            `${completed + 1} / ${totalDownloadable} 🢒 ${host.name} 🢒 ${downloadedSizeInMB} MB / ${totalSizeInMB} MB  🢒 ${ellipsedUrl}`,
+                        );
+                        if (response.total !== -1 && response.total !== 0) {
+                            h.show(filePB);
+                            h.ui.setElProps(filePB, {
+                                width: `${(response.loaded / response.total) * 100}%`,
+                            });
+                        } else {
+                            h.ui.setElProps(filePB, { width: '0%' }); // Hide or reset if total is unknown
+                        }
+
+                        /* v1.12.1 (2e-F04): large-file DIRECT switches — the size
+                         * surfacing mid-download (GoFile/Pixeldrain/Filester) or the
+                         * Bunkr port-killer threshold hand off to GM_download. */
+                        if (!switchedToDirect && (isGoFile || isPixeldrain || isFilester) && response.total && response.total > BLOB_MAX_BYTES) {
+                            switchedToDirect = true;
+                            recoveryArmed = true;
+                            log.post.info(postId, `::Large file (${response.total} bytes > ~1.6GB) detected -> switch to DIRECT::: ${url}`, postNumber);
+                            try { request.abort(); } catch (e) { console.debug('[Forums++] large-file abort rejected:', e && e.message); }
+                            startDirectDownload(resource, response.total).then(() => resolve());
+                            return;
+                        }
+                        if (!switchedToDirect && isBunkr && response.total && response.total > BUNKR_DIRECT_MIN_BYTES) {
+                            switchedToDirect = true;
+                            recoveryArmed = true;
+                            log.post.info(postId, `::Bunkr large file (${response.total} bytes > 500MB) -> switch to DIRECT::: ${url}`, postNumber);
+                            try { request.abort(); } catch (e) { console.debug('[Forums++] bunkr-large abort rejected:', e && e.message); }
+                            startDirectDownload(resource, response.total).then(() => resolve());
+                            return;
+                        }
+                    },
+                    onload: response => {
+                        /* v1.12.1 (2e-F05): the onload guards — bad status,
+                         * HTML/maintenance bodies, and the verifyBunkrLinks
+                         * tiny-sniff (the checkbox's FIRST consumer — it was
+                         * rendered+tracked but never read before this round). */
+                        if (abortReason === 'bunkr_maint') return; // the onabort arm counted it
+
+                        const contentType = String((response.responseHeaders || '').match(/(?<=content-type:\s)[^\r\n]+/i)?.[0] || '');
+                        const isHtml = /text\/html|application\/xhtml\+xml/i.test(contentType);
+                        const badStatus = !response.status || response.status >= 400;
+
+                        const countFailure = reason => {
+                            completed++;
+                            h.ui.setElProps(statusLabel.el, { color: '#ff0055' });
+                            h.ui.setText(statusLabel.el, `${completed} / ${totalDownloadable} 🢒 ${ellipsedUrl}`);
+                            h.ui.setElProps(totalPB, { width: `${(completed / totalDownloadable) * 100}%` });
+                            log.post.error(postId, reason, postNumber);
+                            resolve();
+                        };
+
+                        if (isGoFile && (badStatus || isHtml)) {
+                            /* v1.12.1 (2e-F29): the GoFile soft-block gate — warm
+                             * the tab once per URL, retry once; a still-gated second
+                             * pass counts the failure. */
+                            if (!gofileWarmupAttempted.has(url)) {
+                                gofileWarmupAttempted.add(url);
+                                recoveryArmed = true;
+                                log.post.info(postId, `::GoFile gate -> warm-up tab (3s) then retry [1/2]::: ${url}`, postNumber);
+                                gofileWarmupOpenTab(url);
+                                setTimeout(() => { startDownload(resource).then(() => resolve()); }, 3000);
+                                return;
+                            }
+                            countFailure(`::GoFile failed (gate persisted after retry)::: ${url}`);
+                            return;
+                        }
+
+                        if (isBunkr) {
+                            const bunkrFinalUrl = String(response.finalUrl || '');
+                            const bunkrLoc = String((response.responseHeaders || '').match(/(?<=location:\s)[^\r\n]+/i)?.[0] || '');
+                            const isMaint = /\/maint\.mp4(\?|$)/i.test(bunkrFinalUrl) || /\/maint\.mp4(\?|$)/i.test(bunkrLoc);
+                            const blob = response.response;
+                            const size = blob && typeof blob.size === 'number' ? blob.size : 0;
+                            const tinyLimit = 32768;
+
+                            if (badStatus || isHtml || isMaint) {
+                                const reason = isMaint ? 'maintenance redirect (maint.mp4)' : (badStatus ? `HTTP ${response.status || 0}` : 'HTML/maintenance response');
+                                countFailure(`::Bunkr skipped (${reason})::: ${url}`);
+                                return;
+                            }
+
+                            /* The verifyBunkrLinks tiny-sniff — read the first 2 KB
+                             * of a suspiciously small non-HTML body for placeholder
+                             * markers before trusting it (async continuation owns
+                             * the settle). */
+                            if (postSettings.verifyBunkrLinks && size > 0 && size <= tinyLimit) {
+                                recoveryArmed = true;
+                                blob.text().then(t => {
+                                    const head = String(t || '').slice(0, 2048).toLowerCase();
+                                    return head.includes('<!doctype') ||
+                                        head.includes('<html') ||
+                                        head.includes('<head') ||
+                                        head.includes('<body') ||
+                                        head.includes('temporarily not available') ||
+                                        head.includes('maintenance') ||
+                                        head.includes('cloudflare');
+                                }).catch(e => {
+                                    console.debug('[Forums++] bunkr tiny-sniff read rejected:', e && e.message);
+                                    return false;
+                                }).then(isPlaceholder => {
+                                    if (isPlaceholder) {
+                                        countFailure(`::Bunkr skipped (tiny HTML placeholder)::: ${url}`);
+                                    } else {
+                                        finishSuccessfulLoad(response);
+                                    }
+                                });
+                                return;
+                            }
+
+                            finishSuccessfulLoad(response);
+                            return;
+                        }
+
+                        if (badStatus) {
+                            countFailure(`::Download failed (HTTP ${response.status || 0})::: ${url}`);
+                            return;
+                        }
+
+                        finishSuccessfulLoad(response);
+                    },
+                    onerror: err => {
+                        completed++;
+                        log.post.error(postId, `Download failed for ${url}: ${err.error} - ${err.details}`, postNumber);
+                        resolve();
+                    },
+                    ontimeout: () => {
+                        /* v1.12.1: the 2 h ultimate bound fired — count it like
+                         * any other failure (the stall watchdog should have
+                         * caught genuinely dead transfers long before). */
+                        completed++;
+                        log.post.error(postId, `Download timed out (2h hard bound) for ${url}`, postNumber);
+                        resolve();
+                    },
+                    /* v1.12.1 (2e-F05): abort completion handler — recovery-owned
+                     * aborts (DIRECT switch, maint, retries) are counted by their
+                     * own arms; a stray abort counts as a failure. */
+                    onabort: () => {
+                        if (recoveryArmed || switchedToDirect) return;
+                        completed++;
+                        log.post.error(postId, `Download aborted for ${url}`, postNumber);
+                        resolve();
+                    },
+                });
+
+                /* v1.12.1 (2e-F02): the no-progress stall watchdog — aborts when
+                 * the byte counter stalls for stallMs; turbo URLs re-sign and
+                 * retry (≤3) then fall back to DIRECT (≤1); everything else
+                 * fails visibly. The interval self-clears on stall and the
+                 * .finally below clears it on settle (guard+lifecycle pair). */
+                /* v1.12.1: the watchdog's own time ceiling — the transport's
+                 * 2 h hard bound backstops it; this arm keeps the interval
+                 * from outliving a wedged request handle. */
+                const WATCHDOG_MAX_MS = 7260000; // 2 h + 1 min > the transport bound
+                progress.intervalId = setInterval(async () => {
+                    if (switchedToDirect || recoveryArmed) {
+                        clearInterval(progress.intervalId);
+                        return;
+                    }
+                    if (Date.now() - progress.armedAt > WATCHDOG_MAX_MS) {
+                        clearInterval(progress.intervalId);
+                        return;
+                    }
+                    if (progress.old === progress.updated) {
+                        try { request.abort(); } catch (e) { console.debug('[Forums++] stall abort rejected:', e && e.message); }
+                        clearInterval(progress.intervalId);
+                        recoveryArmed = true;
+
+                        if (isTurbo) {
+                            const turboId = turboIdBySignedUrl.get(url) || turboIdBySignedUrl.get(String(url).split('?')[0]);
+                            const st = turboRetryState.get(url) || { resign: 0, direct: 0 };
+
+                            if (turboId && st.resign < TURBO_RESIGN_RETRIES) {
+                                st.resign++;
+                                turboRetryState.set(url, st);
+                                log.post.info(postId, `::Turbo stalled (no progress for ${Math.round(stallMs / 1000)}s) -> re-sign + retry [${st.resign}/${TURBO_RESIGN_RETRIES}]::: ${url}`, postNumber);
+
+                                try {
+                                    const newUrl = await xfpdTurboSignUrlWithTimeout(turboId, url, null);
+                                    if (newUrl) {
+                                        resource.url = newUrl;
+                                        turboIdBySignedUrl.set(newUrl, turboId);
+                                    }
+                                } catch (e) {
+                                    console.debug('[Forums++] turbo re-sign rejected:', e && e.message);
+                                }
+
+                                // Retry (even a plain retry sometimes works when re-sign failed).
+                                setTimeout(() => { startDownload(resource).then(() => resolve()); }, TURBO_RETRY_DELAY_MS);
+                                return;
+                            }
+
+                            if (st.direct < TURBO_DIRECT_FALLBACKS) {
+                                st.direct++;
+                                turboRetryState.set(url, st);
+                                log.post.info(postId, `::Turbo stalled (no progress for ${Math.round(stallMs / 1000)}s) -> DIRECT fallback (outside ZIP) [${st.direct}/${TURBO_DIRECT_FALLBACKS}]::: ${url}`, postNumber);
+                                startDirectDownload(resource).then(() => resolve());
+                                return;
+                            }
+
+                            completed++;
+                            h.ui.setElProps(statusLabel.el, { color: '#ff0055' });
+                            h.ui.setText(statusLabel.el, `${completed} / ${totalDownloadable} 🢒 ${ellipsedUrl}`);
+                            h.ui.setElProps(totalPB, { width: `${(completed / totalDownloadable) * 100}%` });
+                            log.post.error(postId, `::Turbo failed (stalled after retries)::: ${url}`, postNumber);
+                            resolve();
+                            return;
+                        }
+
+                        // Make stalls visible instead of silently counting a
+                        // failed download as complete.
+                        completed++;
+                        h.ui.setElProps(statusLabel.el, { color: '#ff0055' });
+                        h.ui.setText(statusLabel.el, `${completed} / ${totalDownloadable} 🢒 ${ellipsedUrl}`);
+                        h.ui.setElProps(totalPB, { width: `${(completed / totalDownloadable) * 100}%` });
+                        log.post.error(postId, `::Stalled/Failed::: ${url}`, postNumber);
+                        resolve();
+                    } else {
+                        progress.old = progress.updated;
+                    }
+                }, stallMs);
+            }).finally(() => {
+                if (progress.intervalId) clearInterval(progress.intervalId);
+                activeDownloads.delete(resource);
+            });
+
+            activeDownloads.add(resource);
+            resource._downloadPromise = downloadPromise;
+            return downloadPromise;
+        };
+
+        // Sequential batches; items within a batch run concurrently.
+        const runBatches = async () => {
+            for (const batch of batches) {
+                await Promise.all(batch.map(item => startDownload(item)));
+            }
+        };
+        pipelinePromise = runBatches();
     } else {
         log.post.info(postId, '::Skipping download::', postNumber);
     }
 
-    h.hide(statusLabel.container);
+    /* v1.12.1 (2e-F07): await the pipeline BEFORE the zip assembly — the old
+     * fire-and-forget GM_download path let the beforeunload guard drop while
+     * writes were still pending, and the zip gate below needs the true file
+     * count. */
+    await pipelinePromise;
+
+    /* v1.12.1 (2e-F17): the final summary — an incomplete run keeps an amber
+     * X / Y label visible instead of vanishing silently. */
     h.hide(filePB);
     h.hide(totalPB);
+    if (!postSettings.skipDownload && totalDownloadable > 0 && completed < totalDownloadable) {
+        h.ui.setElProps(statusLabel.el, { color: '#e8a838', fontWeight: 'bold' });
+        h.ui.setText(statusLabel.el, `${completed} / ${totalDownloadable} downloaded`);
+        h.show(statusLabel.container);
+    } else {
+        h.hide(statusLabel.container);
+    }
 
     setProcessing(false, postId);
 
-    if (totalDownloadable > 0) {
+    /* v1.12.1 (2e-F29): restore the operator's own gofile.io accountToken
+     * cookie once no post is still processing (the guest mirror is undone). */
+    if (!processing.find(p => p.processing)) {
+        await gofileRestoreCookie();
+    }
+
+    /* v1.12.1 (2e-F07): the zip gate — needZipBlob is true only when the zip
+     * actually carries files, or the log/links artifacts were requested; an
+     * all-DIRECT or all-failed run no longer downloads an empty archive. */
+    const needZipBlob = postSettings.generateLog || postSettings.generateLinks || (postSettings.zipped && zipFileCount > 0);
+
+    if (totalDownloadable > 0 && needZipBlob) {
         let title = threadTitle.replace(/[\\\/]/g, settings.naming.invalidCharSubstitute);
         const filename = customFilename || `${title} #${postNumber}.zip`;
 
         log.separator(postId);
-        log.post.info(postId, `::Preparing zip::`, postNumber);
+        log.post.info(postId, `::Preparing zip (${zipFileCount} file(s))::`, postNumber);
 
         if (postSettings.generateLog) {
             log.post.info(postId, `::Generating log file::`, postNumber);
@@ -5917,31 +6392,40 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
             );
         }
 
-        let blob = await zip.generateAsync({ type: 'blob' });
+        /* v1.12.1 (2e-F07): JSZip assembly failures are caught and logged — a
+         * raw throw here used to abort the completion callbacks below. */
+        let blob = null;
+        try {
+            blob = await zip.generateAsync({ type: 'blob' });
+        } catch (zipError) {
+            log.post.error(postId, `Zip assembly failed: ${zipError.message}`, postNumber);
+        }
 
-        if (isFF) {
-            saveAs(blob, filename);
-        } else if (postSettings.zipped) {
-            GM_download({
-                url: URL.createObjectURL(blob),
-                name: `${title}/#${postNumber}.zip`,
-                onload: () => URL.revokeObjectURL(blob),
-                onerror: response => {
-                    log.post.error(postId, `Error writing zipped file to disk: ${response.error} - ${response.details}`, postNumber);
-                    console.log('Trying to write using FileSaver.js...');
-                    saveAs(blob, filename); // Fallback for GM_download errors
-                },
-            });
-        } else if (!postSettings.zipped && (postSettings.generateLog || postSettings.generateLinks)) {
-            // Only generate a zip with logs/links if not zipping all files, for non-FF
-            GM_download({
-                url: URL.createObjectURL(blob),
-                name: `${title}/#${postNumber}/generated.zip`, // Put it in a subfolder
-                onload: () => URL.revokeObjectURL(blob),
-                onerror: response => {
-                    log.post.error(postId, `Error writing generated.zip to disk: ${response.error} - ${response.details}`, postNumber);
-                },
-            });
+        if (blob) {
+            if (isFF) {
+                saveAs(blob, filename);
+            } else if (postSettings.zipped && zipFileCount > 0) {
+                GM_download({
+                    url: URL.createObjectURL(blob),
+                    name: `${title}/#${postNumber}.zip`,
+                    onload: () => URL.revokeObjectURL(blob),
+                    onerror: response => {
+                        log.post.error(postId, `Error writing zipped file to disk: ${response.error} - ${response.details}`, postNumber);
+                        console.log('Trying to write using FileSaver.js...');
+                        saveAs(blob, filename); // Fallback for GM_download errors
+                    },
+                });
+            } else if (postSettings.generateLog || postSettings.generateLinks) {
+                // Only generate a zip with logs/links when not zipping all files
+                GM_download({
+                    url: URL.createObjectURL(blob),
+                    name: `${title}/#${postNumber}/generated.zip`, // Put it in a subfolder
+                    onload: () => URL.revokeObjectURL(blob),
+                    onerror: response => {
+                        log.post.error(postId, `Error writing generated.zip to disk: ${response.error} - ${response.details}`, postNumber);
+                    },
+                });
+            }
         }
     } else {
         setProcessing(false, postId); // Ensure processing flag is reset even if no files were downloaded
@@ -5979,7 +6463,9 @@ const addDuplicateTabLink = postEl => {
     if (anchor) {
         anchor.style.color = 'rgb(138, 138, 138)';
         anchor.setAttribute('target', '_blank');
-        anchor.setAttribute('href', window.location.href); // Set href to current page to open duplicate
+        /* v1.12.1 (2e-F19): keep the cloned post anchor's own href (the
+         * #post-<id> scroll context) — only the target flips to a new tab;
+         * overwriting with location.href lost the anchor. */
         anchor.querySelector('time')?.remove(); // Use optional chaining
         anchor.parentNode.style.marginLeft = '10px';
         anchor.append(span);
@@ -6237,11 +6723,81 @@ const selectedPosts = [];
                 html += ui.forms.createCheckbox(`config-download-post-${postId}`, `Post #${h.escapeHTML(postNumber)} ${summary}`, false);
             });
 
+            /* v1.12.1 (round 6, 2e-F24/2d-K02): the cached-post search — the
+             * ThreadCache read side's FIRST consumer (the getters were exposed
+             * but never called before this round; the docs' search claim was
+             * false). Searches the ≤10 cached surrounding pages of THIS thread
+             * (in-thread scope — not cross-thread) and jumps to matches. */
             html = `${ui.forms.createRow(ui.forms.createLabel('Post Selection'))} ${html}`;
+            html += ui.forms.createRow(`<div style="margin-top:6px">
+                <input id="xfpd-cache-search" type="text" placeholder="Search cached posts (this thread)" autocomplete="off"
+                    style="width:92%;background:${color};color:#f4f4f5;border:1px solid rgba(0,229,255,0.35);border-radius:4px;padding:4px 6px;font-size:11px;font-family:'JetBrains Mono',monospace" />
+                <div id="xfpd-cache-search-results" style="margin-top:4px;max-height:180px;overflow-y:auto;font-size:11px"></div>
+            </div>`);
             ui.tooltip(btnDownloadPage, ui.forms.config.page.createForm(color, html), {
                 placement: 'bottom',
                 interactive: true,
                 onShown: () => {
+                    // Wire the cached-post search (once per tooltip render).
+                    (() => {
+                        const searchInput = h.element('#xfpd-cache-search');
+                        const resultsBox = h.element('#xfpd-cache-search-results');
+                        if (!searchInput || !resultsBox || searchInput.dataset.wired === 'true') return;
+                        searchInput.dataset.wired = 'true';
+
+                        let searchDebounce = null;
+
+                        const runSearch = async () => {
+                            const query = String(searchInput.value || '').trim().toLowerCase();
+                            resultsBox.replaceChildren();
+                            if (query.length < 2) {
+                                const pages = await ThreadCache.listCachedPageNumbers();
+                                const currentPageCount = (await ThreadCache.getCachedPage(parsers.thread.parsePost(h.elements('.message-attribution-opposite')[0])?.pageNumber || 1)).length;
+                                resultsBox.textContent = pages.length
+                                    ? `${pages.length} cached page(s) · ${currentPageCount} post(s) on this page's cache entry`
+                                    : 'No cached pages yet (caching runs after page load)';
+                                return;
+                            }
+
+                            const allPosts = await ThreadCache.getAllCachedPosts();
+                            const matches = allPosts
+                                .filter(p => (p.textContent || '').toLowerCase().includes(query))
+                                .slice(0, 10);
+
+                            if (!matches.length) {
+                                resultsBox.textContent = `No matches for "${query}" in the cached pages.`;
+                                return;
+                            }
+
+                            for (const match of matches) {
+                                const line = document.createElement('div');
+                                line.style.marginBottom = '3px';
+                                const link = document.createElement('a');
+                                link.href = `#post-${match.postId}`;
+                                link.style.color = '#67E8F9';
+                                link.style.textDecoration = 'none';
+                                const snippet = h.escapeHTML(h.limit(String(match.textContent || '').replace(/\s+/g, ' ').trim(), 48));
+                                link.textContent = `#${match.postNumber} (p.${match.pageNumber}): ${snippet}`;
+                                link.addEventListener('click', () => {
+                                    btnDownloadPage._tippy?.hide();
+                                });
+                                line.appendChild(link);
+                                resultsBox.appendChild(line);
+                            }
+                        };
+
+                        searchInput.addEventListener('input', () => {
+                            if (searchDebounce) clearTimeout(searchDebounce);
+                            searchDebounce = setTimeout(() => {
+                                searchDebounce = null;
+                                runSearch().catch(e => console.debug('[Forums++] cache search rejected:', e && e.message));
+                            }, 250);
+                        });
+
+                        runSearch().catch(e => console.debug('[Forums++] cache search initial render rejected:', e && e.message));
+                    })();
+
+
                     parsedPosts
                         .filter(p => p.parsedHosts.length)
                         .forEach(post => {

@@ -1,32 +1,33 @@
-# Forums++ · v1.12.0
+# Forums++ · v1.12.1
 
 > Forum power-user workstation — `forums` family · [suite 4ndr0666tools](../INDEX.md)
 
 ## Mission
 
-Forums++ is the heavy machinery for forum work sessions: powerful bulk downloading with per-thread indexing, link checking (alive/dead classification), and archival, driven from a UI that treats a whole subforum as a workspace rather than a page at a time. It composes with Forum Link Xtractor and Confirmation Bypass — where those remove friction, Forums++ industrializes the result.
+Forums++ is the heavy machinery for forum work sessions: bulk downloading across the full file-host menagerie (40+ host signatures with per-host resolvers — sign APIs, CF bridges, warm-up tabs, password albums), driven from a per-post config form and a page-level batch selector. The round-6 lineage restoration brought back the whole resolution layer the consolidation had lost: goonbox, turbo/saint2, redgifs users, pornhub, filester, the live gofile/cyberdrop/bunkr API generations. It composes with Forum Link Xtractor and Confirmation Bypass — where those remove friction, Forums++ industrializes the result.
 
 ## Scope
 
 | Dimension | Value |
 |---|---|
-| Version | `1.12.0` |
+| Version | `1.12.1` |
 | Matches | `https://simpcity.su/threads/*`, `https://simpcity.cr/threads/*`, `https://simpcity.is/threads/*`, `https://simpcity.cz/threads/*` (+6 more) |
 | Run-at | `document-start` |
-| Size | 335.5 KB · 7469 lines |
+| Size | 366.2 KB · 8025 lines |
 | Install | [dist/4ndr0tools - Forums++.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Forums%2B%2B.user.js) |
 
 ## Feature Inventory
 
-- Bulk thread downloading with queue control
-- Thread indexing and cross-thread search
-- Link checking with alive/dead/broken classification
-- Archival export
+- Bulk thread downloading with batch rules (turbo/bunkr serialize, ≤1 GoFile per batch)
+- No-progress stall watchdog with turbo re-sign and DIRECT large-file fallback
+- Bunkr link verification (maintenance/placeholder sniff on tiny responses)
+- Zip / log / links artifact export (zip skipped when empty)
+- In-thread cached-post search (≤10 surrounding pages, MRU-bounded thread cache)
 - setProcessing-safe UI state management (restored after the v1.3.0 regression)
 
 ## Settings & Persistence
 
-Queue, index, and archive preferences persist through GM storage.
+Per-post options are page-scoped (they reset on reload by design); the persistent GM keys are the redgifs token, the gofile website-token/account caches (24 h TTL), and the bounded thread cache.
 
 ## Permissions (OPSEC)
 

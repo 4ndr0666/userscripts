@@ -169,6 +169,12 @@ const RECONCILED_NAMES = {
          * authorized by the operator's standing round-6 directive (zero dead
          * code); the anchor machine-checks the successor surface. */
         "cyberdrop_helper": {"note": "removed as superseded dead code (WO-01 round 6): the legacy /api/f retry ladder is replaced by the api.cyberdrop.cr info→auth→direct ladder + warm-up retries (lineage L4782-5291 port)", "anchor": {"file": "canon/_sovereign/4ndr0tools - Forums++.user.js", "mustContain": ["cyberdropWarmupOnce", "api/file/auth/"]}},
+        /* WO-01 round-6 segment 2: processQueue removed — the URL-keyed
+         * while-loop scheduler is replaced by the pre-built batch array
+         * (lineage batch rules) + runBatches()/startDownload(); the old
+         * Promise.race deref threw on rewritten URLs and duplicate URLs
+         * collapsed in the URL-keyed Set. */
+        "processQueue": {"note": "removed as superseded (WO-01 round 6 segment 2): the batch-array + runBatches()/startDownload() pipeline replaces the URL-keyed while-loop scheduler", "anchor": {"file": "canon/_sovereign/4ndr0tools - Forums++.user.js", "mustContain": ["const runBatches", "startDownload(resource)"]}},
     },
     "Akasha Silence": {
         "applyNetworkHooks": {"note": "applyLocalHooks (renamed, suite v1.4.5) — the fetch/XHR/beacon defusing migrated to the NetHook v3 veto (__4NDR0_NET_API__.onRequest, kernel-owned wraps); the local installer keeps the WebSocket/WebRTC/worker pacifiers", "anchor": {"file": "canon/_merged/4ndr0tools - Akasha Silence.user.js", "mustContain": ["applyLocalHooks", "onRequest"]}},
@@ -902,7 +908,10 @@ async function gateD() {
          * strictly widened). */
         !fpp.includes("if (!props || props.status !== 'ok' || !props.data)") ||
         !fpp.includes("if (requiredPassword && !unlocked)") ||
-        !fpp.includes("clearInterval(requestProgress.intervalId);") ||
+        /* WO-01 round 6 (segment 2): the watchdog cleanup rides the
+         * per-download progress record now (the requestProgress shared
+         * record died with the restructure). */
+        !fpp.includes("if (progress.intervalId) clearInterval(progress.intervalId);") ||
         !lm2.includes("const spoilerCandidates =") ||
         !lm2.includes("const folderId = matches?.[1] || matches?.[2] || null;") ||
         !lm2.includes("hasRedirectLink(n)")
