@@ -34,6 +34,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { stripCommentsKeepStrings } from "./scan-kit.mjs";
 import { CURRENT_ROUND, roundLt } from "./census-round.mjs"; /* WO-01 round-1 (2-a F1): round derives from package.json — the hardcoded
  * "v1.7.2" left every G9 expiry check inert while the suite reached v1.8.2. */
 
@@ -118,27 +119,126 @@ function declaredConnects(src) {
  * variable urls (resolver-walker patterns), which left the observed-subset-
  * declared gate vacuously green for exactly the scripts with the largest
  * transport surfaces; the vacuity is now a printed number, and a script with
- * a live transport and ZERO declarations is flagged instead of skipped. */
+ * a live transport and ZERO declarations is flagged instead of skipped.
+ *
+ * WO-01 round 7 (7c F01/F02): the observation covers the FULL privileged-
+ * transport form family — GM_download (an @connect-gated transport with NO
+ * detection before: 13 invisible sites), aliased callees (const http =
+ * GM_xmlhttpRequest → http(...) AND http.get/post/base(...) method calls —
+ * Forums++'s primary resolver transport sat behind one), non-object first
+ * args (GM_xmlhttpRequest(opts), GM_download(details)), and option bodies
+ * of ANY size (the lazy {0,900} window dropped >900-char bodies and
+ * truncated at nested braces). The scan runs on the strings-kept
+ * comment-stripped view — comment mentions were counted as dispatches (5
+ * sites) — with definition sites excluded (\b-boundary kills the _gmFetch
+ * prefix match; function/method definition shapes are skipped). NOT
+ * codeOnly: that view blanks string CONTENTS, which is exactly what this
+ * census extracts. */
 function dispatchSiteCounts(src) {
+    const view = stripCommentsKeepStrings(src);
     let literal = 0;
     let variable = 0;
-    let m;
-    const gmAny = /gmFetch\s*\(/g;
-    while ((m = gmAny.exec(src)) !== null) {
-        const rest = src.slice(m.index + m[0].length);
-        if (/^\s*['"`]/.test(rest)) literal++;
-        else variable++;
+
+    /* From a call-head's '(': skip spaces; a '{' starts the option object
+     * (brace-depth-scanned to its match — no size window); a quote is a
+     * literal argument; anything else is a variable/opts-arg site. */
+    const argStart = (headIndex) => {
+        let i = headIndex;
+        while (i < view.length && /\s/.test(view[i])) i++;
+        return i;
+    };
+    const objectBodyAt = (i) => {
+        if (view[i] !== '{') return null;
+        let depth = 0;
+        let j = i;
+        for (; j < view.length; j++) {
+            if (view[j] === '{') depth++;
+            else if (view[j] === '}') { depth--; if (depth === 0) break; }
+        }
+        return depth === 0 ? view.slice(i, j + 1) : view.slice(i, j + 1);
+    };
+    /* X.base('GET', url, ...) — the ALIAS base-method's first arg is the
+     * HTTP verb; the URL is the SECOND. Returns the second arg's index, or
+     * -1 when the first arg is not a quoted verb (fall back to arg-1). */
+    const argAfterFirst = (headIndex) => {
+        const i = argStart(headIndex);
+        if (view[i] === '\'' || view[i] === '"' || view[i] === '`') {
+            const q = view[i];
+            let j = i + 1;
+            while (j < view.length && view[j] !== q) j++;
+            let k = j + 1;
+            while (k < view.length && /\s/.test(view[k])) k++;
+            if (view[k] === ',') return argStart(k + 1);
+        }
+        return -1;
+    };
+    const classifyCall = (headIndex, isVerbFirst) => {
+        let at = headIndex;
+        if (isVerbFirst) {
+            const second = argAfterFirst(headIndex);
+            if (second < 0) { variable++; return; }
+            at = second;
+        }
+        const i = argStart(at);
+        if (view[i] === '{') {
+            const body = objectBodyAt(i);
+            if (body && /url\s*:\s*['"`]/.test(body)) literal++;
+            else variable++;
+        } else if (view[i] === '\'' || view[i] === '"' || view[i] === '`') {
+            literal++;
+        } else {
+            variable++;
+        }
+    };
+
+    const callees = [/\bgmFetch\s*\(/g, /\bGM_download\s*\(/g, /\bGM(?:_xmlhttpRequest|\.\s*xmlHttpRequest)\s*\(/g];
+
+    /* Alias pre-pass: const X = GM_xmlhttpRequest / GM_download /
+     * GM.xmlHttpRequest — X(...) and X.get/post/put/head/base/fetch(...)
+     * are privileged dispatches through the alias. */
+    const aliasRe = /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*GM(?:_xmlhttpRequest|_download|\.\s*xmlHttpRequest)\b/g;
+    const aliases = new Set();
+    let am;
+    while ((am = aliasRe.exec(view)) !== null) aliases.add(am[1]);
+    for (const alias of aliases) {
+        const a = alias.replace(/\$/g, "\\$");
+        callees.push(new RegExp(`\\b${a}\\s*\\(|\\b${a}\\s*\\.\\s*(?:get|post|put|head|base|fetch)\\s*\\(`, "g"));
     }
-    const xhrRe = /GM(?:_xmlhttpRequest|\.\s*xmlHttpRequest)\s*\(\s*\{([\s\S]{0,900}?)\}/g;
-    while ((m = xhrRe.exec(src)) !== null) {
-        if (/url\s*:\s*['"`]/.test(m[1])) literal++;
-        else variable++;
+
+    for (const re of callees) {
+        let m;
+        re.lastIndex = 0;
+        while ((m = re.exec(view)) !== null) {
+            /* definition shapes are never dispatches: `function gmFetch(...)`,
+             * method shorthand `gmFetch(args) {`, `async gmFetch(args) {`. */
+            const before = view.slice(Math.max(0, m.index - 14), m.index);
+            if (/(?:async\s+)?function\s*$/.test(before)) continue;
+            const head = m.index + m[0].length;
+            const i = argStart(head);
+            const body = view[i] === '{' ? objectBodyAt(i) : null;
+            const parenClose = (() => {
+                let depth = 0;
+                let j = m.index + m[0].length - 1; /* at the '(' */
+                for (; j < view.length; j++) {
+                    if (view[j] === '(') depth++;
+                    else if (view[j] === ')') { depth--; if (depth === 0) return j; }
+                }
+                return -1;
+            })();
+            if (parenClose > 0 && /^\s*\{/.test(view.slice(parenClose, parenClose + 4))) {
+                /* `name(args) {` — method-shorthand definition (a call followed
+                 * by a bare block is not a shape the corpus produces). */
+                continue;
+            }
+            classifyCall(head, /\.base\s*\($/.test(m[0]));
+        }
     }
     return { literal, variable };
 }
 
 /* observed hosts from privileged dispatch literals */
 function observedHosts(src) {
+    const view = stripCommentsKeepStrings(src);
     const hosts = [];
     const pushLiteral = (lit) => {
         if (!lit) return;
@@ -154,17 +254,82 @@ function observedHosts(src) {
             hosts.push(h);
         }
     };
+    const argStart = (headIndex) => {
+        let i = headIndex;
+        while (i < view.length && /\s/.test(view[i])) i++;
+        return i;
+    };
+    const objectBodyAt = (i) => {
+        if (view[i] !== '{') return null;
+        let depth = 0;
+        let j = i;
+        for (; j < view.length; j++) {
+            if (view[j] === '{') depth++;
+            else if (view[j] === '}') { depth--; if (depth === 0) break; }
+        }
+        return view.slice(i, j + 1);
+    };
+    const pushUrlFromBody = (body) => {
+        if (!body) return;
+        const um = body.match(/url\s*:\s*(['"`])([^"`$]*)\1/);
+        if (um) { pushLiteral(um[2]); return; }
+        const um2 = body.match(/url\s*:\s*(['"`])([^"`]*)\1/);
+        if (um2) pushLiteral(um2[2]);
+    };
+    const pushQuoteAt = (i) => {
+        const q = view[i];
+        let j = i + 1;
+        while (j < view.length && view[j] !== q) j++;
+        pushLiteral(view.slice(i + 1, j));
+    };
+    /* X.base('GET', url, ...) — skip the verb, extract the second arg. */
+    const argAfterFirst = (headIndex) => {
+        const i = argStart(headIndex);
+        if (view[i] === '\'' || view[i] === '"' || view[i] === '`') {
+            const q = view[i];
+            let j = i + 1;
+            while (j < view.length && view[j] !== q) j++;
+            let k = j + 1;
+            while (k < view.length && /\s/.test(view[k])) k++;
+            if (view[k] === ',') return argStart(k + 1);
+        }
+        return -1;
+    };
+
     /* gmFetch( 'literal' | `tpl` — first-arg position */
-    const gmRe = /gmFetch\s*\(\s*(['"`])([^'"`)]*)\1/g;
+    const gmRe = /\bgmFetch\s*\(/g;
     let m;
-    while ((m = gmRe.exec(src)) !== null) pushLiteral(m[2]);
-    /* GM_xhr option objects: url: 'literal' */
-    const xhrRe = /GM(?:_xmlhttpRequest|\.\s*xmlHttpRequest)\s*\(\s*\{([\s\S]{0,900}?)\}/g;
-    while ((m = xhrRe.exec(src)) !== null) {
-        const um = m[1].match(/url\s*:\s*(['"`])([^'"`$]*)\1/);
-        if (um) pushLiteral(um[2]);
-        const um2 = m[1].match(/url\s*:\s*(['"`])([^'"`]*)\1/);
-        if (!um && um2) pushLiteral(um2[2]);
+    while ((m = gmRe.exec(view)) !== null) {
+        const i = argStart(m.index + m[0].length);
+        if (view[i] === '\'' || view[i] === '"' || view[i] === '`') pushQuoteAt(i);
+    }
+
+    /* GM_xhr / GM_download option objects and bare-literal forms; aliased
+     * callees (const http = GM_xmlhttpRequest) — the alias's object calls,
+     * bare literals, and .get/.post-style method calls (7c F01). */
+    const aliasRe = /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*GM(?:_xmlhttpRequest|_download|\.\s*xmlHttpRequest)\b/g;
+    const aliases = new Set();
+    let am;
+    while ((am = aliasRe.exec(view)) !== null) aliases.add(am[1]);
+    const calleeRes = [/\bGM_download\s*\(/g, /\bGM(?:_xmlhttpRequest|\.\s*xmlHttpRequest)\s*\(/g];
+    for (const alias of aliases) {
+        const a = alias.replace(/\$/g, "\\$");
+        calleeRes.push(new RegExp(`\\b${a}\\s*\\(|\\b${a}\\s*\\.\\s*(?:get|post|put|head|base|fetch)\\s*\\(`, "g"));
+    }
+    for (const re of calleeRes) {
+        re.lastIndex = 0;
+        while ((m = re.exec(view)) !== null) {
+            const before = view.slice(Math.max(0, m.index - 14), m.index);
+            if (/(?:async\s+)?function\s*$/.test(before)) continue;
+            let i = argStart(m.index + m[0].length);
+            if (/\.base\s*\($/.test(m[0])) {
+                const second = argAfterFirst(m.index + m[0].length);
+                if (second >= 0) i = second;
+                else continue; // non-literal verb: the url position is not statically reachable this way
+            }
+            if (view[i] === '{') pushUrlFromBody(objectBodyAt(i));
+            else if (view[i] === '\'' || view[i] === '"' || view[i] === '`') pushQuoteAt(i);
+        }
     }
     return hosts;
 }
@@ -273,7 +438,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToP
     const root = process.argv[2] ? path.resolve(process.argv[2]) : DEFAULT_ROOT;
     const noLedger = process.argv.includes("--no-ledger");
     const r = runConnectCensus(root, { noLedger });
-    console.log(`connect census: ${r.scripts} declaring scripts, ${r.connectDeclarations} @connect tokens, ${r.observedHosts} distinct observed literal hosts, ${r.dispatchLiteral} literal + ${r.dispatchVariable} variable-url dispatch sites (the variable split disclosed per 2d F01) — ${r.wildcardScripts} wildcard scripts (${r.ledgered} ledgered)${noLedger ? " [negative-proof mode: adjudication layer disabled]" : ""}`);
+    console.log(`connect census: ${r.scripts} declaring scripts, ${r.connectDeclarations} @connect tokens, ${r.observedHosts} distinct observed literal hosts, ${r.dispatchLiteral} literal + ${r.dispatchVariable} variable-url dispatch sites (the variable split disclosed per 2d F01; the form family per 7c F01: GM_download + aliases + opts-args) — ${r.wildcardScripts} wildcard scripts (${r.ledgered} ledgered)${noLedger ? " [negative-proof mode: adjudication layer disabled]" : ""}`);
     if (r.problems.length) {
         for (const p of r.problems) console.log(`  ✗ ${p}`);
         process.exit(1);

@@ -1084,7 +1084,7 @@ async function gateD() {
     if (connects.problems.length) {
         for (const cn of connects.problems) failures.push(`[D] connect census: ${cn}`);
     } else {
-        passes.push(`[D] connect census verified (${connects.scripts} declaring scripts, ${connects.connectDeclarations} @connect tokens, ${connects.observedHosts} observed literal hosts — ${connects.wildcardScripts} wildcards, all ledgered with justification + expiry)`);
+        passes.push(`[D] connect census verified (${connects.scripts} declaring scripts, ${connects.connectDeclarations} @connect tokens, ${connects.observedHosts} observed literal hosts — ${connects.dispatchLiteral} literal + ${connects.dispatchVariable} variable-url dispatch sites (the 7c F01 form family: GM_download + aliases + opts-args, comment/definition sites excluded) — ${connects.wildcardScripts} wildcards, all ledgered with justification + expiry)`);
     }
 
     // Co-install domain census (suite v1.5.1, GUP G12 — v1.5.0 verdict
