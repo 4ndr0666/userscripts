@@ -2,7 +2,7 @@
 // @name         4ndr0tools - Instagram++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666
-// @version      13.2.2
+// @version      13.2.3
 // @description  Tab-Bar + Dock Integration. Hotkey trigger (Alt+I). Ad-Blocking. Deep-Stack Recovery. Resilient cursor-based pagination. Stories support. Image/video download engine.
 // @license      MIT
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Instagram++.user.js
@@ -1492,7 +1492,16 @@ const __4NDR0_NET_API__ = (function () {
         log(`Harvested ${items.length} items via intercept.`);
 
         if (STATE.uiReady) renderBatch(items, cursor);
-        else STATE.pendingItems.push(...items);
+        else {
+            /* v13.2.3 (8c F03): the pre-UI buffer is bounded — hours of passive
+             * browsing without opening the ARES wall accumulated every
+             * intercepted timeline/reels/profile page's full media JSON
+             * indefinitely (the _seen FIFO bounds ids, not payload bytes); FIFO
+             * cap at 500, drop-oldest (a dropped item re-harvests if
+             * re-encountered after _seen's own 10k eviction). */
+            STATE.pendingItems.push(...items);
+            while (STATE.pendingItems.length > 500) STATE.pendingItems.shift();
+        }
 
         return { itemsHarvested: items.length, cursor, recognized: true };
     }

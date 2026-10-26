@@ -2,7 +2,7 @@
 // @name           4ndr0tools - LinkMasterΨ
 // @namespace      https://github.com/4ndr0666/userscripts
 // @author         4ndr0666
-// @version      6.3.3
+// @version      6.3.4
 // @description    Accurately decodes, previews, exports, validates and scrapes all links. (Dual MPV Support + Ψ IG Harvester + sexyforums premium-link unwrap + GitHub raw-URL harvest + Ψ2 forum deep-scrape engine)
 // @downloadURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
 // @updateURL      https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
@@ -1212,6 +1212,9 @@ const __4NDR0_NET_API__ = (function () {
     return api;
 })();
 
+// 6.3.4 (suite v1.15.0, WO-01 round 8): the promise family's last settle
+// path — a manager-aborted request never rejected gm_promise (timeout and
+// error were covered; the abort arm was the only missing reject).
 // 6.3.3 (suite v1.12.0, WO-01 round 4): truth batch — getPsiGlyphSVG
 // removed as dead code (zero call sites since the v6.2.3 element-built
 // twin; 4-c F06, reconciled in RECONCILED_NAMES) and the three decodeURI
@@ -3339,7 +3342,9 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
       gm_promise: (args) => new Promise((resolve, reject) => {
         // v6.3.0: hard 20 s default bound — no caller ever passed a timeout,
         // so the whole promise family was unbounded before.
-        GM_xmlhttpRequest({ ...args, timeout: args.timeout || 20000, onload: resolve, onerror: reject, ontimeout: reject });
+        // v6.3.4 (8c F07): a manager-aborted request settles too — the
+        // onabort arm was the only missing reject path.
+        GM_xmlhttpRequest({ ...args, timeout: args.timeout || 20000, onload: resolve, onerror: reject, ontimeout: reject, onabort: reject });
       }),
       base: (method, url, callbacks = {}, headers = {}, data = {}, responseType = "document") => h.promise((resolve, reject) => {
         let responseHeaders = null;

@@ -1,4 +1,4 @@
-# Watermark++ · v2.1.1
+# Watermark++ · v2.1.2
 
 > Perceptual watermark detection + removal — `sovereign platforms` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ Watermark++ detects and removes watermarks using perceptual-hash matching agains
 
 | Dimension | Value |
 |---|---|
-| Version | `2.1.1` |
+| Version | `2.1.2` |
 | Matches | `https://gemini.google.com/*`, `https://business.gemini.google/*` |
 | Run-at | `document-start` |
-| Size | 1262.0 KB · 15512 lines |
+| Size | 1265.0 KB · 15562 lines |
 | Install | [dist/4ndr0tools - Watermark++.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Watermark%2B%2B.user.js) |
 
 ## Feature Inventory

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Watermark++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      2.1.1
+// @version      2.1.2
 // @description  Security research and alignment testing only.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @author       4ndr0666
@@ -15,8 +15,20 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Watermark++.user.js
 // @license      MIT
 // ==/UserScript==
+// 2.1.2 (suite v1.15.0, WO-01 round 8): every transport settles (8c
+// F01/F02/F04). The GM transport had NO timeout and NO onabort — a stalled
+// connection or a manager abort left fetchBlobWithUserscriptRequest's
+// promise pending forever, and the clipboard hook awaits it before
+// originalWrite: Gemini's copy button wedged (the suite's sole outlier —
+// PM/Bunkr/IG/Gofile/Pixeldrain/Blob2URL all carry timeout+onabort+
+// settle-once). The bootstrap RPC fetch gains a 15 s AbortController
+// ceiling (the whole init sequence awaited it unbounded before
+// processingRuntime.initialize() — a hung same-origin fetch left the entire
+// feature set dead AND the beforeunload dispose wiring uninstalled; the
+// catch-and-continue degradation was designed but unreachable in bounded
+// time). The dormant fetchBlobDirect default gains its ok-check.
 // 2.0.2 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.1.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.1.2 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 (() => {
   // src/shared/actionContextCompat.js
@@ -11819,7 +11831,13 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.1.1 
     onProcessedBlobResolved = null,
     processClipboardImageBlob = null,
     fetchBlobDirect: fetchBlobDirect2 = async (url) => {
+      /* v2.1.2 (8c F04): the dormant-default arm aligned with its siblings —
+       * an ok-check before the blob (blob:/data: URLs are local, but the arm
+       * is reachable and must not hand a caller an error page as a blob). */
       const response = await fetch(url);
+      if (!response?.ok) {
+        throw new Error(`Failed to fetch image: ${response?.status || 0}`);
+      }
       return response.blob();
     },
     resolveBlobViaImageElement = ({ objectUrl, imageElement }) => createBlobFromObjectUrlImage(objectUrl, imageElement, targetWindow),
@@ -13138,6 +13156,12 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.1.1 
         method: "GET",
         url,
         responseType: "arraybuffer",
+        /* v2.1.2 (8c F01): the transport settles on EVERY path — no timeout
+         * meant ontimeout could never fire and a stalled connection pinned
+         * the promise forever (the clipboard hook awaits this before
+         * originalWrite: the copy button wedged); the 20 s bound + the
+         * onabort reject mirror the suite's kernel-less transport idiom. */
+        timeout: 20000,
         onload: (response) => {
           const status = Number(response?.status) || 0;
           if (status < 200 || status >= 300) {
@@ -13152,6 +13176,9 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.1.1 
         },
         ontimeout: () => {
           reject(new Error("Failed to fetch image: timeout"));
+        },
+        onabort: () => {
+          reject(new Error("Failed to fetch image: aborted"));
         }
       });
     });
@@ -13529,8 +13556,30 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.1.1 
     if (typeof effectiveFetch !== "function") {
       return false;
     }
+    /* v2.1.2 (8c F02): a bounded bootstrap — the RPC fetch had no ceiling, and
+     * the whole init sequence awaited it before processingRuntime.initialize()
+     * (page processor, process bridge, image replacement, the beforeunload
+     * dispose wiring): a hung same-origin fetch left the entire feature set
+     * dead AND the dispose wiring uninstalled. The catch-and-continue below is
+     * the designed degradation; it just needed to be reachable in bounded
+     * time. The controller prefers the page realm (cross-realm signals are
+     * not universally honored by the page's own fetch binding). */
+    const AbortCtor = (targetWindow && typeof targetWindow.AbortController === "function")
+      ? targetWindow.AbortController
+      : (typeof AbortController === "function" ? AbortController : null);
+    const controller = AbortCtor ? new AbortCtor() : null;
+    const abortTimer = controller
+      ? setTimeout(() => {
+        try { controller.abort(); } catch (abortError) {
+          logger?.debug?.("[Gemini Watermark Remover] Bootstrap abort rejected (already settled):", abortError);
+        }
+      }, 15000)
+      : null;
     try {
-      const response = await effectiveFetch(request.url, request.init);
+      const response = await effectiveFetch(request.url, controller
+        ? { ...request.init, signal: controller.signal }
+        : request.init);
+      if (abortTimer) clearTimeout(abortTimer);
       if (typeof onResponseText === "function" && response) {
         const responseText = typeof response.clone === "function" ? await response.clone().text() : await response.text();
         await onResponseText(responseText, {
@@ -13540,6 +13589,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.1.1 
       }
       return true;
     } catch (error) {
+      if (abortTimer) clearTimeout(abortTimer);
       logger?.warn?.("[Gemini Watermark Remover] Conversation history bootstrap failed:", error);
       return false;
     }

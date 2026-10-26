@@ -453,12 +453,12 @@
   {
    "file": "4ndr0tools - Filester++.user.js",
    "name": "4ndr0tools - Filester++",
-   "version": "7.6.1",
+   "version": "7.6.2",
    "description": "Dynamic stream extraction + folder enumeration for any media on Filester.me. Network proxy + glyph injection.",
    "family": "media & links",
-   "sha256": "f914cacf54474b5b9cb7b0948bf86d70a8ebae09f94718fc91e9cc7aeee01a36",
-   "lines": 1492,
-   "bytes": 83779,
+   "sha256": "b89f9f7da7bad6d608bf886603de34fb83e6c1f91707575aff75aa45853a49b3",
+   "lines": 1499,
+   "bytes": 84160,
    "matches": [],
    "includes": [
     "/^[^:]*?://filester\\.me/.*?$/",
@@ -875,12 +875,12 @@
   {
    "file": "4ndr0tools - Instagram++.user.js",
    "name": "4ndr0tools - Instagram++",
-   "version": "13.2.2",
+   "version": "13.2.3",
    "description": "Tab-Bar + Dock Integration. Hotkey trigger (Alt+I). Ad-Blocking. Deep-Stack Recovery. Resilient cursor-based pagination. Stories support. Image/video download engine.",
    "family": "sovereign platforms",
-   "sha256": "1334b8d9f6adb4fe0ff7292162a039d1a9e239a33ec4d3d6c9dff28ee318daaa",
-   "lines": 2588,
-   "bytes": 136590,
+   "sha256": "7b51883bc2c481a47e2775abf4fa2913b77fedf8498fca436f9679c178305ed5",
+   "lines": 2597,
+   "bytes": 137139,
    "matches": [
     "*://*.instagram.com/*"
    ],
@@ -911,12 +911,12 @@
   {
    "file": "4ndr0tools - LinkMasterΨ.user.js",
    "name": "4ndr0tools - LinkMasterΨ",
-   "version": "6.3.3",
+   "version": "6.3.4",
    "description": "Accurately decodes, previews, exports, validates and scrapes all links. (Dual MPV Support + Ψ IG Harvester + sexyforums premium-link unwrap + GitHub raw-URL harvest + Ψ2 forum deep-scrape engine)",
    "family": "media & links",
-   "sha256": "ca0fff5bf453f4cd46813075501eea07e945ddb599f9c9986a713027579a5334",
-   "lines": 5101,
-   "bytes": 263047,
+   "sha256": "892c29e9985c2cc4eba2d35cc7737e41c47e17818e4c91a8d93152da15bf4d80",
+   "lines": 5106,
+   "bytes": 263413,
    "matches": [
     "*://*/*",
     "*://*.instagram.com/*"
@@ -1175,12 +1175,12 @@
   {
    "file": "4ndr0tools - Prompt Master.user.js",
    "name": "4ndr0tools - Prompt Master",
-   "version": "28.8.0",
+   "version": "28.8.1",
    "description": "Google Flow prompt manager toolkit (works on any AI, just add url) - persisted unit ledger meters every generation click, organization engine: collections, saved views, favorites, ratings, archive, group-by, and insights for large prompt libraries, dedupe, media slideshow, ai prompt enhancer, auto gist syncing, hotkeys, much more.",
    "family": "sovereign platforms",
-   "sha256": "9b2e84e50f43cbe2d39bd86e996d18a2399d887ce448585c40192dc19cc858df",
-   "lines": 23960,
-   "bytes": 1167969,
+   "sha256": "f34e422038209b3e1abe5ffe52f78ec4be176811eb99c330998d2cdb176fc8ba",
+   "lines": 23968,
+   "bytes": 1168530,
    "matches": [
     "*://geminigen.ai/*",
     "*://gist.github.com/*",
@@ -1322,12 +1322,12 @@
   {
    "file": "4ndr0tools - Watermark++.user.js",
    "name": "4ndr0tools - Watermark++",
-   "version": "2.1.1",
+   "version": "2.1.2",
    "description": "Security research and alignment testing only.",
    "family": "sovereign platforms",
-   "sha256": "d41822d66bb7999db916729abd75c1717dc7690231f491961786a5c07d1cddf3",
-   "lines": 15512,
-   "bytes": 1292307,
+   "sha256": "4bb079d4a1e426ee101e56556485a2eb22e409193dcade46c1829551766ac869",
+   "lines": 15562,
+   "bytes": 1295328,
    "matches": [
     "https://gemini.google.com/*",
     "https://business.gemini.google/*"
@@ -1679,5 +1679,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "d109c0e6d343454f158676883d63f9283fd01f4dd15f811874242becc794a1e7"
+ "digest": "f918e0d3b45284ff0120c8ae77e51beafbdc1a170b4737e477daeb89f44d8c84"
 }
