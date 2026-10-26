@@ -7,8 +7,11 @@
 > three Anti-* ICC scripts folded into Akasha Silence at merge; Zai Exporter
 > arrived later), 9 BETA promotions (Stream Interceptor v1.3.0; Forum Link
 > Xtractor's second candidate promotion), 3 merges (Akasha Silence), 38
-> dist installables at 112,767 lines, 2,464 baseline units checked with 52
-> reconciled renames, and `npm run check` = build → inventory → qr-verify →
+> dist installables at 116,366 lines (the WO-01 round-6 lineage restoration:
+> Forums++ v1.11.2 → v1.12.1 carries the XenForoPostDownloader v3.23
+> machinery), 2,464 baseline units checked with 54
+> reconciled renames (52 + round 6's cyberdrop_helper/processQueue
+> supersession records), and `npm run check` = build → inventory → qr-verify →
 > style-audit → validate. The machine-checked truth is always the gate; this
 > prose is the story of how the suite came to be.**
 >
