@@ -112,6 +112,31 @@ function declaredConnects(src) {
     return out;
 }
 
+/* WO-01 round 6 (2d F01): dispatch-site observation split — sites whose url
+ * value is a VARIABLE cannot be literal-observed; they are counted and
+ * disclosed instead of silently passing. 10/15 GM-transport scripts dispatch
+ * variable urls (resolver-walker patterns), which left the observed-subset-
+ * declared gate vacuously green for exactly the scripts with the largest
+ * transport surfaces; the vacuity is now a printed number, and a script with
+ * a live transport and ZERO declarations is flagged instead of skipped. */
+function dispatchSiteCounts(src) {
+    let literal = 0;
+    let variable = 0;
+    let m;
+    const gmAny = /gmFetch\s*\(/g;
+    while ((m = gmAny.exec(src)) !== null) {
+        const rest = src.slice(m.index + m[0].length);
+        if (/^\s*['"`]/.test(rest)) literal++;
+        else variable++;
+    }
+    const xhrRe = /GM(?:_xmlhttpRequest|\.\s*xmlHttpRequest)\s*\(\s*\{([\s\S]{0,900}?)\}/g;
+    while ((m = xhrRe.exec(src)) !== null) {
+        if (/url\s*:\s*['"`]/.test(m[1])) literal++;
+        else variable++;
+    }
+    return { literal, variable };
+}
+
 /* observed hosts from privileged dispatch literals */
 function observedHosts(src) {
     const hosts = [];
@@ -167,7 +192,7 @@ export function runConnectCensus(root = DEFAULT_ROOT, opts = {}) {
      * the prior canon (v1.4.10 carried 9 unjustified wildcards; the ledger
      * is v1.5.1 work and lives in this tool, so the proof runs with it off). */
     const LEDGER = opts.noLedger ? [] : ADJUDICATED_WILDCARD;
-    const stats = { scripts: 0, connectDeclarations: 0, wildcardScripts: 0, observedHosts: 0, ledgered: 0 };
+    const stats = { scripts: 0, connectDeclarations: 0, wildcardScripts: 0, observedHosts: 0, ledgered: 0, dispatchLiteral: 0, dispatchVariable: 0 };
     const seenLedger = new Set();
 
     const targets = [];
@@ -186,7 +211,18 @@ export function runConnectCensus(root = DEFAULT_ROOT, opts = {}) {
     for (const [rel, abs] of targets) {
         const src = fs.readFileSync(abs, "utf8");
         const declared = declaredConnects(src);
-        if (!declared.length) continue;
+        const dispatches = dispatchSiteCounts(src);
+        stats.dispatchLiteral += dispatches.literal;
+        stats.dispatchVariable += dispatches.variable;
+        if (!declared.length) {
+            /* WO-01 round 6 (2d F01): the old bare `continue` made the
+             * observed-subset-declared gate vacuously green for zero-declaration
+             * scripts with live transports (the LFA bugmenot.com case). */
+            if (dispatches.literal > 0 || dispatches.variable > 0) {
+                problems.push(`${rel}: live privileged transport (${dispatches.literal} literal + ${dispatches.variable} variable dispatch sites) with ZERO @connect declarations — declare the endpoints (GUP G7 minimal privilege)`);
+            }
+            continue;
+        }
         stats.scripts++;
         stats.connectDeclarations += declared.length;
         const observed = [...new Set(observedHosts(src))];
@@ -237,10 +273,10 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToP
     const root = process.argv[2] ? path.resolve(process.argv[2]) : DEFAULT_ROOT;
     const noLedger = process.argv.includes("--no-ledger");
     const r = runConnectCensus(root, { noLedger });
-    console.log(`connect census: ${r.scripts} declaring scripts, ${r.connectDeclarations} @connect tokens, ${r.observedHosts} distinct observed literal hosts — ${r.wildcardScripts} wildcard scripts (${r.ledgered} ledgered)${noLedger ? " [negative-proof mode: adjudication layer disabled]" : ""}`);
+    console.log(`connect census: ${r.scripts} declaring scripts, ${r.connectDeclarations} @connect tokens, ${r.observedHosts} distinct observed literal hosts, ${r.dispatchLiteral} literal + ${r.dispatchVariable} variable-url dispatch sites (the variable split disclosed per 2d F01) — ${r.wildcardScripts} wildcard scripts (${r.ledgered} ledgered)${noLedger ? " [negative-proof mode: adjudication layer disabled]" : ""}`);
     if (r.problems.length) {
         for (const p of r.problems) console.log(`  ✗ ${p}`);
         process.exit(1);
     }
-    console.log("  ✓ every observed endpoint is declared; every wildcard is ledgered with justification + expiry");
+    console.log("  ✓ every observed endpoint is declared; every wildcard is ledgered with justification + expiry; every live-transport script declares at least one endpoint");
 }

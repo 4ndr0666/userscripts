@@ -948,12 +948,12 @@
   {
    "file": "4ndr0tools - Login Form Autofiller.user.js",
    "name": "4ndr0tools - Login Form Autofiller",
-   "version": "2.0.7",
+   "version": "2.0.8",
    "description": "It integrates BugMeNot into any login form (it retrieves all matching logins from bugmenot.com and autofills the login form)",
    "family": "ux utilities",
-   "sha256": "934e831a1e9e70ac5ece8b1eede365bc9db5b710b88934e07d4cd0c436016dc9",
-   "lines": 1025,
-   "bytes": 45417,
+   "sha256": "f97293e3d325f542c6c756c2d3de08c42eadc3b4569620a2b94ec0c24f929203",
+   "lines": 1031,
+   "bytes": 45822,
    "matches": [],
    "includes": [
     "http://*",
@@ -970,7 +970,9 @@
     "GM.xmlHttpRequest"
    ],
    "requires": [],
-   "connects": [],
+   "connects": [
+    "bugmenot.com"
+   ],
    "runAt": "document-idle",
    "noframes": true,
    "urls": {
@@ -1670,5 +1672,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "659581e22ee2518d738d992c63521ded33b86332bab4e46563304fea75ae4d38"
+ "digest": "53c630c2e4d180a5d0de73e26b1430d33d290770b32e97f0e9d1d4d3edcd49fd"
 }

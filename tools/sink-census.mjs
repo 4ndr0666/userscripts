@@ -102,6 +102,11 @@ const CLASSES = {
     fetchWrap:           /\.fetch\s*(?:\+)?=(?!=)/g,
     xhrWrap:             /\.prototype\.(?:open|send)\s*=(?!=)/g,
     tapOpenSend:         /(?<!prototype\.)\.(?:open|send)\s*=(?!=)/g,
+    /* WO-01 round 6: the page-API interposition family — URL.createObjectURL
+     * wraps and canvas prototype commit hooks (the Hailuo++ interception
+     * platform). Same adjudication contract as the wrap classes: count drift
+     * fails closed, every site is ledgered with justification + expiry. */
+    protoWrap:           /(?:URL\.createObjectURL|\.(?:prototype\.)?(?:toDataURL|toBlob))\s*=(?!=)/g,
 };
 
 /* WO-01 round-2 (6-a F06): bracket-form tripwires — el["innerHTML"] = … and
@@ -226,6 +231,14 @@ const ADJUDICATED = {
     "4ndr0tools - Forums++.user.js": {
         expiry: "v1.15.0",
         newFunction: { count: 1, reason: "gofile-wt-bridge (round 6): scoped Function evaluation of the live-fetched gofile.io/js/wt.obf.js — the site's own generateWT() token generator, called with navigator as the sole argument so the declaration stays local to the factory (never leaks to global); source verified by /generateWT/ content check before eval and cached 24 h in GM storage while the 4-hour time bucket inside generateWT() is recomputed on every call (lineage L3899-3947 port)" },
+    },
+    "4ndr0tools - Akasha Silence.user.js": {
+        expiry: "v1.15.0",
+        protoWrap: { count: 2, reason: "canvas-blindness (v5.x feature, first LEDGERED round 6): HTMLCanvasElement toDataURL/toBlob wrapped with the blindedScratch canvas — the anti-fingerprinting neutralizer; originals saved and re-invoked so page rendering is unaffected; this surface was INVISIBLE to the census before the round-6 protoWrap class (the blind spot closed by the Hailuo++ interception platform's arrival in the same family)" },
+    },
+    "4ndr0tools - Hailuo++.user.js": {
+        expiry: "v1.15.0",
+        protoWrap: { count: 3, reason: "interception platform (round 6, 2-c): URL.createObjectURL clone-at-create (the blob vault registry) + HTMLCanvasElement toDataURL/toBlob commit hooks (canvas capture above the noise floor) — the page-API interposition family the wrap classes could not see; install-once guarded by the __andr0HailuoIntercept realm mark (MPC class, global-census ledgered), every hook body fail-closed per-family try/catch, originals saved and re-invoked (the page always receives its native result); NetHook owns the fetch/XHR wraps — this family is Hailuo++'s own vault surface" },
     },
     "4ndr0tools - Instagram++.user.js": {
         expiry: "v1.14.0",
