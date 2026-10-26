@@ -1,4 +1,4 @@
-# Forums++ · v1.12.1
+# Forums++ · v1.13.0
 
 > Forum power-user workstation — `forums` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ Forums++ is the heavy machinery for forum work sessions: bulk downloading across
 
 | Dimension | Value |
 |---|---|
-| Version | `1.12.1` |
+| Version | `1.13.0` |
 | Matches | `https://simpcity.su/threads/*`, `https://simpcity.cr/threads/*`, `https://simpcity.is/threads/*`, `https://simpcity.cz/threads/*` (+6 more) |
 | Run-at | `document-start` |
-| Size | 366.2 KB · 8025 lines |
+| Size | 368.0 KB · 8050 lines |
 | Install | [dist/4ndr0tools - Forums++.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Forums%2B%2B.user.js) |
 
 ## Feature Inventory
@@ -32,7 +32,7 @@ Per-post options are page-scoped (they reset on reload by design); the persisten
 ## Permissions (OPSEC)
 
 GM grants: `GM_xmlhttpRequest`, `GM_download`, `GM_setValue`, `GM_getValue`, `GM_addValueChangeListener`, `GM_openInTab`, `GM_cookie`.
-Cross-origin connects: `self`, `coomer.su`, `coomer.st`, `kemono.su`, `kemono.cr`, `big-taco-1img.bunkr.ru`, `i-pizza.bunkr.ru`, `bunkr.ac`, `bunkr.ax`, `bunkr.black`, `bunkr.cat`, `bunkr.ci`, `bunkr.cr`, `bunkr.fi`, `bunkr.is`, `bunkr.lu`, `bunkr.lv`, `bunkr.bi`, `bunkr.cm`, `bunkr.at`, `bunkr.by`, `bunkr.cx`, `bunkr.sx`, `bunkr.media`, `bunkr.nu`, `bunkr.red`, `bunkr.ru`, `bunkr.se`, `bunkr.si`, `bunkr.site`, `bunkr.pk`, `bunkr.ph`, `bunkr.ps`, `bunkr.sk`, `bunkr.ws`, `bunkrr.ru`, `bunkrr.su`, `bunkrrr.org`, `bunkr-cache.se`, `mlk-bk.cdn.gigachad-cdn.ru`, `apidl.bunkr.ru`, `get.bunkrr.su`, `cdn.cr`, `glb-apisign.cdn.cr`, `cyberdrop.me`, `cyberdrop.cc`, `cyberdrop.ch`, `cyberdrop.cloud`, `cyberdrop.nl`, `cyberdrop.to`, `cyberdrop.cr`, `cyberfile.su`, `cyberfile.me`, `saint2.su`, `saint2.pk`, `saint2.cr`, `turbo.cr`, `turbocdn.st`, `redd.it`, `i.ibb.co`, `ibb.co`, `imagebam.com`, `jpg.fish`, `jpg.fishing`, `jpg.pet`, `jpeg.pet`, `jpg1.su`, `jpg2.su`, `jpg3.su`, `jpg4.su`, `jpg5.su`, `jpg6.su`, `jpg7.cr`, `cuckcapital.cr`, `selti-delivery.ru`, `imgbox.com`, `pixhost.to`, `pornhub.com`, `postimg.cc`, `imgvb.com`, `pixxxels.cc`, `imagevenue.com`, `pbs.twimg.com`, `pixeldrain.com`, `pixeldrain.net`, `pixeldra.in`, `redgifs.com`, `noodlemagazine.com`, `spankbang.com`, `sb-cd.com`, `gofile.io`, `phncdn.com`, `goonbox.cr`, `filester.me`, `filester.sh`, `filester.si`, `filester.gg`, `box.com`, `boxcloud.com`, `give.xxx`, `pomf2.lain.la`, `onlyfans.com`.
+Cross-origin connects: `self`, `coomer.su`, `coomer.st`, `kemono.su`, `kemono.cr`, `big-taco-1img.bunkr.ru`, `i-pizza.bunkr.ru`, `bunkr.ac`, `bunkr.ax`, `bunkr.black`, `bunkr.cat`, `bunkr.ci`, `bunkr.cr`, `bunkr.fi`, `bunkr.is`, `bunkr.lu`, `bunkr.lv`, `bunkr.bi`, `bunkr.cm`, `bunkr.at`, `bunkr.by`, `bunkr.cx`, `bunkr.sx`, `bunkr.media`, `bunkr.nu`, `bunkr.red`, `bunkr.ru`, `bunkr.se`, `bunkr.si`, `bunkr.site`, `bunkr.pk`, `bunkr.ph`, `bunkr.ps`, `bunkr.sk`, `bunkr.ws`, `bunkrr.ru`, `bunkrr.su`, `bunkrrr.org`, `bunkr.org`, `bunkrr.org`, `bunkr-cache.se`, `mlk-bk.cdn.gigachad-cdn.ru`, `apidl.bunkr.ru`, `get.bunkrr.su`, `cdn.cr`, `glb-apisign.cdn.cr`, `cyberdrop.me`, `cyberdrop.cc`, `cyberdrop.ch`, `cyberdrop.cloud`, `cyberdrop.nl`, `cyberdrop.to`, `cyberdrop.cr`, `cyberfile.su`, `cyberfile.me`, `saint2.su`, `saint2.pk`, `saint2.cr`, `turbo.cr`, `turbocdn.st`, `redd.it`, `i.ibb.co`, `ibb.co`, `imagebam.com`, `jpg.fish`, `jpg.fishing`, `jpg.pet`, `jpeg.pet`, `jpg1.su`, `jpg2.su`, `jpg3.su`, `jpg4.su`, `jpg5.su`, `jpg6.su`, `jpg7.cr`, `cuckcapital.cr`, `selti-delivery.ru`, `imgbox.com`, `pixhost.to`, `pornhub.com`, `postimg.cc`, `imgvb.com`, `pixxxels.cc`, `imagevenue.com`, `pbs.twimg.com`, `pixeldrain.com`, `pixeldrain.net`, `pixeldra.in`, `redgifs.com`, `noodlemagazine.com`, `spankbang.com`, `sb-cd.com`, `gofile.io`, `phncdn.com`, `goonbox.cr`, `filester.me`, `filester.sh`, `filester.si`, `filester.gg`, `box.com`, `boxcloud.com`, `give.xxx`, `pomf2.lain.la`, `onlyfans.com`, `yandex.ru`, `yandex.com`, `yandex.kz`.
 
 ## Lineage
 

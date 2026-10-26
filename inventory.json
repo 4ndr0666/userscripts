@@ -522,12 +522,12 @@
   {
    "file": "4ndr0tools - Forums++.user.js",
    "name": "4ndr0tools - Forums++",
-   "version": "1.12.1",
+   "version": "1.13.0",
    "description": "Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.",
    "family": "forums",
-   "sha256": "500dd7acfc7c3dc90f0e400cbed1fb19ad52c8cf3176f9050e884682245ab48c",
-   "lines": 8025,
-   "bytes": 375023,
+   "sha256": "2f04f3f4038567fbc774d138583c076675e1dfdcf447fe439ff721e8638021e7",
+   "lines": 8050,
+   "bytes": 376858,
    "matches": [
     "https://simpcity.su/threads/*",
     "https://simpcity.cr/threads/*",
@@ -597,6 +597,8 @@
     "bunkrr.ru",
     "bunkrr.su",
     "bunkrrr.org",
+    "bunkr.org",
+    "bunkrr.org",
     "bunkr-cache.se",
     "mlk-bk.cdn.gigachad-cdn.ru",
     "apidl.bunkr.ru",
@@ -660,7 +662,10 @@
     "boxcloud.com",
     "give.xxx",
     "pomf2.lain.la",
-    "onlyfans.com"
+    "onlyfans.com",
+    "yandex.ru",
+    "yandex.com",
+    "yandex.kz"
    ],
    "runAt": "document-start",
    "noframes": false,
@@ -1672,5 +1677,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "53c630c2e4d180a5d0de73e26b1430d33d290770b32e97f0e9d1d4d3edcd49fd"
+ "digest": "1711a63c66ad94fb7e6268e54e24a75abb27f5f62f19effb5a100c17d4d426cb"
 }

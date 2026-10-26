@@ -3,7 +3,7 @@
 // @name        4ndr0tools - Forums++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     1.12.1
+// @version     1.13.0
 // @description Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @match       https://simpcity.su/threads/*
@@ -59,6 +59,8 @@
 // @connect bunkrr.ru
 // @connect bunkrr.su
 // @connect bunkrrr.org
+// @connect bunkr.org
+// @connect bunkrr.org
 // @connect bunkr-cache.se
 // @connect mlk-bk.cdn.gigachad-cdn.ru
 // @connect apidl.bunkr.ru
@@ -123,6 +125,9 @@
 // @connect give.xxx
 // @connect pomf2.lain.la
 // @connect onlyfans.com
+// @connect yandex.ru
+// @connect yandex.com
+// @connect yandex.kz
 // @run-at document-start
 // @grant GM_xmlhttpRequest
 // @grant GM_download
@@ -1303,6 +1308,24 @@ const __4NDR0_NET_API__ = (function () {
     return api;
 })();
 
+// 1.13.0 (suite v1.15.0, WO-01 round 7): the resolution-layer truth pass —
+// every host the widened v1.12.0 tables collect is now actually resolvable
+// (the matcher-widening asymmetry class: hosts/@connect were widened but the
+// resolver patterns were not — 7a F01/F02/F03/F05/F06). Coomer .st (both
+// resolvers + the walker's host derivation), kemono .cr, JPGX .cr
+// +cuckcapital singles, the no-digit/jpe?g family forms (jpg.fish/jpg.pet/
+// jpeg.pet were collected since v1.11.2 but never matched a resolver — the
+// inherited 7a F08 defect), pixeldrain .net/pixeldra.in, and bunkr.at (the
+// token shipped in v1.12.0 but the TLD never joined the four alternations)
+// all resolve now; the yandex resolver's literal disk.yandex.ru endpoint and
+// page fetches gain their covering tokens (yandex ru/com/kz — 7a F04) and
+// bunkr.org/bunkrr.org join bunkrrr.org (the alternation always admitted
+// them); the cyberdrop single-file fallback ladder's four api.cyberdrop.cr
+// candidates interpolate their slug (single quotes shipped literal
+// '${slug}' text — 7c F06); the boot redgifs token fetch dedupes into the
+// status-checked refresh helper and only runs on /threads/ pages (it fired
+// on every gofile.io/goonbox.cr helper tab the widened @match added —
+// 7a F09/F10).
 // 1.12.1 (suite v1.14.0, WO-01 round 6): the lineage restoration, segment 2 —
 // the download pipeline + UI/storage layer. PIPELINE: lineage batch rules
 // (turbo-family/bunkr serialize to 1, else 2, ≤1 GoFile per batch — the
@@ -1368,7 +1391,7 @@ const __4NDR0_NET_API__ = (function () {
 // Content-Disposition filename decodeURIComponent site degrades losslessly
 // on malformed input instead of throwing (4-c F05).
 // 1.9.2 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Forums++.user v1.12.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Forums++.user v1.13.0 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 /* global JSZip, tippy, GM_xmlhttpRequest, saveAs, sha256, GM_download, GM_getValue, GM_setValue, GM_addValueChangeListener, GM_openInTab, GM_cookie */
 
@@ -3792,7 +3815,7 @@ const hosts = [
     ['Simpcity:Attachments', [/(\/attachments\/|\/data\/video\/)/]],
     ['Coomer:Profiles', [/coomer.(su|st)\/[~an@._-]+\/user/]],
     ['Coomer:image', [/(\w+\.)?coomer.(su|st)\/(data|thumbnail)/]],
-    ['JPGX:image', [/(simp\d+\.)?(cuckcapital\.cr|jpg\d?\.(church|fish|fishing|pet|su|cr))\/(?!(img\/|a\/|album\/))/, /jpe?g\d\.(church|fish|fishing|pet|su|cr)(\/a\/|\/album\/)[~an@-_.]+<no_qs>/]],
+    ['JPGX:image', [/(simp\d+\.)?(cuckcapital\.cr|jpe?g\d?\.(church|fish|fishing|pet|su|cr))\/(?!(img\/|a\/|album\/))/, /jpe?g\d?\.(church|fish|fishing|pet|su|cr)(\/a\/|\/album\/)[~an@-_.]+<no_qs>/]],
     ['Goonbox:image', [/goonbox\.cr\/img\//, /goonbox\.cr\/a\//]],
     ['kemono:direct link', [/.{2,6}\.(kemono.su|kemono.cr)\/data\//]],
     ['Postimg:image', [/!!https?:\/\/(www.)?i\.?(postimg|pixxxels).cc\/(.{8})/]],
@@ -3820,10 +3843,10 @@ const hosts = [
     ['Redgifs:user', [/redgifs\.com\/users\//]],
     ['Bunkr:',
         [
-            /!!(?<=href=")https:\/\/((stream|cdn(\d+)?)\.)?bunkrr?r?\.(ac|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org)(?!(\/a\/)).*?(?=")|(?<=(href=")|(src="))https:\/\/((i|cdn|i-pizza|big-taco-1img)(\d+)?\.)?bunkrr?r?\.(ac|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org)(?!(\/a\/))\/(v\/)?.*?(?=")/,
+            /!!(?<=href=")https:\/\/((stream|cdn(\d+)?)\.)?bunkrr?r?\.(ac|at|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org)(?!(\/a\/)).*?(?=")|(?<=(href=")|(src="))https:\/\/((i|cdn|i-pizza|big-taco-1img)(\d+)?\.)?bunkrr?r?\.(ac|at|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org)(?!(\/a\/))\/(v\/)?.*?(?=")/,
         ]
     ],
-    ['Bunkr:Albums', [/bunkrr?r?\.(ac|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org)\/a\//]],
+    ['Bunkr:Albums', [/bunkrr?r?\.(ac|at|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org)\/a\//]],
     ['Give.xxx:Profiles', [/give.xxx\/[~an@_-]+/]],
     ['Pixeldrain:', [/(focus\.)?(pixeldrain.com|pixeldrain.net|pixeldra.in)\/[lu]\//]],
     ['Gofile:', [/gofile.io\/d/]],
@@ -3867,11 +3890,11 @@ const resolvers = [
         },
     ],
     [[/pomf2.lain.la/], url => url.replace(/pomf2.lain.la\/f\/(.*)\.(\w{3,4})(\?.*)?/, 'pomf2.lain.la/f/$1.$2')],
-    [[/coomer.su\/(data|thumbnail)/], url => url],
+    [[/coomer\.(su|st)\/(data|thumbnail)/], url => url],
     [
-        [/coomer.su/, /:!coomer.su\/(data|thumbnail)/],
+        [/coomer\.(su|st)/, /:!coomer\.(su|st)\/(data|thumbnail)/],
         async (url, http) => {
-            const host = `https://coomer.su`;
+            const host = `https://${String(url).match(/coomer\.(su|st)/i)?.[0] || 'coomer.su'}`;
             const profileId = url.replace(/\?.*/, '').split('/').pop();
             if (!profileId) return null;
 
@@ -3965,13 +3988,13 @@ const resolvers = [
             }
         },
     ],
-    [[/kemono.su\/data/], url => url],
+    [[/kemono\.(su|cr)\/data/], url => url],
     [
-        [/(jpg\d\.(church|fish|fishing|pet|su))|selti-delivery\.ru\//i, /:!jpe?g\d\.(church|fish|fishing|pet|su)(\/a\/|\/album\/)/i],
+        [/(jpe?g\d?\.(church|fish|fishing|pet|su|cr))|cuckcapital\.cr\//i, /:!jpe?g\d?\.(church|fish|fishing|pet|su|cr)(\/a\/|\/album\/)/i],
         url => url.replace('.th.', '.').replace('.md.', '.'),
     ],
     [
-        [/jpe?g\d\.(church|fish|fishing|pet|su)(\/a\/|\/album\/)/i],
+        [/jpe?g\d?\.(church|fish|fishing|pet|su|cr)(\/a\/|\/album\/)/i],
         async (url, http, spoilers, postId) => {
             url = url.replace(/\?.*/, '');
             let reFetch = false;
@@ -4294,7 +4317,7 @@ const resolvers = [
      * maps. The legacy /api/v2/file/{id} decrypt is kept as the fallback when
      * the /f/ page yields no data-file-id. */
     [
-        [/((stream|cdn(\d+)?)\.)?bunkrr?r?\.(ac|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org).*?\.|((i|cdn)(\d+)?\.)?bunkrr?r?\.(ac|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org)\/(v\/)?/i, /:!bunkrr?r?\.(ac|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org)\/a\//],
+        [/((stream|cdn(\d+)?)\.)?bunkrr?r?\.(ac|at|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org).*?\.|((i|cdn)(\d+)?\.)?bunkrr?r?\.(ac|at|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org)\/(v\/)?/i, /:!bunkrr?r?\.(ac|at|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org)\/a\//],
         async (url, http, _, postId) => {
             try {
                 const { pathname } = new URL(url);
@@ -4397,7 +4420,7 @@ const resolvers = [
         },
     ],
     [
-        [/bunkrr?r?\.(ac|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org)\/a\//],
+        [/bunkrr?r?\.(ac|at|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org)\/a\//],
         async (url, http, _, ___, ____, progressCB) => {
             try {
                 const cleanUrl = String(url || '').split('#')[0];
@@ -4694,7 +4717,7 @@ const resolvers = [
         },
     ],
     [
-        [/pixeldrain.com\/[ul]/],
+        [/pixeldrain\.(com|net)\/[ul]|pixeldra\.in\/[ul]/],
         url => {
             let resolved = url.replace('/u/', '/api/file/').replace('/l/', '/api/list/');
             resolved = h.contains('/api/list', resolved) ? `${resolved}/zip` : resolved;
@@ -5771,7 +5794,12 @@ const resolvers = [
      * /f/ slugs; each resolves via api.cyberdrop.cr /api/file/auth/<slug> (with
      * the page-origin api base tried first); the single-file ladder walks the
      * info → auth → tokenized-direct candidates, then a warm-up tab retry
-     * (lineage L4782-5291, L8968-9018). Name hints ride the bounded maps. */
+     * (lineage L4782-5291, L8968-9018). Name hints ride the bounded maps.
+     * TLD contract (v1.13.0): the matchers accept any cyberdrop.<tld>, the
+     * transports carry tokens for the seven known live roots (me/cc/ch/
+     * cloud/nl/to/cr — 7a F07); a rotation to a new root needs the @connect
+     * token and (for the api.<root> ladder) nothing else — the generic
+     * matcher already collects it. */
     [
         [/fs-\d+\.cyberdrop\.[a-z]{2,}\/|cyberdrop\.[a-z]{2,}\/a\//],
         async (url, http, spoilers, postId, postSettings, progressCB) => {
@@ -5943,10 +5971,10 @@ const resolvers = [
                     apiCandidates.push(`https://api.${root}/api/file/url/${slug}`);
                     apiCandidates.push(`https://api.${root}/api/file/${slug}`);
                 }
-                apiCandidates.push('https://api.cyberdrop.cr/api/file/info/${slug}');
-                apiCandidates.push('https://api.cyberdrop.cr/api/file/auth/${slug}');
-                apiCandidates.push('https://api.cyberdrop.cr/api/file/url/${slug}');
-                apiCandidates.push('https://api.cyberdrop.cr/api/file/${slug}');
+                apiCandidates.push(`https://api.cyberdrop.cr/api/file/info/${slug}`);
+                apiCandidates.push(`https://api.cyberdrop.cr/api/file/auth/${slug}`);
+                apiCandidates.push(`https://api.cyberdrop.cr/api/file/url/${slug}`);
+                apiCandidates.push(`https://api.cyberdrop.cr/api/file/${slug}`);
                 apiCandidates.push(`${origin}/api/f/${slug}`);
 
                 const headers = {
@@ -7733,15 +7761,12 @@ const selectedPosts = [];
         // resolver now creates/activates/persists the guest token lazily
         // (xfpd_gofile_at, 24 h TTL) with the cookie sync in place.
 
-        // Redgifs token handling
-        try {
-            const { source } = await h.http.get('https://api.redgifs.com/v2/auth/temporary');
-            if (h.contains('token', source)) {
-                const token = JSON.parse(source).token;
-                GM_setValue('redgifs_token', token); // Store token for future use
-            }
-        } catch (e) {
-            console.error(`Error getting temporary redgifs auth token: ${e.message}`);
+        // Redgifs token handling (v1.13.0: the duplicated inline fetch is
+        // gone — the status-checked refresh helper owns the flow — and the
+        // boot fetch only runs on /threads/ pages, not on the gofile.io /
+        // goonbox.cr helper surfaces the v1.12.0 @match widening added).
+        if (location.pathname.startsWith('/threads/')) {
+            await redgifsFetchTempToken();
         }
 
         init.injectCustomStyles(); // Inject custom CSS styles
