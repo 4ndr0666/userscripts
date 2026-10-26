@@ -14,7 +14,7 @@
 | 4ndr0tools - Blob2URL | `7.3.0` | promoted | 38 | typeof-guarded + gmFetch fallback | universal (*) |
 | 4ndr0tools - Bunkr++ | `7.7.0` | sovereign | 97 | typeof-guarded + gmFetch fallback | scoped via @include: bunkr, bunker |
 | 4ndr0tools - Bypass Paywalls | `0.1.7` | sovereign | 10 | kernel-free | 404media.co, adweek.com, ad.nl, americanbanker.com (+166) |
-| 4ndr0tools - Confirmation Bypass | `4.1.0` | promoted | 41 | kernel-free | forums.socialmediagirls.com, simpcity.cr, turbo.cr, xcandid.vip + * |
+| 4ndr0tools - Confirmation Bypass | `4.1.1` | promoted | 41 | kernel-free | forums.socialmediagirls.com, simpcity.cr, turbo.cr, xcandid.vip + * |
 | 4ndr0tools - Filester++ | `7.6.1` | sovereign | 6 | typeof-guarded (NetHook) | scoped via @include: filester |
 | 4ndr0tools - Forum Link Xtractor | `3.2.3` | promoted | 22 | kernel-free | forums.socialmediagirls.com, simpcity.su, simpcity.cr, candidshiny.com (+1) |
 | 4ndr0tools - Forums++ | `1.13.2` | sovereign | 141 | typeof-guarded + gmFetch fallback | simpcity.su, simpcity.cr, simpcity.is, simpcity.cz (+5) |

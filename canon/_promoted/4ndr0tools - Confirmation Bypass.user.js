@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Confirmation Bypass
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      4.1.0
+// @version      4.1.1
 // @author       4ndr0666
 // @description  Reveals forum invisi-text, view all replies, rewrite redirect links. Download Gate: bypass all confirmation pages on all sites, glass overlay copy/download URL (incl. vidara embeds on xcandid), auto-solve Altcha, auto-click download. Turbo: embed routing, upload injector. Util: external link safety, right-click scrollbar to top.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -23,6 +23,24 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Confirmation%20Bypass.user.js
 // @license      MIT
 // ==/UserScript==
+// 4.1.1 (suite v1.15.0, WO-01 round 7): the download-gate trigger's own
+// audit pass (7b F16-F18). The boot-path observer hole: when the button was
+// found ENABLED at boot the early return never armed the G6 observer — if
+// the button re-disabled inside the grace window the comment 're-armed by
+// the observer' was false in that path (nothing ever called attempt again —
+// silent death, the exact class G6 was built to prevent); the observer now
+// ALWAYS arms (the WeakSet makes re-attempts harmless). The re-arm
+// double-dispatch: a Content-Disposition / <a download> / fetch→blob save
+// NEVER changes location.href, so the 'href unchanged = handler not ready'
+// heuristic fired click #2 on an already-downloading button — the re-click
+// now requires the button to still look IDLE (not disabled, not aria-busy,
+// no loading/spinner class, and an UNCHANGED label — a downloading control
+// usually swaps its text or spins). The text fallback: the unanchored
+// containment test matched footer prose like 'How to download files' and
+// could pick an ad link ahead of the real control when #downloadBtn was
+// absent — the label is now anchored short whole-text (≤40 chars), and the
+// observer's attempt() is debounced 120 ms (every document mutation ran a
+// full-document anchor-text sweep: countdown timers, spinners).
 // 4.1.0 (suite v1.14.0, WO-01 round 6): turbo.cr landing download-gate sleep
 // restored (2-b F03/F04) — the v3.6.2 G6 rework dropped the legacy 300 ms
 // grace, so the boot-time click fired into a button whose async handler was
@@ -37,7 +55,7 @@
 // identities in one console since promotion; 4-c F04); the v4.0.4 suite
 // banner at boot is the single identity.
 // 4.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1.0 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px');
 
 
 /* ═══ SUITE PROMOTION 4.0.0 ═══════════════════════════════════════════
@@ -800,7 +818,10 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
     // ══════════════════════════════════════════════════════════════════════════
     function initializeDownloadTrigger() {
         const SELECTOR  = '#downloadBtn';
-        const TEXT_FALLBACK = /download\s*file/i;
+        /* v4.1.1 (7b F18): anchored short whole-text — the unanchored
+         * containment test matched footer/help prose ('How to download
+         * files') and could pick an ad link ahead of the real control. */
+        const TEXT_FALLBACK = /^\s*download\s+(the\s+)?file\s*$/i;
         const GRACE_MS  = 300;  // legacy v3.5.2 grace — restored 4.1.0 (2-b F03)
         const REARM_MS  = 1600; // swallow window before the single re-arm
         const MAX_CLICKS = 2;
@@ -809,13 +830,16 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
         const scheduled = new WeakSet();
         let clicks = 0;
         let obs = null;
+        let rearmLabel = ''; // 7b F17: the label at click time — a busy control usually swaps it
 
         const findButton = () => {
             const btn = document.querySelector(SELECTOR);
             if (btn) return btn;
-            // Markup drift fallback: any control labelled 'download file'.
+            // Markup drift fallback: any SHORT-labelled 'download file' control
+            // (v4.1.1 7b F18: long-text elements are prose, not controls).
             for (const el of document.querySelectorAll('button, a[role="button"], a')) {
-                if (TEXT_FALLBACK.test((el.textContent || '').trim())) return el;
+                const label = (el.textContent || '').trim();
+                if (label.length <= 40 && TEXT_FALLBACK.test(label)) return el;
             }
             return null;
         };
@@ -825,6 +849,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
             if (btn.disabled) return false; // captcha still solving — stay armed
             btn.setAttribute('data-cb4-dl-clicked', 'true');
             clicks += 1;
+            rearmLabel = (btn.textContent || '').trim(); // 7b F17: label at click time
             console.log('[4ndr0tools] Download button triggered.');
             const view = btn.ownerDocument?.defaultView ?? null;
             ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'].forEach(type => {
@@ -843,6 +868,18 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
                 if (window.location.href === landingHref) {
                     const btn = findButton();
                     if (btn && !btn.disabled) {
+                        /* v4.1.1 (7b F17): a Content-Disposition / <a download>
+                         * / fetch→blob save NEVER changes location.href — the
+                         * old re-arm treated that as 'handler not ready' and
+                         * double-dispatched a second download. The re-click
+                         * now requires the button to still look IDLE: not
+                         * aria-busy, no loading/spinner class, and an
+                         * UNCHANGED label (a downloading control usually
+                         * swaps its text or spins). */
+                        const busy = btn.getAttribute('aria-busy') === 'true'
+                            || /\b(loading|spinner|busy|progress)\b/i.test(String(btn.className || ''))
+                            || (btn.textContent || '').trim() !== rearmLabel;
+                        if (busy) return;
                         btn.removeAttribute('data-cb4-dl-clicked');
                         window.setTimeout(() => { clickDownload(btn); }, GRACE_MS);
                     }
@@ -864,17 +901,32 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
                     if (obs) obs.disconnect();
                     if (clicks < MAX_CLICKS) scheduleRearm();
                 } else {
-                    scheduled.delete(btn); // disabled at grace time — re-armed by the observer
+                    scheduled.delete(btn); // disabled at grace time — the ALWAYS-armed observer below re-attempts (7b F16)
                 }
             }, GRACE_MS);
             return true;
         };
 
-        if (attempt()) return;
+        /* v4.1.1 (7b F16): the observer ALWAYS arms — the old early return
+         * (button found enabled at boot) left the G6 observer disarmed, and
+         * a button re-disabled inside the grace window died silently (the
+         * 're-armed by the observer' comment was false in that path). The
+         * WeakSet makes re-attempts harmless while a grace is pending. */
+        attempt();
 
         // Button may not exist yet — and may be born disabled: watch for
         // both its insertion and its disabled-attribute flip.
-        obs = new MutationObserver(() => { attempt(); });
+        /* v4.1.1 (7b F18): debounced — every document mutation ran a
+         * full-document anchor-text sweep (countdown timers, spinners); the
+         * 120 ms coalescer matches the suite's observer idiom. */
+        let attemptDebounce = null;
+        obs = new MutationObserver(() => {
+            if (attemptDebounce) return;
+            attemptDebounce = window.setTimeout(() => {
+                attemptDebounce = null;
+                attempt();
+            }, 120);
+        });
         obs.observe(document.documentElement, {
             childList:       true,
             subtree:         true,
