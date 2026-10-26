@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Hailuo++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      6.1.1
+// @version      6.1.2
 // @author       4ndr0666
 // @description  Enterprise-grade, idempotent automation engine for HailuoAI featuring automated queue management, asset fetching with tracked-download deduplication, an in-HUD Asset Bay thumbnail gallery (click-to-new-window, hover-playable previews, blob downloads that never navigate the session window) with cross-reload persistence, completion notifications, failure-card masking, API hard purge, and interactive asset links — hardened for the 2026-09 MiniMax H3 site generation and the hailuoai.video/agent chat surface. v5.4: editable-context (Slate) DOM guards, self-healing HUD watchdog, HUD collapse + Ctrl+Alt+H toggle, frame isolation, webp-aware blob transport with retry, and non-destructive title telemetry. v6.1: document-start interception platform — canvas toDataURL/toBlob commit hooks, URL.createObjectURL blob-clone vault fortification, and an a/img/video DOM stalker feeding the bay.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -22,6 +22,20 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Hailuo++.user.js
 // @license      MIT
 // ==/UserScript==
+// 6.1.2 (suite v1.15.0, WO-01 round 8): the platform's budget accounting
+// made honest. The SAVE arm minted its object URL through the WRAPPED
+// URL.createObjectURL — every SAVE registered a page-owned clone entry
+// charging the 224 MiB byte budget the blob's size AGAIN (a vault-clone
+// SAVE double-charged: the original entry plus the wrap's slice(0) copy),
+// never revoked by us, evicting LIVE captures prematurely via FIFO/budget
+// pressure — the SAVE now mints through the saved native. The re-mint path
+// retired the source entry (the same blob was registered TWICE — a
+// transient 2x charge; the minted-ness of the old URL decides its revoke).
+// The stalk sweep floor anchors at ENQUEUE time (the observer anchored it
+// at the first mutation batch and the debounce reset it after every sweep —
+// alternating quiet/churn phases granted each burst a fresh 2 s window;
+// the '2 s after the FIRST queued node' contract now holds from the
+// queue's own birth). The scriptVersion fallback literal re-stamped.
 // 6.1.1 (suite v1.15.0, WO-01 round 7): the interception platform's own
 // audit pass — the fortification mechanisms get the correctness they
 // claimed. The baseline sweep for late arming was a NO-OP (runStalkSweep
@@ -76,7 +90,7 @@
 // button), and the window.open escalation now checks its return value.
 // Subsumed @match lines (create*/agent* under hailuoai.video/*) dropped.
 // 6.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.2 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 
 /* ═══ SUITE PROMOTION 6.0.0 ═══════════════════════════════════════════
@@ -357,7 +371,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.1 —
                     Logger.debug('Interception platform already armed in this page realm; skipping re-install.');
                     return false;
                 }
-                window.__andr0HailuoIntercept = '6.1.1';
+                window.__andr0HailuoIntercept = '6.1.2';
             } catch (markError) {
                 Logger.warn('Realm mark write rejected; installing hooks without the double-injection guard.', markError);
             }
@@ -433,6 +447,21 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.1 —
                      * minted so eviction revokes it (an untracked re-mint
                      * leaked its URL entry for the document lifetime). */
                     this.registerClone(fresh, entry.blob, true);
+                    /* v6.1.2 (8b F06): the OLD entry retires with the re-mint —
+                     * the registry held the same blob TWICE (a transient 2x
+                     * byte-budget charge; registerClone's eviction may already
+                     * have removed it, so the delete() return decides the
+                     * subtraction), and the old URL is the re-mint's dead
+                     * premise — its minted-ness decides the revoke. */
+                    if (this.cloneRegistry.delete(url)) {
+                        this.totalCloneBytes -= entry.size || 0;
+                        if (this.totalCloneBytes < 0) this.totalCloneBytes = 0;
+                    }
+                    if (entry.minted && this.nativeRevokeObjectURL) {
+                        try { this.nativeRevokeObjectURL.call(URL, url); } catch (revokeError) {
+                            Logger.debug('Retired re-mint source URL revoke rejected.', revokeError);
+                        }
+                    }
                     return fresh;
                 }
                 return null;
@@ -648,6 +677,13 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.1 —
             try {
                 const tag = node.tagName;
                 if (tag === 'A' || tag === 'IMG' || tag === 'VIDEO' || tag === 'SOURCE') {
+                    /* v6.1.2 (8b F14): the sweep floor anchors at ENQUEUE time —
+                     * the observer callback anchored it at the first mutation
+                     * BATCH, and the debounce path reset it to 0 after every
+                     * sweep, so alternating quiet/churn phases granted each
+                     * burst a fresh 2 s window; the '2 s after the FIRST queued
+                     * node' contract holds from the queue's own birth now. */
+                    if (this.stalkQueue.size === 0 && this.stalkSweepFloorAt === 0) this.stalkSweepFloorAt = Date.now();
                     this.stalkQueue.add(node);
                 } else if (typeof node.querySelectorAll === 'function') {
                     for (const el of node.querySelectorAll('a[href], img, video, source')) {
@@ -760,7 +796,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.1 —
         constructor() {
             this.scriptVersion = (typeof GM_info !== 'undefined' && GM_info && GM_info.script && GM_info.script.version)
                 ? GM_info.script.version
-                : "6.1.0";
+                : "6.1.2"; // v6.1.2 (8b F15): the direct-paste fallback stays stamped with the release
             this.selectors = {
                 videoCardQueries: [
                     "div[class*='group/video-card']",
@@ -2261,7 +2297,15 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.1 —
                 if (!blobPayload || blobPayload.size === 0) {
                     throw new Error('Transport returned an empty payload');
                 }
-                const objectUrl = URL.createObjectURL(blobPayload);
+                const objectUrl = (interceptPlatform !== null && typeof interceptPlatform.nativeCreateObjectURL === 'function')
+                    /* v6.1.2 (8b F05): mint through the SAVED NATIVE — the
+                     * page-visible URL.createObjectURL is OUR wrap, so a SAVE
+                     * through it registered a page-owned clone entry charging
+                     * the byte budget the blob's size AGAIN (never revoked by
+                     * us — dead entries evicted LIVE captures prematurely);
+                     * the 30 s revoke below already runs against the native. */
+                    ? interceptPlatform.nativeCreateObjectURL.call(URL, blobPayload)
+                    : URL.createObjectURL(blobPayload);
                 const downloadAnchor = document.createElement('a');
                 downloadAnchor.href = objectUrl;
                 downloadAnchor.download = filename;

@@ -19,7 +19,7 @@
 | **Forums++** | `1.13.3` | forums | typeof-guarded + gmFetch fallback | [reference](./forums/) |
 | **GoFile++** | `2.2.0` | media & links | typeof-guarded + gmFetch fallback | [reference](./gofile/) |
 | **GooglePhotosandDrive++** | `8.1.1` | images | typeof-guarded + gmFetch fallback | [reference](./gphotos-drive/) |
-| **Hailuo++** | `6.1.1` | sovereign platforms | kernel-free | [devlog](./hailuo++/) |
+| **Hailuo++** | `6.1.2` | sovereign platforms | kernel-free | [devlog](./hailuo++/) |
 | **HostWarp** | `1.1.6` | ux utilities | build-module (6-kernel) | [reference](./hostwarp/) |
 | **Images++** | `4.0.5` | images | kernel-free | [reference](./images/) |
 | **Instagram++** | `13.2.2` | sovereign platforms | typeof-guarded + gmFetch fallback | [reference](./instagram/) |

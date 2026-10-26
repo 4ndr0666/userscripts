@@ -20,7 +20,7 @@
 | 4ndr0tools - Forums++ | `1.13.3` | sovereign | 141 | typeof-guarded + gmFetch fallback | simpcity.su, simpcity.cr, simpcity.is, simpcity.cz (+5) |
 | 4ndr0tools - GoFile++ | `2.2.0` | sovereign | 11 | typeof-guarded + gmFetch fallback | gofile.io |
 | 4ndr0tools - GooglePhotosandDrive++ | `8.1.1` | promoted | 55 | typeof-guarded + gmFetch fallback | googleusercontent.com, photos.google.com, drive.google.com |
-| 4ndr0tools - Hailuo++ | `6.1.1` | promoted | 20 | kernel-free | hailuoai.com, hailuoai.video |
+| 4ndr0tools - Hailuo++ | `6.1.2` | promoted | 20 | kernel-free | hailuoai.com, hailuoai.video |
 | 4ndr0tools - HostWarp | `1.1.6` | module:hostwarp | 9 | build-module (6-kernel) | universal (*) |
 | 4ndr0tools - Images++ | `4.0.5` | merged | 80 | kernel-free | universal (*) |
 | 4ndr0tools - Instagram++ | `13.2.2` | sovereign | 33 | typeof-guarded + gmFetch fallback | instagram.com |
