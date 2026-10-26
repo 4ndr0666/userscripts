@@ -522,12 +522,12 @@
   {
    "file": "4ndr0tools - Forums++.user.js",
    "name": "4ndr0tools - Forums++",
-   "version": "1.13.1",
+   "version": "1.13.2",
    "description": "Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.",
    "family": "forums",
-   "sha256": "3b1365397bff79bb663a5d39b0ab0889678764a1e45fa9d844faecf27c272c50",
-   "lines": 8195,
-   "bytes": 387304,
+   "sha256": "ba6132561e11fcf78ff2cab73eae3486d458e3b1dee902e8861bd525132ff051",
+   "lines": 8330,
+   "bytes": 396257,
    "matches": [
     "https://simpcity.su/threads/*",
     "https://simpcity.cr/threads/*",
@@ -549,7 +549,8 @@
     "GM_getValue",
     "GM_addValueChangeListener",
     "GM_openInTab",
-    "GM_cookie"
+    "GM_cookie",
+    "GM_deleteValue"
    ],
    "requires": [
     "https://unpkg.com/@popperjs/core@2",
@@ -1677,5 +1678,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "765767954be45f222c81474086030da5632d90bdabf7455efbbb88d1fe67f266"
+ "digest": "328dbb72368b6be2d64c697e08eaef57e1ed8899ca57ababadbfa03951d9bdd0"
 }

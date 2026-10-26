@@ -33,7 +33,7 @@
       "inputs": [
         "polling census clean: true (42 sites)",
         "observer census clean: true (58 sites)",
-        "cache census clean: true (148 registries)",
+        "cache census clean: true (147 registries)",
         "size budget clean: true"
       ]
     },
@@ -54,7 +54,7 @@
       "score": 10,
       "inputs": [
         "kernel typed-error family (NetError/NetTimeoutError/NetHttpError) — smoke battery: true",
-        "non-kernel catch census: 960 sites — 9 typed, 483 debug-logged, 468 handled, 0 silent (clean: true)"
+        "non-kernel catch census: 963 sites — 9 typed, 486 debug-logged, 468 handled, 0 silent (clean: true)"
       ],
       "coverage": 1
     },

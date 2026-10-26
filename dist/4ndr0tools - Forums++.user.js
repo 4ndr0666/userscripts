@@ -3,7 +3,7 @@
 // @name        4ndr0tools - Forums++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     1.13.1
+// @version     1.13.2
 // @description Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @match       https://simpcity.su/threads/*
@@ -136,6 +136,7 @@
 // @grant GM_addValueChangeListener
 // @grant GM_openInTab
 // @grant GM_cookie
+// @grant GM_deleteValue
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Forums++.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Forums++.user.js
 // @license      MIT
@@ -1308,6 +1309,35 @@ const __4NDR0_NET_API__ = (function () {
     return api;
 })();
 
+// 1.13.2 (suite v1.15.0, WO-01 round 7): the storage/UI/hygiene batch
+// (7d F06-F12/F18-F23/F26-F28). STORAGE: pruned ThreadCache threads
+// GM_deleteValue their key (the old {} placeholder capped the data but
+// accumulated one dead key per thread ever visited) and expired gofile
+// wt/at entries purge on read; a failed page fetch no longer poisons the
+// cache (the catch returned [] — truthy, so a transient error permanently
+// cached that page as 0 posts and the search undercounted); the zip save
+// arms revoke the URL STRING (the old arms revoked the Blob object — a
+// no-op that pinned every multi-MB zip blob until page unload). ZIP: the
+// in-zip folder structure materializes (the sanitizer class included '/' —
+// 'folder/video.mp4' flattened to 'folder_video.mp4' so the hierarchy the
+// FF log/links paths and the folder-aware dedup both assume never existed);
+// the thread title rides the segment sanitizer (a ':' failed GM_download
+// name validation) and the FF flat arm sanitizes the basename too. DIRECT
+// files join the folder-aware dedup set (a blob-staged name.mp4 and a
+// DIRECT-switched same-named file collided on disk); the (n) suffix emits
+// no trailing dot when the extension is empty. UI: the cached-post search
+// input is readable on the light theme (near-white on near-white); matches
+// on non-visible cached pages navigate to the PAGE path (a bare #post-<id>
+// fragment silently no-oped when the post wasn't in the current DOM); the
+// Download-Page tooltip's onShown wires post checkboxes + content tooltips
+// once (every show re-registered them — handler accumulation); the
+// auto-reaction fires only when something was actually staged or saved
+// (completed>0 counted ALL-failed runs too — failures increment completed).
+// The bunkr tiny-sniff needs a strong marker or ≥2 weak ones (a single
+// 'cloudflare' byte sequence in a legit small binary dropped real files);
+// the gofile cookie restore re-checks the busy state inside itself (a
+// download starting between the idle check and the restore got the
+// operator's own cookie swapped back mid-run).
 // 1.13.1 (suite v1.15.0, WO-01 round 7): the pipeline settlement pass —
 // every per-file promise now settles on every exit path. The bunkr maint
 // abort wedged the whole post forever (7d F01: the onabort arm's comment
@@ -1423,9 +1453,9 @@ const __4NDR0_NET_API__ = (function () {
 // Content-Disposition filename decodeURIComponent site degrades losslessly
 // on malformed input instead of throwing (4-c F05).
 // 1.9.2 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Forums++.user v1.13.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Forums++.user v1.13.2 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
-/* global JSZip, tippy, GM_xmlhttpRequest, saveAs, sha256, GM_download, GM_getValue, GM_setValue, GM_addValueChangeListener, GM_openInTab, GM_cookie */
+/* global JSZip, tippy, GM_xmlhttpRequest, saveAs, sha256, GM_download, GM_getValue, GM_setValue, GM_addValueChangeListener, GM_openInTab, GM_cookie, GM_deleteValue */
 
 const JSZipGlobal = window.JSZip;
 const tippyGlobal = window.tippy;
@@ -2118,6 +2148,21 @@ const ui = {
             return false;
         })();
         return lightTheme ? '#EDF0F3' : 'rgba(10,19,26,0.85)';
+    },
+    /* v1.13.2 (7d F10): the same probe, as a flag — the cached-post search
+     * input styled its text with the dark ink on the light surface
+     * (near-white on near-white). */
+    isLightTheme: () => {
+        try {
+            const scheme = document.documentElement?.dataset?.colorScheme
+                || document.documentElement?.getAttribute('data-color-scheme')
+                || document.body?.dataset?.colorScheme
+                || document.body?.getAttribute('data-color-scheme');
+            if (scheme) return String(scheme).toLowerCase().includes('light');
+        } catch (e) {
+            console.debug('[Forums++] color-scheme probe rejected:', e && e.message);
+        }
+        return false;
     },
     /**
      * @param {HTMLElement|string} target
@@ -3630,6 +3675,14 @@ const gofileRestoreCookie = () =>
                 resolve();
                 return;
             }
+            /* v1.13.2 (7d F27): a download that started between the caller's
+             * idle check and this restore must not get the operator's own
+             * cookie swapped back mid-run — leave the capture armed for the
+             * next idle window. */
+            if (processing.find(p => p.processing)) {
+                resolve();
+                return;
+            }
             const originalValue = gofileOriginalCookieValue;
             gofileCookieCaptured = false;
             gofileOriginalCookieValue = null;
@@ -4790,6 +4843,16 @@ const resolvers = [
                 }
             };
 
+            /* v1.13.2 (7d F28): expired wt/at entries purge on read — they
+             * were inert-but-lingering storage. */
+            const gmDelete = key => {
+                try {
+                    if (typeof GM_deleteValue === 'function') GM_deleteValue(key);
+                } catch (e) {
+                    console.debug('[Forums++] gofile storage purge rejected:', e && e.message);
+                }
+            };
+
             const gmReq = async (method, reqUrl, data = null, headers = {}, responseType = 'text') => {
                 return await http.base(method, reqUrl, {}, headers, data, responseType);
             };
@@ -4801,6 +4864,7 @@ const resolvers = [
 
                 const now = Date.now();
                 const cached = gmGet(WT_KEY, null);
+                if (!force && cached && cached.ts && now - cached.ts >= WT_MAX_AGE_MS) gmDelete(WT_KEY);
                 let srcText =
                     !force && cached && cached.src && cached.ts && now - cached.ts < WT_MAX_AGE_MS
                         ? cached.src
@@ -4903,6 +4967,8 @@ const resolvers = [
                         } catch (e) {
                             console.debug('[Forums++] gofile settings mirror rejected:', e && e.message);
                         }
+                    } else if (cached && cached.ts && now - cached.ts >= AT_MAX_AGE_MS) {
+                        gmDelete(AT_KEY); // 7d F28: purge the expired entry
                     }
                 }
 
@@ -6605,7 +6671,10 @@ const ThreadCache = (() => {
             return pagePosts;
         } catch (error) {
             console.error(`ThreadCache: Failed to fetch or parse page ${pageUrl}: ${error.message}`);
-            return [];
+            /* v1.13.2 (7d F07): null, not [] — an empty array is truthy, so a
+             * transient fetch failure permanently cached that page as 0
+             * posts (the search undercounted and the page never refetched). */
+            return null;
         }
     };
 
@@ -6634,7 +6703,15 @@ const ThreadCache = (() => {
             const next = [String(threadId), ...index.filter(id => id !== String(threadId))];
             const pruned = next.slice(0, MAX_CACHED_THREADS);
             for (const staleId of next.slice(MAX_CACHED_THREADS)) {
-                await GM_setValue(`${CACHE_KEY_PREFIX}${staleId}`, {});
+                /* v1.13.2 (7d F06): pruned threads DELETE their key — the old
+                 * {} placeholder capped the DATA but accumulated one dead key
+                 * per thread ever visited. The typeof guard keeps managers
+                 * without GM_deleteValue on the old shape. */
+                if (typeof GM_deleteValue === 'function') {
+                    try { GM_deleteValue(`${CACHE_KEY_PREFIX}${staleId}`); } catch (e) { console.debug('ThreadCache: prune rejected:', e && e.message); }
+                } else {
+                    await GM_setValue(`${CACHE_KEY_PREFIX}${staleId}`, {});
+                }
             }
             if (JSON.stringify(pruned) !== JSON.stringify(index)) {
                 await GM_setValue(INDEX_KEY, pruned);
@@ -6673,7 +6750,7 @@ const ThreadCache = (() => {
                 console.log(`ThreadCache: Fetching page ${pageNum} for caching...`);
                 fetchPromises.push(
                     fetchAndParsePage(pageUrl).then(posts => {
-                        cachedData[pageNum] = posts;
+                        if (posts) cachedData[pageNum] = posts; // 7d F07: never store a failed fetch
                     }).catch(err => {
                         console.error(`ThreadCache: Error fetching/parsing page ${pageNum}: ${err.message}`);
                     })
@@ -6938,6 +7015,32 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
         customFilename = customFilename.replace(/:id:/g, postId);
     }
 
+    /* v1.13.2 (7d F22): hoisted to post scope — the zip-gate title and the
+     * FF flat save arm need the SEGMENT sanitizer too (a ':' in the thread
+     * title failed GM_download name validation; the old arms only replaced
+     * slashes). */
+    const WIN_ILLEGAL_RE = /[<>:"\\|?*\x00-\x1F]/g;
+    const sanitizeWinSegment = s => {
+        const sub = (settings && settings.naming && settings.naming.invalidCharSubstitute) ? settings.naming.invalidCharSubstitute : '_';
+        let out = String(s || '');
+        if (settings?.naming?.allowEmojis === false) {
+            try {
+                out = out.replace(/\p{Extended_Pictographic}/gu, '');
+            } catch (e) {
+                out = out.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '');
+            }
+            out = out.replace(/[\uFE0E\uFE0F\u200D]/g, '');
+        }
+        out = out.replace(WIN_ILLEGAL_RE, sub);
+        out = out.replace(/[\x00-\x08\x0E-\x1F\x7F]/g, '');
+        out = out.replace(/[\. ]+$/g, '').replace(/^[\. ]+/g, '');
+        if (!out) out = '_';
+        if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(out)) out = '_' + out;
+        return out;
+    };
+    const sanitizeWinPath = pth => String(pth || '').split('/').map(sanitizeWinSegment).join('/');
+    const safeThreadTitle = sanitizeWinSegment(threadTitle);
+
     // Deduplicate resolved URLs based on their final filename AFTER stripping query strings/hashes
     if (postSettings.skipDuplicates) {
         const uniqueResolved = [];
@@ -7017,26 +7120,7 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
          * raw-URL through GM_download, outside the zip, Windows-safe names. */
         const BLOB_MAX_BYTES = Math.floor(1.6 * 1024 * 1024 * 1024);
         const BUNKR_DIRECT_MIN_BYTES = 500 * 1024 * 1024;
-        const WIN_ILLEGAL_RE = /[<>:"\/\\|?*\x00-\x1F]/g;
-        const sanitizeWinSegment = s => {
-            const sub = (settings && settings.naming && settings.naming.invalidCharSubstitute) ? settings.naming.invalidCharSubstitute : '_';
-            let out = String(s || '');
-            if (settings?.naming?.allowEmojis === false) {
-                try {
-                    out = out.replace(/\p{Extended_Pictographic}/gu, '');
-                } catch (e) {
-                    out = out.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '');
-                }
-                out = out.replace(/[\uFE0E\uFE0F\u200D]/g, '');
-            }
-            out = out.replace(WIN_ILLEGAL_RE, sub);
-            out = out.replace(/[\x00-\x08\x0E-\x1F\x7F]/g, '');
-            out = out.replace(/[\. ]+$/g, '').replace(/^[\. ]+/g, '');
-            if (!out) out = '_';
-            if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(out)) out = '_' + out;
-            return out;
-        };
-        const sanitizeWinPath = pth => String(pth || '').split('/').map(sanitizeWinSegment).join('/');
+        // (sanitizeWinSegment/sanitizeWinPath are hoisted to post scope — v1.13.2, 7d F22)
 
         /* v1.12.1 (2e-F03): turbo stall re-sign — a signed URL that stops
          * progressing is re-signed (≤3) before ONE direct fallback. */
@@ -7074,8 +7158,13 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
             return resource.original;
         };
 
-        let successful = 0;      // actually-saved count (summary + zip gating)
+        let successful = 0;      // staged-or-saved count (7d F19: consumed by the onComplete reaction gate — F23)
         let zipFileCount = 0;    // files staged into the zip (2e-F07)
+
+        /* v1.13.2 (7d F20): the dead bookkeeping is gone — activeDownloads
+         * and resource._downloadPromise were written and deleted but NEVER
+         * read anywhere (the re-entry guard reads the processing registry
+         * instead; the batch runner awaits startDownload's return value). */
 
         /* The DIRECT path: raw-URL GM_download outside the zip. Returns a
          * promise that settles when the download completes (2e-F07: awaited,
@@ -7088,6 +7177,21 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                 || gofileNameByUrl.get(resource.url)
                 || filesterNameByUrl.get(resource.url)
                 || h.basename(resource.url).replace(/\?.*/, '').replace(/#.*/, '');
+            /* v1.13.2 (7d F18): DIRECT-path files join the folder-aware dedup
+             * set — a blob-staged name.mp4 and a DIRECT-switched same-named
+             * file used to collide on disk (overwrite or browser auto-rename
+             * race). Same key space + (n) suffix logic as the zip arm, and
+             * the suffix carries no trailing dot when the extension is
+             * empty (7d F21). */
+            const inFolderD = (!postSettings.flatten && folder && folder.trim() !== '');
+            const pathKeyD = nm => (inFolderD ? `${folder}/${nm}` : nm).toLowerCase();
+            let dCounter = 1;
+            const dExt = h.ext(name);
+            while (downloadedFilenames.has(pathKeyD(name))) {
+                name = `${h.fnNoExt(name)} (${dCounter})${dExt ? `.${dExt}` : ''}`;
+                dCounter++;
+            }
+            downloadedFilenames.add(pathKeyD(name));
             const relative = (!postSettings.flatten && folder && folder.trim() !== '') ? `${folder}/${name}` : name;
             const winPath = sanitizeWinPath(`${threadTitle}/${relative}`);
             resource._direct = true;
@@ -7123,10 +7227,6 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                 }
             });
         };
-
-        /* v1.12.1 (2e-F13): activeDownloads keys RESOURCES (objects), not URL
-         * strings — duplicate URLs across hosts no longer collapse. */
-        const activeDownloads = new Set();
 
         const startDownload = resource => {
             const url = resource.url;
@@ -7223,7 +7323,10 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                 let finalBasename = basename;
                 let counter = 1;
                 while (downloadedFilenames.has(pathKeyOf(finalBasename))) {
-                    finalBasename = `${h.fnNoExt(basename)} (${counter}).${ext}`;
+                    /* v1.13.2 (7d F21): no trailing dot when the extension is
+                     * empty — 'name (1).' strips to 'name (1)' on Windows and
+                     * collides with the unsuffixed save. */
+                    finalBasename = `${h.fnNoExt(basename)} (${counter})${ext ? `.${ext}` : ''}`;
                     counter++;
                 }
                 downloadedFilenames.add(pathKeyOf(finalBasename));
@@ -7241,8 +7344,15 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                     log.post.info(postId, `::Saving as::: ${finalBasename}`, postNumber);
                 }
 
-                // Sanitize filename for various OS
-                finalPathInZip = finalPathInZip.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\uFFFF]/g, '').replace(/[\\\/:\*?"<>|]/g, settings.naming.invalidCharSubstitute);
+                // Sanitize filename for various OS — v1.13.2 (7d F09): per
+                // SEGMENT, keeping the '/' folder separators: the class used
+                // to flatten 'folder/video.mp4' to 'folder_video.mp4' so the
+                // zip never materialized the folder structure that the FF
+                // log/links paths and the folder-aware dedup both assume.
+                finalPathInZip = finalPathInZip
+                    .split('/')
+                    .map(seg => seg.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\uFFFF]/g, '').replace(/[\\:\*?"<>|]/g, settings.naming.invalidCharSubstitute))
+                    .join('/');
 
                 if (!postSettings.zipped) {
                     /* Chrome AND Firefox: per-file GM_download of the blob URL
@@ -7257,8 +7367,8 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                         }
                     };
                     const saveName = isFF
-                        ? `${threadTitle.replace(/[\\\/]/g, settings.naming.invalidCharSubstitute)} #${postNumber} - ${finalBasename}`
-                        : `${threadTitle.replace(/[\\\/]/g, settings.naming.invalidCharSubstitute)}/${finalPathInZip}`;
+                        ? `${safeThreadTitle} #${postNumber} - ${sanitizeWinSegment(finalBasename)}`
+                        : `${safeThreadTitle}/${finalPathInZip}`;
                     GM_download({
                         url: blobUrl,
                         name: saveName,
@@ -7448,13 +7558,13 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                                 recoveryArmed = true;
                                 blob.text().then(t => {
                                     const head = String(t || '').slice(0, 2048).toLowerCase();
-                                    return head.includes('<!doctype') ||
-                                        head.includes('<html') ||
-                                        head.includes('<head') ||
-                                        head.includes('<body') ||
-                                        head.includes('temporarily not available') ||
-                                        head.includes('maintenance') ||
-                                        head.includes('cloudflare');
+                                    /* v1.13.2 (7d F26): a strong marker alone, or ≥2
+                                     * weak ones — a single 'cloudflare' byte sequence
+                                     * in a legit small binary dropped real files. */
+                                    if (head.includes('<!doctype') || head.includes('<html') || head.includes('<head') || head.includes('<body')) {
+                                        return true;
+                                    }
+                                    return ['temporarily not available', 'maintenance', 'cloudflare'].filter(m => head.includes(m)).length >= 2;
                                 }).catch(e => {
                                     console.debug('[Forums++] bunkr tiny-sniff read rejected:', e && e.message);
                                     return false;
@@ -7625,11 +7735,8 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                 }, stallMs);
             }).finally(() => {
                 if (progress.intervalId) clearInterval(progress.intervalId);
-                activeDownloads.delete(resource);
             });
 
-            activeDownloads.add(resource);
-            resource._downloadPromise = downloadPromise;
             return downloadPromise;
         };
 
@@ -7709,32 +7816,40 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
             log.post.error(postId, `Zip assembly failed: ${zipError.message}`, postNumber);
         }
 
-        if (blob) {
+            if (blob) {
             if (isFF) {
                 saveAs(blob, filename);
             } else if (postSettings.zipped && zipFileCount > 0) {
+                /* v1.13.2 (7d F08): revoke the URL STRING — the old arm
+                 * revoked the Blob object (coerced to '[object Blob]', a no-op
+                 * that pinned every multi-MB zip blob until page unload); the
+                 * saveAs fallback revokes after FileSaver has taken the blob. */
+                const zipUrl = URL.createObjectURL(blob);
                 GM_download({
-                    url: URL.createObjectURL(blob),
+                    url: zipUrl,
                     name: `${title}/#${postNumber}.zip`,
-                    onload: () => URL.revokeObjectURL(blob),
+                    onload: () => URL.revokeObjectURL(zipUrl),
                     onerror: response => {
                         log.post.error(postId, `Error writing zipped file to disk: ${response.error} - ${response.details}`, postNumber);
                         console.log('Trying to write using FileSaver.js...');
                         saveAs(blob, filename); // Fallback for GM_download errors
+                        URL.revokeObjectURL(zipUrl);
                     },
                 });
             } else if (postSettings.generateLog || postSettings.generateLinks) {
                 // Only generate a zip with logs/links when not zipping all files
+                const genUrl = URL.createObjectURL(blob);
                 GM_download({
-                    url: URL.createObjectURL(blob),
+                    url: genUrl,
                     name: `${title}/#${postNumber}/generated.zip`, // Put it in a subfolder
-                    onload: () => URL.revokeObjectURL(blob),
+                    onload: () => URL.revokeObjectURL(genUrl),
                     onerror: response => {
                         log.post.error(postId, `Error writing generated.zip to disk: ${response.error} - ${response.details}`, postNumber);
+                        URL.revokeObjectURL(genUrl);
                     },
                 });
             }
-        }
+            }
     }
 
     if (totalDownloadable > 0) {
@@ -7743,7 +7858,7 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
         } else {
             log.post.info(postId, `::Links generation completed::`, postNumber);
         }
-        callbacks?.onComplete?.(totalDownloadable, completed);
+        callbacks?.onComplete?.(totalDownloadable, completed, successful);
     }
 
     // Clear logs for this post after completion
@@ -7985,8 +8100,11 @@ const selectedPosts = [];
             };
 
             const postDownloadCallbacks = {
-                onComplete: (total, completed) => {
-                    if (total > 0 && completed > 0) {
+                /* v1.13.2 (7d F23): the reaction fires only when something was
+                 * actually staged or saved — completed>0 counted ALL-failed
+                 * runs too (failures increment completed). */
+                onComplete: (total, completed, successful) => {
+                    if (total > 0 && successful > 0) {
                         registerPostReaction(parsedPost.footer); // React to the post on successful download
                     }
                 },
@@ -8069,7 +8187,7 @@ const selectedPosts = [];
             html = `${ui.forms.createRow(ui.forms.createLabel('Post Selection'))} ${html}`;
             html += ui.forms.createRow(`<div style="margin-top:6px">
                 <input id="xfpd-cache-search" type="text" placeholder="Search cached posts (this thread)" autocomplete="off"
-                    style="width:92%;background:${color};color:#f4f4f5;border:1px solid rgba(0,229,255,0.35);border-radius:4px;padding:4px 6px;font-size:11px;font-family:'JetBrains Mono',monospace" />
+                    style="width:92%;background:${color};color:${ui.isLightTheme() ? '#1A1D21' : '#f4f4f5'};border:1px solid rgba(0,229,255,0.35);border-radius:4px;padding:4px 6px;font-size:11px;font-family:'JetBrains Mono',monospace" />
                 <div id="xfpd-cache-search-results" style="margin-top:4px;max-height:180px;overflow-y:auto;font-size:11px"></div>
             </div>`);
             ui.tooltip(btnDownloadPage, ui.forms.config.page.createForm(color, html), {
@@ -8111,7 +8229,12 @@ const selectedPosts = [];
                                 const line = document.createElement('div');
                                 line.style.marginBottom = '3px';
                                 const link = document.createElement('a');
-                                link.href = `#post-${match.postId}`;
+                                /* v1.13.2 (7d F11): a match on a NON-visible cached
+                                 * page needs the page path — a bare #post-<id> fragment
+                                 * silently no-oped when the post wasn't in the current
+                                 * DOM (the search spans up to 10 cached pages). */
+                                const threadBase = location.pathname.replace(/\/page-\d+\/?$/, '/');
+                                link.href = `${threadBase}${match.pageNumber > 1 ? `page-${match.pageNumber}/` : ''}#post-${match.postId}`;
                                 link.style.color = '#67E8F9';
                                 link.style.textDecoration = 'none';
                                 const snippet = h.escapeHTML(h.limit(String(match.textContent || '').replace(/\s+/g, ' ').trim(), 48));
@@ -8140,28 +8263,40 @@ const selectedPosts = [];
                         .filter(p => p.parsedHosts.length)
                         .forEach(post => {
                         const { postId, contentContainer } = post.parsedPost;
-                        // Add tooltips for post content summary links
-                        ui.tooltip(
-                            `#post-content-${postId}`,
-                            `<div style="overflow-y: auto; background: rgba(10,19,26,0.85); padding: 16px; width: 500px; max-height: 500px">
-                                ${contentContainer.innerHTML}
-                            </div>`,
-                            { placement: 'right', offset: [10, 15] },
-                        );
+                        /* v1.13.2 (7d F12): wire ONCE — the tooltip content
+                         * persists across shows, so every onShown re-registered
+                         * the change listeners (handler accumulation) and
+                         * stacked another tippy instance on the content anchor. */
+                        const contentAnchor = h.element(`#post-content-${postId}`);
+                        if (contentAnchor && contentAnchor.dataset.wired !== 'true') {
+                            contentAnchor.dataset.wired = 'true';
+                            // Add tooltips for post content summary links
+                            ui.tooltip(
+                                `#post-content-${postId}`,
+                                `<div style="overflow-y: auto; background: rgba(10,19,26,0.85); padding: 16px; width: 500px; max-height: 500px">
+                                    ${contentContainer.innerHTML}
+                                </div>`,
+                                { placement: 'right', offset: [10, 15] },
+                            );
+                        }
 
                         // Event listener for individual post selection checkboxes
-                        document.querySelector(`#config-download-post-${postId}`)?.addEventListener('change', e => {
-                            const selectedPost = selectedPosts.find(s => s.post.parsedPost.postId === postId);
-                            if (selectedPost) {
-                                selectedPost.enabled = e.target.checked;
-                            }
+                        const postCb = document.querySelector(`#config-download-post-${postId}`);
+                        if (postCb && postCb.dataset.wired !== 'true') {
+                            postCb.dataset.wired = 'true';
+                            postCb.addEventListener('change', e => {
+                                const selectedPost = selectedPosts.find(s => s.post.parsedPost.postId === postId);
+                                if (selectedPost) {
+                                    selectedPost.enabled = e.target.checked;
+                                }
 
-                            const checkAllCB = h.element('#config-toggle-all-posts');
-                            if (checkAllCB) {
-                                // Update "toggle all" checkbox based on individual selections
-                                checkAllCB.checked = selectedPosts.filter(s => s.enabled).length === parsedPosts.filter(p => p.parsedHosts.length).length;
-                            }
-                        });
+                                const checkAllCB = h.element('#config-toggle-all-posts');
+                                if (checkAllCB) {
+                                    // Update "toggle all" checkbox based on individual selections
+                                    checkAllCB.checked = selectedPosts.filter(s => s.enabled).length === parsedPosts.filter(p => p.parsedHosts.length).length;
+                                }
+                            });
+                        }
 
                     });
 
