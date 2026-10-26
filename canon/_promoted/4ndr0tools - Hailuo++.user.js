@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Hailuo++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      6.1.0
+// @version      6.1.1
 // @author       4ndr0666
 // @description  Enterprise-grade, idempotent automation engine for HailuoAI featuring automated queue management, asset fetching with tracked-download deduplication, an in-HUD Asset Bay thumbnail gallery (click-to-new-window, hover-playable previews, blob downloads that never navigate the session window) with cross-reload persistence, completion notifications, failure-card masking, API hard purge, and interactive asset links — hardened for the 2026-09 MiniMax H3 site generation and the hailuoai.video/agent chat surface. v5.4: editable-context (Slate) DOM guards, self-healing HUD watchdog, HUD collapse + Ctrl+Alt+H toggle, frame isolation, webp-aware blob transport with retry, and non-destructive title telemetry. v6.1: document-start interception platform — canvas toDataURL/toBlob commit hooks, URL.createObjectURL blob-clone vault fortification, and an a/img/video DOM stalker feeding the bay.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -22,6 +22,38 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Hailuo++.user.js
 // @license      MIT
 // ==/UserScript==
+// 6.1.1 (suite v1.15.0, WO-01 round 7): the interception platform's own
+// audit pass — the fortification mechanisms get the correctness they
+// claimed. The baseline sweep for late arming was a NO-OP (runStalkSweep
+// only drained an empty queue — first install mid-session, manager update
+// re-injection, and bfcache restore never stalker-captured anything; the
+// existing DOM is enqueued first now). The DOM stalker observes
+// attribute-only mutations too (attributeFilter src/href — a lazy <img>
+// whose src materializes, a src-only React re-render, a <source> quality
+// switch were all invisible). The clone registry honors BOTH bounds — the
+// 120-entry count AND a 224 MiB aggregate byte budget (120 multi-MB agent
+// clones retained gigabytes on exactly the long sessions the platform
+// targets), with eviction REVOKING the object URLs we minted (canvas
+// captures and re-mints — an un-revoked self-minted URL pinned its blob's
+// bytes for the document lifetime; page-owned keys are never revoked). The
+// trailing debounce gains a 2 s max-latency cap (continuous churn — agent
+// token streaming — postponed the sweep indefinitely). Canvas hash commits
+// only AFTER the capture entered the vault (a failed mint used to mark the
+// content captured forever — a permanently lost capture on re-commit). The
+// toDataURL noise floor accounts for base64 inflation (the string form
+// carried a ~25% lower effective byte floor than toBlob's). SAVE filenames
+// for blob: items derive their extension from the serving clone's MIME (a
+// canvas image/webp or a page video/webm was saved with the wrong label —
+// the UUID pathname never matched an extension). Blob admission is
+// duck-typed (instanceof Blob is cross-realm fragile — isolated-world
+// managers silently disabled the whole clone feature with no error
+// anywhere). The page error/rejection listeners are debug-gated
+// observe-only telemetry (the capture phase doubled the console line count
+// on the site's own noisy upstream; a Symbol rejection reason threw INSIDE
+// the error handler). The re-minted URLs register as minted (an untracked
+// re-mint leaked its URL entry forever). The dead registry fields (mime /
+// size / ts) are consumed now — size by the byte budget, mime by the SAVE
+// filename, ts by the budget-eviction WARN.
 // 6.1.0 (suite v1.14.0, WO-01 round 6): interception platform — the vault is
 // fortified end-to-end per the operator directive. @run-at flips to
 // document-start so three new hook families arm BEFORE the site's media
@@ -44,7 +76,7 @@
 // button), and the window.open escalation now checks its return value.
 // Subsumed @match lines (create*/agent* under hailuoai.video/*) dropped.
 // 6.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.0 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 
 /* ═══ SUITE PROMOTION 6.0.0 ═══════════════════════════════════════════
@@ -105,6 +137,11 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.0 —
         static warn(msg, data = '') { console.warn(`[4ndr0tools][WARN] ${msg}`, data); }
         static error(msg, err = '') { console.error(`[4ndr0tools][ERROR] ${msg}`, err); }
     }
+    /* v6.1.1 (7b F07): gates the interception platform's observe-only page
+     * telemetry — the capture-phase error listener sees every failed
+     * resource load too, which doubled the console line count on the site's
+     * own documented noisy upstream whenever devtools Verbose was on. */
+    Logger.debugEnabled = false;
 
     /* v6.1.0 (round 6): the interception platform instance — declared early
      * (let, null-initialized) because AssetBayStore, the bay thumbs, the
@@ -284,8 +321,14 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.0 —
        ══════════════════════════════════════════════════════════════════════════ */
     class InterceptPlatform {
         constructor() {
-            this.cloneRegistry = new Map();      // objectUrl -> { blob, mime, size, ts }
+            this.cloneRegistry = new Map();      // objectUrl -> { blob, mime, size, ts, minted }
             this.maxClones = 120;
+            /* v6.1.1 (7b F03): the count bound alone was bookkeeping — 120
+             * clones of multi-MB agent media could retain gigabytes on
+             * exactly the long sessions the platform targets; the aggregate
+             * byte budget evicts (with WARN) before the tab-crash class. */
+            this.maxCloneBytes = 224 * 1024 * 1024; // 224 MiB aggregate budget
+            this.totalCloneBytes = 0;
             this.canvasHashes = new Set();       // sha256 prefixes already captured
             this.canvasHashOrder = [];           // FIFO order for the bounded hash set
             this.maxCanvasHashes = 500;
@@ -294,7 +337,9 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.0 —
             this.stalkObserver = null;
             this.stalkQueue = new Set();         // elements pending the debounced sweep
             this.stalkDebounceTimer = null;
+            this.stalkSweepFloorAt = 0;          // 7b F10: max-latency cap anchor
             this.nativeCreateObjectURL = null;
+            this.nativeRevokeObjectURL = null;
             this.nativeToDataURL = null;
             this.nativeToBlob = null;
             this.sink = null;                    // AutomationOrchestrator (uiFactory bay)
@@ -312,7 +357,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.0 —
                     Logger.debug('Interception platform already armed in this page realm; skipping re-install.');
                     return false;
                 }
-                window.__andr0HailuoIntercept = '6.1.0';
+                window.__andr0HailuoIntercept = '6.1.1';
             } catch (markError) {
                 Logger.warn('Realm mark write rejected; installing hooks without the double-injection guard.', markError);
             }
@@ -327,14 +372,42 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.0 —
 
         /* ── clone registry ─────────────────────────────────────────────────── */
 
-        registerClone(url, clone) {
-            if (typeof url !== 'string' || !url || !(clone instanceof Blob)) return;
+        /* v6.1.1 (7b F06): duck-typed Blob admission — `instanceof Blob` is
+         * cross-realm fragile (isolated-world managers run the page's Blob in
+         * a different realm), which silently disabled the whole clone
+         * feature with no error anywhere. */
+        isBlobLike(v) {
+            return !!v && typeof v === 'object' && typeof v.size === 'number' && typeof v.slice === 'function';
+        }
+
+        registerClone(url, clone, mintedByUs = false) {
+            if (typeof url !== 'string' || !url || !this.isBlobLike(clone)) return;
             if (this.cloneRegistry.has(url)) return;
-            this.cloneRegistry.set(url, { blob: clone, mime: clone.type || '', size: clone.size, ts: Date.now() });
-            while (this.cloneRegistry.size > this.maxClones) {
+            this.cloneRegistry.set(url, { blob: clone, mime: clone.type || '', size: clone.size || 0, ts: Date.now(), minted: !!mintedByUs });
+            this.totalCloneBytes += clone.size || 0;
+            /* v6.1.1 (7b F02/F03): eviction honors BOTH bounds — count AND the
+             * aggregate byte budget — and revokes the object URLs WE minted
+             * (canvas captures, re-mints): an un-revoked self-minted URL pins
+             * its blob's bytes in the URL store for the document's lifetime,
+             * so the 120-entry FIFO bounded bookkeeping only, not memory.
+             * Page-owned keys are never revoked (that would break the page).
+             * The newest entry always survives (size>1 guard) — one giant
+             * capture beats evicting everything to chase the budget. */
+            while ((this.cloneRegistry.size > this.maxClones || (this.totalCloneBytes > this.maxCloneBytes && this.cloneRegistry.size > 1))) {
                 const oldest = this.cloneRegistry.keys().next().value;
                 if (oldest === undefined) break;
+                const entry = this.cloneRegistry.get(oldest);
                 this.cloneRegistry.delete(oldest);
+                this.totalCloneBytes -= (entry && entry.size) || 0;
+                if (this.totalCloneBytes < 0) this.totalCloneBytes = 0;
+                if (entry && entry.minted && this.nativeRevokeObjectURL) {
+                    try { this.nativeRevokeObjectURL.call(URL, oldest); } catch (revokeError) {
+                        Logger.debug('Self-minted clone URL revoke rejected.', revokeError);
+                    }
+                }
+                if (this.totalCloneBytes > this.maxCloneBytes) {
+                    Logger.warn(`Clone registry byte budget exceeded (${(this.totalCloneBytes / 1048576).toFixed(1)} MiB retained); dropped a ${((entry && entry.size) || 0)}-byte clone aged ${Math.max(0, Date.now() - ((entry && entry.ts) || Date.now()))} ms.`);
+                }
             }
         }
 
@@ -355,7 +428,14 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.0 —
             if (!entry || !this.nativeCreateObjectURL) return null;
             try {
                 const fresh = this.nativeCreateObjectURL.call(URL, entry.blob);
-                return typeof fresh === 'string' ? fresh : null;
+                if (typeof fresh === 'string') {
+                    /* v6.1.1 (7b F02): the re-minted URL is OURS — register it
+                     * minted so eviction revokes it (an untracked re-mint
+                     * leaked its URL entry for the document lifetime). */
+                    this.registerClone(fresh, entry.blob, true);
+                    return fresh;
+                }
+                return null;
             } catch (mintError) {
                 Logger.debug('Vault clone re-mint rejected by the URL runtime.', mintError);
                 return null;
@@ -369,11 +449,12 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.0 —
                 const nativeCreate = URL.createObjectURL;
                 if (typeof nativeCreate !== 'function') return;
                 this.nativeCreateObjectURL = nativeCreate;
+                if (typeof URL.revokeObjectURL === 'function') this.nativeRevokeObjectURL = URL.revokeObjectURL;
                 const self = this;
                 URL.createObjectURL = function (blobOrMediaSource) {
                     const url = nativeCreate.apply(this, arguments);
                     try {
-                        if (blobOrMediaSource instanceof Blob && blobOrMediaSource.size > 0) {
+                        if (self.isBlobLike(blobOrMediaSource) && blobOrMediaSource.size > 0) {
                             self.registerClone(url, blobOrMediaSource.slice(0));
                         }
                     } catch (cloneError) {
@@ -429,13 +510,15 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.0 —
                 Logger.debug('Canvas shape probe rejected; commit not captured.', shapeError);
                 return;
             }
-            if (blob instanceof Blob && blob.size >= this.minCaptureBytes) {
+            if (this.isBlobLike(blob) && blob.size >= this.minCaptureBytes) {
                 this.ingestCapturedBlob(blob);
                 return;
             }
-            if (typeof dataUrl === 'string' && dataUrl.length >= this.minCaptureBytes && dataUrl.startsWith('data:')) {
+            if (typeof dataUrl === 'string' && dataUrl.length >= Math.ceil(this.minCaptureBytes * 4 / 3) && dataUrl.startsWith('data:')) {
                 /* data: URL → Blob via the page fetch API (data: URLs never
-                 * hit the network and need no @connect grant). */
+                 * hit the network and need no @connect grant). v6.1.1 (7b
+                 * F13): the base64 inflation is accounted — the string form
+                 * carried a ~25% lower effective byte floor than toBlob's. */
                 fetch(dataUrl)
                     .then(res => {
                         if (!res.ok) throw new Error(`data: conversion returned HTTP ${res.status}`);
@@ -449,7 +532,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.0 —
         }
 
         ingestCapturedBlob(blob) {
-            if (!(blob instanceof Blob) || blob.size < this.minCaptureBytes) return;
+            if (!this.isBlobLike(blob) || blob.size < this.minCaptureBytes) return;
             let subtle = null;
             try {
                 subtle = window.crypto && window.crypto.subtle && typeof window.crypto.subtle.digest === 'function'
@@ -467,17 +550,21 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.0 —
                     const hash = Array.from(new Uint8Array(digest)).slice(0, 8)
                         .map(b => b.toString(16).padStart(2, '0')).join('');
                     if (this.canvasHashes.has(hash)) return; // already captured
+                    const clone = blob.slice(0);
+                    if (!this.nativeCreateObjectURL) return;
+                    const url = this.nativeCreateObjectURL.call(URL, clone);
+                    if (typeof url !== 'string') return;
+                    this.registerClone(url, clone, true);
+                    this.dispatchVaultCapture({ src: url, type: 'image' });
+                    /* v6.1.1 (7b F08): the hash commits only AFTER the capture
+                     * entered the vault — a failed mint/register used to mark
+                     * the content captured forever, a permanently lost capture
+                     * on re-commit. */
                     this.canvasHashes.add(hash);
                     this.canvasHashOrder.push(hash);
                     while (this.canvasHashOrder.length > this.maxCanvasHashes) {
                         this.canvasHashes.delete(this.canvasHashOrder.shift());
                     }
-                    const clone = blob.slice(0);
-                    if (!this.nativeCreateObjectURL) return;
-                    const url = this.nativeCreateObjectURL.call(URL, clone);
-                    if (typeof url !== 'string') return;
-                    this.registerClone(url, clone);
-                    this.dispatchVaultCapture({ src: url, type: 'image' });
                     Logger.info(`Canvas commit captured into the vault (sha256 ${hash.slice(0, 8)}, ${blob.size} bytes).`);
                 })
                 .catch(hashError => Logger.debug('Canvas capture hashing rejected.', hashError));
@@ -493,6 +580,15 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.0 —
                  * scans the `self` realm; an alias here reads as pollution). */
                 this.stalkObserver = new MutationObserver((mutations) => {
                     for (const mutation of mutations) {
+                        /* v6.1.1 (7b F04): attribute-only mutations — a lazy
+                         * <img> whose src materializes, a React re-render that
+                         * only swaps src, a <source> quality switch — never
+                         * delivered addedNodes, so the elements were invisible
+                         * to the stalker after the baseline sweep. */
+                        if (mutation.type === 'attributes') {
+                            if (mutation.target && mutation.target.nodeType === 1) this.queueStalkNode(mutation.target);
+                            continue;
+                        }
                         if (!mutation.addedNodes || mutation.addedNodes.length === 0) continue;
                         for (const node of mutation.addedNodes) {
                             if (!node || node.nodeType !== 1) continue; // ELEMENT_NODE
@@ -500,19 +596,48 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.0 —
                         }
                     }
                     if (this.stalkQueue.size === 0) return;
+                    if (this.stalkSweepFloorAt === 0) this.stalkSweepFloorAt = Date.now();
                     if (this.stalkDebounceTimer) clearTimeout(this.stalkDebounceTimer);
+                    /* v6.1.1 (7b F10): max-latency cap — every mutation batch
+                     * reset the 400 ms trailing debounce, so continuous churn
+                     * (agent token streaming) postponed the sweep for the
+                     * burst duration; 2 s after the FIRST queued node the
+                     * sweep fires regardless. */
+                    if (Date.now() - this.stalkSweepFloorAt >= 2000) {
+                        this.stalkSweepFloorAt = 0;
+                        if (this.stalkDebounceTimer) { clearTimeout(this.stalkDebounceTimer); this.stalkDebounceTimer = null; }
+                        this.runStalkSweep();
+                        return;
+                    }
                     this.stalkDebounceTimer = setTimeout(() => {
                         this.stalkDebounceTimer = null;
+                        this.stalkSweepFloorAt = 0;
                         this.runStalkSweep();
                     }, 400);
                 });
-                this.stalkObserver.observe(document.documentElement, { childList: true, subtree: true });
+                this.stalkObserver.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['src', 'href'] });
                 /* Baseline sweep for nodes already in the DOM when the
-                 * platform arms late (readyState already interactive). */
+                 * platform arms late (readyState already interactive) —
+                 * v6.1.1 (7b F01): the sweep must ENQUEUE the existing nodes
+                 * first; draining an empty queue was a no-op (first install
+                 * mid-session, manager update re-injection, bfcache restore
+                 * never stalker-captured anything). */
+                const enqueueExistingDom = () => {
+                    try {
+                        if (typeof document.querySelectorAll === 'function') {
+                            for (const el of document.querySelectorAll('a[href], img, video, source')) {
+                                this.stalkQueue.add(el);
+                            }
+                        }
+                    } catch (baselineError) {
+                        Logger.debug('Baseline DOM enqueue rejected.', baselineError);
+                    }
+                };
                 if (document.readyState !== 'loading') {
+                    enqueueExistingDom();
                     this.runStalkSweep();
                 } else {
-                    window.addEventListener('DOMContentLoaded', () => { this.runStalkSweep(); }, { once: true });
+                    window.addEventListener('DOMContentLoaded', () => { enqueueExistingDom(); this.runStalkSweep(); }, { once: true });
                 }
             } catch (installError) {
                 Logger.warn('DOM stalker was not installed (observer API sealed?).', installError);
@@ -596,11 +721,22 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.0 —
 
         installPageErrorIsolation() {
             try {
+                /* v6.1.1 (7b F07): observe-only telemetry, debug-gated — the
+                 * capture phase sees every failed resource load too, which
+                 * doubled the console line count on the site's own documented
+                 * noisy upstream whenever devtools Verbose was on; the
+                 * rejection reason stringification is guarded (a Symbol reason
+                 * used to throw INSIDE the error handler itself). These are
+                 * observers, not isolators — nothing is swallowed. */
                 window.addEventListener('error', (event) => {
+                    if (!Logger.debugEnabled) return;
                     Logger.debug('Page error observed (interception platform remains armed).', event && event.message);
                 }, true);
                 window.addEventListener('unhandledrejection', (event) => {
-                    Logger.debug('Unhandled rejection observed (interception platform remains armed).', event && event.reason ? String(event.reason) : '');
+                    if (!Logger.debugEnabled) return;
+                    let reason = '';
+                    try { reason = String(event && event.reason); } catch (stringifyError) { reason = '<unstringifiable>'; }
+                    Logger.debug('Unhandled rejection observed (interception platform remains armed).', reason);
                 });
             } catch (installError) {
                 Logger.warn('Page error isolation listeners were not installed.', installError);
@@ -2013,8 +2149,20 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.0 —
             }
         }
 
-        composeAssetFilename(assetObj) {
+        composeAssetFilename(assetObj, mimeOverride = '') {
             const defaultExtension = assetObj.type === 'video' ? '.mp4' : '.png';
+            /* v6.1.1 (7b F05): a blob: src has a UUID pathname — no extension
+             * match — so a canvas image/webp or a page video/webm saved with
+             * the wrong label; the serving clone's MIME maps to the extension
+             * whenever the URL itself can't provide one. */
+            const mimeExtension = (() => {
+                const mime = String(mimeOverride || '').split(';')[0].trim().toLowerCase();
+                return ({
+                    'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp',
+                    'image/gif': '.gif', 'image/avif': '.avif',
+                    'video/mp4': '.mp4', 'video/webm': '.webm', 'video/quicktime': '.mov',
+                })[mime] || '';
+            })();
             let stem = assetObj.type ? String(assetObj.type) : 'asset';
             try {
                 const parsed = new URL(assetObj.src, location.href);
@@ -2024,7 +2172,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.0 —
                     if (rawStem) stem = rawStem;
                 }
                 const extensionMatch = parsed.pathname.match(/\.(jpe?g|png|webp|gif|mp4|webm|mov)$/i);
-                let extension = extensionMatch ? extensionMatch[0].toLowerCase() : defaultExtension;
+                let extension = extensionMatch ? extensionMatch[0].toLowerCase() : (mimeExtension || defaultExtension);
                 const ossProcess = parsed.searchParams.get('x-oss-process') || '';
                 const formatMatch = ossProcess.match(/format[,/](jpe?g|png|webp|gif)/i);
                 if (formatMatch) {
@@ -2085,7 +2233,6 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.0 —
         }
 
         async downloadAssetViaBlob(assetObj) {
-            const filename = this.composeAssetFilename(assetObj);
             try {
                 let blobPayload = null;
                 /* v6.1.0: clone-first — if the vault holds a clone for this
@@ -2094,7 +2241,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.0 —
                  * revocation and CDN expiry can no longer kill a vault
                  * capture. */
                 const vaultClone = interceptPlatform !== null ? interceptPlatform.getClone(assetObj.src) : null;
-                if (vaultClone instanceof Blob && vaultClone.size > 0) {
+                if (vaultClone && typeof vaultClone.size === 'number' && typeof vaultClone.slice === 'function' && vaultClone.size > 0) {
                     blobPayload = vaultClone;
                     Logger.debug('Blob payload served from the interception vault clone; network transport skipped.', assetObj.src);
                 } else {
@@ -2107,6 +2254,10 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.0 —
                         blobPayload = await this.requestBlobPayload(assetObj.src);
                     }
                 }
+                /* v6.1.1 (7b F05): composed AFTER the payload resolves — the
+                 * clone's MIME rides the filename when the URL can't name an
+                 * extension (blob: UUID paths). */
+                const filename = this.composeAssetFilename(assetObj, blobPayload && blobPayload.type);
                 if (!blobPayload || blobPayload.size === 0) {
                     throw new Error('Transport returned an empty payload');
                 }

@@ -745,12 +745,12 @@
   {
    "file": "4ndr0tools - Hailuo++.user.js",
    "name": "4ndr0tools - Hailuo++",
-   "version": "6.1.0",
+   "version": "6.1.1",
    "description": "Enterprise-grade, idempotent automation engine for HailuoAI featuring automated queue management, asset fetching with tracked-download deduplication, an in-HUD Asset Bay thumbnail gallery (click-to-new-window, hover-playable previews, blob downloads that never navigate the session window) with cross-reload persistence, completion notifications, failure-card masking, API hard purge, and interactive asset links — hardened for the 2026-09 MiniMax H3 site generation and the hailuoai.video/agent chat surface. v5.4: editable-context (Slate) DOM guards, self-healing HUD watchdog, HUD collapse + Ctrl+Alt+H toggle, frame isolation, webp-aware blob transport with retry, and non-destructive title telemetry. v6.1: document-start interception platform — canvas toDataURL/toBlob commit hooks, URL.createObjectURL blob-clone vault fortification, and an a/img/video DOM stalker feeding the bay.",
    "family": "sovereign platforms",
-   "sha256": "e343f48b1a9d339337ac55c791fbad204bd6a7ce31b9ae0001d9aa36cbd349b5",
-   "lines": 2366,
-   "bytes": 122553,
+   "sha256": "7f11a520ae31478e74f5577bf1280f7057924ac413ee6b2c290653b4bb14ab28",
+   "lines": 2517,
+   "bytes": 133113,
    "matches": [
     "https://hailuoai.com/video*",
     "https://hailuoai.video/*"
@@ -1678,5 +1678,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "328dbb72368b6be2d64c697e08eaef57e1ed8899ca57ababadbfa03951d9bdd0"
+ "digest": "1ec99492658e6b1ccd9560cdd1f599e55a107cc80faa7d592c061b9eb42bcd3b"
 }
