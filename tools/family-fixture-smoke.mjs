@@ -529,10 +529,10 @@ forceImmediateAnswer();`, hwCtx);
     );
     const cyberfileMatch = [..."func('folder', 'cf98765')".matchAll(/(?<='folder',\s').*?(?=')/gis)].map((m) => m[0])[0];
     assert(
-        "Forums++ v1.10.2 fixes gofile status operator-precedence, cyberfile nodeId lookbehind ('cf98765') & public-folder gate, cyberdrop http param, and downloadPost interval cleanup",
+        "Forums++ v1.12.0 keeps the gofile status gate null-safe (the v1.10.2 precedence fix, strengthened in the round-6 API rewrite), cyberfile nodeId lookbehind ('cf98765') & public-folder gate, GM_download Blob URL, and downloadPost interval cleanup",
         cyberfileMatch === "cf98765" &&
-        fppSrc.includes("if (props?.status !== 'ok' || !props?.data)") &&
-        fppSrc.includes("const contentCode = url.split('/').filter(Boolean).pop();") &&
+        fppSrc.includes("if (!props || props.status !== 'ok' || !props.data)") &&
+        fppSrc.includes("const id = String(urlOrId).includes('gofile.io/d/') ? String(urlOrId).split('/').reverse()[0] : String(urlOrId);") &&
         fppSrc.includes("if (requiredPassword && !unlocked)") &&
         fppSrc.includes("async (url, http) => {") &&
         fppSrc.includes("URL.createObjectURL(response.response)") &&

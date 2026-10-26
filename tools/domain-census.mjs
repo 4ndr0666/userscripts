@@ -68,6 +68,12 @@ const SANCTIONED_CO_INSTALL = [
         expiry: "v1.14.0",
     },
     {
+        domain: "gofile.io",
+        scripts: ["4ndr0tools - Forums++.user.js", "4ndr0tools - Gofile++.user.js"],
+        reason: "bulk download x standalone drive (round 6): Forums++ resolves /d/ links from forum threads through the 2026-08 API (guest account + wt.obf.js + accountToken cookie sync — the gofile.io/* @match exists for that surface and is gated by the resolver); Gofile++ drives standalone gofile.io browsing sessions (recursive scans, DM handoff) — disjoint surfaces (thread-page resolvers vs site-page engine), hotkey census green",
+        expiry: "v1.15.0",
+    },
+    {
         domain: "instagram.com",
         scripts: ["4ndr0tools - LinkMasterΨ.user.js", "4ndr0tools - Instagram++.user.js"],
         reason: "capture pipeline × feed augmenter: LMΨ harvests links/thumbnails for the ψ-suite, IG++ injects download badges on feed media — disjoint DOM surfaces, disjoint activation (capture panel vs automatic badges); hotkey census green",

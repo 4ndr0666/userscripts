@@ -99,6 +99,18 @@ const ADJUDICATED_PAGE_LIFETIME = [
         expiry: "v1.14.0",
     },
     {
+        file: "canon/_sovereign/4ndr0tools - Forums++.user.js",
+        callText: "setInterval(beat, GBX_HEARTBEAT_MS)",
+        reason: "goonbox bridge heartbeat (round 6, lineage L598-1071 port): the marker-gated helper tab beats xfpd_gbx_ready every second so the forum tab's gbxBridgeAlive() freshness check (5x heartbeat window) can detect a dead/closed helper — the beat IS the liveness signal, no detection trigger can be separated from it; teardown pair: beforeunload clears the interval AND zeroes the ready key; the tab's whole purpose is to outlive individual requests (idle close is request-driven, not time-driven)",
+        expiry: "v1.15.0",
+    },
+    {
+        file: "canon/_sovereign/4ndr0tools - Forums++.user.js",
+        callText: "setInterval(() => { handle(gbxGet(GBX_K_REQ,",
+        reason: "goonbox bridge request poll (round 6): dual-delivery receiver — GM_addValueChangeListener delivers the request on the configurations where cross-tab storage propagation works, this 150 ms poll is the ONLY delivery path on Firefox+Tampermonkey (per-tab GM cache blindness, the b13 lesson); per-tick work is a JSON.parse of a usually-empty string (O(1) not-ready return); lastId makes double-delivery a no-op; teardown pair: beforeunload clears the interval",
+        expiry: "v1.15.0",
+    },
+    {
         file: "canon/_sovereign/4ndr0tools - YouTube Playlist Master.user.js",
         callText: "setInterval(() => { try { if (!DECK.root",
         reason: "deck watchdog: self-healing re-mount daemon (documented v1.2.0/v1.4.0 behavior — deliberately retries every 5 s for the page lifetime, mountFails counter guards error-flood); per-tick work is an O(1) isConnected check; detection of detach IS this watchdog, so no re-arm trigger can be separated from it",

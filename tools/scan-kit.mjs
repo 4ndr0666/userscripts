@@ -138,6 +138,30 @@ export function checkLexicalBalance(src, label = "source") {
             if (pairs[top.ch] !== c) return `${label}: "${c}" at line ${line} closes "${top.ch}" opened at line ${top.line}`;
             lastSig = c; i++; continue;
         }
+        if (/[A-Za-z_$]/.test(c)) {
+            /* WO-01 round 6 (2-c instrument defect, found live by the Forums++
+             * restoration): whole-word scan. A regex literal may directly follow a
+             * VALUE-POSITION KEYWORD (`return /…/`, `typeof /…/`, `case /…/:`) —
+             * the per-char fallthrough below overwrote lastSig with the keyword's
+             * LAST LETTER ('n' for return), which is not in the regex-detection
+             * class, so `return /^[^<>:"|?*\x00-\x1F]+…$/i` was misread as division
+             * and its class-internal `"` opened a phantom string (the canon was
+             * node-clean; the instrument was wrong). Keywords in property position
+             * (obj.return, x.case) keep the old per-word-tail behavior via the
+             * prev-sig exclusion. */
+            let j = i + 1;
+            while (j < n && /[\w$]/.test(src[j])) j++;
+            const word = src.slice(i, j);
+            const prevSig = lastSig;
+            const VALUE_KEYWORDS = new Set(["return", "typeof", "instanceof", "in", "of", "new", "delete", "void", "do", "else", "yield", "await", "case", "throw"]);
+            if (VALUE_KEYWORDS.has(word) && !/[.\)\]"'`/]/.test(prevSig || "")) {
+                lastSig = "("; // regex-legal value position
+            } else {
+                lastSig = src[j - 1];
+            }
+            i = j;
+            continue;
+        }
         if (!/\s/.test(c)) lastSig = c;
         i++;
     }

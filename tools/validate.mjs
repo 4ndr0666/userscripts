@@ -160,6 +160,16 @@ const RECONCILED_NAMES = {
      * present AS CODE in the dist — dead weight that would have excused
      * their disappearance. They are live code now: Gate B verifies them
      * directly, fail-closed. */
+    "Forums++": {
+        /* WO-01 round-6: cyberdrop_helper removed — the legacy 3x3.5 s retry
+         * ladder (old cyberdrop.me/api/f JSON flow) is superseded by the live
+         * api.cyberdrop.cr info->auth->direct candidate ladder with
+         * cyberdropWarmupOnce retries; every former call site consumed the
+         * old-API response shape the live site no longer serves. Removal
+         * authorized by the operator's standing round-6 directive (zero dead
+         * code); the anchor machine-checks the successor surface. */
+        "cyberdrop_helper": {"note": "removed as superseded dead code (WO-01 round 6): the legacy /api/f retry ladder is replaced by the api.cyberdrop.cr info→auth→direct ladder + warm-up retries (lineage L4782-5291 port)", "anchor": {"file": "canon/_sovereign/4ndr0tools - Forums++.user.js", "mustContain": ["cyberdropWarmupOnce", "api/file/auth/"]}},
+    },
     "Akasha Silence": {
         "applyNetworkHooks": {"note": "applyLocalHooks (renamed, suite v1.4.5) — the fetch/XHR/beacon defusing migrated to the NetHook v3 veto (__4NDR0_NET_API__.onRequest, kernel-owned wraps); the local installer keeps the WebSocket/WebRTC/worker pacifiers", "anchor": {"file": "canon/_merged/4ndr0tools - Akasha Silence.user.js", "mustContain": ["applyLocalHooks", "onRequest"]}},
     },
@@ -886,7 +896,11 @@ async function gateD() {
         !pdDist.includes("const list = el('div', null, jobs.map(j =>") ||
         !pdDist.includes("const runNavRefresh = debounce(() => {") ||
         !pdDist.includes("GM_registerMenuCommand('★ Premium: active', openSettingsPanel);") ||
-        !fpp.includes("if (props?.status !== 'ok' || !props?.data)") ||
+        /* WO-01 round 6: the gofile status gate strengthened to the null-safe
+         * form in the 2026-08 API rewrite (`!props ||` short-circuits before
+         * the member reads — the v1.10.2 precedence fix preserved and
+         * strictly widened). */
+        !fpp.includes("if (!props || props.status !== 'ok' || !props.data)") ||
         !fpp.includes("if (requiredPassword && !unlocked)") ||
         !fpp.includes("clearInterval(requestProgress.intervalId);") ||
         !lm2.includes("const spoilerCandidates =") ||

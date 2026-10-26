@@ -223,6 +223,10 @@ const ADJUDICATED = {
         newFunction: { count: 1, reason: "eval-bridge: same page-$ bridge, new Function fallback (policy-gated)" },
         parseFromString: { count: 1, reason: "page-policy: $parseHtml routes through the page's own trustedHTML policy (v1.4.2 capture)" },
     },
+    "4ndr0tools - Forums++.user.js": {
+        expiry: "v1.15.0",
+        newFunction: { count: 1, reason: "gofile-wt-bridge (round 6): scoped Function evaluation of the live-fetched gofile.io/js/wt.obf.js — the site's own generateWT() token generator, called with navigator as the sole argument so the declaration stays local to the factory (never leaks to global); source verified by /generateWT/ content check before eval and cached 24 h in GM storage while the 4-hour time bucket inside generateWT() is recomputed on every call (lineage L3899-3947 port)" },
+    },
     "4ndr0tools - Instagram++.user.js": {
         expiry: "v1.14.0",
         parseFromString: { count: 1, reason: "page-policy: DASH manifest parse covered by the page 'default' createHTML policy minted at boot" },

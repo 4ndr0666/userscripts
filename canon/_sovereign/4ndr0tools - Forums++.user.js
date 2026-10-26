@@ -3,11 +3,19 @@
 // @name        4ndr0tools - Forums++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     1.11.2
+// @version     1.12.0
 // @description Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @match       https://simpcity.su/threads/*
 // @match       https://simpcity.cr/threads/*
+// @match       https://simpcity.is/threads/*
+// @match       https://simpcity.cz/threads/*
+// @match       https://simpcity.hk/threads/*
+// @match       https://simpcity.rs/threads/*
+// @match       https://simpcity.ax/threads/*
+// @match       https://gofile.io/*
+// @match       https://goonbox.cr/*
+// @match       https://*.goonbox.cr/*
 // @require     https://unpkg.com/@popperjs/core@2
 // @require     https://unpkg.com/tippy.js@6
 // @require     https://unpkg.com/file-saver@2.0.4/dist/FileSaver.min.js
@@ -15,8 +23,9 @@
 // @require     https://raw.githubusercontent.com/geraintluff/sha256/gh-pages/sha256.min.js
 // @connect self
 // @connect coomer.su
+// @connect coomer.st
 // @connect kemono.su
-// @connect github.com
+// @connect kemono.cr
 // @connect big-taco-1img.bunkr.ru
 // @connect i-pizza.bunkr.ru
 // @connect bunkr.ac
@@ -27,6 +36,14 @@
 // @connect bunkr.cr
 // @connect bunkr.fi
 // @connect bunkr.is
+// @connect bunkr.lu
+// @connect bunkr.lv
+// @connect bunkr.bi
+// @connect bunkr.cm
+// @connect bunkr.at
+// @connect bunkr.by
+// @connect bunkr.cx
+// @connect bunkr.sx
 // @connect bunkr.media
 // @connect bunkr.nu
 // @connect bunkr.red
@@ -44,17 +61,24 @@
 // @connect bunkrrr.org
 // @connect bunkr-cache.se
 // @connect mlk-bk.cdn.gigachad-cdn.ru
+// @connect apidl.bunkr.ru
+// @connect get.bunkrr.su
+// @connect cdn.cr
+// @connect glb-apisign.cdn.cr
 // @connect cyberdrop.me
 // @connect cyberdrop.cc
 // @connect cyberdrop.ch
 // @connect cyberdrop.cloud
 // @connect cyberdrop.nl
 // @connect cyberdrop.to
+// @connect cyberdrop.cr
 // @connect cyberfile.su
 // @connect cyberfile.me
 // @connect saint2.su
 // @connect saint2.pk
 // @connect saint2.cr
+// @connect turbo.cr
+// @connect turbocdn.st
 // @connect redd.it
 // @connect i.ibb.co
 // @connect ibb.co
@@ -69,6 +93,8 @@
 // @connect jpg4.su
 // @connect jpg5.su
 // @connect jpg6.su
+// @connect jpg7.cr
+// @connect cuckcapital.cr
 // @connect selti-delivery.ru
 // @connect imgbox.com
 // @connect pixhost.to
@@ -76,29 +102,72 @@
 // @connect postimg.cc
 // @connect imgvb.com
 // @connect pixxxels.cc
-// @connect postimg.cc
 // @connect imagevenue.com
 // @connect pbs.twimg.com
-// @connect media.tumblr.com
 // @connect pixeldrain.com
+// @connect pixeldrain.net
+// @connect pixeldra.in
 // @connect redgifs.com
 // @connect noodlemagazine.com
-// @connect pvvstream.pro
 // @connect spankbang.com
 // @connect sb-cd.com
 // @connect gofile.io
 // @connect phncdn.com
-// @connect xvideos.com
-// @connect githubusercontent.com
+// @connect goonbox.cr
+// @connect filester.me
+// @connect filester.sh
+// @connect filester.si
+// @connect filester.gg
+// @connect box.com
+// @connect boxcloud.com
+// @connect give.xxx
+// @connect pomf2.lain.la
+// @connect onlyfans.com
 // @run-at document-start
 // @grant GM_xmlhttpRequest
 // @grant GM_download
 // @grant GM_setValue
 // @grant GM_getValue
+// @grant GM_addValueChangeListener
+// @grant GM_openInTab
+// @grant GM_cookie
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Forums++.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Forums++.user.js
 // @license      MIT
 // ==/UserScript==
+// 1.12.0 (suite v1.14.0, WO-01 round 6): the lineage restoration, segment 1 — the
+// resolution layer is restored to XenForoPostDownloader v3.23 feature parity
+// (the operator's Forums++ directive; every port below carries its machinery
+// complete — no matcher-only dead-ends). HEADER: @match gains the four
+// simpcity TLD mirrors + gofile.io/* + goonbox.cr/* (the goonbox helper-tab
+// bridge and the gofile cookie sync run in those tabs); @grant gains
+// GM_addValueChangeListener/GM_openInTab/GM_cookie; @connect loses six
+// zero-code tokens (media.tumblr.com, pvvstream.pro, xvideos.com, github.com,
+// githubusercontent.com, postimg.cc duplicate) and gains the port-driven set
+// (coomer.st, kemono.cr, jpg7.cr, cuckcapital.cr, bunkr lu/lv/bi/cm/at/by/cx/sx,
+// apidl.bunkr.ru, get.bunkrr.su, cdn.cr, glb-apisign.cdn.cr, cyberdrop.cr,
+// turbo.cr, turbocdn.st, onlyfans.com, pomf2.lain.la, give.xxx, box.com,
+// boxcloud.com, goonbox.cr, filester me/sh/si/gg, pixeldrain.net, pixeldra.in).
+// HOSTS: Goonbox / Redgifs:users / Filester:d+f / turbo(v|d|a) shapes join the
+// table; Saint widens to the turbo.cr originals beside the saint2 migration;
+// Coomer .st, kemono .cr, JPGX .cr+cuckcapital, Bunkr +8 TLDs, Pixeldrain
+// .net/pixeldra.in, Cyberdrop generic-TLD matchers widened. RESOLVERS: the
+// turbo sign API (5 s timeout, 2 jittered retries, fn= preservation, embed
+// fallback) + stall re-sign ride-along state; the goonbox CF bridge (GM-storage
+// handshake, marker-gated helper tab, path allow-list, 120 s breaker, listener
+// + poll dual delivery); GoFile's 2026-08 API (wt.obf.js scoped-eval + guest
+// account + xfpd_gofile_wt/at 24 h TTL + bearerOverride + cookie sync/restore
+// — the hardcoded token and its unreachable createAccount boot path are dead
+// against the live site and are gone); Bunkr's apidl/_001_v2 flow with CF
+// warm-up tabs, 60-min domain blacklist, cdn.cr signing, name hints and the
+// ?page= album walker; Cyberdrop's api.cyberdrop.cr info→auth→direct ladder
+// with warm-up; Redgifs users pagination walker + token refresh on
+// 401/403/429; Pornhub flashvars reassembly (bounded retries, the lineage's
+// 20-loop tamed to 5 with logging); Filester v2 token API for /d/ + /f/ (the
+// v1 cache-host probe sweep stays unported by design — its hosts are
+// NXDOMAIN/black-holed per the lineage's own field notes; Filester++
+// sovereign keeps the standalone surface). All hint registries bounded
+// (hintMap FIFO); every catch logged (G11).
 // 1.11.2 (suite v1.12.0, WO-01 round 5): the ibb.co data-object decode joins
 // the guarded family (5-c F01 — the 1.11.1 line below claimed "both sites"
 // while only the Content-Disposition filename site had shipped the guard;
@@ -108,9 +177,9 @@
 // Content-Disposition filename decodeURIComponent site degrades losslessly
 // on malformed input instead of throwing (4-c F05).
 // 1.9.2 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Forums++.user v1.11.2 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Forums++.user v1.12.0 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
-/* global JSZip, tippy, GM_xmlhttpRequest, saveAs, sha256, GM_download, GM_getValue, GM_setValue */
+/* global JSZip, tippy, GM_xmlhttpRequest, saveAs, sha256, GM_download, GM_getValue, GM_setValue, GM_addValueChangeListener, GM_openInTab, GM_cookie */
 
 const JSZipGlobal = window.JSZip;
 const tippyGlobal = window.tippy;
@@ -206,7 +275,13 @@ const settings = {
     },
     hosts: {
         goFile: {
-            token: 'KPQJgKlYsy8JPmbuxj3MC4e5PFEpdZYP',
+            // v1.12.0: the hardcoded token is gone — the live API requires the
+            // per-request x-website-token (wt.obf.js generateWT) and the token
+            // is now created/persisted lazily by the resolver (xfpd_gofile_at,
+            // 24 h TTL). bearerOverride: paste a personal GoFile token here to
+            // always use it instead of the anonymous account flow.
+            token: '',
+            bearerOverride: '',
         },
     },
     ui: {
@@ -1354,6 +1429,1112 @@ function setProcessing(isProcessing, postId) {
     entry.processing = Boolean(isProcessing);
 }
 
+/* ════════════════════════════════════════════════════════════════════════════
+   v1.12.0 (WO-01 round 6) — THE LINEAGE MACHINERY (segment 1 of the
+   XenForoPostDownloader v3.23 restoration). Everything between this banner and
+   the hosts[] table below is ported from the operator-provided lineage source
+   (gup/forumspp-lineage.js, @namespace github.com/SkyCloudDev), rewritten to
+   the canon's census laws: every catch is non-empty and logged (G11), every
+   registry is FIFO-bounded (cache census), the two page-lifetime service
+   intervals are polling-census ledgered, and no empty TODO survives.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* Bounded hint registry factory — the lineage's hint Maps were unbounded
+ * (cache-census violation); every one below is FIFO-capped instead. */
+const hintMap = (cap = 2000) => {
+    const map = new Map();
+    return {
+        get: k => map.get(k),
+        set: (k, v) => {
+            if (map.has(k)) { map.set(k, v); return; }
+            map.set(k, v);
+            while (map.size > cap) {
+                const oldest = map.keys().next().value;
+                if (oldest === undefined) break;
+                map.delete(oldest);
+            }
+        },
+        has: k => map.has(k),
+        get size() { return map.size; },
+    };
+};
+
+const gofileNameById = hintMap(4000);
+const gofileNameByUrl = hintMap(4000);
+const cyberdropNameBySlug = hintMap(4000);
+const cyberdropNameByUrl = hintMap(4000);
+const bunkrNameByUrl = hintMap(4000);
+const filesterNameBySlug = hintMap(4000);
+const filesterNameByUrl = hintMap(4000);
+const filesterSlugByUrl = hintMap(4000);
+const filesterRefByUrl = hintMap(4000);
+const goonboxThumbByUrl = hintMap(1000);
+/* Turbo: signed turbocdn URL -> turbo id (needed for re-sign when a signed
+ * URL stalls mid-download — the segment-2 watchdog consumes this). */
+const turboIdBySignedUrl = hintMap(4000);
+
+/* v1.12.0 (round 6): the shared kernel-first GM transport — kernel gmFetch
+ * when the singleton is present, the kernel-less fallback otherwise (the
+ * boundary-smoke contract; every dispatch hard-timeout bounded). Resolves the
+ * raw GM response ({status, responseText, ...}); rejects typed NetError kinds. */
+const fppKernelLessGmFetch = (u, o) => {
+    if (typeof GM_xmlhttpRequest !== 'function') return Promise.reject(Object.assign(new Error('kernel-less transport unavailable'), { kind: 'gm-unavailable' }));
+    o = o || {};
+    return new Promise((res, rej) => {
+        let s = false;
+        const d = (fn, v) => { if (!s) { s = true; fn(v); } };
+        GM_xmlhttpRequest({
+            method: o.method || 'GET',
+            url: u,
+            timeout: Math.max(1, o.timeout || 15000),
+            onload: (r) => d(res, r),
+            onerror: () => d(rej, Object.assign(new Error('network error'), { kind: 'transport' })),
+            ontimeout: () => d(rej, Object.assign(new Error('gmFetch timeout'), { kind: 'timeout' })),
+            onabort: () => d(rej, Object.assign(new Error('aborted'), { kind: 'abort' })),
+        });
+    });
+};
+const fppGmFetch = (u, o) => (typeof __4NDR0_NET_API__ === 'undefined' ? fppKernelLessGmFetch : __4NDR0_NET_API__.gmFetch)(u, o);
+
+const xfpdSleepMs = ms => new Promise(r => setTimeout(r, ms));
+const xfpdJitterMs = (minMs, maxMs) => {
+    const lo = Math.min(minMs, maxMs);
+    const hi = Math.max(minMs, maxMs);
+    return lo + Math.floor(Math.random() * (hi - lo + 1));
+};
+
+/* Tab-handle closer — Tampermonkey can return either a Tab object or a
+ * Promise<Tab> from GM_openInTab; both close through this. */
+const xfpdCloseTabHandle = tabOrPromise => {
+    try {
+        if (tabOrPromise && typeof tabOrPromise.close === 'function') {
+            tabOrPromise.close();
+            return;
+        }
+        if (tabOrPromise && typeof tabOrPromise.then === 'function') {
+            tabOrPromise.then(tab => { try { tab?.close?.(); } catch (e) { console.debug('[Forums++] deferred tab close rejected:', e && e.message); } }).catch(e => { console.debug('[Forums++] deferred tab handle rejected (already settled):', e && e.message); });
+        }
+    } catch (e) {
+        console.debug('[Forums++] tab close rejected:', e && e.message);
+    }
+};
+
+/* ── Turbo/saint2 sign API (lineage L2816-2893) ──────────────────────────
+ * turbo.cr (and its saint2 migration) sign their CDN URLs through
+ * <origin>/api/sign?v=<id> (legacy <origin>/sign?v=). 5 s timeout, 2 retries
+ * with 700-1400 ms jitter — avoids the rare ~50 s stalls on the sign route.
+ * The fn= parameter preserves the original filename on the CDN download. */
+const XFPD_TURBO_SIGN_TIMEOUT_MS = 5000;
+const XFPD_TURBO_SIGN_RETRIES = 2;
+const XFPD_TURBO_SIGN_JITTER_MIN_MS = 700;
+const XFPD_TURBO_SIGN_JITTER_MAX_MS = 1400;
+
+const xfpdGmGetText = (getUrl, headers, timeoutMs) =>
+    fppGmFetch(String(getUrl), { method: 'GET', timeout: Number(timeoutMs) || 15000, headers: headers || {}, checkStatus: false })
+        .then(r => ({ ok: true, status: r.status || 0, text: String(r.responseText || r.response || '') }))
+        .catch(e => {
+            console.debug('[Forums++] turbo sign transport rejected:', e && (e.message || e.kind));
+            return { ok: false, status: 0, text: '' };
+        });
+
+const xfpdTurboOrigin = turboUrl => {
+    try {
+        const u = new URL(String(turboUrl));
+        if (/(^|\.)turbo\.cr$/i.test(u.hostname)) return 'https://turbo.cr';
+        if (/(^|\.)saint2\.(su|pk|cr)$/i.test(u.hostname)) return u.origin;
+    } catch (e) {
+        console.debug('[Forums++] turbo origin derivation rejected (turbo.cr default):', e && e.message);
+    }
+    return 'https://turbo.cr';
+};
+
+const xfpdTurboFetchSignJsonWithTimeout = async (turboId, refererUrl) => {
+    const id = String(turboId || '').trim();
+    if (!id) return null;
+
+    const origin = xfpdTurboOrigin(refererUrl);
+    const embedUrl = String(refererUrl || `${origin}/embed/${id}`);
+    const headers = {
+        Accept: 'application/json, text/plain, */*',
+        Referer: embedUrl,
+    };
+
+    const signUrls = [
+        `${origin}/api/sign?v=${encodeURIComponent(id)}`,
+        `${origin}/sign?v=${encodeURIComponent(id)}`, // legacy fallback
+    ];
+
+    for (let attempt = 0; attempt <= XFPD_TURBO_SIGN_RETRIES; attempt++) {
+        for (const signUrl of signUrls) {
+            const r = await xfpdGmGetText(signUrl, headers, XFPD_TURBO_SIGN_TIMEOUT_MS);
+            if (!r || !r.ok || r.status !== 200 || !r.text) continue;
+
+            let j = null;
+            try { j = JSON.parse(r.text); } catch (e) { j = null; }
+            if (!j || !j.url) continue;
+
+            const ok = (j.success === undefined) ? true : !!j.success;
+            if (ok) return j;
+        }
+        if (attempt < XFPD_TURBO_SIGN_RETRIES) {
+            await xfpdSleepMs(xfpdJitterMs(XFPD_TURBO_SIGN_JITTER_MIN_MS, XFPD_TURBO_SIGN_JITTER_MAX_MS));
+        }
+    }
+    return null;
+};
+
+const xfpdTurboSignUrlWithTimeout = async (turboId, refererUrl, nameHint) => {
+    const j = await xfpdTurboFetchSignJsonWithTimeout(turboId, refererUrl);
+    if (!j || !j.url) return null;
+
+    let signed = j.url;
+    const originalName = j.original_filename || nameHint;
+
+    // Preserve filename for the CDN download (used later for saveAs).
+    if (signed && originalName && !/[?&]fn=/.test(String(signed))) {
+        const enc = encodeURIComponent(String(originalName)).replace(/%20/g, '+');
+        signed += (signed.includes('?') ? '&' : '?') + 'fn=' + enc;
+    }
+    return signed;
+};
+
+/* ── Goonbox same-origin API bridge (lineage L598-1071) ──────────────────
+ * Goonbox's API sits behind Cloudflare and needs first-party cookies; a
+ * GM_xmlhttpRequest from the forum tab is third-party and 403s on Firefox.
+ * One inactive marker-gated goonbox.cr tab (this script also runs there via
+ * the @match) serves the API same-origin; the two tabs talk over GM storage.
+ * Direct request first — the bridge only engages on 403/empty/unparseable. */
+const GOONBOX_ORIGIN = 'https://goonbox.cr';
+
+const GBX_K_READY = 'xfpd_gbx_ready';
+const GBX_K_REQ = 'xfpd_gbx_req';
+const GBX_K_RES = 'xfpd_gbx_res';
+
+const GBX_POLL_MS = 150;
+const GBX_HEARTBEAT_MS = 1000;
+const GBX_READY_TIMEOUT_MS = 20000;
+const GBX_REQ_TIMEOUT_MS = 25000;
+// Close a few seconds after the *last* request — a post usually resolves
+// several Goonbox links, and a tab per link would be slow and conspicuous.
+const GBX_IDLE_CLOSE_MS = 5000;
+// Cloudflare may still be settling when the helper tab first runs.
+const GBX_FETCH_ATTEMPTS = 3;
+const GBX_FETCH_RETRY_MS = 800;
+
+// The helper tab opens on a REAL Goonbox page with this marker appended: the
+// marker gates the worker (a user browsing goonbox.cr never becomes a bridge)
+// and the bare-origin form never injects on Firefox+Tampermonkey (b08 lesson).
+const GBX_MARKER_KEY = 'xfpd_gbx';
+const GBX_MARKER_VAL = '1';
+
+// Only these two API shapes may cross the bridge — the helper builds the final
+// URL itself and never accepts full URLs, so GM storage cannot turn a
+// cookie-bearing tab into a general-purpose proxy. Enforced on both sides.
+const GBX_ALLOWED_PATHS = [
+    /^\/api\/images\/[A-Za-z0-9_-]{1,64}$/,
+    /^\/api\/albums\/[A-Za-z0-9._~-]{1,128}\/images\?page=\d{1,4}$/,
+];
+
+const goonboxBridgePathAllowed = p => {
+    const s = String(p || '');
+    return GBX_ALLOWED_PATHS.some(rx => rx.test(s));
+};
+
+/* Cross-tab delivery: GM storage reads are not reliably cross-tab (per-tab
+ * cache), so GM_addValueChangeListener mirrors feed the polled reads. Both
+ * paths dedupe naturally (request id / newest heartbeat). */
+const xfpdAddValueChangeListener =
+    (typeof GM_addValueChangeListener === 'function' ? GM_addValueChangeListener : null) ||
+    (typeof window.GM_addValueChangeListener === 'function' ? window.GM_addValueChangeListener.bind(window) : null);
+
+let gbxReadyMirror = 0;
+let gbxResMirror = '';
+let gbxListenersBound = false;
+
+const gbxBindListeners = () => {
+    if (gbxListenersBound || !xfpdAddValueChangeListener) return;
+    gbxListenersBound = true;
+    try {
+        xfpdAddValueChangeListener(GBX_K_READY, (name, oldV, newV) => {
+            gbxReadyMirror = Number(newV || 0) || 0;
+        });
+    } catch (e) { console.debug('[Forums++] gbx ready listener rejected:', e && e.message); }
+    try {
+        xfpdAddValueChangeListener(GBX_K_RES, (name, oldV, newV) => {
+            gbxResMirror = String(newV || '');
+        });
+    } catch (e) { console.debug('[Forums++] gbx res listener rejected:', e && e.message); }
+};
+
+const gbxGet = (key, dflt = '') => {
+    try { return GM_getValue(key, dflt); } catch (e) { return dflt; }
+};
+
+const gbxSet = (key, val) => {
+    try { GM_setValue(key, val); } catch (e) { console.debug('[Forums++] gbx storage write rejected:', e && e.message); }
+};
+
+// Requester side (runs in the forum tab).
+let gbxTabHandle = null;
+let gbxIdleTimer = null;
+let gbxChain = Promise.resolve();
+let gbxSeq = 0;
+// Circuit breaker: if the helper never announces itself (a CF interstitial
+// that needs a human), back off 120 s instead of paying the timeout per link.
+let gbxUnavailableUntil = 0;
+let gbxInFlight = 0;
+const GBX_BREAKER_MS = 120000;
+
+const gbxBridgeAlive = () => {
+    const polled = Number(gbxGet(GBX_K_READY, 0) || 0) || 0;
+    const t = Math.max(polled, gbxReadyMirror);
+    return t > 0 && (Date.now() - t) < (GBX_HEARTBEAT_MS * 5);
+};
+
+const gbxCloseTab = () => {
+    try { if (gbxIdleTimer) clearTimeout(gbxIdleTimer); } catch (e) { console.debug('[Forums++] gbx idle timer clear rejected:', e && e.message); }
+    gbxIdleTimer = null;
+    xfpdCloseTabHandle(gbxTabHandle);
+    gbxTabHandle = null;
+    gbxSet(GBX_K_READY, 0);
+    gbxSet(GBX_K_REQ, '');
+    gbxSet(GBX_K_RES, '');
+};
+
+// The idle timer must be cancelled when a request STARTS, not only re-armed
+// when one finishes — a mid-request close returned null in b08.
+const gbxCancelIdleTimer = () => {
+    try { if (gbxIdleTimer) clearTimeout(gbxIdleTimer); } catch (e) { console.debug('[Forums++] gbx idle timer cancel rejected:', e && e.message); }
+    gbxIdleTimer = null;
+};
+
+const gbxMaybeArmIdleTimer = () => {
+    gbxCancelIdleTimer();
+    if (gbxInFlight > 0) return;
+    gbxIdleTimer = setTimeout(() => { gbxCloseTab(); }, GBX_IDLE_CLOSE_MS);
+};
+
+const gbxHelperUrl = pageUrl => {
+    const base = String(pageUrl || '').trim();
+    try {
+        const u = new URL(base);
+        if (/(^|\.)goonbox\.cr$/i.test(u.hostname)) {
+            u.searchParams.set(GBX_MARKER_KEY, GBX_MARKER_VAL);
+            return u.href;
+        }
+    } catch (e) { console.debug('[Forums++] gbx helper URL parse rejected:', e && e.message); }
+    return `${GOONBOX_ORIGIN}/?${GBX_MARKER_KEY}=${GBX_MARKER_VAL}`;
+};
+
+const gbxOpenTab = pageUrl => {
+    gbxSet(GBX_K_READY, 0);
+    try {
+        return GM_openInTab(gbxHelperUrl(pageUrl), { active: false, insert: true, setParent: true });
+    } catch (e) {
+        console.debug('[Forums++] gbx helper tab open rejected:', e && e.message);
+        return null;
+    }
+};
+
+const gbxAwaitReady = async () => {
+    const deadline = Date.now() + GBX_READY_TIMEOUT_MS;
+    while (Date.now() < deadline) {
+        if (gbxBridgeAlive()) return true;
+        await xfpdSleepMs(GBX_POLL_MS);
+    }
+    return false;
+};
+
+const gbxEnsureTab = async pageUrl => {
+    gbxBindListeners(); // before the first gbxBridgeAlive() read.
+
+    if (gbxBridgeAlive()) {
+        gbxUnavailableUntil = 0;
+        return true;
+    }
+    if (Date.now() < gbxUnavailableUntil) return false;
+
+    if (!gbxTabHandle) {
+        gbxTabHandle = gbxOpenTab(pageUrl);
+        if (!gbxTabHandle) return false;
+    }
+
+    if (await gbxAwaitReady()) {
+        gbxUnavailableUntil = 0;
+        return true;
+    }
+
+    // No heartbeat: the tab may never have had the script injected — discard
+    // it and open a fresh one exactly once (the Firefox+TM lesson).
+    xfpdCloseTabHandle(gbxTabHandle);
+    gbxTabHandle = gbxOpenTab(pageUrl);
+    if (gbxTabHandle && await gbxAwaitReady()) {
+        gbxUnavailableUntil = 0;
+        return true;
+    }
+
+    // Still nothing: most likely a CF interstitial that needs a human. Leave
+    // the tab open (it is where they would solve it) and back off.
+    gbxUnavailableUntil = Date.now() + GBX_BREAKER_MS;
+    return false;
+};
+
+// One API path through the helper tab. Serialized: exactly one bridge request
+// in flight at a time keeps the handshake race-free and the calls sequential.
+const goonboxBridgeGet = (path, pageUrl) => {
+    const run = async () => {
+        if (!goonboxBridgePathAllowed(path)) return null;
+        if (!(await gbxEnsureTab(pageUrl))) return null;
+
+        const id = `${Date.now()}_${++gbxSeq}`;
+        gbxResMirror = '';
+        gbxSet(GBX_K_RES, '');
+        gbxSet(GBX_K_REQ, JSON.stringify({ id, path, t: Date.now() }));
+
+        const deadline = Date.now() + GBX_REQ_TIMEOUT_MS;
+        let notReadyLogged = false; // the parse throw fires every 150 ms until the helper answers — log it once per request, not per tick
+        while (Date.now() < deadline) {
+            await xfpdSleepMs(GBX_POLL_MS);
+
+            // Listener mirror first — on Firefox+Tampermonkey the polled read
+            // never updates.
+            let res = null;
+            for (const raw of [gbxResMirror, gbxGet(GBX_K_RES, '')]) {
+                try {
+                    const p = JSON.parse(String(raw || ''));
+                    if (p && p.id === id) { res = p; break; }
+                } catch (e) {
+                    if (!notReadyLogged) {
+                        notReadyLogged = true;
+                        console.debug('[Forums++] gbx bridge response not ready yet (polling until the helper answers):', e && e.message);
+                    }
+                }
+            }
+            if (res) return res;
+
+            // Tab closed or crashed mid-request.
+            if (!gbxBridgeAlive()) break;
+        }
+        return null;
+    };
+
+    // Count in, cancel any pending close, run, count out, re-arm only when
+    // nothing else is outstanding. Incrementing here (not inside run) is
+    // deliberate: the tab must survive until the chain drains.
+    gbxInFlight++;
+    gbxCancelIdleTimer();
+
+    const settle = () => {
+        gbxInFlight = Math.max(0, gbxInFlight - 1);
+        gbxMaybeArmIdleTimer();
+    };
+
+    gbxChain = gbxChain.catch(e => { console.debug('[Forums++] gbx chain step rejected (chain continues):', e && e.message); }).then(run);
+    const p = gbxChain;
+    p.then(settle, settle);
+    return p;
+};
+
+// Debug switch: force every Goonbox API call down the bridge path from the
+// devtools console: localStorage.setItem('xfpd_gbx_force_bridge', 'true').
+// Off unless enabled; enabling only ever ADDS an attempt (a failed bridge
+// still falls through to the direct result).
+const GBX_K_FORCE = 'xfpd_gbx_force_bridge';
+
+const gbxForceEnabled = () => {
+    try {
+        const v = localStorage.getItem(GBX_K_FORCE);
+        if (v !== null && String(v).toLowerCase() === 'true') return true;
+    } catch (e) { console.debug('[Forums++] force-flag read rejected:', e && e.message); }
+    try {
+        const v = gbxGet(GBX_K_FORCE, false);
+        if (v === true || String(v).toLowerCase() === 'true') return true;
+    } catch (e) { console.debug('[Forums++] force-flag GM read rejected:', e && e.message); }
+    return false;
+};
+
+// One Goonbox API call: direct first, bridge second. Parsed JSON or null.
+const goonboxApiJson = async (apiHttp, path, pageUrl, postId) => {
+    const referer = pageUrl;
+    const say = msg => { log.host.info(postId, msg, 'goonbox.cr'); };
+    const parse = s => {
+        try {
+            const j = JSON.parse(String(s || ''));
+            return (j && typeof j === 'object') ? j : null;
+        } catch (e) { return null; }
+    };
+
+    let status = 0;
+    let source = '';
+    try {
+        const r = await apiHttp.get(
+            `${GOONBOX_ORIGIN}${path}`,
+            {},
+            { Referer: referer || `${GOONBOX_ORIGIN}/`, Accept: 'application/json' },
+            'text',
+        );
+        status = Number((r && r.status) || 0) || 0;
+        source = String((r && r.source) || '');
+    } catch (e) {
+        console.debug('[Forums++] goonbox direct transport rejected:', e && e.message);
+    }
+
+    const direct = (status && status < 400) ? parse(source) : null;
+    const forced = gbxForceEnabled();
+
+    if (direct && !forced) return direct;
+
+    if (forced) {
+        say(`::Bridge forced (debug flag)::: ${path}`);
+    } else {
+        // 403 from Cloudflare, an empty body, or an HTML challenge page all
+        // mean the same thing here — retry same-origin rather than tell apart.
+        say(`::API direct failed (${status || 'no response'}) -> bridge::: ${path}`);
+    }
+
+    const viaBridge = await goonboxBridgeGet(path, pageUrl);
+
+    if (viaBridge && viaBridge.ok) {
+        const j = parse(viaBridge.body);
+        if (j) {
+            say(`::Bridge OK (${viaBridge.status})::: ${path}`);
+            return j;
+        }
+        say(`::Bridge returned ${viaBridge.status} but body was not JSON::: ${path}`);
+    } else {
+        say(`::Bridge failed (${viaBridge ? viaBridge.status : 'no response'})::: ${path}`);
+    }
+
+    // Forcing must never break a working download: fall back to the direct result.
+    if (direct) return direct;
+
+    return null;
+};
+
+// Helper-tab side (runs only on goonbox.cr, marker-gated).
+const gbxIsHelperTab = () => {
+    try {
+        return new URLSearchParams(location.search).get(GBX_MARKER_KEY) === GBX_MARKER_VAL;
+    } catch (e) {
+        return false;
+    }
+};
+
+const goonboxBridgeServe = () => {
+    if (!gbxIsHelperTab()) return;
+
+    let lastId = '';
+    let busy = false;
+
+    const beat = () => gbxSet(GBX_K_READY, Date.now());
+    beat();
+    // Page-lifetime service heartbeat (polling-census ledgered — round 6).
+    const heartbeatInterval = setInterval(beat, GBX_HEARTBEAT_MS);
+    window.addEventListener('beforeunload', () => { try { clearInterval(heartbeatInterval); gbxSet(GBX_K_READY, 0); } catch (e) { console.debug('[Forums++] gbx heartbeat teardown rejected:', e && e.message); } }, { once: true });
+
+    const handle = async raw => {
+        if (busy) return;
+
+        let req = null;
+        try { req = JSON.parse(String(raw || '')); } catch (e) { req = null; }
+        if (!req || !req.id || req.id === lastId) return;
+
+        lastId = req.id;
+        busy = true;
+
+        const reply = payload => {
+            try { gbxSet(GBX_K_RES, JSON.stringify({ id: req.id, ...payload })); } catch (e) { console.debug('[Forums++] gbx reply write rejected:', e && e.message); }
+        };
+
+        try {
+            // Re-check here too: this tab holds the cookies — the restriction
+            // only protects anything where it is enforced.
+            if (!goonboxBridgePathAllowed(req.path)) {
+                reply({ ok: false, status: 0, body: '' });
+                return;
+            }
+
+            // Cloudflare may still be settling in a freshly loaded tab, so
+            // retry a few times while the answer still looks like a challenge
+            // or a transport failure — a clean 404 is a real answer.
+            let last = { ok: false, status: 0, body: '' };
+            for (let attempt = 1; attempt <= GBX_FETCH_ATTEMPTS; attempt++) {
+                try {
+                    const r = await fetch(`${GOONBOX_ORIGIN}${req.path}`, {
+                        credentials: 'include',
+                        headers: { Accept: 'application/json' },
+                    });
+                    const body = await r.text();
+                    last = { ok: !!r.ok, status: Number(r.status) || 0, body };
+                } catch (e) {
+                    console.debug('[Forums++] gbx helper fetch rejected:', e && e.message);
+                    last = { ok: false, status: 0, body: '' };
+                }
+
+                let parsed = null;
+                try { parsed = JSON.parse(String(last.body || '')); } catch (e) { parsed = null; }
+                if (last.ok && parsed && typeof parsed === 'object') break;
+                if (last.status && last.status !== 403 && last.status !== 429 && last.status < 500) break;
+
+                if (attempt < GBX_FETCH_ATTEMPTS) await xfpdSleepMs(GBX_FETCH_RETRY_MS);
+            }
+
+            reply(last);
+        } catch (e) {
+            console.debug('[Forums++] gbx helper serve rejected:', e && e.message);
+            reply({ ok: false, status: 0, body: '' });
+        } finally {
+            busy = false;
+        }
+    };
+
+    // Listener first (Firefox+TM poll blindness); polling retained — `lastId`
+    // makes double-delivery a no-op. Page-lifetime service poll (ledgered).
+    if (xfpdAddValueChangeListener) {
+        try {
+            xfpdAddValueChangeListener(GBX_K_REQ, (name, oldV, newV) => { handle(newV); });
+        } catch (e) { console.debug('[Forums++] gbx req listener rejected:', e && e.message); }
+    }
+    const pollInterval = setInterval(() => { handle(gbxGet(GBX_K_REQ, '')); }, GBX_POLL_MS);
+    window.addEventListener('beforeunload', () => { try { clearInterval(pollInterval); } catch (e) { console.debug('[Forums++] gbx poll teardown rejected:', e && e.message); } }, { once: true });
+};
+
+goonboxBridgeServe(); // no-op unless this tab is the marker-gated helper.
+
+/* ── Bunkr/Cloudflare machinery (lineage L1073-1385) ─────────────────────
+ * Best-effort warm-up tabs let the browser complete JS-only CF interstitials
+ * (NOT interactive Turnstile — those still need a human). Fast-fail + a
+ * 60-minute domain blacklist keep a dead TLD from stalling every link. */
+const BUNKR_CF_WARMUP_MS = 6000;
+const BUNKR_CF_MAX_RETRIES = 3;
+const BUNKR_CF_WARMUP_ACTIVE_TAB = false;
+const BUNKR_CF_WARMUP_COOLDOWN_MS = 15000;
+const BUNKR_FASTFAIL_ON_403 = true;
+const BUNKR_DOMAIN_BLACKLIST_MS = 60 * 60 * 1000;
+const xfpdBunkrDomainBanUntil = hintMap(64);
+
+const xfpdBunkrNormalizeBase = baseOrUrl => {
+    try {
+        const u = new URL(String(baseOrUrl || ''));
+        return u.origin;
+    } catch (e) {
+        return String(baseOrUrl || '').replace(/\/+$/, '');
+    }
+};
+
+const xfpdBunkrIsBaseBanned = baseOrUrl => {
+    try {
+        const base = xfpdBunkrNormalizeBase(baseOrUrl);
+        const until = xfpdBunkrDomainBanUntil.get(base);
+        if (!until) return false;
+        if (Date.now() >= until) {
+            // hintMap has no delete; a stale entry simply expires by time.
+            return false;
+        }
+        return true;
+    } catch (e) {
+        return false;
+    }
+};
+
+const xfpdBunkrBanBase = baseOrUrl => {
+    try {
+        const base = xfpdBunkrNormalizeBase(baseOrUrl);
+        // Never blacklist the last-resort domain.
+        if (base === 'https://bunkr.cr') return;
+        xfpdBunkrDomainBanUntil.set(base, Date.now() + BUNKR_DOMAIN_BLACKLIST_MS);
+    } catch (e) { console.debug('[Forums++] bunkr ban rejected:', e && e.message); }
+};
+
+const xfpdBunkrFilterBases = bases => {
+    const uniq = [];
+    const seen = new Set();
+    for (const b of (bases || [])) {
+        const base = xfpdBunkrNormalizeBase(b);
+        if (!base || seen.has(base)) continue;
+        seen.add(base);
+        uniq.push(base);
+    }
+    const filtered = uniq.filter(b => b === 'https://bunkr.cr' || !xfpdBunkrIsBaseBanned(b));
+    return filtered.length ? filtered : uniq;
+};
+
+const xfpdLooksLikeCfChallenge = (source, dom) => {
+    try {
+        const s = String(source || '');
+        const head = s.slice(0, 8000).toLowerCase();
+
+        const title = String(dom?.querySelector?.('title')?.textContent || '').trim();
+
+        if (title && /just a moment|attention required|checking your browser/i.test(title)) return true;
+        if (title && /cloudflare/i.test(title)) return true;
+
+        if (head.includes('cdn-cgi/challenge-platform')) return true;
+        if (head.includes('challenges.cloudflare.com')) return true;
+        if (head.includes('cf-browser-verification')) return true;
+        if (head.includes('checking your browser')) return true;
+        if (head.includes('just a moment')) return true;
+        if (head.includes('attention required')) return true;
+
+        if (dom?.querySelector?.('#cf-challenge-running, #challenge-form, .cf-browser-verification, .cf-challenge')) return true;
+    } catch (e) {
+        console.debug('[Forums++] CF challenge sniff rejected:', e && e.message);
+    }
+    return false;
+};
+
+const xfpdLooksLikeCfFilenameHint = name => {
+    const n = String(name || '').trim();
+    return /^(?:just a moment\.{0,3}|checking your browser\.{0,3}|attention required\.{0,3})$/i.test(n) || /cloudflare/i.test(n);
+};
+
+// Original filename from Bunkr /api/_001_v2 JSON (when /v/ is CF-blocked).
+const xfpdBunkrExtractNameFromVsData = data => {
+    try {
+        const cands = [];
+        const add = v => {
+            if (!v) return;
+            if (typeof v === 'string') cands.push(v);
+            else if (typeof v === 'number') cands.push(String(v));
+        };
+
+        add(data?.name);
+        add(data?.filename);
+        add(data?.file_name);
+        add(data?.original);
+        add(data?.title);
+
+        if (data?.data && typeof data.data === 'object') {
+            add(data.data.name);
+            add(data.data.filename);
+            add(data.data.file_name);
+            add(data.data.original);
+            add(data.data.title);
+        }
+        if (data?.file && typeof data.file === 'object') {
+            add(data.file.name);
+            add(data.file.filename);
+            add(data.file.original);
+            add(data.file.title);
+        }
+
+        const norm = s => {
+            let t = String(s || '').replace(/\s+/g, ' ').trim();
+            t = t.replace(/\s*\|\s*Bunkr\s*$/i, '').trim();
+            return t;
+        };
+
+        for (const raw of cands) {
+            const t = norm(raw);
+            if (!t) continue;
+            if (xfpdLooksLikeCfFilenameHint(t)) continue;
+            if (/\.[A-Za-z0-9]{1,8}$/.test(t)) return t;
+        }
+        for (const raw of cands) {
+            const t = norm(raw);
+            if (!t) continue;
+            if (xfpdLooksLikeCfFilenameHint(t)) continue;
+            return t;
+        }
+    } catch (e) {
+        console.debug('[Forums++] bunkr name extraction rejected:', e && e.message);
+    }
+    return '';
+};
+
+const xfpdWarmupTab = async (url, ms = BUNKR_CF_WARMUP_MS, active = BUNKR_CF_WARMUP_ACTIVE_TAB) => {
+    try {
+        const tab = GM_openInTab(url, { active: !!active, insert: true, setParent: true });
+        await h.delayedResolve(ms);
+        xfpdCloseTabHandle(tab);
+    } catch (e) {
+        console.debug('[Forums++] warm-up tab rejected (best-effort):', e && e.message);
+        await h.delayedResolve(ms);
+    }
+};
+
+let xfpdBunkrCfWarmupPromise = null;
+let xfpdBunkrCfWarmupLastAt = 0;
+
+// At most ONE warm-up tab at a time, and no more than one per cooldown window.
+const xfpdBunkrCfWarmup = async url => {
+    try {
+        const now = Date.now();
+
+        if (xfpdBunkrCfWarmupPromise) {
+            return await xfpdBunkrCfWarmupPromise;
+        }
+
+        if (now - xfpdBunkrCfWarmupLastAt < BUNKR_CF_WARMUP_COOLDOWN_MS) {
+            await h.delayedResolve(Math.min(1000, BUNKR_CF_WARMUP_MS));
+            return null;
+        }
+
+        xfpdBunkrCfWarmupLastAt = now;
+
+        xfpdBunkrCfWarmupPromise = (async () => {
+            await xfpdWarmupTab(url);
+        })();
+
+        try {
+            return await xfpdBunkrCfWarmupPromise;
+        } finally {
+            xfpdBunkrCfWarmupPromise = null;
+        }
+    } catch (e) {
+        console.debug('[Forums++] bunkr CF warm-up rejected (best-effort):', e && e.message);
+        return null;
+    }
+};
+
+const xfpdBunkrGetWithCfRetry = async (cfHttp, url, warmUrlOrOrigin, allowWarmup = true) => {
+    let last = null;
+    for (let attempt = 0; attempt <= BUNKR_CF_MAX_RETRIES; attempt++) {
+        try {
+            last = await cfHttp.get(url);
+        } catch (e) {
+            last = null;
+        }
+
+        const dom = last?.dom;
+        const source = last?.source || '';
+        const status = Number(last?.status || 0);
+
+        // Fast-fail on 403 / CF interstitial for non-last domains: blacklist
+        // immediately so the caller can try the next domain.
+        if (BUNKR_FASTFAIL_ON_403 && (status === 403) && !allowWarmup) {
+            xfpdBunkrBanBase(warmUrlOrOrigin || url);
+            return last || { dom: null, source: '' };
+        }
+        if (BUNKR_FASTFAIL_ON_403 && !allowWarmup && last && xfpdLooksLikeCfChallenge(source, dom)) {
+            xfpdBunkrBanBase(warmUrlOrOrigin || url);
+            return last || { dom: null, source: '' };
+        }
+
+        if (last && !xfpdLooksLikeCfChallenge(source, dom)) return last;
+
+        if (attempt < BUNKR_CF_MAX_RETRIES) {
+            if (allowWarmup) {
+                await xfpdBunkrCfWarmup(String(warmUrlOrOrigin || url));
+            } else {
+                await h.delayedResolve(200);
+            }
+        }
+    }
+    return last || { dom: null, source: '' };
+};
+
+const xfpdBunkrPostVsWithCfRetry = async (cfHttp, endpoint, payload, refererUrl, originUrl, allowWarmup = true) => {
+    let lastText = '';
+    let lastStatus = 0;
+    for (let attempt = 0; attempt <= BUNKR_CF_MAX_RETRIES; attempt++) {
+        try {
+            const response = await cfHttp.post(
+                endpoint,
+                JSON.stringify(payload),
+                {},
+                {
+                    'Content-Type': 'application/json',
+                    Referer: refererUrl,
+                    Origin: originUrl,
+                },
+            );
+            lastText = String(response?.source || '');
+            lastStatus = Number(response?.status || 0);
+        } catch (e) {
+            lastText = '';
+            lastStatus = 0;
+        }
+
+        if (BUNKR_FASTFAIL_ON_403 && (Number(lastStatus || 0) === 403) && !allowWarmup) {
+            xfpdBunkrBanBase(originUrl || refererUrl || endpoint);
+            return null;
+        }
+        if (BUNKR_FASTFAIL_ON_403 && !allowWarmup && xfpdLooksLikeCfChallenge(lastText, null)) {
+            xfpdBunkrBanBase(originUrl || refererUrl || endpoint);
+            return null;
+        }
+        try {
+            return JSON.parse(lastText || '{}');
+        } catch (e) {
+            if (xfpdLooksLikeCfChallenge(lastText, null) && attempt < BUNKR_CF_MAX_RETRIES) {
+                if (allowWarmup) {
+                    await xfpdBunkrCfWarmup(String(refererUrl || originUrl || endpoint));
+                } else {
+                    await h.delayedResolve(200);
+                }
+                continue;
+            }
+            return null;
+        }
+    }
+    return null;
+};
+
+// Sign a bunkr cdn.cr URL via glb-apisign.cdn.cr — unsigned URLs 403.
+const xfpdBunkrSignCdnUrl = async (signHttp, rawUrl) => {
+    try {
+        const urlObj = new URL(rawUrl);
+        const path = decodeURIComponent(urlObj.pathname);
+        const signRes = await signHttp.get(
+            `https://glb-apisign.cdn.cr/sign?path=${encodeURIComponent(path)}`
+        );
+        const signText = String(signRes?.source || '');
+        const signData = JSON.parse(signText);
+        if (signData?.token && signData?.ex) {
+            urlObj.searchParams.set('token', String(signData.token));
+            urlObj.searchParams.set('ex', String(signData.ex));
+            return urlObj.toString();
+        }
+    } catch (e) {
+        console.debug('[Forums++] bunkr CDN signing rejected (unsigned URL returned):', e && e.message);
+    }
+    return rawUrl;
+};
+
+/* ── GoFile cookie sync (lineage L309-426) ────────────────────────────────
+ * The site authenticates CDN downloads via the accountToken cookie set
+ * client-side; mirroring it with OUR resolved guest token keeps resolution
+ * and download on the same account. The user's own cookie is captured once
+ * and restored when the last post goes idle. */
+let gofileCookieCaptured = false;
+let gofileOriginalCookieValue = null;
+
+const gofileCaptureOriginalCookie = () =>
+    new Promise(resolve => {
+        if (gofileCookieCaptured || typeof GM_cookie === 'undefined' || !GM_cookie || typeof GM_cookie.list !== 'function') {
+            resolve();
+            return;
+        }
+        try {
+            GM_cookie.list({ url: 'https://gofile.io/', domain: 'gofile.io', name: 'accountToken' }, (cookies, error) => {
+                if (error) {
+                    console.warn('[GoFile] GM_cookie.list failed while capturing original accountToken cookie:', error);
+                } else {
+                    const existing = Array.isArray(cookies) ? cookies.find(c => c && c.name === 'accountToken') : null;
+                    gofileOriginalCookieValue = existing ? existing.value : null;
+                }
+                gofileCookieCaptured = true;
+                resolve();
+            });
+        } catch (e) {
+            console.warn('[GoFile] GM_cookie.list threw while capturing original accountToken cookie:', e && e.message);
+            gofileCookieCaptured = true;
+            resolve();
+        }
+    });
+
+const gofileSyncCookie = token =>
+    new Promise(resolve => {
+        (async () => {
+            try {
+                if (!token || typeof GM_cookie === 'undefined' || !GM_cookie || typeof GM_cookie.set !== 'function') {
+                    resolve(false);
+                    return;
+                }
+                await gofileCaptureOriginalCookie();
+                GM_cookie.set(
+                    {
+                        url: 'https://gofile.io/',
+                        name: 'accountToken',
+                        value: String(token),
+                        domain: 'gofile.io',
+                        path: '/',
+                        secure: true,
+                        sameSite: 'lax',
+                    },
+                    error => {
+                        if (error) console.warn('[GoFile] GM_cookie.set failed for accountToken:', error);
+                        resolve(!error);
+                    },
+                );
+            } catch (e) {
+                console.warn('[GoFile] gofileSyncCookie threw:', e && e.message);
+                resolve(false);
+            }
+        })();
+    });
+
+const gofileRestoreCookie = () =>
+    new Promise(resolve => {
+        try {
+            if (!gofileCookieCaptured || typeof GM_cookie === 'undefined' || !GM_cookie) {
+                resolve();
+                return;
+            }
+            const originalValue = gofileOriginalCookieValue;
+            gofileCookieCaptured = false;
+            gofileOriginalCookieValue = null;
+
+            if (originalValue === null) {
+                if (typeof GM_cookie.delete === 'function') {
+                    GM_cookie.delete({ url: 'https://gofile.io/', name: 'accountToken', domain: 'gofile.io', path: '/' }, error => {
+                        if (error) console.warn('[GoFile] Failed to remove guest accountToken cookie during restore:', error);
+                        resolve();
+                    });
+                    return;
+                }
+                resolve();
+                return;
+            }
+
+            GM_cookie.set(
+                {
+                    url: 'https://gofile.io/',
+                    name: 'accountToken',
+                    value: originalValue,
+                    domain: 'gofile.io',
+                    path: '/',
+                    secure: true,
+                    sameSite: 'lax',
+                },
+                error => {
+                    if (error) console.warn('[GoFile] Failed to restore original accountToken cookie:', error);
+                    resolve();
+                },
+            );
+        } catch (e) {
+            console.debug('[GoFile] cookie restore rejected:', e && e.message);
+            resolve();
+        }
+    });
+
+/* ── Cyberdrop warm-up (lineage L8968-9018) ───────────────────────────────
+ * One inactive /f/ tab per origin lets the site set its cookies; at most one
+ * warm-up tab at any time, once per origin. */
+const CYBERDROP_WARMUP_DEFAULT_MS = 2500;
+let cyberdropWarmupChain = Promise.resolve();
+const cyberdropWarmupAttempted = hintMap(16);
+
+const cyberdropWarmupOnce = async (key, warmUrl, ms = CYBERDROP_WARMUP_DEFAULT_MS) => {
+    // Back-compat: allow cyberdropWarmupOnce(url) calls.
+    if (typeof warmUrl === 'undefined') {
+        const maybeUrl = String(key || '').trim();
+        if (/^https?:\/\//i.test(maybeUrl)) {
+            warmUrl = maybeUrl;
+            try { key = `cyberdrop:${new URL(maybeUrl).origin}`; } catch (e) { key = `cyberdrop:${maybeUrl}`; }
+        }
+    }
+
+    // Normalize keys that accidentally include a full URL (avoid per-file warmups).
+    const _k0 = String(key || '').trim();
+    if (_k0.indexOf('://') !== -1) {
+        const m = _k0.match(/https?:\/\/[^\s]+/i);
+        if (m) { try { key = `cyberdrop:${new URL(m[0]).origin}`; } catch (e) { console.debug('[Forums++] cyberdrop warmup key normalize rejected:', e && e.message); } }
+    }
+
+    const k = String(key || '').trim();
+    const u = String(warmUrl || '').trim();
+    if (!k || !u) return;
+
+    if (cyberdropWarmupAttempted.has(k)) {
+        return;
+    }
+
+    cyberdropWarmupChain = cyberdropWarmupChain.then(() => {
+        return new Promise(resolve => {
+            try {
+                const tab = GM_openInTab(u, { active: false, insert: true, setParent: true });
+                setTimeout(() => {
+                    xfpdCloseTabHandle(tab);
+                    resolve();
+                }, Math.max(250, ms));
+            } catch (e) {
+                console.debug('[Forums++] cyberdrop warm-up tab rejected:', e && e.message);
+                resolve();
+            }
+        });
+    });
+
+    cyberdropWarmupAttempted.set(k, true);
+    await cyberdropWarmupChain;
+};
+
+/* ── Filester v2 token API (lineage L447-588) ─────────────────────────────
+ * The ONLY resolver that still works: POST {apiBase}/v2/api/public/download
+ * {file_slug} → { server, file, token, name, expires_in }. Tokens are
+ * IP-bound and expire ~30 min — resolve as late as possible. The legacy
+ * cache-host probe sweep is intentionally NOT ported: its hosts are
+ * NXDOMAIN/black-holed per the lineage's own field notes (dead infra). */
+const FILESTER_API_TIMEOUT_MS = 20000;
+
+const filesterResolveV2 = async (v2Http, apiBase, slug) => {
+    const base = String(apiBase || 'https://filester.me').replace(/\/$/, '');
+    const s = String(slug || '').trim();
+    if (!s) return null;
+
+    try {
+        const res = await v2Http.base(
+            'POST',
+            `${base}/v2/api/public/download`,
+            {},
+            {
+                Accept: 'application/json, text/plain, */*',
+                'Content-Type': 'application/json;charset=UTF-8',
+                Origin: base,
+                Referer: `${base}/d/${s}`,
+            },
+            JSON.stringify({ file_slug: s }),
+            'text',
+        );
+
+        let j = null;
+        try { j = JSON.parse(String((res && res.source) || '')); } catch (e) { j = null; }
+
+        const server = String((j && j.server) || '').replace(/\/$/, '');
+        const file = String((j && j.file) || '');
+        const token = String((j && j.token) || '');
+        const name = String((j && j.name) || '');
+        if (!server || !file || !token) return null;
+
+        // Encode per path segment (encodeURI leaves `#` alone, which would
+        // truncate the URL at the fragment).
+        const filePath = String(file).split('/').map(encodeURIComponent).join('/');
+        let streamUrl = `${server}/v2/${filePath}?token=${encodeURIComponent(token)}&download=true`;
+        if (name) streamUrl += `&n=${encodeURIComponent(name)}`;
+
+        const finalName = name || `Filester_${s}${(/\.[A-Za-z0-9]{1,8}$/.exec(file) || [''])[0]}`;
+        const ref = `${base}/d/${s}`;
+
+        filesterSlugByUrl.set(String(streamUrl), String(s));
+        filesterRefByUrl.set(String(streamUrl), String(ref));
+        filesterNameBySlug.set(String(s), String(finalName));
+        filesterNameByUrl.set(String(streamUrl), String(finalName));
+
+        return { url: streamUrl, name: finalName, ref, token, server, file };
+    } catch (e) {
+        console.debug('[Forums++] filester v2 resolve rejected:', e && e.message);
+    }
+
+    return null;
+};
+
+// Recognize a resolved Filester stream URL by the slug map (populated at
+// resolution time) rather than by CDN hostname — Filester renames its CDN.
+const isFilesterUrl = u => {
+    const s = String(u || '');
+    if (/(?:^|\/\/)(?:[a-z0-9-]+\.)*filester\.(me|sh|si|gg)\/(?:d|v)\//i.test(s)) return true;
+    return filesterSlugByUrl.has(s);
+};
+
+/* ── Redgifs token refresh (lineage L4557-4577) ───────────────────────────
+ * A 401 at download time is no longer fatal until page refresh. */
+const redgifsFetchTempToken = async () => {
+    try {
+        const { source, status } = await h.http.get('https://api.redgifs.com/v2/auth/temporary', {}, {}, 'text');
+        if (status === 200 && source && h.contains('token', source)) {
+            const token = JSON.parse(source).token;
+            if (token) {
+                GM_setValue('redgifs_token', token);
+            }
+            return token || null;
+        }
+    } catch (e) {
+        console.debug('[Forums++] redgifs token refresh rejected:', e && e.message);
+    }
+    return null;
+};
+
 /**
  * An array of arrays defining how to match hosts inside the posts.
  *
@@ -1396,10 +2577,11 @@ function setProcessing(isProcessing, postId) {
  */
 const hosts = [
     ['Simpcity:Attachments', [/(\/attachments\/|\/data\/video\/)/]],
-    ['Coomer:Profiles', [/coomer.su\/[~an@._-]+\/user/]],
-    ['Coomer:image', [/(\w+\.)?coomer.su\/(data|thumbnail)/]],
-    ['JPG6:image', [/(simp\d+\.)?(selti-delivery\.ru|jpg\d?\.(church|fish|fishing|pet|su))\/(?!(img\/|a\/|album\/))/, /jpe?g\d\.(church|fish|fishing|pet|su)(\/a\/|\/album\/)[~an@-_.]+<no_qs>/]],
-    ['kemono:direct link', [/.{2,6}\.kemono.su\/data\//]],
+    ['Coomer:Profiles', [/coomer.(su|st)\/[~an@._-]+\/user/]],
+    ['Coomer:image', [/(\w+\.)?coomer.(su|st)\/(data|thumbnail)/]],
+    ['JPGX:image', [/(simp\d+\.)?(cuckcapital\.cr|jpg\d?\.(church|fish|fishing|pet|su|cr))\/(?!(img\/|a\/|album\/))/, /jpe?g\d\.(church|fish|fishing|pet|su|cr)(\/a\/|\/album\/)[~an@-_.]+<no_qs>/]],
+    ['Goonbox:image', [/goonbox\.cr\/img\//, /goonbox\.cr\/a\//]],
+    ['kemono:direct link', [/.{2,6}\.(kemono.su|kemono.cr)\/data\//]],
     ['Postimg:image', [/!!https?:\/\/(www.)?i\.?(postimg|pixxxels).cc\/(.{8})/]],
     ['Ibb:image',
         [
@@ -1419,21 +2601,25 @@ const hosts = [
     ['Pixhost:image', [/(t|img)(\d+)?\.pixhost.to\//, /pixhost.to\/gallery\//]],
     ['Imagebam:image', [/imagebam.com\/(view|gallery)/]],
     ['Imagebam:full embed', [/images\d.imagebam.com/]],
-    ['Saint:video', [/(saint2.(su|pk|cr)\/embed\/|([~an@]+\.)?saint2.(su|pk|cr)\/videos)/]],
-    ['Redgifs:video', [/!!redgifs.com(\/|\\\/)ifr.*?(?="|&quot;)/]],
+    ['Saint:video', [/((\w+\.)?(saint2.(su|pk|cr)|turbo\.cr)\/(embed|v|d)\/)|(([~an@]+\.)?saint2.(su|pk|cr)\/videos)/]],
+    ['Saint:albums', [/((\w+\.)?(saint2.(su|pk|cr)|turbo\.cr)\/a\/)/]],
+    ['Redgifs:video', [/!!redgifs.com(\/|\\\/)(ifr|watch|gifs\/detail|gifs\/watch).*?(?="|&quot;)/]],
+    ['Redgifs:user', [/redgifs\.com\/users\//]],
     ['Bunkr:',
         [
-            /!!(?<=href=")https:\/\/((stream|cdn(\d+)?)\.)?bunkrr?r?\.(ac|ax|black|cat|ci|cr|fi|is|media|nu|pk|ph|ps|red|ru|se|si|site|sk|ws|ru|su|org)(?!(\/a\/)).*?(?=")|(?<=(href=")|(src="))https:\/\/((i|cdn|i-pizza|big-taco-1img)(\d+)?\.)?bunkrr?r?\.(ac|ax|black|cat|ci|cr|fi|is|media|nu|pk|ph|ps|red|ru|se|si|site|sk|ws|ru|su|org)(?!(\/a\/))\/(v\/)?.*?(?=")/,
+            /!!(?<=href=")https:\/\/((stream|cdn(\d+)?)\.)?bunkrr?r?\.(ac|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org)(?!(\/a\/)).*?(?=")|(?<=(href=")|(src="))https:\/\/((i|cdn|i-pizza|big-taco-1img)(\d+)?\.)?bunkrr?r?\.(ac|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org)(?!(\/a\/))\/(v\/)?.*?(?=")/,
         ]
     ],
-    ['Bunkr:Albums', [/bunkrr?r?\.(ac|ax|black|cat|ci|cr|fi|is|media|nu|pk|ph|ps|red|ru|se|si|site|sk|ws|ru|su|org)\/a\//]],
+    ['Bunkr:Albums', [/bunkrr?r?\.(ac|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org)\/a\//]],
     ['Give.xxx:Profiles', [/give.xxx\/[~an@_-]+/]],
-    ['Pixeldrain:', [/(focus\.)?pixeldrain.com\/[lu]\//]],
+    ['Pixeldrain:', [/(focus\.)?(pixeldrain.com|pixeldrain.net|pixeldra.in)\/[lu]\//]],
     ['Gofile:', [/gofile.io\/d/]],
+    ['Filester:links', [/filester\.(me|sh|si|gg)\/d\//]],
+    ['Filester:albums', [/filester\.(me|sh|si|gg)\/f\//]],
     ['Box.com:', [/m\.box\.com\//]],
     ['Yandex:', [/(disk\.)?yandex\.[a-z]+/]],
     ['Cyberfile:', [/!!https:\/\/cyberfile.(su|me)\/\w+(\/)?(?=")/, /cyberfile.(su|me)\/folder\//]],
-    ['Cyberdrop:', [/fs-\d+.cyberdrop.(me|to|cc|nl)\/|cyberdrop.me\/(f|e)\//, /cyberdrop.(me|to|cc|nl)\/a\//]],
+    ['Cyberdrop:', [/fs-\d+\.cyberdrop\.[a-z]{2,}\/|cyberdrop\.[a-z]{2,}\/(f|e)\//, /cyberdrop\.[a-z]{2,}\/a\//]],
     ['Pornhub:video', [/([~an@]+\.)?pornhub.com\/view_video/]],
     ['Noodlemagazine:video', [/(adult.)?noodlemagazine.com\/watch\//]],
     ['Spankbang:video', [/spankbang.com\/.*?\/video/]],
@@ -1660,6 +2846,120 @@ const resolvers = [
             };
         },
     ],
+    /* v1.12.0 (round 6): Goonbox /img/ + /a/ — metadata API first (with the
+     * CF bridge fallback), original_url deep-scan, reachability probe before
+     * discarding originals, thumbnail fallback, album pagination walker
+     * (lineage L3018-3126). */
+    [
+        [/goonbox\.cr\/img\//],
+        async (url, http, spoilers, postId) => {
+            try {
+                const id = url.split('/').pop().split('?')[0];
+                const fallback = goonboxThumbByUrl.get(url.replace(/\?.*/, '').replace(/\/$/, '')) || null;
+
+                // Direct request first, same-origin bridge tab only if
+                // Cloudflare rejects it — see goonboxApiJson.
+                const data = await goonboxApiJson(http, `/api/images/${id}`, url, postId);
+
+                // Take the first original_url anywhere in the response rather
+                // than pinning to data.image.original_url — that pin yields
+                // undefined the moment Goonbox moves the field, and the only
+                // symptom is a silently lower-resolution file.
+                const findOriginal = (obj, depth = 0) => {
+                    if (!obj || typeof obj !== 'object' || depth > 6) return null;
+                    if (Array.isArray(obj)) {
+                        for (const it of obj) {
+                            const v = findOriginal(it, depth + 1);
+                            if (v) return v;
+                        }
+                        return null;
+                    }
+                    for (const k of ['original_url', 'originalUrl', 'original']) {
+                        const v = obj[k];
+                        if (typeof v === 'string' && /^https?:\/\//i.test(v.trim())) return v.trim();
+                    }
+                    for (const k of Object.keys(obj)) {
+                        const v = findOriginal(obj[k], depth + 1);
+                        if (v) return v;
+                    }
+                    return null;
+                };
+
+                const originalUrl = findOriginal(data);
+
+                if (!originalUrl) {
+                    // Silent downgrade to a thumbnail is the worst failure mode here.
+                    log.host.info(postId, `::No original_url in API response -> thumbnail::: ${url}`, 'goonbox.cr');
+                    return fallback;
+                }
+
+                // Some originals genuinely 404 while the medium-res thumbnail
+                // still exists — but only a definitive "gone" justifies
+                // discarding: a refused HEAD says nothing (plenty of CDN edges
+                // do not serve HEAD), so a ranged GET is the authority.
+                const probe = async (method, headers) => {
+                    try {
+                        const r = await http.base(method, originalUrl, {}, { Referer: url, ...headers }, null, 'text');
+                        return Number((r && r.status) || 0) || 0;
+                    } catch (e) {
+                        return 0;
+                    }
+                };
+
+                let status = await probe('HEAD', {});
+                let reachable = status >= 200 && status < 400;
+
+                if (!reachable) {
+                    status = await probe('GET', { Range: 'bytes=0-0' });
+                    reachable = status >= 200 && status < 400;
+                }
+
+                if (!reachable) {
+                    log.host.info(postId, `::Original unreachable (${status}) -> thumbnail::: ${originalUrl}`, 'goonbox.cr');
+                    return fallback || originalUrl;
+                }
+
+                return originalUrl;
+            } catch (error) {
+                log.host.error(postId, `::Error resolving Goonbox image ${url}::: ${error.message}`, 'goonbox.cr');
+                return null;
+            }
+        },
+    ],
+    [
+        [/goonbox\.cr\/a\//],
+        async (url, http, spoilers, postId) => {
+            try {
+                const albumSlug = url.replace(/\?.*/, '').split('/').filter(Boolean).pop();
+
+                // Direct request first; the helper tab is reused across every
+                // page of the album.
+                const fetchPage = async page =>
+                    await goonboxApiJson(http, `/api/albums/${albumSlug}/images?page=${page}`, url, postId);
+
+                const first = await fetchPage(1);
+                if (!first || !h.isArray(first.images)) return null;
+
+                const resolved = first.images.map(img => img.original_url).filter(Boolean);
+                const lastPage = first.pagination?.last_page || 1;
+
+                for (let page = 2; page <= lastPage; page++) {
+                    const data = await fetchPage(page);
+                    if (data && h.isArray(data.images)) {
+                        resolved.push(...data.images.map(img => img.original_url).filter(Boolean));
+                    }
+                }
+
+                return {
+                    folderName: `goonbox_${albumSlug}`,
+                    resolved,
+                };
+            } catch (error) {
+                log.host.error(postId, `::Error resolving Goonbox album ${url}::: ${error.message}`, 'goonbox.cr');
+                return null;
+            }
+        },
+    ],
     [
         [/\/\/ibb.co\/[a-zA-Z0-9-_.]+/, /:!([a-z](\d+)?\.)?ibb.co\/album\/[a-zA-Z0-9_.-]+/],
         async (url, http) => {
@@ -1773,22 +3073,88 @@ const resolvers = [
             }
         },
     ],
+    /* v1.12.0 (round 6): Bunkr's live flow — /f/<slug> pages carry the
+     * data-file-id; apidl.bunkr.ru/api/_001_v2 returns the (possibly XOR-
+     * "SECRET_KEY_<hour>" encrypted) CDN URL; glb-apisign.cdn.cr signs it.
+     * CF fast-fail + 60-min domain blacklist + warm-up tabs ride the machinery
+     * (lineage L3321-3723). Name hints from the album grid ride the bounded
+     * maps. The legacy /api/v2/file/{id} decrypt is kept as the fallback when
+     * the /f/ page yields no data-file-id. */
     [
-        [/((stream|cdn(\d+)?)\.)?bunkrr?r?\.(ac|ax|black|cat|ci|cr|fi|is|media|nu|pk|ph|ps|red|ru|se|si|site|sk|ws|su|org).*?\.|((i|cdn)(\d+)?\.)?bunkrr?r?\.(ac|ax|black|cat|ci|cr|fi|is|media|nu|pk|ph|ps|red|ru|se|si|site|sk|ws|su|org)\/(v\/)?/i, /:!bunkrr?r?\.(ac|ax|black|cat|ci|cr|fi|is|media|nu|pk|ph|ps|red|ru|se|si|site|sk|ws|su|org)\/a\//],
+        [/((stream|cdn(\d+)?)\.)?bunkrr?r?\.(ac|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org).*?\.|((i|cdn)(\d+)?\.)?bunkrr?r?\.(ac|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org)\/(v\/)?/i, /:!bunkrr?r?\.(ac|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org)\/a\//],
         async (url, http, _, postId) => {
             try {
                 const { pathname } = new URL(url);
                 const segments = pathname.split('/').filter(Boolean);
                 const index = segments.findIndex(s => ['f', 'v', 'd'].includes(s));
-                const id = index > -1 ? segments.slice(index + 1).join('/') : segments.pop();
-                if (!id) {
+                const slug = index > -1 ? segments.slice(index + 1).join('/') : segments.pop();
+                if (!slug) {
                     log.host.error(postId, `::Could not extract ID from Bunkr URL::: ${url}`, 'Bunkr');
                     return null;
                 }
 
+                const fileBase = (() => { try { return new URL(url).origin; } catch (e) { return 'https://bunkr.cr'; } })();
+
+                // Live flow: fetch the /f/ page for the numeric data-file-id.
+                let dataId = null;
+                try {
+                    const fileRes = await xfpdBunkrGetWithCfRetry(http, `${fileBase}/f/${slug}`, fileBase, fileBase === 'https://bunkr.cr');
+                    const fileDom = fileRes?.dom;
+                    if (fileDom && !xfpdLooksLikeCfChallenge(fileRes?.source || '', fileDom)) {
+                        dataId = fileDom?.querySelector?.('[data-file-id]')?.getAttribute?.('data-file-id') || null;
+                    }
+                } catch (e) {
+                    console.debug('[Forums++] bunkr /f/ page fetch rejected:', e && e.message);
+                }
+
+                if (dataId) {
+                    const data = await xfpdBunkrPostVsWithCfRetry(
+                        http,
+                        'https://apidl.bunkr.ru/api/_001_v2',
+                        { id: dataId },
+                        `https://get.bunkrr.su/file/${dataId}`,
+                        'https://get.bunkrr.su',
+                        true,
+                    );
+
+                    if (data && data.url) {
+                        const decodeFinalUrl = dataToDecode => {
+                            try {
+                                if (!dataToDecode || !dataToDecode.url) return null;
+                                if (!dataToDecode.encrypted) return dataToDecode.url;
+
+                                const binaryString = atob(dataToDecode.url);
+                                const keyBytes = new TextEncoder().encode(`SECRET_KEY_${Math.floor(dataToDecode.timestamp / 3600)}`);
+
+                                return Array.from(binaryString)
+                                    .map((char, i) => String.fromCharCode(char.charCodeAt(0) ^ keyBytes[i % keyBytes.length]))
+                                    .join('');
+                            } catch (e) {
+                                return null;
+                            }
+                        };
+
+                        let finalUrl = decodeFinalUrl(data);
+                        if (finalUrl && typeof finalUrl === 'string') {
+                            finalUrl = finalUrl.trim();
+                            if (finalUrl.startsWith('//')) finalUrl = 'https:' + finalUrl;
+                            finalUrl = await xfpdBunkrSignCdnUrl(http, finalUrl);
+
+                            const hint = xfpdBunkrExtractNameFromVsData(data) || '';
+                            if (hint && String(hint).trim()) {
+                                bunkrNameByUrl.set(String(finalUrl), String(hint).trim());
+                            }
+
+                            return finalUrl;
+                        }
+                    }
+                }
+
+                // Legacy fallback: the /api/v2/file/{id} decrypt (kept for URLs
+                // whose /f/ page yields no data-file-id).
                 const response = await http.post(
-                    `https://bunkr.cr/api/v2/file/${id}`, // Updated API endpoint based on typical Bunkr structures
-                    null, // No data needed for GET equivalent
+                    `https://bunkr.cr/api/v2/file/${slug}`,
+                    null,
                     {},
                     { 'Content-Type': 'application/json' }
                 );
@@ -1796,7 +3162,7 @@ const resolvers = [
                 const data = JSON.parse(response.source);
 
                 if (!data || data.status === 'error') {
-                    log.host.error(postId, `::Bunkr API error for ID ${id}::: ${data?.message || 'Unknown error'}`, 'Bunkr');
+                    log.host.error(postId, `::Bunkr API error for ID ${slug}::: ${data?.message || 'Unknown error'}`, 'Bunkr');
                     return null;
                 }
 
@@ -1805,7 +3171,6 @@ const resolvers = [
                     finalURL = data.url;
                 } else {
                     const binaryString = atob(data.url);
-                    // Bunkr encryption key derivation logic might vary, this is a common one.
                     const keyBytes = new TextEncoder().encode(`SECRET_KEY_${Math.floor(data.timestamp / 3600)}`);
                     finalURL = Array.from(binaryString)
                         .map((char, i) => String.fromCharCode(char.charCodeAt(0) ^ keyBytes[i % keyBytes.length]))
@@ -1819,70 +3184,224 @@ const resolvers = [
         },
     ],
     [
-        [/bunkrr?r?\.(ac|ax|black|cat|ci|cr|fi|is|media|nu|pk|ph|ps|red|ru|se|si|site|sk|ws|su|org)\/a\//],
-        async (url, http, _, postId) => {
+        [/bunkrr?r?\.(ac|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|ru|su|org)\/a\//],
+        async (url, http, _, ___, ____, progressCB) => {
             try {
-                const { dom, source } = await http.get(url);
-                const containers = dom.querySelectorAll('.grid-images > div');
-                const files = [];
+                const cleanUrl = String(url || '').split('#')[0];
+                const baseUrl = cleanUrl.split('?')[0].replace(/\/+$/, '');
 
-                for (const f of containers) {
-                    const a = f.querySelector('a[class="after:absolute after:z-10 after:inset-0"]');
-                    if (!a) continue;
+                const resolved = [];
+                const seen = new Set();
 
-                    const href = a.getAttribute('href');
-                    if (!href || !href.includes('/f/')) continue;
+                // Keep the human filename from the album grid (title / .theName).
+                const nameHintBySlug = new Map();
 
-                    const id = href.split('/f/')[1];
-                    // v1.9: derive the API origin from the link being resolved
-                    // instead of hardcoding bunkr.cr — bunkr rotates domains
-                    // constantly and a stale base 404s the whole album scan.
-                    let apiBase;
-                    try { apiBase = new URL(href, url).origin; }
-                    catch (e) { try { apiBase = new URL(url).origin; } catch (e2) { apiBase = 'https://bunkr.si'; } }
-                    try {
-                        const response = await http.post(
-                            `${apiBase}/api/v2/file/${id}`,
-                            null,
-                            {},
-                            { 'Content-Type': 'application/json' }
-                        );
-                        const data = JSON.parse(response.source);
+                let firstDom = null;
+                let firstSource = null;
 
-                        if (!data || data.status === 'error') {
-                            log.host.warn(postId, `::Bunkr album API error for ID ${id}::: ${data?.message || 'Unknown error'}`, 'Bunkr');
+                const sanitizeName = s => String(s || '')
+                    .replace(/[\\/:*?"<>|]/g, '-')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+
+                const extractSlugsFromDom = dom => {
+                    const containers = dom?.querySelectorAll?.('.grid-images > div') || [];
+                    const slugs = [];
+
+                    for (const c of containers) {
+                        const a =
+                            c.querySelector('a[class="after:absolute after:z-10 after:inset-0"]') ||
+                            c.querySelector('a[href*="/f/"]') ||
+                            c.querySelector('a[href*="/v/"]') ||
+                            c.querySelector('a[href*="/d/"]');
+
+                        const href = a?.getAttribute?.('href') || '';
+                        const m = href.match(/\/(f|v|d)\/([^\/?#]+)/i);
+                        if (m && m[2]) {
+                            const slug = m[2];
+                            slugs.push(slug);
+
+                            try {
+                                let hint = c?.getAttribute?.('title') || '';
+                                if (!hint) hint = c?.querySelector?.('.theName')?.textContent || '';
+                                if (!hint) hint = c?.querySelector?.('p.truncate')?.textContent || '';
+                                if (!hint) hint = c?.querySelector?.('.grid-images_box-txt p')?.textContent || '';
+                                hint = String(hint || '').replace(/\s+/g, ' ').trim();
+                                if (hint) nameHintBySlug.set(slug, hint);
+                            } catch (e) {
+                                console.debug('[Forums++] bunkr album name hint rejected:', e && e.message);
+                            }
+                        }
+                    }
+
+                    return slugs;
+                };
+
+                const asyncPool = async (limit, items, worker) => {
+                    const results = new Array(items.length);
+                    let i = 0;
+
+                    const runners = Array.from({ length: Math.max(1, limit) }, async () => {
+                        while (true) {
+                            const idx = i++;
+                            if (idx >= items.length) break;
+                            try {
+                                results[idx] = await worker(items[idx], idx);
+                            } catch (e) {
+                                results[idx] = null;
+                            }
+                        }
+                    });
+
+                    await Promise.all(runners);
+                    return results;
+                };
+
+                const origin = (() => {
+                    try { return new URL(baseUrl).origin; } catch (e) { return 'https://bunkr.cr'; }
+                })();
+
+                let folderName = null;
+
+                const MAX_PAGES = 500;
+                const CONCURRENCY = 8;
+
+                const albumUrlObj = (() => {
+                    try { return new URL(baseUrl); } catch (e) { return null; }
+                })();
+                const albumPath = (albumUrlObj && albumUrlObj.pathname) ? albumUrlObj.pathname : '/';
+                const albumBasesAll = xfpdBunkrFilterBases([origin, 'https://bunkr.pk', 'https://bunkr.cr']);
+                let albumBaseChosen = null;
+
+                for (let page = 1; page <= MAX_PAGES; page++) {
+                    if (typeof progressCB === 'function') {
+                        progressCB(`Resolving: ${baseUrl}?page=${page}`);
+                    }
+
+                    const pageBases = albumBaseChosen
+                        ? [albumBaseChosen, ...albumBasesAll.filter(b => b !== albumBaseChosen)]
+                        : albumBasesAll;
+
+                    let dom = null, source = '';
+                    let slugs = [];
+
+                    for (const base of pageBases) {
+                        const base0 = String(base || '').replace(/\/$/, '');
+                        const candidate = `${base0}${albumPath}?page=${page}`;
+
+                        try {
+                            ({ dom, source } = await xfpdBunkrGetWithCfRetry(http, candidate, base0, base0 === 'https://bunkr.cr'));
+                        } catch (e) {
+                            dom = null;
+                            source = '';
+                        }
+
+                        if (xfpdLooksLikeCfChallenge(source, dom)) continue;
+
+                        slugs = extractSlugsFromDom(dom);
+                        if (page === 1 && !slugs.length) {
                             continue;
                         }
 
-                        let finalURL;
-                        if (!data.encrypted) {
-                            finalURL = data.url;
-                        } else {
-                            const binaryString = atob(data.url);
-                            const keyBytes = new TextEncoder().encode(`SECRET_KEY_${Math.floor(data.timestamp / 3600)}`);
-                            finalURL = Array.from(binaryString)
-                                .map((char, i) => String.fromCharCode(char.charCodeAt(0) ^ keyBytes[i % keyBytes.length]))
-                                .join('');
-                        }
-                        files.push(finalURL);
-                    } catch (error) {
-                        log.host.warn(postId, `::Error resolving Bunkr album file ${id}::: ${error.message}`, 'Bunkr');
+                        if (!albumBaseChosen) albumBaseChosen = base0;
+                        break;
                     }
+
+                    if (!dom) break;
+                    if (!slugs.length) break;
+
+                    if (page === 1) {
+                        firstDom = dom;
+                        firstSource = source;
+
+                        const h1 = dom?.querySelector?.('h1');
+                        const title = (h1?.innerText || h1?.textContent || '').split('\n')[0]?.trim();
+                        if (title) folderName = sanitizeName(title);
+                    }
+
+                    const fresh = [];
+                    for (const s of slugs) {
+                        if (!s || seen.has(s)) continue;
+                        seen.add(s);
+                        fresh.push(s);
+                    }
+
+                    if (!fresh.length) break;
+
+                    const urls = await asyncPool(CONCURRENCY, fresh, async slug => {
+                        // Fetch /f/{slug} to get the numeric file ID required by the new API.
+                        const fileBase = String(albumBaseChosen || origin || 'https://bunkr.cr').replace(/\/$/, '');
+                        const filePageUrl = `${fileBase}/f/${slug}`;
+                        let dataId = null;
+                        try {
+                            const fileRes = await xfpdBunkrGetWithCfRetry(http, filePageUrl, fileBase, fileBase === 'https://bunkr.cr');
+                            const fileDom = fileRes?.dom;
+                            if (fileDom && !xfpdLooksLikeCfChallenge(fileRes?.source || '', fileDom)) {
+                                dataId = fileDom?.querySelector?.('[data-file-id]')?.getAttribute?.('data-file-id') || null;
+                            }
+                        } catch (e) {
+                            console.debug('[Forums++] bunkr album /f/ fetch rejected for one slug:', e && e.message);
+                        }
+                        if (!dataId) return null;
+
+                        let data = null;
+                        try {
+                            data = await xfpdBunkrPostVsWithCfRetry(
+                                http,
+                                'https://apidl.bunkr.ru/api/_001_v2',
+                                { id: dataId },
+                                `https://get.bunkrr.su/file/${dataId}`,
+                                'https://get.bunkrr.su',
+                                true,
+                            );
+                        } catch (e) {
+                            console.debug('[Forums++] bunkr album API step rejected for one slug:', e && e.message);
+                        }
+                        if (!data || !data.url) return null;
+
+                        let finalUrl;
+                        try {
+                            if (!data.encrypted) {
+                                finalUrl = data.url;
+                            } else {
+                                const binaryString = atob(data.url);
+                                const keyBytes = new TextEncoder().encode(`SECRET_KEY_${Math.floor(data.timestamp / 3600)}`);
+                                finalUrl = Array.from(binaryString)
+                                    .map((char, i) => String.fromCharCode(char.charCodeAt(0) ^ keyBytes[i % keyBytes.length]))
+                                    .join('');
+                            }
+                        } catch (e) {
+                            console.debug('[Forums++] bunkr album decode rejected for one slug:', e && e.message);
+                            return null;
+                        }
+                        if (!finalUrl || typeof finalUrl !== 'string') return null;
+                        finalUrl = finalUrl.trim();
+                        if (finalUrl.startsWith('//')) finalUrl = 'https:' + finalUrl;
+
+                        finalUrl = await xfpdBunkrSignCdnUrl(http, finalUrl);
+
+                        try {
+                            const hint = nameHintBySlug.get(slug) || xfpdBunkrExtractNameFromVsData(data) || '';
+                            if (hint && String(hint).trim()) {
+                                bunkrNameByUrl.set(String(finalUrl), String(hint).trim());
+                            }
+                        } catch (e) {
+                            console.debug('[Forums++] bunkr album hint registration rejected:', e && e.message);
+                        }
+
+                        return finalUrl;
+                    });
+
+                    for (const u of urls) if (u) resolved.push(u);
                 }
 
-                const infoContainer = dom.querySelector('h1');
-                const parts = infoContainer?.outerText
-                    .split('\n')
-                    .map(t => t.trim())
-                    .filter(t => t !== '');
-                const origAlbumName = parts.length ? parts[0].trim() : url.split('/').pop() ?? 'Bunkr Album';
-                const albumName = origAlbumName.replaceAll('/', '-').replace(/&amp;/g, '');
+                if (!folderName) folderName = h.basename(baseUrl);
 
                 return {
-                    dom,
-                    source,
-                    folderName: albumName,
-                    resolved: files.filter(file => file),
+                    dom: firstDom,
+                    source: firstSource,
+                    folderName,
+                    resolved,
                 };
             } catch (error) {
                 log.host.error(postId, `::Error resolving Bunkr album ${url}::: ${error.message}`, 'Bunkr');
@@ -1970,87 +3489,350 @@ const resolvers = [
             return resolved;
         },
     ],
+    /* v1.12.0 (round 6): GoFile's 2026-08 API — the static wt is dead; the
+     * site derives a per-request X-Website-Token from the account token via
+     * generateWT() in gofile.io/js/wt.obf.js. The script is fetched live,
+     * evaluated in a scoped Function (reads navigator only, the declaration
+     * stays local), and its source cached for a day (xfpd_gofile_wt) — the
+     * 4-hour time bucket inside generateWT() is recomputed on every call.
+     * Guest account via POST /accounts + GET /accounts/website activation,
+     * persisted 24 h (xfpd_gofile_at); bearerOverride pins a personal token.
+     * Password albums try each spoiler as a sha256 hash (lineage L3873-4229). */
     [
         [/gofile.io\/d/],
         async (url, http, spoilers, postId) => {
-            const resolveAlbum = async (contentId, availableSpoilers) => {
-                const apiUrl = `https://api.gofile.io/contents/${contentId}?wt=4fd6sg89d7s6`;
-                let { source } = await http.get(apiUrl, {}, { 'Authorization': `Bearer ${settings.hosts.goFile.token}` });
+            const WT_KEY = 'xfpd_gofile_wt';
+            const AT_KEY = 'xfpd_gofile_at';
+            const WT_MAX_AGE_MS = 24 * 3600 * 1000;
+            const AT_MAX_AGE_MS = 24 * 3600 * 1000;
 
-                if (h.contains('error-notFound', source)) {
-                    log.host.error(postId, `::Album not found::: ${url}`, 'gofile.io');
+            const gmGet = (key, fallback) => {
+                try {
+                    return typeof GM_getValue === 'function' ? GM_getValue(key, fallback) : fallback;
+                } catch (e) {
+                    return fallback;
+                }
+            };
+
+            const gmSet = (key, val) => {
+                try {
+                    if (typeof GM_setValue === 'function') GM_setValue(key, val);
+                } catch (e) {
+                    console.debug('[Forums++] gofile storage write rejected:', e && e.message);
+                }
+            };
+
+            const gmReq = async (method, reqUrl, data = null, headers = {}, responseType = 'text') => {
+                return await http.base(method, reqUrl, {}, headers, data, responseType);
+            };
+
+            let cachedGenerateWT = null;
+
+            const getGenerateWT = async (force = false) => {
+                if (!force && cachedGenerateWT) return cachedGenerateWT;
+
+                const now = Date.now();
+                const cached = gmGet(WT_KEY, null);
+                let srcText =
+                    !force && cached && cached.src && cached.ts && now - cached.ts < WT_MAX_AGE_MS
+                        ? cached.src
+                        : null;
+
+                if (!srcText) {
+                    const { source } = await gmReq('GET', 'https://gofile.io/js/wt.obf.js', null, {}, 'text');
+                    srcText = source || '';
+                    if (!srcText || !/generateWT/.test(srcText)) {
+                        throw new Error('Could not fetch GoFile wt.obf.js (generateWT).');
+                    }
+                    gmSet(WT_KEY, { src: srcText, ts: now });
+                }
+
+                try {
+                    const factory = new Function(
+                        'navigator',
+                        `${srcText}\nreturn (typeof generateWT === 'function') ? generateWT : null;`,
+                    );
+                    const fn = factory(navigator);
+                    if (typeof fn !== 'function') throw new Error('no generateWT');
+                    cachedGenerateWT = fn;
+                    return fn;
+                } catch (e) {
+                    throw new Error('Could not evaluate GoFile generateWT().');
+                }
+            };
+
+            const computeWebsiteToken = async (token, force = false) => {
+                const gen = await getGenerateWT(force);
+                return gen(token);
+            };
+
+            const createAccountToken = async () => {
+                // Live site creates the guest account with a plain POST (no website-token).
+                const { source } = await gmReq(
+                    'POST',
+                    'https://api.gofile.io/accounts',
+                    JSON.stringify({}),
+                    {
+                        accept: 'application/json',
+                        'content-type': 'application/json',
+                    },
+                    'text',
+                );
+
+                const json = JSON.parse(source || '{}');
+
+                if (!json || json.status !== 'ok' || !json.data || !json.data.token) {
+                    throw new Error(`createAccount failed: ${json?.message || json?.status || 'unknown'}`);
+                }
+
+                const token = json.data.token;
+
+                // Sync/activate the fresh guest token server-side — the website
+                // does this via GET /accounts/website before it will resolve
+                // /contents for that token.
+                try {
+                    await gmReq(
+                        'GET',
+                        'https://api.gofile.io/accounts/website',
+                        null,
+                        { accept: 'application/json', authorization: `Bearer ${token}` },
+                        'text',
+                    );
+                } catch (e) {
+                    console.debug('[Forums++] gofile account activation rejected (best-effort):', e && e.message);
+                }
+
+                try {
+                    settings.hosts.goFile.token = token;
+                } catch (e) {
+                    console.debug('[Forums++] gofile settings write rejected:', e && e.message);
+                }
+
+                gmSet(AT_KEY, { token, ts: Date.now() });
+                await gofileSyncCookie(token);
+                return token;
+            };
+
+            const getAccountToken = async (force = false) => {
+                // If the user provided a personal Bearer token, always use it.
+                let token = null;
+                try {
+                    const override = settings?.hosts?.goFile?.bearerOverride;
+                    if (override && String(override).trim() !== '') {
+                        token = String(override).trim();
+                    }
+                } catch (e) {
+                    console.debug('[Forums++] gofile bearerOverride read rejected:', e && e.message);
+                }
+
+                if (!token) {
+                    const now = Date.now();
+                    const cached = gmGet(AT_KEY, null);
+                    if (!force && cached && cached.token && cached.ts && now - cached.ts < AT_MAX_AGE_MS) {
+                        token = cached.token;
+                        try {
+                            settings.hosts.goFile.token = token;
+                        } catch (e) {
+                            console.debug('[Forums++] gofile settings mirror rejected:', e && e.message);
+                        }
+                    }
+                }
+
+                if (!token) {
+                    try {
+                        if (!force && settings && settings.hosts && settings.hosts.goFile && settings.hosts.goFile.token) {
+                            token = settings.hosts.goFile.token;
+                        }
+                    } catch (e) {
+                        console.debug('[Forums++] gofile settings token read rejected:', e && e.message);
+                    }
+                }
+
+                if (!token) {
+                    // createAccountToken() already syncs the cookie for this token.
+                    return await createAccountToken();
+                }
+
+                await gofileSyncCookie(token);
+                return token;
+            };
+
+            const apiContentsRaw = async (contentId, passwordHash, token) => {
+                const wt = await computeWebsiteToken(token);
+
+                // Match the website's getContent() query shape exactly.
+                const params = [
+                    'contentFilter=',
+                    'page=1',
+                    'pageSize=1000',
+                    'sortField=createTime',
+                    'sortDirection=-1',
+                ];
+                if (passwordHash) params.push(`password=${encodeURIComponent(passwordHash)}`);
+                const apiUrl = `https://api.gofile.io/contents/${encodeURIComponent(contentId)}?${params.join('&')}`;
+
+                const { source } = await gmReq(
+                    'GET',
+                    apiUrl,
+                    null,
+                    {
+                        accept: 'application/json',
+                        authorization: `Bearer ${token}`,
+                        'x-website-token': wt,
+                        'x-bl': (typeof navigator !== 'undefined' && navigator.language) || '',
+                    },
+                    'text',
+                );
+
+                return JSON.parse(source || '{}');
+            };
+
+            const apiContents = async (contentId, passwordHash) => {
+                let token = await getAccountToken(false);
+
+                let json = await apiContentsRaw(contentId, passwordHash, token);
+                if (json && json.status === 'ok') return json;
+
+                const s = String(json?.status || json?.message || '').toLowerCase();
+
+                if (s.includes('unauthorized') || s.includes('token') || s.includes('invalid')) {
+                    // Refresh both the salts (wt.obf.js may have rotated) and the guest token.
+                    await getGenerateWT(true);
+                    token = await getAccountToken(true);
+                    json = await apiContentsRaw(contentId, passwordHash, token);
+                    return json;
+                }
+
+                return json;
+            };
+
+            const resolveAlbum = async (urlOrId, availableSpoilers) => {
+                const id = String(urlOrId).includes('gofile.io/d/') ? String(urlOrId).split('/').reverse()[0] : String(urlOrId);
+
+                let props = await apiContents(id, null);
+
+                if (props && props.status === 'error-notFound') {
+                    log.host.error(postId, `::Album not found::: ${urlOrId}`, 'gofile.io');
                     return null;
                 }
-                if (h.contains('error-notPublic', source)) {
-                    log.host.error(postId, `::Album not public::: ${url}`, 'gofile.io');
+
+                if (props && props.status === 'error-notPublic') {
+                    log.host.error(postId, `::Album not public::: ${urlOrId}`, 'gofile.io');
                     return null;
                 }
 
-                let props = JSON.parse(source?.toString() ?? '{}');
+                if (props && props.status === 'error-passwordRequired') {
+                    log.host.info(postId, `::Album requires password::: ${urlOrId}`, 'gofile.io');
 
-                if (h.contains('error-passwordRequired', source) && availableSpoilers?.length) {
-                    log.host.info(postId, `::Album requires password::: ${url}`, 'gofile.io');
+                    if (!availableSpoilers || !availableSpoilers.length) {
+                        return props;
+                    }
+
                     log.host.info(postId, `::Trying with ${availableSpoilers.length} available password(s)::`, 'gofile.io');
 
                     for (const spoiler of availableSpoilers) {
-                        try {
-                            const hash = sha256(spoiler);
-                            const { source: passwordSource } = await http.get(`${apiUrl}&password=${hash}`);
-                            const passwordProps = JSON.parse(passwordSource?.toString() ?? '{}');
-                            if (passwordProps?.status === 'ok') {
-                                props = passwordProps;
-                                log.host.info(postId, `::Successfully authenticated with:: ${spoiler}`, 'gofile.io');
-                                break;
-                            }
-                        } catch (error) {
-                            log.host.warn(postId, `::Attempt with password '${spoiler}' failed::: ${error.message}`, 'gofile.io');
+                        const hash = sha256(spoiler);
+                        const attempt = await apiContents(id, hash);
+
+                        if (attempt && attempt.status === 'ok') {
+                            log.host.info(postId, `::Successfully authenticated with:: ${spoiler}`, 'gofile.io');
+                            props = attempt;
+                            break;
                         }
                     }
-                    if (props?.status !== 'ok') {
-                        log.host.error(postId, `::Failed to authenticate with any provided password::: ${url}`, 'gofile.io');
-                        return null;
-                    }
                 }
+
                 return props;
             };
 
-            const contentCode = url.split('/').filter(Boolean).pop();
-            if (!contentCode) return null;
+            const props = await resolveAlbum(url, spoilers);
 
-            const props = await resolveAlbum(contentCode, spoilers);
             let folderName = h.basename(url);
 
-            if (props?.status !== 'ok' || !props?.data) {
-                log.host.error(postId, `::Unable to resolve album::: ${url}`, 'gofile.io');
-                return { dom: null, source: null, folderName, resolved: [] };
+            if (!props || props.status !== 'ok' || !props.data) {
+                if (props && props.status === 'error-passwordRequired') {
+                    log.host.error(postId, `::Password required (no valid password found)::: ${url}`, 'gofile.io');
+                } else {
+                    log.host.error(postId, `::Unable to resolve album::: ${url}`, 'gofile.io');
+                }
+
+                return {
+                    dom: null,
+                    source: null,
+                    folderName,
+                    resolved: [],
+                };
             }
 
             const resolved = [];
 
-            const getChildAlbums = async (currentProps, currentSpoilers) => {
-                if (!currentProps || currentProps.status !== 'ok' || !currentProps.data?.children) {
+            // Some /d/ links point directly at a file — /contents/{id} then
+            // returns data.type === 'file' with no data.children.
+            const resolveGofileFileLink = obj => {
+                if (!obj) return null;
+
+                const fileId = obj.id || obj.code;
+                const fileName = encodeURIComponent(obj.name || fileId || 'file');
+
+                // Prefer direct/CDN links when available; do NOT force
+                // /download/web/ (the web flow can return album HTML).
+                const candidates = [obj.directLink, obj.link, obj.downloadLink].filter(Boolean);
+                const link =
+                    candidates.find(u => /\/download\/direct\//i.test(String(u))) ||
+                    candidates[0] ||
+                    (fileId ? `https://gofile.io/download/web/${fileId}/${fileName}` : null);
+
+                if (link && obj.name && fileId) {
+                    gofileNameById.set(String(fileId), String(obj.name));
+                    gofileNameByUrl.set(String(link), String(obj.name));
+                }
+
+                return link;
+            };
+
+            const getChildAlbums = async (childProps, currentSpoilers) => {
+                if (!childProps || childProps.status !== 'ok' || !childProps.data) {
                     return [];
                 }
 
                 const currentResolved = [];
-                const files = currentProps.data.children;
-                folderName = currentProps.data.name; // Update folderName with the root album name
+
+                folderName = childProps.data.name || folderName;
+
+                if (childProps.data.type === 'file') {
+                    const link = resolveGofileFileLink(childProps.data);
+                    if (link) currentResolved.push(link);
+                    return currentResolved;
+                }
+
+                if (!childProps.data.children) {
+                    return [];
+                }
+
+                const files = childProps.data.children;
 
                 for (const fileKey in files) {
-                    if (Object.prototype.hasOwnProperty.call(files, fileKey)) {
-                        const obj = files[fileKey];
-                        if (obj.type === 'file') {
-                            currentResolved.push(obj.link);
-                        } else if (obj.type === 'folder') {
-                            try {
-                                const folderProps = await resolveAlbum(obj.code, currentSpoilers);
-                                currentResolved.push(...(await getChildAlbums(folderProps, currentSpoilers)));
-                            } catch (error) {
-                                log.host.error(postId, `::Error resolving Gofile subfolder ${obj.code}::: ${error.message}`, 'gofile.io');
-                            }
+                    if (!Object.prototype.hasOwnProperty.call(files, fileKey)) continue;
+                    const obj = files[fileKey];
+
+                    if (!obj) continue;
+
+                    if (obj.type === 'file') {
+                        const link = resolveGofileFileLink(obj);
+                        if (link) currentResolved.push(link);
+                    } else if (obj.type === 'folder') {
+                        const folderId = obj.id || obj.code;
+                        if (!folderId) continue;
+
+                        try {
+                            const folderProps = await resolveAlbum(folderId, currentSpoilers);
+                            currentResolved.push(...(await getChildAlbums(folderProps, currentSpoilers)));
+                        } catch (error) {
+                            log.host.error(postId, `::Error resolving Gofile subfolder ${folderId}::: ${error.message}`, 'gofile.io');
                         }
                     }
                 }
+
                 return currentResolved;
             };
 
@@ -2060,7 +3842,146 @@ const resolvers = [
                 log.host.warn(postId, `::Empty album::: ${url}`, 'gofile.io');
             }
 
-            return { dom: null, source: null, folderName, resolved };
+            return {
+                dom: null,
+                source: null,
+                folderName,
+                resolved,
+            };
+        },
+    ],
+    /* v1.12.0 (round 6): Filester /d/ + /f/ via the v2 token API — resolve as
+     * late as possible (tokens are IP-bound, ~30 min TTL) (lineage L5433+,
+     * v2 core). The /f/ album walker lists div.file-item rows. */
+    [
+        [/filester\.(me|sh|si|gg)\/d\//],
+        async (url, http, spoilers, postId) => {
+            try {
+                let clean = String(url || '').trim();
+                if (clean.startsWith('//')) clean = 'https:' + clean;
+                if (!/^https?:\/\//i.test(clean)) clean = 'https://' + clean.replace(/^\/+/, '');
+
+                const u = new URL(clean);
+                const origin = `${u.protocol}//${u.hostname}`;
+                const mSlug = (u.pathname || '').match(/\/d\/([^\/?#]+)/i);
+                if (!mSlug || !mSlug[1]) return null;
+
+                const slug = mSlug[1];
+                const result = await filesterResolveV2(http, origin, slug);
+                if (!result) {
+                    log.host.error(postId, `::Could not resolve Filester download token::: ${url}`, 'filester');
+                    return null;
+                }
+                return result.url;
+            } catch (error) {
+                log.host.error(postId, `::Error resolving Filester link ${url}::: ${error.message}`, 'filester');
+                return null;
+            }
+        },
+    ],
+    [
+        [/filester\.(me|sh|si|gg)\/f\//],
+        async (url, http, spoilers, postId) => {
+            try {
+                let clean = String(url || '').trim();
+                if (!clean) return null;
+                if (clean.startsWith('//')) clean = 'https:' + clean;
+                if (!/^https?:\/\//i.test(clean)) clean = 'https://' + clean.replace(/^\/+/, '');
+
+                const u0 = new URL(clean);
+                const origin = `${u0.protocol}//${u0.hostname}`;
+
+                const mId = (u0.pathname || '').match(/\/f\/([^\/?#]+)/i);
+                if (!mId || !mId[1]) return clean;
+
+                const albumId = mId[1];
+                const baseUrl = `${origin}/f/${albumId}`;
+
+                const { dom, source } = await http.get(baseUrl);
+
+                // Folder name: og:title / <title> with site suffixes stripped.
+                const pickClean = s => {
+                    let t = String(s || '').trim();
+                    if (!t) return '';
+                    t = t.replace(/\s*\|\s*filester\.(me|sh|si|gg)\s*$/i, '').trim();
+                    t = t.replace(/\s*-\s*filester\.(me|sh|si|gg)\s*$/i, '').trim();
+                    if (t.includes('|')) t = t.replace(/\s*\|\s*/g, ' - ').trim();
+                    t = t.replace(/\s+/g, ' ').trim();
+                    return t;
+                };
+
+                let title = '';
+                try {
+                    title = pickClean(dom?.querySelector('meta[property="og:title"]')?.getAttribute('content') || '');
+                } catch (e) { console.debug('[Forums++] filester og:title read rejected:', e && e.message); }
+                if (!title) {
+                    try {
+                        title = pickClean(dom?.querySelector('title')?.textContent || '');
+                    } catch (e) { console.debug('[Forums++] filester title read rejected:', e && e.message); }
+                }
+                if (!title || /^filester\.(me|sh|si|gg)\b/i.test(title) || /BETA\s*\d/i.test(title)) {
+                    title = albumId;
+                }
+
+                // Album rows: div.file-item with /d/<slug> in the onclick or a
+                // download button.
+                const slugs = [];
+                const seen = new Set();
+                for (const el of [...(dom ? dom.querySelectorAll('div.file-item') : [])]) {
+                    let slug = '';
+                    try {
+                        const oc = String(el.getAttribute('onclick') || '');
+                        const m = /\/d\/([^'"?\s]+)/i.exec(oc);
+                        if (m && m[1]) slug = m[1];
+                    } catch (e) { console.debug('[Forums++] filester row onclick read rejected:', e && e.message); }
+
+                    if (!slug) {
+                        try {
+                            const btn = el.querySelector('button.download-btn');
+                            const oc2 = String(btn?.getAttribute?.('onclick') || '');
+                            const m2 = /downloadFile\(\s*'([^']+)'/i.exec(oc2);
+                            if (m2 && m2[1]) slug = m2[1];
+                        } catch (e) { console.debug('[Forums++] filester row button read rejected:', e && e.message); }
+                    }
+
+                    if (slug && !seen.has(slug)) {
+                        seen.add(slug);
+                        slugs.push(slug);
+                    }
+                }
+
+                // Regex fallback when the DOM shape drifts.
+                if (!slugs.length && source) {
+                    for (const m of source.matchAll(/\/d\/([A-Za-z0-9_-]{4,})/g)) {
+                        if (!seen.has(m[1])) {
+                            seen.add(m[1]);
+                            slugs.push(m[1]);
+                        }
+                    }
+                }
+
+                if (!slugs.length) return clean;
+
+                const resolved = [];
+                for (const slug of slugs) {
+                    const result = await filesterResolveV2(http, origin, slug);
+                    if (result && result.url) {
+                        resolved.push(result.url);
+                    } else {
+                        log.host.warn(postId, `::Filester album file not resolvable::: ${baseUrl}/d/${slug}`, 'filester');
+                    }
+                }
+
+                return {
+                    dom,
+                    source,
+                    folderName: title,
+                    resolved,
+                };
+            } catch (error) {
+                log.host.error(postId, `::Error resolving Filester album ${url}::: ${error.message}`, 'filester');
+                return null;
+            }
         },
     ],
     [
@@ -2232,32 +4153,400 @@ const resolvers = [
     ],
     [[/([~an@]+\.)?saint2.(su|pk|cr)\/videos/], async url => url],
     [[/public.onlyfans.com\/files/], async url => url],
+    /* v1.12.0 (round 6): the turbo/saint2 family — sign API first (5 s timeout,
+     * 2 jittered retries, fn= filename preservation), embed <source>/<video> DOM
+     * fallback, then the /d/ route as the last resort (lineage L4376-4542). */
     [
-        [/saint2.(su|pk|cr)\/embed/],
-        async (url, http) => {
+        [/(([\w-]+\.)?(saint2.(su|pk|cr)|turbo\.cr))\/a\//],
+        async (url, http, spoilers, postId) => {
             try {
-                const { dom } = await http.get(url);
-                return dom.querySelector('source')?.getAttribute('src');
+                const { dom, source } = await http.get(url);
+
+                // Album folder naming (stable + readable): turbo_<albumId> - <title>
+                const mAlbum = url.match(/\/a\/([^\/?#]+)/i);
+                const albumId = mAlbum ? mAlbum[1] : null;
+                const base = albumId ? `turbo_${albumId}` : 'turbo_album';
+
+                const rawTitle = dom?.querySelector('h1')?.textContent?.trim() || '';
+                const invalidSub = settings.naming.invalidCharSubstitute || '_';
+
+                let safeTitle = rawTitle
+                    .replace(/[\\/:*?"<>|]/g, invalidSub)
+                    .replace(/\s+/g, ' ')
+                    .trim();
+
+                // Cap title to avoid extremely long Windows paths.
+                if (safeTitle.length > 120) safeTitle = safeTitle.slice(0, 120).trim();
+
+                let folderName = base;
+                if (safeTitle && safeTitle.toLowerCase() !== base.toLowerCase()) {
+                    folderName = `${safeTitle} - ${base}`;
+                }
+
+                folderName = folderName
+                    .replace(/[\\/:*?"<>|]/g, invalidSub)
+                    .replace(/\s+/g, ' ')
+                    .trim();
+
+                if (folderName.length > 180) folderName = folderName.slice(0, 180).trim();
+
+                // Map videoId -> original filename (from the album table rows).
+                const idToName = new Map();
+
+                let ids = Array.from(dom?.querySelectorAll('tr.file-row') || [])
+                    .map(row => {
+                        const a = row.querySelector('a[href^="/v/"]');
+                        const id = (a?.getAttribute('href') || '').match(/\/v\/([^\/?#]+)/i)?.[1];
+                        if (id) {
+                            const nm = row.getAttribute('data-name') || row.dataset?.name;
+                            if (nm) idToName.set(id, nm);
+                        }
+                        return id;
+                    })
+                    .filter(Boolean)
+                    .unique();
+
+                // Fallback: regex scan (if DOM parsing fails).
+                if (!ids.length && source) {
+                    ids = (source.match(/href="\/v\/([^"?#]+)"/gi) || [])
+                        .map(s => (s.match(/\/v\/([^"?#]+)/i) || [null, null])[1])
+                        .filter(Boolean)
+                        .unique();
+                }
+
+                const resolved = [];
+
+                for (const id of ids) {
+                    const embedUrl = `${xfpdTurboOrigin(url)}/embed/${id}`;
+                    let signed = null;
+                    try {
+                        signed = await xfpdTurboSignUrlWithTimeout(id, embedUrl, idToName.get(id));
+                    } catch (e) {
+                        console.debug('[Forums++] turbo album sign rejected for one id:', e && e.message);
+                    }
+
+                    // Fallback: read the media URL from the embed page.
+                    if (!signed) {
+                        try {
+                            const { dom: edom } = await http.get(embedUrl, {}, { Referer: embedUrl });
+                            const src =
+                                  edom?.querySelector('source[src]')?.getAttribute('src') ||
+                                  edom?.querySelector('video[src]')?.getAttribute('src');
+                            if (src) {
+                                signed = new URL(src, embedUrl).toString();
+                            }
+                        } catch (e) {
+                            console.debug('[Forums++] turbo album embed fallback rejected:', e && e.message);
+                        }
+                    }
+
+                    // Attach the original name to CDN URLs.
+                    if (signed && /turbocdn\.st/i.test(signed)) {
+                        const originalName = idToName.get(id);
+                        if (originalName && !/[?&]fn=/.test(signed)) {
+                            const enc = encodeURIComponent(String(originalName)).replace(/%20/g, '+');
+                            signed += (signed.includes('?') ? '&' : '?') + 'fn=' + enc;
+                        }
+                    }
+
+                    if (signed && id) {
+                        turboIdBySignedUrl.set(String(signed), String(id)); // stall re-sign state
+                    }
+                    resolved.push(signed || `${xfpdTurboOrigin(url)}/d/${id}`);
+                }
+
+                return {
+                    dom,
+                    source,
+                    folderName,
+                    resolved,
+                };
             } catch (error) {
-                console.error(`Error resolving Saint2 embed: ${error.message}`);
+                log.host.error(postId, `::Error resolving turbo/saint2 album ${url}::: ${error.message}`, 'turbo.cr');
                 return null;
             }
         },
     ],
     [
-        [/redgifs.com(\/|\\\/)ifr/],
+        [/(([\w-]+\.)?(saint2.(su|pk|cr)|turbo\.cr))\/(v|d)\//],
+        async (url, http) => {
+            const mm = url.match(/\/(v|d)\/([^\/?#]+)/i);
+            const id = mm ? mm[2] : null;
+            if (!id) return url;
+
+            const origin = xfpdTurboOrigin(url);
+            const embedUrl = `${origin}/embed/${id}`;
+            try {
+                const signed = await xfpdTurboSignUrlWithTimeout(id, embedUrl, null);
+                if (signed) {
+                    turboIdBySignedUrl.set(String(signed), String(id));
+                    return signed;
+                }
+            } catch (e) {
+                console.debug('[Forums++] turbo single sign rejected:', e && e.message);
+            }
+
+            // Fallback: read <source>/<video> directly from the embed page.
+            try {
+                const { dom } = await http.get(embedUrl, {}, { Referer: embedUrl });
+                const src =
+                      dom?.querySelector('source[src]')?.getAttribute('src') ||
+                      dom?.querySelector('video[src]')?.getAttribute('src');
+                if (src) {
+                    return new URL(src, embedUrl).toString();
+                }
+            } catch (e) {
+                console.debug('[Forums++] turbo single embed fallback rejected:', e && e.message);
+            }
+
+            // Last fallback: the site's direct download route.
+            return `${origin}/d/${id}`;
+        },
+    ],
+    [
+        [/(([\w-]+\.)?(saint2.(su|pk|cr)|turbo\.cr))\/embed\//],
+        async (url, http) => {
+            const m = url.match(/\/embed\/([^\/?#]+)/i);
+            const id = m ? m[1] : null;
+            if (!id) return null;
+
+            try {
+                const signed = await xfpdTurboSignUrlWithTimeout(id, url, null);
+                if (signed) {
+                    turboIdBySignedUrl.set(String(signed), String(id));
+                    return signed;
+                }
+            } catch (e) {
+                console.debug('[Forums++] turbo embed sign rejected:', e && e.message);
+            }
+
+            try {
+                const { dom } = await http.get(url, {}, { Referer: url });
+                const src =
+                      dom?.querySelector('source[src]')?.getAttribute('src') ||
+                      dom?.querySelector('video[src]')?.getAttribute('src');
+                if (src) {
+                    return new URL(src, url).toString();
+                }
+            } catch (e) {
+                console.debug('[Forums++] turbo embed DOM fallback rejected:', e && e.message);
+            }
+
+            return null;
+        },
+    ],
+    /* v1.12.0 (round 6): Redgifs users pagination walker — count=80 pages,
+     * 429 backoff, token refresh on 401/403 (lineage L4544-4692). */
+    [
+        [/redgifs\.com\/users\//i],
+        async (url, http, spoilers, postId, postSettings, progressCB) => {
+            const raw = String(url || '');
+            const m = raw.match(/redgifs\.com\/users\/([^\/?#]+)/i);
+            const username = m && m[1] ? decodeURIComponent(m[1]) : '';
+
+            if (!username) {
+                return null;
+            }
+
+            const baseUrl = `https://www.redgifs.com/users/${username}`;
+
+            let token = GM_getValue('redgifs_token', null);
+            if (!token) {
+                token = await redgifsFetchTempToken();
+            }
+            if (!token) {
+                log.host.error(postId, `::Could not obtain redgifs token::: ${baseUrl}`, 'redgifs.com');
+                return null;
+            }
+
+            const preferredKeys = ['hd', 'hd1080', 'hd720', 'sd', 'mp4'];
+            const resolved = [];
+
+            const MAX_PAGES = 5000;
+            const COUNT = 80;
+            const ORDER = 'new';
+
+            const fetchPage = async (page, t) => {
+                const apiUrl = `https://api.redgifs.com/v2/users/${encodeURIComponent(username)}/search?order=${ORDER}&page=${page}&count=${COUNT}`;
+                try {
+                    return await http.get(apiUrl, {}, { Authorization: `Bearer ${t}` }, 'text');
+                } catch (e) {
+                    return { source: null, status: 0 };
+                }
+            };
+
+            const tryFetchPage = async page => {
+                let attempt = 0;
+                let last = { source: null, status: 0 };
+
+                while (attempt < 3) {
+                    attempt++;
+
+                    last = await fetchPage(page, token);
+
+                    if (last.status === 429) {
+                        await xfpdSleepMs(800 * attempt);
+                        continue;
+                    }
+
+                    if (last.status === 401 || last.status === 403 || (last.source && /unauthorized|forbidden/i.test(last.source))) {
+                        token = await redgifsFetchTempToken();
+                        if (!token) {
+                            return last;
+                        }
+                        last = await fetchPage(page, token);
+                    }
+
+                    return last;
+                }
+
+                return last;
+            };
+
+            let pages = 1;
+
+            for (let page = 1; page <= pages && page <= MAX_PAGES; page++) {
+                if (typeof progressCB === 'function') {
+                    progressCB(`Resolving: ${baseUrl} (page ${page}/${pages})`);
+                }
+
+                const { source, status } = await tryFetchPage(page);
+
+                if (status !== 200 || !source) {
+                    break;
+                }
+
+                let j;
+                try {
+                    j = JSON.parse(source);
+                } catch (e) {
+                    break;
+                }
+
+                const gifs = Array.isArray(j?.gifs) ? j.gifs : (Array.isArray(j?.results) ? j.results : []);
+                pages = Number(j?.pages) || pages;
+
+                for (const g of gifs) {
+                    const urls = g?.urls || g?.gif?.urls;
+                    if (!urls) {
+                        continue;
+                    }
+
+                    let best = null;
+
+                    for (const k of preferredKeys) {
+                        const v = urls[k];
+                        if (typeof v === 'string' && /^https?:\/\//i.test(v)) {
+                            best = v;
+                            break;
+                        }
+                    }
+
+                    if (!best) {
+                        for (const v of Object.values(urls)) {
+                            if (typeof v === 'string' && /^https?:\/\//i.test(v) && /\.mp4(\?|$)/i.test(v)) {
+                                best = v;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (best) {
+                        resolved.push(best);
+                    }
+                }
+
+                if (!gifs.length) {
+                    break;
+                }
+
+                await xfpdSleepMs(75);
+            }
+
+            if (!resolved.length) {
+                return null;
+            }
+
+            return {
+                folderName: username,
+                resolved,
+            };
+        },
+    ],
+    /* v1.12.0 (round 6): ifr/watch/detail single gifs — token refresh on
+     * 401/403 before giving up (lineage L4693-4780). */
+    [
+        [/redgifs.com(\/|\\\/)(ifr|watch|gifs\/detail|gifs\/watch)/i],
         async (url, http) => {
             try {
-                const id = url.split('/').pop();
-                if (!id) return null;
+                const raw = String(url || '');
+                const idMatch =
+                      raw.match(/redgifs\.com(?:\/|\\\/)(?:ifr(?:\/|\\\/)|watch(?:\/|\\\/)|gifs(?:\/|\\\/)detail(?:\/|\\\/))?([a-z0-9_-]+)/i) ||
+                      raw.match(/\/([a-z0-9_-]+)(?:\?.*)?$/i);
+                const id = (idMatch && idMatch[1] ? String(idMatch[1]) : '').match(/[a-z0-9_-]+/i)?.[0];
+
+                if (!id) {
+                    return null;
+                }
+
+                let token = GM_getValue('redgifs_token', null);
+                if (!token) {
+                    token = await redgifsFetchTempToken();
+                }
+                if (!token) {
+                    return null;
+                }
 
                 const apiUrl = `https://api.redgifs.com/v2/gifs/${id}`;
-                const token = GM_getValue('redgifs_token', null);
-                const { source } = await http.get(apiUrl, {}, { Authorization: `Bearer ${token}` });
-                if (h.contains('urls', source)) {
-                    const urls = JSON.parse(source)?.gif?.urls;
-                    return urls?.hd || urls?.sd || null;
+
+                const fetchGif = async t => {
+                    try {
+                        return await http.get(apiUrl, {}, { Authorization: `Bearer ${t}` }, 'text');
+                    } catch (e) {
+                        return { source: null, status: 0 };
+                    }
+                };
+
+                let { source, status } = await fetchGif(token);
+
+                if (status === 401 || status === 403 || (source && /unauthorized|forbidden/i.test(source))) {
+                    token = await redgifsFetchTempToken();
+                    if (!token) {
+                        return null;
+                    }
+                    ({ source, status } = await fetchGif(token));
                 }
+
+                if (status !== 200 || !source) {
+                    return null;
+                }
+
+                let j;
+                try {
+                    j = JSON.parse(source);
+                } catch (e) {
+                    return null;
+                }
+
+                const urls = j?.gif?.urls || j?.urls;
+                if (!urls) {
+                    return null;
+                }
+
+                const preferredKeys = ['hd', 'hd1080', 'hd720', 'sd', 'mp4'];
+                for (const k of preferredKeys) {
+                    const v = urls[k];
+                    if (typeof v === 'string' && /^https?:\/\//i.test(v)) {
+                        return v;
+                    }
+                }
+
+                for (const v of Object.values(urls)) {
+                    if (typeof v === 'string' && /\.mp4(\?|$)/i.test(v)) {
+                        return v;
+                    }
+                }
+
                 return null;
             } catch (error) {
                 console.error(`Error resolving Redgifs: ${error.message}`);
@@ -2265,153 +4554,487 @@ const resolvers = [
             }
         },
     ],
+    /* v1.12.0 (round 6): Cyberdrop's live API ladder — album /a/ pages list
+     * /f/ slugs; each resolves via api.cyberdrop.cr /api/file/auth/<slug> (with
+     * the page-origin api base tried first); the single-file ladder walks the
+     * info → auth → tokenized-direct candidates, then a warm-up tab retry
+     * (lineage L4782-5291, L8968-9018). Name hints ride the bounded maps. */
     [
-        [/fs-\d+.cyberdrop.(me|to|cc|nl)\/|cyberdrop.me\/(f|e)\//, /:!cyberdrop.(me|to|cc|nl)\/a\//],
-        async (url, http) => {
-            let resolvedUrl = "";
-            let apiHost = "https://cyberdrop.me/api/f"; // Base API for files
-
-            if (url.includes('fs-')) {
-                // Initial URL might be a direct file link, try to normalize it to Cyberdrop's domain
-                url = url.replace(/(fs|img)-\d+/i, '').replace(/(to|cc|nl)-\d+/i, 'me');
-                try {
-                    // This initial GET request might be to get redirects or direct file info page
-                    await http.get(url, {
-                        onStateChange: response => {
-                            if (response.readyState === 2 && response.finalUrl !== url) {
-                                url = response.finalUrl;
-                            }
-                        },
-                    });
-                } catch (error) {
-                    console.warn(`Cyberdrop (direct): Initial GET failed for ${url}: ${error.message}`);
-                    // Fallback to try API directly if initial GET fails
-                }
-            }
-
-            // Attempt to resolve via Cyberdrop's API for file links
+        [/fs-\d+\.cyberdrop\.[a-z]{2,}\/|cyberdrop\.[a-z]{2,}\/a\//],
+        async (url, http, spoilers, postId, postSettings, progressCB) => {
             try {
-                const parts = url.split('/');
-                const fileId = parts.pop() || parts.pop(); // Get last segment, or second to last if trailing slash
-                if (fileId) {
-                    const apiUrl = `${apiHost}/${fileId}`;
-                    // v1.10.0: bounded + typed — kernel gmFetch (15 s). Any
-                    // HTTP status resolves so the caller's gates are
-                    // unchanged; transport faults map to status 0 with the
-                    // typed NetError kind logged.
-                    const fppKernelLessGmFetch = (u, o) => {
-                        if (typeof GM_xmlhttpRequest !== "function") return Promise.reject(Object.assign(new Error("kernel-less transport unavailable"), { kind: "gm-unavailable" }));
-                        o = o || {};
-                        return new Promise((res, rej) => {
-                            let s = false;
-                            const d = (fn, v) => { if (!s) { s = true; fn(v); } };
-                            GM_xmlhttpRequest({
-                                method: o.method || "GET",
-                                url: u,
-                                timeout: Math.max(1, o.timeout || 15000),
-                                onload: (r) => d(res, r),
-                                onerror: () => d(rej, Object.assign(new Error("network error"), { kind: "transport" })),
-                                ontimeout: () => d(rej, Object.assign(new Error("gmFetch timeout"), { kind: "timeout" })),
-                                onabort: () => d(rej, Object.assign(new Error("aborted"), { kind: "abort" })),
-                            });
-                        });
-                    };
-                    const response = await (typeof __4NDR0_NET_API__ === "undefined" ? fppKernelLessGmFetch : __4NDR0_NET_API__.gmFetch)(apiUrl, {
-                        method: "GET",
-                        timeout: 15000,
-                        checkStatus: false
-                    }).catch(err => {
-                        console.warn(`Cyberdrop (direct): transport failure for ${apiUrl} (${err && err.kind})`);
-                        return { status: 0, responseText: '' };
-                    });
+                url = String(url || '').trim();
+                if (url.startsWith('//')) url = 'https:' + url;
+                if (!/^https?:\/\//i.test(url)) url = 'https://' + url.replace(/^\/+/, '');
 
-                    if (response.status === 200) {
-                        const webData = JSON.parse(response.responseText);
-                        if (webData.url) {
-                            resolvedUrl = webData.url;
+                const albumIdMatch = url.match(/\/a\/([^\/?#]+)/i);
+                const albumId = albumIdMatch ? albumIdMatch[1] : '';
+
+                const pageUrl = url;
+                let pageOrigin = 'https://cyberdrop.cr';
+                try { pageOrigin = new URL(pageUrl).origin; } catch (e) { console.debug('[Forums++] cyberdrop album origin parse rejected:', e && e.message); }
+
+                const getAlbumHtml = async () => {
+                    if (typeof progressCB === 'function') progressCB('Cyberdrop: loading album page');
+                    const r = await http.get(pageUrl, {}, {
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                        'Referer': pageOrigin + '/',
+                        'Origin': pageOrigin,
+                    }, 'text');
+                    return r && r.source ? r.source : '';
+                };
+
+                let html = await getAlbumHtml();
+
+                const extractSlugs = src => {
+                    const slugs = [];
+                    const seen = new Set();
+                    const re = /href\s*=\s*["'](?:https?:\/\/(?:[\w-]+\.)*cyberdrop\.[a-z.]+)?\/f\/([A-Za-z0-9_-]+)(?:[\/?#"'])/ig;
+                    let m;
+                    while ((m = re.exec(src || '')) !== null) {
+                        const s = m[1];
+                        if (s && !seen.has(s)) {
+                            seen.add(s);
+                            slugs.push(s);
                         }
-                    } else {
-                        console.error(`Cyberdrop (direct): API request for ${apiUrl} failed with status ${response.status}`);
                     }
-                }
-            } catch (error) {
-                console.error(`Cyberdrop (direct): Error during API resolution for ${url}: ${error.message}`);
-            }
+                    return slugs;
+                };
 
-            return resolvedUrl || url; // Return resolved URL or original if all attempts fail
+                let slugs = extractSlugs(html);
+
+                // If the HTML is gated/empty, warm the album page once and retry.
+                if (!slugs.length) {
+                    await cyberdropWarmupOnce(pageUrl);
+                    html = await getAlbumHtml();
+                    slugs = extractSlugs(html);
+                }
+
+                if (!slugs.length) return url;
+
+                const pickTitle = src => {
+                    const m1 = src.match(/property=["']og:title["'][^>]*content=["']([^"']+)["']/i) ||
+                               src.match(/content=["']([^"']+)["'][^>]*property=["']og:title["']/i);
+                    const m2 = src.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+                    const m3 = src.match(/<title[^>]*>([^<]+)<\/title>/i);
+                    let t = (m1 && m1[1]) || (m2 && m2[1]) || (m3 && m3[1]) || '';
+                    t = t.trim();
+                    t = t.replace(/\s*\|\s*CyberDrop.*$/i, '').replace(/\s*-\s*CyberDrop.*$/i, '').trim();
+                    if (!t) t = albumId ? `cyberdrop_${albumId}` : 'cyberdrop_album';
+                    return t;
+                };
+
+                const folderName = pickTitle(html);
+
+                // Per-file names from the album page (regex form — the album grid
+                // carries title= hints) so downloads keep extensions.
+                try {
+                    const rxName = /href=["']\/f\/([A-Za-z0-9]+)["'][^>]*\btitle=["']([^"']+)["']/gi;
+                    let m;
+                    while ((m = rxName.exec(html)) !== null) {
+                        const slug = m[1];
+                        const nm = String(m[2]).trim();
+                        if (nm) cyberdropNameBySlug.set(slug, nm);
+                    }
+                } catch (e) {
+                    console.debug('[Forums++] cyberdrop album name hints rejected:', e && e.message);
+                }
+
+                const host = (() => { try { return new URL(pageUrl).hostname; } catch (e) { return ''; } })();
+                const root = (String(host || '').match(/cyberdrop\.[a-z]+$/i) || [null])[0];
+                const apiBases = [];
+                if (root) apiBases.push(`https://api.${root}`);
+                apiBases.push('https://api.cyberdrop.cr');
+
+                const resolved = [];
+                for (let i = 0; i < slugs.length; i++) {
+                    const slug = slugs[i];
+                    if (typeof progressCB === 'function') progressCB(`Cyberdrop: resolving ${i + 1}/${slugs.length}`);
+
+                    let j = null;
+
+                    for (const base of apiBases) {
+                        const apiUrl = `${base}/api/file/auth/${slug}`;
+
+                        const r = await http.get(apiUrl, {}, {
+                            'Accept': 'application/json, text/plain, */*',
+                            'Origin': pageOrigin,
+                            'Referer': pageOrigin + '/',
+                        }, 'text');
+
+                        if (!r || !r.source) continue;
+
+                        try { j = JSON.parse(r.source); } catch (e) { j = null; }
+                        if (j) break;
+                    }
+
+                    if (!j) continue;
+
+                    let direct = null;
+                    if (typeof j.url === 'string') direct = j.url;
+                    else if (j.data && typeof j.data.url === 'string') direct = j.data.url;
+                    else if (typeof j.file === 'string') direct = j.file;
+                    else if (j.data && typeof j.data.file === 'string') direct = j.data.file;
+
+                    if (typeof direct !== 'string' || !direct.trim()) continue;
+                    direct = direct.trim();
+                    if (direct.startsWith('//')) direct = 'https:' + direct;
+
+                    if (!/^https?:\/\//i.test(direct)) continue;
+                    resolved.push(direct);
+                }
+
+                if (!resolved.length) return url;
+
+                return { folderName, resolved };
+            } catch (error) {
+                log.host.error(postId, `::Error resolving Cyberdrop album ${url}::: ${error.message}`, 'cyberdrop');
+                return url;
+            }
         },
     ],
     [
-        [/cyberdrop.me\/a\//],
-        async (url, http, _, postId) => {
+        [/fs-\d+\.cyberdrop\.[a-z]{2,}\/|cyberdrop\.[a-z]{2,}\/(f|e)\//, /:!cyberdrop\.[a-z]{2,}\/a\//],
+        async (url, http) => {
+            // Cyberdrop embeds (/e/) expose the real file URL only after loading
+            // the /f/ page. Preferred: the info API ladder; on failure, warm up
+            // /f/ in an inactive tab once and retry.
             try {
-                const { source, dom } = await http.get(url);
-                const resolved = [];
-                const apiHost = "https://cyberdrop.me/api/f"; // API for individual files in album
+                url = String(url || '').trim();
+                if (url.startsWith('//')) url = 'https:' + url;
+                if (!/^https?:\/\//i.test(url)) url = 'https://' + url.replace(/^\/+/, '');
 
-                let files = [...(dom?.querySelectorAll('#file') ?? [])].map(file => {
-                    const href = file.getAttribute('href');
-                    const fileId = href?.split('/').pop();
-                    return fileId ? `${apiHost}/${fileId}` : null;
-                }).filter(Boolean);
-
-                for (const fileApiUrl of files) {
-                    try {
-                        let dl_url = '';
-                        // v1.10.0: bounded + typed — kernel gmFetch (15 s).
-                        // Transport faults map to status 0 so the non-200 path
-                        // (warn + cyberdrop_helper fallback) is preserved;
-                        // the typed NetError kind is logged.
-                        const fppKernelLessGmFetch2 = (u, o) => {
-                            if (typeof GM_xmlhttpRequest !== "function") return Promise.reject(Object.assign(new Error("kernel-less transport unavailable"), { kind: "gm-unavailable" }));
-                            o = o || {};
-                            return new Promise((res, rej) => {
-                                let s = false;
-                                const d = (fn, v) => { if (!s) { s = true; fn(v); } };
-                                GM_xmlhttpRequest({
-                                    method: o.method || "GET",
-                                    url: u,
-                                    timeout: Math.max(1, o.timeout || 15000),
-                                    onload: (r) => d(res, r),
-                                    onerror: () => d(rej, Object.assign(new Error("network error"), { kind: "transport" })),
-                                    ontimeout: () => d(rej, Object.assign(new Error("gmFetch timeout"), { kind: "timeout" })),
-                                    onabort: () => d(rej, Object.assign(new Error("aborted"), { kind: "abort" })),
-                                });
-                            });
-                        };
-                        const response = await (typeof __4NDR0_NET_API__ === "undefined" ? fppKernelLessGmFetch2 : __4NDR0_NET_API__.gmFetch)(fileApiUrl, {
-                            method: "GET",
-                            timeout: 15000,
-                            checkStatus: false
-                        }).catch(err => {
-                            console.warn(`Cyberdrop (album): transport failure for ${fileApiUrl} (${err && err.kind})`);
-                            return { status: 0, responseText: '' };
-                        });
-
-                        if (response.status === 200) {
-                            const webData = JSON.parse(response.responseText);
-                            dl_url = webData.url;
-                        } else {
-                            log.host.warn(postId, `Cyberdrop (album): API request for ${fileApiUrl} failed with status ${response.status}`, 'cyberdrop.me');
-                            // Fallback retry with helper for persistent issues, if helper has retry logic
-                            dl_url = await cyberdrop_helper(fileApiUrl);
-                        }
-                        if (dl_url) {
-                            resolved.push(dl_url);
-                        }
-                    } catch (error) {
-                        log.host.error(postId, `Cyberdrop (album): Error resolving file ${fileApiUrl}: ${error.message}`, 'cyberdrop.me');
-                    }
+                // Normalize legacy fs-*/img-* hosts (old mirrors).
+                if (url.includes('fs-') || url.includes('img-')) {
+                    url = url.replace(/(fs|img)-\d+/i, '').replace(/(to|cc|nl)-\d+/i, 'me');
                 }
 
-                return {
-                    dom,
-                    source,
-                    folderName: dom.querySelector('#title')?.innerText.trim() ?? 'Cyberdrop Album',
-                    resolved,
+                const u = new URL(url);
+                const origin = `${u.protocol}//${u.hostname}`;
+                const slugMatch = String(url).match(/\/([ef])\/([^\/?#]+)/i);
+                if (!slugMatch || !slugMatch[2]) {
+                    return url;
+                }
+
+                const slug = slugMatch[2];
+                const pageUrl = `${origin}/f/${slug}`;
+
+                const root = (u.hostname.match(/cyberdrop\.[a-z]+$/i) || [null])[0];
+                const apiBaseDefault = root ? `https://api.${root}` : 'https://api.cyberdrop.cr';
+
+                // Candidate ladder: new API styles first, legacy style last.
+                const apiCandidates = [];
+                if (root) {
+                    apiCandidates.push(`https://api.${root}/api/file/info/${slug}`);
+                    apiCandidates.push(`https://api.${root}/api/file/auth/${slug}`);
+                    apiCandidates.push(`https://api.${root}/api/file/url/${slug}`);
+                    apiCandidates.push(`https://api.${root}/api/file/${slug}`);
+                }
+                apiCandidates.push('https://api.cyberdrop.cr/api/file/info/${slug}');
+                apiCandidates.push('https://api.cyberdrop.cr/api/file/auth/${slug}');
+                apiCandidates.push('https://api.cyberdrop.cr/api/file/url/${slug}');
+                apiCandidates.push('https://api.cyberdrop.cr/api/file/${slug}');
+                apiCandidates.push(`${origin}/api/f/${slug}`);
+
+                const headers = {
+                    Accept: 'application/json, text/plain, */*',
+                    Referer: `${origin}/`,
+                    Origin: origin,
                 };
+
+                const cyberdropGmGetText = (reqUrl, hdrs) =>
+                    fppGmFetch(String(reqUrl), { method: 'GET', timeout: 6000, headers: hdrs || {}, checkStatus: false })
+                        .then(r => ({ status: r.status || 0, source: String(r.responseText || r.response || '') }))
+                        .catch(e => {
+                            console.debug('[Forums++] cyberdrop ladder transport rejected:', e && (e.message || e.kind));
+                            return { status: 0, source: '' };
+                        });
+
+                const cyberdropFetchText = async reqUrl => {
+                    let r = await cyberdropGmGetText(reqUrl, headers);
+                    if ((r.status === 0) && (headers.Origin || headers.Referer)) {
+                        r = await cyberdropGmGetText(reqUrl, { Accept: headers.Accept });
+                    }
+                    return r;
+                };
+
+                const looksLikeName = v => {
+                    if (!v || typeof v !== 'string') return false;
+                    if (v.length > 260) return false;
+                    if (/^https?:\/\//i.test(v)) return false;
+                    const base = v.split(/[\\/]/).pop();
+                    return /^[^<>:"|?*\x00-\x1F]+\.[a-z0-9]{2,8}$/i.test(base);
+                };
+
+                const looksLikeJwt = v => {
+                    if (!v || typeof v !== 'string') return false;
+                    return /^eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(v);
+                };
+
+                const parseInfoText = txt => {
+                    const out = { direct: null, name: null, token: null, base: null, auth: null };
+                    const s = String(txt || '');
+                    if (!s) return out;
+
+                    // 1) Quick regex for an absolute token URL (plain or JSON-escaped).
+                    const rePlain = new RegExp(`https?:\/\/[^"'\s]+\/api\/file\/d\/${slug}\?[^"'\s]*token=[^"'\s]+`, 'i');
+                    let m = s.match(rePlain);
+                    if (m && m[0]) out.direct = m[0];
+
+                    if (!out.direct) {
+                        const reEsc = new RegExp(`https?:\\\/\\\/[^"\s]+\\\/api\\\/file\\\/d\\\/${slug}\\\?[^"\s]*token=[^"\s]+`, 'i');
+                        m = s.match(reEsc);
+                        if (m && m[0]) out.direct = m[0].replace(/\\\//g, '/');
+                    }
+
+                    // 2) Relative token URL.
+                    if (!out.direct) {
+                        const reRel = new RegExp(`\/api\/file\/d\/${slug}\?[^"'\s]*token=[^"'\s]+`, 'i');
+                        m = s.match(reRel);
+                        if (m && m[0]) out.direct = `${apiBaseDefault}${m[0]}`;
+                    }
+
+                    // 3) JSON deep scan for direct/name/token/base/auth fields.
+                    try {
+                        const j = JSON.parse(s);
+                        const seen = new Set();
+
+                        const isTokenUrl = v => {
+                            return typeof v === 'string' && v.includes(`/api/file/d/${slug}`) && /token=/i.test(v);
+                        };
+
+                        const walk = (val, key = '') => {
+                            if (val === null || val === undefined) return;
+
+                            if (typeof val === 'string') {
+                                const v = val;
+
+                                if (isTokenUrl(v) && (!out.direct || v.length > out.direct.length)) out.direct = v;
+
+                                if (!out.name && looksLikeName(v)) {
+                                    out.name = v.split(/[\\/]/).pop();
+                                }
+
+                                if (!out.token && looksLikeJwt(v)) {
+                                    out.token = v;
+                                }
+
+                                if (!out.auth && /\/api\/file\/auth\//i.test(v) && /cyberdrop/i.test(v)) {
+                                    out.auth = v;
+                                }
+
+                                return;
+                            }
+
+                            if (typeof val !== 'object') return;
+                            if (seen.has(val)) return;
+                            seen.add(val);
+
+                            if (Array.isArray(val)) {
+                                for (const v of val) walk(v, key);
+                            } else {
+                                for (const [k, v] of Object.entries(val)) walk(v, k);
+                            }
+                        };
+
+                        walk(j, '');
+
+                        // Common direct/auth/name fields.
+                        if (!out.direct) {
+                            const direct =
+                                (j && (j.url || j.downloadUrl || j.download_url ||
+                                    (j.data && (j.data.url || j.data.downloadUrl || j.data.download_url)) ||
+                                    (j.file && (j.file.url || j.file.downloadUrl || j.file.download_url)))) || null;
+                            if (direct && typeof direct === 'string') out.direct = direct;
+                        }
+                        if (!out.auth) {
+                            const a =
+                                (j && (j.auth_url || j.authUrl ||
+                                    (j.data && (j.data.auth_url || j.data.authUrl)) ||
+                                    (j.file && (j.file.auth_url || j.file.authUrl)))) || null;
+                            if (a && typeof a === 'string') out.auth = a;
+                        }
+                        if (!out.name) {
+                            const n =
+                                (j && (j.name || j.filename || j.fileName || j.originalName ||
+                                    (j.file && (j.file.name || j.file.filename || j.file.originalName)) ||
+                                    (j.data && (j.data.name || j.data.filename || j.data.originalName)))) || null;
+                            if (n && typeof n === 'string' && looksLikeName(n)) out.name = n.split(/[\\/]/).pop();
+                        }
+
+                        // token without direct → build the tokenized URL.
+                        if (!out.direct && out.token) {
+                            const tok = out.token.includes('%') ? out.token : encodeURIComponent(out.token);
+                            out.direct = `${apiBaseDefault.replace(/\/$/, '')}/api/file/d/${slug}?token=${tok}`;
+                        }
+                    } catch (e) {
+                        console.debug('[Forums++] cyberdrop info JSON scan skipped:', e && e.message);
+                    }
+
+                    // Normalize escaped slashes / relative forms.
+                    if (out.direct && typeof out.direct === 'string' && out.direct.includes('\\/')) {
+                        out.direct = out.direct.replace(/\\\//g, '/');
+                    }
+                    if (out.direct && typeof out.direct === 'string' && out.direct.startsWith('/')) {
+                        out.direct = `${apiBaseDefault}${out.direct}`;
+                    }
+                    if (out.auth && typeof out.auth === 'string') {
+                        if (out.auth.includes('\\/')) out.auth = out.auth.replace(/\\\//g, '/');
+                        if (out.auth.startsWith('/')) out.auth = `${apiBaseDefault}${out.auth}`;
+                    }
+
+                    return out;
+                };
+
+                const fetchInfo = async () => {
+                    for (const apiUrl of apiCandidates) {
+                        try {
+                            const { source, status } = await cyberdropFetchText(apiUrl);
+                            if (status !== 200 || !source) continue;
+
+                            const { direct, name, auth } = parseInfoText(source);
+
+                            let resolvedName = name || null;
+                            let resolvedDirect = direct || null;
+
+                            // New flow: info returns auth_url; auth returns the
+                            // tokenized direct URL.
+                            if (!resolvedDirect && auth && typeof auth === 'string') {
+                                try {
+                                    const { source: authSource, status: authStatus } = await cyberdropFetchText(auth);
+                                    if (authStatus === 200 && authSource) {
+                                        const parsedAuth = parseInfoText(authSource);
+                                        if (!resolvedName && parsedAuth && parsedAuth.name) resolvedName = parsedAuth.name;
+                                        if (!resolvedDirect && parsedAuth && parsedAuth.direct) resolvedDirect = parsedAuth.direct;
+                                    }
+                                } catch (e) {
+                                    console.debug('[Forums++] cyberdrop auth step rejected:', e && e.message);
+                                }
+                            }
+
+                            if (resolvedName) cyberdropNameBySlug.set(String(slug), String(resolvedName));
+
+                            if (resolvedDirect && typeof resolvedDirect === 'string') {
+                                if (resolvedName) cyberdropNameByUrl.set(String(resolvedDirect), String(resolvedName));
+                                return resolvedDirect;
+                            }
+                        } catch (e) {
+                            console.debug('[Forums++] cyberdrop ladder step rejected:', e && e.message);
+                        }
+                    }
+                    return null;
+                };
+
+                // 1st attempt: API directly (some setups need two requests for
+                // ddos-guard cookies).
+                let directUrl = await fetchInfo();
+                if (!directUrl) directUrl = await fetchInfo();
+                if (directUrl) return directUrl;
+
+                // Warm-up (one tab at a time) then retry.
+                let warmKey = 'cyberdrop';
+                try { warmKey = `cyberdrop:${new URL(pageUrl).origin}`; } catch (e) { console.debug('[Forums++] cyberdrop warm key rejected:', e && e.message); }
+                await cyberdropWarmupOnce(warmKey, pageUrl, CYBERDROP_WARMUP_DEFAULT_MS);
+
+                directUrl = await fetchInfo();
+                if (!directUrl) directUrl = await fetchInfo();
+                return directUrl || url;
             } catch (error) {
-                log.host.error(postId, `Cyberdrop (album): Error resolving album ${url}: ${error.message}`, 'cyberdrop.me');
+                console.debug('[Forums++] cyberdrop single resolver rejected:', error && error.message);
+                return url;
+            }
+        },
+    ],
+    /* v1.12.0 (round 6): Pornhub flashvars reassembly — var media_N strings
+     * concatenated from the page's own variable table, then the get_media JSON
+     * laddered by quality. The lineage's unbounded 20-retry loop is tamed to 5
+     * attempts with logging (the lineage carried a TODO here; none survives). */
+    [
+        [/([~an@]+\.)?pornhub.com\/view_video/],
+        async (url, http, spoilers, postId) => {
+            try {
+                url = url.replace(/([a-zA-Z0-9]+\.)?pornhub/, 'pornhub');
+
+                const resolvePH = async phUrl => {
+                    const { dom } = await http.get(
+                        phUrl,
+                        {},
+                        {
+                            referer: phUrl,
+                            cookie: 'age-verified: 1; platform=tv; cookiesBannerSeen=1; hasVisited=1',
+                        },
+                    );
+                    const script = [...dom.querySelectorAll('script')]
+                        .map(s => s.innerText)
+                        .filter(s => /var\smedia_\d+/gis.test(s))
+                        .map(s => {
+                            return {
+                                mediaVars: h.re.matchAll(/var\smedia_\d+=.*?;/gis, s),
+                                flashVars: s,
+                            };
+                        })[0];
+
+                    if (!script) return null;
+
+                    const { mediaVars, flashVars } = script;
+
+                    return mediaVars
+                        .map(m => {
+                            const cleaned = m
+                                .replace(/\/\*.*?\*\//gis, '')
+                                .replace(/var\smedia_\d+=/i, '')
+                                .replace(';', '');
+
+                            return cleaned
+                                .split('+')
+                                .map(s => s.trim())
+                                .map(s => {
+                                    const valueMatch = new RegExp(`var ${s}=".*?"`, 'isg').exec(flashVars);
+                                    if (!valueMatch) return '';
+                                    return valueMatch[0].replace(/.*?"/i, '').replace(/"/i, '');
+                                })
+                                .join('');
+                        })
+                        .find(u => u.indexOf('pornhub.com/video/get_media?s=') > -1);
+                };
+
+                let parsed = null;
+                let tries = 0;
+                const MAX_TRIES = 5;
+
+                // The site does not send the right json link on the first try;
+                // there are also occasional 403s / redirects.
+                do {
+                    const infoURL = await resolvePH(url);
+
+                    if (infoURL) {
+                        try {
+                            const { source } = await http.get(infoURL);
+                            const json = JSON.parse(source);
+                            const fetchedFormats = json.reverse();
+                            const qualities = ['1080', '720', '480', '320', '240'];
+                            for (const q of qualities) {
+                                const f = fetchedFormats.find(f => f.quality === q);
+                                if (f && f.videoUrl) {
+                                    parsed = f.videoUrl;
+                                    break;
+                                }
+                            }
+                        } catch (e) {
+                            console.debug('[Forums++] pornhub get_media step rejected:', e && e.message);
+                        }
+                    }
+                    await h.delayedResolve(1000);
+                    tries++;
+                } while (!parsed && tries < MAX_TRIES);
+
+                if (!parsed) {
+                    log.host.error(postId, `::Could not resolve Pornhub stream (after ${MAX_TRIES} attempts)::: ${url}`, 'pornhub.com');
+                }
+
+                return parsed;
+            } catch (error) {
+                log.host.error(postId, `::Error resolving Pornhub video ${url}::: ${error.message}`, 'pornhub.com');
                 return null;
             }
         },
@@ -2661,63 +5284,6 @@ const resolvers = [
     ],
     [[/(\w+)?.redd.it/], url => url.replace(/&amp;/g, '&')],
 ];
-
-/**
- * Helper function for Cyberdrop to retry fetching URLs if initial attempt fails.
- * This is meant for cases where GM_xmlhttpRequest might intermittently fail.
- * @param {string} fileUrl The Cyberdrop API URL for the file.
- * @param {number} [retries=3] Number of retry attempts.
- * @param {number} [delay=3500] Delay between retries in milliseconds.
- * @returns {Promise<string>} The resolved download URL or empty string.
- */
-async function cyberdrop_helper(fileUrl, retries = 3, delay = 3500) {
-    for (let i = 0; i < retries; i++) {
-        await h.delayedResolve(delay); // Wait before retrying
-        try {
-            // v1.10.0: bounded + typed — kernel gmFetch (15 s). Transport
-            // faults map to status 0 so the retry loop is preserved; the
-            // typed NetError kind is logged.
-            const fppKernelLessGmFetch3 = (u, o) => {
-                if (typeof GM_xmlhttpRequest !== "function") return Promise.reject(Object.assign(new Error("kernel-less transport unavailable"), { kind: "gm-unavailable" }));
-                o = o || {};
-                return new Promise((res, rej) => {
-                    let s = false;
-                    const d = (fn, v) => { if (!s) { s = true; fn(v); } };
-                    GM_xmlhttpRequest({
-                        method: o.method || "GET",
-                        url: u,
-                        timeout: Math.max(1, o.timeout || 15000),
-                        onload: (r) => d(res, r),
-                        onerror: () => d(rej, Object.assign(new Error("network error"), { kind: "transport" })),
-                        ontimeout: () => d(rej, Object.assign(new Error("gmFetch timeout"), { kind: "timeout" })),
-                        onabort: () => d(rej, Object.assign(new Error("aborted"), { kind: "abort" })),
-                    });
-                });
-            };
-            const response = await (typeof __4NDR0_NET_API__ === "undefined" ? fppKernelLessGmFetch3 : __4NDR0_NET_API__.gmFetch)(fileUrl, {
-                method: "GET",
-                timeout: 15000,
-                checkStatus: false
-            }).catch(err => {
-                console.warn(`Cyberdrop retry: transport failure for ${fileUrl} (${err && err.kind})`);
-                return { status: 0, responseText: '' };
-            });
-
-            if (response.status === 200) {
-                const webData = JSON.parse(response.responseText);
-                if (webData.url) {
-                    return webData.url;
-                }
-            } else {
-                console.warn(`Cyberdrop retry (${i + 1}/${retries}): API for ${fileUrl} failed with status ${response.status}`);
-            }
-        } catch (error) {
-            console.error(`Cyberdrop retry (${i + 1}/${retries}): Error for ${fileUrl}: ${error.message}`);
-        }
-    }
-    console.error(`Cyberdrop retry: All attempts failed for ${fileUrl}`);
-    return "";
-}
 
 /**
  * Manages caching and retrieval of forum thread pages using GM_setValue.
@@ -3508,29 +6074,10 @@ const selectedPosts = [];
     });
 
     document.addEventListener('DOMContentLoaded', async () => {
-        const goFileTokenFetchFailedErr = 'Failed to create GoFile token. GoFile albums may not work. Refresh the browser to retry.';
-
-        // GoFile token handling
-        if (h.isNullOrUndef(settings.hosts.goFile.token) || settings.hosts.goFile.token.trim() === '') {
-            try {
-                console.log('Creating GoFile token...');
-                const { source } = await h.http.get('https://api.gofile.io/createAccount');
-                if (h.isNullOrUndef(source) || source.trim() === '') {
-                    console.error(goFileTokenFetchFailedErr);
-                } else {
-                    const props = JSON.parse(source);
-                    if (props.status === 'ok' && props.data?.token) {
-                        const token = props.data.token;
-                        settings.hosts.goFile.token = token;
-                        console.log(`Created GoFile token: ${token}`);
-                    } else {
-                        console.error(goFileTokenFetchFailedErr);
-                    }
-                }
-            } catch (e) {
-                console.error(`${goFileTokenFetchFailedErr} Error: ${e.message}`);
-            }
-        }
+        // v1.12.0 (round 6): the legacy GoFile boot-token block (unreachable
+        // createAccount path against the dead pre-2026-08 API) is removed — the
+        // resolver now creates/activates/persists the guest token lazily
+        // (xfpd_gofile_at, 24 h TTL) with the cookie sync in place.
 
         // Redgifs token handling
         try {
