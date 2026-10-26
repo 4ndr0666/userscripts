@@ -151,6 +151,12 @@ const ADJUDICATED = [
         reason: "SCOPED single-element sync: watches ONE prompt-row element (attributeFilter on class/data attributes) to re-sync color/tooltip from prompt metadata — per-fire work is an async storage read plus style writes on that single element; a coalescer would lag the UI sync visibly behind the class toggle; scoped by construction (the element is the whole observed surface). v1.6.0 re-adjudication: scope + filter re-verified. v1.7.0 re-review",
         expiry: "v1.16.0",
     },
+    {
+        file: "canon/_promoted/4ndr0tools - Confirmation Bypass.user.js",
+        callText: "new MutationObserver(() => { pageReacted = true; });",
+        reason: "SETTLE reaction-window probe (8b F07, round 8): a time-bounded 1.5 s whole-DOM liveness probe opened at click #1 — ANY mutation (childList, subtree, or attribute) is the signal that the page's handler reacted to the synthetic click, suppressing the single re-click. The callback is the O(1) flag set; the broad config IS the contract (a reaction is any mutation — narrowing attributeFilter or childList would blind exactly the reaction classes the guard needs: attribute flips, label swaps, spinner classes, handler-side DOM touches). Settle-bounded by construction: the observer disconnects itself via the REARM_MS-100 timer opened at the same click, and the beforeunload cleanup is the second bound; it cannot outlive the re-arm window it exists to guard",
+        expiry: "v1.17.0",
+    },
     /* v28.7.0 (suite re-review): the Prompt Master flow-credit SETTLE liveness
      * ledger entry REMOVED — the site graduated to structural discipline:
      * flowCreditScheduleTick now carries its own node gate (the host-chrome

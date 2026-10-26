@@ -13,7 +13,7 @@
 | **Blob2URL** | `7.3.0` | media & links | typeof-guarded + gmFetch fallback | [reference](./blob2url/) |
 | **Bunkr++** | `7.7.0` | media & links | typeof-guarded + gmFetch fallback | [devlog](./bunkr/) |
 | **Bypass Paywalls** | `0.1.7` | privacy & security | kernel-free | [reference](./bypass-paywalls/) |
-| **Confirmation Bypass** | `4.1.1` | forums | kernel-free | [reference](./confirmation-bypass/) |
+| **Confirmation Bypass** | `4.1.2` | forums | kernel-free | [reference](./confirmation-bypass/) |
 | **Filester++** | `7.6.1` | media & links | typeof-guarded (NetHook) | [reference](./filester/) |
 | **Forum Link Xtractor** | `3.2.3` | forums | kernel-free | [reference](./forum-link-xtractor/) |
 | **Forums++** | `1.13.3` | forums | typeof-guarded + gmFetch fallback | [reference](./forums/) |

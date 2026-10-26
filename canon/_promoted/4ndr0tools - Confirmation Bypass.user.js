@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Confirmation Bypass
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      4.1.1
+// @version      4.1.2
 // @author       4ndr0666
 // @description  Reveals forum invisi-text, view all replies, rewrite redirect links. Download Gate: bypass all confirmation pages on all sites, glass overlay copy/download URL (incl. vidara embeds on xcandid), auto-solve Altcha, auto-click download. Turbo: embed routing, upload injector. Util: external link safety, right-click scrollbar to top.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -23,6 +23,21 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Confirmation%20Bypass.user.js
 // @license      MIT
 // ==/UserScript==
+// 4.1.2 (suite v1.15.0, WO-01 round 8): the re-arm made node-true (8b
+// F07/F16/F17/F08). The 4.1.1 idle-heuristics re-click was a reduction,
+// not the claimed kill: a non-navigating download (Content-Disposition /
+// fetch→blob) on a control that never swaps label/class/aria still passed
+// every check and double-dispatched at ~1.9 s. The re-click now requires
+// the SAME element we clicked (an SPA node-swap means the page REACTED to
+// click #1 — a fresh node is a different control whose state we never
+// observed; the old label comparison was safe-by-accident there) AND zero
+// DOM reaction inside a 1.5 s observation window opened at click time (a
+// page that mutated anything in response to the click had its handler
+// fire — the re-arm exists ONLY for the silent handler-not-ready case).
+// The anchored fallback tolerates trailing icon glyphs ('Download File ↓')
+// — the prose false-positive fix had traded real recall. The pending
+// attempt debounce is cleared at every observer disconnect (the 'observer
+// disconnected' invariant briefly violated otherwise).
 // 4.1.1 (suite v1.15.0, WO-01 round 7): the download-gate trigger's own
 // audit pass (7b F16-F18). The boot-path observer hole: when the button was
 // found ENABLED at boot the early return never armed the G6 observer — if
@@ -55,7 +70,7 @@
 // identities in one console since promotion; 4-c F04); the v4.0.4 suite
 // banner at boot is the single identity.
 // 4.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1.2 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px');
 
 
 /* ═══ SUITE PROMOTION 4.0.0 ═══════════════════════════════════════════
@@ -820,8 +835,11 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
         const SELECTOR  = '#downloadBtn';
         /* v4.1.1 (7b F18): anchored short whole-text — the unanchored
          * containment test matched footer/help prose ('How to download
-         * files') and could pick an ad link ahead of the real control. */
-        const TEXT_FALLBACK = /^\s*download\s+(the\s+)?file\s*$/i;
+         * files') and could pick an ad link ahead of the real control.
+         * v4.1.2 (8b F08): 'file\b[\s\W]*$' tolerates trailing icon glyphs
+         * ('Download File ↓', 'Download file…') — word characters still end
+         * the match, so prose tails ('…file and more') stay excluded. */
+        const TEXT_FALLBACK = /^\s*download\s+(the\s+)?file\b[\s\W]*$/i;
         const GRACE_MS  = 300;  // legacy v3.5.2 grace — restored 4.1.0 (2-b F03)
         const REARM_MS  = 1600; // swallow window before the single re-arm
         const MAX_CLICKS = 2;
@@ -831,6 +849,10 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
         let clicks = 0;
         let obs = null;
         let rearmLabel = ''; // 7b F17: the label at click time — a busy control usually swaps it
+        let clickedNode = null; // 8b F07/F16: element identity of click #1
+        let pageReacted = false; // 8b F07: any DOM mutation since click #1
+        let reactionObs = null; // 8b F07: the 1.5 s reaction window observer
+        let attemptDebounce = null; // 8b F18: 120 ms coalescer (hoisted for the disconnect cleanup)
 
         const findButton = () => {
             const btn = document.querySelector(SELECTOR);
@@ -849,6 +871,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
             if (btn.disabled) return false; // captcha still solving — stay armed
             btn.setAttribute('data-cb4-dl-clicked', 'true');
             clicks += 1;
+            clickedNode = btn; // 8b F07/F16: identity, not visual state
             rearmLabel = (btn.textContent || '').trim(); // 7b F17: label at click time
             console.log('[4ndr0tools] Download button triggered.');
             const view = btn.ownerDocument?.defaultView ?? null;
@@ -857,6 +880,27 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
                     view, bubbles: true, cancelable: true, buttons: 1,
                 }));
             });
+            /* v4.1.2 (8b F07): the reaction window — any DOM mutation within
+             * 1.5 s of the click proves the page's handler fired (attribute
+             * flips, label swaps, handler-side DOM touches: spinners, progress
+             * elements, gating UI). Our own attribute write happened BEFORE
+             * this window arms, and synthetic event dispatch generates no
+             * records of its own — only page-code reactions land here. The
+             * re-arm exists ONLY for the silent handler-not-ready case, so a
+             * reacted page suppresses click #2 even when the button looks
+             * idle. Conservative by design: unrelated churn (an ad rotor)
+             * suppressing one re-click trades toward the LEGACY single-click
+             * behavior — the duplicate-download direction is the regression. */
+            pageReacted = false;
+            try {
+                reactionObs = new MutationObserver(() => { pageReacted = true; });
+                reactionObs.observe(document.documentElement, { childList: true, subtree: true, attributes: true });
+                window.setTimeout(() => {
+                    if (reactionObs) { reactionObs.disconnect(); reactionObs = null; }
+                }, REARM_MS - 100);
+            } catch (reactionError) {
+                console.debug('[4ndr0tools] reaction window unavailable:', reactionError && reactionError.message);
+            }
             return true;
         };
 
@@ -867,7 +911,14 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
             window.setTimeout(() => {
                 if (window.location.href === landingHref) {
                     const btn = findButton();
-                    if (btn && !btn.disabled) {
+                    /* v4.1.2 (8b F07/F16): node identity + the reaction window
+                     * — the visual-state heuristics alone still double-dispatched
+                     * on a label-static non-navigating download (the 4.1.0 re-arm
+                     * regression class), and an SPA node-swap made them
+                     * accidentally-safe (the stale rearmLabel comparison could
+                     * only read 'changed'). The re-click requires the SAME node
+                     * we clicked AND zero page reaction since. */
+                    if (btn && btn === clickedNode && !pageReacted && !btn.disabled) {
                         /* v4.1.1 (7b F17): a Content-Disposition / <a download>
                          * / fetch→blob save NEVER changes location.href — the
                          * old re-arm treated that as 'handler not ready' and
@@ -899,6 +950,10 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
             window.setTimeout(() => {
                 if (clickDownload(btn)) {
                     if (obs) obs.disconnect();
+                    /* v4.1.2 (8b F17): the pending coalescer dies with the
+                     * observer — a scheduled attempt firing up to 120 ms
+                     * after disconnect briefly violated the invariant. */
+                    if (attemptDebounce) { window.clearTimeout(attemptDebounce); attemptDebounce = null; }
                     if (clicks < MAX_CLICKS) scheduleRearm();
                 } else {
                     scheduled.delete(btn); // disabled at grace time — the ALWAYS-armed observer below re-attempts (7b F16)
@@ -918,8 +973,8 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
         // both its insertion and its disabled-attribute flip.
         /* v4.1.1 (7b F18): debounced — every document mutation ran a
          * full-document anchor-text sweep (countdown timers, spinners); the
-         * 120 ms coalescer matches the suite's observer idiom. */
-        let attemptDebounce = null;
+         * 120 ms coalescer matches the suite's observer idiom. (Hoisted at
+         * v4.1.2 so the disconnect cleanups can clear it — 8b F17.) */
         obs = new MutationObserver(() => {
             if (attemptDebounce) return;
             attemptDebounce = window.setTimeout(() => {
@@ -933,7 +988,11 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
             attributes:      true,
             attributeFilter: ['disabled'],
         });
-        window.addEventListener('beforeunload', () => { if (obs) obs.disconnect(); }, { once: true });
+        window.addEventListener('beforeunload', () => {
+            if (obs) obs.disconnect();
+            if (attemptDebounce) { window.clearTimeout(attemptDebounce); attemptDebounce = null; } // 8b F17
+            if (reactionObs) { reactionObs.disconnect(); reactionObs = null; } // 8b F07
+        }, { once: true });
     }
 
     // ══════════════════════════════════════════════════════════════════════════

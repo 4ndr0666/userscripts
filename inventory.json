@@ -416,12 +416,12 @@
   {
    "file": "4ndr0tools - Confirmation Bypass.user.js",
    "name": "4ndr0tools - Confirmation Bypass",
-   "version": "4.1.1",
+   "version": "4.1.2",
    "description": "Reveals forum invisi-text, view all replies, rewrite redirect links. Download Gate: bypass all confirmation pages on all sites, glass overlay copy/download URL (incl. vidara embeds on xcandid), auto-solve Altcha, auto-click download. Turbo: embed routing, upload injector. Util: external link safety, right-click scrollbar to top.",
    "family": "forums",
-   "sha256": "d7e2eaaa1d004d7823782fcc415c9dc6a34ee8d4549e10fedc5c91dfd53fabbc",
-   "lines": 1307,
-   "bytes": 69812,
+   "sha256": "18ecbfef0ac7421737956328287cc17df4f0a49df5c4dd8ea99752fe935b85f7",
+   "lines": 1366,
+   "bytes": 74174,
    "matches": [
     "*://forums.socialmediagirls.com/*",
     "*://forums.socialmediagirls.com/goto/link-confirmation*",
@@ -1679,5 +1679,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "3393c021747b946fec1367176a902478abe008f0cc9160a0225aa7c2003c3f04"
+ "digest": "d109c0e6d343454f158676883d63f9283fd01f4dd15f811874242becc794a1e7"
 }
