@@ -117,7 +117,7 @@ const CLASSES = {
  * closed on the first hit — write property access in dot form, or in
  * bracket form only for genuinely dynamic (non-constant) keys. */
 const BRACKET_PROP_WRITES =
-    /\[\s*["'](?:(?:inner|outer)HTML|fetch|open|send|eval|parseFromString)["']\s*\]\s*(?:\+)?=(?!=)/g;
+    /\[\s*["'](?:(?:inner|outer)HTML|fetch|open|send|eval|parseFromString|toDataURL|toBlob|createObjectURL|convertToBlob|getContext)["']\s*\]\s*(?:\+)?=(?!=)/g;
 const BRACKET_TIMER_STRINGS =
     /\[\s*["']set(?:Timeout|Interval)["']\s*\]\s*\(\s*["'`]/g;
 /* WO-01 round-3 (3-a F02): bracket CALL forms — el["insertAdjacentHTML"](…),
@@ -133,6 +133,15 @@ const BRACKET_TIMER_STRINGS =
  * sink CALLS must use dot form; dynamic-key bracket access is unaffected. */
 const BRACKET_SINK_CALLS =
     /\[\s*["'](?:(?:insertAdjacentHTML|parseFromString|write(?:ln)?|eval|Function)|set(?:Timeout|Interval))["']\s*\]\s*\(/g;
+/* WO-01 round 7 (7c F07): defineProperty/Reflect.set tripwire for the
+ * page-API interposition family — Object.defineProperty(proto,
+ * 'toDataURL', …) and Reflect.set(proto, 'createObjectURL', …) assign the
+ * same hooks the protoWrap class adjudicates, but through a call form no
+ * CLASSES regex can see. Zero live occurrences; first hit fails closed
+ * with the same contract as the bracket tripwires (ledger it in protoWrap
+ * or write it in the dot form the census reads). */
+const DEFINE_PROP_INTERPOSITION =
+    /\b(?:Object\.defineProperty|Reflect\.set)\s*\(\s*[^,()]*,\s*["'](?:toDataURL|toBlob|createObjectURL|convertToBlob|getContext)["']/g;
 
 /* WO-01 round-4 (4-a F07 — the round-3 recommendation, delivered): the
  * ACCEPTED RESIDUALS of the sink-detection surface, enumerated in one place
@@ -322,7 +331,9 @@ export function runSinkCensus() {
         ? fs.readdirSync(DIST).filter((f) => f.endsWith(".user.js")).sort()
         : [];
 
+    const seenFiles = new Set(); /* WO-01 round 7 (7c F09): orphan sweep anchor */
     for (const f of files) {
+        seenFiles.add(f);
         const src = fs.readFileSync(path.join(DIST, f), "utf8");
         const code = distCodeView(src);
         /* WO-01 round-2 (6-a F06): bracket-form tripwires (see definitions
@@ -338,6 +349,9 @@ export function runSinkCensus() {
         }
         for (const bc of stringsView.match(BRACKET_SINK_CALLS) || []) {
             problems.push(`${f}: bracket-form sink call ${bc.slice(0, 34)}… — constant-name sink calls must use dot form so the CLASSES/polling censuses stay visible (3-a F02 tripwire)`);
+        }
+        for (const dp of stringsView.match(DEFINE_PROP_INTERPOSITION) || []) {
+            problems.push(`${f}: defineProperty/Reflect.set interposition ${dp.slice(0, 44)}… — the page-API hook family must ride the protoWrap class in dot form so the count-drift gate sees it (7c F07 tripwire)`);
         }
         const counts = scanCode(code);
         const ledger = ADJUDICATED[f] || {};
@@ -385,6 +399,17 @@ export function runSinkCensus() {
         }
         /* files entirely absent from the ledger but carrying sites were
          * caught above; files absent and clean are fine. */
+    }
+
+    /* WO-01 round 7 (7c F09): orphan sweep — a ledger entry whose dist file
+     * disappeared (rename/delete) was never re-checked: the count-drift and
+     * expiry machinery only ran for files that EXIST, so a stale entry
+     * silently stopped ticking. The connect census has had this sweep since
+     * round 6; the sink census's per-file classes get it now. */
+    for (const f of Object.keys(ADJUDICATED)) {
+        if (!seenFiles.has(f)) {
+            problems.push(`stale sink ledger entry: ${f} — the dist file no longer exists (remove the entry)`);
+        }
     }
 
     /* Kernel zero-string-sink invariant (defense-in-depth; validate.mjs
