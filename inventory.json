@@ -525,9 +525,9 @@
    "version": "1.13.3",
    "description": "Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.",
    "family": "forums",
-   "sha256": "e10a6fc8b7e802723f899a5e6d6ab5516d5b43c4b8a862385a228280a9aa940a",
-   "lines": 8409,
-   "bytes": 402175,
+   "sha256": "d02460527fe329666962eaae51c9915931d507060ac47da2cae38030a707986a",
+   "lines": 8417,
+   "bytes": 402347,
    "matches": [
     "https://simpcity.su/threads/*",
     "https://simpcity.cr/threads/*",
@@ -629,6 +629,14 @@
     "jpg.fishing",
     "jpg.pet",
     "jpeg.pet",
+    "jpg.church",
+    "jpg.su",
+    "jpg.cr",
+    "jpeg.church",
+    "jpeg.fish",
+    "jpeg.fishing",
+    "jpeg.su",
+    "jpeg.cr",
     "jpg1.su",
     "jpg2.su",
     "jpg3.su",
@@ -1679,5 +1687,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "f918e0d3b45284ff0120c8ae77e51beafbdc1a170b4737e477daeb89f44d8c84"
+ "digest": "7ee79d0ecc756f6b16dd7cdafdc1bf70bdf5d6729f111b2fd0bcc59c1c2229bf"
 }

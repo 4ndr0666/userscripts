@@ -90,6 +90,14 @@
 // @connect jpg.fishing
 // @connect jpg.pet
 // @connect jpeg.pet
+// @connect jpg.church
+// @connect jpg.su
+// @connect jpg.cr
+// @connect jpeg.church
+// @connect jpeg.fish
+// @connect jpeg.fishing
+// @connect jpeg.su
+// @connect jpeg.cr
 // @connect jpg1.su
 // @connect jpg2.su
 // @connect jpg3.su

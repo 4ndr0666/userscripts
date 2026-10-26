@@ -1084,7 +1084,7 @@ async function gateD() {
     if (connects.problems.length) {
         for (const cn of connects.problems) failures.push(`[D] connect census: ${cn}`);
     } else {
-        passes.push(`[D] connect census verified (${connects.scripts} declaring scripts, ${connects.connectDeclarations} @connect tokens, ${connects.observedHosts} observed literal hosts — ${connects.dispatchLiteral} literal + ${connects.dispatchVariable} variable-url dispatch sites (the 7c F01 form family: GM_download + aliases + opts-args, comment/definition sites excluded) — ${connects.wildcardScripts} wildcards, all ledgered with justification + expiry)`);
+        passes.push(`[D] connect census verified (${connects.scripts} declaring scripts, ${connects.connectDeclarations} @connect tokens, ${connects.observedHosts} observed literal hosts — ${connects.dispatchLiteral} literal + ${connects.dispatchVariable} variable-url dispatch sites (${connects.dispatchDerived} derived host-sets / ${connects.dispatchPartial} partial / ${connects.dispatchResidual} residual underivable — the 2d-F01 derivation engine: const-walk ≤2 hops + helper-1-level admission + resolver-table gate alternation, decrease-refusing exact-equality ledger per file; the 7c F01 form family: GM_download + aliases + opts-args + parameter-alias admission, comment/definition sites excluded) — ${connects.wildcardScripts} wildcards, all ledgered with justification + expiry)`);
     }
 
     // Co-install domain census (suite v1.5.1, GUP G12 — v1.5.0 verdict
@@ -1270,7 +1270,7 @@ async function gateD() {
             observer: { clean: !observers.problems.length, sites: observers.sites },
             cache: { clean: !caches.problems.length, registries: caches.registries },
             size: { clean: !sizes.problems.length },
-            connect: { clean: !connects.problems.length },
+            connect: { clean: !connects.problems.length, derived: connects.dispatchDerived, partial: connects.dispatchPartial, residual: connects.dispatchResidual },
             domain: { clean: !domains.problems.length },
             error: { clean: !errors.problems.length, catchSites: errors.catchSites, typed: errors.typed, debug: errors.debug, handled: errors.handled, silent: errors.silent },
         },
