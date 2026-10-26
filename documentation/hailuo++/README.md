@@ -1,6 +1,8 @@
 # 4ndr0tools - Hailuo++ (GUP v5.3 Revision)
 
-> **⚠ HISTORICAL DEVLOG — v5.3.0 arc.** This document is the preserved engineering record of the v5.3.0 development cycle; the devlog body below is kept intact as history. The **current shipped script is v6.0.2**, built from `canon/_promoted/4ndr0tools - Hailuo++.user.js` into **`dist/4ndr0tools - Hailuo++.user.js`** — see [`documentation/INDEX.md`](../INDEX.md) for the live reference. Filenames, version stamps and verification steps below refer to the historical v5.3.0 deliverable, not the current release.
+> **⚠ HISTORICAL DEVLOG — v5.3.0 arc.** This document is the preserved engineering record of the v5.3.0 development cycle; the devlog body below is kept intact as history. The **current shipped script is v6.1.0**, built from `canon/_promoted/4ndr0tools - Hailuo++.user.js` into **`dist/4ndr0tools - Hailuo++.user.js`** — see [`documentation/INDEX.md`](../INDEX.md) for the live reference. Filenames, version stamps and verification steps below refer to the historical v5.3.0 deliverable, not the current release.
+
+> **v6.1.0 addendum (WO-01 round 6):** the current release arms a document-start interception platform — `URL.createObjectURL` blob-clone vault fortification, `HTMLCanvasElement` `toDataURL`/`toBlob` commit hooks, and an `<a>`/`<img>`/`<video>` DOM stalker feeding the bay. Blob-backed bay items now survive page-side URL revocation (SAVE serves the vault clone with zero network; dead thumbnails re-mint from it). The v5.3.0-era "session-scoped bay" residual below now applies to http CDN references only.
 
 ## Deliverable
 
@@ -33,11 +35,11 @@ On `/agent`, assets are plain `cdn.hailuoai.video` images with no rendered downl
 
 ## Install
 
-> **Current release:** install **`dist/4ndr0tools - Hailuo++.user.js`** (v6.0.2) — see [INDEX.md](../INDEX.md). The steps below are the **historical v5.3.0** procedure, retained as part of the devlog record.
+> **Current release:** install **`dist/4ndr0tools - Hailuo++.user.js`** (v6.1.0) — see [INDEX.md](../INDEX.md). The steps below are the **historical v5.3.0** procedure, retained as part of the devlog record.
 
 1. Open the Tampermonkey dashboard.
 2. If a previous version is installed, open it in the editor, select-all, replace with this file's contents, and save (preserves your GM_setValue state). Otherwise create a new script from this file.
-3. Navigate to `https://hailuoai.video/agent` — the HUD should boot; first console line ends with `Build 5.3.0.` (historical v5.3.0 build stamp; the current v6.0.2 release reports its own version).
+3. Navigate to `https://hailuoai.video/agent` — the HUD should boot; first console line ends with `Build 5.3.0.` (historical v5.3.0 build stamp; the current v6.1.0 release reports its own version).
 
 > If Tampermonkey asks once about cross-domain requests, allow it — the header already declares `@connect cdn.hailuoai.video` (+ sibling hosts) so blob downloads run without further prompts.
 

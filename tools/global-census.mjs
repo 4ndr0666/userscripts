@@ -60,6 +60,8 @@ const SANCTIONED = [
       reason: "cross-context bridge: namespaced opener-side entry point for the turbo.cr upload popup flow (documented 'namespaced global' from the C lineage)", expiry: "v1.14.0" },
     { file: "canon/_promoted/4ndr0tools - Confirmation Bypass.user.js", name: "__turboUploadWin", realm: "window",
       reason: "cross-context bridge: the upload popup's window handle, validated by the postMessage allowlist flow", expiry: "v1.14.0" },
+    { file: "canon/_promoted/4ndr0tools - Hailuo++.user.js", name: "__andr0HailuoIntercept", realm: "window",
+      reason: "double-injection guard: interception-platform singleton mark (MPC psiMediaControllerLoaded class) — a second manager copy must see the first arm (canvas toDataURL/toBlob wraps + createObjectURL clone registry + DOM stalker are page-realm interpositions that must install exactly once); closure state would defeat the guard (round 6, 2-c F06)", expiry: "v1.15.0" },
     { file: "canon/_promoted/4ndr0tools - Media Player Controller.user.js", name: "psiMediaControllerLoaded", realm: "window",
       reason: "double-injection guard: co-install singleton mark — a second copy of the controller (second manager or re-run) must see the first load; closure state would defeat the guard", expiry: "v1.14.0" },
     { file: "canon/_promoted/4ndr0tools - Media Player Controller.user.js", name: "psiMediaGodmodeLoaded", realm: "window",

@@ -1,14 +1,12 @@
 // ==UserScript==
 // @name         4ndr0tools - Hailuo++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      6.0.2
+// @version      6.1.0
 // @author       4ndr0666
-// @description  Enterprise-grade, idempotent automation engine for HailuoAI featuring automated queue management, asset fetching with tracked-download deduplication, an in-HUD Asset Bay thumbnail gallery (click-to-new-window, hover-playable previews, blob downloads that never navigate the session window) with cross-reload persistence, completion notifications, failure-card masking, API hard purge, and interactive asset links — hardened for the 2026-09 MiniMax H3 site generation and the hailuoai.video/agent chat surface. v5.4: editable-context (Slate) DOM guards, self-healing HUD watchdog, HUD collapse + Ctrl+Alt+H toggle, frame isolation, webp-aware blob transport with retry, and non-destructive title telemetry.
+// @description  Enterprise-grade, idempotent automation engine for HailuoAI featuring automated queue management, asset fetching with tracked-download deduplication, an in-HUD Asset Bay thumbnail gallery (click-to-new-window, hover-playable previews, blob downloads that never navigate the session window) with cross-reload persistence, completion notifications, failure-card masking, API hard purge, and interactive asset links — hardened for the 2026-09 MiniMax H3 site generation and the hailuoai.video/agent chat surface. v5.4: editable-context (Slate) DOM guards, self-healing HUD watchdog, HUD collapse + Ctrl+Alt+H toggle, frame isolation, webp-aware blob transport with retry, and non-destructive title telemetry. v6.1: document-start interception platform — canvas toDataURL/toBlob commit hooks, URL.createObjectURL blob-clone vault fortification, and an a/img/video DOM stalker feeding the bay.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @match        https://hailuoai.com/video*
 // @match        https://hailuoai.video/*
-// @match        https://hailuoai.video/create*
-// @match        https://hailuoai.video/agent*
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_xmlhttpRequest
@@ -19,13 +17,34 @@
 // @connect      hailuoai.com
 // @connect      cdn.hailuo.com
 // @noframes
-// @run-at       document-end
+// @run-at       document-start
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Hailuo++.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Hailuo++.user.js
 // @license      MIT
 // ==/UserScript==
+// 6.1.0 (suite v1.14.0, WO-01 round 6): interception platform — the vault is
+// fortified end-to-end per the operator directive. @run-at flips to
+// document-start so three new hook families arm BEFORE the site's media
+// pipeline can commit anything (the orchestrator/HUD boot sequence is
+// unchanged — the same readyState/DOMContentLoaded → 1500 ms gate): (1)
+// URL.createObjectURL wrap clones every Blob into a bounded registry before
+// the page receives its URL — page-side revocation can no longer kill a
+// vault capture (SAVE serves the clone with zero network; dead thumbnails
+// re-mint from it; blob: assets now enter the bay at all — the old http-only
+// gates rejected them); (2) HTMLCanvasElement.prototype.toDataURL/toBlob
+// hooks capture every canvas buffer commit above the noise floor (≥96×96 px
+// and ≥4 KB), deduplicated by SHA-256; (3) a DOM-stalker MutationObserver
+// feeds any <a>/<img>/<video>/<source> with a media-plausible target URL
+// into the bay (http media extensions, hailuo CDN media paths, or live-clone
+// blob: URLs), 400 ms coalesced. Stability: per-hook try/catch (one family
+// throwing never disarms the others), the __andr0HailuoIntercept realm mark
+// (MPC double-injection-guard class, ledgered), page error/rejection
+// isolation listeners, the fetch transport fallback gains a 60 s
+// AbortController timeout (a hung CORS request no longer pins the SAVE
+// button), and the window.open escalation now checks its return value.
+// Subsumed @match lines (create*/agent* under hailuoai.video/*) dropped.
 // 6.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.0.2 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.0 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 
 /* ═══ SUITE PROMOTION 6.0.0 ═══════════════════════════════════════════
@@ -86,6 +105,13 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.0.2 —
         static warn(msg, data = '') { console.warn(`[4ndr0tools][WARN] ${msg}`, data); }
         static error(msg, err = '') { console.error(`[4ndr0tools][ERROR] ${msg}`, err); }
     }
+
+    /* v6.1.0 (round 6): the interception platform instance — declared early
+     * (let, null-initialized) because AssetBayStore, the bay thumbs, the
+     * transport escalation and the boot sequence all consult the clone
+     * registry; it is instantiated and armed AFTER the class definitions,
+     * before the orchestrator bootstraps. */
+    let interceptPlatform = null;
 
     class PersistentState {
         constructor() {
@@ -186,7 +212,14 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.0.2 —
             return Boolean(src) && this.capturedIndex.has(src);
         }
         capture(assetObj) {
-            if (!assetObj || !assetObj.src || !assetObj.src.startsWith('http')) return null;
+            if (!assetObj || !assetObj.src) return null;
+            const src = assetObj.src;
+            /* v6.1.0: the vault admits blob: URLs iff a live clone exists in
+             * the interception registry — the site's generated media lands in
+             * object URLs, and the clone is what keeps the capture valid. */
+            const isHttp = src.startsWith('http');
+            const isLiveBlob = src.startsWith('blob:') && interceptPlatform !== null && interceptPlatform.hasClone(src);
+            if (!isHttp && !isLiveBlob) return null;
             if (this.capturedIndex.has(assetObj.src)) return null;
             const item = {
                 src: assetObj.src,
@@ -221,11 +254,377 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.0.2 —
         }
     }
 
+    /* ══════════════════════════════════════════════════════════════════════════
+       [ U_Intercept_Platform ] (6.1.0 — round 6, 2-c F02/F03/F04)
+       The document-start interception layer. Three hook families, each
+       fail-closed per-hook (a throw in one family never disarms the others)
+       and installed exactly once per page realm (the __andr0HailuoIntercept
+       mark — the MPC double-injection-guard class, ledgered in the global
+       census):
+
+       1. URL.createObjectURL wrap — every Blob the page turns into an object
+          URL is CLONED (blob.slice(0)) into a bounded registry before the
+          page receives its URL. Page-side revokeObjectURL kills the page's
+          handle, never our clone: the vault stays valid, SAVE serves the
+          clone with zero network, and dead thumbnails re-mint from it.
+       2. HTMLCanvasElement toDataURL/toBlob hooks — every canvas buffer
+          commit above the noise floor (≥96×96 px AND ≥4 KB payload) is
+          captured as a vault image, deduplicated by SHA-256, re-served from
+          a minted clone URL.
+       3. DOM stalker — a MutationObserver over documentElement watching
+          every added <a>/<img>/<video>/<source> node with a target URL;
+          media-plausible targets flow into the Asset Bay unconditionally
+          (http media extensions, hailuo CDN media paths, or any blob: URL
+          with a live clone). Coalesced (400 ms debounce) — the census idiom.
+
+       The orchestrator/HUD engine is unchanged: only the boot readyState
+       gate moved (document-start keeps the exact same DOMContentLoaded →
+       1500 ms bootstrap sequence; the hooks simply arm before the site's
+       own media pipeline can commit anything).
+       ══════════════════════════════════════════════════════════════════════════ */
+    class InterceptPlatform {
+        constructor() {
+            this.cloneRegistry = new Map();      // objectUrl -> { blob, mime, size, ts }
+            this.maxClones = 120;
+            this.canvasHashes = new Set();       // sha256 prefixes already captured
+            this.canvasHashOrder = [];           // FIFO order for the bounded hash set
+            this.maxCanvasHashes = 500;
+            this.minCanvasPixels = 96 * 96;      // noise floor: UI sprites stay out
+            this.minCaptureBytes = 4096;         // noise floor: tiny commits stay out
+            this.stalkObserver = null;
+            this.stalkQueue = new Set();         // elements pending the debounced sweep
+            this.stalkDebounceTimer = null;
+            this.nativeCreateObjectURL = null;
+            this.nativeToDataURL = null;
+            this.nativeToBlob = null;
+            this.sink = null;                    // AutomationOrchestrator (uiFactory bay)
+            this.armed = false;
+            this.mediaExtRe = /\.(mp4|webm|mov|m4v|mkv|avi|jpg|jpeg|png|webp|gif|avif)(?:[?#]|$)/i;
+            this.videoExtRe = /\.(mp4|webm|mov|m4v|mkv|avi)(?:[?#]|$)/i;
+            this.hailuoHosts = ['cdn.hailuoai.video', 'oss.hailuoai.video', 'hailuoai.video', 'cdn.hailuo.com', 'hailuoai.com'];
+        }
+
+        arm(sink) {
+            if (this.armed) return false;
+            this.armed = true;
+            try {
+                if (window.__andr0HailuoIntercept) {
+                    Logger.debug('Interception platform already armed in this page realm; skipping re-install.');
+                    return false;
+                }
+                window.__andr0HailuoIntercept = '6.1.0';
+            } catch (markError) {
+                Logger.warn('Realm mark write rejected; installing hooks without the double-injection guard.', markError);
+            }
+            this.sink = sink;
+            this.installObjectUrlWrap();
+            this.installCanvasHooks();
+            this.installDomStalker();
+            this.installPageErrorIsolation();
+            Logger.info(`Interception platform armed at document.readyState=${document.readyState} (createObjectURL clone registry, canvas commit hooks, DOM stalker).`);
+            return true;
+        }
+
+        /* ── clone registry ─────────────────────────────────────────────────── */
+
+        registerClone(url, clone) {
+            if (typeof url !== 'string' || !url || !(clone instanceof Blob)) return;
+            if (this.cloneRegistry.has(url)) return;
+            this.cloneRegistry.set(url, { blob: clone, mime: clone.type || '', size: clone.size, ts: Date.now() });
+            while (this.cloneRegistry.size > this.maxClones) {
+                const oldest = this.cloneRegistry.keys().next().value;
+                if (oldest === undefined) break;
+                this.cloneRegistry.delete(oldest);
+            }
+        }
+
+        hasClone(url) {
+            return typeof url === 'string' && this.cloneRegistry.has(url);
+        }
+
+        getClone(url) {
+            const entry = typeof url === 'string' ? this.cloneRegistry.get(url) : null;
+            return entry ? entry.blob : null;
+        }
+
+        /* Re-mint a FRESH object URL for a (possibly dead) one, from the
+         * clone — the vault-validity fallback. Uses the saved native so our
+         * own wrap never re-enters. */
+        remintCloneUrl(url) {
+            const entry = typeof url === 'string' ? this.cloneRegistry.get(url) : null;
+            if (!entry || !this.nativeCreateObjectURL) return null;
+            try {
+                const fresh = this.nativeCreateObjectURL.call(URL, entry.blob);
+                return typeof fresh === 'string' ? fresh : null;
+            } catch (mintError) {
+                Logger.debug('Vault clone re-mint rejected by the URL runtime.', mintError);
+                return null;
+            }
+        }
+
+        /* ── hook family 1: URL.createObjectURL clone-at-create ─────────────── */
+
+        installObjectUrlWrap() {
+            try {
+                const nativeCreate = URL.createObjectURL;
+                if (typeof nativeCreate !== 'function') return;
+                this.nativeCreateObjectURL = nativeCreate;
+                const self = this;
+                URL.createObjectURL = function (blobOrMediaSource) {
+                    const url = nativeCreate.apply(this, arguments);
+                    try {
+                        if (blobOrMediaSource instanceof Blob && blobOrMediaSource.size > 0) {
+                            self.registerClone(url, blobOrMediaSource.slice(0));
+                        }
+                    } catch (cloneError) {
+                        Logger.debug('Object-URL clone registration rejected; the page URL is unaffected.', cloneError);
+                    }
+                    return url;
+                };
+            } catch (installError) {
+                Logger.warn('createObjectURL interception was not installed (page sealed the API?).', installError);
+            }
+        }
+
+        /* ── hook family 2: canvas buffer-commit capture ───────────────────── */
+
+        installCanvasHooks() {
+            try {
+                if (typeof HTMLCanvasElement === 'undefined') return;
+                const proto = HTMLCanvasElement.prototype;
+                if (typeof proto.toDataURL !== 'function' || typeof proto.toBlob !== 'function') return;
+                this.nativeToDataURL = proto.toDataURL;
+                this.nativeToBlob = proto.toBlob;
+                const self = this;
+                proto.toDataURL = function () {
+                    const result = self.nativeToDataURL.apply(this, arguments);
+                    try { self.captureCanvasCommit(this, null, result); } catch (hookError) {
+                        Logger.debug('Canvas toDataURL capture rejected; the page result is unaffected.', hookError);
+                    }
+                    return result;
+                };
+                proto.toBlob = function (callback) {
+                    const canvas = this;
+                    const args = Array.prototype.slice.call(arguments);
+                    if (typeof callback === 'function') {
+                        args[0] = function (blob) {
+                            try { self.captureCanvasCommit(canvas, blob, null); } catch (hookError) {
+                                Logger.debug('Canvas toBlob capture rejected; the page callback is unaffected.', hookError);
+                            }
+                            callback(blob);
+                        };
+                    }
+                    return self.nativeToBlob.apply(this, args);
+                };
+            } catch (installError) {
+                Logger.warn('Canvas commit hooks were not installed (prototype sealed?).', installError);
+            }
+        }
+
+        captureCanvasCommit(canvas, blob, dataUrl) {
+            try {
+                if (!canvas || typeof canvas.width !== 'number' || typeof canvas.height !== 'number') return;
+                if (canvas.width * canvas.height < this.minCanvasPixels) return;
+            } catch (shapeError) {
+                Logger.debug('Canvas shape probe rejected; commit not captured.', shapeError);
+                return;
+            }
+            if (blob instanceof Blob && blob.size >= this.minCaptureBytes) {
+                this.ingestCapturedBlob(blob);
+                return;
+            }
+            if (typeof dataUrl === 'string' && dataUrl.length >= this.minCaptureBytes && dataUrl.startsWith('data:')) {
+                /* data: URL → Blob via the page fetch API (data: URLs never
+                 * hit the network and need no @connect grant). */
+                fetch(dataUrl)
+                    .then(res => {
+                        if (!res.ok) throw new Error(`data: conversion returned HTTP ${res.status}`);
+                        return res.blob();
+                    })
+                    .then(converted => {
+                        if (converted && converted.size >= this.minCaptureBytes) this.ingestCapturedBlob(converted);
+                    })
+                    .catch(convError => Logger.debug('Canvas dataURL commit conversion rejected.', convError));
+            }
+        }
+
+        ingestCapturedBlob(blob) {
+            if (!(blob instanceof Blob) || blob.size < this.minCaptureBytes) return;
+            let subtle = null;
+            try {
+                subtle = window.crypto && window.crypto.subtle && typeof window.crypto.subtle.digest === 'function'
+                    ? window.crypto.subtle : null;
+            } catch (probeError) {
+                Logger.debug('crypto.subtle probe rejected; canvas capture skipped.', probeError);
+            }
+            if (!subtle) {
+                Logger.debug('Canvas capture skipped: crypto.subtle unavailable in this context.');
+                return;
+            }
+            blob.arrayBuffer()
+                .then(buffer => subtle.digest('SHA-256', buffer))
+                .then(digest => {
+                    const hash = Array.from(new Uint8Array(digest)).slice(0, 8)
+                        .map(b => b.toString(16).padStart(2, '0')).join('');
+                    if (this.canvasHashes.has(hash)) return; // already captured
+                    this.canvasHashes.add(hash);
+                    this.canvasHashOrder.push(hash);
+                    while (this.canvasHashOrder.length > this.maxCanvasHashes) {
+                        this.canvasHashes.delete(this.canvasHashOrder.shift());
+                    }
+                    const clone = blob.slice(0);
+                    if (!this.nativeCreateObjectURL) return;
+                    const url = this.nativeCreateObjectURL.call(URL, clone);
+                    if (typeof url !== 'string') return;
+                    this.registerClone(url, clone);
+                    this.dispatchVaultCapture({ src: url, type: 'image' });
+                    Logger.info(`Canvas commit captured into the vault (sha256 ${hash.slice(0, 8)}, ${blob.size} bytes).`);
+                })
+                .catch(hashError => Logger.debug('Canvas capture hashing rejected.', hashError));
+        }
+
+        /* ── hook family 3: DOM stalker ─────────────────────────────────────── */
+
+        installDomStalker() {
+            try {
+                if (typeof MutationObserver !== 'function') return;
+                /* Arrow callbacks bind `this` to the platform instance — no
+                 * realm-shaped `self` alias (the global census deliberately
+                 * scans the `self` realm; an alias here reads as pollution). */
+                this.stalkObserver = new MutationObserver((mutations) => {
+                    for (const mutation of mutations) {
+                        if (!mutation.addedNodes || mutation.addedNodes.length === 0) continue;
+                        for (const node of mutation.addedNodes) {
+                            if (!node || node.nodeType !== 1) continue; // ELEMENT_NODE
+                            this.queueStalkNode(node);
+                        }
+                    }
+                    if (this.stalkQueue.size === 0) return;
+                    if (this.stalkDebounceTimer) clearTimeout(this.stalkDebounceTimer);
+                    this.stalkDebounceTimer = setTimeout(() => {
+                        this.stalkDebounceTimer = null;
+                        this.runStalkSweep();
+                    }, 400);
+                });
+                this.stalkObserver.observe(document.documentElement, { childList: true, subtree: true });
+                /* Baseline sweep for nodes already in the DOM when the
+                 * platform arms late (readyState already interactive). */
+                if (document.readyState !== 'loading') {
+                    this.runStalkSweep();
+                } else {
+                    window.addEventListener('DOMContentLoaded', () => { this.runStalkSweep(); }, { once: true });
+                }
+            } catch (installError) {
+                Logger.warn('DOM stalker was not installed (observer API sealed?).', installError);
+            }
+        }
+
+        queueStalkNode(node) {
+            try {
+                const tag = node.tagName;
+                if (tag === 'A' || tag === 'IMG' || tag === 'VIDEO' || tag === 'SOURCE') {
+                    this.stalkQueue.add(node);
+                } else if (typeof node.querySelectorAll === 'function') {
+                    for (const el of node.querySelectorAll('a[href], img, video, source')) {
+                        this.stalkQueue.add(el);
+                    }
+                }
+            } catch (queueError) {
+                Logger.debug('Stalk queue admission rejected for one node.', queueError);
+            }
+        }
+
+        runStalkSweep() {
+            if (this.stalkQueue.size === 0) return;
+            const pending = Array.from(this.stalkQueue);
+            this.stalkQueue.clear();
+            for (const el of pending) {
+                try {
+                    if (!el.isConnected) continue;
+                    this.captureFromElement(el);
+                } catch (elementError) {
+                    Logger.debug('Stalk sweep rejected one element capture.', elementError);
+                }
+            }
+        }
+
+        captureFromElement(el) {
+            const tag = el.tagName;
+            let src = '';
+            let type = 'image';
+            if (tag === 'VIDEO') {
+                src = String(el.currentSrc || el.src || '').trim();
+                if (!src) {
+                    const source = el.querySelector('source');
+                    src = source ? String(source.src || source.getAttribute('src') || '').trim() : '';
+                }
+                if (!src) src = String(el.getAttribute('data-src') || '').trim();
+                type = 'video';
+            } else if (tag === 'SOURCE') {
+                src = String(el.src || el.getAttribute('src') || '').trim();
+                const parent = el.parentElement;
+                type = parent && parent.tagName === 'VIDEO' ? 'video' : 'image';
+            } else if (tag === 'IMG') {
+                src = String(el.currentSrc || el.src || '').trim() || String(el.getAttribute('data-src') || '').trim();
+                type = 'image';
+            } else if (tag === 'A') {
+                src = String(el.href || el.getAttribute('href') || '').trim();
+                type = this.videoExtRe.test(src) ? 'video' : 'image';
+            }
+            if (!src) return;
+            if (!this.isVaultWorthy(src, tag)) return;
+            this.dispatchVaultCapture({ src, type });
+        }
+
+        isVaultWorthy(src, tag) {
+            if (src.startsWith('blob:')) return this.hasClone(src); // site-generated media with a live clone
+            if (!/^https?:/i.test(src)) return false;               // data: and relatives are UI noise
+            if (tag === 'VIDEO' || tag === 'SOURCE') return true;   // every video target is media
+            if (this.mediaExtRe.test(src)) return true;             // direct media file URL
+            try {
+                const parsed = new URL(src, location.href);
+                if (this.hailuoHosts.includes(parsed.hostname)) {
+                    return /\/(video|image|media|oss|files?)\//i.test(parsed.pathname) || this.mediaExtRe.test(src);
+                }
+            } catch (urlError) {
+                Logger.debug('Vault-worthiness URL parse rejected; target skipped.', urlError);
+            }
+            return false;
+        }
+
+        /* ── stability: page error isolation ────────────────────────────────── */
+
+        installPageErrorIsolation() {
+            try {
+                window.addEventListener('error', (event) => {
+                    Logger.debug('Page error observed (interception platform remains armed).', event && event.message);
+                }, true);
+                window.addEventListener('unhandledrejection', (event) => {
+                    Logger.debug('Unhandled rejection observed (interception platform remains armed).', event && event.reason ? String(event.reason) : '');
+                });
+            } catch (installError) {
+                Logger.warn('Page error isolation listeners were not installed.', installError);
+            }
+        }
+
+        /* ── sink ───────────────────────────────────────────────────────────── */
+
+        dispatchVaultCapture(assetObj) {
+            try {
+                if (this.sink && this.sink.uiFactory && this.sink.uiFactory.assetBayStore) {
+                    this.sink.uiFactory.captureAssetIntoBay(assetObj);
+                }
+            } catch (sinkError) {
+                Logger.debug('Vault capture dispatch rejected by the bay layer.', sinkError);
+            }
+        }
+    }
+
     class EngineConfiguration {
         constructor() {
             this.scriptVersion = (typeof GM_info !== 'undefined' && GM_info && GM_info.script && GM_info.script.version)
                 ? GM_info.script.version
-                : "6.0.2";
+                : "6.1.0";
             this.selectors = {
                 videoCardQueries: [
                     "div[class*='group/video-card']",
@@ -1206,7 +1605,20 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.0.2 —
                 mediaNode.alt = 'captured asset thumbnail';
                 mediaNode.loading = 'lazy';
             }
-            mediaNode.addEventListener('error', () => { thumb.classList.add('bay-expired'); });
+            mediaNode.addEventListener('error', () => {
+                /* v6.1.0: a dead blob: thumb re-mints ONCE from the vault
+                 * clone (the page may have revoked the original object URL —
+                 * the clone is immune); everything else expires as before. */
+                if (!mediaNode.dataset.reminted && interceptPlatform !== null) {
+                    const reminted = interceptPlatform.remintCloneUrl(item.src);
+                    if (reminted) {
+                        mediaNode.dataset.reminted = '1';
+                        mediaNode.src = reminted;
+                        return;
+                    }
+                }
+                thumb.classList.add('bay-expired');
+            });
             thumb.appendChild(mediaNode);
             const badge = document.createElement('span');
             badge.className = 'bay-type-badge';
@@ -1300,11 +1712,25 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.0.2 —
         }
 
         openAssetInNewWindow(src) {
-            if (!src || !src.startsWith('http')) {
+            if (!src) {
+                Logger.warn("Bay dispatch rejected: no asset source present.");
+                return;
+            }
+            let target = src;
+            if (src.startsWith('blob:')) {
+                /* v6.1.0: blob: bay items open from a FRESH mint of the vault
+                 * clone — the page's original object URL may be revoked. */
+                const reminted = interceptPlatform !== null ? interceptPlatform.remintCloneUrl(src) : null;
+                if (!reminted) {
+                    Logger.warn("Bay dispatch rejected: the blob asset no longer has a live clone in the vault.");
+                    return;
+                }
+                target = reminted;
+            } else if (!src.startsWith('http')) {
                 Logger.warn("Bay dispatch rejected: asset source is not an HTTP location context.");
                 return;
             }
-            const opened = window.open(src, '_blank', 'noopener,noreferrer');
+            const opened = window.open(target, '_blank', 'noopener,noreferrer');
             if (!opened) Logger.warn("New-window dispatch was blocked by the popup policy; focus the page and click the thumbnail again.");
         }
 
@@ -1645,23 +2071,41 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.0.2 —
                     }
                 });
             }
-            return fetch(url, { mode: 'cors', credentials: 'omit', referrerPolicy: 'no-referrer' }).then(response => {
-                if (!response.ok) throw new Error(`Fetch returned HTTP ${response.status}`);
-                return response.blob();
-            });
+            /* v6.1.0: the fetch fallback gains a 60 s AbortController timeout —
+             * a hung CORS request used to pin the SAVE button forever (the
+             * label only reset on the true/false settle paths). */
+            const controller = (typeof AbortController === 'function') ? new AbortController() : null;
+            const fetchTimer = controller ? setTimeout(() => { controller.abort(); }, 60000) : null;
+            return fetch(url, { mode: 'cors', credentials: 'omit', referrerPolicy: 'no-referrer', signal: controller ? controller.signal : undefined })
+                .then(response => {
+                    if (!response.ok) throw new Error(`Fetch returned HTTP ${response.status}`);
+                    return response.blob();
+                })
+                .finally(() => { if (fetchTimer) clearTimeout(fetchTimer); });
         }
 
         async downloadAssetViaBlob(assetObj) {
             const filename = this.composeAssetFilename(assetObj);
             try {
                 let blobPayload = null;
-                try {
-                    blobPayload = await this.requestBlobPayload(assetObj.src);
-                } catch (firstAttemptError) {
-                    Logger.warn('Blob transport first attempt rejected; retrying once before new-window escalation.',
-                        String((firstAttemptError && firstAttemptError.message) || firstAttemptError));
-                    await new Promise(resolve => setTimeout(resolve, 800));
-                    blobPayload = await this.requestBlobPayload(assetObj.src);
+                /* v6.1.0: clone-first — if the vault holds a clone for this
+                 * asset (intercepted object URL or canvas capture), SAVE
+                 * serves the snapshot directly with ZERO network: page-side
+                 * revocation and CDN expiry can no longer kill a vault
+                 * capture. */
+                const vaultClone = interceptPlatform !== null ? interceptPlatform.getClone(assetObj.src) : null;
+                if (vaultClone instanceof Blob && vaultClone.size > 0) {
+                    blobPayload = vaultClone;
+                    Logger.debug('Blob payload served from the interception vault clone; network transport skipped.', assetObj.src);
+                } else {
+                    try {
+                        blobPayload = await this.requestBlobPayload(assetObj.src);
+                    } catch (firstAttemptError) {
+                        Logger.warn('Blob transport first attempt rejected; retrying once before new-window escalation.',
+                            String((firstAttemptError && firstAttemptError.message) || firstAttemptError));
+                        await new Promise(resolve => setTimeout(resolve, 800));
+                        blobPayload = await this.requestBlobPayload(assetObj.src);
+                    }
                 }
                 if (!blobPayload || blobPayload.size === 0) {
                     throw new Error('Transport returned an empty payload');
@@ -1680,7 +2124,17 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.0.2 —
                 return true;
             } catch (transportError) {
                 Logger.warn('Blob download pipeline rejected; escalating asset to a new window instead (the active session window is never navigated).', { src: assetObj.src, reason: String((transportError && transportError.message) || transportError) });
-                window.open(assetObj.src, '_blank', 'noopener,noreferrer');
+                let escalationTarget = assetObj.src;
+                if (assetObj.src.startsWith('blob:')) {
+                    const reminted = interceptPlatform !== null ? interceptPlatform.remintCloneUrl(assetObj.src) : null;
+                    if (!reminted) {
+                        Logger.warn('Escalation unavailable: the blob asset has no live vault clone (the reference stays on the bay item for COPY).');
+                        return false;
+                    }
+                    escalationTarget = reminted;
+                }
+                const opened = window.open(escalationTarget, '_blank', 'noopener,noreferrer');
+                if (!opened) Logger.warn('Escalation window was blocked by the popup policy; the asset reference remains on the bay item (COPY still provides the original URL).');
                 return false;
             }
         }
@@ -1894,6 +2348,13 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.0.2 —
     }
 
     const applicationAgent = new AutomationOrchestrator();
+    /* v6.1.0 (round 6): the interception platform arms BEFORE the engine's
+     * deferred bootstrap — at document-start this precedes every page script,
+     * so the canvas and createObjectURL hooks are live before the site's
+     * media pipeline can commit anything. The orchestrator/HUD boot gate
+     * below is byte-identical in behavior to the document-end era. */
+    interceptPlatform = new InterceptPlatform();
+    interceptPlatform.arm(applicationAgent);
     if (document.readyState === "complete" || document.readyState === "interactive") {
         setTimeout(() => { applicationAgent.bootstrap(); }, 1500);
     } else {

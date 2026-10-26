@@ -703,17 +703,15 @@
   {
    "file": "4ndr0tools - Hailuo++.user.js",
    "name": "4ndr0tools - Hailuo++",
-   "version": "6.0.2",
-   "description": "Enterprise-grade, idempotent automation engine for HailuoAI featuring automated queue management, asset fetching with tracked-download deduplication, an in-HUD Asset Bay thumbnail gallery (click-to-new-window, hover-playable previews, blob downloads that never navigate the session window) with cross-reload persistence, completion notifications, failure-card masking, API hard purge, and interactive asset links — hardened for the 2026-09 MiniMax H3 site generation and the hailuoai.video/agent chat surface. v5.4: editable-context (Slate) DOM guards, self-healing HUD watchdog, HUD collapse + Ctrl+Alt+H toggle, frame isolation, webp-aware blob transport with retry, and non-destructive title telemetry.",
+   "version": "6.1.0",
+   "description": "Enterprise-grade, idempotent automation engine for HailuoAI featuring automated queue management, asset fetching with tracked-download deduplication, an in-HUD Asset Bay thumbnail gallery (click-to-new-window, hover-playable previews, blob downloads that never navigate the session window) with cross-reload persistence, completion notifications, failure-card masking, API hard purge, and interactive asset links — hardened for the 2026-09 MiniMax H3 site generation and the hailuoai.video/agent chat surface. v5.4: editable-context (Slate) DOM guards, self-healing HUD watchdog, HUD collapse + Ctrl+Alt+H toggle, frame isolation, webp-aware blob transport with retry, and non-destructive title telemetry. v6.1: document-start interception platform — canvas toDataURL/toBlob commit hooks, URL.createObjectURL blob-clone vault fortification, and an a/img/video DOM stalker feeding the bay.",
    "family": "sovereign platforms",
-   "sha256": "6eb245ce5eaa5c49eaf1a6b8233bcab2b93c894439c0c45d6644353e3e6e0d28",
-   "lines": 1905,
-   "bytes": 96758,
+   "sha256": "e343f48b1a9d339337ac55c791fbad204bd6a7ce31b9ae0001d9aa36cbd349b5",
+   "lines": 2366,
+   "bytes": 122553,
    "matches": [
     "https://hailuoai.com/video*",
-    "https://hailuoai.video/*",
-    "https://hailuoai.video/create*",
-    "https://hailuoai.video/agent*"
+    "https://hailuoai.video/*"
    ],
    "includes": [],
    "excludes": [],
@@ -731,7 +729,7 @@
     "hailuoai.com",
     "cdn.hailuo.com"
    ],
-   "runAt": "document-end",
+   "runAt": "document-start",
    "noframes": true,
    "urls": {
     "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Hailuo++.user.js",
@@ -1628,5 +1626,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "483aa8fccdf19528214dd51a729c3bd18f690cf42fac6880739609bee641bc84"
+ "digest": "ddecc4fcde73a0666f730c6bfd6dac1e43c11bd46802082c63545f9bb530626a"
 }
