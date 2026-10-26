@@ -1,4 +1,4 @@
-# Confirmation Bypass · v4.0.4
+# Confirmation Bypass · v4.1.0
 
 > Forum friction eliminator — `forums` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ Confirmation Bypass removes every friction layer forums put between the operator
 
 | Dimension | Value |
 |---|---|
-| Version | `4.0.4` |
+| Version | `4.1.0` |
 | Matches | `*://forums.socialmediagirls.com/*`, `*://forums.socialmediagirls.com/goto/link-confirmation*`, `*://simpcity.cr/*`, `*://simpcity.cr/redirect/*` (+4 more) |
 | Run-at | `document-idle` |
-| Size | 61.4 KB · 1193 lines |
+| Size | 64.6 KB · 1255 lines |
 | Install | [dist/4ndr0tools - Confirmation Bypass.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Confirmation%20Bypass.user.js) |
 
 ## Feature Inventory
@@ -28,14 +28,14 @@ Confirmation Bypass removes every friction layer forums put between the operator
 
 ## Settings & Persistence
 
-Module toggles persist through GM storage; the overlay is glass-spec styled.
+No configuration surface — every module is always-on by design; the overlay is glass-spec styled.
 
 ## Permissions (OPSEC)
 
 GM grants: `GM_addStyle`, `GM_xmlhttpRequest`.
 Cross-origin connects: `socialmediagirls.com`, `simpcity.cr`.
 
-> v4.0.2: answer-page parses policy-wrapped for TT hosts (suite v1.4.2 class fix).
+> v4.0.2: answer-page parses policy-wrapped for TT hosts (suite v1.4.2 class fix). v4.1.0: turbo.cr landing download trigger re-gains the legacy 300 ms grace sleep plus a bounded re-arm (round 6, 2-b F03/F04).
 
 ## Lineage
 

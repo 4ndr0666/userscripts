@@ -13,7 +13,7 @@
 | **Blob2URL** | `7.3.0` | media & links | typeof-guarded + gmFetch fallback | [reference](./blob2url/) |
 | **Bunkr++** | `7.7.0` | media & links | typeof-guarded + gmFetch fallback | [devlog](./bunkr/) |
 | **Bypass Paywalls** | `0.1.7` | privacy & security | kernel-free | [reference](./bypass-paywalls/) |
-| **Confirmation Bypass** | `4.0.4` | forums | kernel-free | [reference](./confirmation-bypass/) |
+| **Confirmation Bypass** | `4.1.0` | forums | kernel-free | [reference](./confirmation-bypass/) |
 | **Filester++** | `7.6.1` | media & links | typeof-guarded (NetHook) | [reference](./filester/) |
 | **Forum Link Xtractor** | `3.2.3` | forums | kernel-free | [reference](./forum-link-xtractor/) |
 | **Forums++** | `1.11.2` | forums | typeof-guarded + gmFetch fallback | [reference](./forums/) |
@@ -24,7 +24,7 @@
 | **Images++** | `4.0.5` | images | kernel-free | [reference](./images/) |
 | **Instagram++** | `13.2.2` | sovereign platforms | typeof-guarded + gmFetch fallback | [reference](./instagram/) |
 | **LinkMasterΨ** | `6.3.3` | media & links | typeof-guarded (NetHook) | [reference](./linkmaster/) |
-| **Login Form Autofiller** | `2.0.6` | ux utilities | kernel-free | [reference](./login-form-autofiller/) |
+| **Login Form Autofiller** | `2.0.7` | ux utilities | kernel-free | [reference](./login-form-autofiller/) |
 | **Maximize_Any_Media** | `2.0.1` | video & players | kernel-free | [reference](./maximize-any-media/) |
 | **Media Player Controller** | `8.1.3` | video & players | kernel-free | [reference](./media-player-controller/) |
 | **ModelSearch** | `4.0.3` | forums | kernel-free | [reference](./modelsearch/) |

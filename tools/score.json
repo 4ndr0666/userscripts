@@ -33,7 +33,7 @@
       "inputs": [
         "polling census clean: true (40 sites)",
         "observer census clean: true (57 sites)",
-        "cache census clean: true (137 registries)",
+        "cache census clean: true (138 registries)",
         "size budget clean: true"
       ]
     },

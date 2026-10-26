@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Confirmation Bypass
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      4.0.4
+// @version      4.1.0
 // @author       4ndr0666
 // @description  Reveals forum invisi-text, view all replies, rewrite redirect links. Download Gate: bypass all confirmation pages on all sites, glass overlay copy/download URL (incl. vidara embeds on xcandid), auto-solve Altcha, auto-click download. Turbo: embed routing, upload injector. Util: external link safety, right-click scrollbar to top.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -23,12 +23,21 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Confirmation%20Bypass.user.js
 // @license      MIT
 // ==/UserScript==
+// 4.1.0 (suite v1.14.0, WO-01 round 6): turbo.cr landing download-gate sleep
+// restored (2-b F03/F04) — the v3.6.2 G6 rework dropped the legacy 300 ms
+// grace, so the boot-time click fired into a button whose async handler was
+// not bound yet and the data-cb4-dl-clicked guard then suppressed every
+// retry (the download never initiated). The trigger now schedules the click
+// after a 300 ms grace (re-checking the disabled state inside the timeout),
+// keeps the G6 armed observer, adds a 'download file' text fallback for
+// #downloadBtn markup drift, and re-arms once if the page has not navigated
+// 1.6 s after the click (a handler that was not ready can swallow click #1).
 // 4.0.4 (suite v1.12.0, WO-01 round 4): banner-truth sync — the BETA-era
 // 'Unified Pipeline v3.6.2 — SECURED' duplicate boot line removed (two
 // identities in one console since promotion; 4-c F04); the v4.0.4 suite
 // banner at boot is the single identity.
 // 4.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.0.4 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1.0 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px');
 
 
 /* ═══ SUITE PROMOTION 4.0.0 ═══════════════════════════════════════════
@@ -772,24 +781,50 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.0
     // ══════════════════════════════════════════════════════════════════════════
     // [ U_Download_Trigger ]
     // Fires after Altcha resolves on the turbo.cr download landing page.
-    // Watches for #downloadBtn to appear (it may render after the captcha
-    // state change) then clicks it programmatically.
+    // Watches for #downloadBtn (or a 'download file' labelled control, for
+    // markup drift) to appear — it may render after the captcha state
+    // change — then clicks it programmatically.
     // Uses ownerDocument.defaultView for the MouseEvent view to avoid the
     // GM sandbox proxy rejection (same fix as U_Altcha_Solver).
-    // G6 (v3.6.2): the watcher now also observes the button's disabled
-    // attribute and only dispatches on an ENABLED button. The old fixed
-    // 300 ms grace click could fire while the Altcha proof-of-work was
-    // still running — and the childList-only observer then disconnected,
-    // so the auto-download silently died on slow-solving pages. The
-    // data-cb4-dl-clicked guard keeps the click idempotent.
+    // G6 (v3.6.2): the watcher observes the button's disabled attribute and
+    // dispatches only on an ENABLED button; the data-cb4-dl-clicked guard
+    // keeps the click idempotent.
+    // 4.1.0 (round 6, 2-b F03/F04): the legacy 300 ms grace is RESTORED as a
+    // superset of both eras — the click is scheduled after the grace (with
+    // the disabled state re-checked inside the timeout) so the page can
+    // bind its async handler and re-enable the button after the Altcha PoW
+    // resolves; the G6 armed observer is kept for absent/born-disabled
+    // buttons; and if the page has not navigated REARM_MS after the click,
+    // the trigger re-arms exactly once (a handler that was not ready in
+    // time can swallow click #1 — MAX_CLICKS bounds the loop).
     // ══════════════════════════════════════════════════════════════════════════
     function initializeDownloadTrigger() {
-        const SELECTOR = '#downloadBtn';
+        const SELECTOR  = '#downloadBtn';
+        const TEXT_FALLBACK = /download\s*file/i;
+        const GRACE_MS  = 300;  // legacy v3.5.2 grace — restored 4.1.0 (2-b F03)
+        const REARM_MS  = 1600; // swallow window before the single re-arm
+        const MAX_CLICKS = 2;
+
+        const landingHref = window.location.href;
+        const scheduled = new WeakSet();
+        let clicks = 0;
+        let obs = null;
+
+        const findButton = () => {
+            const btn = document.querySelector(SELECTOR);
+            if (btn) return btn;
+            // Markup drift fallback: any control labelled 'download file'.
+            for (const el of document.querySelectorAll('button, a[role="button"], a')) {
+                if (TEXT_FALLBACK.test((el.textContent || '').trim())) return el;
+            }
+            return null;
+        };
 
         const clickDownload = (btn) => {
             if (btn.hasAttribute('data-cb4-dl-clicked')) return true;
             if (btn.disabled) return false; // captcha still solving — stay armed
             btn.setAttribute('data-cb4-dl-clicked', 'true');
+            clicks += 1;
             console.log('[4ndr0tools] Download button triggered.');
             const view = btn.ownerDocument?.defaultView ?? null;
             ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'].forEach(type => {
@@ -800,26 +835,53 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.0
             return true;
         };
 
+        // The swallow guard: if the click landed but the page never started
+        // navigating, the handler was not ready — clear the guard and allow
+        // exactly one re-click (MAX_CLICKS bounds the loop).
+        const scheduleRearm = () => {
+            window.setTimeout(() => {
+                if (window.location.href === landingHref) {
+                    const btn = findButton();
+                    if (btn && !btn.disabled) {
+                        btn.removeAttribute('data-cb4-dl-clicked');
+                        window.setTimeout(() => { clickDownload(btn); }, GRACE_MS);
+                    }
+                }
+            }, REARM_MS);
+        };
+
         const attempt = () => {
-            const btn = document.querySelector(SELECTOR);
+            const btn = findButton();
             if (!btn) return false;
-            return clickDownload(btn);
+            if (btn.disabled) return false; // G6: stay armed for the flip
+            if (scheduled.has(btn)) return false;
+            scheduled.add(btn);
+            // The restored grace sleep: dispatch after GRACE_MS so the
+            // page's own async handler binding and captcha re-enable land
+            // first — the legacy behavior the G6 rework dropped.
+            window.setTimeout(() => {
+                if (clickDownload(btn)) {
+                    if (obs) obs.disconnect();
+                    if (clicks < MAX_CLICKS) scheduleRearm();
+                } else {
+                    scheduled.delete(btn); // disabled at grace time — re-armed by the observer
+                }
+            }, GRACE_MS);
+            return true;
         };
 
         if (attempt()) return;
 
         // Button may not exist yet — and may be born disabled: watch for
         // both its insertion and its disabled-attribute flip.
-        const obs = new MutationObserver((_, observerInstance) => {
-            if (attempt()) observerInstance.disconnect();
-        });
+        obs = new MutationObserver(() => { attempt(); });
         obs.observe(document.documentElement, {
             childList:       true,
             subtree:         true,
             attributes:      true,
             attributeFilter: ['disabled'],
         });
-        window.addEventListener('beforeunload', () => obs.disconnect(), { once: true });
+        window.addEventListener('beforeunload', () => { if (obs) obs.disconnect(); }, { once: true });
     }
 
     // ══════════════════════════════════════════════════════════════════════════

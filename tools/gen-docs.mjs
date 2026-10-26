@@ -147,8 +147,8 @@ const KNOWLEDGE = {
             "Turbo: embed routing + upload injector",
             "External link safety + right-click scrollbar navigation",
         ],
-        settings: "Module toggles persist through GM storage; the overlay is glass-spec styled.",
-        notes: "v4.0.2: answer-page parses policy-wrapped for TT hosts (suite v1.4.2 class fix).",
+        settings: "No configuration surface — every module is always-on by design; the overlay is glass-spec styled.",
+        notes: "v4.0.2: answer-page parses policy-wrapped for TT hosts (suite v1.4.2 class fix). v4.1.0: turbo.cr landing download trigger re-gains the legacy 300 ms grace sleep plus a bounded re-arm (round 6, 2-b F03/F04).",
     },
     "4ndr0tools - Filester++": {
         slug: "filester",

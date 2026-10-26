@@ -16,7 +16,7 @@ successor** — running both is the co-install chaos this consolidation removes.
 | m3u8++ v4.4 | [m3u8++ v5.1.1](../dist/4ndr0tools%20-%20m3u8++.user.js) | m3u8++ (old) |
 | Hailuo++ v5.1.1 | [Hailuo++ v6.0.2](../dist/4ndr0tools%20-%20Hailuo%2B%2B.user.js) | Hailuo++ (old) |
 | Blob2URL v6.3 | [Blob2URL v7.3.0](../dist/4ndr0tools%20-%20Blob2URL.user.js) | Blob2URL (old) |
-| Confirmation Bypass v3.6.1 | [Confirmation Bypass v4.0.4](../dist/4ndr0tools%20-%20Confirmation%20Bypass.user.js) | Confirmation Bypass (old) |
+| Confirmation Bypass v3.6.1 | [Confirmation Bypass v4.1.0](../dist/4ndr0tools%20-%20Confirmation%20Bypass.user.js) | Confirmation Bypass (old) |
 | ModelSearch v2.1 | [ModelSearch v4.0.3](../dist/4ndr0tools%20-%20ModelSearch.user.js) | ModelSearch (old) |
 | GooglePhotosandDrive++ v1.5.0 | [GooglePhotosandDrive++ v8.1.1](../dist/4ndr0tools%20-%20GooglePhotosandDrive%2B%2B.user.js) | GooglePhotosandDrive++ (old) |
 | Media Player Controller v5.1.0 | [Media Player Controller v8.1.3](../dist/4ndr0tools%20-%20Media%20Player%20Controller.user.js) | Media Player Controller (old) |
@@ -29,7 +29,7 @@ successor** — running both is the co-install chaos this consolidation removes.
 | m3u8++BETA v4.5 | [m3u8++ v5.1.1](../dist/4ndr0tools%20-%20m3u8%2B%2B.user.js) | m3u8++BETA **and** old stable m3u8++ |
 | Hailuo++BETA v5.4.0 | [Hailuo++ v6.0.2](../dist/4ndr0tools%20-%20Hailuo%2B%2B.user.js) | Hailuo++BETA and old stable |
 | Blob2URLBETA v6.5 | [Blob2URL v7.3.0](../dist/4ndr0tools%20-%20Blob2URL.user.js) | Blob2URLBETA and old stable |
-| Confirmation Bypass BETA v3.6.2 | [Confirmation Bypass v4.0.4](../dist/4ndr0tools%20-%20Confirmation%20Bypass.user.js) | both |
+| Confirmation Bypass BETA v3.6.2 | [Confirmation Bypass v4.1.0](../dist/4ndr0tools%20-%20Confirmation%20Bypass.user.js) | both |
 | ModelSearchBETA v3.2.0-Ψ | [ModelSearch v4.0.3](../dist/4ndr0tools%20-%20ModelSearch.user.js) | both |
 | GooglePhotosandDrive++BETA v7.0.0 | [GooglePhotosandDrive++ v8.1.1](../dist/4ndr0tools%20-%20GooglePhotosandDrive%2B%2B.user.js) | both |
 | Media Player Controller BETA v7.0.0-Ψ | [Media Player Controller v8.1.3](../dist/4ndr0tools%20-%20Media%20Player%20Controller.user.js) | both |
