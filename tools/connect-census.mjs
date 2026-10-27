@@ -142,9 +142,10 @@ function declaredConnects(src) {
  * census extracts.
  *
  * WO-01 round 8 (2d-F01): dispatchSiteRecords() produces the per-site
- * records (kind/line/callee/urlExpr) the derivation engine consumes;
- * dispatchSiteCounts() remains the byte-compatible aggregator (27+122 at
- * the r8 base, before class-B admissions add the invisible sites). */
+ * records (kind/line/callee/urlExpr) the derivation engine consumes
+ * (27 literal + 122 variable at the r8 base, before class-B admissions
+ * add the invisible sites; the standalone aggregator wrapper was retired
+ * in round 9 — 9c F07, defined-never-called dead code). */
 function dispatchSiteRecords(src) {
     const view = stripCommentsKeepStrings(src);
     const records = [];
@@ -272,14 +273,6 @@ function dispatchSiteRecords(src) {
     return records;
 }
 
-function dispatchSiteCounts(src) {
-    const records = dispatchSiteRecords(src);
-    let literal = 0;
-    let variable = 0;
-    for (const r of records) { if (r.kind === "literal") literal++; else variable++; }
-    return { literal, variable };
-}
-
 /* ── WO-01 round 8 (2d-F01): the derivation engine ─────────────────────────
  * Three extraction classes, each with its own view discipline (8a F01: the
  * strings-kept view truncates at '//' inside regex bodies, so alternation
@@ -366,6 +359,14 @@ function enumerateGateFamily(regexText) {
     const unescapeStatic = (t) => t.replace(/\\([.^$*+?()[\]{}|/])/g, "$1");
     /* static text → host variants (X? optionals expand; classes/\d poison) */
     const staticHostVariants = (t) => {
+        /* 9c F03 (round 9): a LEADING host-level group has an empty
+         * before-fragment ('' + (postimg|pixxxels) + '.cc') — the empty arm
+         * ENUMERATES, it does not poison (the candidate host-regex below
+         * still requires a dot, so a bare (su|st) with no after-fragment
+         * stays non-host). The r8 shape returned null here, poisoning every
+         * leading-group gate — the od-verified live postimg/pixxxels gate
+         * claimed as a static win in the r8 message never derived. */
+        if (t === "") return [""];
         /* \d/\w/\s classes: digit classes DROP (optional subdomain-ish
          * digits carry their own tokens — jpg1-7); word/space classes POISON
          * the arm; then unescape, then expand X? optionals */
@@ -670,12 +671,6 @@ function resolveExprHosts(expr, ctx, depth = 0) {
             }
             /* return of an origin/hostname member — runtime arm */
             if (/return\s+[A-Za-z_$][\w$]*\.(?:origin|hostname)/.test(body)) out.runtime = true;
-            /* return under a gate alternation — enumerate the family (the
-             * saint2 (su|pk|cr) arm of xfpdTurboOrigin) */
-            for (const gm of body.matchAll(/\.test\(\s*[A-Za-z_$][\w$]*\.(?:hostname|host)\s*\)|\(\s*([A-Za-z_$][\w$]*)\s*(?:\|\|\s*\1\.)*\s*(?:\.hostname|\.host)/g)) {
-                /* the gate regexes live in the RAW body — harvest via the
-                 * caller-visible alternation matches below */
-            }
             for (const gm of body.matchAll(/matchAll?\((\/[^/`]+\/[a-z]*)\)/gi)) {
                 const fam = enumerateGateFamily(gm[1]);
                 if (fam?.hosts) out.hosts.push(...fam.hosts);
@@ -686,10 +681,6 @@ function resolveExprHosts(expr, ctx, depth = 0) {
                     const fam = enumerateGateFamily(re);
                     if (fam?.hosts) out.hosts.push(...fam.hosts);
                 }
-            }
-            /* literal string hosts anywhere in the returns' gate conditions */
-            for (const gm of body.matchAll(/return\s+[A-Za-z_$][\w$]*\.origin/g)) {
-                out.runtime = true;
             }
             out.hosts = [...new Set(out.hosts)];
             if (!out.hosts.length && out.runtime) return { hosts: [], runtime: true };
@@ -705,9 +696,11 @@ function resolveExprHosts(expr, ctx, depth = 0) {
 
     /* template literal or concatenation — resolve each arm */
     let arms = [];
+    let templateMode = false;
     if (/^`/.test(trimmed)) {
         const inner = trimmed.slice(1, trimmed.lastIndexOf("`"));
         arms = inner.split(/(\$\{[^`]*?\})/g);
+        templateMode = true; /* 9c F02 (round 9) */
     } else if (trimmed.includes("+")) {
         arms = trimmed.split("+");
     } else {
@@ -721,8 +714,17 @@ function resolveExprHosts(expr, ctx, depth = 0) {
             const sub = resolveExprHosts(inner, ctx, depth + 1);
             out.hosts.push(...sub.hosts);
             if (sub.runtime) out.runtime = true;
-        } else if (/^['"`]/.test(a)) {
-            const inner = a.slice(1, -1);
+        } else if (templateMode || /^['"`]/.test(a)) {
+            /* 9c F02 (round 9): a template's STATIC arms are literal text —
+             * unquoted by construction (the backticks were stripped above),
+             * so the r8 /^['"`]/ test routed them to the expression
+             * resolver, which returned runtime for want of a quote —
+             * leaving `https://glb-apisign.cdn.cr/sign?path=${…}` UNDERIVABLE
+             * though its static head carries a declared host (the
+             * fail-closed direction, but a false residual). Template arms
+             * parse as literals now; concatenation arms keep the quote
+             * discipline. */
+            const inner = templateMode ? a : a.slice(1, -1);
             const h = hostFromLiteral(inner);
             if (h) out.hosts.push(h);
         } else {
@@ -832,11 +834,34 @@ function deriveDispatchTruth(src) {
          * escape-pair-aware: \/ inside gate bodies) */
         const families = [];
         let nonEnumerable = false;
-        for (const gm of pair.gates.matchAll(/\/(?:\\.|[^/\\\]])+\/[a-z]*/g)) {
+        for (const gm of pair.gates.matchAll(/\/(?:\\.|[^/\\])+\/[a-z]*/g)) {
+            /* 9c F01 (round 9): the r8 gate-body class excluded ']' — a gate
+             * containing a regex character class ([a-z]+, .{1,20}) could
+             * never match past the ']' to its own closing '/', so the gate
+             * was silently DROPPED: in a mixed pair the surviving gates
+             * derived an incomplete “gate IS the bound” host-set while the
+             * class gate's non-enumerable VETO vanished (fail-open), and
+             * stray separator spans matched as garbage ('/, /y'). The body
+             * class now excludes only '/' and '\'— exactly pairRe's
+             * element pattern above; the RC6 red control (a mixed
+             * clean+class pair) proves the veto fires with the fix. Zero
+             * live count change: the corpus's class-gate pairs are
+             * single-gate (residual either way). */
             if (gm[0].startsWith("/:!")) continue; /* negative-lookahead gate */
             const fam = enumerateGateFamily(gm[0]);
             if (fam?.hosts) families.push(...fam.hosts);
-            else if (fam?.nonEnumerable) nonEnumerable = true;
+            else nonEnumerable = true;
+            /* 9c F01 completion (round 9, caught live by the RC6 red
+             * control): a gate whose family parses to NULL (unparseable
+             * statics — classes/quantifiers in the skeleton, e.g.
+             * /rc-[a-z]+\.example/ or the live ibb \/\/ibb.co\/[a-zA-Z0-9-_.]+
+             * direct gate) bounds an UNKNOWABLE admissible set — for the
+             * pair the gate IS the bound, so null must VETO exactly like
+             * the poisoned non-enumerable families, never silently drop
+             * (the r8 `else if (fam?.nonEnumerable)` treated null as
+             * "gate does not exist" — the fail-open half of F01 the
+             * matcher fix alone did not close; the RC6 mixed-pair control
+             * fired on exactly this before the completion). */
         }
         const hosts = [...new Set(families)];
         /* the fn's first-hop dispatch records: callee is the http param (the
@@ -928,36 +953,48 @@ function viewLineOf(view, idx) {
  * drift machinery bites in both directions). */
 const DERIVATION_LEDGER = [
     {
-        /* first GREEN run at the r8 tree (after the 8 jpg/jpeg token adds —
-         * the engine's own first live catch): 54 variable sites = 6 DERIVED
-         * (the resolver-gate first-hops: imagevenue/coomer/postimg-pixxxels/
-         * jpg-family/gofile/redgifs/spankbang/imagebam + the goonbox
-         * const-walk admission) + 3 PARTIAL (filester v2 base fallback,
-         * cyberdrop ladder literal arms, the pornhub family) + 45 residual
-         * (walker second-hops on runtime page URLs, the yandex/nitter/
-         * cyberdrop-TLD non-enumerable gates, the >64-member bunkr family,
-         * GM_download page/CDN arms, hub wrappers). */
+        /* round-9 re-adjudication (the 9c F01/F02/F03 engine hardening —
+         * increase drift is the sanctioned re-adjudication path): 14 DERIVED
+         * (the resolver-gate first-hops: imagevenue, postimg.cc +
+         * pixxxels.cc — the r8 leading-group poisoning finally fixed, the
+         * jpg/jpeg no-digit family, pixhost, give.xxx, cyberfile, noodle,
+         * spankbang, imagebam, imgvb/imgbox, the goonbox const-walk) +
+         * 4 PARTIAL (filester v2 base fallback, the cyberdrop ladder
+         * literal arms, the pornhub family, and glb-apisign.cdn.cr — the
+         * signHttp template head, the r8 unquoted-template-arm gap) +
+         * 36 residual (walker second-hops on runtime page URLs, the
+         * yandex/nitter/cyberdrop-TLD non-enumerable gates, the >64-member
+         * bunkr family, GM_download page/CDN arms). TRUTH NOTE (9c F06):
+         * of the r8 message's claimed static-win quartet only imagebam.com
+         * derived at the r8 tree; redgifs/ibb carry class-gated or
+         * escaped-scheme gates (poison/null by rule) and pornhub's
+         * optional-subdomain prefix collapses under coveredBy — the r8
+         * prose overstated; the HUB rule has ZERO live instances corpus-wide
+         * (the >8-call-site wrappers stay a disclosed horizon, not a live
+         * residual class here). */
         file: "canon/_sovereign/4ndr0tools - Forums++.user.js",
-        derived: 13,
-        partial: 3,
-        residual: 38,
+        derived: 14,
+        partial: 4,
+        residual: 36,
         expiry: "v1.17.0",
     },
     {
-        /* first GREEN run: 41 variable sites = 7 DERIVED (resolver-gate
-         * first-hops over the link-harvestor's resolver table) + 2 PARTIAL +
-         * 32 residual; the wildcard covers the derived set (the ledger pins
-         * the drift, not the coverage). */
+        /* round-9 re-adjudication (the 9c F01/F02/F03 engine hardening):
+         * 17 DERIVED (the link-harvestor's resolver-gate first-hops — now
+         * including the postimg.cc/pixxxels.cc leading-group family the r8
+         * poisoning missed) + 2 PARTIAL + 22 residual; the wildcard covers
+         * the derived set (the ledger pins the drift, not the coverage). */
         file: "canon/_merged/4ndr0tools - LinkMasterΨ.user.js",
-        derived: 16,
+        derived: 17,
         partial: 2,
-        residual: 23,
+        residual: 22,
         expiry: "v1.17.0",
     },
     {
-        /* first GREEN run: 8 variable sites = 0 derived + 1 PARTIAL (the
-         * gemini literals.googleusercontent.com transport arm) + 7 residual
-         * (the RPC/asset arms are runtime JSON fields). */
+        /* first GREEN run: 8 variable sites = 0 derived + 1 PARTIAL + 7
+         * residual (the RPC/asset arms are runtime JSON fields). TRUTH NOTE
+         * (9c F06): the partial host is generativelanguage.googleapis.com
+         * — the r8 prose mislabeled it literals.googleusercontent.com. */
         file: "canon/_sovereign/4ndr0tools - Prompt Master.user.js",
         derived: 0,
         partial: 1,
@@ -1130,6 +1167,17 @@ export function runConnectCensus(root = DEFAULT_ROOT, opts = {}) {
             if (dispatches.literal > 0 || dispatches.variable > 0) {
                 problems.push(`${rel}: live privileged transport (${dispatches.literal} literal + ${dispatches.variable} variable dispatch sites) with ZERO @connect declarations — declare the endpoints (GUP G7 minimal privilege)`);
             }
+            /* 9c F08 (round 9): a zero-declaration file still OWNS its
+             * derivation-ledger entry — mark it seen here so the orphan
+             * sweep below reports the TRUE reason when it fires (the r8
+             * sweep's "no variable dispatch sites anymore" line was the
+             * wrong reason for exactly this class: the file kept its
+             * variable sites and dropped its declarations instead; the
+             * zero-declaration problem above already fires, so the net was
+             * fail-closed — now the message is truthful too). Drift/expiry
+             * for such files rides the declaration fix. */
+            const d0 = DLEDGER.find((e) => e.file === rel);
+            if (d0) seenDerivation.add(d0.file);
             continue;
         }
         stats.scripts++;
@@ -1184,7 +1232,13 @@ export function runConnectCensus(root = DEFAULT_ROOT, opts = {}) {
                 } else if (truth.derived > dentry.derived || truth.partial > dentry.partial || truth.residual > dentry.residual) {
                     problems.push(`${rel}: derivation count drift (INCREASE: ledger ${dentry.derived}/${dentry.partial}/${dentry.residual}, found ${truth.derived}/${truth.partial}/${truth.residual}) — new derivable surface; re-adjudicate the ledger`);
                 }
-                if (dentry.expiry && roundLt(CURRENT_ROUND, dentry.expiry) === false) {
+                /* 9c F04 (round 9): a ledger entry WITHOUT an expiry silently
+                 * skipped the clock — the r8 message's "no-expiry hard fail"
+                 * was never implemented (sink-census has it; this census
+                 * did not). The gap is closed. */
+                if (!dentry.expiry) {
+                    problems.push(`derivation ledger entry has NO expiry: ${rel} — every baseline must carry one (the G9 re-adjudication clock)`);
+                } else if (roundLt(CURRENT_ROUND, dentry.expiry) === false) {
                     problems.push(`expired derivation ledger entry: ${rel} — expiry ${dentry.expiry} has passed round ${CURRENT_ROUND} without re-adjudication`);
                 }
             } else if (truth.derived > 0 || truth.partial > 0) {
@@ -1210,7 +1264,6 @@ export function runConnectCensus(root = DEFAULT_ROOT, opts = {}) {
     for (const e of DLEDGER) {
         if (!seenDerivation.has(e.file)) {
             const stillExists = targets.some(([rel]) => rel === e.file);
-            const hasVariable = stillExists ? false : false; /* existence decides */
             if (!stillExists) {
                 problems.push(`stale derivation ledger entry: ${e.file} — the canon file no longer exists (rename/delete outran the ledger)`);
             } else {
