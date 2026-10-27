@@ -37,6 +37,7 @@ import { runPollingCensus } from "./polling-census.mjs";
 import { runObserverCensus } from "./observer-census.mjs";
 import { runErrorCensus } from "./error-census.mjs";
 import { runConnectCensus } from "./connect-census.mjs";
+import { runOperatorBatteryCheck } from "./operator-battery.mjs"; /* WO-01 round 9: the operator-side regression battery — the machine half (anchor liveness, version stamps, residual coverage, results discipline) */
 import { runDomainCensus } from "./domain-census.mjs";
 import { runGlobalCensus } from "./global-census.mjs";
 import { runCacheCensus } from "./cache-census.mjs";
@@ -1123,6 +1124,23 @@ async function gateD() {
         passes.push(`[D] connect census verified (${connects.scripts} declaring scripts, ${connects.connectDeclarations} @connect tokens, ${connects.observedHosts} observed literal hosts — ${connects.dispatchLiteral} literal + ${connects.dispatchVariable} variable-url dispatch sites (${connects.dispatchDerived} derived host-sets / ${connects.dispatchPartial} partial / ${connects.dispatchResidual} residual underivable — the 2d-F01 derivation engine: const-walk ≤2 hops + helper-1-level admission + resolver-table gate alternation, decrease-refusing exact-equality ledger per file; the 7c F01 form family: GM_download + aliases + opts-args + parameter-alias admission, comment/definition sites excluded) — ${connects.wildcardScripts} wildcards, all ledgered with justification + expiry)`);
     }
 
+    // Operator-side regression battery (WO-01 round 9 — the operator's
+    // directive: the live-behavior verifications the machine gate cannot
+    // make, finally given a manifest, a checklist, and an ingestion loop).
+    // The machine certifies the battery is WELL-FORMED AND AIMED AT LIVING
+    // CODE: manifest schema, anchor liveness at the stamped version (the
+    // RECONCILED_NAMES {file, mustContain} precedent), residual-coverage
+    // totality, dist installability, results-ledger discipline. The
+    // OPERATOR certifies the code works by running the rendered checklist
+    // (documentation/operator-battery/README.md) and pasting the report
+    // back — ingest lands in tools/operator-battery/results.json.
+    const battery = runOperatorBatteryCheck();
+    if (battery.problems.length) {
+        for (const bt of battery.problems) failures.push(`[D] operator battery: ${bt}`);
+    } else {
+        passes.push(`[D] operator regression battery verified (${battery.tests} operator-side tests across ${battery.families} families — ${battery.anchors} anchors all LIVE at their stamped versions, ${battery.residuals} worklog residuals fully covered, every referenced script installable from dist; results ledger: ${battery.adjudicated} of ${battery.results} entries adjudicated — the live-behavior complement renders at documentation/operator-battery/README.md)`);
+    }
+
     // Co-install domain census (suite v1.5.1, GUP G12 — v1.5.0 verdict
     // §2/G12): the @match/@include surface (incl. module meta.json) is
     // normalized to domain keys; every hot key (≥2 scripts) must be
@@ -1307,6 +1325,7 @@ async function gateD() {
             cache: { clean: !caches.problems.length, registries: caches.registries },
             size: { clean: !sizes.problems.length },
             connect: { clean: !connects.problems.length, derived: connects.dispatchDerived, partial: connects.dispatchPartial, residual: connects.dispatchResidual },
+            operatorBattery: { clean: !battery.problems.length, tests: battery.tests, families: battery.families, residuals: battery.residuals, adjudicated: battery.adjudicated },
             domain: { clean: !domains.problems.length },
             error: { clean: !errors.problems.length, catchSites: errors.catchSites, typed: errors.typed, debug: errors.debug, handled: errors.handled, silent: errors.silent },
         },
