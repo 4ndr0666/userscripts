@@ -2,7 +2,7 @@
 // @name         4ndr0tools - Yandex Image Search++ 
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666 
-// @version      0.4.2
+// @version      0.4.3
 // @description  Robust, event-driven slideshow, fullscreen preview, and on-screen status for Yandex reverse-image search.
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YandexImageSearch++.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YandexImageSearch++.user.js
@@ -12,8 +12,16 @@
 // @license      MIT
 // @grant        none
 // ==/UserScript==
+// 0.4.3 (suite v1.18.0, WO-01 round 10): dead-CSS dedupe + spec unification
+// (10c-F08) — the #slideshow-indicator-4ndr0 rule declared `transition`
+// twice; the first (`all 150ms ease-in-out`) was dead weight, always
+// overridden by the later `opacity 0.3s ease-in-out`. The duplicate is
+// collapsed to ONE declaration unified on the 3lectric-Glass spec timing
+// (opacity 150ms ease-in-out) — the style audit's mandated token and the
+// effective behavior now agree (the fade tightens 300 ms → 150 ms, the
+// suite-wide spec value).
 // 0.4.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: YandexImageSearch++.user v0.4.2 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: YandexImageSearch++.user v0.4.3 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 (() => {
     'use strict';
@@ -50,13 +58,12 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: YandexImageSearch++.user
                 font-size: 16px;
                 padding: 5px 10px;
                 border-radius: 5px;
-                transition: all 150ms ease-in-out;
                 z-index: 2147483647; /* Max z-index */
                 pointer-events: none;
                 font-family: 'JetBrains Mono', monospace;
                 text-shadow: 0 0 5px #00E5FF;
                 opacity: 0;
-                transition: opacity 0.3s ease-in-out;
+                transition: opacity 150ms ease-in-out;
             }
             #slideshow-indicator-4ndr0.visible {
                 opacity: 1;

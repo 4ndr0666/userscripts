@@ -1,6 +1,8 @@
 # 4ndr0tools - m3u8++ v4.5 (GUP v5.3 audited)
 
-> **⚠ HISTORICAL DEVLOG — v4.5 arc.** This document is the preserved engineering record of the v4.5 audit cycle; the devlog body below is kept intact as history. The **current shipped script is v5.1.1**, built from `canon/_promoted/4ndr0tools - m3u8++.user.js` into **`dist/4ndr0tools - m3u8++.user.js`** — see [`documentation/INDEX.md`](../INDEX.md) for the live reference. Filenames, version stamps and install-verification steps below refer to the historical v4.5 deliverable, not the current release.
+> **⚠ HISTORICAL DEVLOG — v4.5 arc.** This document is the preserved engineering record of the v4.5 audit cycle; the devlog body below is kept intact as history. The **current shipped script is v5.1.2**, built from `canon/_promoted/4ndr0tools - m3u8++.user.js` into **`dist/4ndr0tools - m3u8++.user.js`** — see [`documentation/INDEX.md`](../INDEX.md) for the live reference. Filenames, version stamps and install-verification steps below refer to the historical v4.5 deliverable, not the current release.
+>
+> **v5.1.2 release addendum (suite v1.18.0, WO-01 round 10):** the cross-frame title handshake gains request-id correlation + a 2 s bound (rapid double-clicks no longer cross-resolve; a top frame that never answers degrades to an empty filename instead of hanging the download await and leaking a listener per click); the duplicate `shownUrls` registration retired; the thatwind fetch proxy no longer re-proxies legitimate 204/206 responses and rethrows Request-object invocations the GM transport cannot carry. The residuals list below is updated where 5.1.2 changed the facts.
 
 **File:** `4ndr0tools-m3u8PlusPlus-v4.5.user.js` — 801 lines, md5 `648ef361c35bc852d9965ef4ab7182a8`
 **Baseline:** your uploaded v4.4 (byte-identical to upstream stable — the audit superset contract is v4.5 ⊇ v4.4)
@@ -46,6 +48,6 @@
 ## Documented residuals (deliberate, non-regressions)
 
 - `shownUrls` grows unboundedly for the page lifetime — by design: FIFO eviction would re-duplicate long-running feeds (dedup correctness > memory; entries are ~100 B).
-- The top-title relay answers any window that posts the magic string (cross-origin `document.title` exposure) — legacy protocol, low sensitivity, unchanged.
+- The top-title relay answers any window that posts the magic string (cross-origin `document.title` exposure) — v5.1.2: the request-id correlation separates concurrent handshakes and bounds the wait at 2 s; the legacy un-correlated shape still answers for mixed-version update windows (the exposure class itself is unchanged, low sensitivity).
 - Proxy 300 s timeout is a compromise: strictly better than hang-forever, still permissive for big segments.
 - Evidence set: the suite's canonical chain — `tools/baseline.json` + `tools/ledger.json` + `canon/EVIDENCE.json` + the Gate A–D machine checks in `tools/validate.mjs` (WO-01 round-2, 6-d F12: this line previously cited a `gup-m3u8/` directory that does not exist in the repository).

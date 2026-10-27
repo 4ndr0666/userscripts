@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Confirmation Bypass
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      4.1.3
+// @version      4.1.4
 // @author       4ndr0666
 // @description  Reveals forum invisi-text, view all replies, rewrite redirect links. Download Gate: bypass all confirmation pages on all sites, glass overlay copy/download URL (incl. vidara embeds on xcandid), auto-solve Altcha, auto-click download. Turbo: embed routing, upload injector. Util: external link safety, right-click scrollbar to top.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -23,6 +23,16 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Confirmation%20Bypass.user.js
 // @license      MIT
 // ==/UserScript==
+// 4.1.4 (suite v1.18.0, WO-01 round 10): the reaction flag becomes
+// PER-WINDOW (10b F04 — the shared pageReacted boolean was the unclosed
+// stale-flag half of the same instance-capture class 9a F04 closed for
+// the observer: unreachable today because click #2 (t≈1900) postdates
+// window #1's close (t≈1500), but any future overlapping window would
+// have let window #1's still-live observer set the flag window #2's re-arm
+// consumed. Each window now carries its own reacted flag on a per-window
+// object; scheduleRearm captures the window armed by ITS click; the
+// self-disconnect timer retires the window object alongside its observer,
+// identity-guarded).
 // 4.1.3 (suite v1.16.0, WO-01 round 9): the reaction window's arming
 // order (9a F01/F04). The 4.1.2 window armed AFTER the five-event dispatch
 // loop — but dispatchEvent runs page click handlers SYNCHRONOUSLY, so a
@@ -84,7 +94,7 @@
 // identities in one console since promotion; 4-c F04); the v4.0.4 suite
 // banner at boot is the single identity.
 // 4.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1.3 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1.4 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px');
 
 
 /* ═══ SUITE PROMOTION 4.0.0 ═══════════════════════════════════════════
@@ -864,7 +874,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
         let obs = null;
         let rearmLabel = ''; // 7b F17: the label at click time — a busy control usually swaps it
         let clickedNode = null; // 8b F07/F16: element identity of click #1
-        let pageReacted = false; // 8b F07: any DOM mutation since click #1
+        let reactionWindow = null; // 10b F04: the ACTIVE per-window reaction flag { reacted } — one per click, retired with its observer
         let reactionObs = null; // 8b F07: the 1.5 s reaction window observer
         let attemptDebounce = null; // 8b F18: 120 ms coalescer (hoisted for the disconnect cleanup)
 
@@ -899,9 +909,15 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
              * window exists to catch. Our own attribute write happened
              * before this line, and synthetic event dispatch generates no
              * records of its own — only page-code reactions land here. */
-            pageReacted = false;
+            /* v4.1.4 (10b F04): the flag is PER-WINDOW — the window object
+             * carries its own reacted state, so a hypothetical overlapping
+             * window's still-live observer can never set the flag a LATER
+             * window's re-arm consumes (the stale-flag half of the 9a F04
+             * instance-capture class). */
+            const win = { reacted: false };
+            reactionWindow = win;
             try {
-                reactionObs = new MutationObserver(() => { pageReacted = true; });
+                reactionObs = new MutationObserver(() => { win.reacted = true; });
                 /* 9a F04: the self-disconnect timer closes over THIS instance —
                  * the shared variable would disconnect whatever observer is
                  * current when the timer fires (safe today only because
@@ -912,6 +928,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
                 window.setTimeout(() => {
                     ro.disconnect();
                     if (reactionObs === ro) reactionObs = null;
+                    if (reactionWindow === win) reactionWindow = null; // 10b F04: retire with its observer
                 }, REARM_MS - 100);
             } catch (reactionError) {
                 console.debug('[4ndr0tools] reaction window unavailable:', reactionError && reactionError.message);
@@ -937,6 +954,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
         // navigating, the handler was not ready — clear the guard and allow
         // exactly one re-click (MAX_CLICKS bounds the loop).
         const scheduleRearm = () => {
+            const myWindow = reactionWindow; // 10b F04: bind THIS click's window — the re-arm consumes its own flag, never a successor's
             window.setTimeout(() => {
                 if (window.location.href === landingHref) {
                     const btn = findButton();
@@ -947,7 +965,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
                      * accidentally-safe (the stale rearmLabel comparison could
                      * only read 'changed'). The re-click requires the SAME node
                      * we clicked AND zero page reaction since. */
-                    if (btn && btn === clickedNode && !pageReacted && !btn.disabled) {
+                    if (btn && btn === clickedNode && !(myWindow && myWindow.reacted) && !btn.disabled) {
                         /* v4.1.1 (7b F17): a Content-Disposition / <a download>
                          * / fetch→blob save NEVER changes location.href — the
                          * old re-arm treated that as 'handler not ready' and

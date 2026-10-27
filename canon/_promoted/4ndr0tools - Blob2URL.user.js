@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Blob2URL
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      7.3.0
+// @version      7.3.1
 // @author       4ndr0666
 // @description  Universal blob exfiltration, universal media URL sniffer + wire capture + URL vault (Alt+Shift+V), interactive asset sniffing, CSP/CORS bypass.
 // @license      MIT
@@ -16,6 +16,12 @@
 // @grant        GM_download
 // @connect      *
 // ==/UserScript==
+// 7.3.1 (suite v1.18.0, WO-01 round 10): registry-truth pair from the rotation
+// audit — IG.autoSaved (the instagram.com auto-download dedupe Set) is now
+// bounded at 500 with FIFO eviction mirroring merge()'s entries/index cap,
+// closing the one unbounded registry in the script (10b-F13); the boot
+// banner stamps the live version (blob2url_v7.3.1_ONLINE — it still reported
+// v7.1 against @version 7.3.0, 10b-F14).
 
 
 /* ═══ SUITE PROMOTION 7.0.0 ═══════════════════════════════════════════
@@ -888,6 +894,7 @@
                 for (const e of fresh) if (e.kind === 'progressive' && (!best || e.type < best.type)) best = e;
                 if (best && !this.autoSaved.has(best.url)) {
                     this.autoSaved.add(best.url);
+                    if (this.autoSaved.size > 500) { const it = this.autoSaved.values(); this.autoSaved.delete(it.next().value); }
                     this.saveUrl(best.url, best.code);
                 }
             }
@@ -1288,5 +1295,5 @@
         deploy(); // Initial scan
     });
 
-    log("Ψ-4ndr0tools - blob2url_v7.1_ONLINE // 3LECTRIC-GLASS // GUP-G1..G5 + U1..U4");
+    log("Ψ-4ndr0tools - blob2url_v7.3.1_ONLINE // 3LECTRIC-GLASS // GUP-G1..G5 + U1..U4");
 })();

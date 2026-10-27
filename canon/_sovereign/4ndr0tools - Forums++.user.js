@@ -3,7 +3,7 @@
 // @name        4ndr0tools - Forums++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     1.13.4
+// @version     1.13.5
 // @description Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @match       https://simpcity.su/threads/*
@@ -150,6 +150,20 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Forums++.user.js
 // @license      MIT
 // ==/UserScript==
+// 1.13.5 (suite v1.18.0, WO-01 round 10): three audit one-liners. (1) The
+// HEAD-SLICE sniff widens 4096→8192 bytes (10b F01 — a 4096-byte slice of
+// CJK/emoji content decodes to only ~1366 chars, letting a marker at char
+// position ~1400 escape the 2048-char window the test reads; 8192 covers the
+// 4-byte worst case, still trivially cheap). (2) The zip arms' FileSaver
+// fallback gains its own guard (10b F03 — an @require failure made the
+// catch itself throw, degrading the guard to downloadPostGuarded's wrapper;
+// the fallback now logs instead). (3) http.base gains onabort (10c F04 — an
+// externally aborted GM request hung the resolver promise forever; timeout
+// covered, abort did not). Truth note for the record: the r9 commit message
+// claimed the zip arms gained 'the try/catch + FileSaver fallback the
+// per-file arm has had since 1.13.3' — the per-file arm's catch is
+// count+settle only; the FileSaver-in-catch was NEW for the zip arms
+// (attribution drift, code sound).
 // 1.13.4 (suite v1.16.0, WO-01 round 9): the two audit one-liners
 // (9a F02/F05) + the disposition truth pass. The 1.13.3 headerless-body
 // sniff admission fed the WHOLE blob to blob.text() to inspect 2048 chars
@@ -311,7 +325,7 @@
 // Content-Disposition filename decodeURIComponent site degrades losslessly
 // on malformed input instead of throwing (4-c F05).
 // 1.9.2 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Forums++.user v1.13.4 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Forums++.user v1.13.5 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 /* global JSZip, tippy, GM_xmlhttpRequest, saveAs, sha256, GM_download, GM_getValue, GM_setValue, GM_addValueChangeListener, GM_openInTab, GM_cookie, GM_deleteValue */
 
@@ -731,6 +745,9 @@ const h = {
                         reject(error);
                     },
                     ontimeout: () => reject(new Error('Request timed out (20s)')),
+                    /* v1.13.5 (10c F04): a manager-aborted request must settle
+                     * the resolver — timeout covered this, abort did not. */
+                    onabort: () => reject(new Error('Request aborted')),
                 });
             });
         },
@@ -6469,7 +6486,11 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                              * test reads). */
                             if (postSettings.verifyBunkrLinks && size > 0 && (size <= tinyLimit || !contentType)) {
                                 recoveryArmed = true;
-                                blob.slice(0, 4096).text().then(t => {
+                                /* v1.13.5 (10b F01): 8192 bytes covers the 2048-char
+                                 * window at the 4-byte worst case — a 4096-byte CJK
+                                 * slice decodes to ~1366 chars and could drop a
+                                 * marker inside the window the test reads. */
+                                blob.slice(0, 8192).text().then(t => {
                                     const head = String(t || '').slice(0, 2048).toLowerCase();
                                     /* v1.13.2 (7d F26): a strong marker alone, or ≥2
                                      * weak ones — a single 'cloudflare' byte sequence
@@ -6773,14 +6794,16 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                         onerror: response => {
                             log.post.error(postId, `Error writing zipped file to disk: ${response.error} - ${response.details}`, postNumber);
                             console.log('Trying to write using FileSaver.js...');
-                            saveAs(blob, filename); // Fallback for GM_download errors
+                            try { saveAs(blob, filename); } catch (fsErr) { log.post.error(postId, `FileSaver fallback failed: ${fsErr && fsErr.message}`, postNumber); } // Fallback for GM_download errors (guarded v1.13.5, 10b F03)
                             URL.revokeObjectURL(zipUrl);
                         },
                     });
                 } catch (zipDispatchError) {
                     log.post.error(postId, `Zip dispatch failed: ${zipDispatchError && zipDispatchError.message}`, postNumber);
                     console.log('Trying to write using FileSaver.js...');
-                    saveAs(blob, filename);
+                    /* v1.13.5 (10b F03): FileSaver itself may be missing
+                     * (@require failure) — the guard's catch must not throw. */
+                    try { saveAs(blob, filename); } catch (fsErr) { log.post.error(postId, `FileSaver fallback failed: ${fsErr && fsErr.message}`, postNumber); }
                     URL.revokeObjectURL(zipUrl);
                 }
             } else if (postSettings.generateLog || postSettings.generateLinks) {
@@ -6799,14 +6822,15 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                              * fallback its sibling has had since v1.12.1 — a GM_download
                              * error silently dropped the log/links artifacts before. */
                             console.log('Trying to write using FileSaver.js...');
-                            saveAs(blob, `${title} #${postNumber} - generated.zip`);
+                            try { saveAs(blob, `${title} #${postNumber} - generated.zip`); } catch (fsErr) { log.post.error(postId, `FileSaver fallback failed: ${fsErr && fsErr.message}`, postNumber); }
                             URL.revokeObjectURL(genUrl);
                         },
                     });
                 } catch (genDispatchError) {
                     log.post.error(postId, `Generated.zip dispatch failed: ${genDispatchError && genDispatchError.message}`, postNumber);
                     console.log('Trying to write using FileSaver.js...');
-                    saveAs(blob, `${title} #${postNumber} - generated.zip`);
+                    /* v1.13.5 (10b F03): the sibling's FileSaver guard, mirrored. */
+                    try { saveAs(blob, `${title} #${postNumber} - generated.zip`); } catch (fsErr) { log.post.error(postId, `FileSaver fallback failed: ${fsErr && fsErr.message}`, postNumber); }
                     URL.revokeObjectURL(genUrl);
                 }
             }

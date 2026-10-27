@@ -2,7 +2,7 @@
 // @author       4ndr0666
 // @name        4ndr0tools - Login Form Autofiller
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version     2.0.8
+// @version     2.0.9
 // @description It integrates BugMeNot into any login form (it retrieves all matching logins from bugmenot.com and autofills the login form)
 // @authors     4ndr0666
 // @icon        data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -21,6 +21,16 @@
 // @noframes
 // @run-at      document-idle
 // ==/UserScript==
+// 2.0.9 (suite v1.18.0, WO-01 round 10): the element-identity binding
+// (10c F06 — field binding lived on LIVE input indices: an SPA re-render
+// that shifted the input array made the menu click read/write credentials
+// into the WRONG field (getLogin re-resolved allInputs[staleIdx]), left
+// swapped nodes permanently unwrapped (the index-keyed guard skipped them),
+// and mis-keyed menu visibility. Sibling refs, the wrapper ref, and the
+// get-login link now bind by element identity at injection time —
+// __bmnUsernameField/__bmnPwField/__bmnWrapper expandos — and the guard
+// is a WeakSet of elements. The index attributes and getBmnWrapper's
+// by-ID resolution retired with the reads.)
 // 2.0.8 (suite v1.14.0, WO-01 round 6): @connect bugmenot.com — the connect
 // census's zero-declaration flag (2d F01) caught the live GM.xmlHttpRequest
 // transport hitting bugmenot.com with no declaration (the old census skipped
@@ -42,7 +52,7 @@
 // GM3-era engines (EOL 2017) lose support. Pure attack-surface removal: no
 // third-party remote code executing with the script's grants (3-c F08, closed).
 // 2.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Login Form Autofiller.user v2.0.8 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Login Form Autofiller.user v2.0.9 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 /* global GM */
 
@@ -79,7 +89,10 @@ var counter;
 // FIX (SPA): Tracks which username field indices have had a BugMeNot wrapper
 // injected, preventing the MutationObserver from double-injecting.
 // ---------------------------------------------------------------------------
-var injectedUsernameIndices = new Set();
+/* 2.0.9 (10c F06): element-keyed — an index key went stale on SPA
+ * re-renders (a swapped node at the same index was skipped; a shifted
+ * index targeted the wrong field). */
+var injectedUsernameFields = new WeakSet();
 
 // ---------------------------------------------------------------------------
 // TWO-PHASE STATE
@@ -288,21 +301,12 @@ function setNativeValue(field, value) {
 
 
 // ---------------------------------------------------------------------------
-// getBmnWrapper — retrieves the BugMeNot UI panel by username-field index
-// ---------------------------------------------------------------------------
-function getBmnWrapper(usernameFieldIndex) {
-    return document.getElementById('reify-bugmenot-bmnWrapper' + usernameFieldIndex);
-}
-
-
-// ---------------------------------------------------------------------------
 // updateGetLoginLinkLabel
 //
 // FIX (dynamic label): Rebuilds the "Get login" button text after each
 // successful injection. Injects "Reset counter" link on first counter advance.
 // ---------------------------------------------------------------------------
-function updateGetLoginLinkLabel(usernameFieldIndex) {
-    var bmnWrapper = getBmnWrapper(usernameFieldIndex);
+function updateGetLoginLinkLabel(bmnWrapper) {
     if (!bmnWrapper) return;
 
     var anchors = bmnWrapper.getElementsByTagName('a');
@@ -328,16 +332,18 @@ function updateGetLoginLinkLabel(usernameFieldIndex) {
         getLoginAnchor.appendChild(document.createTextNode(newText));
         getLoginAnchor.title = newTitle;
 
+        /* 2.0.9 (10c F06): the reset link's identity derives from the bound
+         * wrapper's own id — the injection-time index survives there. */
+        var idxPart = String(bmnWrapper.id || '').replace(/^reify-bugmenot-bmnWrapper/, '');
         if (currentCounter > 0 &&
-                !document.getElementById('reify-bugmenot-resetLink' + usernameFieldIndex)) {
+                !document.getElementById('reify-bugmenot-resetLink' + idxPart)) {
             var resetCounterLink = menuLink(
                 '', 'Reset login attempt counter',
                 'Resets the login attempt counter (reloads the page)',
                 resetCounterLink_onclick, Style.menuLink,
-                usernameFieldIndex, -1,
                 menuLink_onmouseover, menuLink_onmouseout
             );
-            resetCounterLink.id = 'reify-bugmenot-resetLink' + usernameFieldIndex;
+            resetCounterLink.id = 'reify-bugmenot-resetLink' + idxPart;
             var resetCounterLinkWrapper = menuEntry(resetCounterLink, Style.menuLinkWrapper);
             var firstChild = bmnWrapper.firstChild;
             if (firstChild && firstChild.nextSibling) {
@@ -424,7 +430,7 @@ function attemptPhase2PasswordInjection() {
 // FIX 1: continue unconditional when field unusable; DEBUG gates log only.
 // FIX 2: counter guaranteed initialized before first call.
 // FIX 7: myprompt/myprompt2 declared with let in outer scope.
-// FIX (SPA): injectedUsernameIndices prevents double-injection.
+// FIX (SPA): the injected-fields WeakSet prevents double-injection (2.0.9: element-keyed).
 // FIX (visibility): Only visible fields processed — skips hidden duplicates.
 // ---------------------------------------------------------------------------
 function processLoginFields() {
@@ -446,7 +452,7 @@ function processLoginFields() {
 
             if (fieldType !== 'email' && fieldType !== 'text') continue;
             if (!Utility.isVisible(field)) continue;
-            if (injectedUsernameIndices.has(i)) continue;
+            if (injectedUsernameFields.has(field)) continue; // 10c F06: element identity, not array position
 
             var usernameField = field;
             var usernameIndex = i;
@@ -454,16 +460,12 @@ function processLoginFields() {
             var pwField       = passwordIndex !== -1 ? allInputs[passwordIndex] : null;
 
             usernameField.blur();
-            usernameField.setAttribute('usernameInputIndex', usernameIndex);
-            usernameField.setAttribute('passwordInputIndex', passwordIndex);
             Utility.addEventHandler(usernameField, 'focus', usernameField_onfocus);
             Utility.addEventHandler(usernameField, 'blur',  usernameField_onblur);
 
             if (pwField) {
                 Utility.addEventHandler(pwField, 'focus', pwField_onfocus);
                 Utility.addEventHandler(pwField, 'blur',  pwField_onblur);
-                pwField.setAttribute('usernameInputIndex', usernameIndex);
-                pwField.setAttribute('passwordInputIndex', passwordIndex);
             }
 
             let myprompt, myprompt2;
@@ -485,7 +487,6 @@ function processLoginFields() {
             var getLoginLink = menuLink(
                 bmnUri, myprompt, myprompt2,
                 getLoginLink_onclick, Style.menuLink,
-                usernameIndex, passwordIndex,
                 menuLink_onmouseover, menuLink_onmouseout
             );
             var getLoginLinkWrapper = menuEntry(getLoginLink, Style.menuLinkWrapper);
@@ -500,7 +501,6 @@ function processLoginFields() {
                     '', 'Reset login attempt counter',
                     'Resets the login attempt counter (reloads the page)',
                     resetCounterLink_onclick, Style.menuLink,
-                    usernameIndex, passwordIndex,
                     menuLink_onmouseover, menuLink_onmouseout
                 );
                 resetCounterLink.id = 'reify-bugmenot-resetLink' + usernameIndex;
@@ -512,7 +512,6 @@ function processLoginFields() {
                 bmnUri, 'More options',
                 'See more options for getting logins from BugMeNot.com (opens a new window)',
                 openMenuLink_onclick, Style.menuLink,
-                usernameIndex, passwordIndex,
                 menuLink_onmouseover, menuLink_onmouseout
             );
             var fullFormLinkWrapper = menuEntry(fullFormLink, Style.menuLinkWrapper);
@@ -521,7 +520,6 @@ function processLoginFields() {
                 bmnHomeUri, 'Visit BugMeNot',
                 'Go to the BugMeNot home page (opens a new window)',
                 openMenuLink_onclick, Style.menuLink,
-                usernameIndex, passwordIndex,
                 menuLink_onmouseover, menuLink_onmouseout
             );
             var visitBmnLinkWrapper = menuEntry(visitBmnLink, Style.menuLinkWrapper);
@@ -529,10 +527,22 @@ function processLoginFields() {
             bmnWrapper.appendChild(fullFormLinkWrapper);
             bmnWrapper.appendChild(visitBmnLinkWrapper);
 
+            /* 2.0.9 (10c F06): the element-identity binding — sibling refs,
+             * the wrapper ref, and the get-login link bind at injection
+             * time; every later consumer reads these, never a re-resolved
+             * live index (an SPA shift used to land credentials in the
+             * wrong field and orphan the menu). */
+            usernameField.__bmnPwField = pwField || null;
+            if (pwField) pwField.__bmnUsernameField = usernameField;
+            getLoginLink.__bmnUsernameField = usernameField;
+            getLoginLink.__bmnPwField = pwField;
+            usernameField.__bmnWrapper = bmnWrapper;
+            if (pwField) pwField.__bmnWrapper = bmnWrapper;
+
             copyProperties(bmnWrapper.style, Style.bmnWrapper);
             bmnContainer.appendChild(bmnWrapper);
 
-            injectedUsernameIndices.add(usernameIndex);
+            injectedUsernameFields.add(usernameField);
 
             if (DEBUG) {
                 console.log('BugMeNot: Attached to username field', usernameIndex,
@@ -555,15 +565,14 @@ function menuEntry(linkEl, styleObj) {
 
 
 // ---------------------------------------------------------------------------
-// menuLink — constructs a styled <a> element with all required attributes
+// menuLink — constructs a styled <a> element (2.0.9: the index params
+// retired with the index binding — identity travels on the element refs)
 // ---------------------------------------------------------------------------
-function menuLink(href, text, title, onclick, styleObj, usernameInputIndex, passwordInputIndex, onmouseover, onmouseout) {
+function menuLink(href, text, title, onclick, styleObj, onmouseover, onmouseout) {
     var newMenuLink = document.createElement('a');
     newMenuLink.href = href;
     newMenuLink.appendChild(document.createTextNode(text));
     newMenuLink.title = title;
-    newMenuLink.setAttribute('usernameInputIndex', usernameInputIndex);
-    newMenuLink.setAttribute('passwordInputIndex', passwordInputIndex);
     Utility.addEventHandler(newMenuLink, 'click',     onclick);
     Utility.addEventHandler(newMenuLink, 'mouseover', onmouseover);
     Utility.addEventHandler(newMenuLink, 'mouseout',  onmouseout);
@@ -592,13 +601,15 @@ function menuLink_onmouseout(event) {
 // getLoginLink_onclick — triggers credential fill; prompts before overwrite
 // ---------------------------------------------------------------------------
 function getLoginLink_onclick(event) {
-    var allInputs = document.getElementsByTagName('input');
-    var unIdx = this.getAttribute('usernameInputIndex');
-    var pwIdx = this.getAttribute('passwordInputIndex');
-    var unVal = allInputs[unIdx] ? allInputs[unIdx].value : '';
-    var pwVal = (pwIdx !== '-1' && allInputs[pwIdx]) ? allInputs[pwIdx].value : '';
+    /* 2.0.9 (10c F06): element refs bound at construction — the old index
+     * re-resolution read credentials from whatever field the SPA had
+     * shifted into the recorded position. */
+    var unField = this.__bmnUsernameField || null;
+    var pwField = this.__bmnPwField || null;
+    var unVal = unField ? unField.value : '';
+    var pwVal = pwField ? pwField.value : '';
     if ((!pwVal.length && !unVal.length) || confirm('Overwrite the current login entry?')) {
-        getLogin(bmnUri, unIdx, pwIdx);
+        getLogin(bmnUri, unField, pwField);
     }
     menuLink_onmouseout({ currentTarget: this });
     event.preventDefault && event.preventDefault();
@@ -640,39 +651,31 @@ function usernameField_onfocus(event) {
     event = event || window.event;
     var target = event.currentTarget || event.srcElement;
     target.setAttribute('hasFocus', true);
-    var unIdx = target.getAttribute('usernameInputIndex');
-    showHideBmnWrapper(unIdx, target, true);
+    showHideBmnWrapper(target.__bmnWrapper, target, true); // 10c F06: bound wrapper, not index lookup
 }
 
 function usernameField_onblur(event) {
-    var allInputs = document.getElementsByTagName('input');
     event = event || window.event || this;
     var target = event.currentTarget || event.srcElement;
     target.setAttribute('hasFocus', false);
-    var unIdx = target.getAttribute('usernameInputIndex');
-    var pwIdx = target.getAttribute('passwordInputIndex');
-    var pwField = (pwIdx !== '-1' && allInputs[pwIdx]) ? allInputs[pwIdx] : null;
-    var fRef = hideIfNoFocus(target, pwField, unIdx);
+    var pwField = target.__bmnPwField || null; // 10c F06: bound sibling, not index re-resolution
+    var fRef = hideIfNoFocus(target, pwField, target.__bmnWrapper);
     setTimeout(fRef, BLUR_TIMEOUT);
 }
 
 function pwField_onfocus(event) {
-    var allInputs = document.getElementsByTagName('input');
     event = event || window.event;
     var target = event.currentTarget || event.srcElement;
     target.setAttribute('hasFocus', true);
-    var unIdx = target.getAttribute('usernameInputIndex');
-    showHideBmnWrapper(unIdx, allInputs[unIdx], true);
+    showHideBmnWrapper(target.__bmnWrapper, target.__bmnUsernameField || target, true); // 10c F06: bound refs — position off the username field when live
 }
 
 function pwField_onblur(event) {
-    var allInputs = document.getElementsByTagName('input');
     event = event || window.event;
     var target = event.currentTarget || event.srcElement;
     target.setAttribute('hasFocus', false);
-    var unIdx = target.getAttribute('usernameInputIndex');
-    var unField = allInputs[unIdx];
-    var fRef = hideIfNoFocus(unField, target, unIdx);
+    var unField = target.__bmnUsernameField || null; // 10c F06: bound sibling, not index re-resolution
+    var fRef = hideIfNoFocus(unField, target, target.__bmnWrapper);
     setTimeout(fRef, BLUR_TIMEOUT);
 }
 
@@ -681,7 +684,7 @@ function pwField_onblur(event) {
 // hideIfNoFocus — deferred closure that collapses the wrapper if neither
 // field has focus. pwField may be null for multi-step forms.
 // ---------------------------------------------------------------------------
-function hideIfNoFocus(usernameField, pwField, usernameIndex) {
+function hideIfNoFocus(usernameField, pwField, bmnWrapper) {
     return (function () {
         var bUsernameFocus = usernameField ? usernameField.getAttribute('hasFocus') : false;
         if (typeof bUsernameFocus === 'string') {
@@ -692,18 +695,18 @@ function hideIfNoFocus(usernameField, pwField, usernameIndex) {
             bPasswordFocus = (bPasswordFocus && bPasswordFocus !== 'false');
         }
         if (!bUsernameFocus && !bPasswordFocus) {
-            showHideBmnWrapper(usernameIndex, usernameField, false);
+            showHideBmnWrapper(bmnWrapper, usernameField, false);
         }
     });
 }
 
 
 // ---------------------------------------------------------------------------
-// showHideBmnWrapper — toggles wrapper visibility; keyed to usernameIndex.
+// showHideBmnWrapper — toggles wrapper visibility; takes the BOUND wrapper
+// element (10c F06 — the by-index ID lookup retired with the index binding).
 // FIX 12: Reset loop targets <a> elements (not <div>).
 // ---------------------------------------------------------------------------
-function showHideBmnWrapper(usernameIndex, referenceField, show) {
-    var bmnWrapper = getBmnWrapper(usernameIndex);
+function showHideBmnWrapper(bmnWrapper, referenceField, show) {
     if (!bmnWrapper) return;
     if (show) {
         bmnWrapper.style.display = 'block';
@@ -750,14 +753,10 @@ function positionBmnWrapper(bmnWrapper, anchorField) {
 // FIX (Angular/React/MegaPass): All field writes via setNativeValue().
 // FIX (dynamic label): updateGetLoginLinkLabel called after injection.
 // ---------------------------------------------------------------------------
-function getLogin(uri, usernameInputIndex, passwordInputIndex) {
+function getLogin(uri, usernameField, pwField) {
     (async function () {
-        var allInputs     = document.getElementsByTagName('input');
-        var usernameField = allInputs[usernameInputIndex];
-        var pwField       = (passwordInputIndex !== '-1' && passwordInputIndex !== -1)
-                            ? allInputs[passwordInputIndex]
-                            : null;
-
+        /* 2.0.9 (10c F06): the fields arrive BOUND — no live-index
+         * re-resolution (an SPA shift used to swap the target here). */
         waitOrRestoreFields(usernameField, false);
 
         var firstAttempt = (retrievals === 0);
@@ -845,7 +844,7 @@ function getLogin(uri, usernameInputIndex, passwordInputIndex) {
                     GM.setValue('counter', counter);
                     GM.setValue('lastURL', String(window.location));
 
-                    updateGetLoginLinkLabel(usernameInputIndex);
+                    updateGetLoginLinkLabel(usernameField.__bmnWrapper); // 10c F06: the bound wrapper
                 }
                 // v2.0.4 (WO-01 round 3, 3-c F06): the trailing duplicate
                 // `onerror` key was removed — the v2.0.3 transport hardening
@@ -886,7 +885,7 @@ function getLogin(uri, usernameInputIndex, passwordInputIndex) {
             GM.setValue('counter', counter);
             GM.setValue('lastURL', String(window.location));
 
-            updateGetLoginLinkLabel(usernameInputIndex);
+            updateGetLoginLinkLabel(usernameField.__bmnWrapper); // 10c F06: the bound wrapper
         }
     })();
 }

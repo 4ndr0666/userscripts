@@ -62,12 +62,12 @@
   {
    "file": "4ndr0tools - Akasha Silence.user.js",
    "name": "4ndr0tools - Akasha Silence",
-   "version": "5.2.3",
+   "version": "5.2.4",
    "description": "Unified counter-surveillance defense layer with a three-stage strictness valve (full / core / off via Ctrl+Alt+Shift+K). Three-way consolidation of Anti-detection + Counter-surveillance + Anti-telemetry (ICC): anti-analysis script neutralization, telemetry sinkholing (fetch/XHR/beacon/WebSocket), WebRTC blinding, session-stable fingerprint spoofing (hardware/canvas/WebGL/audio), identifier poisoning, Google link-tracking sanitization and hostile-UI countermeasures.",
    "family": "privacy & security",
-   "sha256": "a0edfe8c0657a84e9d5a3d94c6fe02a190387ae5d101a35fa129b89f9aa13201",
-   "lines": 2164,
-   "bytes": 118250,
+   "sha256": "cbe7ef984ad6efe7fd21e427228127a4b2fb7e3228966b17d3c46b7a95330626",
+   "lines": 2178,
+   "bytes": 119291,
    "matches": [
     "*://*/*"
    ],
@@ -152,12 +152,12 @@
   {
    "file": "4ndr0tools - Blob2URL.user.js",
    "name": "4ndr0tools - Blob2URL",
-   "version": "7.3.0",
+   "version": "7.3.1",
    "description": "Universal blob exfiltration, universal media URL sniffer + wire capture + URL vault (Alt+Shift+V), interactive asset sniffing, CSP/CORS bypass.",
    "family": "media & links",
-   "sha256": "3ab011f0446dd9522ead1b86219b82ccb268d056bc33ffc1b099daeed9305ca3",
-   "lines": 2461,
-   "bytes": 143389,
+   "sha256": "0f7712ddf72b54a6f24c0e5919cc9955514f6ed39917b4d5f0155aa24d3023dc",
+   "lines": 2468,
+   "bytes": 143950,
    "matches": [
     "*://*/*"
    ],
@@ -416,12 +416,12 @@
   {
    "file": "4ndr0tools - Confirmation Bypass.user.js",
    "name": "4ndr0tools - Confirmation Bypass",
-   "version": "4.1.3",
+   "version": "4.1.4",
    "description": "Reveals forum invisi-text, view all replies, rewrite redirect links. Download Gate: bypass all confirmation pages on all sites, glass overlay copy/download URL (incl. vidara embeds on xcandid), auto-solve Altcha, auto-click download. Turbo: embed routing, upload injector. Util: external link safety, right-click scrollbar to top.",
    "family": "forums",
-   "sha256": "7284268e130ad777ceab61a62308c781c41f4d3f59d86114c26d3f41393d889f",
-   "lines": 1395,
-   "bytes": 76196,
+   "sha256": "26a82305aef54fec8276aeda6ab19ac97ae0ecb104afd0b19b8f706d8f0eb836",
+   "lines": 1413,
+   "bytes": 77596,
    "matches": [
     "*://forums.socialmediagirls.com/*",
     "*://forums.socialmediagirls.com/goto/link-confirmation*",
@@ -484,12 +484,12 @@
   {
    "file": "4ndr0tools - Forum Link Xtractor.user.js",
    "name": "4ndr0tools - Forum Link Xtractor",
-   "version": "3.2.3",
+   "version": "3.2.4",
    "description": "Link xtractor, Invisitext revealer, and inline post reply viewer.",
    "family": "forums",
-   "sha256": "c4ee9494fc16bca121b46518468181e586d48d12fcd74aa2e8694ac56a9a3ac1",
-   "lines": 821,
-   "bytes": 41972,
+   "sha256": "ad7826e5bb032677969f674c40589982b49fd9fdcb242a671d5809afcb31bd35",
+   "lines": 831,
+   "bytes": 42607,
    "matches": [
     "*://forums.socialmediagirls.com/*",
     "*://simpcity.su/*",
@@ -522,12 +522,12 @@
   {
    "file": "4ndr0tools - Forums++.user.js",
    "name": "4ndr0tools - Forums++",
-   "version": "1.13.4",
+   "version": "1.13.5",
    "description": "Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.",
    "family": "forums",
-   "sha256": "2629beecd294ac5bedaed572de1c022d9c5e328f6342d34bd3b1f673285272ce",
-   "lines": 8461,
-   "bytes": 405493,
+   "sha256": "d64fe671c7d98822161c74a35fef5356ebd69d52188201bbada3625dfb01c7dc",
+   "lines": 8485,
+   "bytes": 407812,
    "matches": [
     "https://simpcity.su/threads/*",
     "https://simpcity.cr/threads/*",
@@ -821,12 +821,12 @@
   {
    "file": "4ndr0tools - Images++.user.js",
    "name": "4ndr0tools - Images++",
-   "version": "4.0.5",
+   "version": "4.0.6",
    "description": "Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. Collapse-mode hotkey is configurable.",
    "family": "images",
-   "sha256": "e62972656994f472b16659982c3abca26cabc696c90f54571ac977d382a5a9f6",
-   "lines": 4645,
-   "bytes": 140238,
+   "sha256": "8665e1923cb6dfe744e3d376b5b15b6ec6cb57af4df851a6dd09c947e0763c0e",
+   "lines": 4656,
+   "bytes": 140840,
    "matches": [
     "*://*/*"
    ],
@@ -963,12 +963,12 @@
   {
    "file": "4ndr0tools - Login Form Autofiller.user.js",
    "name": "4ndr0tools - Login Form Autofiller",
-   "version": "2.0.8",
+   "version": "2.0.9",
    "description": "It integrates BugMeNot into any login form (it retrieves all matching logins from bugmenot.com and autofills the login form)",
    "family": "ux utilities",
-   "sha256": "f97293e3d325f542c6c756c2d3de08c42eadc3b4569620a2b94ec0c24f929203",
-   "lines": 1031,
-   "bytes": 45822,
+   "sha256": "c1e7df26a3bfc08f5d28b7bf023052004d8c44f8a571a11c5b31096d9d733724",
+   "lines": 1030,
+   "bytes": 46406,
    "matches": [],
    "includes": [
     "http://*",
@@ -998,12 +998,12 @@
   {
    "file": "4ndr0tools - Maximize_Any_Media.user.js",
    "name": "4ndr0tools - Maximize_Any_Media",
-   "version": "2.0.1",
+   "version": "2.0.2",
    "description": "Maximize + Pip controls to any media anywhere - video, images, embedded and shadow-DOM players, on any site. 3lectric-Glass spec. Ψ",
    "family": "video & players",
-   "sha256": "c06857d7556fbcae2b11101602ff2f602a04fc1e16e45ddabe8da0891125a911",
-   "lines": 1231,
-   "bytes": 50083,
+   "sha256": "b6ef42fbc8c87f7f1c896e61e2fe112b8dba2aa4d2eba6bd248259b62e0c383e",
+   "lines": 1244,
+   "bytes": 50886,
    "matches": [],
    "includes": [
     "*"
@@ -1029,12 +1029,12 @@
   {
    "file": "4ndr0tools - Media Player Controller.user.js",
    "name": "4ndr0tools - Media Player Controller",
-   "version": "8.1.3",
+   "version": "8.1.4",
    "description": "Speed • Fine Rate ±0.1 • Alt+Shift rAF Zoom/Pan • Rotation • Smart Maximize • Native Fullscreen • PiP • Play • DblClick • Pause-on-Acquire • Virtual DOM Nodes • Shadow-DOM Discovery • Cyan-Glass Scrub Bar • Download Button (fetch + blob capture) • Screenshot • Volume/Mute • Frame Step • Seek Hotkeys • IG Story Nav (3-Layer) • Story Repeat (3-Layer) • Active-Media Observer • YouTube Ad Auto-Skip • Toast Feedback • Draggable HUD • Full Hotkey Suite",
    "family": "video & players",
-   "sha256": "e43914a65873840629ce89cae9fa3a6aa43de00e430ad6e78ff3684b6918f2f8",
-   "lines": 2696,
-   "bytes": 117078,
+   "sha256": "d9a9985117b70468788920d9daf24a2cf49d414ba56220cd78da6b3f08e5ca1b",
+   "lines": 2725,
+   "bytes": 118838,
    "matches": [
     "*://*/*"
    ],
@@ -1058,12 +1058,12 @@
   {
    "file": "4ndr0tools - ModelSearch.user.js",
    "name": "4ndr0tools - ModelSearch",
-   "version": "4.0.3",
+   "version": "4.0.4",
    "description": "Covert SimpCity search UI directly from any website. (Electric-Glass + Alt+S Hotkey Only)",
    "family": "forums",
-   "sha256": "018325f464d98c916959f27b47a32c668be3b2cd983d2d35f4a60d63a6d16de0",
-   "lines": 519,
-   "bytes": 24379,
+   "sha256": "080c43c892afc5ae969a52c31e933d5c99a055dbd0d67195c4eba7e7e2179c03",
+   "lines": 530,
+   "bytes": 25206,
    "matches": [
     "*://*/*"
    ],
@@ -1118,12 +1118,12 @@
   {
    "file": "4ndr0tools - Pixeldrain++.user.js",
    "name": "4ndr0tools - Pixeldrain++",
-   "version": "1.2.2",
+   "version": "1.2.3",
    "description": "Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.",
    "family": "media & links",
-   "sha256": "7bd2992153b3331c427ea7d7272577da995d438c740d97abf90573a59a6db8e0",
-   "lines": 3778,
-   "bytes": 210288,
+   "sha256": "2b2536617b879407c6a670c6b5a85b6d86f8431dfc669f8f63335e0b85305316",
+   "lines": 3797,
+   "bytes": 211761,
    "matches": [
     "https://pixeldrain.com/*",
     "https://pixeldrain.net/*",
@@ -1290,12 +1290,12 @@
   {
    "file": "4ndr0tools - Stream Interceptor.user.js",
    "name": "4ndr0tools - Stream Interceptor",
-   "version": "3.3.0",
+   "version": "3.3.1",
    "description": "Intercepts, parses, and extracts stream tokens, manifests, and direct video sources via the suite's shared NetHook hub and DOM inspection. Suite v3.3: the v3.1 dual-realm fetch/XHR hooks ride the shared NetHook singleton (malformed-SVG veto, asset discovery, deep text inspection); ShadowDOM piercing, ReDoS-proof regex, 3lectric-Glass card surface, universal URL registry cap.",
    "family": "media & links",
-   "sha256": "fe5b47bf4c85801de401258ed47670c7308472de9d5a32d9501d2210a7c912f2",
-   "lines": 2000,
-   "bytes": 106287,
+   "sha256": "814fb8a93664ec109e9bfc71ad90ca7ddb1d7df6ca18a99c6c9e4a7a0f2825e1",
+   "lines": 2013,
+   "bytes": 107144,
    "matches": [
     "*://*/*"
    ],
@@ -1415,12 +1415,12 @@
   {
    "file": "4ndr0tools - YandexImageSearch++.user.js",
    "name": "4ndr0tools - Yandex Image Search++",
-   "version": "0.4.2",
+   "version": "0.4.3",
    "description": "Robust, event-driven slideshow, fullscreen preview, and on-screen status for Yandex reverse-image search.",
    "family": "images",
-   "sha256": "f212b800260ac764f074464a1663960e400d102e58176c6b54909e85b11ea6b5",
-   "lines": 288,
-   "bytes": 12216,
+   "sha256": "6b95b417ad9527aa4f484526404691c6098a173da32718c572c55011712c9ac9",
+   "lines": 295,
+   "bytes": 12711,
    "matches": [
     "*://yandex.com/images/*",
     "*://yandex.ru/images/*"
@@ -1500,12 +1500,12 @@
   {
    "file": "4ndr0tools - Youtube Removed Video Revealer.user.js",
    "name": "4ndr0tools - Youtube Removed Video Revealer",
-   "version": "2.0.3",
+   "version": "2.0.4",
    "description": "Restores titles for removed or private videos in YouTube playlists",
    "family": "video & players",
-   "sha256": "62bcf1ee3d3397da1cc2479786c229fb3baa3703b20cf154192cecd5f8601e73",
-   "lines": 610,
-   "bytes": 29930,
+   "sha256": "c1868fbb3eb01c71d1159308f6715fd231a345142c01345c19500db54afd0fc7",
+   "lines": 626,
+   "bytes": 30782,
    "matches": [
     "*://*.youtube.com/*"
    ],
@@ -1562,12 +1562,12 @@
   {
    "file": "4ndr0tools - m3u8++.user.js",
    "name": "4ndr0tools - m3u8++",
-   "version": "5.1.1",
+   "version": "5.1.2",
    "description": "Automatically displays the m3u8 url for ANY video playing in the top right corner of the video. Click url to copy or click download to use the webapp \"tools.thatwind.com\". Also injects Play buttons next to magnet links on every page, relaying them to www.diancigaoshou.com.",
    "family": "media & links",
-   "sha256": "418e0936bd220b177b5ed11a243f6707fc0f1381dea6d658de7826ea2ee21d4b",
-   "lines": 2019,
-   "bytes": 104209,
+   "sha256": "a320f1769c7fc4ae42ff147031071c9387b518f2016f7bf4edda201e4f103140",
+   "lines": 2068,
+   "bytes": 107607,
    "matches": [
     "*://*/*"
    ],
@@ -1687,5 +1687,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "2fc23b3176dac35ddfd120a2a0bc8aab8289cb329ab3104dfc1ba95c7dfadb5f"
+ "digest": "8b33de586cf757648d60ec71c5340d640488ceb67c708dadaa123db347dc9296"
 }

@@ -1,4 +1,4 @@
-# ModelSearch · v4.0.3
+# ModelSearch · v4.0.4
 
 > Covert cross-site forum search — `forums` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ ModelSearch is a covert SimpCity search UI usable from any website — one Alt+S
 
 | Dimension | Value |
 |---|---|
-| Version | `4.0.3` |
+| Version | `4.0.4` |
 | Matches | `*://*/*` |
 | Run-at | `document-start` |
-| Size | 23.8 KB · 519 lines |
+| Size | 24.6 KB · 530 lines |
 | Install | [dist/4ndr0tools - ModelSearch.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20ModelSearch.user.js) |
 
 ## Feature Inventory

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Pixeldrain++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.2.2
+// @version      1.2.3
 // @description  Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.
 // @author       4ndr0666
 // @license      MIT
@@ -1218,12 +1218,24 @@ const __4NDR0_NET_API__ = (function () {
     return api;
 })();
 
+// 1.2.3 (suite v1.18.0, WO-01 round 10): the FSA streamed→buffered fallback
+// corruption fix (10c F02 — a non-abort stream failure fell through to an
+// UNPOSITIONED writable.write of the full body onto the N bytes already
+// committed: corrupt file + success toast; the fallback now aborts the
+// partial stream and re-creates the writable, whose implicit truncate
+// guarantees a clean slate); speed_multiplied's all-circuits-open path threw
+// undefined and masked its own reason in Log.warn (10c F03); the modal ESC
+// listener now unbinds on EVERY close path, not only Escape (10c F01 — N
+// opens leaked N live keydown listeners); the misleading
+// 'interceptor: unbound' debug line in ~24 unrelated catch contexts became
+// context-true messages + the duplicate nav-refresh dataset reset dropped
+// (10c F10).
 // 1.2.2 (suite v1.12.0, WO-01 round 4): error-path hardening — fsPath()'s
 // decode degrades losslessly on malformed percent-escapes (a bare '%' in a
 // /d/ pathname no longer aborts the setTimeout callback before the
 // fs-fallback injector and auto-trigger block; 4-c F05).
 // 1.1.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.2 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.3 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 /* eslint-disable no-undef */
 (function () {
@@ -1385,7 +1397,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.2
         return {
             get: (k, def) => { try { if (hasGM) return GM_getValue(k, def); const raw = localStorage.getItem(k); return raw == null ? def : JSON.parse(raw); } catch { return def; } },
             set: (k, v) => { try { if (hasGM) return GM_setValue(k, v); localStorage.setItem(k, JSON.stringify(v)); } catch (e) { console.error(`[${NS}]`, e); } },
-            del: (k) => { try { if (hasGM && typeof GM_deleteValue === 'function') return GM_deleteValue(k); localStorage.removeItem(k); } catch { console.debug('PD interceptor: unbound');} }
+            del: (k) => { try { if (hasGM && typeof GM_deleteValue === 'function') return GM_deleteValue(k); localStorage.removeItem(k); } catch { console.debug('PD store: delete failed'); } }
         };
     })();
     function loadSettings() { return Object.assign({}, DEFAULTS, Store.get(STORAGE_KEY, {}) || {}); }
@@ -1568,7 +1580,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.2
             try {
                 const r = await this._gmFetch('https://pixeldrain.com/api/user', { responseType: 'json', timeout: 10000 });
                 if (r.status >= 200 && r.status < 300) return r.response || JSON.parse(r.responseText);
-            } catch { console.debug('PD interceptor: unbound');}
+            } catch { console.debug('PD user API: fetch failed'); }
             return null;
         },
         directURL(id, { download = false } = {}) {
@@ -1611,7 +1623,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.2
                         headers: { 'Accept': 'text/html' },
                         redirect: 'follow'
                     });
-                } catch { console.debug('PD interceptor: unbound');}
+                } catch { console.debug('PD view-pad: fetch failed'); }
                 if (i < count - 1) await sleep(200);
             }
             Log.info(`view-pad: +${count} views for ${id}`);
@@ -1969,7 +1981,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.2
                     await writable.close();
                     BandwidthTracker.add(loaded, false);
                     return { ok: true, mode: 'premium_direct', size: loaded };
-                } catch (e) { try { await writable.abort(); } catch { console.debug('PD interceptor: unbound');} throw e; }
+                } catch (e) { try { await writable.abort(); } catch { console.debug('PD fsa: stream abort failed'); } throw e; }
             }
 
             const start = performance.now();
@@ -1992,13 +2004,13 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.2
 
         async speed_multiplied({ id, name, size, onProgress, signal }) {
             if (!Caps.fsAccess) throw new Error('File System Access API required');
-            if (!size) { try { size = (await PDApi.fileInfo(id)).size; } catch { console.debug('PD interceptor: unbound');} }
+            if (!size) { try { size = (await PDApi.fileInfo(id)).size; } catch { console.debug('PD fsa: fileInfo size unavailable'); } }
             if (!size) {
                 const proxy = await ProxyManager.best(id);
                 try {
                     const h = await gmXHR({ method: 'HEAD', url: ProxyManager.url(proxy, id), timeout: 10000 });
                     size = parseInt((h.responseHeaders || '').match(/content-length:\s*(\d+)/i)?.[1] || '0', 10);
-                } catch { console.debug('PD interceptor: unbound');}
+                } catch { console.debug('PD fsa: HEAD size probe failed'); }
             }
             if (!size) throw new Error('Cannot determine file size');
 
@@ -2054,7 +2066,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.2
             const fetchChunk = async (idx) => {
                 const baseFrom = idx * chunkSize;
                 const to = Math.min(size - 1, (idx + 1) * chunkSize - 1);
-                let lastErr;
+                let lastErr = new Error('no mirror available (circuit open)');
                 const maxAttempts = SETTINGS.chunkRetry + 1;
 
                 for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -2116,18 +2128,18 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.2
                 BandwidthTracker.add(size, true);
                 const avgSpeed = size / (elapsed / 1000);
                 return { ok: true, mode: 'speed_multiplied', size, connections: totalConns, mirrors: mirrors.length, time: elapsed, speed: avgSpeed };
-            } catch (e) { try { await writable.abort(); } catch { console.debug('PD interceptor: unbound');} throw e; }
+            } catch (e) { try { await writable.abort(); } catch { console.debug('PD fsa: stream abort failed'); } throw e; }
         },
 
         async multi_proxy_ranged({ id, name, size, onProgress, signal }) {
             if (!Caps.fsAccess) throw new Error('File System Access API required');
-            if (!size) { try { size = (await PDApi.fileInfo(id)).size; } catch { console.debug('PD interceptor: unbound');} }
+            if (!size) { try { size = (await PDApi.fileInfo(id)).size; } catch { console.debug('PD fsa: fileInfo size unavailable'); } }
             if (!size) {
                 const proxy = await ProxyManager.best(id);
                 try {
                     const h = await gmXHR({ method: 'HEAD', url: ProxyManager.url(proxy, id), timeout: 10000 });
                     size = parseInt((h.responseHeaders || '').match(/content-length:\s*(\d+)/i)?.[1] || '0', 10);
-                } catch { console.debug('PD interceptor: unbound');}
+                } catch { console.debug('PD fsa: HEAD size probe failed'); }
             }
             if (!size) throw new Error('Cannot determine file size');
 
@@ -2223,7 +2235,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.2
                 if (resumeJobId) ResumeManager.markComplete(resumeJobId, elapsed);
                 BandwidthTracker.add(size, true);
                 return { ok: true, mode: 'multi_proxy_ranged', size, chunks: chunkCount, time: elapsed };
-            } catch (e) { try { await writable.abort(); } catch { console.debug('PD interceptor: unbound');} throw e; }
+            } catch (e) { try { await writable.abort(); } catch { console.debug('PD fsa: stream abort failed'); } throw e; }
         },
 
         async gm_stream_fsa({ id, name, size, onProgress, signal }) {
@@ -2232,13 +2244,13 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.2
             const url = ProxyManager.url(proxy, id, { download: true });
             Log.info(`gm_stream_fsa via ${proxy.host}`);
 
-            if (!size) { try { size = (await PDApi.fileInfo(id)).size; } catch { console.debug('PD interceptor: unbound');} }
+            if (!size) { try { size = (await PDApi.fileInfo(id)).size; } catch { console.debug('PD fsa: fileInfo size unavailable'); } }
 
             const handle = await window.showSaveFilePicker({
                 suggestedName: sanitizeFilename(name),
                 types: [{ description: 'File', accept: { '*/*': [] } }]
             });
-            const writable = await handle.createWritable();
+            let writable = await handle.createWritable();
             const start = performance.now();
             let loaded = 0;
             const total = size || 0;
@@ -2270,7 +2282,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.2
                         onerror: (e) => reject(new Error(`network: ${(e && (e.error || e.statusText)) || 'unknown'}`)),
                         ontimeout: () => reject(new Error('timeout'))
                     });
-                    if (signal) signal.addEventListener('abort', () => { aborted = true; try { h && h.abort && h.abort(); } catch { console.debug('PD interceptor: unbound');} reject(new Error('aborted')); });
+                    if (signal) signal.addEventListener('abort', () => { aborted = true; try { h && h.abort && h.abort(); } catch { console.debug('PD fsa: request abort failed'); } reject(new Error('aborted')); });
                 });
                 if (streamed && loaded > 0) {
                     await writable.close();
@@ -2279,8 +2291,15 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.2
                     return { ok: true, mode: 'gm_stream_fsa', proxy: proxy.host, size: loaded };
                 }
             } catch (e) {
-                if (e.message === 'aborted') { try { await writable.abort(); } catch { console.debug('PD interceptor: unbound');} throw e; }
+                if (e.message === 'aborted') { try { await writable.abort(); } catch { console.debug('PD fsa: stream abort failed'); } throw e; }
                 Log.warn('stream fallback to buffered:', e.message);
+                /* discard the partial stream before the buffered re-download:
+                 * an unpositioned write onto N committed bytes corrupts the
+                 * file (10c F02). createWritable()'s implicit truncate gives
+                 * the fallback a clean slate. */
+                try { await writable.abort(); } catch (fsSettleErr) { console.debug('PD fsa: partial-stream abort already settled:', fsSettleErr && fsSettleErr.message); }
+                writable = await handle.createWritable();
+                loaded = 0;
             }
 
             try {
@@ -2302,12 +2321,12 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.2
                 CircuitBreaker.record(proxy.host, true);
                 BandwidthTracker.add(r.response.byteLength, true);
                 return { ok: true, mode: 'gm_stream_fsa', proxy: proxy.host, size: r.response.byteLength };
-            } catch (e) { try { await writable.abort(); } catch { console.debug('PD interceptor: unbound');} throw e; }
+            } catch (e) { try { await writable.abort(); } catch { console.debug('PD fsa: stream abort failed'); } throw e; }
         },
 
         async single_host_ranged({ id, name, size, onProgress, signal }) {
             if (!Caps.fsAccess) throw new Error('FSA required');
-            if (!size) { try { size = (await PDApi.fileInfo(id)).size; } catch { console.debug('PD interceptor: unbound');} }
+            if (!size) { try { size = (await PDApi.fileInfo(id)).size; } catch { console.debug('PD fsa: fileInfo size unavailable'); } }
             if (!size) throw new Error('Cannot determine size');
             const proxy = await ProxyManager.best(id);
             const url = ProxyManager.url(proxy, id);
@@ -2360,7 +2379,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.2
                 CircuitBreaker.record(proxy.host, true);
                 BandwidthTracker.add(size, true);
                 return { ok: true, mode: 'single_host_ranged', size, proxy: proxy.host, connections: conns };
-            } catch (e) { try { await writable.abort(); } catch { console.debug('PD interceptor: unbound');} throw e; }
+            } catch (e) { try { await writable.abort(); } catch { console.debug('PD fsa: stream abort failed'); } throw e; }
         },
 
         async native_fetch({ id, name, size, onProgress, signal }) {
@@ -2395,7 +2414,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.2
                         CircuitBreaker.record(mirror.host, true);
                         BandwidthTracker.add(loaded, true);
                         return { ok: true, mode: 'native_fetch', proxy: mirror.host, size: loaded };
-                    } catch (e) { try { await writable.abort(); } catch { console.debug('PD interceptor: unbound');} throw e; }
+                    } catch (e) { try { await writable.abort(); } catch { console.debug('PD fsa: stream abort failed'); } throw e; }
                 } catch (e) { lastErr = e; if (e.kind === 'abort' || e.message === 'aborted') throw e; }
             }
             throw lastErr || new Error('All mirrors failed');
@@ -2697,7 +2716,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.2
         },
 
         cancelAll() {
-            for (const [, job] of this._activeJobs) { try { job.ac.abort(); } catch { console.debug('PD interceptor: unbound');} }
+            for (const [, job] of this._activeJobs) { try { job.ac.abort(); } catch { console.debug('PD jobs: abort failed'); } }
             this._activeJobs.clear();
         },
 
@@ -3109,9 +3128,9 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.2
     };
 
     function getViewerData() {
-        try { if (typeof unsafeWindow !== 'undefined' && unsafeWindow.viewer_data) return unsafeWindow.viewer_data; } catch { console.debug('PD interceptor: unbound');}
-        try { const el = document.querySelector('#viewer_data,[data-viewer],script[type="application/json"]'); if (el) return JSON.parse(el.textContent); } catch { console.debug('PD interceptor: unbound');}
-        try { if (window.viewer_data) return window.viewer_data; } catch { console.debug('PD interceptor: unbound');}
+        try { if (typeof unsafeWindow !== 'undefined' && unsafeWindow.viewer_data) return unsafeWindow.viewer_data; } catch { console.debug('PD viewer: unsafeWindow read failed'); }
+        try { const el = document.querySelector('#viewer_data,[data-viewer],script[type="application/json"]'); if (el) return JSON.parse(el.textContent); } catch { console.debug('PD viewer: DOM json parse failed'); }
+        try { if (window.viewer_data) return window.viewer_data; } catch { console.debug('PD viewer: window read failed'); }
         return null;
     }
 
@@ -3275,17 +3294,18 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.2
             const footEl = bg.querySelector(`.${NS}-modal-foot`);
             if (body) bodyEl.append(...(Array.isArray(body) ? body : [body]));
             if (footEl && footer) footEl.append(...(Array.isArray(footer) ? footer : [footer]));
-            const close = () => { try { onClose && onClose(); } catch { console.debug('PD interceptor: unbound');} bg.remove(); };
+            const esc = (e) => { if (e.key === 'Escape') close(); };
+            const close = () => { try { onClose && onClose(); } catch { console.debug('PD modal: onClose handler failed'); } document.removeEventListener('keydown', esc); bg.remove(); };
             closeBtn.addEventListener('click', close);
             bg.addEventListener('click', e => { if (e.target === bg) close(); });
-            document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); } });
+            document.addEventListener('keydown', esc);
             (document.body || document.documentElement).appendChild(bg);
             return { el: bg, body: bodyEl, footer: footEl, close };
         }
     };
 
     function copyToClipboard(text) {
-        if (Caps.gmClipboard) { try { GM_setClipboard(text); return Promise.resolve(true); } catch { console.debug('PD interceptor: unbound');} }
+        if (Caps.gmClipboard) { try { GM_setClipboard(text); return Promise.resolve(true); } catch { console.debug('PD clipboard: GM write failed'); } }
         if (navigator.clipboard) return navigator.clipboard.writeText(text).then(() => true).catch(() => false);
         return Promise.resolve(false);
     }
@@ -3707,7 +3727,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.2
         ResumeManager.cleanup();
 
         const onReady = () => {
-            try { injectStyles(); } catch { console.debug('PD interceptor: unbound');}
+            try { injectStyles(); } catch { console.debug('PD styles: injection failed'); }
 
             const obs = new MutationObserver(() => {
                 const el = findToolbar();
@@ -3720,8 +3740,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.2
             const runNavRefresh = debounce(() => {
                 document.querySelectorAll('[data-pdbp="1"]').forEach(e => e.remove());
                 document.querySelectorAll('[data-pdbp-injected]').forEach(e => delete e.dataset.pdbpInjected);
-                document.querySelectorAll(`[data-pdbp-injected]`).forEach(e => e.removeAttribute('data-pdbp-injected'));
-                try { patchVideoLoggedRestriction(); } catch { console.debug('PD interceptor: unbound');}
+                try { patchVideoLoggedRestriction(); } catch { console.debug('PD nav: video patch failed'); }
                 tryInject();
             }, 600);
             const onNav = () => {

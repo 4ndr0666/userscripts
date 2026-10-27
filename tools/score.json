@@ -54,7 +54,7 @@
       "score": 10,
       "inputs": [
         "kernel typed-error family (NetError/NetTimeoutError/NetHttpError) — smoke battery: true",
-        "non-kernel catch census: 972 sites — 9 typed, 489 debug-logged, 474 handled, 0 silent (clean: true)"
+        "non-kernel catch census: 978 sites — 9 typed, 490 debug-logged, 479 handled, 0 silent (clean: true)"
       ],
       "coverage": 1
     },

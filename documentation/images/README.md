@@ -1,4 +1,4 @@
-# Images++ · v4.0.5
+# Images++ · v4.0.6
 
 > Universal link-media previewer — `images` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ Images++ shows the media behind links: hover a link, see the image or video it p
 
 | Dimension | Value |
 |---|---|
-| Version | `4.0.5` |
+| Version | `4.0.6` |
 | Matches | `*://*/*` |
 | Run-at | `document-start` |
-| Size | 137.0 KB · 4645 lines |
+| Size | 137.5 KB · 4656 lines |
 | Install | [dist/4ndr0tools - Images++.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Images%2B%2B.user.js) |
 
 ## Feature Inventory

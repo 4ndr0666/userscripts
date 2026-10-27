@@ -1,4 +1,4 @@
-# Login Form Autofiller · v2.0.8
+# Login Form Autofiller · v2.0.9
 
 > BugMeNot integration for any login form — `ux utilities` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,11 +10,11 @@ Login Form Autofiller wires BugMeNot into every login form on the web: it detect
 
 | Dimension | Value |
 |---|---|
-| Version | `2.0.8` |
+| Version | `2.0.9` |
 | Matches | @include: `http://*`, `https://*` |
 | Excludes | `http://bugmenot.com/*`, `https://bugmenot.com/*` |
 | Run-at | `document-idle` |
-| Size | 44.7 KB · 1031 lines |
+| Size | 45.3 KB · 1030 lines |
 | Install | [dist/4ndr0tools - Login Form Autofiller.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Login%20Form%20Autofiller.user.js) |
 
 ## Feature Inventory

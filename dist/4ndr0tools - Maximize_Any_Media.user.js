@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Maximize_Any_Media
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      2.0.1
+// @version      2.0.2
 // @author       4ndr0666
 // @description  Maximize + Pip controls to any media anywhere - video, images, embedded and shadow-DOM players, on any site. 3lectric-Glass spec. Ψ
 // @license      MIT
@@ -16,6 +16,14 @@
 // @grant        GM_setValue
 // @grant        GM_registerMenuCommand
 // ==/UserScript==
+// 2.0.2 (suite v1.18.0, WO-01 round 10): imagePip start-failure race (10c-F07)
+// — a rapid double-toggle can replace this.active with a NEWER session while
+// the older start() is still awaiting play()/requestPictureInPicture(); its
+// catch then called await this.stop() against whatever this.active held,
+// tearing down the newer session's PiP. The catch now guards on identity —
+// cleanup only runs when this.active is still the captured session's own
+// state. The SCRIPT.version fallback literal rides the bump (GM_info remains
+// primary).
 
 ;(() => {
   // Paradigm: Event-Driven Userscript Overlay — module-scoped state only, zero
@@ -31,7 +39,7 @@
      * again. */
     version: (typeof GM_info !== 'undefined' && GM_info && GM_info.script && GM_info.script.version)
       ? GM_info.script.version
-      : "2.0.1",
+      : "2.0.2",
     spec: "3lectric-Glass",
   }
 
@@ -429,7 +437,12 @@
         } else {
           tool.addTip(gv.btnText.pipUnsupported)
         }
-        await this.stop()
+        // 10c-F07: a rapid double-toggle can replace this session while its
+        // start() still awaits — only clean up when this.active is still OUR
+        // state, never a newer session's.
+        if (this.active === state) {
+          await this.stop()
+        }
       }
     },
     async stop() {

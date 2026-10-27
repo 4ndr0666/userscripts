@@ -16,7 +16,7 @@
 
 ### FPP-GBX-01
 
-**goonbox.cr helper tab opens once, handshakes, and resolves (the flagship P2-only residual)** — `4ndr0tools - Forums++.user.js` v1.13.4 · provenance: r6 Task 3 (14500cb port); residual re-listed r7 Task 7 and r8 Task 10 residuals (3)
+**goonbox.cr helper tab opens once, handshakes, and resolves (the flagship P2-only residual)** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r6 Task 3 (14500cb port); residual re-listed r7 Task 7 and r8 Task 10 residuals (3)
 
 - **Environment**: chrome / tampermonkey-mv3 / sites: a logged-in simpcity.su thread containing goonbox.cr links
 - **Prerequisites**: Forums++ installed and enabled · goonbox host rows enabled in the per-post config form
@@ -43,7 +43,7 @@
 
 ### FPP-GBX-02
 
-**the force-bridge debug flag proves the whole P2 handshake independent of CF state** — `4ndr0tools - Forums++.user.js` v1.13.4 · provenance: designed into the r6 port (14500cb) as the operator-side P2 verification instrument
+**the force-bridge debug flag proves the whole P2 handshake independent of CF state** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: designed into the r6 port (14500cb) as the operator-side P2 verification instrument
 
 - **Environment**: any / any / sites: a thread with goonbox.cr links
 - **Prerequisites**: FPP-GBX-01 environment
@@ -65,7 +65,7 @@
 
 ### FPP-WRM-01
 
-**gofile.io warm-up tab + guest-token/cookie bridge, cookie restored after idle** — `4ndr0tools - Forums++.user.js` v1.13.4 · provenance: r6 port (14500cb/a4c1f5b F22/F29); r7 79c70eb restore-race narrowing (7d F27)
+**gofile.io warm-up tab + guest-token/cookie bridge, cookie restored after idle** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r6 port (14500cb/a4c1f5b F22/F29); r7 79c70eb restore-race narrowing (7d F27)
 
 - **Environment**: chrome / tampermonkey-mv3 (GM_cookie live) / sites: a thread with gofile.io links
 - **Prerequisites**: a gofile.io account is NOT needed (guest flow)
@@ -89,7 +89,7 @@
 
 ### FPP-WRM-02
 
-**cyberdrop warm-up tab fires at most once per origin** — `4ndr0tools - Forums++.user.js` v1.13.4 · provenance: r6 port (2-e F31) + the r7 backtick fix (ae8fdf2)
+**cyberdrop warm-up tab fires at most once per origin** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r6 port (2-e F31) + the r7 backtick fix (ae8fdf2)
 
 - **Environment**: chrome / tampermonkey-mv3 / sites: a thread with cyberdrop .to/.nl/.cr /f/ or /e/ links
 - **Risk**: download low · network one tab per origin · ToS low
@@ -111,7 +111,7 @@
 
 ### FPP-RES-01
 
-**kemono.su/.cr direct links resolve with zero network (identity resolver)** — `4ndr0tools - Forums++.user.js` v1.13.4 · provenance: r6 restoration (14500cb) + r7 TLD truth pass (ae8fdf2: 7a F02)
+**kemono.su/.cr direct links resolve with zero network (identity resolver)** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r6 restoration (14500cb) + r7 TLD truth pass (ae8fdf2: 7a F02)
 
 - **Environment**: chrome / tampermonkey-mv3 / sites: a thread containing kemono.su or kemono.cr direct /data/ links
 - **Prerequisites**: Skip Download + Generate Links ON for a liveness-only, zero-download run
@@ -134,7 +134,7 @@
 
 ### FPP-RES-02
 
-**coomer.su AND coomer.st profile walkers enumerate multi-page** — `4ndr0tools - Forums++.user.js` v1.13.4 · provenance: r6 restoration + r7 ae8fdf2 (7a F01 — the coomer .st dead-end fixed)
+**coomer.su AND coomer.st profile walkers enumerate multi-page** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r6 restoration + r7 ae8fdf2 (7a F01 — the coomer .st dead-end fixed)
 
 - **Environment**: chrome / tampermonkey-mv3 / sites: one thread with coomer.su profile links and one with .st
 - **Prerequisites**: Skip Download + Generate Links for liveness-only
@@ -156,7 +156,7 @@
 
 ### FPP-RES-03
 
-**bunkr family resolves: TLD alternation + CF retry + CDN signing (bunkr.org/bunkrr.org/bunkrrr.org/gigachad-cdn)** — `4ndr0tools - Forums++.user.js` v1.13.4 · provenance: r6 restoration (14500cb) + r8 c866a50 (8b F02 family widening)
+**bunkr family resolves: TLD alternation + CF retry + CDN signing (bunkr.org/bunkrr.org/bunkrrr.org/gigachad-cdn)** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r6 restoration (14500cb) + r8 c866a50 (8b F02 family widening)
 
 - **Environment**: chrome / tampermonkey-mv3 / sites: a thread with a small bunkr /a/ album and a single /f/ file
 - **Prerequisites**: Skip Download + Generate Links for liveness-only (DIRECT arms can download hundreds of MB otherwise)
@@ -179,7 +179,7 @@
 
 ### FPP-RES-04
 
-**cyberdrop ladder: api.<root> runtime arms + literal api.cyberdrop.cr fallbacks** — `4ndr0tools - Forums++.user.js` v1.13.4 · provenance: r6 restoration + r7 ae8fdf2 (the 7c-F06 backtick fix)
+**cyberdrop ladder: api.<root> runtime arms + literal api.cyberdrop.cr fallbacks** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r6 restoration + r7 ae8fdf2 (the 7c-F06 backtick fix)
 
 - **Environment**: chrome / tampermonkey-mv3 / sites: one cyberdrop.to link (root arm) and one non-declared-TLD link if findable
 - **Risk**: download low · network tiny GETs · ToS low — public host
@@ -199,7 +199,7 @@
 
 ### FPP-RES-05
 
-**jpg/jpeg no-digit family: NO manager prompt on first dispatch (the engine's first live catch)** — `4ndr0tools - Forums++.user.js` v1.13.4 · provenance: r8 836f5bc — the derivation engine's first live catch (8 tokens declared)
+**jpg/jpeg no-digit family: NO manager prompt on first dispatch (the engine's first live catch)** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r8 836f5bc — the derivation engine's first live catch (8 tokens declared)
 
 - **Environment**: chrome / tampermonkey-mv3 / sites: a thread with jpg.church / jpg.su / jpg.cr / jpeg.church / jpeg.fish / jpeg.fishing / jpeg.su / jpeg.cr links (any subset)
 - **Risk**: download low · network image GETs · ToS moderate — image boards, adult content
@@ -220,7 +220,7 @@
 
 ### FPP-RES-06
 
-**pixeldrain .com/.net/pixeldra.in — all three domains resolve** — `4ndr0tools - Forums++.user.js` v1.13.4 · provenance: r7 ae8fdf2 (7a F05)
+**pixeldrain .com/.net/pixeldra.in — all three domains resolve** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r7 ae8fdf2 (7a F05)
 
 - **Environment**: chrome / tampermonkey-mv3 / sites: a thread with pixeldrain.net/l/ links (the discriminating case) and .com links
 - **Risk**: download low · network low · ToS low
@@ -238,7 +238,7 @@
 
 ### FPP-RES-07
 
-**yandex disk resolves via the POST ladder; prompts disclose the non-enumerable TLD horizon** — `4ndr0tools - Forums++.user.js` v1.13.4 · provenance: r7 ae8fdf2 (7a F04 — the missing yandex tokens)
+**yandex disk resolves via the POST ladder; prompts disclose the non-enumerable TLD horizon** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r7 ae8fdf2 (7a F04 — the missing yandex tokens)
 
 - **Environment**: chrome / tampermonkey-mv3 / sites: a thread with disk.yandex.ru/i/ links
 - **Risk**: download low · network one POST · ToS low
@@ -258,7 +258,7 @@
 
 ### FPP-RES-08
 
-**redgifs: ONE boot token fetch on /threads/ pages only + token refresh on stale** — `4ndr0tools - Forums++.user.js` v1.13.4 · provenance: r6 restoration + r7 ae8fdf2 (7a F09/F10)
+**redgifs: ONE boot token fetch on /threads/ pages only + token refresh on stale** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r6 restoration + r7 ae8fdf2 (7a F09/F10)
 
 - **Environment**: chrome / tampermonkey-mv3 / sites: a simpcity thread; then the goonbox helper tab from FPP-GBX-01
 - **Risk**: download low · network one anonymous token per session · ToS low
@@ -279,7 +279,7 @@
 
 ### FPP-RES-09
 
-**saint2/turbo: origin derivation + sign API + embed links** — `4ndr0tools - Forums++.user.js` v1.13.4 · provenance: r6 restoration (14500cb turbo sign port) + r9 F02 (the template-arm derivation)
+**saint2/turbo: origin derivation + sign API + embed links** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r6 restoration (14500cb turbo sign port) + r9 F02 (the template-arm derivation)
 
 - **Environment**: chrome / tampermonkey-mv3 / sites: a thread with a turbo.cr video link and (if findable) a saint2.su one
 - **Risk**: download low · network tiny sign requests · ToS moderate — adult video host
@@ -299,7 +299,7 @@
 
 ### FPP-RES-10
 
-**filester v2 API + cache-host probe sweep** — `4ndr0tools - Forums++.user.js` v1.13.4 · provenance: r6 restoration (14500cb filesterResolveV2 port)
+**filester v2 API + cache-host probe sweep** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r6 restoration (14500cb filesterResolveV2 port)
 
 - **Environment**: chrome / tampermonkey-mv3 / sites: a thread with filester /d/ or /f/ links
 - **Risk**: download low · network low · ToS low
@@ -317,7 +317,7 @@
 
 ### FPP-RES-11
 
-**imagebam view/gallery + full-embed CDN links** — `4ndr0tools - Forums++.user.js` v1.13.4 · provenance: r6/r7 resolver batches
+**imagebam view/gallery + full-embed CDN links** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r6/r7 resolver batches
 
 - **Environment**: chrome / tampermonkey-mv3 / sites: a thread with imagebam view/gallery links and (if findable) full-embed images<N>.imagebam.com links
 - **Risk**: download low · network image GETs · ToS moderate — image host, adult content
@@ -335,7 +335,7 @@
 
 ### FPP-RES-12
 
-**ibb.co albums walk via JSON; postimg/pixxxels rewrite correctly** — `4ndr0tools - Forums++.user.js` v1.13.4 · provenance: r6/r7 resolver batches + r9 F03 (the postimg/pixxxels leading-group enumeration)
+**ibb.co albums walk via JSON; postimg/pixxxels rewrite correctly** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r6/r7 resolver batches + r9 F03 (the postimg/pixxxels leading-group enumeration)
 
 - **Environment**: chrome / tampermonkey-mv3 / sites: a thread with an ibb.co/album/ link, i.ibb.co single images, and a postimg.cc 8-char link
 - **Risk**: download low · network low · ToS low
@@ -357,7 +357,7 @@
 
 ### FPP-DLP-01
 
-**safeThreadTitle on a ':'-containing thread title (zip gate + generated.zip names)** — `4ndr0tools - Forums++.user.js` v1.13.4 · provenance: 7d F22 filed (partial fix), 8b F01 completed (c866a50), 9a F05 (the dispatch guards)
+**safeThreadTitle on a ':'-containing thread title (zip gate + generated.zip names)** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: 7d F22 filed (partial fix), 8b F01 completed (c866a50), 9a F05 (the dispatch guards)
 
 - **Environment**: chrome / tampermonkey-mv3 / sites: a simpcity thread whose TITLE contains ':' (e.g. 'Video: something')
 - **Prerequisites**: Zipped checked · Generate Log + Generate Links checked (forces the generated.zip arm even on an all-DIRECT run)
@@ -379,7 +379,7 @@
 
 ### FPP-DLP-02
 
-**isBunkrUrl maint guard: a maintenance placeholder is NEVER saved as a real file** — `4ndr0tools - Forums++.user.js` v1.13.4 · provenance: 8b F02 MAJOR (c866a50) + r9 9a F02 (the 4 KiB head slice)
+**isBunkrUrl maint guard: a maintenance placeholder is NEVER saved as a real file** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: 8b F02 MAJOR (c866a50) + r9 9a F02 (the 4 KiB head slice)
 
 - **Environment**: chrome / tampermonkey-mv3 / sites: a bunkr link that is in maintenance (bunkr rotates a maint.mp4 placeholder when a CDN is down)
 - **Prerequisites**: maintenance is transient — BLOCKED is acceptable when no maint link is findable that session; re-try later
@@ -401,7 +401,7 @@
 
 ### FPP-DLP-03
 
-**the 500 MB bunkr DIRECT switch fires mid-download** — `4ndr0tools - Forums++.user.js` v1.13.4 · provenance: 2-e F04 (a4c1f5b); r7 79c70eb loaded-bytes switch; r8 c866a50 family widening
+**the 500 MB bunkr DIRECT switch fires mid-download** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: 2-e F04 (a4c1f5b); r7 79c70eb loaded-bytes switch; r8 c866a50 family widening
 
 - **Environment**: chrome / tampermonkey-mv3 / sites: a bunkr file of at least 500 MB (operator-picked)
 - **Prerequisites**: Zipped ON so the switch is observable as an exit from the zip path · HIGH download volume — schedule on an unmetered connection; one file only
@@ -423,7 +423,7 @@
 
 ### FPP-DLP-04
 
-**FF per-file saveAs arm vs Chrome GM_download arm (the named FF residual)** — `4ndr0tools - Forums++.user.js` v1.13.4 · provenance: the standing FF-saveAs residual (r6/r7/r8 lists); 2e F08; r8 c866a50 (8b F04/F12)
+**FF per-file saveAs arm vs Chrome GM_download arm (the named FF residual)** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: the standing FF-saveAs residual (r6/r7/r8 lists); 2e F08; r8 c866a50 (8b F04/F12)
 
 - **Environment**: firefox AND chrome (both, as control) / tampermonkey / sites: a small post with 2-3 downloadable files
 - **Risk**: download low · network low · ToS low
@@ -446,7 +446,7 @@
 
 ### FPP-DLP-05
 
-**light vs dark theme tooltip pair + search input ink** — `4ndr0tools - Forums++.user.js` v1.13.4 · provenance: 2e F16 (a4c1f5b); 7d F10 search input (79c70eb); the standing light-theme residual
+**light vs dark theme tooltip pair + search input ink** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: 2e F16 (a4c1f5b); 7d F10 search input (79c70eb); the standing light-theme residual
 
 - **Environment**: chrome / tampermonkey-mv3 / sites: simpcity with the account theme switcher (data-color-scheme)
 - **Risk**: download none · network none · ToS none
@@ -467,7 +467,7 @@
 
 ### FPP-DLP-06
 
-**zip-gate FileSaver fallback fires on a GM_download error (both arms)** — `4ndr0tools - Forums++.user.js` v1.13.4 · provenance: 2-e F07 (v1.12.1), 8b F01 (v1.13.3), 9a F05 (v1.13.4 dispatch guards)
+**zip-gate FileSaver fallback fires on a GM_download error (both arms)** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: 2-e F07 (v1.12.1), 8b F01 (v1.13.3), 9a F05 (v1.13.4 dispatch guards)
 
 - **Environment**: chrome / tampermonkey-mv3 / sites: any post producing a zip
 - **Prerequisites**: the sanctioned trigger: set Chrome to 'Ask where to save each file' and CANCEL once (onerror fires); or run opportunistically when any DLP-01 validation error occurs
@@ -488,7 +488,7 @@
 
 ### FPP-DLP-07
 
-**turbo stall, re-sign ladder, DIRECT fallback under adversarial network** — `4ndr0tools - Forums++.user.js` v1.13.4 · provenance: 2-e F02/F03 (a4c1f5b/cae8685)
+**turbo stall, re-sign ladder, DIRECT fallback under adversarial network** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: 2-e F02/F03 (a4c1f5b/cae8685)
 
 - **Environment**: chrome / tampermonkey-mv3 / sites: a turbo/saint2 video link
 - **Prerequisites**: DevTools Network throttling set to a stall profile (offline after headers)
@@ -711,7 +711,7 @@
 
 ### CB-TRG-01
 
-**overlay right-click, turbo.cr landing, GRACE_MS auto-click of the download button** — `4ndr0tools - Confirmation Bypass.user.js` v4.1.3 · provenance: the operator's round-6 nuance (1); 8157fbe restoration; 90a9696 + f255b44 hardening; r9 9a F01 (the arming order)
+**overlay right-click, turbo.cr landing, GRACE_MS auto-click of the download button** — `4ndr0tools - Confirmation Bypass.user.js` v4.1.4 · provenance: the operator's round-6 nuance (1); 8157fbe restoration; 90a9696 + f255b44 hardening; r9 9a F01 (the arming order)
 
 - **Environment**: chrome / tampermonkey-mv3 / sites: a simpcity (or SMG) thread embedding a turbo.cr video (the /embed/ iframe or link)
 - **Risk**: download one file · network one adult video host · ToS moderate
@@ -734,7 +734,7 @@
 
 ### CB-TRG-02
 
-**the 1.5s reaction window: second click ONLY when the page didn't react** — `4ndr0tools - Confirmation Bypass.user.js` v4.1.3 · provenance: 8b F07/F16/F17 (f255b44, the ledgered SETTLE probe), r9 9a F01 (the window now arms BEFORE the dispatch loop)
+**the 1.5s reaction window: second click ONLY when the page didn't react** — `4ndr0tools - Confirmation Bypass.user.js` v4.1.4 · provenance: 8b F07/F16/F17 (f255b44, the ledgered SETTLE probe), r9 9a F01 (the window now arms BEFORE the dispatch loop)
 
 - **Environment**: chrome / tampermonkey-mv3 / sites: as CB-TRG-01
 - **Risk**: download as TRG-01 · network as TRG-01 · ToS as TRG-01
@@ -755,7 +755,7 @@
 
 ### CB-TRG-03
 
-**node-swap treated as reacted (a fresh control never receives click #2)** — `4ndr0tools - Confirmation Bypass.user.js` v4.1.3 · provenance: 8b F16 (f255b44)
+**node-swap treated as reacted (a fresh control never receives click #2)** — `4ndr0tools - Confirmation Bypass.user.js` v4.1.4 · provenance: 8b F16 (f255b44)
 
 - **Environment**: chrome / tampermonkey-mv3 / sites: as CB-TRG-01
 - **Prerequisites**: hard to force deterministically on live turbo.cr — run opportunistically when TRG-01/02 show the control re-rendering; otherwise BLOCKED-acceptable
@@ -774,7 +774,7 @@
 
 ### CB-TRG-04
 
-**glyph-tolerant anchored fallback ('Download File' with icon glyph) — the drift-time selector** — `4ndr0tools - Confirmation Bypass.user.js` v4.1.3 · provenance: 7b F18 (v4.1.1) + 8b F08 (v4.1.2)
+**glyph-tolerant anchored fallback ('Download File' with icon glyph) — the drift-time selector** — `4ndr0tools - Confirmation Bypass.user.js` v4.1.4 · provenance: 7b F18 (v4.1.1) + 8b F08 (v4.1.2)
 
 - **Environment**: chrome / tampermonkey-mv3 / sites: as CB-TRG-01
 - **Prerequisites**: exercisable only if turbo.cr renames/removes #downloadBtn markup (markup drift). TODAY: run document.querySelector('#downloadBtn') in DevTools — when present the primary selector wins and the fallback is untested (BLOCKED-acceptable)

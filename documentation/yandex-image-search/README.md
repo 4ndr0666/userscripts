@@ -1,4 +1,4 @@
-# Yandex Image Search++ · v0.4.2
+# Yandex Image Search++ · v0.4.3
 
 > Yandex reverse-image integration — `images` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ Yandex Image Search++ integrates Yandex's reverse image search into the browsing
 
 | Dimension | Value |
 |---|---|
-| Version | `0.4.2` |
+| Version | `0.4.3` |
 | Matches | `*://yandex.com/images/*`, `*://yandex.ru/images/*` |
 | Run-at | `document-idle` |
-| Size | 11.9 KB · 288 lines |
+| Size | 12.4 KB · 295 lines |
 | Install | [dist/4ndr0tools - YandexImageSearch++.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YandexImageSearch%2B%2B.user.js) |
 
 ## Feature Inventory

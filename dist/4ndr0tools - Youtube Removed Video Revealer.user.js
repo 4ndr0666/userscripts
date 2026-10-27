@@ -2,7 +2,7 @@
 // @name         4ndr0tools - Youtube Removed Video Revealer
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666
-// @version      2.0.3
+// @version      2.0.4
 // @description  Restores titles for removed or private videos in YouTube playlists
 // @license      MIT
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Youtube%20Removed%20Video%20Revealer.user.js
@@ -15,12 +15,18 @@
 // @connect      web.archive.org
 // @require      https://cdnjs.cloudflare.com/ajax/libs/cash/8.1.5/cash.min.js
 // ==/UserScript==
+// v2.0.4 (suite v1.18.0, WO-01 round 10): processClick's native filmot
+// fetch gains the 20 s AbortController bound its GM sibling has had since
+// v2.0.2 (10c F05 — a stalled request left 'Restore Titles' silently dead;
+// the abort rejection flows into the existing retry/reportAJAXError path),
+// and the retry now sleeps 500 ms first — the old comment claimed a throttle
+// that never existed (comment-vs-code truth, the NANO rider).
 let ArchivedIDS = {}, RecoveredIDS = {}, DetectedIDS = {}, deletedIDs = "", deletedIDCnt = 0;
 // v1.5.0 (suite, B.1): zero global pollution — restored/removed bookkeeping
 // moved off window into script scope (the page never reads these).
 
 // 2.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Youtube Removed Video Revealer.user v2.0.3 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Youtube Removed Video Revealer.user v2.0.4 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 // REVISION: Migrated from 'var' to 'const' for immutable global styling constants to prevent accidental reassignment.
 const darkModeBackground = "#000099";
@@ -577,7 +583,16 @@ async function processClick(format, nTry = 0) {
     const apiURL = `https://filmot.com/api/getvideos?key=md5paNgdbaeudounjp39&id=${deletedIDs}`;
 
     try {
-        const response = await fetch(apiURL);
+        /* v2.0.4 (10c F05): the 20 s bound mirrors the GM sibling's v2.0.2
+         * ceiling — a stalled filmot.com response must reject, not hang. */
+        const ctl = new AbortController();
+        const abortTimer = setTimeout(() => ctl.abort(), 20000);
+        let response;
+        try {
+            response = await fetch(apiURL, { signal: ctl.signal });
+        } finally {
+            clearTimeout(abortTimer);
+        }
         if (!response.ok) {
             throw new Error(`Network response was not ok: ${response.status}`);
         }
@@ -596,8 +611,9 @@ async function processClick(format, nTry = 0) {
             reportAJAXError(`${apiURL} ${JSON.stringify(error.message)}`);
             return;
         }
-        // Wait briefly if we wanted to throttle, then retry by calling function again recursively.
-        // Using await to ensure recursive stack handles promise resolution correctly.
+        // v2.0.4: the throttle the old comment claimed — 500 ms before the
+        // single recursive retry, so a failing filmot.com is not hammered.
+        await new Promise(r => setTimeout(r, 500));
         await processClick(format, nTry + 1);
     }
 }

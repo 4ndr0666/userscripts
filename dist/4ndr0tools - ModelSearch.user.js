@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - ModelSearch
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      4.0.3
+// @version      4.0.4
 // @description  Covert SimpCity search UI directly from any website. (Electric-Glass + Alt+S Hotkey Only)
 // @author       4ndr0666
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20ModelSearch.user.js
@@ -15,6 +15,14 @@
 // @license      MIT
 // @run-at       document-start
 // ==/UserScript==
+// 4.0.4 (suite v1.18.0, WO-01 round 10): hotkey/dispatch pair from the
+// rotation audit — the Alt+S keydown now early-returns on IME composition
+// and key auto-repeat (event.isComposing || event.repeat, the suite hotkey
+// idiom Blob2URL already carries: a held Alt+S no longer re-triggers and an
+// IME session no longer surfaces the overlay mid-composition); and
+// #performSearch checks GM_openInTab's return — a popup-blocked dispatch
+// keeps the overlay open with the query intact instead of silently hiding
+// it, so the failure is visible (10b-F15).
 // 4.0.3 (suite v1.12.0, WO-01 round 4): meta-truth — the dead GM_addStyle
 // grant removed (zero call sites since the v3.2.0 BUG-3 font fix replaced
 // its only consumer; the round-2 Images++ 6-c F03 class, not propagated; 4-c F07).
@@ -417,6 +425,8 @@ Changelog:
 
                 // === Alt+S — open overlay ===
                 if (event.altKey && (event.key === 's' || event.key === 'S')) {
+                    // IME composition + key auto-repeat safety (suite hotkey idiom).
+                    if (event.isComposing || event.repeat) return;
                     // [v3.2.0 BUG-2 FIX] Do not hijack Alt+S when the user is
                     // actively typing inside any editable element on the host page.
                     const tag      = document.activeElement?.tagName;
@@ -483,7 +493,8 @@ Changelog:
             const query = this.#inputElement.value.trim();
             if (query) {
                 const searchUrl = `${ModelSearchTool.#SEARCH_URL_BASE}?q=${encodeURIComponent(query)}&o=date`;
-                GM_openInTab(searchUrl, { active: true });
+                const tab = GM_openInTab(searchUrl, { active: true });
+                if (!tab) return; // popup-blocked dispatch — keep the overlay + query visible
                 this.#hideOverlay();
                 this.#inputElement.value = '';
             }

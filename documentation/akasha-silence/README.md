@@ -1,4 +1,4 @@
-# Akasha Silence · v5.2.3
+# Akasha Silence · v5.2.4
 
 > Unified counter-surveillance defense layer — `privacy & security` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ Akasha Silence is the consolidation of three legacy shields — Anti-detection, 
 
 | Dimension | Value |
 |---|---|
-| Version | `5.2.3` |
+| Version | `5.2.4` |
 | Matches | `*://*/*` |
 | Run-at | `document-start` |
-| Size | 115.5 KB · 2164 lines |
+| Size | 116.5 KB · 2178 lines |
 | Install | [dist/4ndr0tools - Akasha Silence.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Akasha%20Silence.user.js) |
 
 ## Feature Inventory

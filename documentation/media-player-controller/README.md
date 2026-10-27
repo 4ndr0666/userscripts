@@ -1,4 +1,4 @@
-# Media Player Controller · v8.1.3
+# Media Player Controller · v8.1.4
 
 > The universal media cockpit — `video & players` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ MPC is the cockpit for any media element on any page: speed with ±0.1 fine rate
 
 | Dimension | Value |
 |---|---|
-| Version | `8.1.3` |
+| Version | `8.1.4` |
 | Matches | `*://*/*` |
 | Run-at | `document-end` |
-| Size | 114.3 KB · 2696 lines |
+| Size | 116.1 KB · 2725 lines |
 | Install | [dist/4ndr0tools - Media Player Controller.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Media%20Player%20Controller.user.js) |
 
 ## Feature Inventory

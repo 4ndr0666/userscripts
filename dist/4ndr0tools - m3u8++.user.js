@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - m3u8++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      5.1.1
+// @version      5.1.2
 // @author       4ndr0666
 // @description  Automatically displays the m3u8 url for ANY video playing in the top right corner of the video. Click url to copy or click download to use the webapp "tools.thatwind.com". Also injects Play buttons next to magnet links on every page, relaying them to www.diancigaoshou.com.
 // @license      MIT
@@ -1194,6 +1194,18 @@ const __4NDR0_NET_API__ = (function () {
     return api;
 })();
 
+// 5.1.2 (suite v1.18.0, WO-01 round 10): the handshake + proxy hardening
+// batch. (1) getTopTitle gains request-id correlation and a 2 s bound
+// (10b F06/F07 — the cross-frame handshake resolved on ANY matching
+// message, so two rapid [Download] clicks let item B carry item A's
+// title, and a top frame that never answers hung the download() await
+// forever while leaking one message listener per click; the responder
+// echoes the request id, and mixed-version update windows degrade to an
+// empty title, never a hang). (2) The duplicate shownUrls push retired
+// (10b F08 — showVideo's url.href registration covers it). (3) The
+// thatwind fetch proxy no longer re-proxies legitimate 204/206 responses
+// and rethrows on Request-object invocations the GM transport cannot
+// carry (10b F09).
 // 5.1.1 (suite v1.12.0, WO-01 round 4): truth batch — the escapeHtml
 // helper removed as dead code (zero call sites: showVideo renders through
 // createElement/textContent since the TT migration; the G8 mitigation had
@@ -1373,9 +1385,16 @@ const __4NDR0_NET_API__ = (function () {
         unsafeWindow.fetch = async function (...args) {
             try {
                 let response = await _fetch(...args);
-                if (response.status !== 200) throw new Error(response.status);
+                /* 5.1.2 (10b F09): 204 (empty) and 206 (range) are SUCCESS
+                 * for the webapp's segment traffic — re-proxying them via
+                 * GM dropped the Range headers and refetched whole bodies. */
+                if (!(response.ok || response.status === 204 || response.status === 206)) throw new Error(response.status);
                 return response;
             } catch (e) {
+                /* 5.1.2 (10b F09): a Request-object invocation cannot be
+                 * proxied — the GM transport takes a URL string; rethrow
+                 * instead of handing it an object it would mangle. */
+                if (args[0] && typeof args[0] === "object") throw e;
                 if (args.length == 1) {
                     console.log(`Proxy request: ${args[0]}`);
                     return await new Promise((resolve, reject) => {
@@ -1439,28 +1458,57 @@ const __4NDR0_NET_API__ = (function () {
 
 
     window.addEventListener("message", async (e) => {
-        if (e.data === "3j4t9uj349-gm-get-title") {
-            let name = `top-title-${Date.now()}`;
+        if (e.data === "3j4t9uj349-gm-get-title" || (typeof e.data === "string" && e.data.startsWith("3j4t9uj349-gm-get-title:"))) {
+            /* 5.1.2 (10b F07): the response echoes the request id when the
+             * caller sent one — concurrent handshakes correlate. The legacy
+             * exact-match shape still answers (a mixed-version window
+             * degrades to an empty title at the caller's 2 s bound, never
+             * a hang). */
+            const reqId = (typeof e.data === "string" && e.data.startsWith("3j4t9uj349-gm-get-title:"))
+                ? e.data.slice("3j4t9uj349-gm-get-title:".length) : "";
+            let name = `top-title-${Date.now()}${reqId ? "-" + reqId : ""}`;
             await mgmapi.setValue(name, document.title);
-            e.source.postMessage(`3j4t9uj349-gm-top-title-name:${name}`, "*");
+            e.source.postMessage(reqId
+                ? `3j4t9uj349-gm-top-title-name:${reqId}:${name}`
+                : `3j4t9uj349-gm-top-title-name:${name}`, "*");
         }
     });
 
     function getTopTitle() {
-        return new Promise(resolve => {
-            window.addEventListener("message", async function l(e) {
-                if (typeof e.data === "string") {
-                    if (e.data.startsWith("3j4t9uj349-gm-top-title-name:")) {
-                        let name = e.data.slice("3j4t9uj349-gm-top-title-name:".length);
-                        await new Promise(r => setTimeout(r, 5));
-                        resolve(await mgmapi.getValue(name));
-                        mgmapi.deleteValue(name);
-                        window.removeEventListener("message", l);
-                    }
-                }
-            });
-            window.top.postMessage("3j4t9uj349-gm-get-title", "*");
+        /* 5.1.2 (10b F06/F07): request-id correlation + the 2 s bound. The
+         * old handshake resolved on ANY matching message — two rapid
+         * [Download] clicks registered two listeners and BOTH resolved on
+         * the FIRST response (item B carried item A's title, or undefined
+         * after the first deleteValue), and a top frame that never answers
+         * (script not injected there / CSP) hung the await inside
+         * download() forever, leaking one message listener per click. */
+        const reqId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const PREFIX = "3j4t9uj349-gm-top-title-name:";
+        let onMsg = null;
+        const handshake = new Promise(resolve => {
+            onMsg = async (e) => {
+                if (typeof e.data !== "string" || !e.data.startsWith(PREFIX)) return;
+                const body = e.data.slice(PREFIX.length);
+                const sep = body.indexOf(":");
+                if (sep === -1 || body.slice(0, sep) !== reqId) return; // not this request's answer
+                window.removeEventListener("message", onMsg);
+                const name = body.slice(sep + 1);
+                await new Promise(r => setTimeout(r, 5));
+                resolve(await mgmapi.getValue(name));
+                mgmapi.deleteValue(name);
+            };
+            window.addEventListener("message", onMsg);
+            window.top.postMessage(`3j4t9uj349-gm-get-title:${reqId}`, "*");
         });
+        const bounded = Promise.race([
+            handshake,
+            new Promise(r => setTimeout(r, 2000)).then(() => ""),
+        ]);
+        /* the timeout arm must not strand the listener on a late answer —
+         * removeEventListener is idempotent when onMsg already removed
+         * itself on match. */
+        bounded.finally(() => { if (onMsg) window.removeEventListener("message", onMsg); });
+        return bounded;
     }
 
 
@@ -1692,7 +1740,8 @@ const __4NDR0_NET_API__ = (function () {
             if (v.duration && v.src && v.src.startsWith("http") && (!shownUrls.includes(v.src))) {
                 const src = v.src;
 
-                shownUrls.push(src);
+                /* 5.1.2 (10b F08): the local push retired — showVideo's
+                 * url.href registration (below) is the single entry. */
                 showVideo({
                     type: "video",
                     url: new URL(src),

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Images++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      4.0.5
+// @version      4.0.6
 // @description  Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. Collapse-mode hotkey is configurable.
 // @author       4ndr0666
 // @match        *://*/*
@@ -51,6 +51,11 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Images++.user.js
 // @license      MIT
 // ==/UserScript==
+// 4.0.6 (suite v1.18.0, WO-01 round 10): Req.gmXhr gains onabort (10c F04 —
+// the supersede path aborts the in-flight request via tryCatch(ai.req.abort),
+// and the aborted promise NEVER settled: timeout and error covered, a
+// manager abort left the page-walk caller awaiting forever. The abort arm
+// nulls the slot and rejects like its siblings.)
 // 4.0.5 (suite v1.12.0, WO-01 round 5): the googleusercontent proxy rule's
 // s-callback and Util.decodeUrl join the guarded family (5-c F02) — a bare
 // '%' in a proxy URL no longer throws out of the rule matcher's pipeline.
@@ -58,7 +63,7 @@
 // rule and getFileName decodes degrade losslessly on malformed
 // percent-escapes instead of throwing inside the mpiv engine (4-c F05).
 // 4.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Images++.user v4.0.5 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Images++.user v4.0.6 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 /* ═══ v4.0.0 — SUITE CONSOLIDATION MERGE (GUP superset gate) ═════════════════
    Base:      Images++ v3.0.0 stable — the universal mouseover-preview lineage
@@ -2843,6 +2848,12 @@ const Req = {
         ontimeout() {
           ai.req = null;
           reject(`Timeout fetching ${url}`);
+        },
+        /* 4.0.6 (10c F04): the supersede path aborts in-flight requests —
+         * the aborted promise must settle like every sibling arm. */
+        onabort() {
+          ai.req = null;
+          reject(`Aborted fetching ${url}`);
         },
       }));
       function done(r) {

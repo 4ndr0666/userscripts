@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Media Player Controller
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      8.1.3
+// @version      8.1.4
 // @author       4ndr0666
 // @description  Speed • Fine Rate ±0.1 • Alt+Shift rAF Zoom/Pan • Rotation • Smart Maximize • Native Fullscreen • PiP • Play • DblClick • Pause-on-Acquire • Virtual DOM Nodes • Shadow-DOM Discovery • Cyan-Glass Scrub Bar • Download Button (fetch + blob capture) • Screenshot • Volume/Mute • Frame Step • Seek Hotkeys • IG Story Nav (3-Layer) • Story Repeat (3-Layer) • Active-Media Observer • YouTube Ad Auto-Skip • Toast Feedback • Draggable HUD • Full Hotkey Suite
 // @license      MIT
@@ -16,6 +16,17 @@
 // @all_frames   true
 // @run-at       document-end
 // ==/UserScript==
+// 8.1.4 (suite v1.18.0, WO-01 round 10): the vnode localStorage orphan purge now
+// materializes IN-SESSION — purgeOrphanVNodes previously ran only at
+// beforeunload, so an infinite-scroll SPA that never unloads grew the vnode
+// store unbounded and the B.1 bound never fired; the virtualization sweep
+// now carries a ~30s-cadence throttled purge tick (timestamp check inside
+// runVirtualizationSweep — no new observers/timers, 10b-F16). Rider: the
+// blob-capture 'ended' once-listener that outlives a stopTimer-terminated
+// recording is dispositioned comment-only — its action is already a
+// state-guarded no-op in that case (recorder.state !== 'inactive'
+// short-circuits stop(); unbinding it would restructure for zero behavioral
+// gain).
 // 8.1.1 (suite v1.4.0): OPSEC — remote Google-Fonts @import purged (IP-leak / fingerprint vector on every page load); local spec font stack retained. 3lectric-Glass universality round.
 
 
@@ -268,15 +279,27 @@
         purgeVNode(id);
     }
 
+    // v8.1.4 (10b-F16): last in-session orphan-purge timestamp — throttles the
+    // purge to a ~30s cadence inside the sweep so the vnode localStorage bound
+    // materializes during the session (an infinite-scroll SPA never unloads).
+    let lastOrphanPurgeMs = Date.now();
+
     /**
      * Scroll-driven virtualization loop.
      * Prunes videos fully outside VNODE_MARGIN px of the viewport.
      * Re-hydrates placeholders that have scrolled back into view.
      * Shadow-root aware via queryAll().
+     * v8.1.4: also carries the ~30s in-session orphan purge (no new observers).
      */
     function runVirtualizationSweep() {
         const vpTop    = window.scrollY;
         const vpBottom = vpTop + window.innerHeight;
+
+        // v8.1.4 (10b-F16): in-session orphan purge, ~30s cadence.
+        if (Date.now() - lastOrphanPurgeMs >= 30000) {
+            lastOrphanPurgeMs = Date.now();
+            purgeOrphanVNodes();
+        }
 
         queryAll('video').forEach(video => {
             if (video === activeVideo) return; // Never prune the active target
@@ -1959,6 +1982,12 @@
             const stopTimer = setTimeout(() => {
                 try { if (recorder.state !== 'inactive') recorder.stop(); } catch (_) { console.debug('MPC interceptor:', _); /* already stopped */ }
             }, stopMs);
+            // v8.1.4 rider (10b-F16 review): this once-listener can outlive a
+            // stopTimer-terminated recording, but its action is already a
+            // state-guarded no-op in that case (recorder.state !== 'inactive'
+            // short-circuits stop(); clearTimeout on a fired timer is inert) —
+            // disposition: comment-only, unbinding it would restructure for
+            // zero behavioral gain.
             video.addEventListener('ended', () => {
                 clearTimeout(stopTimer);
                 try { if (recorder.state !== 'inactive') recorder.stop(); } catch (_) { console.debug('MPC interceptor:', _); /* already stopped */ }
@@ -2684,7 +2713,7 @@
     // BOOT LOG
     // ==========================================
     console.log(
-        '%c[4NDR0666OS] Media Player Controller v8.1.3-Ψ — Unified Superset. ' +
+        '%c[4NDR0666OS] Media Player Controller v8.1.4-Ψ — Unified Superset. ' +
         'Speed ±0.1 | rAF Zoom/Pan (0.5–8x) | Rotation | Smart Maximize (Video+Image) | ' +
         'Native Fullscreen | PiP | Play/DblClick/Space | Pause-on-Acquire | Fallback Target Acquisition | Virtual DOM | ' +
         'Shadow-DOM Discovery | Scrub Bar | Download (fetch + blob capture) | Screenshot | ' +

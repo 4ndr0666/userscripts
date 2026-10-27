@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Stream Interceptor
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      3.3.0
+// @version      3.3.1
 // @description  Intercepts, parses, and extracts stream tokens, manifests, and direct video sources via the suite's shared NetHook hub and DOM inspection. Suite v3.3: the v3.1 dual-realm fetch/XHR hooks ride the shared NetHook singleton (malformed-SVG veto, asset discovery, deep text inspection); ShadowDOM piercing, ReDoS-proof regex, 3lectric-Glass card surface, universal URL registry cap.
 // @author       4ndr0666
 // @license      MIT
@@ -1193,6 +1193,15 @@ const __4NDR0_NET_API__ = (function () {
     return api;
 })();
 
+// 3.3.1 (suite v1.18.0, WO-01 round 10): rotation-audit hygiene triplet — the
+// boot identity line now stamps the live version (it still reported v3.2.0
+// against @version 3.3.0, 10b-F10); DEBUG_MODE ships false by default (the
+// script matches *://*/*, so a true default console-noised EVERY page load
+// against the suite's debug-off convention — the Ψ menu toggle still flips
+// it at runtime, 10b-F11); executeAutoDownload's GM_download dispatch is
+// wrapped in a sync-throw guard so a manager that throws synchronously
+// (unsupported scheme, missing grant) logs through the script's CRITICAL
+// logger and the caller continues instead of hanging the pipeline (10b-F12).
 
 (function () {
     'use strict';
@@ -1233,7 +1242,7 @@ const __4NDR0_NET_API__ = (function () {
        1. CORE CONFIGURATION & STATE
        ========================================================================= */
     const CONFIG = {
-        DEBUG_MODE: true,
+        DEBUG_MODE: false,
         ENABLE_OBSERVER: true,
         AUTO_DOWNLOAD: false,
         OBSERVER_DEBOUNCE_MS: 800,
@@ -1469,13 +1478,17 @@ const __4NDR0_NET_API__ = (function () {
         log.info(`Initiating automated stream retrieval for: ${filename}`);
 
         if (typeof GM_download === 'function') {
-            GM_download({
-                url: url,
-                name: filename,
-                saveAs: false,
-                onload: () => log.success(`Asset structurally verified and secured: ${filename}`),
-                onerror: (err) => log.error(`Download pipeline execution halted: ${err.details || err.error || 'Unknown error'}`)
-            });
+            try {
+                GM_download({
+                    url: url,
+                    name: filename,
+                    saveAs: false,
+                    onload: () => log.success(`Asset structurally verified and secured: ${filename}`),
+                    onerror: (err) => log.error(`Download pipeline execution halted: ${err.details || err.error || 'Unknown error'}`)
+                });
+            } catch (e) {
+                log.error(`Download pipeline dispatch failed for: ${filename}`, e);
+            }
         } else {
             const host = document.body || document.documentElement;
             if (!host) {
@@ -1995,5 +2008,5 @@ const __4NDR0_NET_API__ = (function () {
     registerMenuCommands();
     boot();
 
-    log.info('Ψ Stream Interceptor v3.2.0 — CORE INJECTED & VERIFIED (4ndr0tools suite)');
+    log.info('Ψ Stream Interceptor v3.3.1 — CORE INJECTED & VERIFIED (4ndr0tools suite)');
 })();

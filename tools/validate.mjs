@@ -186,6 +186,15 @@ const RECONCILED_NAMES = {
          * comment-stripped census clean). */
         "escapeHTML": {"note": "removed as dead code (WO-01 round-2): the HTML entity escaper had zero call sites in the shipped script and zero in the legacy baseline it was carried verbatim from", "anchor": null},
     },
+    "Login Form Autofiller": {
+        /* WO-01 round-10 (10c F06): the index-era ID resolver retired — the
+         * element-identity binding replaced every consumer (the menu click,
+         * the focus/blur visibility toggles, and updateGetLoginLinkLabel
+         * carry the bound __bmnWrapper ref injected at field-wrap time);
+         * zero call sites remain (comment-stripped census clean — the
+         * wrapper's id survives as a diagnostic label only). */
+        "getBmnWrapper": {"note": "removed as dead code (WO-01 round-10, 10c F06): the by-ID wrapper resolver served the live-index binding the element-identity refactor retired — sibling refs, the wrapper ref, and the get-login link now bind by element identity at injection time (__bmnUsernameField/__bmnPwField/__bmnWrapper), so an SPA re-render can no longer shift credentials into the wrong field or orphan the menu", "anchor": {"file": "canon/_sovereign/4ndr0tools - Login Form Autofiller.user.js", "mustContain": ["__bmnWrapper", "injectedUsernameFields"]}},
+    },
     "m3u8++": {
         /* WO-01 round-4 (4-c F06): dead helper removed — zero call sites
          * (showVideo renders through createElement/textContent since the TT
