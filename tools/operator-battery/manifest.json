@@ -418,7 +418,7 @@
                 {
                     "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
                     "mustContain": [
-                        "kemono"
+                        "kemono:direct link"
                     ],
                     "atVersion": "1.13.5"
                 }
@@ -476,7 +476,7 @@
                 {
                     "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
                     "mustContain": [
-                        "coomer",
+                        "Coomer:Profiles",
                         "Resolved page"
                     ],
                     "atVersion": "1.13.5"
@@ -686,7 +686,8 @@
                 {
                     "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
                     "mustContain": [
-                        "pixeldrain"
+                        "Pixeldrain:",
+                        "isPixeldrainUrl"
                     ],
                     "atVersion": "1.13.5"
                 }
@@ -965,8 +966,8 @@
                 {
                     "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
                     "mustContain": [
-                        "ibb.co",
-                        "postimg"
+                        "Ibb:image",
+                        "Postimg:image"
                     ],
                     "atVersion": "1.13.5"
                 }
@@ -1863,7 +1864,7 @@
                 {
                     "file": "canon/_promoted/4ndr0tools - Hailuo++.user.js",
                     "mustContain": [
-                        "6.1.2"
+                        "ensureHudIntegrity"
                     ],
                     "atVersion": "6.1.2"
                 }
@@ -2344,7 +2345,7 @@
                 {
                     "file": "package.json",
                     "mustContain": [
-                        "validate"
+                        "operator-battery.mjs check"
                     ],
                     "atVersion": "suite"
                 }
@@ -2557,7 +2558,8 @@
                 {
                     "file": "package.json",
                     "mustContain": [
-                        "build"
+                        "operator-battery.mjs check",
+                        "operator-battery.mjs render"
                     ],
                     "atVersion": "suite"
                 }
