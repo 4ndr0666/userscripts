@@ -1,6 +1,6 @@
 {
     "operatorBatteryResults": "1.0.0",
-    "expiry": "v1.18.0",
+    "expiry": "v1.19.0",
     "note": "The adjudication ledger for operator-side test runs (the sink-census ADJUDICATED idiom). Every entry is re-adjudicated at each pin (the G9 cycle) and the expiry rolls with the suite. FAIL entries MUST carry evidence + note (the fail-visible chain). BLOCKED is a first-class state. Entries for unknown test ids fail the check (orphan sweep).",
     "adjudications": {}
 }

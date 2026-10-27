@@ -7,7 +7,14 @@
 > three Anti-* ICC scripts folded into Akasha Silence at merge; Zai Exporter
 > arrived later), 9 BETA promotions (Stream Interceptor v1.3.0; Forum Link
 > Xtractor's second candidate promotion), 3 merges (Akasha Silence), 38
-> dist installables at 117,216 lines (the WO-01 round-9 audit
+> dist installables at 117,456 lines (the WO-01 round-10 rotation
+> settlement batch — 15 canon bumps: Forums++ v1.13.4 → v1.13.5, CB
+> v4.1.3 → v4.1.4, Pixeldrain++ v1.2.2 → v1.2.3, LFA v2.0.8 → v2.0.9,
+> m3u8++ v5.1.1 → v5.1.2, Images++ v4.0.5 → v4.0.6, YRVR v2.0.3 →
+> v2.0.4, Stream Interceptor v3.3.0 → v3.3.1, Blob2URL v7.3.0 → v7.3.1,
+> ModelSearch v4.0.3 → v4.0.4, MPC v8.1.3 → v8.1.4, MAM v2.0.1 → v2.0.2,
+> Yandex v0.4.2 → v0.4.3, Akasha v5.2.3 → v5.2.4, FLX v3.2.3 → v3.2.4 —
+> over the WO-01 round-9 audit
 > one-liners + the operator battery's birth — Forums++ v1.13.3 → v1.13.4,
 > CB v4.1.2 → v4.1.3 — over the WO-01 round-8 settlement rounds:
 > Forums++ v1.13.2 → v1.13.3, Hailuo++ v6.1.1 → v6.1.2, CB
