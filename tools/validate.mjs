@@ -36,6 +36,7 @@ import { runTransportCensus } from "./transport-census.mjs";
 import { runPollingCensus } from "./polling-census.mjs";
 import { runObserverCensus } from "./observer-census.mjs";
 import { runErrorCensus } from "./error-census.mjs";
+import { runScopeCensus } from "./scope-census.mjs"; /* WO-01 round 11 (OBI-F01): the promise-settlement binding census — a free-variable reference to a settlement name outside every binding span (the Forums++ 1.12.1–1.13.5 'resolve is not defined' live crash the operator's first battery run caught) fails closed */
 import { runConnectCensus } from "./connect-census.mjs";
 import { runOperatorBatteryCheck } from "./operator-battery.mjs"; /* WO-01 round 9: the operator-side regression battery — the machine half (anchor liveness, version stamps, residual coverage, results discipline) */
 import { runDomainCensus } from "./domain-census.mjs";
@@ -1117,6 +1118,25 @@ async function gateD() {
         passes.push(`[D] error census verified (${errors.catchSites} catch sites + ${errors.promiseCatchSites} Promise .catch sites + ${errors.thenArmSites} .then error arms across ${errors.filesScanned} source files — ${errors.typed} typed, ${errors.debug} debug-logged, ${errors.handled} handled, ${errors.silent} silent, ${errors.silentPromiseCatches - errors.ledgeredPromiseArms} silent promise handlers (${errors.ledgeredPromiseArms} ledgered); kernel NetError family asserted, ${errors.kernelClasses} classes)`);
     }
 
+    // Promise-settlement binding census (WO-01 round 11, OBI-F01): the
+    // operator's first real battery run caught Forums++ 1.12.1–1.13.5
+    // shipping a success handler that referenced the download promise
+    // executor's `resolve` param from OUTSIDE its binding scope — every
+    // successful load threw ReferenceError at the settle line and the
+    // batch wedged forever ('gofile++ to absolutely zero avail'). Five
+    // rounds of shape-reading censuses missed it because none read
+    // BINDING. This census reads binding: every settlement-name reference
+    // (resolve/reject/settle/fulfill) must sit inside a span where that
+    // name is actually bound (executor param, callback param, declaration,
+    // catch). Fixture self-assertion proves the class both directions at
+    // every run.
+    const scopes = runScopeCensus();
+    if (scopes.problems.length) {
+        for (const sc of scopes.problems) failures.push(`[D] scope census: ${sc}`);
+    } else {
+        passes.push(`[D] scope census verified (${scopes.filesScanned} source files, ${scopes.references} settlement references, ${scopes.bindingNames} bound names, 0 free — the OBI-F01 class closed repo-wide; fixture self-assertion green)`);
+    }
+
     // Minimal-privilege connect census (suite v1.5.1, GUP G7 — v1.5.0
     // verdict §2/G7): every canon installable's declared @connect set is
     // reconciled against its observed privileged-endpoint literals
@@ -1337,6 +1357,7 @@ async function gateD() {
             operatorBattery: { clean: !battery.problems.length, tests: battery.tests, families: battery.families, residuals: battery.residuals, adjudicated: battery.adjudicated },
             domain: { clean: !domains.problems.length },
             error: { clean: !errors.problems.length, catchSites: errors.catchSites, typed: errors.typed, debug: errors.debug, handled: errors.handled, silent: errors.silent },
+            scope: { clean: !scopes.problems.length, files: scopes.filesScanned }, /* r11 (11c-F07): the 13th instrument rides the score context — the OBI-F01 binding census */
         },
         opsec: opsecClean,
         netHook: { consumers: netConsumerCount },

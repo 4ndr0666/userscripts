@@ -463,7 +463,11 @@ export function ingestOperatorReport(reportPath, opts = {}) {
     for (const line of tableLines) {
         if (!/^\s*\|/.test(line)) continue;
         if (/^\s*\|[\s:|-]+\|?\s*$/.test(line)) continue; /* separator row */
-        const m = /^\s*\|\s*([A-Za-z][A-Za-z0-9-]*)\s*\|\s*([A-Za-z]+)\s*\|\s*([^|]*)\|\s*([^|]*)\|/.exec(line);
+        /* r11 (11c-F09): the row regex is ANCHORED — an unanchored match let a
+         * `|` inside evidence/note silently truncate evidence, mis-assign the
+         * note, and drop the tail; a malformed row now fails visibly as a
+         * shape problem (the operator escapes or drops the pipe). */
+        const m = /^\s*\|\s*([A-Za-z][A-Za-z0-9-]*)\s*\|\s*([A-Za-z]+)\s*\|\s*([^|]*)\|\s*([^|]*)\|\s*$/.exec(line);
         if (!m) {
             problems.push(`unparsed report row: "${line.trim().slice(0, 80)}" — check the column shape (| test | status | evidence | note |)`);
             rejected++;
