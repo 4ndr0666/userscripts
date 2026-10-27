@@ -475,6 +475,42 @@ function gateC() {
             passes.push(`[C] README size/version stamps coincide with inventory for all ${Object.keys(readmes).length} documented scripts`);
         }
     }
+    /* WO-01 round 9 (the 9d82511 message-vs-diff class caught live): the
+     * hand-written deep devlogs (documented=true in gen-docs KNOWLEDGE)
+     * are LINKED but never rewritten by the generator, so their
+     * "current shipped" banners can drift silently — the r8 commit claimed
+     * "Devlog: the 6.1.2 entry" while its diff never touched the devlog,
+     * and the tree advertised v6.1.1 against canon v6.1.2 for a full round.
+     * The banner must name its dist file and carry that script's live
+     * inventory version; the check self-discovers devlogs by the banner
+     * shape (a new hand-written devlog is covered on its first run). */
+    {
+        const invScripts3 = readJsonCached("inventory.json").scripts;
+        const bannerStale = [];
+        let devlogCount = 0;
+        for (const dir of fs.readdirSync(path.join(ROOT, "documentation"))) {
+            const rp = path.join(ROOT, "documentation", dir, "README.md");
+            if (!fs.existsSync(rp)) continue;
+            const head = fs.readFileSync(rp, "utf8").split("\n").slice(0, 12).join("\n");
+            if (!/current shipped/i.test(head)) continue; /* generated references re-write their own head */
+            devlogCount++;
+            const dm = /dist\/(4ndr0tools - [^`*]+?\.user\.js)/.exec(head);
+            if (!dm) { bannerStale.push(`${dir}/README.md banner names no dist file`); continue; }
+            const scriptFile = dm[1].trim();
+            const inv = invScripts3.find((s) => s.file === scriptFile);
+            if (!inv) { bannerStale.push(`${dir}/README.md banner names unknown dist file ${scriptFile}`); continue; }
+            /* the "current shipped" LINE must carry the version — not just
+             * anywhere in the head (an addendum mentioning the release would
+             * mask a stale banner line; red-controlled exactly so). */
+            const bannerLines = head.split("\n").filter((l) => /current shipped/i.test(l)).join("\n");
+            if (!bannerLines.includes(inv.version)) bannerStale.push(`${dir}/README.md banner stale (the 'current shipped' line says a version ≠ v${inv.version} for ${scriptFile}) — re-stamp the banner and add the release addendum`);
+        }
+        if (bannerStale.length) {
+            failures.push(`[C] documentation drift (devlog banner stale for: ${bannerStale.join(", ")}) — hand-written devlogs are linked, never rewritten: re-stamp them with the release`);
+        } else {
+            passes.push(`[C] devlog current-release banners coincide with inventory for all ${devlogCount} hand-written devlog(s)`);
+        }
+    }
     let n = 0;
     for (const f of files) {
         n++;

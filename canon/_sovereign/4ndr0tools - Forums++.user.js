@@ -3,7 +3,7 @@
 // @name        4ndr0tools - Forums++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     1.13.3
+// @version     1.13.4
 // @description Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @match       https://simpcity.su/threads/*
@@ -150,6 +150,23 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Forums++.user.js
 // @license      MIT
 // ==/UserScript==
+// 1.13.4 (suite v1.16.0, WO-01 round 9): the two audit one-liners
+// (9a F02/F05) + the disposition truth pass. The 1.13.3 headerless-body
+// sniff admission fed the WHOLE blob to blob.text() to inspect 2048 chars
+// — a multi-hundred-MB headerless binary spiked memory for nothing; the
+// sniff reads a 4 KiB HEAD SLICE now (the head carries every marker the
+// test reads). The zip-gate GM_download dispatches (zip + generated.zip)
+// gain the arm-level try/catch + FileSaver fallback the per-file arm has
+// had since 1.13.3 (8b F04) — a synchronous dispatch throw (blocked
+// manager API, revoked grant) must not kill the post's save; the
+// generated.zip artifacts land via FileSaver either way. WAIVED on
+// record (9a F06): isBunkrUrl stays unanchored-substring — both matched
+// substrings are bunkr infrastructure exclusively (bunkrr?r?./bunkr-cache/
+// gigachad-cdn appear in no non-bunkr hostname), and anchoring on hostname
+// would trade the negligible false-positive surface for a new URL-parse
+// failure mode on non-URL inputs. CORRECTED on record (9a F07): the 1.13.3
+// commit message said 'six' bunkr alternation groups; the tree carries
+// seven live instances (the dedup itself was complete).
 // 1.13.2 (suite v1.15.0, WO-01 round 7): the storage/UI/hygiene batch
 // (7d F06-F12/F18-F23/F26-F28). STORAGE: pruned ThreadCache threads
 // GM_deleteValue their key (the old {} placeholder capped the data but
@@ -294,7 +311,7 @@
 // Content-Disposition filename decodeURIComponent site degrades losslessly
 // on malformed input instead of throwing (4-c F05).
 // 1.9.2 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Forums++.user v1.13.3 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Forums++.user v1.13.4 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 /* global JSZip, tippy, GM_xmlhttpRequest, saveAs, sha256, GM_download, GM_getValue, GM_setValue, GM_addValueChangeListener, GM_openInTab, GM_cookie, GM_deleteValue */
 
@@ -6444,9 +6461,15 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                              * escapes the isHtml guard above (contentType ''), so
                              * the sniff admits the headerless class too — the
                              * verifyBunkrLinks checkbox is opt-in and cheap. */
+                            /* v1.13.4 (9a F02): the sniff reads a 4 KiB HEAD SLICE — the
+                             * v1.13.3 headerless admission fed the WHOLE blob to
+                             * blob.text(), materializing a multi-hundred-MB string to
+                             * inspect 2048 chars (a headerless large binary spiked
+                             * memory for nothing; the head carries every marker the
+                             * test reads). */
                             if (postSettings.verifyBunkrLinks && size > 0 && (size <= tinyLimit || !contentType)) {
                                 recoveryArmed = true;
-                                blob.text().then(t => {
+                                blob.slice(0, 4096).text().then(t => {
                                     const head = String(t || '').slice(0, 2048).toLowerCase();
                                     /* v1.13.2 (7d F26): a strong marker alone, or ≥2
                                      * weak ones — a single 'cloudflare' byte sequence
@@ -6737,34 +6760,55 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                  * that pinned every multi-MB zip blob until page unload); the
                  * saveAs fallback revokes after FileSaver has taken the blob. */
                 const zipUrl = URL.createObjectURL(blob);
-                GM_download({
-                    url: zipUrl,
-                    name: `${title}/#${postNumber}.zip`,
-                    onload: () => URL.revokeObjectURL(zipUrl),
-                    onerror: response => {
-                        log.post.error(postId, `Error writing zipped file to disk: ${response.error} - ${response.details}`, postNumber);
-                        console.log('Trying to write using FileSaver.js...');
-                        saveAs(blob, filename); // Fallback for GM_download errors
-                        URL.revokeObjectURL(zipUrl);
-                    },
-                });
+                /* v1.13.4 (9a F05): the zip-gate dispatches gain the arm-level
+                 * try/catch the per-file arm has had since v1.13.3 (8b F04) — a
+                 * synchronous dispatch throw (blocked manager API, revoked
+                 * grant) must not kill the post's save; the FileSaver fallback
+                 * takes the blob either way. */
+                try {
+                    GM_download({
+                        url: zipUrl,
+                        name: `${title}/#${postNumber}.zip`,
+                        onload: () => URL.revokeObjectURL(zipUrl),
+                        onerror: response => {
+                            log.post.error(postId, `Error writing zipped file to disk: ${response.error} - ${response.details}`, postNumber);
+                            console.log('Trying to write using FileSaver.js...');
+                            saveAs(blob, filename); // Fallback for GM_download errors
+                            URL.revokeObjectURL(zipUrl);
+                        },
+                    });
+                } catch (zipDispatchError) {
+                    log.post.error(postId, `Zip dispatch failed: ${zipDispatchError && zipDispatchError.message}`, postNumber);
+                    console.log('Trying to write using FileSaver.js...');
+                    saveAs(blob, filename);
+                    URL.revokeObjectURL(zipUrl);
+                }
             } else if (postSettings.generateLog || postSettings.generateLinks) {
                 // Only generate a zip with logs/links when not zipping all files
                 const genUrl = URL.createObjectURL(blob);
-                GM_download({
-                    url: genUrl,
-                    name: `${title}/#${postNumber}/generated.zip`, // Put it in a subfolder
-                    onload: () => URL.revokeObjectURL(genUrl),
-                    onerror: response => {
-                        log.post.error(postId, `Error writing generated.zip to disk: ${response.error} - ${response.details}`, postNumber);
-                        /* v1.13.3 (8b F01): the generated.zip arm gains the FileSaver
-                         * fallback its sibling has had since v1.12.1 — a GM_download
-                         * error silently dropped the log/links artifacts before. */
-                        console.log('Trying to write using FileSaver.js...');
-                        saveAs(blob, `${title} #${postNumber} - generated.zip`);
-                        URL.revokeObjectURL(genUrl);
-                    },
-                });
+                /* v1.13.4 (9a F05): the generated.zip arm mirrors its sibling's
+                 * dispatch guard (same 8b F04 class, completed by symmetry). */
+                try {
+                    GM_download({
+                        url: genUrl,
+                        name: `${title}/#${postNumber}/generated.zip`, // Put it in a subfolder
+                        onload: () => URL.revokeObjectURL(genUrl),
+                        onerror: response => {
+                            log.post.error(postId, `Error writing generated.zip to disk: ${response.error} - ${response.details}`, postNumber);
+                            /* v1.13.3 (8b F01): the generated.zip arm gains the FileSaver
+                             * fallback its sibling has had since v1.12.1 — a GM_download
+                             * error silently dropped the log/links artifacts before. */
+                            console.log('Trying to write using FileSaver.js...');
+                            saveAs(blob, `${title} #${postNumber} - generated.zip`);
+                            URL.revokeObjectURL(genUrl);
+                        },
+                    });
+                } catch (genDispatchError) {
+                    log.post.error(postId, `Generated.zip dispatch failed: ${genDispatchError && genDispatchError.message}`, postNumber);
+                    console.log('Trying to write using FileSaver.js...');
+                    saveAs(blob, `${title} #${postNumber} - generated.zip`);
+                    URL.revokeObjectURL(genUrl);
+                }
             }
         }
     }

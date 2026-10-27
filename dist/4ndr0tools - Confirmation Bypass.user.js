@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Confirmation Bypass
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      4.1.2
+// @version      4.1.3
 // @author       4ndr0666
 // @description  Reveals forum invisi-text, view all replies, rewrite redirect links. Download Gate: bypass all confirmation pages on all sites, glass overlay copy/download URL (incl. vidara embeds on xcandid), auto-solve Altcha, auto-click download. Turbo: embed routing, upload injector. Util: external link safety, right-click scrollbar to top.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -23,6 +23,20 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Confirmation%20Bypass.user.js
 // @license      MIT
 // ==/UserScript==
+// 4.1.3 (suite v1.16.0, WO-01 round 9): the reaction window's arming
+// order (9a F01/F04). The 4.1.2 window armed AFTER the five-event dispatch
+// loop — but dispatchEvent runs page click handlers SYNCHRONOUSLY, so a
+// handler-side DOM touch (toast/progress appended outside the button: no
+// btn-local class/label/aria change) committed inside the listener BEFORE
+// the window opened was never recorded — pageReacted stayed false and the
+// re-arm still double-dispatched at ~1.9 s for exactly the handler-side
+// class the window was built to catch. The window now arms BEFORE the
+// dispatch loop (our own data-cb4 write precedes it; synthetic events
+// generate no records). The self-disconnect timer also closes over the
+// observer INSTANCE it was created with (the shared variable would
+// disconnect whatever observer is current when the timer fires — safe
+// today only because click #2 postdates click #1's window, but any future
+// overlapping window would disconnect the wrong observer early).
 // 4.1.2 (suite v1.15.0, WO-01 round 8): the re-arm made node-true (8b
 // F07/F16/F17/F08). The 4.1.1 idle-heuristics re-click was a reduction,
 // not the claimed kill: a non-navigating download (Content-Disposition /
@@ -70,7 +84,7 @@
 // identities in one console since promotion; 4-c F04); the v4.0.4 suite
 // banner at boot is the single identity.
 // 4.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1.2 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1.3 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px');
 
 
 /* ═══ SUITE PROMOTION 4.0.0 ═══════════════════════════════════════════
@@ -875,6 +889,33 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
             rearmLabel = (btn.textContent || '').trim(); // 7b F17: label at click time
             console.log('[4ndr0tools] Download button triggered.');
             const view = btn.ownerDocument?.defaultView ?? null;
+            /* v4.1.3 (9a F01): the reaction window arms BEFORE the dispatch
+             * loop — dispatchEvent runs page click handlers SYNCHRONOUSLY,
+             * and handler-side DOM mutations (a toast/progress node appended
+             * outside the button: no btn-local class/label/aria change)
+             * committed inside the listener were invisible to a window armed
+             * after the loop, leaving pageReacted false and the re-arm
+             * double-dispatching exactly the handler-side-touch class the
+             * window exists to catch. Our own attribute write happened
+             * before this line, and synthetic event dispatch generates no
+             * records of its own — only page-code reactions land here. */
+            pageReacted = false;
+            try {
+                reactionObs = new MutationObserver(() => { pageReacted = true; });
+                /* 9a F04: the self-disconnect timer closes over THIS instance —
+                 * the shared variable would disconnect whatever observer is
+                 * current when the timer fires (safe today only because
+                 * click #2 postdates click #1's window; any future overlapping
+                 * window would disconnect the wrong observer early). */
+                const ro = reactionObs;
+                reactionObs.observe(document.documentElement, { childList: true, subtree: true, attributes: true });
+                window.setTimeout(() => {
+                    ro.disconnect();
+                    if (reactionObs === ro) reactionObs = null;
+                }, REARM_MS - 100);
+            } catch (reactionError) {
+                console.debug('[4ndr0tools] reaction window unavailable:', reactionError && reactionError.message);
+            }
             ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'].forEach(type => {
                 btn.dispatchEvent(new MouseEvent(type, {
                     view, bubbles: true, cancelable: true, buttons: 1,
@@ -883,24 +924,12 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
             /* v4.1.2 (8b F07): the reaction window — any DOM mutation within
              * 1.5 s of the click proves the page's handler fired (attribute
              * flips, label swaps, handler-side DOM touches: spinners, progress
-             * elements, gating UI). Our own attribute write happened BEFORE
-             * this window arms, and synthetic event dispatch generates no
-             * records of its own — only page-code reactions land here. The
-             * re-arm exists ONLY for the silent handler-not-ready case, so a
-             * reacted page suppresses click #2 even when the button looks
-             * idle. Conservative by design: unrelated churn (an ad rotor)
-             * suppressing one re-click trades toward the LEGACY single-click
-             * behavior — the duplicate-download direction is the regression. */
-            pageReacted = false;
-            try {
-                reactionObs = new MutationObserver(() => { pageReacted = true; });
-                reactionObs.observe(document.documentElement, { childList: true, subtree: true, attributes: true });
-                window.setTimeout(() => {
-                    if (reactionObs) { reactionObs.disconnect(); reactionObs = null; }
-                }, REARM_MS - 100);
-            } catch (reactionError) {
-                console.debug('[4ndr0tools] reaction window unavailable:', reactionError && reactionError.message);
-            }
+             * elements, gating UI). The re-arm exists ONLY for the silent
+             * handler-not-ready case, so a reacted page suppresses click #2
+             * even when the button looks idle. Conservative by design:
+             * unrelated churn (an ad rotor) suppressing one re-click trades
+             * toward the LEGACY single-click behavior — the duplicate-download
+             * direction is the regression. */
             return true;
         };
 

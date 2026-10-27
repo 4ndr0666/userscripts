@@ -14,10 +14,10 @@
 | 4ndr0tools - Blob2URL | `7.3.0` | promoted | 38 | typeof-guarded + gmFetch fallback | universal (*) |
 | 4ndr0tools - Bunkr++ | `7.7.0` | sovereign | 97 | typeof-guarded + gmFetch fallback | scoped via @include: bunkr, bunker |
 | 4ndr0tools - Bypass Paywalls | `0.1.7` | sovereign | 10 | kernel-free | 404media.co, adweek.com, ad.nl, americanbanker.com (+166) |
-| 4ndr0tools - Confirmation Bypass | `4.1.2` | promoted | 41 | kernel-free | forums.socialmediagirls.com, simpcity.cr, turbo.cr, xcandid.vip + * |
+| 4ndr0tools - Confirmation Bypass | `4.1.3` | promoted | 41 | kernel-free | forums.socialmediagirls.com, simpcity.cr, turbo.cr, xcandid.vip + * |
 | 4ndr0tools - Filester++ | `7.6.2` | sovereign | 7 | typeof-guarded (NetHook) | scoped via @include: filester |
 | 4ndr0tools - Forum Link Xtractor | `3.2.3` | promoted | 22 | kernel-free | forums.socialmediagirls.com, simpcity.su, simpcity.cr, candidshiny.com (+1) |
-| 4ndr0tools - Forums++ | `1.13.3` | sovereign | 141 | typeof-guarded + gmFetch fallback | simpcity.su, simpcity.cr, simpcity.is, simpcity.cz (+5) |
+| 4ndr0tools - Forums++ | `1.13.4` | sovereign | 141 | typeof-guarded + gmFetch fallback | simpcity.su, simpcity.cr, simpcity.is, simpcity.cz (+5) |
 | 4ndr0tools - GoFile++ | `2.2.0` | sovereign | 11 | typeof-guarded + gmFetch fallback | gofile.io |
 | 4ndr0tools - GooglePhotosandDrive++ | `8.1.1` | promoted | 55 | typeof-guarded + gmFetch fallback | googleusercontent.com, photos.google.com, drive.google.com |
 | 4ndr0tools - Hailuo++ | `6.1.2` | promoted | 20 | kernel-free | hailuoai.com, hailuoai.video |
