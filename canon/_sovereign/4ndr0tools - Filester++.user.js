@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Filester++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      7.6.2
+// @version      7.6.3
 // @author       4ndr0666
 // @description  Dynamic stream extraction + folder enumeration for any media on Filester.me. Network proxy + glyph injection.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -16,6 +16,13 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Filester++.user.js
 // @license      MIT
 // ==/UserScript==
+// 7.6.3 (suite v1.19.0, WO-01 round 11): every resolveMedia/enumerateFolder
+// probe carries a 10 s AbortController (11b-F10 — the YRVR 2.0.4 shape the
+// r10 rotation fixed there but never armed here): a stalled connection
+// wedged the glyph at '⟳' forever; the timeout rejection flows into the
+// existing per-probe catch and the sweep moves to the next endpoint. The
+// json body read rides inside the bound too (the YRVR 2.0.5 body-phase
+// lesson — 11b-F12 class).
 // 7.5.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
 
 /* ═══ v7.5.0 — framework realignment pass ═════════════════════════════════
@@ -36,7 +43,7 @@
 (function () {
     'use strict';
 
-    console.log('%c[4NDR0tools] Filester Universal Liberator v7.6.2-Ψ', 'color:#00E5FF; font-family:monospace; font-weight:bold;');
+    console.log('%c[4NDR0tools] Filester Universal Liberator v7.6.3-Ψ', 'color:#00E5FF; font-family:monospace; font-weight:bold;');
 
     const API_BASE = 'https://u1.filester.me';
     const mediaCache = new Map(); // id/slug → {type, streamUrl, directUrl}
@@ -151,7 +158,16 @@
 
         for (const url of probes) {
             try {
-                const res = await origFetch(url, { method: 'HEAD' });
+                /* v7.6.3 (11b-F10): the 10 s per-probe bound — a stalled
+                 * connection wedged the glyph at '⟳' forever. */
+                const ctl = new AbortController();
+                const abortTimer = setTimeout(() => ctl.abort(), 10000);
+                let res;
+                try {
+                    res = await origFetch(url, { method: 'HEAD', signal: ctl.signal });
+                } finally {
+                    clearTimeout(abortTimer);
+                }
                 if (res.ok) {
                     const entry = { type: res.headers.get('content-type')?.includes('video') ? 'video' : 'file', streamUrl: url };
                     setMediaCache(idOrSlug, entry);
@@ -181,17 +197,29 @@
         ];
         for (const url of probes) {
             try {
-                const res = await origFetch(url);
-                if (res.ok) {
-                    const ct = res.headers.get('content-type') || '';
-                    if (ct.includes('json')) {
-                        const data = await res.json();
-                        console.log(`[Ψ-4NDR0666] Folder ${folderId} enumerated via ${url}:`, data);
-                        if (Array.isArray(data) || Array.isArray(data?.files) || Array.isArray(data?.data)) {
-                            console.table(Array.isArray(data) ? data : (data.files || data.data));
+                /* v7.6.3 (11b-F10): the 10 s per-probe bound; the json BODY
+                 * read rides inside it too (the YRVR 2.0.5 lesson — a stalled
+                 * body escapes a headers-only bound). */
+                const ctl = new AbortController();
+                const abortTimer = setTimeout(() => ctl.abort(), 10000);
+                let data = null;
+                try {
+                    const res = await origFetch(url, { signal: ctl.signal });
+                    if (res.ok) {
+                        const ct = res.headers.get('content-type') || '';
+                        if (ct.includes('json')) {
+                            data = await res.json();
                         }
-                        return true;
                     }
+                } finally {
+                    clearTimeout(abortTimer);
+                }
+                if (data) {
+                    console.log(`[Ψ-4NDR0666] Folder ${folderId} enumerated via ${url}:`, data);
+                    if (Array.isArray(data) || Array.isArray(data?.files) || Array.isArray(data?.data)) {
+                        console.table(Array.isArray(data) ? data : (data.files || data.data));
+                    }
+                    return true;
                 }
             } catch (e) { console.debug('FILESTER interceptor:', e);}
         }

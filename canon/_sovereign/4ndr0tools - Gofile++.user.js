@@ -2,9 +2,9 @@
 // @name        4ndr0tools - GoFile++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     2.2.0
+// @version     2.3.0
 // @description Directly batch-download GoFiles with a robust UI. Supports recursive folder scans, direct links, and download managers (Aria2, IDM). Fixing SPA persistence and Sandbox access.
-// @match       *://gofile.io/*
+// @match       *://*.gofile.io/*
 // @icon        data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @connect     api.gofile.io
 // @connect     localhost
@@ -16,8 +16,27 @@
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Gofile++.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Gofile++.user.js
 // ==/UserScript==
+// 2.3.0 (suite v1.19.0, WO-01 round 11): THE ZERO-AVAIL BATCH — the
+// operator's battery run fired Gofile++ up 'to absolutely zero avail'
+// (11a-F01..F04). (1) @match widens to *://*.gofile.io/* — the exact-host
+// pattern never injected on www.gofile.io, the site's canonical app host:
+// total silence, no boot banner, nothing (11a-F01). (2) The observer now
+// falls back to document.documentElement when #index_main is absent at
+// init — the childList+subtree config is behaviorally equivalent at the
+// document root, and a layout-id change no longer disarms the whole panel
+// (11a-F02). (3) getContent rides the CURRENT API era: a guest-account
+// token (POST /accounts, cached 24 h) carried as Authorization: Bearer —
+// the pre-2023 `Cookie: document.cookie` auth and the years-stale
+// hardcoded 'wt' fallback token are dead (11a-F03). (4) The sidebar
+// append is null-guarded (11a-F04). Plus: the Direct arm checks
+// window.open's return (popup blocking was a silent drop; 11a-F05), zh-CN
+// gains the missing abdm_not_configured key (11a-F06), the inline pageApp
+// duplicate calls the helper (11a-F07), the 'Stop observing' comment tells
+// the truth — the observer is intentionally never disconnected, it is the
+// panel's liveness keeper (11a-F08), and the dead classList remnant is
+// gone (11a-F09).
 // 2.1.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.2.0 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.3.0 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 
 ; (function () {
@@ -39,6 +58,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.2.0 —
             abdm_download_folder_placeholder: '若留空则使用 ABDM 默认设置',
             abdm_port: 'ABDM 端口',
             abdm_port_not_configured: 'ABDM 端口未配置',
+            abdm_not_configured: 'ABDM 端口未配置',
             abdm_port_placeholder: '默认为 15151',
             abdm_settings: ' AB Download Manager 设置',
             are_you_sure_to_download__these_files: '确定要下载下列文件吗？',
@@ -336,15 +356,43 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.2.0 —
     }
 
     /** GoFile content fetch for the recursive scan (v2.1.0 — was missing
-     *  entirely). Uses the page's website token when available, with the
-     *  known public token as fallback, and carries the session cookie. */
+     *  entirely). v2.3.0 (11a-F03): rides the CURRENT API era — the guest
+     *  account token (POST /accounts, cached 24 h) carried as
+     *  `Authorization: Bearer`; the pre-2023 `Cookie: document.cookie`
+     *  auth era is dead (guest context lives in the account token, not the
+     *  page jar). The website token still rides the query string when the
+     *  page exposes one. */
     async function getContent(contentId) {
-        const pageApp = (typeof appdata !== 'undefined' && appdata) ? appdata : null;
-        const wt = (pageApp && pageApp.wt) ? pageApp.wt : '4fd6sg89d7s6';
-        const res = await utils.gmFetch(`https://api.gofile.io/contents/${contentId}?wt=${wt}`, {
-            headers: { Cookie: utils.getToken() },
+        const wt = (pageApp() && pageApp().wt) ? pageApp().wt : '';
+        const token = await getGuestToken();
+        const res = await utils.gmFetch(`https://api.gofile.io/contents/${contentId}${wt ? `?wt=${wt}` : ''}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         return res.json();
+    }
+
+    /** v2.3.0 (11a-F03): the guest-account token — POST /accounts creates
+     *  (or returns) a guest account; the token is cached for 24 h (the
+     *  site's own guest-session lifetime class) so recursive scans do not
+     *  mint an account per folder. Mint failures degrade to the
+     *  unauthenticated request — the toast path reports the API's own
+     *  verdict instead of a silent death. */
+    async function getGuestToken() {
+        const CACHE_KEY = 'GE_guest_token_cache';
+        try {
+            const cached = JSON.parse(GM_getValue(CACHE_KEY, 'null'));
+            if (cached && cached.token && (Date.now() - cached.at) < 86400000) return cached.token;
+        } catch (_) { /* corrupted cache — mint a fresh token */ }
+        try {
+            const res = await utils.gmFetch('https://api.gofile.io/accounts', { method: 'POST' });
+            const acc = await res.json();
+            const token = acc && acc.data && acc.data.token;
+            if (token) {
+                try { GM_setValue(CACHE_KEY, JSON.stringify({ token, at: Date.now() })); } catch (_) { /* storage refusal — token simply is not cached */ }
+                return token;
+            }
+        } catch (_) { /* mint failure — degrade to unauthenticated */ }
+        return null;
     }
 
 
@@ -500,11 +548,19 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.2.0 —
             const lang = I18N[navigator.language] ? navigator.language : DEFAULT_LANGUAGE
             return I18N[lang][key] || key
         },
-        getToken: () => document.cookie,
+        getToken: () => document.cookie, /* v2.3.0: no longer the API auth path (11a-F03) — kept for diagnostics */
         goDirectLinks(links) {
+            let blocked = 0;
             links.forEach((link) => {
-                window.open(link, link)
-            })
+                /* v2.3.0 (11a-F05): '_blank' (the URL-as-window-name made
+                 * repeat clicks reuse a named window) and the popup-block
+                 * check — a blocked opener was a SILENT drop. */
+                const win = window.open(link, '_blank');
+                if (!win) blocked++;
+            });
+            if (blocked) {
+                createNotification(utils.getTranslation('error'), `popup blocked (${blocked} of ${links.length}) — allow popups for this site`, 'error');
+            }
         },
         async collectAllItems() {
             createAlert('loading', utils.getTranslation('fetching_file_list'))
@@ -1083,7 +1139,6 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.2.0 —
             // create container
             const container = document.createElement('ul')
             container.id = GE_CONTAINER_ID
-            // 'border-t', 'border-gray-700', 'mt-4',
             container.classList.add('pt-4', 'space-y-4')
 
             // append buttons to container
@@ -1094,7 +1149,11 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.2.0 —
             })
 
             // append container to sidebar
-            document.querySelector('#index_sidebar').appendChild(container)
+            /* v2.3.0 (11a-F04): null-guarded — a stale layout id must not
+             * throw a TypeError on every debounced observer pass. */
+            const sidebar = document.querySelector('#index_sidebar');
+            if (!sidebar) return;
+            sidebar.appendChild(container)
         },
     }
 
@@ -1116,8 +1175,9 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.2.0 —
                     if (pageApp()?.fileManager?.mainContent?.data) {
                         // Add buttons to sidebar
                         !container && operations.addContainerToSidebar()
-                        // Stop observing
-                        // obs.disconnect()
+                        // v2.3.0 (11a-F08) truth note: NEVER disconnect —
+                        // this observer is the panel's liveness keeper
+                        // (idempotent add/remove as the SPA swaps content).
                     } else {
                         // remove GofileEnhanced_Container
                         container && container.remove()
@@ -1125,17 +1185,18 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.2.0 —
                 }, 150)
             })
 
-            // Observe the target node "#index_main", which is in the DOM initially.
-            const targetNode = document.getElementById('index_main')
+            // Observe the target node "#index_main"; v2.3.0 (11a-F02): when
+            // the layout id is absent at init, fall back to the document
+            // root — the childList+subtree config is behaviorally equivalent
+            // there and a layout-id change can no longer disarm the panel.
+            const targetNode = document.getElementById('index_main') || document.documentElement
             const config = { childList: true, subtree: true }
-            if (targetNode) {
-                observer.observe(targetNode, config)
-            } else {
-                /* [R3 boot hygiene] wrong-host diagnostic: the harness and
-                 * non-gofile pages legitimately lack #index_main — a debug
-                 * line, not an error (the live matrix boot gate requires a
-                 * clean error channel on every host). */
-                console.debug('[Gofile Enhanced] #index_main not found.')
+            observer.observe(targetNode, config)
+            if (!document.getElementById('index_main')) {
+                /* [R3 boot hygiene] wrong-host diagnostic kept: the fallback
+                 * is armed, this line only records the layout-id drift for
+                 * anyone debugging a redesigned page. */
+                console.debug('[Gofile Enhanced] #index_main not found — observing document root.')
             }
         },
     }

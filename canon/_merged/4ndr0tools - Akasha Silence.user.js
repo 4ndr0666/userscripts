@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Akasha Silence
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      5.2.4
+// @version      5.2.5
 // @description  Unified counter-surveillance defense layer with a three-stage strictness valve (full / core / off via Ctrl+Alt+Shift+K). Three-way consolidation of Anti-detection + Counter-surveillance + Anti-telemetry (ICC): anti-analysis script neutralization, telemetry sinkholing (fetch/XHR/beacon/WebSocket), WebRTC blinding, session-stable fingerprint spoofing (hardware/canvas/WebGL/audio), identifier poisoning, Google link-tracking sanitization and hostile-UI countermeasures.
 // @author       4ndr0666
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -12,6 +12,22 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Akasha%20Silence.user.js
 // @license      MIT
 // ==/UserScript==
+// 5.2.5 (suite v1.19.0, WO-01 round 11): THE OPERATOR-BATTERY LIVE CATCH
+// (OBI-F02 — the operator's first battery run, free-form console excerpt:
+// dozens of 'Uncaught SecurityError: Failed to read a named property
+// '_akashaLocalHooked' from 'Window'' at the iframe load listener on
+// simpcity.cr). Root cause: the synchronous added-node branch of the iframe
+// watcher was try-guarded, but the LOAD-listener callback was not — and
+// applyLocalHooks reads a named expando off the passed Window, which THROWS
+// on cross-origin frames (a cross-origin Window allows only the allowlist:
+// location, postMessage…; every expando read is a SecurityError). The
+// listener callback now carries the same try/catch discipline as its
+// synchronous sibling, and applyLocalHooks probes the realm FIRST — a
+// cross-origin frame cannot host local pacifiers anyway (every subsequent
+// property write would throw the same way), so it returns early instead of
+// throwing. Net effect: the console spam is gone, no behavior is lost —
+// same-origin frames hook exactly as before; cross-origin frames were never
+// hookable and now fail soft.
 // 5.2.4 (suite v1.18.0, WO-01 round 10): comment-truth + regex-hygiene pair
 // (10c-F09) — the D1-STEALTH paradigm note over-claimed "Proxy facades" for
 // the WebSocket/WebRTC/worker pacifiers; they are (and remain) PLAIN
@@ -181,7 +197,7 @@
         }
     }, true);
 
-    const SCRIPT_VERSION = '5.2.4'; // v5.2.3: single source — both boot banners interpolate this
+    const SCRIPT_VERSION = '5.2.5'; // v5.2.3: single source — both boot banners interpolate this
     if (AKASHA_PROFILE === 'off') {
         console.log(`%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: AKASHA_SILENCE v${SCRIPT_VERSION} profile=OFF — INERT. Ctrl+Alt+Shift+K cycles the profile. `, 'background: #000; color: #00ff00; font-weight: bold; font-family: monospace; padding: 4px;');
         return;
@@ -480,10 +496,20 @@
     });
 
     /* Local (non-request-path) defenses — still Proxy facades (D1).
-     * Applied to the boot realm and to every propagated iframe realm. */
+     * Applied to the boot realm and to every propagated iframe realm.
+     * v5.2.5 (OBI-F02): the guard probe is cross-origin-SAFE — reading a
+     * named expando off a cross-origin Window throws SecurityError (the
+     * operator's live console spam), and a cross-origin realm cannot host
+     * these pacifiers at all (every property write below would throw the
+     * same way), so the probe returns early instead of throwing. */
     const applyLocalHooks = (targetWindow) => {
-        if (!targetWindow || targetWindow._akashaLocalHooked) return;
-        targetWindow._akashaLocalHooked = true;
+        if (!targetWindow) return;
+        let alreadyHooked = false;
+        try { alreadyHooked = !!targetWindow._akashaLocalHooked; }
+        catch (_) { return; } /* cross-origin realm — cannot host local pacifiers */
+        if (alreadyHooked) return;
+        try { targetWindow._akashaLocalHooked = true; }
+        catch (_) { return; } /* exotic sealed realm — same treatment */
 
         /* WebSocket — tracker URLs resolve to a pacified phantom (D4).
          * Static CONNECTING/OPEN/CLOSING/CLOSED constants are carried over
@@ -990,10 +1016,18 @@
                             applyLocalHooks(node.contentWindow);
                         }
                         node.addEventListener('load', () => {
-                            if (node.contentWindow) {
-                                __4NDR0_NET_API__.propagate(node.contentWindow);
-                                applyLocalHooks(node.contentWindow);
-                            }
+                            /* v5.2.5 (OBI-F02): the load callback carries the
+                             * same try/catch discipline as the synchronous
+                             * added-node branch above — a cross-origin frame
+                             * (or an exotic window whose propagate throws)
+                             * must fail soft, not spam an uncaught
+                             * SecurityError per frame load. */
+                            try {
+                                if (node.contentWindow) {
+                                    __4NDR0_NET_API__.propagate(node.contentWindow);
+                                    applyLocalHooks(node.contentWindow);
+                                }
+                            } catch (e) { console.debug('AKASHA load-hook:', e); }
                         });
                     } catch (e) { console.debug('AKASHA interceptor:', e);}
                 }
