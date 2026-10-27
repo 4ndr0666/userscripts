@@ -7,7 +7,15 @@
 > three Anti-* ICC scripts folded into Akasha Silence at merge; Zai Exporter
 > arrived later), 9 BETA promotions (Stream Interceptor v1.3.0; Forum Link
 > Xtractor's second candidate promotion), 3 merges (Akasha Silence), 38
-> dist installables at 117,456 lines (the WO-01 round-10 rotation
+> dist installables at 117,806 lines (the WO-01 round-11
+> operator-battery settlement — 11 canon bumps over the operator's first
+> real paste-back: Forums++ v1.13.5 → v1.13.6 (the OBI-F01 settle-callback
+> fix), Akasha v5.2.4 → v5.2.5 (the OBI-F02 cross-origin guards), Gofile++
+> v2.2.0 → v2.3.0 (the zero-avail batch), Pixeldrain++ v1.2.3 → v1.2.4
+> (the resume-integrity batch), BypassPaywalls v0.1.7 → v0.1.8 (the
+> dead-branch resurrection), YTPM v1.7.3 → v1.7.4, Filester++ v7.6.2 →
+> v7.6.3, YRVR v2.0.4 → v2.0.5, Redgifs++ v5.2.2 → v5.3.3, YT Filter
+> v2.5 → v2.5.1, Bunkr++ v7.7.0 → v7.7.1 — over the WO-01 round-10 rotation
 > settlement batch — 15 canon bumps: Forums++ v1.13.4 → v1.13.5, CB
 > v4.1.3 → v4.1.4, Pixeldrain++ v1.2.2 → v1.2.3, LFA v2.0.8 → v2.0.9,
 > m3u8++ v5.1.1 → v5.1.2, Images++ v4.0.5 → v4.0.6, YRVR v2.0.3 →

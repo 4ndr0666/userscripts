@@ -5,7 +5,7 @@
 // @namespace    https://github.com/4ndr0666/userscripts
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @run-at       document-end
-// @version      0.1.7
+// @version      0.1.8
 // @match        *://404media.co/*
 // @match        *://*.adweek.com/*
 // @match        *://*.ad.nl/*
@@ -180,12 +180,30 @@
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20BypassPaywalls.user.js
 // @license      MIT
 // ==/UserScript==
+// 0.1.8 (suite v1.19.0, WO-01 round 11): the dead-branch resurrection batch
+// (11b-F01/F05/F06/F07/F16). (1) leparisien: the branch's first statement
+// was `window.removeEventListener('scroll', this.scrollListener)` — in a
+// strict-mode IIFE `this` is undefined, so EVERY leparisien page load threw
+// an unconditional TypeError and the paywall removal below it never ran
+// (the r1 medium.com extensionApi crash class); the line is dead extension
+// lineage — deleted (11b-F01). (2) afr.com image promotion: `'src: ' +
+// src.indexOf('.gif') !== -1` is a precedence bug — string concat binds
+// first, the comparison is always true, so EVERY image was data-src
+// promoted; now the indexOf check (11b-F05). (3) lesechos: the
+// __PRELOADED_STATE__ split chain rode OUTSIDE the try — a page without
+// the marker threw an uncaught TypeError in the setTimeout and the paywall
+// rebuild died; the chain rides inside (11b-F06). (4) canberratimes /
+// bizjournals / seattletimes: three unguarded selector derefs
+// (paywall.classList, bodyHidden.removeAttribute, container.removeAttribute)
+// now null-guard like every sibling branch (11b-F07). (5) The duplicate
+// matchDomain declaration (the hoist-loser boolean twin) is deleted
+// (11b-F16).
 // 0.1.7 (suite v1.12.0, WO-01 round 4): error-path hardening — the barrons
 // signin target decode degrades losslessly on malformed percent-escapes
 // instead of throwing inside the domain branch (4-c F05).
 // 0.1.4 (suite v1.4.2): Trusted-Types class fix — parseFromString sites policy-wrapped (parse sinks die under require-trusted-types-for 'script').
 // 0.1.3 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: BypassPaywalls.user v0.1.7 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: BypassPaywalls.user v0.1.8 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 (function () {
     'use strict';
@@ -415,7 +433,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: BypassPaywalls.user v0.1
             const hiddenImage = document.querySelectorAll('img');
             for (const image of hiddenImage) {
                 const src = image.src;
-                if ('src: ' + src.indexOf('.gif') !== -1) {
+                if (src.indexOf('.gif') !== -1) { /* v0.1.8 (11b-F05): the old `'src: ' + src.indexOf('.gif') !== -1` concatenated FIRST — always true, promoting every image */
                     const dataSrc = image.getAttribute('data-src');
                     if (isSafeImageSrc(dataSrc)) {
                         image.setAttribute('src', dataSrc.trim());
@@ -468,8 +486,10 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: BypassPaywalls.user v0.1
             el.classList.remove('subscriber-hider');
         }
     } else if (matchDomain('canberratimes.com.au')) {
+        /* v0.1.8 (11b-F07): null-guarded like every sibling branch — a
+         * selector miss must not kill the whole domain arm. */
         const paywall = document.querySelector('.subscribe-article.news-article-body.article__body');
-        paywall.classList.remove('subscribe-article');
+        if (paywall) { paywall.classList.remove('subscribe-article'); }
         const subscribe = document.getElementsByClassName('subscriber-container')[0];
         removeDOMElement(subscribe);
         const content = document.getElementsByClassName('subscriber-hider');
@@ -506,7 +526,11 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: BypassPaywalls.user v0.1
             if (contentBodyOverlay) { contentBodyOverlay.removeAttribute('class'); }
         }, 500);
     } else if (matchDomain('leparisien.fr')) {
-        window.removeEventListener('scroll', this.scrollListener);
+        /* v0.1.8 (11b-F01): the branch formerly opened with
+         * `window.removeEventListener('scroll', this.scrollListener)` — dead
+         * extension-lineage code that threw an unconditional TypeError in
+         * the strict-mode IIFE (`this` is undefined) and killed every
+         * leparisien page's paywall removal below it. Deleted. */
         const paywall = document.querySelector('.relative.piano-paywall.below_nav.sticky');
         removeDOMElement(paywall);
         setTimeout(function () {
@@ -536,7 +560,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: BypassPaywalls.user v0.1
             el.classList.remove('is-overlaid');
         }
         const bodyHidden = document.querySelector('.js-pre-chunks__story-body');
-        bodyHidden.removeAttribute('style');
+        if (bodyHidden) { bodyHidden.removeAttribute('style'); } /* v0.1.8 (11b-F07): null-guarded */
     } else if (matchDomain('the-tls.co.uk')) {
         const paywall = document.querySelector('.tls-subscriptions-banner__closed-skin');
         removeDOMElement(paywall);
@@ -626,7 +650,13 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: BypassPaywalls.user v0.1
                 const url = window.location.href;
                 const html = document.documentElement.outerHTML;
                 let state;
+                /* v0.1.8 (11b-F06): marker-absent pages bail cleanly BEFORE the
+                 * try — the old chain threw an uncaught TypeError inside this
+                 * setTimeout (split1 undefined) and killed the whole paywall
+                 * rebuild; routing it into the catch instead would have
+                 * reload-looped such pages (the catch reloads). */
                 const split1 = html.split('window.__PRELOADED_STATE__=')[1];
+                if (typeof split1 !== 'string') { return; }
                 const split2 = split1.split('</script>')[0].trim();
                 if (split2.includes('; window.__DATA__=')) { state = split2.split('; window.__DATA__=')[0].trim(); } else { state = split2.substr(0, split2.length - 1); }
                 try {
@@ -672,7 +702,10 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: BypassPaywalls.user v0.1
                 removeDOMElement(el);
             });
             // Remove Blurred Style from all matching Divs
-            document.getElementById('container').removeAttribute('style');
+            /* v0.1.8 (11b-F07): null-guarded — a selector miss must not kill
+             * the whole domain arm. */
+            const container = document.getElementById('container');
+            if (container) { container.removeAttribute('style'); }
             document.querySelectorAll('div[style~="filter"]').forEach(function (el) {
                 el.removeAttribute('style');
             });
@@ -984,11 +1017,10 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: BypassPaywalls.user v0.1
         }
     }
 
-    function matchDomain(domains) {
-        const hostname = window.location.hostname;
-        if (typeof domains === 'string') { domains = [domains]; }
-        return domains.some(domain => hostname === domain || hostname.endsWith('.' + domain));
-    }
+    /* v0.1.8 (11b-F16): the duplicate matchDomain declaration (the
+     * boolean-returning hoist-loser) is deleted — the string-returning
+     * definition below is the one every call resolves to; the dead twin
+     * above was extension-lineage weight. */
 
     function waitDOMElement(selector, tagName = '', callback, multiple = false) {
         new window.MutationObserver(function (mutations) {

@@ -174,7 +174,7 @@
             "family": "cross-tab-bridges",
             "title": "goonbox.cr helper tab opens once, handshakes, and resolves (the flagship P2-only residual)",
             "script": "4ndr0tools - Forums++.user.js",
-            "scriptVersion": "1.13.5",
+            "scriptVersion": "1.13.6",
             "anchors": [
                 {
                     "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -184,7 +184,7 @@
                         "gbxEnsureTab",
                         "gbxBindListeners"
                     ],
-                    "atVersion": "1.13.5"
+                    "atVersion": "1.13.6"
                 }
             ],
             "env": {
@@ -250,7 +250,7 @@
             "family": "cross-tab-bridges",
             "title": "the force-bridge debug flag proves the whole P2 handshake independent of CF state",
             "script": "4ndr0tools - Forums++.user.js",
-            "scriptVersion": "1.13.5",
+            "scriptVersion": "1.13.6",
             "anchors": [
                 {
                     "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -258,7 +258,7 @@
                         "xfpd_gbx_force_bridge",
                         "Bridge forced"
                     ],
-                    "atVersion": "1.13.5"
+                    "atVersion": "1.13.6"
                 }
             ],
             "env": {
@@ -303,7 +303,7 @@
             "family": "cross-tab-bridges",
             "title": "gofile.io warm-up tab + guest-token/cookie bridge, cookie restored after idle",
             "script": "4ndr0tools - Forums++.user.js",
-            "scriptVersion": "1.13.5",
+            "scriptVersion": "1.13.6",
             "anchors": [
                 {
                     "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -312,7 +312,7 @@
                         "gofileRestoreCookie",
                         "gofileWarmupOpenTab"
                     ],
-                    "atVersion": "1.13.5"
+                    "atVersion": "1.13.6"
                 }
             ],
             "env": {
@@ -364,14 +364,14 @@
             "family": "cross-tab-bridges",
             "title": "cyberdrop warm-up tab fires at most once per origin",
             "script": "4ndr0tools - Forums++.user.js",
-            "scriptVersion": "1.13.5",
+            "scriptVersion": "1.13.6",
             "anchors": [
                 {
                     "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
                     "mustContain": [
                         "cyberdropWarmupOnce"
                     ],
-                    "atVersion": "1.13.5"
+                    "atVersion": "1.13.6"
                 }
             ],
             "env": {
@@ -413,14 +413,14 @@
             "family": "resolver-liveness",
             "title": "kemono.su/.cr direct links resolve with zero network (identity resolver)",
             "script": "4ndr0tools - Forums++.user.js",
-            "scriptVersion": "1.13.5",
+            "scriptVersion": "1.13.6",
             "anchors": [
                 {
                     "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
                     "mustContain": [
                         "kemono:direct link"
                     ],
-                    "atVersion": "1.13.5"
+                    "atVersion": "1.13.6"
                 }
             ],
             "env": {
@@ -471,7 +471,7 @@
             "family": "resolver-liveness",
             "title": "coomer.su AND coomer.st profile walkers enumerate multi-page",
             "script": "4ndr0tools - Forums++.user.js",
-            "scriptVersion": "1.13.5",
+            "scriptVersion": "1.13.6",
             "anchors": [
                 {
                     "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -479,7 +479,7 @@
                         "Coomer:Profiles",
                         "Resolved page"
                     ],
-                    "atVersion": "1.13.5"
+                    "atVersion": "1.13.6"
                 }
             ],
             "env": {
@@ -524,7 +524,7 @@
             "family": "resolver-liveness",
             "title": "bunkr family resolves: TLD alternation + CF retry + CDN signing (bunkr.org/bunkrr.org/bunkrrr.org/gigachad-cdn)",
             "script": "4ndr0tools - Forums++.user.js",
-            "scriptVersion": "1.13.5",
+            "scriptVersion": "1.13.6",
             "anchors": [
                 {
                     "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -532,7 +532,7 @@
                         "xfpdBunkrSignCdnUrl",
                         "isBunkrUrl"
                     ],
-                    "atVersion": "1.13.5"
+                    "atVersion": "1.13.6"
                 }
             ],
             "env": {
@@ -578,7 +578,7 @@
             "family": "resolver-liveness",
             "title": "cyberdrop ladder: api.<root> runtime arms + literal api.cyberdrop.cr fallbacks",
             "script": "4ndr0tools - Forums++.user.js",
-            "scriptVersion": "1.13.5",
+            "scriptVersion": "1.13.6",
             "anchors": [
                 {
                     "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -586,7 +586,7 @@
                         "apiCandidates",
                         "api.cyberdrop.cr"
                     ],
-                    "atVersion": "1.13.5"
+                    "atVersion": "1.13.6"
                 }
             ],
             "env": {
@@ -628,7 +628,7 @@
             "family": "resolver-liveness",
             "title": "jpg/jpeg no-digit family: NO manager prompt on first dispatch (the engine's first live catch)",
             "script": "4ndr0tools - Forums++.user.js",
-            "scriptVersion": "1.13.5",
+            "scriptVersion": "1.13.6",
             "anchors": [
                 {
                     "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -638,7 +638,7 @@
                         "@connect jpg.pet",
                         "@connect jpeg.pet"
                     ],
-                    "atVersion": "1.13.5"
+                    "atVersion": "1.13.6"
                 }
             ],
             "env": {
@@ -681,7 +681,7 @@
             "family": "resolver-liveness",
             "title": "pixeldrain .com/.net/pixeldra.in — all three domains resolve",
             "script": "4ndr0tools - Forums++.user.js",
-            "scriptVersion": "1.13.5",
+            "scriptVersion": "1.13.6",
             "anchors": [
                 {
                     "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -689,7 +689,7 @@
                         "Pixeldrain:",
                         "isPixeldrainUrl"
                     ],
-                    "atVersion": "1.13.5"
+                    "atVersion": "1.13.6"
                 }
             ],
             "env": {
@@ -724,7 +724,7 @@
             "family": "resolver-liveness",
             "title": "yandex disk resolves via the POST ladder; prompts disclose the non-enumerable TLD horizon",
             "script": "4ndr0tools - Forums++.user.js",
-            "scriptVersion": "1.13.5",
+            "scriptVersion": "1.13.6",
             "anchors": [
                 {
                     "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -734,7 +734,7 @@
                         "@connect yandex.kz",
                         "disk.yandex.ru"
                     ],
-                    "atVersion": "1.13.5"
+                    "atVersion": "1.13.6"
                 }
             ],
             "env": {
@@ -776,7 +776,7 @@
             "family": "resolver-liveness",
             "title": "redgifs: ONE boot token fetch on /threads/ pages only + token refresh on stale",
             "script": "4ndr0tools - Forums++.user.js",
-            "scriptVersion": "1.13.5",
+            "scriptVersion": "1.13.6",
             "anchors": [
                 {
                     "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -784,7 +784,7 @@
                         "redgifsFetchTempToken",
                         "/threads/"
                     ],
-                    "atVersion": "1.13.5"
+                    "atVersion": "1.13.6"
                 }
             ],
             "env": {
@@ -827,7 +827,7 @@
             "family": "resolver-liveness",
             "title": "saint2/turbo: origin derivation + sign API + embed links",
             "script": "4ndr0tools - Forums++.user.js",
-            "scriptVersion": "1.13.5",
+            "scriptVersion": "1.13.6",
             "anchors": [
                 {
                     "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -835,7 +835,7 @@
                         "xfpdTurboOrigin",
                         "glb-apisign.cdn.cr"
                     ],
-                    "atVersion": "1.13.5"
+                    "atVersion": "1.13.6"
                 }
             ],
             "env": {
@@ -877,14 +877,14 @@
             "family": "resolver-liveness",
             "title": "filester v2 API + cache-host probe sweep",
             "script": "4ndr0tools - Forums++.user.js",
-            "scriptVersion": "1.13.5",
+            "scriptVersion": "1.13.6",
             "anchors": [
                 {
                     "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
                     "mustContain": [
                         "filesterResolveV2"
                     ],
-                    "atVersion": "1.13.5"
+                    "atVersion": "1.13.6"
                 }
             ],
             "env": {
@@ -919,14 +919,14 @@
             "family": "resolver-liveness",
             "title": "imagebam view/gallery + full-embed CDN links",
             "script": "4ndr0tools - Forums++.user.js",
-            "scriptVersion": "1.13.5",
+            "scriptVersion": "1.13.6",
             "anchors": [
                 {
                     "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
                     "mustContain": [
                         "imagebam"
                     ],
-                    "atVersion": "1.13.5"
+                    "atVersion": "1.13.6"
                 }
             ],
             "env": {
@@ -961,7 +961,7 @@
             "family": "resolver-liveness",
             "title": "ibb.co albums walk via JSON; postimg/pixxxels rewrite correctly",
             "script": "4ndr0tools - Forums++.user.js",
-            "scriptVersion": "1.13.5",
+            "scriptVersion": "1.13.6",
             "anchors": [
                 {
                     "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -969,7 +969,7 @@
                         "Ibb:image",
                         "Postimg:image"
                     ],
-                    "atVersion": "1.13.5"
+                    "atVersion": "1.13.6"
                 }
             ],
             "env": {
@@ -1011,7 +1011,7 @@
             "family": "download-pipeline",
             "title": "safeThreadTitle on a ':'-containing thread title (zip gate + generated.zip names)",
             "script": "4ndr0tools - Forums++.user.js",
-            "scriptVersion": "1.13.5",
+            "scriptVersion": "1.13.6",
             "anchors": [
                 {
                     "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -1019,7 +1019,7 @@
                         "safeThreadTitle",
                         "generated.zip"
                     ],
-                    "atVersion": "1.13.5"
+                    "atVersion": "1.13.6"
                 }
             ],
             "env": {
@@ -1070,7 +1070,7 @@
             "family": "download-pipeline",
             "title": "isBunkrUrl maint guard: a maintenance placeholder is NEVER saved as a real file",
             "script": "4ndr0tools - Forums++.user.js",
-            "scriptVersion": "1.13.5",
+            "scriptVersion": "1.13.6",
             "anchors": [
                 {
                     "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -1079,7 +1079,7 @@
                         "maintenance redirect (maint.mp4)",
                         "blob.slice(0, 8192)"
                     ],
-                    "atVersion": "1.13.5"
+                    "atVersion": "1.13.6"
                 }
             ],
             "env": {
@@ -1129,7 +1129,7 @@
             "family": "download-pipeline",
             "title": "the 500 MB bunkr DIRECT switch fires mid-download",
             "script": "4ndr0tools - Forums++.user.js",
-            "scriptVersion": "1.13.5",
+            "scriptVersion": "1.13.6",
             "anchors": [
                 {
                     "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -1137,7 +1137,7 @@
                         "BUNKR_DIRECT_MIN_BYTES",
                         "Bunkr large file"
                     ],
-                    "atVersion": "1.13.5"
+                    "atVersion": "1.13.6"
                 }
             ],
             "env": {
@@ -1188,14 +1188,14 @@
             "family": "download-pipeline",
             "title": "FF per-file saveAs arm vs Chrome GM_download arm (the named FF residual)",
             "script": "4ndr0tools - Forums++.user.js",
-            "scriptVersion": "1.13.5",
+            "scriptVersion": "1.13.6",
             "anchors": [
                 {
                     "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
                     "mustContain": [
                         "const isFF"
                     ],
-                    "atVersion": "1.13.5"
+                    "atVersion": "1.13.6"
                 }
             ],
             "env": {
@@ -1245,7 +1245,7 @@
             "family": "download-pipeline",
             "title": "light vs dark theme tooltip pair + search input ink",
             "script": "4ndr0tools - Forums++.user.js",
-            "scriptVersion": "1.13.5",
+            "scriptVersion": "1.13.6",
             "anchors": [
                 {
                     "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -1253,7 +1253,7 @@
                         "getTooltipBackgroundColor",
                         "isLightTheme"
                     ],
-                    "atVersion": "1.13.5"
+                    "atVersion": "1.13.6"
                 }
             ],
             "env": {
@@ -1296,7 +1296,7 @@
             "family": "download-pipeline",
             "title": "zip-gate FileSaver fallback fires on a GM_download error (both arms)",
             "script": "4ndr0tools - Forums++.user.js",
-            "scriptVersion": "1.13.5",
+            "scriptVersion": "1.13.6",
             "anchors": [
                 {
                     "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -1305,7 +1305,7 @@
                         "Zip dispatch failed",
                         "Generated.zip dispatch failed"
                     ],
-                    "atVersion": "1.13.5"
+                    "atVersion": "1.13.6"
                 }
             ],
             "env": {
@@ -1349,14 +1349,14 @@
             "family": "download-pipeline",
             "title": "turbo stall, re-sign ladder, DIRECT fallback under adversarial network",
             "script": "4ndr0tools - Forums++.user.js",
-            "scriptVersion": "1.13.5",
+            "scriptVersion": "1.13.6",
             "anchors": [
                 {
                     "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
                     "mustContain": [
                         "Turbo stalled"
                     ],
-                    "atVersion": "1.13.5"
+                    "atVersion": "1.13.6"
                 }
             ],
             "env": {
@@ -2398,7 +2398,7 @@
                     "mustContain": [
                         "gbxBindListeners"
                     ],
-                    "atVersion": "1.13.5"
+                    "atVersion": "1.13.6"
                 }
             ],
             "env": {
@@ -2445,7 +2445,7 @@
                     "mustContain": [
                         "typeof GM_cookie"
                     ],
-                    "atVersion": "1.13.5"
+                    "atVersion": "1.13.6"
                 }
             ],
             "env": {

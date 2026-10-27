@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Bunkr++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      7.7.0
+// @version      7.7.1
 // @author       4ndr0666
 // @description  Direct URL routing, auto-sort, hide visited, bypass dl gateway, bulk download, m3u8/CDN URL aggregation (page-context net-hook + per-item stream glyphs + album-wide STREAMS aggregation), broken-link repair, power-user hotkeys, LinkMaster-grade m3u8 stream resolution with gateway fallback, MPV dispatch (URI/bridge), web-archive dead-CDN resurrection (archive.org / archive.is), captcha-aware transport retry
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -1195,6 +1195,12 @@ const __4NDR0_NET_API__ = (function () {
     return api;
 })();
 
+// v7.7.1 (suite v1.19.0, WO-01 round 11): the seven 'BUNKR interceptor:
+// unbound' catch messages are NAMED (11b-F15 — the 10c-F10 idiom the r10
+// Pixeldrain fix established, never propagated here): every visited-cache
+// read/write/persist/purge rejection now says WHICH store rejected and
+// carries the error — a silent-storage diagnosis no longer requires
+// guessing which of the seven sites fired.
 // v7.0.0-Ψ superset revision (GUP v5.3 audited).
 // GAP 17 fix: the baseline @require of jquery-3.6.0.min.js is removed — a
 // repository-wide scan found zero jQuery/$ references, making it a dead
@@ -1394,7 +1400,7 @@ const __4NDR0_NET_API__ = (function () {
         _sentinelRoot.setAttribute(_SENTINEL_ATTR, String(Date.now()));
     } catch (_) { console.debug('BUNKR interceptor:', _); /* EAFP — proceed; guards below absorb re-runs */ }
 
-    const SCRIPT_VERSION = '7.7.0';
+    const SCRIPT_VERSION = '7.7.1';
     console.log(`%c[4NDR0tools] Bunkr++ v${SCRIPT_VERSION}-Ψ`, 'color:#00E5FF; font-family:monospace; font-weight:bold;');
 
     // =========================================================================
@@ -2351,11 +2357,11 @@ const __4NDR0_NET_API__ = (function () {
         try {
             const raw = localStorage.getItem(VISITED_KEY);
             if (raw) return new Set(JSON.parse(raw));
-        } catch { console.debug('BUNKR interceptor: unbound'); /* fall through */ }
+        } catch (e) { console.debug('BUNKR visited-cache localStorage read rejected — falling through:', e && e.message); }
         try {
             const raw = GM_getValue(VISITED_KEY, null);
             if (raw) return new Set(JSON.parse(raw));
-        } catch { console.debug('BUNKR interceptor: unbound'); /* fall through */ }
+        } catch (e) { console.debug('BUNKR visited-cache GM read rejected — falling through:', e && e.message); }
         return new Set();
     }
 
@@ -2378,8 +2384,8 @@ const __4NDR0_NET_API__ = (function () {
 
     window.addEventListener('beforeunload', () => {
         if (_visitedDirty && _visitedCache) {
-            try { localStorage.setItem(VISITED_KEY, JSON.stringify([..._visitedCache])); } catch { console.debug('BUNKR interceptor: unbound');}
-            try { GM_setValue(VISITED_KEY, JSON.stringify([..._visitedCache])); } catch { console.debug('BUNKR interceptor: unbound');}
+            try { localStorage.setItem(VISITED_KEY, JSON.stringify([..._visitedCache])); } catch (e) { console.debug('BUNKR visited-cache localStorage write rejected at unload:', e && e.message); }
+            try { GM_setValue(VISITED_KEY, JSON.stringify([..._visitedCache])); } catch (e) { console.debug('BUNKR visited-cache GM write rejected at unload:', e && e.message); }
         }
     });
 
@@ -2427,7 +2433,7 @@ const __4NDR0_NET_API__ = (function () {
         GM_registerMenuCommand('📂 Load History',  importVisitedRegistry);
         GM_registerMenuCommand('☠ Purge History', () => {
             localStorage.removeItem(VISITED_KEY);
-            try { GM_setValue(VISITED_KEY, null); } catch { console.debug('BUNKR interceptor: unbound');}
+            try { GM_setValue(VISITED_KEY, null); } catch (e) { console.debug('BUNKR visited-cache GM purge rejected:', e && e.message); }
             _visitedCache = new Set();
             _visitedDirty = false;
             location.reload();
@@ -2461,8 +2467,8 @@ const __4NDR0_NET_API__ = (function () {
     // faithful drop-in twin of the existing save path (no new abstraction
     // layer introduced for a two-line write).
     function _persistVisitedNow(cache) {
-        try { localStorage.setItem(VISITED_KEY, JSON.stringify([...cache])); } catch { console.debug('BUNKR interceptor: unbound'); /* EAFP */ }
-        try { GM_setValue(VISITED_KEY, JSON.stringify([...cache])); } catch { console.debug('BUNKR interceptor: unbound'); /* EAFP */ }
+        try { localStorage.setItem(VISITED_KEY, JSON.stringify([...cache])); } catch (e) { console.debug('BUNKR visited-cache localStorage persist rejected:', e && e.message); }
+        try { GM_setValue(VISITED_KEY, JSON.stringify([...cache])); } catch (e) { console.debug('BUNKR visited-cache GM persist rejected:', e && e.message); }
     }
 
     function importVisitedRegistry() {

@@ -2,7 +2,7 @@
 // @name            4ndr0tools - Redgifs++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author          4ndr0666 
-// @version         5.3.2
+// @version         5.3.3
 // @description     Intercepts Redgifs links on Reddit for a cinematic overlay. On Redgifs itself, enters focused video-only mode. Falls back to JSON.parse intercept for direct /watch/ loads before SPA hydration.
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Redgifs++.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Redgifs++.user.js
@@ -22,7 +22,7 @@
 // (anything removing VIDEO_ONLY_CLASS outside exitVideoOnlyMode) can no longer
 // orphan the prior pair (4-c F08).
 // 5.2 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Redgifs++.user v5.3.2 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Redgifs++.user v5.3.3 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 'use strict';
 
@@ -195,6 +195,12 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Redgifs++.user v5.3.2 �
          */
         const handleGifJson = (json) => {
             if (typeof json !== 'string' || !json.includes('"gif"')) return;
+            /* v5.3.3 (11b-F11): document-start guard — the host page may parse
+             * a gif payload before <body> exists; the element-built stage
+             * below needs it (the host's own parse call must not receive a
+             * TypeError from our hook). The parse hook stays live; the
+             * stage build returns until a later payload. */
+            if (!document.body) return;
 
             let parsed;
             try { parsed = originalParse(json); } catch { return; }

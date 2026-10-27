@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Pixeldrain++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.2.3
+// @version      1.2.4
 // @description  Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.
 // @author       4ndr0666
 // @license      MIT
@@ -1218,6 +1218,33 @@ const __4NDR0_NET_API__ = (function () {
     return api;
 })();
 
+// 1.2.4 (suite v1.19.0, WO-01 round 11): the resume-integrity batch
+// (11b-F02/F03/F08/F17). (1) RESUME ZERO-HOLE: an adopted resume job
+// restored the old chunk map into loadedArr while the writable is
+// createWritable({keepExistingData:false}) — an EMPTY swap (FSA aborts
+// discard partials by construction) — and the queue skipped 'completed'
+// chunks: a resumed download wrote ONLY the missing chunks at their
+// offsets, zero-filled the rest, returned {ok:true, size} full-size and
+// toasted success. THE CORRUPTED FILE CLASS. The adopt now keeps the job
+// identity (progress continuity, the 🔄 button) but resets the chunk map
+// via ResumeManager.resetChunks — an honest full re-download (actual
+// chunk-skip resume is structurally impossible against a fresh empty
+// writable; 11b-F02). (2) SECOND-SETTLER RACE: gm_stream_fsa's onload arm
+// raced the onloadstart reader loop that owns the settle — on consumer
+// lag (disk < network) resolve(true) let writable.close() enqueue before
+// trailing writable.write(value) calls (write-after-close → the loop's
+// rejection became a no-op after the already-resolved promise → silent
+// truncation reported ok:true; the loaded===0 variant resolved(false) →
+// a CONCURRENT buffered re-download on the same writable — the 10c-F02
+// class reborn). The onload arm is now a no-op unless the stream never
+// started (11b-F03). (3) PICKER-IN-LOOP: native_fetch called
+// showSaveFilePicker inside the mirror loop — user activation is consumed
+// by call 1, so mirror 2+ threw the PICKER's NotAllowedError instead of
+// the fetch's real error: 6-mirror failover was effectively single-mirror.
+// ONE picker above the loop; each mirror gets a fresh writable from the
+// same handle (11b-F08). (4) The success path's job lookup is
+// null-guarded — cancelAll() may have cleared the map while the download
+// itself succeeded (the mislabeled ✗ toast; 11b-F17).
 // 1.2.3 (suite v1.18.0, WO-01 round 10): the FSA streamed→buffered fallback
 // corruption fix (10c F02 — a non-abort stream failure fell through to an
 // UNPOSITIONED writable.write of the full body onto the N bytes already
@@ -1235,7 +1262,7 @@ const __4NDR0_NET_API__ = (function () {
 // /d/ pathname no longer aborts the setTimeout callback before the
 // fs-fallback injector and auto-trigger block; 4-c F05).
 // 1.1.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.3 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.4 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 /* eslint-disable no-undef */
 (function () {
@@ -1862,6 +1889,22 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.3
             const j = this.load();
             if (j[jobId]) { j[jobId].completed = true; j[jobId].totalTime = totalTime || 0; this.save(); }
         },
+        /* v1.2.4 (11b-F02): resetChunks — an adopted resume job's chunk map
+         * is reset AND PERSISTED (an in-memory fill alone is lost: updateChunk
+         * re-loads from storage on every chunk completion). The reset is the
+         * honest shape: the FSA writable is an empty swap, so chunk-skip
+         * 'resume' would zero-fill the skipped spans — a full re-download
+         * keeps the job identity without corrupting the file. */
+        resetChunks(jobId) {
+            const j = this.load();
+            if (j[jobId]) {
+                j[jobId].chunks = Array(j[jobId].chunkCount).fill(0);
+                j[jobId].hosts = Array(j[jobId].chunkCount).fill(null);
+                j[jobId].updatedAt = Date.now();
+                this.save();
+            }
+            return !!j[jobId];
+        },
         findByFile(fileId) { return Object.values(this.load()).find(j => j.fileId === fileId && !j.completed) || null; },
         cleanup(maxAge) {
             maxAge = maxAge != null ? maxAge : SETTINGS.resumeMaxAge;
@@ -2040,8 +2083,14 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.3
             if (SETTINGS.resumableEnabled) {
                 const existing = ResumeManager.findByFile(id);
                 if (existing && existing.chunkCount === totalConns) {
+                    /* v1.2.4 (11b-F02): adopted jobs RESET their chunk map —
+                     * the writable below is an empty swap, so restoring the
+                     * old map would skip 'completed' chunks and zero-fill
+                     * their spans (the corrupted-full-size-file class). The
+                     * adopt keeps the job identity only; loadedArr stays
+                     * all-zero — an honest full re-download. */
                     resumeJobId = existing.id;
-                    existing.chunks.forEach((b, i) => { loadedArr[i] = b; });
+                    ResumeManager.resetChunks(resumeJobId);
                 } else {
                     resumeJobId = ResumeManager.create(id, name, size, totalConns);
                 }
@@ -2162,8 +2211,12 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.3
             if (SETTINGS.resumableEnabled) {
                 const existing = ResumeManager.findByFile(id);
                 if (existing && existing.chunkCount === chunkCount) {
+                    /* v1.2.4 (11b-F02): adopted jobs RESET their chunk map —
+                     * the same empty-swap honesty as the parallel arm above
+                     * (chunk-skip against a fresh writable zero-fills the
+                     * skipped spans). Job identity kept; loadedArr all-zero. */
                     resumeJobId = existing.id;
-                    existing.chunks.forEach((b, i) => { loadedArr[i] = b; });
+                    ResumeManager.resetChunks(resumeJobId);
                 } else {
                     resumeJobId = ResumeManager.create(id, name, size, chunkCount);
                 }
@@ -2259,6 +2312,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.3
                 const streamed = await new Promise((resolve, reject) => {
                     const xhr = typeof GM_xmlhttpRequest === 'function' ? GM_xmlhttpRequest : (GM && GM.xmlHttpRequest);
                     let aborted = false;
+                    let streaming = false; /* v1.2.4 (11b-F03): the reader loop owns the settle once it starts */
                     const h = xhr({
                         method: 'GET', url, headers: SPOOF_HEADERS,
                         responseType: 'stream', anonymous: true,
@@ -2267,6 +2321,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.3
                             try {
                                 const reader = resp.response && resp.response.getReader && resp.response.getReader();
                                 if (!reader) { resolve(false); return; }
+                                streaming = true;
                                 while (!aborted) {
                                     const { done, value } = await reader.read();
                                     if (done) break;
@@ -2278,7 +2333,16 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.3
                                 resolve(true);
                             } catch (e) { reject(e); }
                         },
-                        onload: () => { if (loaded > 0) resolve(true); else resolve(false); },
+                        /* v1.2.4 (11b-F03): the onload second-settler is RETIRED —
+                         * it raced the reader loop above (consumer lag let
+                         * resolve(true) fire while trailing writable.write(value)
+                         * calls were still in flight: write-after-close → the
+                         * loop's rejection became a no-op → silent truncation
+                         * reported ok:true; the loaded===0 variant resolved(false)
+                         * → a CONCURRENT buffered re-download on the same
+                         * writable — the 10c-F02 class reborn). onload is a no-op
+                         * unless the stream never started. */
+                        onload: () => { if (!streaming) resolve(false); },
                         onerror: (e) => reject(new Error(`network: ${(e && (e.error || e.statusText)) || 'unknown'}`)),
                         ontimeout: () => reject(new Error('timeout'))
                     });
@@ -2385,15 +2449,22 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.3
         async native_fetch({ id, name, size, onProgress, signal }) {
             if (!Caps.fsAccess || !Caps.streams) throw new Error('FSA/streams unavailable');
             const mirrors = ProxyManager.list().slice(0, 6);
+            /* v1.2.4 (11b-F08): ONE picker for the whole failover chain — user
+             * activation is consumed by the first showSaveFilePicker call, so
+             * calling it inside the mirror loop made mirror 2+ throw the
+             * PICKER's NotAllowedError instead of the fetch's real error
+             * (6-mirror failover was effectively single-mirror). Each mirror
+             * takes a fresh writable from the same handle. */
+            const handle = await window.showSaveFilePicker({
+                suggestedName: sanitizeFilename(name),
+                types: [{ description: 'File', accept: { '*/*': [] } }]
+            });
             let lastErr;
             for (const mirror of mirrors) {
                 const url = ProxyManager.url(mirror, id, { download: true });
+                let writable = null;
                 try {
-                    const handle = await window.showSaveFilePicker({
-                        suggestedName: sanitizeFilename(name),
-                        types: [{ description: 'File', accept: { '*/*': [] } }]
-                    });
-                    const writable = await handle.createWritable();
+                    writable = await handle.createWritable();
                     try {
                         const r = await fetch(url, { credentials: 'omit', referrerPolicy: 'no-referrer', signal });
                         if (r.status === 403) { CircuitBreaker.record(mirror.host, false); ProxyManager.markBlocked(mirror.host); throw new Error('blocked'); }
@@ -2414,7 +2485,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.3
                         CircuitBreaker.record(mirror.host, true);
                         BandwidthTracker.add(loaded, true);
                         return { ok: true, mode: 'native_fetch', proxy: mirror.host, size: loaded };
-                    } catch (e) { try { await writable.abort(); } catch { console.debug('PD fsa: stream abort failed'); } throw e; }
+                } catch (e) { if (writable) { try { await writable.abort(); } catch { console.debug('PD fsa: stream abort failed'); } } throw e; }
                 } catch (e) { lastErr = e; if (e.kind === 'abort' || e.message === 'aborted') throw e; }
             }
             throw lastErr || new Error('All mirrors failed');
@@ -2681,7 +2752,11 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.3
 
                 ui.bar.style.width = '100%';
                 ui.bar.style.background = 'linear-gradient(90deg,#00E5FF,#67E8F9)';
-                const elapsed = Date.now() - this._activeJobs.get(jobId).startTime;
+                /* v1.2.4 (11b-F17): null-guarded — cancelAll() may have cleared
+                 * the map while THIS download itself succeeded; the elapsed
+                 * display degrades to 0 instead of throwing a mislabeled ✗. */
+                const job = this._activeJobs.get(jobId);
+                const elapsed = job ? Date.now() - job.startTime : 0;
                 const tag = result.mode === 'premium_direct'
                     ? `✓ Done (premium · no cap)`
                     : `✓ Done (${result.mode} · 0 BW · ${formatDuration(elapsed)})`;

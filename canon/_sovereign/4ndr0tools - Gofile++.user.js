@@ -382,16 +382,16 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.3.0 —
         try {
             const cached = JSON.parse(GM_getValue(CACHE_KEY, 'null'));
             if (cached && cached.token && (Date.now() - cached.at) < 86400000) return cached.token;
-        } catch (_) { /* corrupted cache — mint a fresh token */ }
+        } catch (e) { console.debug('[Gofile Enhanced] guest-token cache read rejected — minting fresh:', e && e.message); }
         try {
             const res = await utils.gmFetch('https://api.gofile.io/accounts', { method: 'POST' });
             const acc = await res.json();
             const token = acc && acc.data && acc.data.token;
             if (token) {
-                try { GM_setValue(CACHE_KEY, JSON.stringify({ token, at: Date.now() })); } catch (_) { /* storage refusal — token simply is not cached */ }
+                try { GM_setValue(CACHE_KEY, JSON.stringify({ token, at: Date.now() })); } catch (e) { console.debug('[Gofile Enhanced] guest-token cache write rejected — token not cached:', e && e.message); }
                 return token;
             }
-        } catch (_) { /* mint failure — degrade to unauthenticated */ }
+        } catch (e) { console.debug('[Gofile Enhanced] guest-account mint rejected — degrading to unauthenticated:', e && e.message); }
         return null;
     }
 

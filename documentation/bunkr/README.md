@@ -4,7 +4,7 @@
 > A complete forensic record of the development arc: every failure mode, root cause,
 > architectural decision, and battle-tested resolution uncovered across this session.
 >
-> **⚠ Historical arc v5.0.1 → v5.5.0; current shipped version 7.7.0** (`dist/4ndr0tools - Bunkr++.user.js` — see [INDEX.md](../INDEX.md)).
+> **⚠ Historical arc v5.0.1 → v5.5.0; current shipped version 7.7.1** (`dist/4ndr0tools - Bunkr++.user.js` — see [INDEX.md](../INDEX.md)).
 
 ---
 
@@ -541,6 +541,7 @@ Compare against the previous version's manifest. Any segment regression triggers
 | **5.3.0** | M9 extended to `bunkr.cr` asset pages, `NATIVE_DL_SEL` battery, DL glyph native-button click, Tier 0 poll (2s), Tier 7 GET variant, ghostFetch inline `/api/vs` fallback |
 | **5.4.0** | Reconciliation with user's v5.3.6 canonical: `@icon`, `@include` regex, `contextElement` param, `window.jsCDN` Tier 4, UUID extraction (OG image/`videoCoverUrl`/element scan), Tier 8 CDN signing (GM XHR, IP-binding warning toast), Ψ-glyph toast aesthetic |
 | **5.5.0** | M3 `/api/vs` regex loosened to substring match (fixed silent intercept miss), Tier 0 poll extended to 5s (25 ticks), `video.currentSrc` added as Tier 3a (LinkMasterΨ battle-tested DOM-first pattern) |
+| **7.7.1** *(r11 release addendum)* | The seven `'BUNKR interceptor: unbound'` catch messages are NAMED (11b-F15 — the 10c-F10 idiom finally propagated here): every visited-cache read/write/persist/purge rejection now says WHICH store rejected and carries the error. Zero behavior change — diagnostic truth only. |
 
 ---
 

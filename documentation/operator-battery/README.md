@@ -1,4 +1,4 @@
-# Operator Regression Battery · suite 1.18.0
+# Operator Regression Battery · suite 1.19.0
 
 > 45 operator-side tests across 10 families — every verification the machine gate cannot make.
 > Manifest: `tools/operator-battery/manifest.json` (machine-checked: anchor liveness, version stamps, residual coverage). This checklist is its rendered form.
@@ -14,12 +14,16 @@
 
 ## Forums++ cross-tab bridges (4)
 
-### FPP-GBX-01
+### FPP-GBX-01 — FAIL
 
-**goonbox.cr helper tab opens once, handshakes, and resolves (the flagship P2-only residual)** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r6 Task 3 (14500cb port); residual re-listed r7 Task 7 and r8 Task 10 residuals (3)
+**goonbox.cr helper tab opens once, handshakes, and resolves (the flagship P2-only residual)** — `4ndr0tools - Forums++.user.js` v1.13.6 · provenance: r6 Task 3 (14500cb port); residual re-listed r7 Task 7 and r8 Task 10 residuals (3)
+
+- **Last run** (2026-10-27): **FAIL** · chrome / tampermonkey (MV3 — injected-web.js stack frames) / OS unstated / dist @ cd669db / sites: simpcity.cr threads
+  - **Evidence**: console excerpt (15:49:10.264): '4ndr0tools - Forums++.user.js:7471 Uncaught ReferenceError: resolve is not defined at finishSuccessfulLoad (Forums++.user.js:7471:21) at onload (Forums++.user.js:7716:25) at HttpRequested (injected-web.js:1:6781)' — full excerpt in the operator's forums_battery.txt
+  - **Note**: Uncaught ReferenceError at the per-post download success handler — the batch wedged with its concurrency slots never freed. Root cause adjudicated r11 as OBI-F01: finishSuccessfulLoad referenced the downloadPromise executor's resolve param from outside its binding scope (a free variable since 1.12.1). FIXED in Forums++ 1.13.6 (the settle callback is a parameter now); re-run of this test against 1.13.6 pending.
 
 - **Closes residual**: goonbox-bridge-P2-only-live-coverage
-- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.5 — `GOONBOX_ORIGIN` — lines 1795, 1914, 2059, 2061 …+1 more at render · `xfpd_gbx_ready` — lines 1797 at render · `gbxEnsureTab` — lines 1936, 1975 at render · `gbxBindListeners` — lines 1842, 1937 at render
+- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.6 — `GOONBOX_ORIGIN` — lines 1810, 1929, 2074, 2076 …+1 more at render · `xfpd_gbx_ready` — lines 1812 at render · `gbxEnsureTab` — lines 1951, 1990 at render · `gbxBindListeners` — lines 1857, 1952 at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: a logged-in simpcity.su thread containing goonbox.cr links
 - **Prerequisites**: Forums++ installed and enabled · goonbox host rows enabled in the per-post config form
 - **Risk**: download low · network one inactive tab · ToS moderate — CF-protected hosting; do not solve CAPTCHAs beyond your own account's comfort
@@ -43,12 +47,16 @@
 | duplicate tabs / tab churn | gbxEnsureTab discard/reopen loop regressed | revert-pin the dist file; report the tab-strip behavior + console lines | video or screenshot series of the tab strip |
 | firefox: polled GM storage never updates | the listener-mirror path (GM_addValueChangeListener) regressed | revert-pin; report the manager version | console excerpt + Firefox/Tampermonkey versions |
 
-### FPP-GBX-02
+### FPP-GBX-02 — FAIL
 
-**the force-bridge debug flag proves the whole P2 handshake independent of CF state** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: designed into the r6 port (14500cb) as the operator-side P2 verification instrument
+**the force-bridge debug flag proves the whole P2 handshake independent of CF state** — `4ndr0tools - Forums++.user.js` v1.13.6 · provenance: designed into the r6 port (14500cb) as the operator-side P2 verification instrument
+
+- **Last run** (2026-10-27): **FAIL** · chrome / tampermonkey (MV3 — injected-web.js stack frames) / OS unstated / dist @ cd669db / sites: simpcity.cr threads
+  - **Evidence**: console excerpt (15:51:15.609 localStorage.setItem('xfpd_gbx_force_bridge','true') set; 15:51:59.450 + 15:51:59.458 the same 'resolve is not defined' crash ×2) — full excerpt in the operator's forums_battery_tag.txt
+  - **Note**: The force-bridge debug flag was accepted and the bridge path was taken — then the same OBI-F01 crash fired twice at the success handler. The P2 handshake instrumentation itself did its job; the download pipeline wedged behind it. FIXED in 1.13.6; re-run pending.
 
 - **Closes residual**: goonbox-bridge-P2-only-live-coverage
-- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.5 — `xfpd_gbx_force_bridge` — lines 2027, 2030 at render · `Bridge forced` — lines 2076 at render
+- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.6 — `xfpd_gbx_force_bridge` — lines 2042, 2045 at render · `Bridge forced` — lines 2091 at render
 - **Environment**: any / any / sites: a thread with goonbox.cr links
 - **Prerequisites**: FPP-GBX-01 environment
 - **Risk**: download low · network one inactive tab · ToS moderate
@@ -67,12 +75,16 @@
 | flag ignored (no 'Bridge forced' line) | localStorage probe rejected or gbxForceEnabled regressed | verify via the manager storage editor that the GM mirror also works; revert-pin | console excerpt before/after setItem |
 | bridge forced but resolution fails | same taxonomy as FPP-GBX-01 handshake-failure | see FPP-GBX-01 | console excerpt |
 
-### FPP-WRM-01
+### FPP-WRM-01 — FAIL
 
-**gofile.io warm-up tab + guest-token/cookie bridge, cookie restored after idle** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r6 port (14500cb/a4c1f5b F22/F29); r7 79c70eb restore-race narrowing (7d F27)
+**gofile.io warm-up tab + guest-token/cookie bridge, cookie restored after idle** — `4ndr0tools - Forums++.user.js` v1.13.6 · provenance: r6 port (14500cb/a4c1f5b F22/F29); r7 79c70eb restore-race narrowing (7d F27)
+
+- **Last run** (2026-10-27): **FAIL** · chrome / tampermonkey (MV3 — injected-web.js stack frames) / OS unstated / dist @ cd669db / sites: simpcity.cr threads
+  - **Evidence**: console excerpt (15:58:00.755): the same 'resolve is not defined at finishSuccessfulLoad' crash — full excerpt in the operator's forums_batter_gofile.txt; free-form: 'As I was on FPP-WRM-01 I went ahead and fired up gofile++ to absolutely zero avail'
+  - **Note**: The gofile warm-up bridge ran and the same OBI-F01 crash killed the batch at its first successful load. The 'zero avail' observation on Gofile++ itself was adjudicated separately this round (11a-F01..F04: the @match exact-host hole, the #index_main observer pin, the dead pre-2023 Cookie/wt auth — Gofile++ 2.3.0); Forums++ side FIXED in 1.13.6; re-run pending.
 
 - **Closes residual**: gofile-warmup-and-cookie-restore-live
-- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.5 — `gofileSyncCookie` — lines 2515, 2540, 3819, 3865 at render · `gofileRestoreCookie` — lines 2546, 6875 at render · `gofileWarmupOpenTab` — lines 6021, 6451 at render
+- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.6 — `gofileSyncCookie` — lines 2530, 2555, 3834, 3880 at render · `gofileRestoreCookie` — lines 2561, 6896 at render · `gofileWarmupOpenTab` — lines 6036, 6472 at render
 - **Environment**: chrome / tampermonkey-mv3 (GM_cookie live) / sites: a thread with gofile.io links
 - **Prerequisites**: a gofile.io account is NOT needed (guest flow)
 - **Risk**: download low · network one tab, one guest account creation · ToS low — the guest flow is the site's own API path
@@ -95,10 +107,10 @@
 
 ### FPP-WRM-02
 
-**cyberdrop warm-up tab fires at most once per origin** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r6 port (2-e F31) + the r7 backtick fix (ae8fdf2)
+**cyberdrop warm-up tab fires at most once per origin** — `4ndr0tools - Forums++.user.js` v1.13.6 · provenance: r6 port (2-e F31) + the r7 backtick fix (ae8fdf2)
 
 - **Closes residual**: cyberdrop-warmup-live
-- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.5 — `cyberdropWarmupOnce` — lines 2605, 2606, 4822, 5151 at render
+- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.6 — `cyberdropWarmupOnce` — lines 2620, 2621, 4837, 5166 at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: a thread with cyberdrop .to/.nl/.cr /f/ or /e/ links
 - **Risk**: download low · network one tab per origin · ToS low
 
@@ -119,10 +131,10 @@
 
 ### FPP-RES-01
 
-**kemono.su/.cr direct links resolve with zero network (identity resolver)** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r6 restoration (14500cb) + r7 TLD truth pass (ae8fdf2: 7a F02)
+**kemono.su/.cr direct links resolve with zero network (identity resolver)** — `4ndr0tools - Forums++.user.js` v1.13.6 · provenance: r6 restoration (14500cb) + r7 TLD truth pass (ae8fdf2: 7a F02)
 
 - **Closes residual**: resolver-liveness-menagerie
-- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.5 — `kemono:direct link` — lines 2780 at render
+- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.6 — `kemono:direct link` — lines 2795 at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: a thread containing kemono.su or kemono.cr direct /data/ links
 - **Prerequisites**: Skip Download + Generate Links ON for a liveness-only, zero-download run
 - **Risk**: download none (liveness-only) · network zero extra on PASS · ToS moderate — aggregator site; zero extra traffic on PASS
@@ -144,10 +156,10 @@
 
 ### FPP-RES-02
 
-**coomer.su AND coomer.st profile walkers enumerate multi-page** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r6 restoration + r7 ae8fdf2 (7a F01 — the coomer .st dead-end fixed)
+**coomer.su AND coomer.st profile walkers enumerate multi-page** — `4ndr0tools - Forums++.user.js` v1.13.6 · provenance: r6 restoration + r7 ae8fdf2 (7a F01 — the coomer .st dead-end fixed)
 
 - **Closes residual**: resolver-liveness-menagerie
-- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.5 — `Coomer:Profiles` — lines 2776 at render · `Resolved page` — lines 2884 at render
+- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.6 — `Coomer:Profiles` — lines 2791 at render · `Resolved page` — lines 2899 at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: one thread with coomer.su profile links and one with .st
 - **Prerequisites**: Skip Download + Generate Links for liveness-only
 - **Risk**: download none (liveness-only) · network moderate — several page GETs · ToS moderate — adult aggregator; keep posts small
@@ -168,10 +180,10 @@
 
 ### FPP-RES-03
 
-**bunkr family resolves: TLD alternation + CF retry + CDN signing (bunkr.org/bunkrr.org/bunkrrr.org/gigachad-cdn)** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r6 restoration (14500cb) + r8 c866a50 (8b F02 family widening)
+**bunkr family resolves: TLD alternation + CF retry + CDN signing (bunkr.org/bunkrr.org/bunkrrr.org/gigachad-cdn)** — `4ndr0tools - Forums++.user.js` v1.13.6 · provenance: r6 restoration (14500cb) + r8 c866a50 (8b F02 family widening)
 
 - **Closes residual**: resolver-liveness-menagerie
-- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.5 — `xfpdBunkrSignCdnUrl` — lines 2463, 3337, 3577 at render · `isBunkrUrl` — lines 177, 5970, 5984, 6118 at render
+- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.6 — `xfpdBunkrSignCdnUrl` — lines 2478, 3352, 3592 at render · `isBunkrUrl` — lines 192, 5985, 5999, 6133 at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: a thread with a small bunkr /a/ album and a single /f/ file
 - **Prerequisites**: Skip Download + Generate Links for liveness-only (DIRECT arms can download hundreds of MB otherwise)
 - **Risk**: download none (liveness-only) · network low — API GETs · ToS moderate — file host, adult content; pick a small album
@@ -193,10 +205,10 @@
 
 ### FPP-RES-04
 
-**cyberdrop ladder: api.<root> runtime arms + literal api.cyberdrop.cr fallbacks** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r6 restoration + r7 ae8fdf2 (the 7c-F06 backtick fix)
+**cyberdrop ladder: api.<root> runtime arms + literal api.cyberdrop.cr fallbacks** — `4ndr0tools - Forums++.user.js` v1.13.6 · provenance: r6 restoration + r7 ae8fdf2 (the 7c-F06 backtick fix)
 
 - **Closes residual**: resolver-liveness-menagerie
-- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.5 — `apiCandidates` — lines 4940, 4942, 4943, 4944 …+7 more at render · `api.cyberdrop.cr` — lines 257, 311, 4767, 4861 …+5 more at render
+- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.6 — `apiCandidates` — lines 4955, 4957, 4958, 4959 …+7 more at render · `api.cyberdrop.cr` — lines 272, 326, 4782, 4876 …+5 more at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: one cyberdrop.to link (root arm) and one non-declared-TLD link if findable
 - **Risk**: download low · network tiny GETs · ToS low — public host
 
@@ -215,10 +227,10 @@
 
 ### FPP-RES-05
 
-**jpg/jpeg no-digit family: NO manager prompt on first dispatch (the engine's first live catch)** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r8 836f5bc — the derivation engine's first live catch (8 tokens declared)
+**jpg/jpeg no-digit family: NO manager prompt on first dispatch (the engine's first live catch)** — `4ndr0tools - Forums++.user.js` v1.13.6 · provenance: r8 836f5bc — the derivation engine's first live catch (8 tokens declared)
 
 - **Closes residual**: jpg-jpeg-connect-family
-- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.5 — `@connect jpg.church` — lines 93 at render · `@connect jpeg.church` — lines 96 at render · `@connect jpg.pet` — lines 91 at render · `@connect jpeg.pet` — lines 92 at render
+- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.6 — `@connect jpg.church` — lines 93 at render · `@connect jpeg.church` — lines 96 at render · `@connect jpg.pet` — lines 91 at render · `@connect jpeg.pet` — lines 92 at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: a thread with jpg.church / jpg.su / jpg.cr / jpeg.church / jpeg.fish / jpeg.fishing / jpeg.su / jpeg.cr links (any subset)
 - **Risk**: download low · network image GETs · ToS moderate — image boards, adult content
 
@@ -238,10 +250,10 @@
 
 ### FPP-RES-06
 
-**pixeldrain .com/.net/pixeldra.in — all three domains resolve** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r7 ae8fdf2 (7a F05)
+**pixeldrain .com/.net/pixeldra.in — all three domains resolve** — `4ndr0tools - Forums++.user.js` v1.13.6 · provenance: r7 ae8fdf2 (7a F05)
 
 - **Closes residual**: resolver-liveness-menagerie
-- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.5 — `Pixeldrain:` — lines 2811 at render · `isPixeldrainUrl` — lines 5972, 6120 at render
+- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.6 — `Pixeldrain:` — lines 2826 at render · `isPixeldrainUrl` — lines 5987, 6135 at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: a thread with pixeldrain.net/l/ links (the discriminating case) and .com links
 - **Risk**: download low · network low · ToS low
 
@@ -258,10 +270,10 @@
 
 ### FPP-RES-07
 
-**yandex disk resolves via the POST ladder; prompts disclose the non-enumerable TLD horizon** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r7 ae8fdf2 (7a F04 — the missing yandex tokens)
+**yandex disk resolves via the POST ladder; prompts disclose the non-enumerable TLD horizon** — `4ndr0tools - Forums++.user.js` v1.13.6 · provenance: r7 ae8fdf2 (7a F04 — the missing yandex tokens)
 
 - **Closes residual**: resolver-liveness-menagerie
-- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.5 — `@connect yandex.ru` — lines 137 at render · `@connect yandex.com` — lines 138 at render · `@connect yandex.kz` — lines 139 at render · `disk.yandex.ru` — lines 254, 5480 at render
+- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.6 — `@connect yandex.ru` — lines 137 at render · `@connect yandex.com` — lines 138 at render · `@connect yandex.kz` — lines 139 at render · `disk.yandex.ru` — lines 269, 5495 at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: a thread with disk.yandex.ru/i/ links
 - **Risk**: download low · network one POST · ToS low
 
@@ -280,10 +292,10 @@
 
 ### FPP-RES-08
 
-**redgifs: ONE boot token fetch on /threads/ pages only + token refresh on stale** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r6 restoration + r7 ae8fdf2 (7a F09/F10)
+**redgifs: ONE boot token fetch on /threads/ pages only + token refresh on stale** — `4ndr0tools - Forums++.user.js` v1.13.6 · provenance: r6 restoration + r7 ae8fdf2 (7a F09/F10)
 
 - **Closes residual**: resolver-liveness-menagerie
-- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.5 — `redgifsFetchTempToken` — lines 2718, 4564, 4602, 4703 …+2 more at render · `/threads/` — lines 9, 10, 11, 12 …+8 more at render
+- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.6 — `redgifsFetchTempToken` — lines 2733, 4579, 4617, 4718 …+2 more at render · `/threads/` — lines 9, 10, 11, 12 …+8 more at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: a simpcity thread; then the goonbox helper tab from FPP-GBX-01
 - **Risk**: download low · network one anonymous token per session · ToS low
 
@@ -303,10 +315,10 @@
 
 ### FPP-RES-09
 
-**saint2/turbo: origin derivation + sign API + embed links** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r6 restoration (14500cb turbo sign port) + r9 F02 (the template-arm derivation)
+**saint2/turbo: origin derivation + sign API + embed links** — `4ndr0tools - Forums++.user.js` v1.13.6 · provenance: r6 restoration (14500cb turbo sign port) + r9 F02 (the template-arm derivation)
 
 - **Closes residual**: resolver-liveness-menagerie
-- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.5 — `xfpdTurboOrigin` — lines 1728, 1743, 4429, 4464 …+1 more at render · `glb-apisign.cdn.cr` — lines 70, 296, 2462, 2468 …+1 more at render
+- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.6 — `xfpdTurboOrigin` — lines 1743, 1758, 4444, 4479 …+1 more at render · `glb-apisign.cdn.cr` — lines 70, 311, 2477, 2483 …+1 more at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: a thread with a turbo.cr video link and (if findable) a saint2.su one
 - **Risk**: download low · network tiny sign requests · ToS moderate — adult video host
 
@@ -325,10 +337,10 @@
 
 ### FPP-RES-10
 
-**filester v2 API + cache-host probe sweep** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r6 restoration (14500cb filesterResolveV2 port)
+**filester v2 API + cache-host probe sweep** — `4ndr0tools - Forums++.user.js` v1.13.6 · provenance: r6 restoration (14500cb filesterResolveV2 port)
 
 - **Closes residual**: resolver-liveness-menagerie
-- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.5 — `filesterResolveV2` — lines 2657, 4079, 4176 at render
+- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.6 — `filesterResolveV2` — lines 2672, 4094, 4191 at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: a thread with filester /d/ or /f/ links
 - **Risk**: download low · network low · ToS low
 
@@ -345,10 +357,10 @@
 
 ### FPP-RES-11
 
-**imagebam view/gallery + full-embed CDN links** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r6/r7 resolver batches
+**imagebam view/gallery + full-embed CDN links** — `4ndr0tools - Forums++.user.js` v1.13.6 · provenance: r6/r7 resolver batches
 
 - **Closes residual**: resolver-liveness-menagerie
-- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.5 — `imagebam` — lines 88, 2798, 2799, 5313 …+1 more at render
+- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.6 — `imagebam` — lines 88, 2813, 2814, 5328 …+1 more at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: a thread with imagebam view/gallery links and (if findable) full-embed images<N>.imagebam.com links
 - **Risk**: download low · network image GETs · ToS moderate — image host, adult content
 
@@ -365,10 +377,10 @@
 
 ### FPP-RES-12
 
-**ibb.co albums walk via JSON; postimg/pixxxels rewrite correctly** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: r6/r7 resolver batches + r9 F03 (the postimg/pixxxels leading-group enumeration)
+**ibb.co albums walk via JSON; postimg/pixxxels rewrite correctly** — `4ndr0tools - Forums++.user.js` v1.13.6 · provenance: r6/r7 resolver batches + r9 F03 (the postimg/pixxxels leading-group enumeration)
 
 - **Closes residual**: resolver-liveness-menagerie
-- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.5 — `Ibb:image` — lines 2782 at render · `Postimg:image` — lines 2781 at render
+- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.6 — `Ibb:image` — lines 2797 at render · `Postimg:image` — lines 2796 at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: a thread with an ibb.co/album/ link, i.ibb.co single images, and a postimg.cc 8-char link
 - **Risk**: download low · network low · ToS low
 
@@ -389,10 +401,10 @@
 
 ### FPP-DLP-01
 
-**safeThreadTitle on a ':'-containing thread title (zip gate + generated.zip names)** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: 7d F22 filed (partial fix), 8b F01 completed (c866a50), 9a F05 (the dispatch guards)
+**safeThreadTitle on a ':'-containing thread title (zip gate + generated.zip names)** — `4ndr0tools - Forums++.user.js` v1.13.6 · provenance: 7d F22 filed (partial fix), 8b F01 completed (c866a50), 9a F05 (the dispatch guards)
 
 - **Closes residual**: zip-gate-naming-and-fallbacks-live
-- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.5 — `safeThreadTitle` — lines 5917, 6265, 6266, 6734 …+1 more at render · `generated.zip` — lines 172, 176, 6812, 6817 …+4 more at render
+- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.6 — `safeThreadTitle` — lines 5932, 6286, 6287, 6755 …+1 more at render · `generated.zip` — lines 187, 191, 6833, 6838 …+4 more at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: a simpcity thread whose TITLE contains ':' (e.g. 'Video: something')
 - **Prerequisites**: Zipped checked · Generate Log + Generate Links checked (forces the generated.zip arm even on an all-DIRECT run)
 - **Risk**: download one zip per post — use a small post · network low · ToS low
@@ -413,10 +425,10 @@
 
 ### FPP-DLP-02
 
-**isBunkrUrl maint guard: a maintenance placeholder is NEVER saved as a real file** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: 8b F02 MAJOR (c866a50) + r9 9a F02 (the 4 KiB head slice)
+**isBunkrUrl maint guard: a maintenance placeholder is NEVER saved as a real file** — `4ndr0tools - Forums++.user.js` v1.13.6 · provenance: 8b F02 MAJOR (c866a50) + r9 9a F02 (the 4 KiB head slice)
 
 - **Closes residual**: bunkr-maint-guard-live
-- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.5 — `maintSettled` — lines 6130, 6344, 6347, 6348 …+5 more at render · `maintenance redirect (maint.mp4)` — lines 6468 at render · `blob.slice(0, 8192)` — lines 6493 at render
+- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.6 — `maintSettled` — lines 6145, 6365, 6368, 6369 …+5 more at render · `maintenance redirect (maint.mp4)` — lines 6489 at render · `blob.slice(0, 8192)` — lines 6514 at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: a bunkr link that is in maintenance (bunkr rotates a maint.mp4 placeholder when a CDN is down)
 - **Prerequisites**: maintenance is transient — BLOCKED is acceptable when no maint link is findable that session; re-try later
 - **Risk**: download low · network low · ToS low
@@ -437,10 +449,10 @@
 
 ### FPP-DLP-03
 
-**the 500 MB bunkr DIRECT switch fires mid-download** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: 2-e F04 (a4c1f5b); r7 79c70eb loaded-bytes switch; r8 c866a50 family widening
+**the 500 MB bunkr DIRECT switch fires mid-download** — `4ndr0tools - Forums++.user.js` v1.13.6 · provenance: 2-e F04 (a4c1f5b); r7 79c70eb loaded-bytes switch; r8 c866a50 family widening
 
 - **Closes residual**: bunkr-500mb-direct-switch-live
-- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.5 — `BUNKR_DIRECT_MIN_BYTES` — lines 6004, 6394 at render · `Bunkr large file` — lines 6397 at render
+- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.6 — `BUNKR_DIRECT_MIN_BYTES` — lines 6019, 6415 at render · `Bunkr large file` — lines 6418 at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: a bunkr file of at least 500 MB (operator-picked)
 - **Prerequisites**: Zipped ON so the switch is observable as an exit from the zip path · HIGH download volume — schedule on an unmetered connection; one file only
 - **Risk**: download HIGH (one 500MB+ file) · network high · ToS low
@@ -461,10 +473,10 @@
 
 ### FPP-DLP-04
 
-**FF per-file saveAs arm vs Chrome GM_download arm (the named FF residual)** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: the standing FF-saveAs residual (r6/r7/r8 lists); 2e F08; r8 c866a50 (8b F04/F12)
+**FF per-file saveAs arm vs Chrome GM_download arm (the named FF residual)** — `4ndr0tools - Forums++.user.js` v1.13.6 · provenance: the standing FF-saveAs residual (r6/r7/r8 lists); 2e F08; r8 c866a50 (8b F04/F12)
 
 - **Closes residual**: ff-saveas-arm
-- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.5 — `const isFF` — lines 335, 5948 at render
+- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.6 — `const isFF` — lines 350, 5963 at render
 - **Environment**: firefox AND chrome (both, as control) / tampermonkey / sites: a small post with 2-3 downloadable files
 - **Risk**: download low · network low · ToS low
 
@@ -486,10 +498,10 @@
 
 ### FPP-DLP-05
 
-**light vs dark theme tooltip pair + search input ink** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: 2e F16 (a4c1f5b); 7d F10 search input (79c70eb); the standing light-theme residual
+**light vs dark theme tooltip pair + search input ink** — `4ndr0tools - Forums++.user.js` v1.13.6 · provenance: 2e F16 (a4c1f5b); 7d F10 search input (79c70eb); the standing light-theme residual
 
 - **Closes residual**: light-theme-tooltip-pair
-- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.5 — `getTooltipBackgroundColor` — lines 1012, 1387, 7148 at render · `isLightTheme` — lines 1030, 7177 at render
+- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.6 — `getTooltipBackgroundColor` — lines 1027, 1402, 7169 at render · `isLightTheme` — lines 1045, 7198 at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: simpcity with the account theme switcher (data-color-scheme)
 - **Risk**: download none · network none · ToS none
 
@@ -509,10 +521,10 @@
 
 ### FPP-DLP-06
 
-**zip-gate FileSaver fallback fires on a GM_download error (both arms)** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: 2-e F07 (v1.12.1), 8b F01 (v1.13.3), 9a F05 (v1.13.4 dispatch guards)
+**zip-gate FileSaver fallback fires on a GM_download error (both arms)** — `4ndr0tools - Forums++.user.js` v1.13.6 · provenance: 2-e F07 (v1.12.1), 8b F01 (v1.13.3), 9a F05 (v1.13.4 dispatch guards)
 
 - **Closes residual**: zip-gate-naming-and-fallbacks-live
-- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.5 — `Trying to write using FileSaver.js` — lines 6796, 6803, 6824, 6831 at render · `Zip dispatch failed` — lines 6802 at render · `Generated.zip dispatch failed` — lines 6830 at render
+- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.6 — `Trying to write using FileSaver.js` — lines 6817, 6824, 6845, 6852 at render · `Zip dispatch failed` — lines 6823 at render · `Generated.zip dispatch failed` — lines 6851 at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: any post producing a zip
 - **Prerequisites**: the sanctioned trigger: set Chrome to 'Ask where to save each file' and CANCEL once (onerror fires); or run opportunistically when any DLP-01 validation error occurs
 - **Risk**: download none beyond the deliberate cancel · network none · ToS none
@@ -532,10 +544,10 @@
 
 ### FPP-DLP-07
 
-**turbo stall, re-sign ladder, DIRECT fallback under adversarial network** — `4ndr0tools - Forums++.user.js` v1.13.5 · provenance: 2-e F02/F03 (a4c1f5b/cae8685)
+**turbo stall, re-sign ladder, DIRECT fallback under adversarial network** — `4ndr0tools - Forums++.user.js` v1.13.6 · provenance: 2-e F02/F03 (a4c1f5b/cae8685)
 
 - **Closes residual**: turbo-stall-resign-ladder-live
-- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.5 — `Turbo stalled` — lines 6636, 6662 at render
+- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.6 — `Turbo stalled` — lines 6657, 6683 at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: a turbo/saint2 video link
 - **Prerequisites**: DevTools Network throttling set to a stall profile (offline after headers)
 - **Risk**: download low (throttled transfer) · network low · ToS moderate
@@ -998,7 +1010,7 @@
 **Firefox + Tampermonkey: the saveAs arm + the gbx listener-mirror surfaces** — `ALL` vsuite · provenance: the standing FF-saveAs residual (r6/r7/r8 lists) + the Firefox+TM poll-blindness lesson embedded in the gbx listener-mirror
 
 - **Closes residuals**: ff-saveas-arm · manager-browser-matrix
-- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.5 — `gbxBindListeners` — lines 1842, 1937 at render
+- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.6 — `gbxBindListeners` — lines 1857, 1952 at render
 - **Environment**: firefox / tampermonkey / sites: FPP-DLP-04 (mandatory); FPP-GBX-01/02 (the listener-mirror path); FPP-RES spot-check (3 families); HL-SAV-01
 - **Risk**: download as the families · network as the families · ToS as the families
 
@@ -1020,7 +1032,7 @@
 **Violentmonkey spot-check: documented degradations only (GM_cookie absent), no crashes** — `ALL` vsuite · provenance: the manager-matrix family; the guards hardened r1 — regression watch since
 
 - **Closes residual**: manager-browser-matrix
-- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.5 — `typeof GM_cookie` — lines 2493, 2519, 2549, 2566 at render
+- **Anchor**: canon/_sovereign/4ndr0tools - Forums++.user.js @ 1.13.6 — `typeof GM_cookie` — lines 2508, 2534, 2564, 2581 at render
 - **Environment**: chrome or firefox / violentmonkey / sites: Forums++ + Hailuo++ + Blob2URL installed on VM
 - **Risk**: download low · network low · ToS low — spot-check tier: a failure here is a finding, not a release blocker unless it is the crash class
 
@@ -1099,7 +1111,7 @@
 ## Report back (paste this template, filled)
 
 ```markdown
-## OPERATOR BATTERY REPORT — suite 1.18.0 @ <git sha>
+## OPERATOR BATTERY REPORT — suite 1.19.0 @ <git sha>
 ENV: <browser + version> / <manager + version (MV3?)> / <OS> / dist @ <git sha> / date <YYYY-MM-DD>
 
 | test | status (PASS/FAIL/BLOCKED) | evidence (link/inline) | note (failure mode if FAIL/BLOCKED) |
@@ -1156,4 +1168,4 @@ FREE-FORM FINDINGS:
 
 ---
 
-*Rendered by `node tools/operator-battery.mjs render` — deterministic; re-render after any bump. The manifest is the source of truth; this doc is its operator-facing projection (residual map + anchor line refs included). Results ingested by `node tools/operator-battery.mjs ingest <report.md>` land in `tools/operator-battery/results.json` (adjudication ledger, expiry v1.19.0); a partial report needs `--partial`. UNTESTED is the ledger's default — never a report row.*
+*Rendered by `node tools/operator-battery.mjs render` — deterministic; re-render after any bump. The manifest is the source of truth; this doc is its operator-facing projection (residual map + anchor line refs included). Results ingested by `node tools/operator-battery.mjs ingest <report.md>` land in `tools/operator-battery/results.json` (adjudication ledger, expiry v1.20.0); a partial report needs `--partial`. UNTESTED is the ledger's default — never a report row.*

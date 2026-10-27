@@ -1,4 +1,4 @@
-# GoFile++ · v2.2.0
+# GoFile++ · v2.3.0
 
 > GoFile batch acquisition engine — `media & links` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ GoFile++ turns gofile.io folders into batch downloads: recursive folder scans, d
 
 | Dimension | Value |
 |---|---|
-| Version | `2.2.0` |
-| Matches | `*://gofile.io/*` |
+| Version | `2.3.0` |
+| Matches | `*://*.gofile.io/*` |
 | Run-at | `document-idle` |
-| Size | 118.9 KB · 2314 lines |
+| Size | 123.0 KB · 2375 lines |
 | Install | [dist/4ndr0tools - Gofile++.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Gofile%2B%2B.user.js) |
 
 ## Feature Inventory

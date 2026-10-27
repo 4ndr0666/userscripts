@@ -207,11 +207,11 @@ const ADJUDICATED = {
      * its entry below.) */
 
     "4ndr0tools - 4ndr0serviceguard Companion.user.js": {
-        expiry: "v1.19.0",
+        expiry: "v1.20.0",
         tapOpenSend: { count: 1, reason: "own-mock: phantom XHR object's send (script-owned decoy, not a page tap)" },
     },
     "4ndr0tools - AlwaysNewWindow.user.js": {
-        expiry: "v1.19.0",
+        expiry: "v1.20.0",
         tapOpenSend: { count: 2, reason: "win-open-override: force-open/restore pair — the script's core feature, not an XHR tap" },
     },
     /* Akasha Silence: fetchWrap(1) + xhrWrap(2) burned to zero in v1.4.5 —
@@ -228,35 +228,35 @@ const ADJUDICATED = {
      * into the live DOM (XSS-inert by construction; NOT the TT-wrapped
      * page-parse class above). */
     "4ndr0tools - GooglePhotosandDrive++.user.js": {
-        expiry: "v1.19.0",
+        expiry: "v1.20.0",
         parseFromString: { count: 1, reason: "detached-parse: Drive confirm-interstitial HTML parsed into a detached DOMParser document (gmFetch probe body) — querySelector reads only, zero live-DOM insertion, XSS-inert by construction (v1.4.8 true-direct resolution)" },
     },
     "4ndr0tools - Images++.user.js": {
-        expiry: "v1.19.0",
+        expiry: "v1.20.0",
         eval: { count: 1, reason: "eval-bridge: page-$ interop through trustedScript policy (v1.4.2 adjudication)" },
         newFunction: { count: 1, reason: "eval-bridge: same page-$ bridge, new Function fallback (policy-gated)" },
         parseFromString: { count: 1, reason: "page-policy: $parseHtml routes through the page's own trustedHTML policy (v1.4.2 capture)" },
     },
     "4ndr0tools - Forums++.user.js": {
-        expiry: "v1.19.0",
+        expiry: "v1.20.0",
         newFunction: { count: 1, reason: "gofile-wt-bridge (round 6): scoped Function evaluation of the live-fetched gofile.io/js/wt.obf.js — the site's own generateWT() token generator, called with navigator as the sole argument so the declaration stays local to the factory (never leaks to global); source verified by /generateWT/ content check before eval and cached 24 h in GM storage while the 4-hour time bucket inside generateWT() is recomputed on every call (lineage L3899-3947 port)" },
     },
     "4ndr0tools - Akasha Silence.user.js": {
-        expiry: "v1.19.0",
+        expiry: "v1.20.0",
         protoWrap: { count: 2, reason: "canvas-blindness (v5.x feature, first LEDGERED round 6): HTMLCanvasElement toDataURL/toBlob wrapped with the blindedScratch canvas — the anti-fingerprinting neutralizer; originals saved and re-invoked so page rendering is unaffected; this surface was INVISIBLE to the census before the round-6 protoWrap class (the blind spot closed by the Hailuo++ interception platform's arrival in the same family)" },
     },
     "4ndr0tools - Hailuo++.user.js": {
-        expiry: "v1.19.0",
+        expiry: "v1.20.0",
         protoWrap: { count: 3, reason: "interception platform (round 6, 2-c): URL.createObjectURL clone-at-create (the blob vault registry) + HTMLCanvasElement toDataURL/toBlob commit hooks (canvas capture above the noise floor) — the page-API interposition family the wrap classes could not see; install-once guarded by the __andr0HailuoIntercept realm mark (MPC class, global-census ledgered), every hook body fail-closed per-family try/catch, originals saved and re-invoked (the page always receives its native result); NetHook owns the fetch/XHR wraps — this family is Hailuo++'s own vault surface" },
     },
     "4ndr0tools - Instagram++.user.js": {
-        expiry: "v1.19.0",
+        expiry: "v1.20.0",
         parseFromString: { count: 1, reason: "page-policy: DASH manifest parse covered by the page 'default' createHTML policy minted at boot" },
     },
     /* Instagram++: fetchWrap(1) + xhrWrap(2) burned to zero in v1.4.7 — the
      * feed digest rides kernel/net.js onTraffic response events. */
     "4ndr0tools - Pixeldrain++.user.js": {
-        expiry: "v1.19.0",
+        expiry: "v1.20.0",
         tapOpenSend: { count: 3, reason: "accordion-state: panel s.open flags (not network taps)" },
     },
     /* Prompt Master: fetchWrap(1) + xhrWrap(2) burned to zero in v1.4.7 —
@@ -266,7 +266,7 @@ const ADJUDICATED = {
      * in v1.4.6 — blocklist verdicts + structured capture + pacification
      * ride kernel/net.js v4. The WebSocket bridge tap survives below. */
     "4ndr0tools - Recon.user.js": {
-        expiry: "v1.19.0",
+        expiry: "v1.20.0",
         tapOpenSend: { count: 1, reason: "ws-bridge: WebSocket send recorder (recon4 lineage — out of NetHook's fetch/XHR/beacon scope; the page-realm WS facade is Recon's own)" },
     },
     /* Watermark++: the RPC tapOpenSend(4) burned to zero in v1.4.7 — the
@@ -276,7 +276,7 @@ const ADJUDICATED = {
      * preservation, beyond the hub's synchronous verdict scope (same
      * adjudication class as m3u8++'s dev-proxy and Recon's WS bridge). */
     "4ndr0tools - Watermark++.user.js": {
-        expiry: "v1.19.0",
+        expiry: "v1.20.0",
         fetchWrap: { count: 1, reason: "processing-proxy: intent-gated gemini image rewriter (fetch→process→synthetic Response, full header surface) — an async response REPLACER, out of the hub's sync veto/phantom/observe scope; host-gated gemini.google.com" },
     },
     /* m3u8++: xhrWrap(1) + the (uncounted) Response.text tap burned to zero
@@ -287,7 +287,7 @@ const ADJUDICATED = {
      * the hub's sync veto/phantom/observe scope (the Recon ws-bridge
      * adjudication class), and host-gated to dev-only hosts. */
     "4ndr0tools - m3u8++.user.js": {
-        expiry: "v1.19.0",
+        expiry: "v1.20.0",
         fetchWrap: { count: 1, reason: "net-host-proxy: thatwind/localhost dev-proxy fetch path — a GM transport re-dispatcher (custom origin/referer headers, non-200 re-proxy), out of the hub's sync verdict/observe scope; host-gated development tool" },
     },
 };

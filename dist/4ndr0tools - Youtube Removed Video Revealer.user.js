@@ -2,7 +2,7 @@
 // @name         4ndr0tools - Youtube Removed Video Revealer
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666
-// @version      2.0.4
+// @version      2.0.5
 // @description  Restores titles for removed or private videos in YouTube playlists
 // @license      MIT
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Youtube%20Removed%20Video%20Revealer.user.js
@@ -15,6 +15,10 @@
 // @connect      web.archive.org
 // @require      https://cdnjs.cloudflare.com/ajax/libs/cash/8.1.5/cash.min.js
 // ==/UserScript==
+// v2.0.5 (suite v1.19.0, WO-01 round 11): the BODY phase rides inside the
+// 20 s bound (11b-F12) — the v2.0.4 timer was cleared in a finally that
+// ran BEFORE response.json(), so a stalled response body hung 'Restore
+// Titles' past the bound the headers phase had.
 // v2.0.4 (suite v1.18.0, WO-01 round 10): processClick's native filmot
 // fetch gains the 20 s AbortController bound its GM sibling has had since
 // v2.0.2 (10c F05 — a stalled request left 'Restore Titles' silently dead;
@@ -26,7 +30,7 @@ let ArchivedIDS = {}, RecoveredIDS = {}, DetectedIDS = {}, deletedIDs = "", dele
 // moved off window into script scope (the page never reads these).
 
 // 2.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Youtube Removed Video Revealer.user v2.0.4 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Youtube Removed Video Revealer.user v2.0.5 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 // REVISION: Migrated from 'var' to 'const' for immutable global styling constants to prevent accidental reassignment.
 const darkModeBackground = "#000099";
@@ -587,17 +591,19 @@ async function processClick(format, nTry = 0) {
          * ceiling — a stalled filmot.com response must reject, not hang. */
         const ctl = new AbortController();
         const abortTimer = setTimeout(() => ctl.abort(), 20000);
-        let response;
+        let response, data;
         try {
             response = await fetch(apiURL, { signal: ctl.signal });
+            if (!response.ok) {
+                throw new Error(`Network response was not ok: ${response.status}`);
+            }
+            /* v2.0.5 (11b-F12): the BODY phase rides inside the 20 s bound —
+             * the old finally cleared the timer before response.json(), so a
+             * stalled body hung 'Restore Titles' past the bound. */
+            data = await response.json();
         } finally {
             clearTimeout(abortTimer);
         }
-        if (!response.ok) {
-            throw new Error(`Network response was not ok: ${response.status}`);
-        }
-
-        const data = await response.json();
 
         // REVISION: Strict equality check.
         if (format === 1) {

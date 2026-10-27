@@ -1,6 +1,28 @@
 {
     "operatorBatteryResults": "1.0.0",
-    "expiry": "v1.19.0",
+    "expiry": "v1.20.0",
     "note": "The adjudication ledger for operator-side test runs (the sink-census ADJUDICATED idiom). Every entry is re-adjudicated at each pin (the G9 cycle) and the expiry rolls with the suite. FAIL entries MUST carry evidence + note (the fail-visible chain). BLOCKED is a first-class state. Entries for unknown test ids fail the check (orphan sweep).",
-    "adjudications": {}
+    "adjudications": {
+        "FPP-GBX-01": {
+            "status": "FAIL",
+            "env": "chrome / tampermonkey (MV3 — injected-web.js stack frames) / OS unstated / dist @ cd669db / sites: simpcity.cr threads",
+            "evidence": "console excerpt (15:49:10.264): '4ndr0tools - Forums++.user.js:7471 Uncaught ReferenceError: resolve is not defined at finishSuccessfulLoad (Forums++.user.js:7471:21) at onload (Forums++.user.js:7716:25) at HttpRequested (injected-web.js:1:6781)' — full excerpt in the operator's forums_battery.txt",
+            "note": "Uncaught ReferenceError at the per-post download success handler — the batch wedged with its concurrency slots never freed. Root cause adjudicated r11 as OBI-F01: finishSuccessfulLoad referenced the downloadPromise executor's resolve param from outside its binding scope (a free variable since 1.12.1). FIXED in Forums++ 1.13.6 (the settle callback is a parameter now); re-run of this test against 1.13.6 pending.",
+            "date": "2026-10-27"
+        },
+        "FPP-GBX-02": {
+            "status": "FAIL",
+            "env": "chrome / tampermonkey (MV3 — injected-web.js stack frames) / OS unstated / dist @ cd669db / sites: simpcity.cr threads",
+            "evidence": "console excerpt (15:51:15.609 localStorage.setItem('xfpd_gbx_force_bridge','true') set; 15:51:59.450 + 15:51:59.458 the same 'resolve is not defined' crash ×2) — full excerpt in the operator's forums_battery_tag.txt",
+            "note": "The force-bridge debug flag was accepted and the bridge path was taken — then the same OBI-F01 crash fired twice at the success handler. The P2 handshake instrumentation itself did its job; the download pipeline wedged behind it. FIXED in 1.13.6; re-run pending.",
+            "date": "2026-10-27"
+        },
+        "FPP-WRM-01": {
+            "status": "FAIL",
+            "env": "chrome / tampermonkey (MV3 — injected-web.js stack frames) / OS unstated / dist @ cd669db / sites: simpcity.cr threads",
+            "evidence": "console excerpt (15:58:00.755): the same 'resolve is not defined at finishSuccessfulLoad' crash — full excerpt in the operator's forums_batter_gofile.txt; free-form: 'As I was on FPP-WRM-01 I went ahead and fired up gofile++ to absolutely zero avail'",
+            "note": "The gofile warm-up bridge ran and the same OBI-F01 crash killed the batch at its first successful load. The 'zero avail' observation on Gofile++ itself was adjudicated separately this round (11a-F01..F04: the @match exact-host hole, the #index_main observer pin, the dead pre-2023 Cookie/wt auth — Gofile++ 2.3.0); Forums++ side FIXED in 1.13.6; re-run pending.",
+            "date": "2026-10-27"
+        }
+    }
 }

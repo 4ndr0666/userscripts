@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - YT Filter
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      2.5
+// @version      2.5.1
 // @author       4ndr0666
 // @description  Electric-Glass YouTube video filter — views, date, duration
 // @license      MIT
@@ -13,7 +13,7 @@
 // @run-at       document-end
 // ==/UserScript==
 // 2.5 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: YT Filter.user v2.5 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: YT Filter.user v2.5.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 (() => {
   'use strict';
@@ -576,7 +576,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: YT Filter.user v2.5 — 
       filters.minDuration = d.minDuration ?? 0;
       filters.maxDuration = d.maxDuration ?? Infinity;
       filters.enabled     = !!d.enabled;
-    } catch { console.debug('YTF interceptor: unbound'); /* keep defaults */ }
+    } catch (e) { console.debug('YTF saved-filter parse rejected — keeping defaults:', e && e.message); /* v2.5.1 (11b-F13): the failure is NAMED — 'unbound' misattributed a storage-parse rejection */ }
   };
 
   // ---------- Validation ----------

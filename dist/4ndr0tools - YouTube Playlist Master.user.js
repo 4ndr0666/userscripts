@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - YouTube Playlist Master
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.7.3
+// @version      1.7.4
 // @description  Channel playlist buttons (All / Popular / Videos / Shorts / Streams / Members-only), Random play (prefer newest/oldest), reverse autoplay order, playlist autoplay toggle, duration sort, bulk copy/move/delete, JSON + plaintext export/import, snapshots with deleted-video detection, quick watch_videos playlists, queue & watch-later overlays, playlist close button, date/view metadata, episode auto-expand, huge-playlist browser, live settings (no reload), always-available Ψ deck, playlist row filter, duplicate finder & purge, global hotkeys (Alt+Shift+U/S/X), failsafe deck rescue, 404-proof navigation guards, Trusted-Types-immune rendering, fully-visible fit-content modal dialogs.
 // @author       4ndr0666
 // @license      MIT
@@ -1187,6 +1187,22 @@ const __4NDR0_NET_API__ = (function () {
     return api;
 })();
 
+// 1.7.4 (suite v1.19.0, WO-01 round 11): the activateSort wedge + the
+// stale watched-mark (11b-F04/F09). (1) PHASE-2 WEDGE: the inner wait
+// loop's brute-force scroll arm had NO retry cap and allAnchors is a
+// static NodeList that can never gain a missing last anchor — a
+// deleted-video count mismatch (or a permanently #text-less last row)
+// looped autoScroll forever, and after an SPA hop the loop kept
+// scrolling whatever page the user was on until they pressed Sort→Stop.
+// The brute-force arm is capped (8 attempts → honest abort line) AND the
+// outer pass loop gains a stagnation abort: three consecutive passes
+// with zero sorted-count progress abort with a visible warning (a sort
+// that can never converge must say so, not scroll forever; 11b-F04).
+// (2) STALE WATCHED-MARK: the persistent next-button clone bound
+// markWatched(videoId) with the tick-time capture — after the video
+// advanced, clicking it marked the OLD video watched in the durable
+// localStorage map. The click handler resolves the CURRENT video at
+// click time (11b-F09).
 // 1.7.3 (suite v1.12.0, WO-01 round 4): error-path hardening — getQueryArgs
 // degrades losslessly on malformed percent-escapes (a literal '%' in a
 // search value no longer throws inside the CLOSE button's param strip;
@@ -1356,7 +1372,7 @@ const __4NDR0_NET_API__ = (function () {
 
     const CFG = {
         SCRIPT_NAME: 'Ψ Playlist Master',
-        SCRIPT_VERSION: '1.7.3',
+        SCRIPT_VERSION: '1.7.4',
         STORAGE_KEY: 'ytpu.settings',
         SNAPSHOT_KEY: 'ytpu.snapshots',
         SNAPSHOT_CAP: 20,
@@ -4906,6 +4922,8 @@ shuffleButtonActive: "path[d='M18.51,13.29l4.21,4.21l-4.21,4.21l-1.41-1.41l1.8-1
             scrollRetryCount = 0;
 
             // Phase 2: iterative single-drag passes until fully ordered.
+            let lastSortedCount = -1;
+            let stagnantPasses = 0; /* v1.7.4 (11b-F04): a pass loop that can never converge must abort */
             while (sortedCount < initialVideoCount && stopSort === false) {
                 allDragPoints = document.querySelectorAll('ytd-item-section-renderer:first-of-type yt-icon#reorder');
                 allAnchors = document.querySelectorAll('ytd-item-section-renderer:first-of-type div#content a#thumbnail.inline-block.ytd-thumbnail');
@@ -4916,14 +4934,35 @@ shuffleButtonActive: "path[d='M18.51,13.29l4.21,4.21l-4.21,4.21l-1.41-1.41l1.8-1
                         DECK.logMsg(`Video ${initialVideoCount} not loaded yet, scrolling.`);
                         await autoScroll(loadedLocation);
                         scrollRetryCount++;
-                    } else {
+                    } else if (++scrollRetryCount < 8) {
+                        /* v1.7.4 (11b-F04): the brute-force arm is CAPPED — it
+                         * was uncapped and allAnchors is a static NodeList
+                         * that can never gain the missing anchor. */
                         DECK.logMsg(`Video ${initialVideoCount} still not loaded — brute-force scroll.`);
                         await autoScroll();
+                    } else {
+                        DECK.logMsg('Last video anchor never rendered — aborting this pass.', 'warn');
+                        break;
                     }
                 }
 
                 sortedCount = Number(sortVideos(allAnchors, allDragPoints, initialVideoCount) + 1);
                 await new Promise((r) => setTimeout(r, sortLoopTime() * 4));
+                /* v1.7.4 (11b-F04): stagnation abort — a deleted-video count
+                 * mismatch means sortedCount can never reach
+                 * initialVideoCount; without this cap the outer loop spun
+                 * forever, each pass re-scrolling whatever page the user
+                 * was on after an SPA hop. */
+                if (sortedCount === lastSortedCount) {
+                    stagnantPasses++;
+                    if (stagnantPasses >= 3) {
+                        DECK.logMsg(`Sort stalled at ${sortedCount}/${initialVideoCount} for 3 passes — aborting (a video may be deleted).`, 'warn');
+                        break;
+                    }
+                } else {
+                    stagnantPasses = 0;
+                }
+                lastSortedCount = sortedCount;
             }
 
             if (stopSort) {
@@ -6347,7 +6386,11 @@ shuffleButtonActive: "path[d='M18.51,13.29l4.21,4.21l-4.21,4.21l-1.41-1.41l1.8-1
                     newButton.setAttribute('ytpa-random', 'applied');
                     nextButton.replaceWith(newButton);
                     newButton.addEventListener('click', () => {
-                        markWatched(videoId);
+                        /* v1.7.4 (11b-F09): resolve the CURRENT video at click
+                         * time — the tick-time capture marked the OLD video
+                         * watched after the video advanced (the clone is
+                         * persistent; the closure was stale). */
+                        markWatched(PLAYER.getVideoId(location.href));
                         playNextRandom();
                     });
                 }

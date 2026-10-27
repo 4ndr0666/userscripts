@@ -62,12 +62,12 @@
   {
    "file": "4ndr0tools - Akasha Silence.user.js",
    "name": "4ndr0tools - Akasha Silence",
-   "version": "5.2.4",
+   "version": "5.2.5",
    "description": "Unified counter-surveillance defense layer with a three-stage strictness valve (full / core / off via Ctrl+Alt+Shift+K). Three-way consolidation of Anti-detection + Counter-surveillance + Anti-telemetry (ICC): anti-analysis script neutralization, telemetry sinkholing (fetch/XHR/beacon/WebSocket), WebRTC blinding, session-stable fingerprint spoofing (hardware/canvas/WebGL/audio), identifier poisoning, Google link-tracking sanitization and hostile-UI countermeasures.",
    "family": "privacy & security",
-   "sha256": "cbe7ef984ad6efe7fd21e427228127a4b2fb7e3228966b17d3c46b7a95330626",
-   "lines": 2178,
-   "bytes": 119291,
+   "sha256": "07ff8dc523aa4b955ff25f5dfa267cbc2b621237535fb4ad0c76d48b9577a7be",
+   "lines": 2212,
+   "bytes": 121649,
    "matches": [
     "*://*/*"
    ],
@@ -184,12 +184,12 @@
   {
    "file": "4ndr0tools - Bunkr++.user.js",
    "name": "4ndr0tools - Bunkr++",
-   "version": "7.7.0",
+   "version": "7.7.1",
    "description": "Direct URL routing, auto-sort, hide visited, bypass dl gateway, bulk download, m3u8/CDN URL aggregation (page-context net-hook + per-item stream glyphs + album-wide STREAMS aggregation), broken-link repair, power-user hotkeys, LinkMaster-grade m3u8 stream resolution with gateway fallback, MPV dispatch (URI/bridge), web-archive dead-CDN resurrection (archive.org / archive.is), captcha-aware transport retry",
    "family": "media & links",
-   "sha256": "e8bdee55900fdbb8c0c1216e0c4723d652cf58b212af52ad0b399aa2f7ad9ec9",
-   "lines": 5081,
-   "bytes": 269906,
+   "sha256": "b93e0dc5659aacdd2f8fd76b4978ca775b1a0042b93c664f7b7ff15c8403b92f",
+   "lines": 5087,
+   "bytes": 270576,
    "matches": [],
    "includes": [
     "/^[^:]*?:\\/\\/bunkr{1,3}\\.[^/]*?\\/.*?$/",
@@ -223,12 +223,12 @@
   {
    "file": "4ndr0tools - BypassPaywalls.user.js",
    "name": "4ndr0tools - Bypass Paywalls",
-   "version": "0.1.7",
+   "version": "0.1.8",
    "description": "A way to bypass paywalls for popular news sites",
    "family": "privacy & security",
-   "sha256": "c3533b63890475e3e9b512f962eff99e58a9d1e4b8907284ec6f474c6e05aca8",
-   "lines": 1079,
-   "bytes": 55301,
+   "sha256": "60ea8945f0d90f107b4e34c24fd3b8f0fa55210a52962d526c28b24509b39415",
+   "lines": 1111,
+   "bytes": 57802,
    "matches": [
     "*://404media.co/*",
     "*://*.adweek.com/*",
@@ -453,12 +453,12 @@
   {
    "file": "4ndr0tools - Filester++.user.js",
    "name": "4ndr0tools - Filester++",
-   "version": "7.6.2",
+   "version": "7.6.3",
    "description": "Dynamic stream extraction + folder enumeration for any media on Filester.me. Network proxy + glyph injection.",
    "family": "media & links",
-   "sha256": "b89f9f7da7bad6d608bf886603de34fb83e6c1f91707575aff75aa45853a49b3",
-   "lines": 1499,
-   "bytes": 84160,
+   "sha256": "a74919a1aae42a232c9144f254f89b45bc326eba5bd479ee3543ddaf50fc9bec",
+   "lines": 1527,
+   "bytes": 85622,
    "matches": [],
    "includes": [
     "/^[^:]*?://filester\\.me/.*?$/",
@@ -522,12 +522,12 @@
   {
    "file": "4ndr0tools - Forums++.user.js",
    "name": "4ndr0tools - Forums++",
-   "version": "1.13.5",
+   "version": "1.13.6",
    "description": "Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.",
    "family": "forums",
-   "sha256": "d64fe671c7d98822161c74a35fef5356ebd69d52188201bbada3625dfb01c7dc",
-   "lines": 8485,
-   "bytes": 407812,
+   "sha256": "e65af7ae3f30cc1f30c610f94f9b4e29af06178f58a2aece9d21ff5d059d5638",
+   "lines": 8506,
+   "bytes": 409380,
    "matches": [
     "https://simpcity.su/threads/*",
     "https://simpcity.cr/threads/*",
@@ -687,14 +687,14 @@
   {
    "file": "4ndr0tools - Gofile++.user.js",
    "name": "4ndr0tools - GoFile++",
-   "version": "2.2.0",
+   "version": "2.3.0",
    "description": "Directly batch-download GoFiles with a robust UI. Supports recursive folder scans, direct links, and download managers (Aria2, IDM). Fixing SPA persistence and Sandbox access.",
    "family": "media & links",
-   "sha256": "1491bd098b3602d61d8d7a8ecbcd74d8e60fa7bfcf6479ccea1c9b85cbd3159a",
-   "lines": 2314,
-   "bytes": 121781,
+   "sha256": "9f6964d4c0767c6c90c395d7d1391a6a8b637626a5e0534e3a915da1bcca40f4",
+   "lines": 2375,
+   "bytes": 125960,
    "matches": [
-    "*://gofile.io/*"
+    "*://*.gofile.io/*"
    ],
    "includes": [],
    "excludes": [],
@@ -1118,12 +1118,12 @@
   {
    "file": "4ndr0tools - Pixeldrain++.user.js",
    "name": "4ndr0tools - Pixeldrain++",
-   "version": "1.2.3",
+   "version": "1.2.4",
    "description": "Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.",
    "family": "media & links",
-   "sha256": "2b2536617b879407c6a670c6b5a85b6d86f8431dfc669f8f63335e0b85305316",
-   "lines": 3797,
-   "bytes": 211761,
+   "sha256": "a7e63d0e59788c465729d90ac4d871396c075ca90cb25359181b6404401cb1ca",
+   "lines": 3872,
+   "bytes": 216856,
    "matches": [
     "https://pixeldrain.com/*",
     "https://pixeldrain.net/*",
@@ -1259,12 +1259,12 @@
   {
    "file": "4ndr0tools - Redgifs++.user.js",
    "name": "4ndr0tools - Redgifs++",
-   "version": "5.3.2",
+   "version": "5.3.3",
    "description": "Intercepts Redgifs links on Reddit for a cinematic overlay. On Redgifs itself, enters focused video-only mode. Falls back to JSON.parse intercept for direct /watch/ loads before SPA hydration.",
    "family": "video & players",
-   "sha256": "36cbfb89c518df0e5ca6104beefe1b44671f7ada590c153bb4a693ad4ddc3566",
-   "lines": 404,
-   "bytes": 19808,
+   "sha256": "362d3d0c8869b25674bcab157b90755d840decc8698178606d92ee9881c8b954",
+   "lines": 410,
+   "bytes": 20214,
    "matches": [
     "*://*.redgifs.com/watch/*",
     "*://*.redgifs.com/ifr/*",
@@ -1389,12 +1389,12 @@
   {
    "file": "4ndr0tools - YT Filter.user.js",
    "name": "4ndr0tools - YT Filter",
-   "version": "2.5",
+   "version": "2.5.1",
    "description": "Electric-Glass YouTube video filter — views, date, duration",
    "family": "video & players",
-   "sha256": "fd736eead793597fa8ee21f2636ff7c46fa340818a32d6bdaa9365bf96061db5",
+   "sha256": "d932aa3444c1b4db79f12e296a57c6ae925e20608a7a6110d307d85751c9eb1f",
    "lines": 850,
-   "bytes": 32610,
+   "bytes": 32742,
    "matches": [
     "*://*.youtube.com/*"
    ],
@@ -1442,12 +1442,12 @@
   {
    "file": "4ndr0tools - YouTube Playlist Master.user.js",
    "name": "4ndr0tools - YouTube Playlist Master",
-   "version": "1.7.3",
+   "version": "1.7.4",
    "description": "Channel playlist buttons (All / Popular / Videos / Shorts / Streams / Members-only), Random play (prefer newest/oldest), reverse autoplay order, playlist autoplay toggle, duration sort, bulk copy/move/delete, JSON + plaintext export/import, snapshots with deleted-video detection, quick watch_videos playlists, queue & watch-later overlays, playlist close button, date/view metadata, episode auto-expand, huge-playlist browser, live settings (no reload), always-available Ψ deck, playlist row filter, duplicate finder & purge, global hotkeys (Alt+Shift+U/S/X), failsafe deck rescue, 404-proof navigation guards, Trusted-Types-immune rendering, fully-visible fit-content modal dialogs.",
    "family": "video & players",
-   "sha256": "f467fdef12a6526573570caae42f359b2937360381d96ee7304a6050f5a255ff",
-   "lines": 6676,
-   "bytes": 348741,
+   "sha256": "538c77e7945ab2df5df8351ec1895b83c2af29d16f6f4dfcc57633e8affb0bac",
+   "lines": 6719,
+   "bytes": 351522,
    "matches": [
     "https://*.youtube.com/*",
     "https://youtube.com/*"
@@ -1500,12 +1500,12 @@
   {
    "file": "4ndr0tools - Youtube Removed Video Revealer.user.js",
    "name": "4ndr0tools - Youtube Removed Video Revealer",
-   "version": "2.0.4",
+   "version": "2.0.5",
    "description": "Restores titles for removed or private videos in YouTube playlists",
    "family": "video & players",
-   "sha256": "c1868fbb3eb01c71d1159308f6715fd231a345142c01345c19500db54afd0fc7",
-   "lines": 626,
-   "bytes": 30782,
+   "sha256": "3886470c8f97803352c29fab4d6bc87e354c49b59bfb9b6f7f6b82d19a763c3c",
+   "lines": 632,
+   "bytes": 31295,
    "matches": [
     "*://*.youtube.com/*"
    ],
@@ -1687,5 +1687,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "8b33de586cf757648d60ec71c5340d640488ceb67c708dadaa123db347dc9296"
+ "digest": "8b97232331e57a3a155478c94b01432d03d0fd489473f611c28c498bc44841f3"
 }

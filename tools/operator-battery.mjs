@@ -352,6 +352,18 @@ export function renderOperatorBatteryDoc() {
             L.push("");
             L.push(`**${t.title}** — \`${t.script}\` v${t.scriptVersion} · provenance: ${t.provenance}`);
             L.push("");
+            /* r11: the adjudicated row's own record renders — the operator's
+             * evidence and the failure-mode note ARE the "docs the required
+             * detail to mitigate or deal with the findings" contract; a FAIL
+             * heading with no visible explanation is a checklist that lost
+             * its own history. */
+            if (adj[t.id]) {
+                const a = adj[t.id];
+                L.push(`- **Last run** (${a.date || "date unstated"}): **${a.status}**${a.env ? ` · ${a.env}` : ""}`);
+                if (a.evidence) L.push(`  - **Evidence**: ${a.evidence}`);
+                if (a.note) L.push(`  - **Note**: ${a.note}`);
+                L.push("");
+            }
             /* 10a F10: the residual map + the anchor line with line refs. */
             const residualIds = residualByTest.get(t.id) || [];
             if (residualIds.length) {
