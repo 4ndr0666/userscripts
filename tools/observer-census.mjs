@@ -125,37 +125,37 @@ const ADJUDICATED = [
         file: "canon/_promoted/4ndr0tools - Media Player Controller.user.js",
         callText: "new MutationObserver((mutations) => { if (!repeatActive",
         reason: "SCOPED repeat tracker: observes the active media container only (subtree + attributeFilter on time/src); each fire is a gated single-action (executeRepeat) on a matching mutation — coalescing would collapse distinct video-end signals into one and change repeat semantics; repeat-mode exit gates the whole observer (repeatActive early return). v1.6.0 re-adjudication: site re-verified unchanged; scoped-container contract still the bound; NetHook onNode migration not applicable (per-container observe target, not document-level)",
-        expiry: "v1.17.0",
+        expiry: "v1.18.0",
     },
     {
         file: "canon/_promoted/4ndr0tools - Media Player Controller.user.js",
         callText: "new MutationObserver((mutations) => { const current = g",
         reason: "SCOPED media acquisition: observes the active container; getActiveMedia() liveness check + first-match early return per fire — acquisition must see the transient window when the active media swaps (a coalesced flush can miss intermediate nodes and latch a stale target); disconnected and re-armed per container by the acquire path. v1.6.0 re-adjudication: site re-verified unchanged; the re-arm-per-container lifecycle is the site's own, kernel ownership would not add a proof. v1.7.0 re-review",
-        expiry: "v1.17.0",
+        expiry: "v1.18.0",
     },
     {
         file: "canon/_promoted/4ndr0tools - m3u8++.user.js",
         callText: "new MutationObserver(() => { if (!timeout) { timeout = ",
         reason: "SETTLE generic body watcher: watchBodyChange utility — the 200 ms in-flight debounce timer IS in the callback; the broad config (childList+attributes+characterData on the document) is deliberate because the utility's consumers (player mount/unmount detection) need the full surface and the consumer's onchange performs the filtering; per-fire work is the O(1) timer guard. v1.6.0 re-adjudication: coalescer-in-callback re-verified; the broad config is the utility's contract (consumer-side filtering), not drift. v1.7.0 re-review",
-        expiry: "v1.17.0",
+        expiry: "v1.18.0",
     },
     {
         file: "canon/_sovereign/4ndr0tools - AutoTranslate.user.js",
         callText: "new MutationObserver(probe); obs.observe(document.body,",
         reason: "SETTLE language probe: 120 ms Date.now() throttle gate + O(bounded) visible-text sample per fire; characterData on body is the point (text arrival is the signal); settles via finish() or the arming timeoutMs timer, after which the waitForText caller disconnects it — settle-bounded by construction. v1.6.0 re-adjudication: settle path re-verified; probe semantics unchanged. v1.7.0 re-review",
-        expiry: "v1.17.0",
+        expiry: "v1.18.0",
     },
     {
         file: "canon/_sovereign/4ndr0tools - Prompt Master.user.js",
         callText: "new MutationObserver(async () => { if (!e.classList.con",
         reason: "SCOPED single-element sync: watches ONE prompt-row element (attributeFilter on class/data attributes) to re-sync color/tooltip from prompt metadata — per-fire work is an async storage read plus style writes on that single element; a coalescer would lag the UI sync visibly behind the class toggle; scoped by construction (the element is the whole observed surface). v1.6.0 re-adjudication: scope + filter re-verified. v1.7.0 re-review",
-        expiry: "v1.17.0",
+        expiry: "v1.18.0",
     },
     {
         file: "canon/_promoted/4ndr0tools - Confirmation Bypass.user.js",
         callText: "new MutationObserver(() => { pageReacted = true; });",
         reason: "SETTLE reaction-window probe (8b F07, round 8): a time-bounded 1.5 s whole-DOM liveness probe opened at click #1 — ANY mutation (childList, subtree, or attribute) is the signal that the page's handler reacted to the synthetic click, suppressing the single re-click. The callback is the O(1) flag set; the broad config IS the contract (a reaction is any mutation — narrowing attributeFilter or childList would blind exactly the reaction classes the guard needs: attribute flips, label swaps, spinner classes, handler-side DOM touches). Settle-bounded by construction: the observer disconnects itself via the REARM_MS-100 timer opened at the same click, and the beforeunload cleanup is the second bound; it cannot outlive the re-arm window it exists to guard",
-        expiry: "v1.17.0",
+        expiry: "v1.18.0",
     },
     /* v28.7.0 (suite re-review): the Prompt Master flow-credit SETTLE liveness
      * ledger entry REMOVED — the site graduated to structural discipline:

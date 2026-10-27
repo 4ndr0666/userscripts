@@ -1,6 +1,6 @@
-# SIZE-AUDIT — 4ndr0tools - Watermark++.user.js (suite v1.16.0, G6 record)
+# SIZE-AUDIT — 4ndr0tools - Watermark++.user.js (suite v1.17.0, G6 record)
 
-**Artifact:** `dist/4ndr0tools - Watermark++.user.js` — 1,295,328 B (re-measured 2026-10-26 at suite v1.16.0, script v2.1.2 — the WO-01 round-8 transport-settlement batch: the GM transport's timeout+onabort settle arms, the bounded bootstrap RPC ceiling, the dormant-default ok-check), prior re-measure 1,292,307 B at suite v1.15.0 (the WO-01 round-7 pin ride-along: PM/WM canon and kernel byte-identical this round), prior re-measure 2026-10-26 at suite v1.14.0 (the WO-01 round-6 pin ride-along: canon/kernel byte-identical that round), prior re-measure 2026-10-25 at suite v1.13.0, script v2.1.1 — the WO-01 round-5 MIT license adoption re-measure: the @license meta value flip (−27 B; partition: −22 comment-mass by stripper-diff + −5 in-comment spaces); prior re-measure 1,292,334 B at suite v1.12.0 with the round-4 kernel truth batch riding the inlined kernel chunk; prior 1,290,741 B at suite v1.10.0; the v1.8.2-round claim of 1,286,666 B was the pre-round-1 baseline number recorded in error — the WO-01 round-1 tree already measured 1,287,132 B; the v1.5.0-round record below measured 1,279,706 B; v1.4.10 baseline 1,279,143 B). The byte count in this line is machine-verified by tools/size-budget.mjs since WO-01 round-2.
+**Artifact:** `dist/4ndr0tools - Watermark++.user.js` — 1,295,328 B (re-measured 2026-10-27 at suite v1.17.0, script v2.1.2 — the WO-01 round-9 pin ride-along: WM canon and kernel byte-identical this round), prior re-measure 1,295,328 B at suite v1.16.0 (2026-10-26, the WO-01 round-8 transport-settlement batch: the GM transport's timeout+onabort settle arms, the bounded bootstrap RPC ceiling, the dormant-default ok-check), prior re-measure 1,292,307 B at suite v1.15.0 (the WO-01 round-7 pin ride-along: PM/WM canon and kernel byte-identical this round), prior re-measure 2026-10-26 at suite v1.14.0 (the WO-01 round-6 pin ride-along: canon/kernel byte-identical that round), prior re-measure 2026-10-25 at suite v1.13.0, script v2.1.1 — the WO-01 round-5 MIT license adoption re-measure: the @license meta value flip (−27 B; partition: −22 comment-mass by stripper-diff + −5 in-comment spaces); prior re-measure 1,292,334 B at suite v1.12.0 with the round-4 kernel truth batch riding the inlined kernel chunk; prior 1,290,741 B at suite v1.10.0; the v1.8.2-round claim of 1,286,666 B was the pre-round-1 baseline number recorded in error — the WO-01 round-1 tree already measured 1,287,132 B; the v1.5.0-round record below measured 1,279,706 B; v1.4.10 baseline 1,279,143 B). The byte count in this line is machine-verified by tools/size-budget.mjs since WO-01 round-2.
 **Gate:** tools/size-budget.mjs (1,300,000 B hard budget; 1,000,000 B audit line — this record satisfies the latter; byte count VERIFIED against the live artifact).
 
 ## Composition analysis (machine-measured, this round — partitions exactly)
@@ -38,7 +38,7 @@ critical path.
 
 ## Justification
 
-Ships as-is at 1,295,328 B (re-verified 2026-10-26, suite v1.16.0): under the 1.3 MB hard budget, above the audit
+Ships as-is at 1,295,328 B (re-verified 2026-10-27, suite v1.17.0): under the 1.3 MB hard budget, above the audit
 line by design, with this record as the audited decision. The watch item for
 the next round: if the engine grows past ~1,290,000 B, the vision core
 becomes a decomposition candidate (observer → overlay split, or a lazily-
