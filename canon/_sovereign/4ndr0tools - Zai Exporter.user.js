@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Zai Exporter
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.0.0
+// @version      1.0.1
 // @author       4ndr0666
 // @description  One-click conversation exfiltration for the Z.ai GLM web chat — scrapes the live thread (multi-strategy, no network, no timers) and exports it as Markdown, JSON, or plain text, with metadata and Ψ glass console. Runs entirely page-side: zero privileged transports, zero observers, zero polling.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -19,7 +19,12 @@
 // @grant        GM_registerMenuCommand
 // ==/UserScript==
 
-// 4ndr0tools - Zai Exporter v1.0.0 — completed helper userscript.
+// 4ndr0tools - Zai Exporter v1.0.1 — completed helper userscript.
+// v1.0.1 (WO-01 round 12, 12b-F05): injectStyle's GM_addStyle branch never
+// stamped the dedup id on the element it returned, so the getElementById
+// guard could never find it on a later call — one duplicate <style> block
+// per console open, page-lifetime (the GM-granted live path). The returned
+// element is stamped now; the dedup contract holds on every branch.
 //
 // Design contract (suite discipline, machine-checkable properties):
 //   · ZERO polling — no setInterval anywhere: the extractor is strictly
@@ -323,7 +328,14 @@
             let style = id ? document.getElementById(id) : null;
             if (style) { style.textContent = css; return style; }
             if (typeof GM_addStyle === 'function') {
-                try { return GM_addStyle(css); } catch (gmErr) {
+                try {
+                    const s = GM_addStyle(css);
+                    /* 12b-F05 (v1.0.1): stamp the dedup id on the GM path too —
+                     * unstampable returns make every later call miss the guard
+                     * and append a duplicate style block (page-lifetime). */
+                    if (id && s) s.id = id;
+                    return s;
+                } catch (gmErr) {
                     console.debug(SCRIPT.tag, 'GM_addStyle refused, falling back:', gmErr);
                 }
             }

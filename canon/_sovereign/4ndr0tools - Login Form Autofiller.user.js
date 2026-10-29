@@ -2,7 +2,7 @@
 // @author       4ndr0666
 // @name        4ndr0tools - Login Form Autofiller
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version     2.0.9
+// @version     2.0.10
 // @description It integrates BugMeNot into any login form (it retrieves all matching logins from bugmenot.com and autofills the login form)
 // @authors     4ndr0666
 // @icon        data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -21,6 +21,14 @@
 // @noframes
 // @run-at      document-idle
 // ==/UserScript==
+// 2.0.10 (WO-01 round 12): storage parse guards (12b-F09 — four
+// unguarded JSON.parse(await GM.getValue(...)) of stored state: corrupt
+// storage = unhandled rejection + silent feature death for that pass; every
+// read now degrades to its empty default, loudly) + the wrapper prune
+// (12b-F10 — 'reify-bugmenot-container' accumulated one display:none
+// wrapper per username field ever rendered; nothing pruned wrappers whose
+// bound field went detached — processLoginFields now sweeps them at entry,
+// so the container holds only wrappers with live bound fields).
 // 2.0.9 (suite v1.18.0, WO-01 round 10): the element-identity binding
 // (10c F06 — field binding lived on LIVE input indices: an SPA re-render
 // that shifted the input array made the menu click read/write credentials
@@ -314,7 +322,12 @@ function updateGetLoginLinkLabel(bmnWrapper) {
     var getLoginAnchor = anchors[0];
 
     (async function () {
-        var total          = JSON.parse(await GM.getValue('allUsernames', '[]')).length;
+        /* 12b-F09 (v2.0.10): corrupt storage degrades to the empty default
+         * instead of an unhandled rejection that kills this pass silently. */
+        var stored = await GM.getValue('allUsernames', '[]');
+        var list = [];
+        try { list = JSON.parse(stored) || []; } catch (e) { console.debug('LFA: allUsernames store rejected, defaults kept', e); }
+        var total          = list.length;
         var currentCounter = parseInt(await GM.getValue('counter', 0));
 
         var newText, newTitle;
@@ -446,6 +459,15 @@ function processLoginFields() {
             bodyEl.appendChild(bmnContainer);
         }
 
+        /* 12b-F10 (v2.0.10): prune wrappers whose bound field went detached —
+         * the container used to accumulate one display:none wrapper per
+         * username field ever rendered for the page lifetime; the WeakSet
+         * prevents re-INJECTION but nothing retired the dead wrappers. */
+        Array.prototype.forEach.call(bmnContainer.children, function (w) {
+            var a = w.querySelector('a');
+            if (a && a.__bmnUsernameField && !a.__bmnUsernameField.isConnected) w.remove();
+        });
+
         for (var i = 0; i < allInputs.length; i++) {
             var field     = allInputs[i];
             var fieldType = field.type ? field.type.toLowerCase() : '';
@@ -474,7 +496,9 @@ function processLoginFields() {
                 myprompt  = 'Get login from BugMeNot (1/-)';
                 myprompt2 = 'Get a login from BugMeNot';
             } else {
-                var total = JSON.parse(await GM.getValue('allUsernames', '[]')).length;
+                var stored2 = await GM.getValue('allUsernames', '[]');
+                var total = 0;
+                try { total = (JSON.parse(stored2) || []).length; } catch (e) { console.debug('LFA: allUsernames store rejected, defaults kept', e); }
                 if (counter + 1 <= total) {
                     myprompt  = 'Try next login from BugMeNot (' + (counter + 1) + '/' + total + ')';
                     myprompt2 = 'Try next login';
@@ -857,8 +881,13 @@ function getLogin(uri, usernameField, pwField) {
 
         } else {
             // Cached credentials — serve from GM storage without XHR.
-            var retrievedUsernames = JSON.parse(await GM.getValue('allUsernames', '[]'));
-            var retrievedPasswords = JSON.parse(await GM.getValue('allPasswords', '[]'));
+            /* 12b-F09 (v2.0.10): both cached reads guarded the same way —
+             * corrupt storage serves the empty list instead of an unhandled
+             * rejection that kills the fill silently. */
+            var retrievedUsernames = [];
+            var retrievedPasswords = [];
+            try { retrievedUsernames = JSON.parse(await GM.getValue('allUsernames', '[]')) || []; } catch (e) { console.debug('LFA: allUsernames store rejected, defaults kept', e); }
+            try { retrievedPasswords = JSON.parse(await GM.getValue('allPasswords', '[]')) || []; } catch (e) { console.debug('LFA: allPasswords store rejected, defaults kept', e); }
 
             var temp = '';
             for (var j = 0; j < retrievedUsernames.length; j++) {

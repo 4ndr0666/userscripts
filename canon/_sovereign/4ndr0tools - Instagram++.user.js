@@ -2,7 +2,7 @@
 // @name         4ndr0tools - Instagram++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666
-// @version      13.2.3
+// @version      13.2.4
 // @description  Tab-Bar + Dock Integration. Hotkey trigger (Alt+I). Ad-Blocking. Deep-Stack Recovery. Resilient cursor-based pagination. Stories support. Image/video download engine.
 // @license      MIT
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Instagram++.user.js
@@ -21,6 +21,56 @@
 // @connect      *.instagram.com
 // @run-at       document-start
 // ==/UserScript==
+// 13.2.4 (WO-01 round 12): THE NATIVE RETIREMENT VEIL — the "persistent
+// center overlay that scrolls like a live feed down the center and never
+// hides/vanishes" field-report fix. The wall was a TRANSLUCENT pane
+// (rgba(10,19,26,0.85)) over a native page that NativeScrollDriver keeps
+// scrolling underneath: Instagram's own center column ghosted through the
+// 15% alpha forever — moving every 1.5 s and growing with IG's own
+// infinite scroll — obstructing the profile wall (the main feature).
+// The inception lineage (driver8's full-size scroll wall) solved the same
+// problem by REPLACING the whole body; ARES cannot — its harvest and its
+// pagination ride the live page's own traffic and IntersectionObservers.
+// Fixes: (1) the wall background is OPAQUE rgb(10,19,26) (the 13.0.1
+// palette family at α=1); (2) an #ares-veil stylesheet (a documentElement
+// sibling, never inside body) retires the native body VISUALLY —
+// visibility:hidden, NOT display:none (that zeroes geometry and kills IG's
+// IO sentinels + native lazy-load) and NOT html overflow:hidden (that
+// makes scrollTo a no-op and the driver dies) — so IntersectionObservers
+// still fire, scrollTo still moves, harvest still flows, and the native
+// page is simply not PAINTED; (3) native <video> elements are paused at
+// wall-open and on every driver tick (audio ghosts outlive visibility;
+// BODY-SCOPED on purpose — a document-wide sweep would pause the WALL's
+// own videos); (4) EXIT is a hard location.reload() — the old
+// location.assign(href.split('?')[0]) was an IDENTICAL-URL NO-OP on a
+// query-less hash-bearing URL (live-proven), and under the veil that
+// would strand the operator behind a hidden body; (5) the SHOW FEED
+// header toggle — the optional-feature switch the field report demanded
+// ('not collapsable and is never hidden with zero option to suggest
+// otherwise'): one click lifts the veil + makes the wall translucent (the
+// live-feed ghost view, strictly opt-in now); another restores the opaque
+// default; (6) the button labels the operator directed — the whole-grid
+// artifact is DOWNLOAD ALL (renamed from DUMP HTML; the dump itself is
+// DATA-DRIVEN now: every known media item from the harvested catalog, a
+// self-contained HTML grid, zero V-STASIS placeholders — a pruned wall
+// used to dump placeholder blocks) and the per-file media downloader is
+// ⭳ SAVE ALL MEDIA (distinct, truthful — both functions preserved).
+// 13.2.4 riders (round-12 audit): FEED_RE admits /api/v1/feed/user_timeline/
+// (the REST relay Schema C mirrors by name — its responses matched NO
+// pattern, so that harvest path was passively unreachable);
+// fetchWithTimeout's abort clock now covers the BODY phase (res.text()/
+// res.blob() were unbounded after header-settle — a trickling body wedged
+// STATE.isFetching forever: stories LOAD MORE dead; same class for the
+// Tier-3 download drain — the r11 Filester/YRVR shape, armed here);
+// resolveUserId's layer-3 web_profile_info probe rides the same bounded
+// transport; the activeFetch else-arm and the injection-daemon park line
+// tell the truth about what actually happened; the DOWNLOAD ALL (formerly
+// DUMP HTML) button revokes its object URL, rides the saveBlob anchor
+// pattern, and renders its grid from the harvested catalog; the
+// bestDashUrl bandwidth parse is NaN-proofed; the badge-factory comment
+// states the real lazy/snapshot split; the domNodes data ledger is
+// disclosed as page-lifetime BY DESIGN (it powers DOWNLOAD ALL + hydrate —
+// the 80-node budget caps LIVE DOM, not data).
 // 13.2.1 (suite v1.7.3, WO-02): the "V-STASIS overlay" field-report fix —
 // virtualization can no longer park media the user is looking at. Root
 // cause: renderBatch's cache-limit head-prune was POSITIONAL — the moment
@@ -52,7 +102,10 @@
     // =========================================================
     const CFG = {
         ACCENT:      '#00E5FF',
-        BG:          'rgba(10,19,26,0.85)',
+        // v13.2.4: OPAQUE — the wall is the view, not a pane over one. The
+        // 0.85-alpha variant is exactly what let the native center column
+        // ghost through and "scroll like a live feed" behind the wall.
+        BG:          'rgb(10,19,26)',
         ERROR:       '#ff0055',
         H_PCT:       0.88,
         W_PCT:       0.58,
@@ -75,11 +128,20 @@
         userId:       null,
         isFetching:   false,
         totalLoaded:  0,
-        domNodes:     [],
+        domNodes:     [],       // wall nodes. v13.2.4 disclosure: the ARRAY is
+                                // page-lifetime BY DESIGN — each entry's .data
+                                // powers DOWNLOAD ALL and hydrate(); the
+                                // CACHE_LIMIT budget caps LIVE DOM nodes, not
+                                // the data ledger. Bounding the array would
+                                // silently shrink DOWNLOAD ALL's catalog.
         _seen:        new Set(),
         cursors:      {},       // mode -> next cursor from intercept
         pendingItems: [],       // items buffered before UI exists
         uiReady:      false,
+        veilEngaged:  true,      // v13.2.4: the native retirement veil's state —
+                                // true = native feed retired (default, the main
+                                // feature unobstructed); false = the optional
+                                // live-feed ghost view (SHOW FEED toggle).
         injected:     false,
         executed:     false,
         lastError:    null,
@@ -118,7 +180,10 @@
     // Instagram's unredirected API endpoints this is the identical URL.
     // =========================================================
     const FEED_RE = [
-        /\/api\/v1\/feed\/(timeline|user\/\d+|tag\/[^/]+|usertags\/\d+)/,
+        // v13.2.4 (12a-F02): user_timeline admitted — the xdt REST relay
+        // (Schema C's connection name mirrors this URL segment) matched NO
+        // pattern, so its responses were passively unreachable.
+        /\/api\/v1\/feed\/(timeline|user_timeline|user\/\d+|tag\/[^/]+|usertags\/\d+)/,
         /\/graphql\/query/,
         /\/api\/graphql/,
         /bloks\/apps\/com\.bloks\.www\.feed/,
@@ -170,6 +235,15 @@
         },
 
         tick() {
+            // v13.2.4: pause native media as the driver moves the page — new
+            // feed items autoplay under the veil (IG autoplays muted videos
+            // on scroll-into-view; visibility does not stop them). BODY-SCOPED
+            // so the WALL's own videos are never touched — and ENGAGED-gated:
+            // when the operator lifts the veil (SHOW FEED) the native feed's
+            // own autoplay rules govern again, the rider stops re-pausing.
+            if (STATE.veilEngaged) {
+                document.body.querySelectorAll('video').forEach(v => { v.pause(); });
+            }
             const before = STATE.totalLoaded;
             window.scrollTo(0, document.documentElement.scrollHeight);
 
@@ -381,10 +455,38 @@
     // (activeFetch's own busy-guard would refuse every future call).
     // =========================================================
     function fetchWithTimeout(url, options = {}, ms = CFG.FETCH_TIMEOUT_MS) {
+        // v13.2.4 (12a-F03): the abort clock now covers the BODY phase too.
+        // The old shape cleared the timer at header-settle (finally on the
+        // fetch promise), leaving res.text()/res.blob()/res.json() unbounded
+        // — a response whose headers arrived but whose body trickled forever
+        // wedged the caller's await with no settle and no error
+        // (STATE.isFetching stuck: stories LOAD MORE permanently dead; the
+        // Tier-3 download drain stalled the same way — the r11 Filester/YRVR
+        // class, armed here at the single shared transport). The returned
+        // object wraps the real Response: every body-consuming method keeps
+        // the SAME timer armed until it settles (abort mid-read rejects the
+        // body promise on the same clock). A response whose body is never
+        // read leaves one bounded stray tick (<= ms) that aborts a finished
+        // request — a no-op, self-clearing when it fires.
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), ms);
+        const clear = () => clearTimeout(timer);
         return fetch(url, { ...options, signal: controller.signal })
-            .finally(() => clearTimeout(timer));
+            .then((res) => {
+                const body = (name) => (...args) =>
+                    Promise.resolve(res[name](...args)).finally(clear);
+                return {
+                    ok: res.ok,
+                    status: res.status,
+                    statusText: res.statusText,
+                    headers: res.headers,
+                    url: res.url,
+                    text: body('text'),
+                    blob: body('blob'),
+                    json: body('json'),
+                    arrayBuffer: body('arrayBuffer'),
+                };
+            }, (e) => { clear(); throw e; });
     }
 
     function withTimeout(promise, ms, label) {
@@ -464,7 +566,9 @@
             if (doc.querySelector('parsererror')) return null;
             const best = [...doc.getElementsByTagName('Representation')]
                 .map(r => ({
-                    bw:   parseInt(r.getAttribute('bandwidth') || '0', 10),
+                    // v13.2.4 (12a-F09): NaN-proof — a malformed bandwidth
+                    // attribute parsed to NaN made the comparator arbitrary.
+                    bw:   parseInt(r.getAttribute('bandwidth') || '0', 10) || 0,
                     base: r.getElementsByTagName('BaseURL')[0]?.textContent?.trim(),
                 }))
                 .filter(r => r.base)
@@ -475,10 +579,13 @@
         }
     }
 
-    // One shared badge factory. asset is resolved lazily via getAsset() at
-    // CLICK time (not creation time) so a video whose real URL only becomes
-    // known later — once harvested — still downloads correctly without the
-    // badge needing to be re-created.
+    // One shared badge factory. getAsset is invoked at CLICK time (not
+    // creation time). MediaOverlay badges resolve the source lazily INSIDE
+    // their getAsset (a video whose real URL only becomes known later —
+    // once harvested — still downloads correctly); wall badges return a
+    // snapshot read of the already-resolved asset object — the harvested
+    // JSON is complete by render time, so nothing is stale (v13.2.4 comment
+    // truth: the old blanket "resolved lazily" claim held for one caller).
     function makeDownloadBadge(getAsset) {
         const btn = document.createElement('div');
         btn.className = 'ares-dl-badge';
@@ -723,7 +830,11 @@
                 url = reqUrl; json = j;
 
             } else {
-                log('No userId yet — waiting for intercept to provide one.');
+                // v13.2.4 (12a-F04): the truth — this arm is mode-dependent,
+                // not a userId wait: post/tagged/explore ride the passive
+                // intercept by design (the 12a-F12 answer), and a userId-less
+                // stories wait is handled above with its own line.
+                log(`No active fetch path for mode "${STATE.MODE}" — waiting on passive intercept.`);
                 return;
             }
 
@@ -762,16 +873,19 @@
         }
 
         // Layer 3: web_profile_info (async, fires and forgets)
+        // v13.2.4 (12a-F08): rides the bounded transport — the old bare fetch
+        // had no timeout arm at all.
         const rootMatch  = location.pathname.match(/^\/([a-zA-Z0-9._]{1,30})\/?$/);
         const storyMatch = location.pathname.match(/^\/stories\/([a-zA-Z0-9._]{1,30})\//);
         const username   = storyMatch?.[1] || rootMatch?.[1];
         const SKIP = ['explore', 'reels', 'stories', 'direct', 'accounts', 'tv'];
         if (username && (storyMatch || !SKIP.includes(username))) {
-            fetch(
+            fetchWithTimeout(
                 `https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`,
                 { headers: { 'X-IG-App-ID': '936619743392459', 'X-Requested-With': 'XMLHttpRequest' },
-                  credentials: 'include' }
-            ).then(r => r.json())
+                  credentials: 'include' },
+                CFG.FETCH_TIMEOUT_MS)
+             .then(r => r.json())
              .then(json => {
                  STATE.userId = json?.data?.user?.id || json?.user?.pk;
                  log(`UID via web_profile_info: ${STATE.userId}`);
@@ -1120,8 +1234,22 @@
         };
         hdrBtns.append(
             mkBtn('ares-more', 'LOAD MORE', `background:rgba(10,19,26,0.85);color:${CFG.ACCENT};border:1px solid ${CFG.ACCENT};padding:6px 14px;cursor:pointer;font-family:monospace;font-weight:bold;`),
-            mkBtn('ares-dlall', '⭳ DOWNLOAD ALL', `background:transparent;color:${CFG.ACCENT};border:1px solid ${CFG.ACCENT};padding:6px 14px;cursor:pointer;font-family:monospace;`),
-            mkBtn('ares-dump', 'DUMP HTML', 'background:transparent;color:#67E8F9;border:1px solid rgba(0,229,255,0.35);padding:6px 14px;cursor:pointer;font-family:monospace;'),
+            /* v13.2.4 (operator directive): the media-file downloader keeps its
+             * function under a distinct, truthful label — 'SAVE ALL MEDIA' — so
+             * the one-button 'DOWNLOAD ALL' name can live where the operator
+             * uses it: on the whole-grid artifact (the HTML dump button below,
+             * renamed from 'DUMP HTML' per the round-12 transmission). */
+            mkBtn('ares-dlall', '⭳ SAVE ALL MEDIA', `background:transparent;color:${CFG.ACCENT};border:1px solid ${CFG.ACCENT};padding:6px 14px;cursor:pointer;font-family:monospace;`),
+            mkBtn('ares-dump', 'DOWNLOAD ALL', 'background:transparent;color:#67E8F9;border:1px solid rgba(0,229,255,0.35);padding:6px 14px;cursor:pointer;font-family:monospace;'),
+            /* v13.2.4: the optional-feature toggle the field report demanded —
+             * 'not collapsible and never hidden with zero option to suggest
+             * otherwise'. Default: the native feed is retired (veil engaged,
+             * opaque wall — the grid wall IS the view). One click: the native
+             * live feed ghosts back through (veil lifted, wall translucent)
+             * for as long as the operator wants it; another click restores
+             * the default. The button relabels itself — the option is always
+             * visible and self-documenting. */
+            mkBtn('ares-feed', 'SHOW FEED', 'background:transparent;color:#67E8F9;border:1px solid rgba(0,229,255,0.35);padding:6px 14px;cursor:pointer;font-family:monospace;'),
             mkBtn('ares-exit', 'EXIT', `background:transparent;color:${CFG.ERROR};border:1px solid #ff0055;padding:6px 16px;cursor:pointer;font-family:monospace;font-weight:bold;`));
         hdr.append(hdrText, hdrBtns);
         const imgWall = document.createElement('div');
@@ -1131,17 +1259,106 @@
 
         document.documentElement.appendChild(gui);
 
+        // v13.2.4: THE NATIVE RETIREMENT VEIL — see the 13.2.4 changelog. The
+        // wall is a documentElement child (NOT inside body), so hiding body
+        // cannot touch it; the veil rides the same documentElement level for
+        // the same reason. visibility (not display/overflow) is the load-
+        // bearing choice: geometry survives, so IG's own IntersectionObservers
+        // keep firing (native lazy-load + the infinite-scroll the driver
+        // feeds on), window.scrollTo keeps moving, and the native page is
+        // simply never painted. EXIT is a full reload — no restore path
+        // exists or is needed.
+        const veil = document.createElement('style');
+        veil.id = 'ares-veil';
+        veil.textContent = 'body { visibility: hidden !important; }';
+        document.documentElement.appendChild(veil);
+        // Pause whatever native media is playing under the veil — audio
+        // ghosts outlive visibility. BODY-SCOPED on purpose: a document-wide
+        // sweep here would pause the WALL's own videos.
+        document.body.querySelectorAll('video').forEach(v => { v.pause(); });
+
         document.getElementById('ares-exit').onclick = () => {
             NativeScrollDriver.stop();
-            window.location.assign(window.location.href.split('?')[0]);
+            // v13.2.4 (12a-F06): reload, not assign(href.split('?')[0]) — on
+            // a query-less hash-bearing URL the assign was an IDENTICAL-URL
+            // no-op (live-proven: the wall survived it), and under the veil
+            // that would strand the operator behind a hidden body. A reload
+            // is the one exit that always restores the native page.
+            window.location.reload();
         };
 
         document.getElementById('ares-dump').onclick = () => {
-            const blob = new Blob([document.querySelector('#igAllImages').innerHTML], {type:'text/html'});
-            const a    = document.createElement('a');
-            a.href     = URL.createObjectURL(blob);
-            a.download = `4ndr0666_dump_${STATE.userId || 'feed'}.html`;
-            a.click();
+            // v13.2.4: the whole-grid artifact, reworked per the operator's
+            // round-12 directive. The dump is DATA-DRIVEN now — every known
+            // media item renders from its harvested JSON (STATE.pendingItems
+            // + STATE.domNodes[].data, the same catalog DOWNLOAD-ALL-SAVE
+            // uses), NOT from the live DOM: a long wall over the 80-node
+            // cache budget used to dump V-STASIS placeholder blocks wherever
+            // media was parked, and a pruned dump was a partial dump. The
+            // operator's field report confirmed the grid capture worked —
+            // this makes it structural: zero placeholders, every known item,
+            // one self-contained HTML grid. The saveBlob anchor pattern rides
+            // the hidden body (click() fires programmatically regardless of
+            // visibility — live-proven by the wall badge download path).
+            const items = [...STATE.pendingItems, ...STATE.domNodes.map(n => n.data)].filter(Boolean);
+            if (!items.length) {
+                log('No media known yet — try scrolling this page first, or open recon.');
+                return;
+            }
+            const cells = items.map((data, i) => {
+                const asset = pickMediaAsset(data);
+                if (!asset.url) return '';
+                const code = data.code || data.pk || i;
+                const link = `https://www.instagram.com/p/${code}/`;
+                return asset.isVideo
+                    ? `<video src="${asset.url}" controls preload="metadata"></video><a href="${link}">[${code}]</a>`
+                    : `<a href="${link}"><img src="${asset.url}" loading="lazy"></a><a href="${link}">[${code}]</a>`;
+            }).filter(Boolean);
+            const html = '<!DOCTYPE html><html><head><meta charset="utf-8">' +
+                `<title>ARES-9 — media wall (${cells.length} items)</title>` +
+                '<style>body{background:#0a131a;color:#67E8F9;font-family:monospace;margin:0;padding:24px}' +
+                'h1{color:#00E5FF;font-size:13px;letter-spacing:1px}' +
+                '.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}' +
+                '.cell{background:rgba(10,19,26,0.9);border:1px solid rgba(0,229,255,0.35);padding:8px;text-align:center;font-size:10px}' +
+                'img,video{max-width:100%;max-height:320px;display:block;margin:0 auto 6px}' +
+                'a{color:#00E5FF;text-decoration:none}</style></head><body>' +
+                `<h1>ARES-9 // SINGULARITY V7.0 — media wall dump (${cells.length} items, UID ${STATE.userId || '…'})</h1>` +
+                `<div class="grid">${cells.map(c => `<div class="cell">${c}</div>`).join('')}</div>` +
+                '</body></html>';
+            const blob = new Blob([html], {type:'text/html'});
+            const objUrl = URL.createObjectURL(blob);
+            try {
+                const a = document.createElement('a');
+                a.href     = objUrl;
+                a.download = `4ndr0666_dump_${STATE.userId || 'feed'}.html`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            } finally {
+                URL.revokeObjectURL(objUrl);
+            }
+            log(`Grid artifact dispatched: ${cells.length} media item(s) (data-driven — zero placeholders).`);
+        };
+
+        document.getElementById('ares-feed').onclick = () => {
+            // v13.2.4: the optional native-feed toggle — see the 13.2.4
+            // changelog. Lifting the veil restores body visibility and makes
+            // the wall translucent again (the ghost view the field report
+            // described — now strictly opt-in); re-engaging restores the
+            // default opaque retirement and re-pauses native media.
+            STATE.veilEngaged = !STATE.veilEngaged;
+            const veil = document.getElementById('ares-veil');
+            const gui  = document.getElementById('igBigContainer');
+            const btn  = document.getElementById('ares-feed');
+            if (veil) veil.textContent = STATE.veilEngaged ? 'body { visibility: hidden !important; }' : '';
+            if (gui)  gui.style.background = STATE.veilEngaged ? CFG.BG : 'rgba(10,19,26,0.85)';
+            if (btn)  btn.textContent = STATE.veilEngaged ? 'SHOW FEED' : 'HIDE FEED';
+            if (STATE.veilEngaged) {
+                document.body.querySelectorAll('video').forEach(v => { v.pause(); });
+                log('Native feed retired — the wall is the view.');
+            } else {
+                log('Native feed engaged — the wall is translucent; the live feed is visible behind it.');
+            }
         };
 
         document.getElementById('ares-more').onclick = () => {
@@ -1396,7 +1613,12 @@
             }
             if (++daemonTries > 400) {
                 clearInterval(daemon);
-                log('UI injection point never appeared — daemon parked (reload to retry).');
+                // v13.2.4 (12a-F05): the parked line tells the truth — after a
+                // successful injection the daemon retires because the trigger
+                // is live, not because an injection point never appeared.
+                log(STATE.injected
+                    ? 'Injection daemon parked — trigger already live.'
+                    : 'UI injection point never appeared — daemon parked (reload to retry).');
                 return;
             }
             injectTrigger();
