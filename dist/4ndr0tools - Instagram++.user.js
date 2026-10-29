@@ -2,7 +2,7 @@
 // @name         4ndr0tools - Instagram++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666
-// @version      13.2.4
+// @version      13.2.5
 // @description  Tab-Bar + Dock Integration. Hotkey trigger (Alt+I). Ad-Blocking. Deep-Stack Recovery. Resilient cursor-based pagination. Stories support. Image/video download engine.
 // @license      MIT
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Instagram++.user.js
@@ -1189,6 +1189,33 @@ const __4NDR0_NET_API__ = (function () {
     return api;
 })();
 
+// 13.2.5 (WO-01 round 13): the round-13 transmission adjudication + the
+// normalization riders. THE BUTTON CONTRACT, RESTATED WITH PROOF: the
+// operator asked (r12) for 'dump html' to be RENAMED 'download all'. That
+// rename shipped in 13.2.4 and stands — there is NO duplicate and no new
+// dump function: 'DOWNLOAD ALL' IS the former DUMP HTML button (same
+// handler, ares-dump; the dump itself became data-driven in 13.2.4 so a
+// pruned wall can no longer dump V-STASIS placeholder blocks). The other
+// button, '⭳ SAVE ALL MEDIA', is NOT an addition — it is the per-file
+// media downloader that has existed since the suite's origin (v1.1.0,
+// labeled '⭳ DOWNLOAD ALL' through 13.2.3), relabeled in 13.2.4 to free
+// the 'DOWNLOAD ALL' name for the operator's rename. It downloads every
+// harvested media FILE to disk, sequentially, one at a time, paced by the
+// 350 ms DOWNLOAD_STAGGER_MS delay between files, a 120 s per-file
+// timeout, and a 3-tier fallback chain (GM_download → GM_xmlhttpRequest →
+// page fetch) — the engineered contingencies the operator asked about.
+// Both buttons now carry title tooltips so the contract is self-documenting
+// at the wall itself (13c). THE CONSOLE VIOLATION, ADJUDICATED: the
+// '[Violation] Permissions policy violation: unload is not allowed in this
+// document' the operator captured at the SHOW FEED toggle is logged by
+// Instagram's OWN bundle chunk (U99l6HEALpy.js:248 — a file this script
+// does not own, load, or control); this script registers ZERO unload/
+// beforeunload listeners (verified: no 'unload' token exists anywhere in
+// this file or its dist build). It is Chrome's deprecation notice for
+// IG's own unload-listener registration — benign, and not ours to fix.
+// RIDERS: DownloadEngine.sanitize strips trailing dots/spaces (a
+// slice-cut name ending in '.' is Windows-invalid — the Forums++
+// sanitizeWinSegment rule) (13b-F16).
 // 13.2.4 (WO-01 round 12): THE NATIVE RETIREMENT VEIL — the "persistent
 // center overlay that scrolls like a live feed down the center and never
 // hides/vanishes" field-report fix. The wall was a TRANSLUCENT pane
@@ -1807,7 +1834,10 @@ const __4NDR0_NET_API__ = (function () {
         active: false,
 
         sanitize(name) {
-            return String(name).replace(/[^\w.\-]+/g, '_').slice(0, 120);
+            /* v13.2.5 (13b-F16): trailing dot/space strip — a slice-cut name
+             * ending in '.' is Windows-invalid (the Forums++
+             * sanitizeWinSegment sibling's rule). */
+            return String(name).replace(/[^\w.\-]+/g, '_').replace(/[. ]+$/, '').slice(0, 120);
         },
 
         async saveOne(url, filename) {
@@ -2402,13 +2432,18 @@ const __4NDR0_NET_API__ = (function () {
         };
         hdrBtns.append(
             mkBtn('ares-more', 'LOAD MORE', `background:rgba(10,19,26,0.85);color:${CFG.ACCENT};border:1px solid ${CFG.ACCENT};padding:6px 14px;cursor:pointer;font-family:monospace;font-weight:bold;`),
-            /* v13.2.4 (operator directive): the media-file downloader keeps its
-             * function under a distinct, truthful label — 'SAVE ALL MEDIA' — so
-             * the one-button 'DOWNLOAD ALL' name can live where the operator
-             * uses it: on the whole-grid artifact (the HTML dump button below,
-             * renamed from 'DUMP HTML' per the round-12 transmission). */
-            mkBtn('ares-dlall', '⭳ SAVE ALL MEDIA', `background:transparent;color:${CFG.ACCENT};border:1px solid ${CFG.ACCENT};padding:6px 14px;cursor:pointer;font-family:monospace;`),
-            mkBtn('ares-dump', 'DOWNLOAD ALL', 'background:transparent;color:#67E8F9;border:1px solid rgba(0,229,255,0.35);padding:6px 14px;cursor:pointer;font-family:monospace;'),
+            /* v13.2.4 (operator directive) + v13.2.5 (13c, self-documenting):
+             * the media-file downloader keeps its ORIGINAL function (it has
+             * existed since the suite's origin, v1.1.0) under a distinct,
+             * truthful label — 'SAVE ALL MEDIA' — so the one-button
+             * 'DOWNLOAD ALL' name could live where the operator uses it: on
+             * the whole-grid artifact (the HTML dump button below, RENAMED
+             * from 'DUMP HTML' per the round-12 transmission — same handler,
+             * no duplicate). The titles make the split explicit at hover. */
+            Object.assign(mkBtn('ares-dlall', '⭳ SAVE ALL MEDIA', `background:transparent;color:${CFG.ACCENT};border:1px solid ${CFG.ACCENT};padding:6px 14px;cursor:pointer;font-family:monospace;`),
+                { title: 'Download every harvested media FILE to disk — sequential, one at a time, 350ms pacing, 120s per-file timeout, 3-tier fallback (GM_download → GM_xmlhttpRequest → fetch).' }),
+            Object.assign(mkBtn('ares-dump', 'DOWNLOAD ALL', 'background:transparent;color:#67E8F9;border:1px solid rgba(0,229,255,0.35);padding:6px 14px;cursor:pointer;font-family:monospace;'),
+                { title: 'Download the whole-grid HTML artifact — one self-contained page with every known media item embedded at full size (the former DUMP HTML button, renamed per the round-12 directive).' }),
             /* v13.2.4: the optional-feature toggle the field report demanded —
              * 'not collapsible and never hidden with zero option to suggest
              * otherwise'. Default: the native feed is retired (veil engaged,

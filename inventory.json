@@ -32,12 +32,12 @@
   {
    "file": "4ndr0tools - 4ndr0serviceguard Companion.user.js",
    "name": "4ndr0tools - 4ndr0serviceguard Companion",
-   "version": "7.4.2",
+   "version": "7.4.3",
    "description": "Stealth Service Worker / WebSocket / SharedWorker firewall companion for the 4ndr0serviceguard extension. Default-deny with a three-way action model: AUTHORIZE (real), SPOOF (pacified live-looking socket) or DENY (native-faithful failure). Whitelist authorizes, spooflist auto-spoofs silently, the blacklist is an absolute prohibition. Defers to the extension's Gatekeeper whenever the extension is present — and routes list edits to it through the extension's confirm bar. v7.4.0: survives sandboxed frames (opaque origins) — privileged APIs are captured defensively and the WebSocket gate still arms there. v7.4.1: harness/doc alignment with the post-release rename + the 2026-10-12 console-debrief classification (no behavior change).",
    "family": "privacy & security",
-   "sha256": "8ad2e97472e6784e7c367bda88874219743aa663770d731022fd87bcf800a57f",
-   "lines": 1304,
-   "bytes": 55731,
+   "sha256": "4b5ac5cc1b5fda15b3fe3ce649578e9ca61d68549b66296feec243c487216c93",
+   "lines": 1327,
+   "bytes": 57031,
    "matches": [
     "*://*/*"
    ],
@@ -522,12 +522,12 @@
   {
    "file": "4ndr0tools - Forums++.user.js",
    "name": "4ndr0tools - Forums++",
-   "version": "1.13.6",
+   "version": "1.13.7",
    "description": "Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.",
    "family": "forums",
-   "sha256": "e65af7ae3f30cc1f30c610f94f9b4e29af06178f58a2aece9d21ff5d059d5638",
-   "lines": 8506,
-   "bytes": 409380,
+   "sha256": "183e9eb8faa34d7e8d7e6a80400fd5596b66201532216e3119fe2a7f21e9c73b",
+   "lines": 8603,
+   "bytes": 415870,
    "matches": [
     "https://simpcity.su/threads/*",
     "https://simpcity.cr/threads/*",
@@ -883,12 +883,12 @@
   {
    "file": "4ndr0tools - Instagram++.user.js",
    "name": "4ndr0tools - Instagram++",
-   "version": "13.2.4",
+   "version": "13.2.5",
    "description": "Tab-Bar + Dock Integration. Hotkey trigger (Alt+I). Ad-Blocking. Deep-Stack Recovery. Resilient cursor-based pagination. Stories support. Image/video download engine.",
    "family": "sovereign platforms",
-   "sha256": "fe2eb8fad897b75c1b2de8235043087f2797b6c86977de57ee1f13a8b6dca8e1",
-   "lines": 2819,
-   "bytes": 152489,
+   "sha256": "711d5379607859cd3acd50970840dc853831498be3c5682b0c480606d5040428",
+   "lines": 2854,
+   "bytes": 155305,
    "matches": [
     "*://*.instagram.com/*"
    ],
@@ -919,12 +919,12 @@
   {
    "file": "4ndr0tools - LinkMasterΨ.user.js",
    "name": "4ndr0tools - LinkMasterΨ",
-   "version": "6.3.4",
+   "version": "6.3.5",
    "description": "Accurately decodes, previews, exports, validates and scrapes all links. (Dual MPV Support + Ψ IG Harvester + sexyforums premium-link unwrap + GitHub raw-URL harvest + Ψ2 forum deep-scrape engine)",
    "family": "media & links",
-   "sha256": "892c29e9985c2cc4eba2d35cc7737e41c47e17818e4c91a8d93152da15bf4d80",
-   "lines": 5106,
-   "bytes": 263413,
+   "sha256": "834206691c33124c568129eb86b6e679acba0f1cccc50864ccb71267e4a73c06",
+   "lines": 5187,
+   "bytes": 268761,
    "matches": [
     "*://*/*",
     "*://*.instagram.com/*"
@@ -963,12 +963,12 @@
   {
    "file": "4ndr0tools - Login Form Autofiller.user.js",
    "name": "4ndr0tools - Login Form Autofiller",
-   "version": "2.0.10",
+   "version": "2.0.11",
    "description": "It integrates BugMeNot into any login form (it retrieves all matching logins from bugmenot.com and autofills the login form)",
    "family": "ux utilities",
-   "sha256": "284e0ca83c19fc0863d3d32469264cb015b16e87b34b081d9fa9d98016219873",
-   "lines": 1059,
-   "bytes": 48481,
+   "sha256": "09f21b4bfbeaf43b43e407e66b59b4918a892a885cb8123687ecea2e304ec12f",
+   "lines": 1085,
+   "bytes": 50134,
    "matches": [],
    "includes": [
     "http://*",
@@ -1029,12 +1029,12 @@
   {
    "file": "4ndr0tools - Media Player Controller.user.js",
    "name": "4ndr0tools - Media Player Controller",
-   "version": "8.1.4",
+   "version": "8.1.5",
    "description": "Speed • Fine Rate ±0.1 • Alt+Shift rAF Zoom/Pan • Rotation • Smart Maximize • Native Fullscreen • PiP • Play • DblClick • Pause-on-Acquire • Virtual DOM Nodes • Shadow-DOM Discovery • Cyan-Glass Scrub Bar • Download Button (fetch + blob capture) • Screenshot • Volume/Mute • Frame Step • Seek Hotkeys • IG Story Nav (3-Layer) • Story Repeat (3-Layer) • Active-Media Observer • YouTube Ad Auto-Skip • Toast Feedback • Draggable HUD • Full Hotkey Suite",
    "family": "video & players",
-   "sha256": "d9a9985117b70468788920d9daf24a2cf49d414ba56220cd78da6b3f08e5ca1b",
-   "lines": 2725,
-   "bytes": 118838,
+   "sha256": "7f55116009da7d357349e4d6115026c3962490767b0f6e8becc4f8f0cd4e303b",
+   "lines": 2750,
+   "bytes": 120516,
    "matches": [
     "*://*/*"
    ],
@@ -1058,12 +1058,12 @@
   {
    "file": "4ndr0tools - ModelSearch.user.js",
    "name": "4ndr0tools - ModelSearch",
-   "version": "4.0.4",
+   "version": "4.0.5",
    "description": "Covert SimpCity search UI directly from any website. (Electric-Glass + Alt+S Hotkey Only)",
    "family": "forums",
-   "sha256": "080c43c892afc5ae969a52c31e933d5c99a055dbd0d67195c4eba7e7e2179c03",
-   "lines": 530,
-   "bytes": 25206,
+   "sha256": "3a29ff6aaee2c86cd0e3d332b7144519a19563fe39d06423648d46b9e5b064c5",
+   "lines": 544,
+   "bytes": 26009,
    "matches": [
     "*://*/*"
    ],
@@ -1118,12 +1118,12 @@
   {
    "file": "4ndr0tools - Pixeldrain++.user.js",
    "name": "4ndr0tools - Pixeldrain++",
-   "version": "1.2.4",
+   "version": "1.2.5",
    "description": "Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.",
    "family": "media & links",
-   "sha256": "a7e63d0e59788c465729d90ac4d871396c075ca90cb25359181b6404401cb1ca",
-   "lines": 3872,
-   "bytes": 216856,
+   "sha256": "e4e876ef24209f89383443ecb4096470eecfddc3ad98217f5df50cc5e15916c4",
+   "lines": 3884,
+   "bytes": 217722,
    "matches": [
     "https://pixeldrain.com/*",
     "https://pixeldrain.net/*",
@@ -1183,12 +1183,12 @@
   {
    "file": "4ndr0tools - Prompt Master.user.js",
    "name": "4ndr0tools - Prompt Master",
-   "version": "28.8.1",
+   "version": "28.8.2",
    "description": "Google Flow prompt manager toolkit (works on any AI, just add url) - persisted unit ledger meters every generation click, organization engine: collections, saved views, favorites, ratings, archive, group-by, and insights for large prompt libraries, dedupe, media slideshow, ai prompt enhancer, auto gist syncing, hotkeys, much more.",
    "family": "sovereign platforms",
-   "sha256": "f34e422038209b3e1abe5ffe52f78ec4be176811eb99c330998d2cdb176fc8ba",
-   "lines": 23968,
-   "bytes": 1168530,
+   "sha256": "175e1b2ee13954d9c0420c09d4e6cdb941bd420aab351d1ae9505d380b1eab0c",
+   "lines": 24026,
+   "bytes": 1172132,
    "matches": [
     "*://geminigen.ai/*",
     "*://gist.github.com/*",
@@ -1330,12 +1330,12 @@
   {
    "file": "4ndr0tools - Watermark++.user.js",
    "name": "4ndr0tools - Watermark++",
-   "version": "2.1.2",
+   "version": "2.1.3",
    "description": "Security research and alignment testing only.",
    "family": "sovereign platforms",
-   "sha256": "4bb079d4a1e426ee101e56556485a2eb22e409193dcade46c1829551766ac869",
-   "lines": 15562,
-   "bytes": 1295328,
+   "sha256": "86ef20a9c8e9d6169beb3f08deeb9ae11b61084285e8a7dce16940c327e0aa8c",
+   "lines": 15591,
+   "bytes": 1297172,
    "matches": [
     "https://gemini.google.com/*",
     "https://business.gemini.google/*"
@@ -1360,12 +1360,12 @@
   {
    "file": "4ndr0tools - Website Control Panel.user.js",
    "name": "4ndr0tools - Website Control Panel",
-   "version": "5.3.1",
+   "version": "5.3.2",
    "description": "Draggable Cyberdeck HUD, DOM Zapper, Ad suppression, validated-selector compiled deep-cleaning, per-site HUD suppression + Alt+Shift+H hotkey.",
    "family": "ux utilities",
-   "sha256": "c0cecc822a4870a285669f20a49bc2fc92eb90e3e17aa3fe1462dcbca8293c48",
-   "lines": 596,
-   "bytes": 28296,
+   "sha256": "fd4467aa133dd889f1c1acb5f84dc990284087c6961a9e2c921f3e1a02c946ad",
+   "lines": 614,
+   "bytes": 29714,
    "matches": [
     "*://*/*"
    ],
@@ -1389,12 +1389,12 @@
   {
    "file": "4ndr0tools - YT Filter.user.js",
    "name": "4ndr0tools - YT Filter",
-   "version": "2.5.1",
+   "version": "2.5.2",
    "description": "Electric-Glass YouTube video filter — views, date, duration",
    "family": "video & players",
-   "sha256": "d932aa3444c1b4db79f12e296a57c6ae925e20608a7a6110d307d85751c9eb1f",
-   "lines": 850,
-   "bytes": 32742,
+   "sha256": "536afd877070b51534da2719fe1955407a6c819204631a8416be5809dcbf15a2",
+   "lines": 856,
+   "bytes": 33126,
    "matches": [
     "*://*.youtube.com/*"
    ],
@@ -1442,12 +1442,12 @@
   {
    "file": "4ndr0tools - YouTube Playlist Master.user.js",
    "name": "4ndr0tools - YouTube Playlist Master",
-   "version": "1.7.4",
+   "version": "1.7.5",
    "description": "Channel playlist buttons (All / Popular / Videos / Shorts / Streams / Members-only), Random play (prefer newest/oldest), reverse autoplay order, playlist autoplay toggle, duration sort, bulk copy/move/delete, JSON + plaintext export/import, snapshots with deleted-video detection, quick watch_videos playlists, queue & watch-later overlays, playlist close button, date/view metadata, episode auto-expand, huge-playlist browser, live settings (no reload), always-available Ψ deck, playlist row filter, duplicate finder & purge, global hotkeys (Alt+Shift+U/S/X), failsafe deck rescue, 404-proof navigation guards, Trusted-Types-immune rendering, fully-visible fit-content modal dialogs.",
    "family": "video & players",
-   "sha256": "538c77e7945ab2df5df8351ec1895b83c2af29d16f6f4dfcc57633e8affb0bac",
-   "lines": 6719,
-   "bytes": 351522,
+   "sha256": "24c95d86a71b5bf5c031d3fda71d9382b1d0b2b4f5e037730cfb002ae8b42a79",
+   "lines": 6726,
+   "bytes": 352059,
    "matches": [
     "https://*.youtube.com/*",
     "https://youtube.com/*"
@@ -1500,12 +1500,12 @@
   {
    "file": "4ndr0tools - Youtube Removed Video Revealer.user.js",
    "name": "4ndr0tools - Youtube Removed Video Revealer",
-   "version": "2.0.5",
+   "version": "2.0.6",
    "description": "Restores titles for removed or private videos in YouTube playlists",
    "family": "video & players",
-   "sha256": "3886470c8f97803352c29fab4d6bc87e354c49b59bfb9b6f7f6b82d19a763c3c",
-   "lines": 632,
-   "bytes": 31295,
+   "sha256": "a4a26d1845c60ef0254f965078715f82a5ca71135b0a9eb47a83adabf28f1b9d",
+   "lines": 639,
+   "bytes": 31813,
    "matches": [
     "*://*.youtube.com/*"
    ],
@@ -1531,12 +1531,12 @@
   {
    "file": "4ndr0tools - Zai Exporter.user.js",
    "name": "4ndr0tools - Zai Exporter",
-   "version": "1.0.1",
+   "version": "1.0.2",
    "description": "One-click conversation exfiltration for the Z.ai GLM web chat — scrapes the live thread (multi-strategy, no network, no timers) and exports it as Markdown, JSON, or plain text, with metadata and Ψ glass console. Runs entirely page-side: zero privileged transports, zero observers, zero polling.",
    "family": "sovereign platforms",
-   "sha256": "4ee5f20da311717e3ce73f7188f0f8e99a22286b40a9fc778cbc549ec1ec8a36",
-   "lines": 1122,
-   "bytes": 46495,
+   "sha256": "74ddad92725f8b828f6306ca9e859db3a8128fe0017a17b55962cc583fbdb056",
+   "lines": 1140,
+   "bytes": 47774,
    "matches": [
     "https://chat.z.ai/*",
     "https://z.ai/*"
@@ -1562,12 +1562,12 @@
   {
    "file": "4ndr0tools - m3u8++.user.js",
    "name": "4ndr0tools - m3u8++",
-   "version": "5.1.2",
+   "version": "5.1.3",
    "description": "Automatically displays the m3u8 url for ANY video playing in the top right corner of the video. Click url to copy or click download to use the webapp \"tools.thatwind.com\". Also injects Play buttons next to magnet links on every page, relaying them to www.diancigaoshou.com.",
    "family": "media & links",
-   "sha256": "a320f1769c7fc4ae42ff147031071c9387b518f2016f7bf4edda201e4f103140",
-   "lines": 2068,
-   "bytes": 107607,
+   "sha256": "2c3bf9c1c49754fc2abae0f0fd09e3f16428804c3968f03a696a556e9f87306e",
+   "lines": 2110,
+   "bytes": 109886,
    "matches": [
     "*://*/*"
    ],
@@ -1585,6 +1585,8 @@
     "GM.setValue",
     "GM_deleteValue",
     "GM.deleteValue",
+    "GM_listValues",
+    "GM.listValues",
     "GM_xmlhttpRequest",
     "GM.xmlHttpRequest",
     "GM_download"
@@ -1687,5 +1689,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "21a6509c72dc70ae7eb47267eceae11831d14bc3825761be6b532b6010b6c9f8"
+ "digest": "d7d90858d1474b6b49e47487e47e9bec0e14f102660c67c6d942c5e621488ea2"
 }

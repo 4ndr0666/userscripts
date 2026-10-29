@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - 4ndr0serviceguard Companion
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      7.4.2
+// @version      7.4.3
 // @author       4ndr0666
 // @description  Stealth Service Worker / WebSocket / SharedWorker firewall companion for the 4ndr0serviceguard extension. Default-deny with a three-way action model: AUTHORIZE (real), SPOOF (pacified live-looking socket) or DENY (native-faithful failure). Whitelist authorizes, spooflist auto-spoofs silently, the blacklist is an absolute prohibition. Defers to the extension's Gatekeeper whenever the extension is present — and routes list edits to it through the extension's confirm bar. v7.4.0: survives sandboxed frames (opaque origins) — privileged APIs are captured defensively and the WebSocket gate still arms there. v7.4.1: harness/doc alignment with the post-release rename + the 2026-10-12 console-debrief classification (no behavior change).
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -17,7 +17,19 @@
 // @grant        GM_notification
 // ==/UserScript==
 
-// 4ndr0tools - 4ndr0serviceguard Companion v7.4.2 — sandbox-resilient helper userscript.
+// 4ndr0tools - 4ndr0serviceguard Companion v7.4.3 — sandbox-resilient helper userscript.
+//
+// v7.4.3 (WO-01 round 13, 13b-F09): THE HOMOGRAPH GATE — normalizeDomain's
+// global 'xn--' strip (the 7.4.2 both-sides fix's engine) made the IDN
+// lookalike xn--a.example normalize IDENTICALLY to a whitelisted
+// a.example: the local gate authorized IDN homographs of every whitelisted
+// domain, and distinct IDN domains collided into one list entry. The URL
+// parser is the normalizer now — routing the label through new URL()
+// converts unicode spellings to their punycode form (exactly what
+// hostnameOf compares against) without stripping anything. Storage note:
+// an entry SAVED under the 7.4.2 strip (a homograph's collided form) stops
+// matching its lookalike host — that is the fix working; re-add the real
+// domain.
 //
 // Paradigm (D1): Proxy-based interception facade in the page (MAIN) context,
 // mirroring ghost_core_v7.js — single paradigm, zero chimera.
@@ -117,7 +129,18 @@
   let lastNotifyAt = 0;
 
   function normalizeDomain(domain) {
-    return String(domain || '').toLowerCase().trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/xn--/g, '');
+    /* v7.4.3 (13b-F09): the URL parser IS the IDN normalizer. The old
+     * global 'xn--' strip made xn--a.example normalize identically to a
+     * whitelisted a.example (the gate authorized IDN homographs) and
+     * collided distinct IDN domains into one entry. new URL() converts
+     * unicode labels to punycode — the form hostnameOf yields — without
+     * stripping anything; parse failures keep the pre-URL shape. */
+    let s = String(domain || '').toLowerCase().trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    if (!s) return '';
+    try {
+      s = new win.URL('http://' + s).hostname;
+    } catch (e) { /* keep the pre-URL shape */ }
+    return s;
   }
 
   function persistWhitelist() {

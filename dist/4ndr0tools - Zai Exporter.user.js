@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Zai Exporter
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.0.1
+// @version      1.0.2
 // @author       4ndr0666
 // @description  One-click conversation exfiltration for the Z.ai GLM web chat — scrapes the live thread (multi-strategy, no network, no timers) and exports it as Markdown, JSON, or plain text, with metadata and Ψ glass console. Runs entirely page-side: zero privileged transports, zero observers, zero polling.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -19,7 +19,15 @@
 // @grant        GM_registerMenuCommand
 // ==/UserScript==
 
-// 4ndr0tools - Zai Exporter v1.0.1 — completed helper userscript.
+// 4ndr0tools - Zai Exporter v1.0.2 — completed helper userscript.
+// v1.0.2 (WO-01 round 13): the alternation repair actually alternates —
+// classifyAll's repair branch never updated lastKnown, so consecutive
+// unknown messages after a user turn ALL became assistant (the comment
+// promised user→assistant→user; the branch didn't track its own repairs)
+// (13b-F14). Plus the code-fence sentinel is per-run random — a post that
+// literally contained 'ZXCODE0ENDZX' had its text replaced by a code fence,
+// and the fence replacement is literal-safe now (a '$&' inside a code
+// block no longer corrupts the splice) (13b-F21).
 // v1.0.1 (WO-01 round 12, 12b-F05): injectStyle's GM_addStyle branch never
 // stamped the dedup id on the element it returned, so the getElementById
 // guard could never find it on a later call — one duplicate <style> block
@@ -540,6 +548,10 @@
             if (roles[i] === 'unknown') {
                 if (lastKnown === 'user') roles[i] = 'assistant';
                 else if (lastKnown === 'assistant') roles[i] = 'user';
+                /* v1.0.2 (13b-F14): the repair tracks itself — the old branch
+                 * never updated lastKnown, so consecutive unknowns after a
+                 * user turn ALL became assistant. */
+                if (roles[i] !== 'unknown') lastKnown = roles[i];
             } else {
                 lastKnown = roles[i];
             }
@@ -555,18 +567,24 @@
             if (pres.length) {
                 // Fence out code blocks; replace them with sentinels before
                 // the text sweep so their contents are not duplicated.
+                /* v1.0.2 (13b-F21): per-run random sentinel — a post that
+                 * literally contained 'ZXCODE0ENDZX' had its own text
+                 * replaced by a code fence; the fence splice is also
+                 * literal-safe (a '$&' inside a code block no longer
+                 * corrupts String.replace's replacement parsing). */
+                const ZX = 'ZX' + Math.random().toString(36).slice(2, 10).toUpperCase() + 'C0DE';
                 const sentinels = [];
                 const marked = node.cloneNode(true);
                 for (const pre of Array.from(marked.querySelectorAll('pre'))) {
                     const code = normText(pre.textContent);
-                    const sentinel = 'ZXCODE' + sentinels.length + 'ENDZX';
+                    const sentinel = ZX + sentinels.length;
                     sentinels.push('```\n' + code + '\n```');
                     const holder = document.createTextNode(sentinel);
                     pre.parentNode.replaceChild(holder, pre);
                 }
                 let text = normText(marked.textContent);
                 sentinels.forEach((fence, i) => {
-                    text = text.replace('ZXCODE' + i + 'ENDZX', fence);
+                    text = text.replace(ZX + i, () => fence);
                 });
                 return text;
             }

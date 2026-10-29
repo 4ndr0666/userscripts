@@ -310,7 +310,7 @@ the 3lectric-Glass design system.
 \`\`\`
 kernel/    canonical shared modules (brand · core · glass · store · hotkeys · hosts · net) — every module inlined by at least one dist build (zero dead kernel surface; net is consumed via the canon CANON_KERNEL injection)
 modules/   kernel-powered consolidated scripts (HostWarp, PageCraft)
-canon/     consolidated & promoted sources + EVIDENCE.json (per-script transform evidence)
+canon/     consolidated, promoted & merged sources + EVIDENCE.json (per-script transform evidence)
 plugins/   companion plugins (MPV bridge; autopage.json = external-consumer data,
            fetched from the raw repo URL by out-of-repo autopagers — ledgered
            mode external-data) — candidshiny.user.js retired WO-01 round-1
@@ -329,14 +329,16 @@ tools/     build.mjs · inventory.mjs · validate.mjs · qr-verify.mjs · style-
            · kernel-export-census.mjs (export surface × consumer, bidirectional)
            · scan-kit.mjs (the shared lexical-balance + placeholder scanner behind build and validate)
            smoke batteries (npm run smoke) — family-fixture · watermark-batch ·
-           kernel-boundary · flow-chip-browser · ig-wall-browser · pm-grid-browser
-           (six runtime contract batteries, CI-wired since v1.7.4)
-           instruments — tt-smoke.mjs (live Trusted-Types harness) · xref-adjudicate.mjs (flag triage)
+           kernel-boundary · flow-chip-browser · ig-wall-browser · pm-grid-browser ·
+           norm-symmetry · tt-browser
+           (eight runtime contract batteries, CI-wired since v1.7.4; tt-browser
+           drives the tt-smoke harness — closed WO-01 12c-F02)
+           instruments — tt-smoke.mjs (the live Trusted-Types harness tt-browser drives) · xref-adjudicate.mjs (flag triage)
            evidence chain — baseline.json · ledger.json
 \`\`\`
 
 \`npm run build\` → dist. \`npm run check\` → build + inventory + qr-verify + style-audit + full validation
-(GUP superset contract, fail-closed). \`npm run smoke\` → the six runtime contract batteries.
+(GUP superset contract, fail-closed). \`npm run smoke\` → the eight runtime contract batteries.
 CI runs all of these gates on every push, plus a regenerated-reference freshness gate
 (stale committed artifacts fail the build).
 

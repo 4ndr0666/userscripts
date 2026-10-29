@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Pixeldrain++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.2.4
+// @version      1.2.5
 // @description  Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.
 // @author       4ndr0666
 // @license      MIT
@@ -1218,6 +1218,12 @@ const __4NDR0_NET_API__ = (function () {
     return api;
 })();
 
+// 1.2.5 (WO-01 round 13): filename/progress symmetry — sanitizeFilename
+// can emit a name ending in a trailing dot (slice-cut or original), which
+// Windows rejects; the Forums++ sibling sanitizeWinSegment strips [\. ]+$
+// and so does this now (13b-F16). The two content-length parses wrap with
+// || 0 — a malformed-but-present header parsed to NaN and the progress
+// bar rendered 'NaN%' (13b-F22).
 // 1.2.4 (suite v1.19.0, WO-01 round 11): the resume-integrity batch
 // (11b-F02/F03/F08/F17). (1) RESUME ZERO-HOLE: an adopted resume job
 // restored the old chunk map into loadedArr while the writable is
@@ -1443,7 +1449,9 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.4
     function uuid() { return crypto.randomUUID ? crypto.randomUUID() : 'xxxx-xxxx-xxxx'.replace(/x/g, () => (Math.random() * 16 | 0).toString(16)); }
     function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
     function escapeHTML(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
-    function sanitizeFilename(n) { return String(n || 'download').replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').trim() || 'download'; }
+    /* 1.2.5 (13b-F16): trailing dot/space strip — Windows rejects names
+     * ending in a dot; the Forums++ sanitizeWinSegment sibling's rule. */
+    function sanitizeFilename(n) { return String(n || 'download').replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').replace(/[. ]+$/, '').trim() || 'download'; }
     function formatBytes(b) { if (!b) return '0 B'; const u = ['B', 'KB', 'MB', 'GB', 'TB']; const i = Math.min(Math.floor(Math.log(b) / Math.log(1024)), u.length - 1); return (b / Math.pow(1024, i)).toFixed(i ? 1 : 0) + ' ' + u[i]; }
     function formatSpeed(bps) { return bps ? formatBytes(bps) + '/s' : ''; }
     function formatETA(rem, spd) { if (!spd) return '--:--'; const s = Math.ceil(rem / spd); return s > 3600 ? `${Math.floor(s / 3600)}h${Math.floor((s % 3600) / 60)}m` : s > 60 ? `${Math.floor(s / 60)}m${s % 60}s` : `${s}s`; }
@@ -2009,7 +2017,9 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.4
                 try {
                     const r = await fetch(url, { headers: auth, credentials: 'omit', signal });
                     if (!r.ok) throw new Error(`HTTP ${r.status}`);
-                    const total = parseInt(r.headers.get('content-length') || size || '0', 10);
+                    /* 1.2.5 (13b-F22): NaN-proof — a malformed-but-present
+                     * header parsed to NaN and the progress bar read 'NaN%'. */
+                    const total = parseInt(r.headers.get('content-length') || size || '0', 10) || 0;
                     const start = performance.now();
                     let loaded = 0;
                     const reader = r.body.getReader();
@@ -2469,7 +2479,9 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.4
                         const r = await fetch(url, { credentials: 'omit', referrerPolicy: 'no-referrer', signal });
                         if (r.status === 403) { CircuitBreaker.record(mirror.host, false); ProxyManager.markBlocked(mirror.host); throw new Error('blocked'); }
                         if (!r.ok) throw new Error(`HTTP ${r.status}`);
-                        const total = parseInt(r.headers.get('content-length') || size || '0', 10);
+                        /* 1.2.5 (13b-F22): NaN-proof — see the premium_direct
+                         * twin. */
+                        const total = parseInt(r.headers.get('content-length') || size || '0', 10) || 0;
                         const start = performance.now();
                         let loaded = 0;
                         const reader = r.body.getReader();

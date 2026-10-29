@@ -13,37 +13,37 @@ successor** — running both is the co-install chaos this consolidation removes.
 
 | You had | Install instead | Then uninstall |
 |---|---|---|
-| m3u8++ v4.4 | [m3u8++ v5.1.1](../dist/4ndr0tools%20-%20m3u8++.user.js) | m3u8++ (old) |
-| Hailuo++ v5.1.1 | [Hailuo++ v6.1.2](../dist/4ndr0tools%20-%20Hailuo%2B%2B.user.js) | Hailuo++ (old) |
-| Blob2URL v6.3 | [Blob2URL v7.3.0](../dist/4ndr0tools%20-%20Blob2URL.user.js) | Blob2URL (old) |
-| Confirmation Bypass v3.6.1 | [Confirmation Bypass v4.1.2](../dist/4ndr0tools%20-%20Confirmation%20Bypass.user.js) | Confirmation Bypass (old) |
-| ModelSearch v2.1 | [ModelSearch v4.0.3](../dist/4ndr0tools%20-%20ModelSearch.user.js) | ModelSearch (old) |
+| m3u8++ v4.4 | [m3u8++ v5.1.3](../dist/4ndr0tools%20-%20m3u8++.user.js) | m3u8++ (old) |
+| Hailuo++ v5.1.1 | [Hailuo++ v6.2.0](../dist/4ndr0tools%20-%20Hailuo%2B%2B.user.js) | Hailuo++ (old) |
+| Blob2URL v6.3 | [Blob2URL v7.3.1](../dist/4ndr0tools%20-%20Blob2URL.user.js) | Blob2URL (old) |
+| Confirmation Bypass v3.6.1 | [Confirmation Bypass v4.1.4](../dist/4ndr0tools%20-%20Confirmation%20Bypass.user.js) | Confirmation Bypass (old) |
+| ModelSearch v2.1 | [ModelSearch v4.0.5](../dist/4ndr0tools%20-%20ModelSearch.user.js) | ModelSearch (old) |
 | GooglePhotosandDrive++ v1.5.0 | [GooglePhotosandDrive++ v8.1.1](../dist/4ndr0tools%20-%20GooglePhotosandDrive%2B%2B.user.js) | GooglePhotosandDrive++ (old) |
-| Media Player Controller v5.1.0 | [Media Player Controller v8.1.3](../dist/4ndr0tools%20-%20Media%20Player%20Controller.user.js) | Media Player Controller (old) |
-| Forum Link Xtractor v1.0 | [Forum Link Xtractor v3.2.3](../dist/4ndr0tools%20-%20Forum%20Link%20Xtractor.user.js) | Forum Link Xtractor (old) |
+| Media Player Controller v5.1.0 | [Media Player Controller v8.1.5](../dist/4ndr0tools%20-%20Media%20Player%20Controller.user.js) | Media Player Controller (old) |
+| Forum Link Xtractor v1.0 | [Forum Link Xtractor v3.2.4](../dist/4ndr0tools%20-%20Forum%20Link%20Xtractor.user.js) | Forum Link Xtractor (old) |
 
 ### Promotions (you had the BETA)
 
 | You had | Install instead | Then uninstall |
 |---|---|---|
-| m3u8++BETA v4.5 | [m3u8++ v5.1.1](../dist/4ndr0tools%20-%20m3u8%2B%2B.user.js) | m3u8++BETA **and** old stable m3u8++ |
-| Hailuo++BETA v5.4.0 | [Hailuo++ v6.1.2](../dist/4ndr0tools%20-%20Hailuo%2B%2B.user.js) | Hailuo++BETA and old stable |
-| Blob2URLBETA v6.5 | [Blob2URL v7.3.0](../dist/4ndr0tools%20-%20Blob2URL.user.js) | Blob2URLBETA and old stable |
-| Confirmation Bypass BETA v3.6.2 | [Confirmation Bypass v4.1.2](../dist/4ndr0tools%20-%20Confirmation%20Bypass.user.js) | both |
-| ModelSearchBETA v3.2.0-Ψ | [ModelSearch v4.0.3](../dist/4ndr0tools%20-%20ModelSearch.user.js) | both |
+| m3u8++BETA v4.5 | [m3u8++ v5.1.3](../dist/4ndr0tools%20-%20m3u8%2B%2B.user.js) | m3u8++BETA **and** old stable m3u8++ |
+| Hailuo++BETA v5.4.0 | [Hailuo++ v6.2.0](../dist/4ndr0tools%20-%20Hailuo%2B%2B.user.js) | Hailuo++BETA and old stable |
+| Blob2URLBETA v6.5 | [Blob2URL v7.3.1](../dist/4ndr0tools%20-%20Blob2URL.user.js) | Blob2URLBETA and old stable |
+| Confirmation Bypass BETA v3.6.2 | [Confirmation Bypass v4.1.4](../dist/4ndr0tools%20-%20Confirmation%20Bypass.user.js) | both |
+| ModelSearchBETA v3.2.0-Ψ | [ModelSearch v4.0.5](../dist/4ndr0tools%20-%20ModelSearch.user.js) | both |
 | GooglePhotosandDrive++BETA v7.0.0 | [GooglePhotosandDrive++ v8.1.1](../dist/4ndr0tools%20-%20GooglePhotosandDrive%2B%2B.user.js) | both |
-| Media Player Controller BETA v7.0.0-Ψ | [Media Player Controller v8.1.3](../dist/4ndr0tools%20-%20Media%20Player%20Controller.user.js) | both |
-| Forum Link Xtractor BETA v2.1.0 | [Forum Link Xtractor v3.2.3](../dist/4ndr0tools%20-%20Forum%20Link%20Xtractor.user.js) | both |
+| Media Player Controller BETA v7.0.0-Ψ | [Media Player Controller v8.1.5](../dist/4ndr0tools%20-%20Media%20Player%20Controller.user.js) | both |
+| Forum Link Xtractor BETA v2.1.0 | [Forum Link Xtractor v3.2.4](../dist/4ndr0tools%20-%20Forum%20Link%20Xtractor.user.js) | both |
 
 ### LinkMaster family (five → one)
 
 | You had | Install instead | Then uninstall |
 |---|---|---|
-| LinkMasterΨ v5.0.0 | [LinkMasterΨ v6.3.3](../dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js) | LinkMasterΨ (old) |
-| LinkMasterBETA v5.1.1 | [LinkMasterΨ v6.3.3](../dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js) | LinkMasterBETA |
-| LinkMasterΨ2 v3.1.0 | [LinkMasterΨ v6.3.3](../dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js) | LinkMasterΨ2 |
-| Premium Link Revealer v1.2 | [LinkMasterΨ v6.3.3](../dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js) | Premium Link Revealer |
-| Git Raw URL File List Parser v4.0.0 | [LinkMasterΨ v6.3.3](../dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js) | Git Raw URL File List Parser |
+| LinkMasterΨ v5.0.0 | [LinkMasterΨ v6.3.5](../dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js) | LinkMasterΨ (old) |
+| LinkMasterBETA v5.1.1 | [LinkMasterΨ v6.3.5](../dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js) | LinkMasterBETA |
+| LinkMasterΨ2 v3.1.0 | [LinkMasterΨ v6.3.5](../dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js) | LinkMasterΨ2 |
+| Premium Link Revealer v1.2 | [LinkMasterΨ v6.3.5](../dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js) | Premium Link Revealer |
+| Git Raw URL File List Parser v4.0.0 | [LinkMasterΨ v6.3.5](../dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js) | Git Raw URL File List Parser |
 
 Ψ2 users: your `linkmaster_settings` (GoFile token, forum defaults) carry over
 automatically — same storage key. The Forum tab in the new HUD is the Ψ2
@@ -54,21 +54,21 @@ check-scraped flow; paste-to-check remains at the top of the Check tab.
 
 | You had | Install instead | Then uninstall |
 |---|---|---|
-| Images++ v3.0.0 (universal) | [Images++ v4.0.5](../dist/4ndr0tools%20-%20Images%2B%2B.user.js) | Images++ (old) |
-| Images++BETA v2.1.0 (IG-scoped) | [Images++ v4.0.5](../dist/4ndr0tools%20-%20Images%2B%2B.user.js) — see note | Images++BETA |
+| Images++ v3.0.0 (universal) | [Images++ v4.0.6](../dist/4ndr0tools%20-%20Images%2B%2B.user.js) | Images++ (old) |
+| Images++BETA v2.1.0 (IG-scoped) | [Images++ v4.0.6](../dist/4ndr0tools%20-%20Images%2B%2B.user.js) — see note | Images++BETA |
 
 Note: the BETA was a divergent IG/imagefap-scoped branch. Its one unique
-feature — configurable collapse hotkey — is in v4.0.3. If you relied on the
+feature — configurable collapse hotkey — is in v4.0.6. If you relied on the
 BETA's IG-specific hover behavior, the universal stable behavior (also in
-v4.0.3) covers it; Instagram++ remains the dedicated IG tool.
+v4.0.6) covers it; Instagram++ remains the dedicated IG tool.
 
 ### Privacy trio (three → one)
 
 | You had | Install instead | Then uninstall |
 |---|---|---|
-| Anti-detection v1.1 | [Akasha Silence v5.2.3](../dist/4ndr0tools%20-%20Akasha%20Silence.user.js) | Anti-detection |
-| Counter-surveillance v4.0.0 | [Akasha Silence v5.2.3](../dist/4ndr0tools%20-%20Akasha%20Silence.user.js) | Counter-surveillance |
-| Anti-telemetry (ICC) v3.5.0 | [Akasha Silence v5.2.3](../dist/4ndr0tools%20-%20Akasha%20Silence.user.js) | Anti-telemetry (ICC) |
+| Anti-detection v1.1 | [Akasha Silence v5.2.5](../dist/4ndr0tools%20-%20Akasha%20Silence.user.js) | Anti-detection |
+| Counter-surveillance v4.0.0 | [Akasha Silence v5.2.5](../dist/4ndr0tools%20-%20Akasha%20Silence.user.js) | Counter-surveillance |
+| Anti-telemetry (ICC) v3.5.0 | [Akasha Silence v5.2.5](../dist/4ndr0tools%20-%20Akasha%20Silence.user.js) | Anti-telemetry (ICC) |
 
 The three scripts shared ~70% of their core (hardware shroud, canvas
 blinding, network nullification) — running two of them together double-hooked

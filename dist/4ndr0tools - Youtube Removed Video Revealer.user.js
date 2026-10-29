@@ -2,7 +2,7 @@
 // @name         4ndr0tools - Youtube Removed Video Revealer
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666
-// @version      2.0.5
+// @version      2.0.6
 // @description  Restores titles for removed or private videos in YouTube playlists
 // @license      MIT
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Youtube%20Removed%20Video%20Revealer.user.js
@@ -15,6 +15,12 @@
 // @connect      web.archive.org
 // @require      https://cdnjs.cloudflare.com/ajax/libs/cash/8.1.5/cash.min.js
 // ==/UserScript==
+// v2.0.6 (WO-01 round 13): the id capture anchors its left boundary — the
+// old /v=[0-9A-Za-z_\-]*/gm matched INSIDE other params (an '&rv=…' value
+// yielded the wrong id whenever no earlier v= existed), and the empty-match
+// arm ('v=' with nothing after) fed '' downstream; the capture requires the
+// [?&] boundary and a non-empty run, keeping the >= 11 gate (13b-F17). A
+// missing href degrades to '' instead of a TypeError inside the .each.
 // v2.0.5 (suite v1.19.0, WO-01 round 11): the BODY phase rides inside the
 // 20 s bound (11b-F12) — the v2.0.4 timer was cleared in a finally that
 // ran BEFORE response.json(), so a stalled response body hung 'Restore
@@ -272,13 +278,14 @@ function extractIDsFullView() {
         const ahref = $(this).children("a.yt-simple-endpoint");
 
         if (ahref.length > 0) {
-            const href = ahref.attr("href");
+            /* v2.0.6 (13b-F17): anchored capture — see the changelog. */
+            const href = ahref.attr("href") || "";
             const checked = ahref.attr("filmot_chk");
-            let idMatch = href.match(/v=[0-9A-Za-z_\-]*/gm);
+            let idMatch = href.match(/[?&]v=([0-9A-Za-z_-]+)/);
 
             if(idMatch) {
                 // REVISION: Extracted ID cleanly without relying on implicit string coercion that could fail.
-                let id = String(idMatch[0]).substring(2);
+                let id = idMatch[1];
 
                 if (id.length >= 11 && (!checked || checked !== "1")) {
                     ahref.attr("filmot_chk", "1");

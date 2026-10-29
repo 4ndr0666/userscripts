@@ -49,6 +49,8 @@ import { runFamilyFixtureSmoke } from "./family-fixture-smoke.mjs";
 import { runFlowChipBrowserBattery } from "./flow-chip-browser-smoke.mjs";
 import { runIgWallBrowserBattery } from "./ig-wall-browser-smoke.mjs";
 import { runPmGridBrowserBattery } from "./pm-grid-browser-smoke.mjs";
+import { runNormSymmetrySmoke } from "./norm-symmetry-smoke.mjs"; /* WO-01 round 13: the r13 lens battery — storage round-trip + normalization symmetry, pinned so the class can never silently regress */
+import { runTtBrowserBattery } from "./tt-browser-smoke.mjs"; /* WO-01 round 13 (12c-F02 closure): the Trusted-Types harness finally gate-wired — three regimes + wire/veto/observer probes + the live sabotage red control */
 import { runProductionScore, SCORE_THRESHOLD } from "./production-score.mjs";
 import { computeInventory, serialize } from "./inventory.mjs";
 
@@ -1482,6 +1484,52 @@ async function gateD() {
         for (const f of pmGridBrowser.failed) failures.push(`[D] pm-grid browser smoke: ${f.name} (${f.detail})`);
     } else {
         passes.push(`[D] Prompt Master expanded-grid card layout & Media Slideshow browser Proof-of-Possession verified (${pmGridBrowser.passed}/${pmGridBrowser.total} click/wait/get assertions + red control, mode=${pmGridBrowser.mode})`);
+    }
+
+    /* WO-01 round 13 (13b lens): the normalization & storage symmetry battery */
+    const normSym = await runNormSymmetrySmoke(ROOT);
+    if (normSym.problems.length) {
+        for (const p of normSym.problems) failures.push(`[D] norm-symmetry smoke: ${p}`);
+    } else {
+        passes.push(`[D] normalization & storage symmetry battery verified (${normSym.passed}/${normSym.total} assertions: the twin-divergence settlements, the IDN homograph gate, the cross-site credential gate, the toBool class, GlobalFiles LRU bounds, the IG++ button contract)`);
+    }
+
+    /* WO-01 round 13 (12c-F02 closure): the Trusted-Types harness, gate-wired */
+    const ttBrowser = await runTtBrowserBattery();
+    if (!ttBrowser.clean) {
+        for (const f of ttBrowser.failed) failures.push(`[D] tt browser smoke: ${f.name} (${f.detail})`);
+    } else {
+        passes.push(`[D] Trusted-Types integration battery verified (${ttBrowser.passed}/${ttBrowser.total} assertions: Blob2URL vault console under enforced/locked/parity regimes + NetHook wire/veto/observer probes + the live sabotage red control, mode=${ttBrowser.mode})`);
+    }
+
+    /* WO-01 round 13 (13c): the MIGRATION label-drift tripwire — the successor
+     * table's vX.Y.Z labels rode 26 stale versions across rounds 9-12 with no
+     * gate rendering the file. Every versioned "Install instead" label must
+     * match the dist file's live @version, and every dist link must carry a
+     * well-formed [...] label opener on its line. */
+    {
+        const migPath = path.join(ROOT, "docs", "MIGRATION.md");
+        const mig = fs.readFileSync(migPath, "utf8");
+        const labelRe = /\[([^\]]+?) v(\d+\.\d+(?:\.\d+)?)\]\((\.\.\/dist\/[^)]+)\)/g;
+        let mm, drift = [], linked = 0;
+        while ((mm = labelRe.exec(mig)) !== null) {
+            linked++;
+            const distName = decodeURIComponent(mm[3].replace("../dist/", ""));
+            const distPath = path.join(ROOT, "dist", distName);
+            if (!fs.existsSync(distPath)) { drift.push(`dead link: ${mm[3]}`); continue; }
+            const hv = /^\/\/ @version\s+(\S+)/m.exec(fs.readFileSync(distPath, "utf8"));
+            if (!hv || hv[1] !== mm[2]) drift.push(`${distName}: label v${mm[2]} vs dist ${hv ? hv[1] : "?"}`);
+        }
+        let brokenOpeners = 0;
+        for (const line of mig.split("\n")) {
+            if (!line.includes("](../dist/")) continue;
+            for (const seg of line.split("|")) {
+                if (seg.includes("](../dist/") && !/\[[^\]]*\]\(\.\.\/dist\//.test(seg)) brokenOpeners++;
+            }
+        }
+        if (brokenOpeners) failures.push(`[D] MIGRATION.md: ${brokenOpeners} dist link(s) missing a well-formed [label](href) opener`);
+        else if (drift.length) { for (const d of drift) failures.push(`[D] MIGRATION.md label drift: ${d}`); }
+        else passes.push(`[D] MIGRATION.md successor table verified (${linked} versioned dist links, zero label drift, zero broken openers)`);
     }
 }
 

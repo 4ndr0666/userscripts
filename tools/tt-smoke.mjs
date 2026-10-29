@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 /* ═══════════════════════════════════════════════════════════════════════════
- * tools/tt-smoke.mjs — live Trusted-Types integration smoke harness (v1.4.3)
+ * tools/tt-smoke.mjs — live Trusted-Types integration smoke harness (v1.4.8;
+ * header re-stamped WO-01 round 13 — the body carried v1.4.5-v1.4.8 contracts
+ * while the header still said v1.4.3; now gate-driven by tt-browser-smoke.mjs)
  * ----------------------------------------------------------------------------
  * Operator mandate: "Per-site live integration testing (browser-automation
  * smoke of the settings consoles on TT and non-TT hosts) — the static + mock

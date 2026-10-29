@@ -3,7 +3,7 @@
 // @name        4ndr0tools - Forums++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     1.13.6
+// @version     1.13.7
 // @description Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @match       https://simpcity.su/threads/*
@@ -1318,6 +1318,38 @@ const __4NDR0_NET_API__ = (function () {
     return api;
 })();
 
+// 1.13.7 (WO-01 round 13): THE TWIN-DIVERGENCE ROUND — every finding below
+// came from the r13 storage-round-trip and normalization-symmetry lenses
+// (the two lenses the r12 handoff proposed after the MAM-F01 and SGC-F02
+// classes proved impactful). (1) fnNoExt('photo') popped the only part and
+// returned '' — the MIME-repair arm then minted '.mp4' (a HIDDEN DOTFILE)
+// and the dedup suffix minted ' (1)' with a leading space; a basename with
+// no dot IS the stem (13b-F01). (2) The ibb album page-count parse: a
+// missing count node or a comma-formatted count made pageCount NaN, the
+// page loop never ran, and the album silently resolved to ZERO files —
+// digits-only extraction + a one-page floor now (13b-F02). (3) The kemono
+// ?f= pretty-name recovery was DEAD CODE since 1.11.x: the generic
+// basename arm strips the query BEFORE the kemono branch, so the recovery
+// regex could never match and kemono files saved under UUID names — the
+// recovery now reads the ORIGINAL url via URL/searchParams (percent-
+// decoding included, which the old single-instance '%20' replace was not)
+// (13b-F03). (4) The Pixeldrain resolver glued strings onto query-bearing
+// links ('/u/abc?x=1' → '…?x=1?download', '/l/abc?x=1' → '…?x=1/zip') —
+// URL-object construction appends to the path and sets a real param
+// (13b-F04). (5) The current-page ThreadCache write cached an empty page
+// forever — the 7d-F07 truthiness class armed on the write side: a CF
+// interstitial or logged-out view parsed to zero posts and the refetch
+// guard treated [] as cached (13a-F04). (6) getCachedThreadData shape-
+// guards its store — a string-shaped value (manager coercion) made every
+// page write a silent no-op through this non-strict file (13a-F15).
+// (7) The skip-duplicates Bunkr arm kept '' as its dedup key for trailing-
+// slash URLs — every such resource after the first was falsely logged
+// 'Skipped duplicate' and dropped; h.basename strips the slash (13b-F11).
+// (8) The redgifs users decode is guarded — a username with a bare '%'
+// threw URIError before the resolver catch and nulled the whole profile
+// walk (13b-F12, the 5-c F01 sibling). (9) The cyberdrop parseInfoText
+// escapes the page-sourced slug before RegExp interpolation — a slug with
+// regex metachars threw SyntaxError and dropped the file (13b-F13).
 // 1.13.6 (suite v1.19.0, WO-01 round 11): THE OPERATOR-BATTERY LIVE CATCH
 // (OBI-F01 — the operator's first real battery run: FPP-GBX-01/GBX-02/WRM-01
 // all crashed live with 'Uncaught ReferenceError: resolve is not defined at
@@ -1679,7 +1711,12 @@ const h = {
      * @returns {string}
      */
     fnNoExt: path => {
-        const parts = path.trim().split('.');
+        const trimmed = String(path).trim();
+        const parts = trimmed.split('.');
+        /* v1.13.7 (13b-F01): a dotless basename is its own stem — the old
+         * pop-then-join returned '' for 'photo', the MIME-repair arm minted
+         * '.mp4' (a hidden dotfile) and the dedup suffix minted ' (1)'. */
+        if (parts.length < 2) return trimmed;
         parts.pop(); // Remove extension
         return parts.join('.');
     },
@@ -4360,8 +4397,12 @@ const resolvers = [
 
             try {
                 const { source, dom } = await http.get(url);
-                const imageCount = Number(dom.querySelector('span[data-text="image-count"]')?.innerText);
-                const pageCount = Math.ceil(imageCount / 32);
+                /* v1.13.7 (13b-F02): NaN-proof — a missing count node or a
+                 * comma-formatted count parsed to NaN, the page loop never
+                 * ran, and the album silently resolved to zero files. */
+                const countText = String(dom.querySelector('span[data-text="image-count"]')?.innerText || '').replace(/[^0-9]/g, '');
+                const imageCount = parseInt(countText, 10) || 0;
+                const pageCount = Math.max(1, Math.ceil(imageCount / 32));
                 const authToken = h.re.match(/(?<=auth_token=").*?(?=")/i, source);
 
                 const fetchPageData = async (albId, page, seekEnd, token) => {
@@ -4862,10 +4903,26 @@ const resolvers = [
     [
         [/pixeldrain\.(com|net)\/[ul]|pixeldra\.in\/[ul]/],
         url => {
-            let resolved = url.replace('/u/', '/api/file/').replace('/l/', '/api/list/');
-            resolved = h.contains('/api/list', resolved) ? `${resolved}/zip` : resolved;
-            resolved = h.contains('/api/file', resolved) ? `${resolved}?download` : resolved;
-            return resolved;
+            /* v1.13.7 (13b-F04): URL-object construction — the old string
+             * splices glued a second '?' or a trailing segment onto query-
+             * bearing links ('/u/abc?x=1' → '…abc?x=1?download',
+             * '/l/abc?x=1' → '…abc?x=1/zip'), corrupting both API forms. */
+            try {
+                const u = new URL(url);
+                if (u.pathname.includes('/l/')) {
+                    u.pathname = u.pathname.replace('/l/', '/api/list/').replace(/\/+$/, '') + '/zip';
+                    return u.toString();
+                }
+                u.pathname = u.pathname.replace('/u/', '/api/file/');
+                if (u.search) {
+                    u.searchParams.set('download', '');
+                    return u.toString();
+                }
+                return `${u.origin}${u.pathname}?download`;
+            } catch (e) {
+                console.debug('Forums++: pixeldrain resolver fell back to the raw url:', e && e.message);
+                return url;
+            }
         },
     ],
     /* v1.12.0 (round 6): GoFile's 2026-08 API — the static wt is dead; the
@@ -5734,7 +5791,13 @@ const resolvers = [
         async (url, http, spoilers, postId, postSettings, progressCB) => {
             const raw = String(url || '');
             const m = raw.match(/redgifs\.com\/users\/([^\/?#]+)/i);
-            const username = m && m[1] ? decodeURIComponent(m[1]) : '';
+            /* v1.13.7 (13b-F12): guarded decode — a username carrying a bare
+             * '%' threw URIError before the resolver's own catch could
+             * degrade it, nulling the whole profile walk. */
+            let username = m && m[1] ? m[1] : '';
+            if (username) {
+                try { username = decodeURIComponent(username); } catch (e) { console.debug('Forums++: redgifs username kept raw:', e && e.message); }
+            }
 
             if (!username) {
                 return null;
@@ -6173,20 +6236,27 @@ const resolvers = [
                     const s = String(txt || '');
                     if (!s) return out;
 
+                    /* v1.13.7 (13b-F13): the slug is page-sourced text — escape
+                     * it before RegExp interpolation; a slug carrying regex
+                     * metachars threw SyntaxError in the constructor and the
+                     * ladder dropped the file. The isTokenUrl string compare
+                     * below stays raw (plain substring, no regex). */
+                    const slugRe = String(slug || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
                     // 1) Quick regex for an absolute token URL (plain or JSON-escaped).
-                    const rePlain = new RegExp(`https?:\/\/[^"'\s]+\/api\/file\/d\/${slug}\?[^"'\s]*token=[^"'\s]+`, 'i');
+                    const rePlain = new RegExp(`https?:\/\/[^"'\s]+\/api\/file\/d\/${slugRe}\?[^"'\s]*token=[^"'\s]+`, 'i');
                     let m = s.match(rePlain);
                     if (m && m[0]) out.direct = m[0];
 
                     if (!out.direct) {
-                        const reEsc = new RegExp(`https?:\\\/\\\/[^"\s]+\\\/api\\\/file\\\/d\\\/${slug}\\\?[^"\s]*token=[^"\s]+`, 'i');
+                        const reEsc = new RegExp(`https?:\\\/\\\/[^"\s]+\\\/api\\\/file\\\/d\\\/${slugRe}\\\?[^"\s]*token=[^"\s]+`, 'i');
                         m = s.match(reEsc);
                         if (m && m[0]) out.direct = m[0].replace(/\\\//g, '/');
                     }
 
                     // 2) Relative token URL.
                     if (!out.direct) {
-                        const reRel = new RegExp(`\/api\/file\/d\/${slug}\?[^"'\s]*token=[^"'\s]+`, 'i');
+                        const reRel = new RegExp(`\/api\/file\/d\/${slugRe}\?[^"'\s]*token=[^"'\s]+`, 'i');
                         m = s.match(reRel);
                         if (m && m[0]) out.direct = `${apiBaseDefault}${m[0]}`;
                     }
@@ -6743,7 +6813,12 @@ const ThreadCache = (() => {
      */
     const getCachedThreadData = async (threadId) => {
         const cachedData = await GM_getValue(`${CACHE_KEY_PREFIX}${threadId}`, {});
-        return cachedData;
+        /* v1.13.7 (13a-F15): shape guard — a string-shaped store (manager
+         * coercion or a hand edit) made every `cachedData[page] = posts`
+         * write a silent no-op through this non-strict file (property set
+         * on a transient String wrapper). Re-seed empty instead of
+         * silently freezing the cache. */
+        return (cachedData && typeof cachedData === 'object' && !Array.isArray(cachedData)) ? cachedData : {};
     };
 
     /**
@@ -6859,7 +6934,15 @@ const ThreadCache = (() => {
             });
 
             const cachedData = await getCachedThreadData(threadId);
-            cachedData[currentPageNumber] = currentPosts; // Always update current page
+            /* v1.13.7 (13a-F04): the 7d-F07 truthiness class, armed on the
+             * WRITE side — a CF interstitial or logged-out view parsed the
+             * current page to zero posts and the empty array was cached
+             * unconditionally; the `!cachedData[pageNum]` refetch guard
+             * treats [] as cached, freezing that page at 0 posts forever.
+             * Never store an empty current page over anything. */
+            if (currentPosts.length) {
+                cachedData[currentPageNumber] = currentPosts;
+            }
             await setCachedThreadData(threadId, cachedData);
 
             // Asynchronously cache surrounding pages
@@ -7110,7 +7193,12 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
             // This is a simplification; a more robust solution would be to resolve filename during actual download for more accuracy.
             if (r.host.name === 'Bunkr') {
                 // Heuristic for bunkr, assume last part of path is the effective ID, we won't know the exact filename until headers.
-                potentialBasename = r.url.split('/').pop()?.split('?')[0].split('#')[0] ?? potentialBasename;
+                /* v1.13.7 (13b-F11): h.basename strips the trailing slash —
+                 * a slash-terminated bunkr URL made the old split-pop yield
+                 * '' (non-null, so the ?? never fired): every resource after
+                 * the first shared the '' dedup key and was falsely dropped
+                 * as a duplicate. */
+                potentialBasename = h.basename(String(r.url).split('?')[0].split('#')[0]) || potentialBasename;
             }
 
             if (!seenBasenames.has(potentialBasename.toLowerCase())) {
@@ -7343,7 +7431,16 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                 if (resource.url.includes('https://simpcity.su/attachments/')) {
                     basename = basename.replace(/(.*)-(.{3,4})\.\d*$/i, '$1.$2');
                 } else if (resource.url.includes('kemono.su') || resource.url.includes('kemono.cr')) {
-                    basename = basename.replace(/(.*)\?f=(.*)/, '$2').replace('%20', ' ');
+                    /* v1.13.7 (13b-F03): the ?f= recovery reads the ORIGINAL
+                     * url — the generic arm above already stripped the query
+                     * from the basename, so the old regex could never match
+                     * (dead since 1.11.x; kemono files saved under UUID
+                     * names). searchParams decodes percent-encoding properly
+                     * (the old '%20' replace was single-instance). */
+                    try {
+                        const fParam = new URL(resource.url).searchParams.get('f');
+                        if (fParam) basename = fParam;
+                    } catch (e) { console.debug('Forums++: kemono ?f= recovery skipped:', e && e.message); }
                 } else if (resource.url.includes('cyberdrop')) {
                     const hint = cyberdropNameByUrl.get(resource.url);
                     if (hint) {
