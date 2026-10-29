@@ -7,7 +7,17 @@
 > three Anti-* ICC scripts folded into Akasha Silence at merge; Zai Exporter
 > arrived later), 9 BETA promotions (Stream Interceptor v1.3.0; Forum Link
 > Xtractor's second candidate promotion), 3 merges (Akasha Silence), 38
-> dist installables at 117,806 lines (the WO-01 round-11
+> dist installables at 118,284 lines (the WO-01 round-12
+> two-field-report settlement — 8 canon bumps: Instagram++ v13.2.3 →
+> v13.2.4 (THE NATIVE RETIREMENT VEIL — the opaque wall + the #ares-veil
+> body retirement + the SHOW FEED toggle + the operator-directed button
+> renames + the data-driven DOWNLOAD ALL grid artifact + the bounded
+> body-phase transport), Hailuo++ v6.1.2 → v6.2.0 (THE BLOB SANITIZER —
+> the Windows-1252-then-UTF-8 double-encoding repair at both vault
+> boundaries, proven lossless on both operator attack samples), MAM
+> v2.0.2 → v2.0.3, serviceguard Companion v7.4.1 → v7.4.2, Recon v9.1.1
+> → v9.1.2, Zai Exporter v1.0.0 → v1.0.1, AlwaysNewWindow v1.0.2 →
+> v1.0.3, LFA v2.0.9 → v2.0.10 — over the WO-01 round-11
 > operator-battery settlement — 11 canon bumps over the operator's first
 > real paste-back: Forums++ v1.13.5 → v1.13.6 (the OBI-F01 settle-callback
 > fix), Akasha v5.2.4 → v5.2.5 (the OBI-F02 cross-origin guards), Gofile++

@@ -1,7 +1,7 @@
 {
     "operatorBattery": "1.0.0",
-    "suiteRound": "v1.16.0",
-    "authoredAgainst": "9a18c04",
+    "suiteRound": "v1.19.0",
+    "authoredAgainst": "bad84e6",
     "purpose": "The operator-side regression battery: every verification the machine gate cannot make — live site behavior, real browsers, real userscript managers, real network endpoints. The machine certifies this manifest is well-formed and aimed at living code (anchor liveness, version stamps, residual coverage); the OPERATOR certifies the code works by running the checklist in documentation/operator-battery/README.md and pasting the report back. BLOCKED is a first-class state (network/ToS/transient conditions) — honest states, never silent.",
     "conventions": {
         "install": "Install dist/ files via the raw-GitHub URLs in inventory.json (https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/<name>.user.js).",
@@ -1408,7 +1408,7 @@
             "family": "hailuo-live-capture",
             "title": "DOM stalker vault capture: bay thumbnail within ~2s of the first queued node",
             "script": "4ndr0tools - Hailuo++.user.js",
-            "scriptVersion": "6.1.2",
+            "scriptVersion": "6.2.0",
             "anchors": [
                 {
                     "file": "canon/_promoted/4ndr0tools - Hailuo++.user.js",
@@ -1416,7 +1416,7 @@
                         "Asset captured into bay",
                         "Interception platform armed"
                     ],
-                    "atVersion": "6.1.2"
+                    "atVersion": "6.2.0"
                 }
             ],
             "env": {
@@ -1469,14 +1469,14 @@
             "family": "hailuo-live-capture",
             "title": "canvas toDataURL/toBlob commit hooks capture (96x96px+ and 4KB+ floors, sha256 dedup)",
             "script": "4ndr0tools - Hailuo++.user.js",
-            "scriptVersion": "6.1.2",
+            "scriptVersion": "6.2.0",
             "anchors": [
                 {
                     "file": "canon/_promoted/4ndr0tools - Hailuo++.user.js",
                     "mustContain": [
                         "Canvas commit captured"
                     ],
-                    "atVersion": "6.1.2"
+                    "atVersion": "6.2.0"
                 }
             ],
             "env": {
@@ -1528,14 +1528,14 @@
             "family": "hailuo-live-capture",
             "title": "blob: bay admission + createObjectURL clone registry (playable preview, zero-network SAVE)",
             "script": "4ndr0tools - Hailuo++.user.js",
-            "scriptVersion": "6.1.2",
+            "scriptVersion": "6.2.0",
             "anchors": [
                 {
                     "file": "canon/_promoted/4ndr0tools - Hailuo++.user.js",
                     "mustContain": [
                         "isBlobLike"
                     ],
-                    "atVersion": "6.1.2"
+                    "atVersion": "6.2.0"
                 }
             ],
             "env": {
@@ -1581,7 +1581,7 @@
             "family": "hailuo-live-capture",
             "title": "SAVE: native mint, no double charge, bay entry survives repeated SAVEs + Save All",
             "script": "4ndr0tools - Hailuo++.user.js",
-            "scriptVersion": "6.1.2",
+            "scriptVersion": "6.2.0",
             "anchors": [
                 {
                     "file": "canon/_promoted/4ndr0tools - Hailuo++.user.js",
@@ -1589,7 +1589,7 @@
                         "nativeCreateObjectURL",
                         "Save All directive accepted"
                     ],
-                    "atVersion": "6.1.2"
+                    "atVersion": "6.2.0"
                 }
             ],
             "env": {
@@ -1646,14 +1646,14 @@
             "family": "hailuo-live-capture",
             "title": "hover preview plays; the session window never navigates",
             "script": "4ndr0tools - Hailuo++.user.js",
-            "scriptVersion": "6.1.2",
+            "scriptVersion": "6.2.0",
             "anchors": [
                 {
                     "file": "canon/_promoted/4ndr0tools - Hailuo++.user.js",
                     "mustContain": [
                         "showBayHoverPreview"
                     ],
-                    "atVersion": "6.1.2"
+                    "atVersion": "6.2.0"
                 }
             ],
             "env": {
@@ -1695,14 +1695,14 @@
             "family": "hailuo-live-capture",
             "title": "byte-budget eviction: oldest drops, live captures survive, page media keeps working",
             "script": "4ndr0tools - Hailuo++.user.js",
-            "scriptVersion": "6.1.2",
+            "scriptVersion": "6.2.0",
             "anchors": [
                 {
                     "file": "canon/_promoted/4ndr0tools - Hailuo++.user.js",
                     "mustContain": [
                         "byte budget exceeded"
                     ],
-                    "atVersion": "6.1.2"
+                    "atVersion": "6.2.0"
                 }
             ],
             "env": {
@@ -1752,7 +1752,7 @@
             "family": "hailuo-live-capture",
             "title": "EXPIRED re-mint escalation: badge, working re-mint, single budget charge",
             "script": "4ndr0tools - Hailuo++.user.js",
-            "scriptVersion": "6.1.2",
+            "scriptVersion": "6.2.0",
             "anchors": [
                 {
                     "file": "canon/_promoted/4ndr0tools - Hailuo++.user.js",
@@ -1760,7 +1760,7 @@
                         "remintCloneUrl",
                         "EXPIRED"
                     ],
-                    "atVersion": "6.1.2"
+                    "atVersion": "6.2.0"
                 }
             ],
             "env": {
@@ -1811,14 +1811,14 @@
             "family": "hailuo-live-capture",
             "title": "bay persistence across reload (last 60; blob: excluded on BOTH write and restore)",
             "script": "4ndr0tools - Hailuo++.user.js",
-            "scriptVersion": "6.1.2",
+            "scriptVersion": "6.2.0",
             "anchors": [
                 {
                     "file": "canon/_promoted/4ndr0tools - Hailuo++.user.js",
                     "mustContain": [
                         "Asset bay persisted snapshot"
                     ],
-                    "atVersion": "6.1.2"
+                    "atVersion": "6.2.0"
                 }
             ],
             "env": {
@@ -1859,14 +1859,14 @@
             "family": "hailuo-live-capture",
             "title": "HUD boot + self-heal health (Ctrl+Alt+H, collapse, 60s watchdog)",
             "script": "4ndr0tools - Hailuo++.user.js",
-            "scriptVersion": "6.1.2",
+            "scriptVersion": "6.2.0",
             "anchors": [
                 {
                     "file": "canon/_promoted/4ndr0tools - Hailuo++.user.js",
                     "mustContain": [
                         "ensureHudIntegrity"
                     ],
-                    "atVersion": "6.1.2"
+                    "atVersion": "6.2.0"
                 }
             ],
             "env": {
@@ -2279,7 +2279,7 @@
             "family": "instagram-ares",
             "title": "ARES wall harvest: wall opens, entries present, BUFFERED at most 500",
             "script": "4ndr0tools - Instagram++.user.js",
-            "scriptVersion": "13.2.3",
+            "scriptVersion": "13.2.4",
             "anchors": [
                 {
                     "file": "canon/_sovereign/4ndr0tools - Instagram++.user.js",
@@ -2288,7 +2288,7 @@
                         "BUFFERED:",
                         "ARES-9"
                     ],
-                    "atVersion": "13.2.3"
+                    "atVersion": "13.2.4"
                 }
             ],
             "env": {
@@ -2502,7 +2502,7 @@
                     "mustContain": [
                         "toDataURL"
                     ],
-                    "atVersion": "6.1.2"
+                    "atVersion": "6.2.0"
                 }
             ],
             "env": {

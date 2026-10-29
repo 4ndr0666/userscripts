@@ -1,12 +1,14 @@
 # 4ndr0tools - Hailuo++ (GUP v5.3 Revision)
 
-> **⚠ HISTORICAL DEVLOG — v5.3.0 arc.** This document is the preserved engineering record of the v5.3.0 development cycle; the devlog body below is kept intact as history. The **current shipped script is v6.1.2**, built from `canon/_promoted/4ndr0tools - Hailuo++.user.js` into **`dist/4ndr0tools - Hailuo++.user.js`** — see [`documentation/INDEX.md`](../INDEX.md) for the live reference. Filenames, version stamps and verification steps below refer to the historical v5.3.0 deliverable, not the current release.
+> **⚠ HISTORICAL DEVLOG — v5.3.0 arc.** This document is the preserved engineering record of the v5.3.0 development cycle; the devlog body below is kept intact as history. The **current shipped script is v6.2.0**, built from `canon/_promoted/4ndr0tools - Hailuo++.user.js` into **`dist/4ndr0tools - Hailuo++.user.js`** — see [`documentation/INDEX.md`](../INDEX.md) for the live reference. Filenames, version stamps and verification steps below refer to the historical v5.3.0 deliverable, not the current release.
 
 > **v6.1.0 addendum (WO-01 round 6):** the current release arms a document-start interception platform — `URL.createObjectURL` blob-clone vault fortification, `HTMLCanvasElement` `toDataURL`/`toBlob` commit hooks, and an `<a>`/`<img>`/`<video>` DOM stalker feeding the bay. Blob-backed bay items now survive page-side URL revocation (SAVE serves the vault clone with zero network; dead thumbnails re-mint from it). The v5.3.0-era "session-scoped bay" residual below now applies to http CDN references only.
 
 > **v6.1.1 addendum (WO-01 round 7):** the interception platform's own audit pass — the baseline sweep for late arming actually enqueues the existing DOM (it was a no-op), the stalker observes attribute-only src/href mutations, the clone registry honors a 224 MiB aggregate byte budget and revokes self-minted URLs on eviction, canvas hash commits only after the vault admission, blob admission is duck-typed (cross-realm safe), SAVE filenames derive extensions from the serving clone's MIME, and the page telemetry listeners are debug-gated observe-only.
 
 > **v6.1.2 addendum (WO-01 round 8; truth note added round 9):** the platform's budget accounting made honest — the SAVE arm mints its object URL through the saved **native** `createObjectURL` (a SAVE previously minted through our own wrap, charging the 224 MiB clone-registry budget a dead page-owned double entry that evicted live captures prematurely), a re-mint retires the old entry's byte charge when it registers the fresh URL, and the HUD's GM_info-less fallback literal re-syncs with the release header. **Truth note (round-9 audit, 9a F03):** the 6.1.2 commit also claimed the 2 s max-latency sweep floor now "anchors at ENQUEUE time" — that hunk is belt-and-braces for the non-debounce path only: the debounce path still resets the floor after every sweep, so alternating quiet/churn phases grant each quiet-separated burst its own 2 s window (per-queue semantics, accepted and now documented). The observable contract is "≤2 s after the first queued node of each quiet-separated burst", not "≤2 s after a long-lived queue's birth" under sustained churn.
+>
+> **v6.2.0 addendum (WO-01 round 12): THE BLOB SANITIZER — the "blob decryption" field report, corrected for real.** The record amended honestly: rounds 6-8 verified the interception platform's hook mechanics but never the BYTES of a saved file. The operator's round-5 AND round-12 attack samples are both **Windows-1252-then-UTF-8 double-encoded JPEGs** — the site's own pipeline decodes the original binary as Windows-1252 (bytes 0x80-0x9F become the 27 cp1252 punctuation/Latin-extended code points; `ff d8 ff e0` became `c3 bf c3 98 c3 bf c3 a0`) and UTF-8-re-encodes the result; the vault cloned those blobs faithfully, so SAVE delivered unreadable "encrypted-looking" files end-to-end. The sanitizer closes the loop at every boundary we own: **detect** (the raw head misses every known media magic; a fatal-UTF-8 decode succeeds — stream mode, so a boundary cut through a multi-byte pair is not a reject; the cp1252 reverse-mapped char codes DO match a magic), **repair** (the whole payload decodes the same way; the reverse map becomes bytes; a new Blob re-wraps them with the magic's MIME — the extension is right too), **wire-in** (the `createObjectURL` wrap repairs the registry entry asynchronously after the page's URL is served — page semantics untouched; SAVE sanitizes whatever payload it resolved — vault clone or network bytes — before filename/mint). Proven live on both operator samples: full forward-roundtrip closure byte-identical (228,347→146,370 B and 102,736→65,114 B; the repaired JPEG renders), and the family-fixture battery executes the shipped sanitizer against the byte-embedded real sample head on every gate run. Every failure path returns the original blob untouched — the sanitizer can never make a clean blob worse.
 
 ## Deliverable
 
@@ -39,17 +41,17 @@ On `/agent`, assets are plain `cdn.hailuoai.video` images with no rendered downl
 
 ## Install
 
-> **Current release:** install **`dist/4ndr0tools - Hailuo++.user.js`** (v6.1.2) — see [INDEX.md](../INDEX.md). The steps below are the **historical v5.3.0** procedure, retained as part of the devlog record.
+> **Current release:** install **`dist/4ndr0tools - Hailuo++.user.js`** (v6.2.0) — see [INDEX.md](../INDEX.md). The steps below are the **historical v5.3.0** procedure, retained as part of the devlog record.
 
 1. Open the Tampermonkey dashboard.
 2. If a previous version is installed, open it in the editor, select-all, replace with this file's contents, and save (preserves your GM_setValue state). Otherwise create a new script from this file.
-3. Navigate to `https://hailuoai.video/agent` — the HUD should boot; first console line ends with `Build 5.3.0.` (historical v5.3.0 build stamp; the current v6.1.2 release reports its own version).
+3. Navigate to `https://hailuoai.video/agent` — the HUD should boot; first console line ends with `Build 5.3.0.` (historical v5.3.0 build stamp; the current v6.2.0 release reports its own version).
 
 > If Tampermonkey asks once about cross-domain requests, allow it — the header already declares `@connect cdn.hailuoai.video` (+ sibling hosts) so blob downloads run without further prompts.
 
 ## What to verify while testing
 
-> Version checks below describe the historical v5.3.0 build; for the current release verify `@version 6.1.2` in `dist/4ndr0tools - Hailuo++.user.js`.
+> Version checks below describe the historical v5.3.0 build; for the current release verify `@version 6.2.0` in `dist/4ndr0tools - Hailuo++.user.js`.
 
 - **Version stamp**: first console line ends `Build 5.3.0.`; HUD footer shows `v5.3.0`.
 - **On /agent**: generate an image → the Asset Bay bar appears with a thumbnail + flash; click the thumbnail → new window (session untouched); hover → enlarged preview; expand → SAVE downloads a real file (`hailuo-<name>-<timestamp>.<ext>`); COPY puts the CDN URL on your clipboard.

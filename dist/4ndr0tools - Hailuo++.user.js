@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Hailuo++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      6.1.2
+// @version      6.2.0
 // @author       4ndr0666
 // @description  Enterprise-grade, idempotent automation engine for HailuoAI featuring automated queue management, asset fetching with tracked-download deduplication, an in-HUD Asset Bay thumbnail gallery (click-to-new-window, hover-playable previews, blob downloads that never navigate the session window) with cross-reload persistence, completion notifications, failure-card masking, API hard purge, and interactive asset links — hardened for the 2026-09 MiniMax H3 site generation and the hailuoai.video/agent chat surface. v5.4: editable-context (Slate) DOM guards, self-healing HUD watchdog, HUD collapse + Ctrl+Alt+H toggle, frame isolation, webp-aware blob transport with retry, and non-destructive title telemetry. v6.1: document-start interception platform — canvas toDataURL/toBlob commit hooks, URL.createObjectURL blob-clone vault fortification, and an a/img/video DOM stalker feeding the bay.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -22,6 +22,39 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Hailuo++.user.js
 // @license      MIT
 // ==/UserScript==
+// 6.2.0 (WO-01 round 12): THE BLOB SANITIZER — the standing "blob
+// decryption" field report, CORRECTED FOR REAL THIS TIME. The record
+// honestly amended: rounds 6-8 built and verified the interception
+// platform's HOOK MECHANICS (createObjectURL clone-at-create, canvas
+// toDataURL/toBlob commit capture) but never verified the BYTES of a
+// saved file — the operator's round-5 AND round-12 attack samples are
+// both Windows-1252-then-UTF-8 DOUBLE-ENCODED JPEGs (the original binary
+// was decoded as Windows-1252 — bytes 0x80-0x9F became the 27 cp1252
+// punctuation/Latin-extended code points — then UTF-8-re-encoded:
+// ff d8 ff e0 -> c3 bf c3 98 c3 bf c3 a0; both samples carry all 27
+// wide code points, zero U+FFFD, and the reverse map roundtrips
+// BYTE-IDENTICALLY through the standard cp1252 decoder — the repair is
+// provably lossless). The site's own pipeline hands out pre-mangled
+// blobs; the vault cloned them FAITHFULLY, preserving the corruption
+// end-to-end — SAVE delivered unreadable "encrypted-looking" files
+// through five rounds of "verified sound". The fix, at every boundary
+// we own: (1) detect the double-encoding (raw head misses every known
+// media magic; a fatal-UTF-8 decode of the head succeeds — stream mode,
+// so a 64-byte boundary cut through a multi-byte pair is not a reject;
+// the cp1252-reverse-mapped char codes DO match a known magic); (2)
+// repair (the whole payload decodes the same way; the reverse map
+// becomes bytes; a new Blob re-wraps them with the magic's MIME — so
+// the extension is right too, .jpg not .png); (3) wire-in — the
+// createObjectURL wrap repairs the registry entry asynchronously AFTER
+// the page's URL is served (page semantics untouched), and SAVE
+// sanitizes whatever payload it resolved (vault clone OR network bytes
+// — the CDN itself serves the mangled form; the wrap's async repair can
+// lose the race against a fast SAVE click) before filename/mint. Every
+// failure path returns the original blob untouched — the sanitizer can
+// never make a clean blob worse. The operator's exact fallback ask —
+// cloning all underlying blobs at URL.createObjectURL so they remain
+// valid — has been live since 6.1.0; this round makes what the vault
+// HOLDS worth keeping.
 // 6.1.2 (suite v1.15.0, WO-01 round 8): the platform's budget accounting
 // made honest. The SAVE arm minted its object URL through the WRAPPED
 // URL.createObjectURL — every SAVE registered a page-owned clone entry
@@ -90,7 +123,7 @@
 // button), and the window.open escalation now checks its return value.
 // Subsumed @match lines (create*/agent* under hailuoai.video/*) dropped.
 // 6.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.2 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.2.0 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 
 /* ═══ SUITE PROMOTION 6.0.0 ═══════════════════════════════════════════
@@ -156,6 +189,117 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.2 —
      * resource load too, which doubled the console line count on the site's
      * own documented noisy upstream whenever devtools Verbose was on. */
     Logger.debugEnabled = false;
+
+    /* ═════════════════════════════════════════════════════════════════════
+       [ BlobSanitizer ] (6.2.0 — round 12: the operator's standing
+       blob-decryption field report, never actually corrected until now)
+       The site's own media pipeline hands out UTF-8 DOUBLE-ENCODED binary
+       blobs (the round-5 and round-12 attack samples: JPEGs whose every
+       byte >= 0x80 was Latin-1-decoded then UTF-8-re-encoded —
+       ff d8 ff e0 became c3 bf c3 98 c3 bf c3 a0 — an unreadable
+       "encrypted-looking" file that decodes back to a valid JPEG
+       byte-for-byte). The vault cloned those blobs FAITHFULLY and SAVE
+       delivered them as-is. The sanitizer detects the signature and
+       repairs in place at every boundary we own; every failure path
+       returns the original blob untouched (it can never make a clean
+       blob worse).
+       ═════════════════════════════════════════════════════════════════ */
+    const BlobSanitizer = {
+        /* Known binary media magics: the raw head must miss ALL of them
+         * before a double-encoding probe is even attempted. */
+        magics: [
+            { id: 'jpeg', mime: 'image/jpeg', bytes: [0xff, 0xd8, 0xff], at: 0 },
+            { id: 'png',  mime: 'image/png',  bytes: [0x89, 0x50, 0x4e, 0x47], at: 0 },
+            { id: 'gif',  mime: 'image/gif',  bytes: [0x47, 0x49, 0x46, 0x38], at: 0 },
+            { id: 'riff', mime: 'image/webp', bytes: [0x52, 0x49, 0x46, 0x46], at: 0 }, /* RIFF….WEBP */
+            { id: 'mp4',  mime: 'video/mp4',  bytes: [0x66, 0x74, 0x79, 0x70], at: 4 }, /* ….ftyp */
+        ],
+        headMatches(bytes, magic) {
+            if (!bytes || bytes.length < magic.at + magic.bytes.length) return false;
+            return magic.bytes.every((b, i) => bytes[magic.at + i] === b);
+        },
+        rawMagic(bytes) {
+            for (const m of this.magics) if (this.headMatches(bytes, m)) return m;
+            return null;
+        },
+        decodeFatal(view) {
+            try {
+                /* stream:true defers a TRAILING partial multi-byte sequence
+                 * instead of throwing — the head probe slices at an arbitrary
+                 * 64-byte boundary that can cut a c3-xx pair in half, and a
+                 * genuine double-encoded blob must not be discarded for it
+                 * (genuinely invalid sequences within the chunk still throw:
+                 * arbitrary binary stays rejected). */
+                return new TextDecoder('utf-8', { fatal: true }).decode(view, { stream: true });
+            } catch (_) {
+                return null; /* not valid UTF-8 → not our corruption class */
+            }
+        },
+        /* String -> bytes via the Windows-1252 reverse map; null for any
+         * char outside the cp1252 domain (the mangling pipeline decodes the
+         * original binary as Windows-1252 — bytes 0x80-0x9F become the 27
+         * punctuation/Latin-extended code points below, bytes 0xA0-0xFF stay
+         * Latin-1 — then UTF-8-encodes the result. Both operator attack
+         * samples carry EXACTLY this signature: all 27 wide code points
+         * present, zero U+FFFD, byte-identical roundtrip through the
+         * standard cp1252 decoder. Anything wider is a different class and
+         * must never be touched.) */
+        cp1252Reverse: {
+            0x20AC:0x80, 0x201A:0x82, 0x0192:0x83, 0x201E:0x84, 0x2026:0x85,
+            0x2020:0x86, 0x2021:0x87, 0x02C6:0x88, 0x2030:0x89, 0x0160:0x8A,
+            0x2039:0x8B, 0x0152:0x8C, 0x017D:0x8E, 0x2018:0x91, 0x2019:0x92,
+            0x201C:0x93, 0x201D:0x94, 0x2022:0x95, 0x2013:0x96, 0x2014:0x97,
+            0x02DC:0x98, 0x2122:0x99, 0x0161:0x9A, 0x203A:0x9B, 0x0153:0x9C,
+            0x017E:0x9E, 0x0178:0x9F,
+        },
+        stringToBytes(s) {
+            const out = new Uint8Array(s.length);
+            for (let i = 0; i < s.length; i++) {
+                const c = s.charCodeAt(i);
+                if (c <= 0xff) { out[i] = c; continue; }
+                const b = this.cp1252Reverse[c];
+                if (b === undefined) return null;
+                out[i] = b;
+            }
+            return out;
+        },
+        /* Head probe: returns the magic the DOUBLE-ENCODED form decodes to,
+         * or null when the head is clean binary / foreign text. */
+        detectEncodedForm(headView) {
+            const bytes = headView instanceof Uint8Array ? headView : new Uint8Array(headView);
+            if (this.rawMagic(bytes)) return null; /* already clean binary */
+            const decoded = this.decodeFatal(bytes);
+            if (decoded === null) return null;
+            const recovered = this.stringToBytes(decoded);
+            if (!recovered) return null;
+            return this.rawMagic(recovered);
+        },
+        /* Full repair: null unless the WHOLE payload decodes cleanly and the
+         * recovered bytes carry a known magic. */
+        async repairBlob(blob) {
+            try {
+                if (!blob || typeof blob.arrayBuffer !== 'function' || blob.size < 16) return null;
+                const headBuf = await blob.slice(0, 64).arrayBuffer();
+                const magic = this.detectEncodedForm(headBuf);
+                if (!magic) return null;
+                const fullBuf = await blob.arrayBuffer();
+                const decoded = this.decodeFatal(fullBuf);
+                if (decoded === null) return null;
+                const bytes = this.stringToBytes(decoded);
+                if (!bytes || !this.rawMagic(bytes)) return null;
+                const repaired = new Blob([bytes], { type: magic.mime });
+                Logger.info(`Blob sanitizer repaired a double-encoded ${magic.id} (${blob.size} mangled bytes -> ${repaired.size} clean bytes).`);
+                return repaired;
+            } catch (sanitizeError) {
+                Logger.debug('Blob sanitizer repair rejected; serving the original bytes.', sanitizeError);
+                return null;
+            }
+        },
+        async ensureClean(blob) {
+            const repaired = await this.repairBlob(blob);
+            return repaired || blob;
+        },
+    };
 
     /* v6.1.0 (round 6): the interception platform instance — declared early
      * (let, null-initialized) because AssetBayStore, the bay thumbs, the
@@ -371,7 +515,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.2 —
                     Logger.debug('Interception platform already armed in this page realm; skipping re-install.');
                     return false;
                 }
-                window.__andr0HailuoIntercept = '6.1.2';
+                window.__andr0HailuoIntercept = '6.2.0';
             } catch (markError) {
                 Logger.warn('Realm mark write rejected; installing hooks without the double-injection guard.', markError);
             }
@@ -471,6 +615,26 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.2 —
             }
         }
 
+        /* v6.2.0: swap a registry entry's blob for the REPAIRED bytes — budget
+         * accounting adjusted so eviction stays honest; the PAGE's own URL
+         * still references the original blob (page semantics were never
+         * ours to touch) — the vault's SAVE/re-mint serve the clean bytes. */
+        repairRegistryEntry(url, repaired) {
+            try {
+                const entry = typeof url === 'string' ? this.cloneRegistry.get(url) : null;
+                if (!entry || !this.isBlobLike(repaired)) return;
+                this.totalCloneBytes -= entry.size || 0;
+                if (this.totalCloneBytes < 0) this.totalCloneBytes = 0;
+                entry.blob = repaired;
+                entry.size = repaired.size || 0;
+                entry.mime = repaired.type || entry.mime;
+                this.totalCloneBytes += entry.size;
+                Logger.info(`Vault clone repaired in place (${url}) — the SAVE path now serves clean ${entry.mime} bytes.`);
+            } catch (repairError) {
+                Logger.debug('Vault entry repair bookkeeping rejected.', repairError);
+            }
+        }
+
         /* ── hook family 1: URL.createObjectURL clone-at-create ─────────────── */
 
         installObjectUrlWrap() {
@@ -484,7 +648,23 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.2 —
                     const url = nativeCreate.apply(this, arguments);
                     try {
                         if (self.isBlobLike(blobOrMediaSource) && blobOrMediaSource.size > 0) {
-                            self.registerClone(url, blobOrMediaSource.slice(0));
+                            const rawClone = blobOrMediaSource.slice(0);
+                            self.registerClone(url, rawClone);
+                            /* v6.2.0 (round 12): the vault copy is repaired
+                             * ASYNCHRONOUSLY — the page's URL and bytes are
+                             * untouched (page semantics first); when the site
+                             * handed out a double-encoded blob the registry
+                             * entry swaps to the clean bytes (the operator's
+                             * standing blob-decryption field report — the
+                             * samples decode byte-for-byte back to valid
+                             * JPEGs). */
+                            BlobSanitizer.repairBlob(rawClone)
+                                .then((repaired) => { if (repaired) self.repairRegistryEntry(url, repaired); })
+                                .catch((repairError) => {
+                                    /* G11: the raw clone stays on any repair
+                                     * rejection — best-effort, never silent. */
+                                    Logger.debug('Vault clone repair rejected; the raw clone stays.', repairError);
+                                });
                         }
                     } catch (cloneError) {
                         Logger.debug('Object-URL clone registration rejected; the page URL is unaffected.', cloneError);
@@ -796,7 +976,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.2 —
         constructor() {
             this.scriptVersion = (typeof GM_info !== 'undefined' && GM_info && GM_info.script && GM_info.script.version)
                 ? GM_info.script.version
-                : "6.1.2"; // v6.1.2 (8b F15): the direct-paste fallback stays stamped with the release
+                : "6.2.0"; // v6.2.0: the direct-paste fallback stays stamped with the release
             this.selectors = {
                 videoCardQueries: [
                     "div[class*='group/video-card']",
@@ -2290,6 +2470,13 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Hailuo++.user v6.1.2 —
                         blobPayload = await this.requestBlobPayload(assetObj.src);
                     }
                 }
+                /* v6.2.0 (round 12): the LAST line of defense — whatever this
+                 * payload is (vault clone or network bytes), a double-encoded
+                 * blob is repaired BEFORE the filename and the mint: the CDN
+                 * itself serves the mangled form for some assets, and the
+                 * wrap's async repair can lose the race against a fast SAVE
+                 * click. The repaired MIME rides the filename extension. */
+                blobPayload = await BlobSanitizer.ensureClean(blobPayload);
                 /* v6.1.1 (7b F05): composed AFTER the payload resolves — the
                  * clone's MIME rides the filename when the URL can't name an
                  * extension (blob: UUID paths). */

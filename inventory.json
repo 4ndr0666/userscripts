@@ -32,12 +32,12 @@
   {
    "file": "4ndr0tools - 4ndr0serviceguard Companion.user.js",
    "name": "4ndr0tools - 4ndr0serviceguard Companion",
-   "version": "7.4.1",
+   "version": "7.4.2",
    "description": "Stealth Service Worker / WebSocket / SharedWorker firewall companion for the 4ndr0serviceguard extension. Default-deny with a three-way action model: AUTHORIZE (real), SPOOF (pacified live-looking socket) or DENY (native-faithful failure). Whitelist authorizes, spooflist auto-spoofs silently, the blacklist is an absolute prohibition. Defers to the extension's Gatekeeper whenever the extension is present — and routes list edits to it through the extension's confirm bar. v7.4.0: survives sandboxed frames (opaque origins) — privileged APIs are captured defensively and the WebSocket gate still arms there. v7.4.1: harness/doc alignment with the post-release rename + the 2026-10-12 console-debrief classification (no behavior change).",
    "family": "privacy & security",
-   "sha256": "e1be0603b18f8066658764cf3785db4dc0dee1fce1443e33153fde7f61c2db8f",
-   "lines": 1288,
-   "bytes": 54805,
+   "sha256": "8ad2e97472e6784e7c367bda88874219743aa663770d731022fd87bcf800a57f",
+   "lines": 1304,
+   "bytes": 55731,
    "matches": [
     "*://*/*"
    ],
@@ -88,12 +88,12 @@
   {
    "file": "4ndr0tools - AlwaysNewWindow.user.js",
    "name": "4ndr0tools - AlwaysNewWindow",
-   "version": "1.0.2",
+   "version": "1.0.3",
    "description": "Open all links into new windows (optional force mode), auto-expand collapsed content, hide banners and consent overlays, neon-glow overlay scrollbar, and right-click scroll-to-top/bottom.",
    "family": "ux utilities",
-   "sha256": "8590d6851151bbb7f258042c65a0c2e714e08dfc8af93710a2233f25e2593ba5",
-   "lines": 1630,
-   "bytes": 74627,
+   "sha256": "fa61c1f919700c056751ef21e97fcc5d5c3e28040adf182c0c4aabc5b200ca9d",
+   "lines": 1643,
+   "bytes": 75683,
    "matches": [
     "*://*/*"
    ],
@@ -754,12 +754,12 @@
   {
    "file": "4ndr0tools - Hailuo++.user.js",
    "name": "4ndr0tools - Hailuo++",
-   "version": "6.1.2",
+   "version": "6.2.0",
    "description": "Enterprise-grade, idempotent automation engine for HailuoAI featuring automated queue management, asset fetching with tracked-download deduplication, an in-HUD Asset Bay thumbnail gallery (click-to-new-window, hover-playable previews, blob downloads that never navigate the session window) with cross-reload persistence, completion notifications, failure-card masking, API hard purge, and interactive asset links — hardened for the 2026-09 MiniMax H3 site generation and the hailuoai.video/agent chat surface. v5.4: editable-context (Slate) DOM guards, self-healing HUD watchdog, HUD collapse + Ctrl+Alt+H toggle, frame isolation, webp-aware blob transport with retry, and non-destructive title telemetry. v6.1: document-start interception platform — canvas toDataURL/toBlob commit hooks, URL.createObjectURL blob-clone vault fortification, and an a/img/video DOM stalker feeding the bay.",
    "family": "sovereign platforms",
-   "sha256": "683f901a5e5453cf9ceb6fd7abe0c3cae85d63e201a99fc6aa8dfba3991eb815",
-   "lines": 2561,
-   "bytes": 136503,
+   "sha256": "7c70545b20bd5e80e98fffff96be8e8a74661fef3e1eb641f3263eebc9b865f5",
+   "lines": 2748,
+   "bytes": 148048,
    "matches": [
     "https://hailuoai.com/video*",
     "https://hailuoai.video/*"
@@ -883,12 +883,12 @@
   {
    "file": "4ndr0tools - Instagram++.user.js",
    "name": "4ndr0tools - Instagram++",
-   "version": "13.2.3",
+   "version": "13.2.4",
    "description": "Tab-Bar + Dock Integration. Hotkey trigger (Alt+I). Ad-Blocking. Deep-Stack Recovery. Resilient cursor-based pagination. Stories support. Image/video download engine.",
    "family": "sovereign platforms",
-   "sha256": "7b51883bc2c481a47e2775abf4fa2913b77fedf8498fca436f9679c178305ed5",
-   "lines": 2597,
-   "bytes": 137139,
+   "sha256": "fe2eb8fad897b75c1b2de8235043087f2797b6c86977de57ee1f13a8b6dca8e1",
+   "lines": 2819,
+   "bytes": 152489,
    "matches": [
     "*://*.instagram.com/*"
    ],
@@ -963,12 +963,12 @@
   {
    "file": "4ndr0tools - Login Form Autofiller.user.js",
    "name": "4ndr0tools - Login Form Autofiller",
-   "version": "2.0.9",
+   "version": "2.0.10",
    "description": "It integrates BugMeNot into any login form (it retrieves all matching logins from bugmenot.com and autofills the login form)",
    "family": "ux utilities",
-   "sha256": "c1e7df26a3bfc08f5d28b7bf023052004d8c44f8a571a11c5b31096d9d733724",
-   "lines": 1030,
-   "bytes": 46406,
+   "sha256": "284e0ca83c19fc0863d3d32469264cb015b16e87b34b081d9fa9d98016219873",
+   "lines": 1059,
+   "bytes": 48481,
    "matches": [],
    "includes": [
     "http://*",
@@ -998,12 +998,12 @@
   {
    "file": "4ndr0tools - Maximize_Any_Media.user.js",
    "name": "4ndr0tools - Maximize_Any_Media",
-   "version": "2.0.2",
+   "version": "2.0.3",
    "description": "Maximize + Pip controls to any media anywhere - video, images, embedded and shadow-DOM players, on any site. 3lectric-Glass spec. Ψ",
    "family": "video & players",
-   "sha256": "b6ef42fbc8c87f7f1c896e61e2fe112b8dba2aa4d2eba6bd248259b62e0c383e",
-   "lines": 1244,
-   "bytes": 50886,
+   "sha256": "e05df57db59079fbad8487c804f28ea65bd54777bf426b02edf3b0916330ab70",
+   "lines": 1271,
+   "bytes": 52411,
    "matches": [],
    "includes": [
     "*"
@@ -1232,12 +1232,12 @@
   {
    "file": "4ndr0tools - Recon.user.js",
    "name": "4ndr0tools - Recon",
-   "version": "9.1.1",
+   "version": "9.1.2",
    "description": "Alt+Shift+R hotkey — unified forensic recon platform: hardened XHR/fetch/beacon interception through the suite's shared NetHook hub with MITM block & mute rules and failure pacification, console harvesting, WebSocket + postMessage bridge capture, JWT identity harvesting, headless C2 API (reconEngine / chimeraRecon / Hook) and a moveable Shadow-DOM glass dock with full markdown reporting. For security research only.",
    "family": "privacy & security",
-   "sha256": "7ed6137c9447bfe255d756b314e9329dac86ad64131dc7f47029d29d0b108ba0",
-   "lines": 2206,
-   "bytes": 123516,
+   "sha256": "77dd453e7b848faf780cd0e071ed201fabf68b7f6f5e194b9e980d56506565c0",
+   "lines": 2220,
+   "bytes": 124340,
    "matches": [
     "*://*/*"
    ],
@@ -1531,12 +1531,12 @@
   {
    "file": "4ndr0tools - Zai Exporter.user.js",
    "name": "4ndr0tools - Zai Exporter",
-   "version": "1.0.0",
+   "version": "1.0.1",
    "description": "One-click conversation exfiltration for the Z.ai GLM web chat — scrapes the live thread (multi-strategy, no network, no timers) and exports it as Markdown, JSON, or plain text, with metadata and Ψ glass console. Runs entirely page-side: zero privileged transports, zero observers, zero polling.",
    "family": "sovereign platforms",
-   "sha256": "21c3dff4273b289ef1fd4824d54e93991d3b3664be2a00cdbfd25acc7e2b6168",
-   "lines": 1110,
-   "bytes": 45769,
+   "sha256": "4ee5f20da311717e3ce73f7188f0f8e99a22286b40a9fc778cbc549ec1ec8a36",
+   "lines": 1122,
+   "bytes": 46495,
    "matches": [
     "https://chat.z.ai/*",
     "https://z.ai/*"
@@ -1687,5 +1687,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "8b97232331e57a3a155478c94b01432d03d0fd489473f611c28c498bc44841f3"
+ "digest": "21a6509c72dc70ae7eb47267eceae11831d14bc3825761be6b532b6010b6c9f8"
 }

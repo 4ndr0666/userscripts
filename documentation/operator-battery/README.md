@@ -1,4 +1,4 @@
-# Operator Regression Battery · suite 1.19.0
+# Operator Regression Battery · suite 1.20.0
 
 > 45 operator-side tests across 10 families — every verification the machine gate cannot make.
 > Manifest: `tools/operator-battery/manifest.json` (machine-checked: anchor liveness, version stamps, residual coverage). This checklist is its rendered form.
@@ -572,10 +572,10 @@
 
 ### HL-GEN-01
 
-**DOM stalker vault capture: bay thumbnail within ~2s of the first queued node** — `4ndr0tools - Hailuo++.user.js` v6.1.2 · provenance: r6 1e23e63 platform; r7 0d35f53 (7b F01/F04/F14); r8 9d82511 + the r9 9a-F03 truth note
+**DOM stalker vault capture: bay thumbnail within ~2s of the first queued node** — `4ndr0tools - Hailuo++.user.js` v6.2.0 · provenance: r6 1e23e63 platform; r7 0d35f53 (7b F01/F04/F14); r8 9d82511 + the r9 9a-F03 truth note
 
 - **Closes residual**: hailuo-live-capture
-- **Anchor**: canon/_promoted/4ndr0tools - Hailuo++.user.js @ 6.1.2 — `Asset captured into bay` — lines 1720 at render · `Interception platform armed` — lines 383 at render
+- **Anchor**: canon/_promoted/4ndr0tools - Hailuo++.user.js @ 6.2.0 — `Asset captured into bay` — lines 1896 at render · `Interception platform armed` — lines 527 at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: https://hailuoai.video/ logged-in with generation credits
 - **Prerequisites**: the HUD boots (Ctrl+Alt+H toggles visibility) · 'Auto Fetch Asset' is ON (sw-dl, runtimeSwitches.autoGrab; ALL SWITCHES DEFAULT OFF — the operator MUST enable it) · the console shows '[4ndr0tools][INFO] Interception platform armed' — if absent every HL test is BLOCKED at boot
 - **Risk**: download none (one generation credit, ~cents) · network your own account session · ToS own account
@@ -597,10 +597,10 @@
 
 ### HL-CAN-01
 
-**canvas toDataURL/toBlob commit hooks capture (96x96px+ and 4KB+ floors, sha256 dedup)** — `4ndr0tools - Hailuo++.user.js` v6.1.2 · provenance: the r6 operator directive item (3); r7 hash-after-admission
+**canvas toDataURL/toBlob commit hooks capture (96x96px+ and 4KB+ floors, sha256 dedup)** — `4ndr0tools - Hailuo++.user.js` v6.2.0 · provenance: the r6 operator directive item (3); r7 hash-after-admission
 
 - **Closes residual**: hailuo-live-capture
-- **Anchor**: canon/_promoted/4ndr0tools - Hailuo++.user.js @ 6.1.2 — `Canvas commit captured` — lines 597 at render
+- **Anchor**: canon/_promoted/4ndr0tools - Hailuo++.user.js @ 6.2.0 — `Canvas commit captured` — lines 773 at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: https://hailuoai.video/ agent chat
 - **Prerequisites**: Auto Fetch ON · ask for an image/diagram generation that renders on a canvas
 - **Risk**: download none · network own account · ToS own account
@@ -622,10 +622,10 @@
 
 ### HL-BLB-01
 
-**blob: bay admission + createObjectURL clone registry (playable preview, zero-network SAVE)** — `4ndr0tools - Hailuo++.user.js` v6.1.2 · provenance: r6 1e23e63; r7 0d35f53 duck-typing
+**blob: bay admission + createObjectURL clone registry (playable preview, zero-network SAVE)** — `4ndr0tools - Hailuo++.user.js` v6.2.0 · provenance: r6 1e23e63; r7 0d35f53 duck-typing
 
 - **Closes residual**: hailuo-live-capture
-- **Anchor**: canon/_promoted/4ndr0tools - Hailuo++.user.js @ 6.1.2 — `isBlobLike` — lines 393, 398, 486, 542 …+1 more at render
+- **Anchor**: canon/_promoted/4ndr0tools - Hailuo++.user.js @ 6.2.0 — `isBlobLike` — lines 537, 542, 625, 650 …+2 more at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: https://hailuoai.video/
 - **Prerequisites**: Auto Fetch ON · generate a video and let it complete (the player mints blob: URLs)
 - **Risk**: download none · network own account · ToS own account
@@ -646,10 +646,10 @@
 
 ### HL-SAV-01
 
-**SAVE: native mint, no double charge, bay entry survives repeated SAVEs + Save All** — `4ndr0tools - Hailuo++.user.js` v6.1.2 · provenance: r8 9d82511 (8b F05/F06/F15 — the flagship r8 Hailuo fix)
+**SAVE: native mint, no double charge, bay entry survives repeated SAVEs + Save All** — `4ndr0tools - Hailuo++.user.js` v6.2.0 · provenance: r8 9d82511 (8b F05/F06/F15 — the flagship r8 Hailuo fix)
 
 - **Closes residual**: hailuo-live-capture
-- **Anchor**: canon/_promoted/4ndr0tools - Hailuo++.user.js @ 6.1.2 — `nativeCreateObjectURL` — lines 355, 442, 444, 480 …+4 more at render · `Save All directive accepted` — lines 1598 at render
+- **Anchor**: canon/_promoted/4ndr0tools - Hailuo++.user.js @ 6.2.0 — `nativeCreateObjectURL` — lines 499, 586, 588, 644 …+4 more at render · `Save All directive accepted` — lines 1774 at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: https://hailuoai.video/
 - **Prerequisites**: a bay entry present (from HL-GEN/CAN/BLB)
 - **Risk**: download disk space for saved assets · network own account · ToS own account
@@ -672,10 +672,10 @@
 
 ### HL-HOV-01
 
-**hover preview plays; the session window never navigates** — `4ndr0tools - Hailuo++.user.js` v6.1.2 · provenance: v5.4-era feature, verified across r6-r8 audits
+**hover preview plays; the session window never navigates** — `4ndr0tools - Hailuo++.user.js` v6.2.0 · provenance: v5.4-era feature, verified across r6-r8 audits
 
 - **Closes residual**: hailuo-hud-hygiene-family-live
-- **Anchor**: canon/_promoted/4ndr0tools - Hailuo++.user.js @ 6.1.2 — `showBayHoverPreview` — lines 1841, 1846 at render
+- **Anchor**: canon/_promoted/4ndr0tools - Hailuo++.user.js @ 6.2.0 — `showBayHoverPreview` — lines 2017, 2022 at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: https://hailuoai.video/ with a bay entry
 - **Risk**: download none · network none · ToS none
 
@@ -694,10 +694,10 @@
 
 ### HL-EVC-01
 
-**byte-budget eviction: oldest drops, live captures survive, page media keeps working** — `4ndr0tools - Hailuo++.user.js` v6.1.2 · provenance: r7 0d35f53 (7b F02/F03)
+**byte-budget eviction: oldest drops, live captures survive, page media keeps working** — `4ndr0tools - Hailuo++.user.js` v6.2.0 · provenance: r7 0d35f53 (7b F02/F03)
 
 - **Closes residual**: hailuo-hud-hygiene-family-live
-- **Anchor**: canon/_promoted/4ndr0tools - Hailuo++.user.js @ 6.1.2 — `byte budget exceeded` — lines 423 at render
+- **Anchor**: canon/_promoted/4ndr0tools - Hailuo++.user.js @ 6.2.0 — `byte budget exceeded` — lines 567 at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: https://hailuoai.video/
 - **Prerequisites**: a heavy session (or rely on a long session's churn) until the 224 MiB budget is exceeded
 - **Risk**: download none · network heavy session on own account · ToS own account; watch RAM
@@ -718,10 +718,10 @@
 
 ### HL-EXP-01
 
-**EXPIRED re-mint escalation: badge, working re-mint, single budget charge** — `4ndr0tools - Hailuo++.user.js` v6.1.2 · provenance: r6 escalation; r7 remint-register-as-minted; r8 source retirement (9d82511)
+**EXPIRED re-mint escalation: badge, working re-mint, single budget charge** — `4ndr0tools - Hailuo++.user.js` v6.2.0 · provenance: r6 escalation; r7 remint-register-as-minted; r8 source retirement (9d82511)
 
 - **Closes residual**: hailuo-hud-hygiene-family-live
-- **Anchor**: canon/_promoted/4ndr0tools - Hailuo++.user.js @ 6.1.2 — `remintCloneUrl` — lines 440, 1785, 1895, 2324 at render · `EXPIRED` — lines 1250 at render
+- **Anchor**: canon/_promoted/4ndr0tools - Hailuo++.user.js @ 6.2.0 — `remintCloneUrl` — lines 584, 1961, 2071, 2507 at render · `EXPIRED` — lines 1426 at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: https://hailuoai.video/ with a captured CDN-URL asset
 - **Prerequisites**: simulate expiry: DevTools request-block the CDN host so the thumb errors (safe) — or keep the session open for hours
 - **Risk**: download none · network none (request-blocking simulation is safe) · ToS none
@@ -743,10 +743,10 @@
 
 ### HL-BAY-02
 
-**bay persistence across reload (last 60; blob: excluded on BOTH write and restore)** — `4ndr0tools - Hailuo++.user.js` v6.1.2 · provenance: v5.4 feature verified r6/r7 audits
+**bay persistence across reload (last 60; blob: excluded on BOTH write and restore)** — `4ndr0tools - Hailuo++.user.js` v6.2.0 · provenance: v5.4 feature verified r6/r7 audits
 
 - **Closes residual**: hailuo-hud-hygiene-family-live
-- **Anchor**: canon/_promoted/4ndr0tools - Hailuo++.user.js @ 6.1.2 — `Asset bay persisted snapshot` — lines 249 at render
+- **Anchor**: canon/_promoted/4ndr0tools - Hailuo++.user.js @ 6.2.0 — `Asset bay persisted snapshot` — lines 393 at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: https://hailuoai.video/ with captures
 - **Risk**: download none · network none · ToS none
 
@@ -764,10 +764,10 @@
 
 ### HL-SWB-01
 
-**HUD boot + self-heal health (Ctrl+Alt+H, collapse, 60s watchdog)** — `4ndr0tools - Hailuo++.user.js` v6.1.2 · provenance: standing; the 8b F15 fallback literal re-stamped 6.1.2
+**HUD boot + self-heal health (Ctrl+Alt+H, collapse, 60s watchdog)** — `4ndr0tools - Hailuo++.user.js` v6.2.0 · provenance: standing; the 8b F15 fallback literal re-stamped 6.1.2
 
 - **Closes residual**: hailuo-hud-hygiene-family-live
-- **Anchor**: canon/_promoted/4ndr0tools - Hailuo++.user.js @ 6.1.2 — `ensureHudIntegrity` — lines 1970, 1978 at render
+- **Anchor**: canon/_promoted/4ndr0tools - Hailuo++.user.js @ 6.2.0 — `ensureHudIntegrity` — lines 2146, 2154 at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: https://hailuoai.video/
 - **Risk**: download none · network none · ToS none
 
@@ -955,10 +955,10 @@
 
 ### IG-ARES-01
 
-**ARES wall harvest: wall opens, entries present, BUFFERED at most 500** — `4ndr0tools - Instagram++.user.js` v13.2.3 · provenance: 8c F03 — 03dccb2 (IG 13.2.3); the ARES family is long-standing
+**ARES wall harvest: wall opens, entries present, BUFFERED at most 500** — `4ndr0tools - Instagram++.user.js` v13.2.4 · provenance: 8c F03 — 03dccb2 (IG 13.2.3); the ARES family is long-standing
 
 - **Closes residual**: ig-ares-harvest
-- **Anchor**: canon/_sovereign/4ndr0tools - Instagram++.user.js @ 13.2.3 — `pendingItems` — lines 81, 334, 335, 609 …+5 more at render · `BUFFERED:` — lines 1185 at render · `ARES-9` — lines 93, 1106, 1254, 1269 …+2 more at render
+- **Anchor**: canon/_sovereign/4ndr0tools - Instagram++.user.js @ 13.2.4 — `pendingItems` — lines 139, 408, 409, 716 …+7 more at render · `BUFFERED:` — lines 1402 at render · `ARES-9` — lines 155, 1220, 1318, 1325 …+4 more at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: https://www.instagram.com/ logged-in
 - **Prerequisites**: scroll a feed/reels/profile for 1-2 minutes WITHOUT opening the wall (this accumulates pendingItems)
 - **Risk**: download none · network your own IG account; heavy scrolling mimics normal use · ToS moderate — authenticated DOM/wire as capture surface (the suite's standing stance)
@@ -1059,7 +1059,7 @@
 **Hailuo++ + Akasha Silence + Blob2URL on hailuoai.video: no double-canvas-hook crash** — `ALL` vsuite · provenance: the r6 2-c audit's co-install interference class — standing surface (FEATURE-MATRIX co-install domains)
 
 - **Closes residual**: cross-script-coinstall
-- **Anchor**: canon/_promoted/4ndr0tools - Hailuo++.user.js @ 6.1.2 — `toDataURL` — lines 6, 57, 80, 321 …+4 more at render
+- **Anchor**: canon/_promoted/4ndr0tools - Hailuo++.user.js @ 6.2.0 — `toDataURL` — lines 6, 29, 90, 113 …+5 more at render
 - **Environment**: chrome / tampermonkey-mv3 with AKS + B2U + HL all installed and enabled / sites: https://hailuoai.video/ logged in
 - **Risk**: download one generation · network own account · ToS own account
 
@@ -1111,7 +1111,7 @@
 ## Report back (paste this template, filled)
 
 ```markdown
-## OPERATOR BATTERY REPORT — suite 1.19.0 @ <git sha>
+## OPERATOR BATTERY REPORT — suite 1.20.0 @ <git sha>
 ENV: <browser + version> / <manager + version (MV3?)> / <OS> / dist @ <git sha> / date <YYYY-MM-DD>
 
 | test | status (PASS/FAIL/BLOCKED) | evidence (link/inline) | note (failure mode if FAIL/BLOCKED) |
@@ -1168,4 +1168,4 @@ FREE-FORM FINDINGS:
 
 ---
 
-*Rendered by `node tools/operator-battery.mjs render` — deterministic; re-render after any bump. The manifest is the source of truth; this doc is its operator-facing projection (residual map + anchor line refs included). Results ingested by `node tools/operator-battery.mjs ingest <report.md>` land in `tools/operator-battery/results.json` (adjudication ledger, expiry v1.20.0); a partial report needs `--partial`. UNTESTED is the ledger's default — never a report row.*
+*Rendered by `node tools/operator-battery.mjs render` — deterministic; re-render after any bump. The manifest is the source of truth; this doc is its operator-facing projection (residual map + anchor line refs included). Results ingested by `node tools/operator-battery.mjs ingest <report.md>` land in `tools/operator-battery/results.json` (adjudication ledger, expiry v1.21.0); a partial report needs `--partial`. UNTESTED is the ledger's default — never a report row.*

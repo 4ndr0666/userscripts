@@ -1,4 +1,4 @@
-# Recon · v9.1.1
+# Recon · v9.1.2
 
 > Unified forensic recon platform — `privacy & security` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ Recon is the suite's security-research wing: hardened XHR/fetch interception wit
 
 | Dimension | Value |
 |---|---|
-| Version | `9.1.1` |
+| Version | `9.1.2` |
 | Matches | `*://*/*` |
 | Run-at | `document-start` |
-| Size | 120.6 KB · 2206 lines |
+| Size | 121.4 KB · 2220 lines |
 | Install | [dist/4ndr0tools - Recon.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Recon.user.js) |
 
 ## Feature Inventory

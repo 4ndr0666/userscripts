@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Maximize_Any_Media
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      2.0.2
+// @version      2.0.3
 // @author       4ndr0666
 // @description  Maximize + Pip controls to any media anywhere - video, images, embedded and shadow-DOM players, on any site. 3lectric-Glass spec. Ψ
 // @license      MIT
@@ -16,6 +16,16 @@
 // @grant        GM_setValue
 // @grant        GM_registerMenuCommand
 // ==/UserScript==
+// 2.0.3 (WO-01 round 12): the settings round-trip fix (12b-F01) — save()
+// persists JSON.stringify(cache) (a STRING), but load() fed the stored
+// string straight to valid(), whose typeof-obj!=="object" guard rejected
+// it — so on every page load (the primary GM-manager case) user preferences
+// silently reset to DEFAULTS: the GM branch never parsed what the GM branch
+// itself wrote. The stored value is parsed (guarded) before validation —
+// write encoding and read decoding are symmetric now. Plus the
+// leavepictureinpicture identity guard (12b-F04 — the residual window of
+// 10c-F07: a late-RESOLVING older session's PiP teardown event stopped the
+// newer active session; the listener guards on this.active === state).
 // 2.0.2 (suite v1.18.0, WO-01 round 10): imagePip start-failure race (10c-F07)
 // — a rapid double-toggle can replace this.active with a NEWER session while
 // the older start() is still awaiting play()/requestPictureInPicture(); its
@@ -39,7 +49,7 @@
      * again. */
     version: (typeof GM_info !== 'undefined' && GM_info && GM_info.script && GM_info.script.version)
       ? GM_info.script.version
-      : "2.0.2",
+      : "2.0.3",
     spec: "3lectric-Glass",
   }
 
@@ -135,6 +145,19 @@
         }
       } catch (e) {
         tool.print("settings GM read failed: " + e.message)
+      }
+      /* 12b-F01 (v2.0.3): the GM branch writes JSON.stringify(cache) — a
+       * STRING. Fed straight to valid() it failed the typeof-object gate and
+       * every load reset to DEFAULTS (the write/read asymmetry). Parse what
+       * the writer encoded, guarded — corrupt storage degrades to defaults
+       * loudly instead of silently. */
+      if (typeof stored === "string") {
+        try {
+          stored = JSON.parse(stored)
+        } catch (e) {
+          tool.print("settings store parse failed: " + e.message)
+          stored = null
+        }
       }
       if (stored === null) {
         try {
@@ -420,7 +443,11 @@
       const state = { canvas, ctx, video, stream: null, drawTimer, img }
       this.active = state
       video.addEventListener("leavepictureinpicture", () => {
-        imagePip.stop()
+        /* 12b-F04 (v2.0.3): identity guard — a stale session's teardown must
+         * never stop a newer active session (the 10c-F07 residual window). */
+        if (imagePip.active === state) {
+          imagePip.stop()
+        }
       })
       try {
         ctx.drawImage(img, 0, 0, width, height)
