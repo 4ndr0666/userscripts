@@ -1,22 +1,28 @@
 #!/usr/bin/env node
 /**
  * tools/ig-wall-browser-smoke.mjs — Live Headless Chromium (click, wait, get)
- * Proof-of-Possession Battery for Instagram++ v13.2.1 NeuralDOM viewport-aware
- * virtualization (the "V-STASIS overlay" field-report fix, WO-02 round 1).
+ * Proof-of-Possession Battery for Instagram++ NeuralDOM viewport-aware
+ * virtualization (the "V-STASIS overlay" field-report fix, WO-02 round 1)
+ * AND the v13.2.4 NATIVE RETIREMENT VEIL (the "persistent center overlay
+ * that scrolls like a live feed down the center and never hides" field
+ * report, WO-01 round 12).
  *
  * Paradigm: identical to tools/flow-chip-browser-smoke.mjs — spawns an isolated
  * Chromium instance with a mkdtemp /tmp profile, serves an Instagram PROFILE
  * fixture at http://www.instagram.com:<port>/<user>/ via --host-resolver-rules,
  * drives real CDP/DOM (click, wait, get) interactions, and verifies the exact
- * invariant the field report demanded:
+ * invariants the field reports demanded:
  *
  *   THE WALL MUST NEVER SHOW A V-STASIS PLACEHOLDER WHERE THE USER IS LOOKING.
+ *   THE NATIVE PAGE MUST NEVER GHOST THROUGH — OR DIE UNDER — THE WALL.
  *
  * Concretely, on a profile fixture pre-seeded with 150 harvested media nodes
  * (nearly twice the 80-node budget, so the prune path is exercised from the
  * very first batch — the exact geometry under which the old positional
  * head-prune parked the visible head and produced the full-screen semi-
- * transparent "V-STASIS" overlay):
+ * transparent "V-STASIS" overlay) PLUS one video post and an adversarial
+ * bright 12000px native center column with a genuinely PLAYING native
+ * video (canvas-captured stream — no media file needed):
  *
  *   1. the wall opens with real media in the viewport, zero V-STASIS rects
  *      intersecting it (the reported bug, asserted geometrically);
@@ -26,11 +32,32 @@
  *      visible media);
  *   4. scrolling down hydrates the far end, scrolling back up re-hydrates
  *      the head (placeholders are a parking state, never a dead state);
- *   5. canon kernel-less parity boots the same wall;
- *   6. a structural tripwire pins the isOffscreen gate in both canon and
- *      dist (removing the gate turns the battery red);
- *   7. red control: the checker flags the ORIGINAL bug geometry (a V-STASIS
- *      rect covering the viewport at scroll 0) as a failure.
+ *   5. THE VEIL: the wall background computes OPAQUE rgb(10, 19, 26) — the
+ *      0.85-alpha pane that let the native center column ghost through is
+ *      gone (asserted against the live computed style);
+ *   6. THE VEIL: #ares-veil exists and body computes visibility:hidden —
+ *      the native column and the native video are retired from painting;
+ *   7. GEOMETRY SURVIVES the veil (the anti-display:none tripwire): the
+ *      native main/column rects keep real height, the document stays
+ *      taller than the viewport — IG's own IO sentinels and lazy-load
+ *      geometry live on under the veil;
+ *   8. DRIVER VIABILITY under the veil: NativeScrollDriver still moves the
+ *      real document scroll (scrollY > 0 after a tick) — the pagination
+ *      heartbeat the veil must never kill;
+ *   9. the pause rider is BODY-SCOPED: the genuinely-playing NATIVE video
+ *      is paused by the rider while a genuinely-playing WALL video is
+ *      never touched;
+ *  10. a wall download badge under the veil delivers a REAL FILE to disk
+ *      (the saveBlob anchor rides the hidden body — click() fires
+ *      programmatically regardless of visibility);
+ *  11. canon kernel-less parity boots the same wall with the same veil
+ *      contract;
+ *  12. structural tripwires pin the isOffscreen gate AND the veil tokens
+ *      in both canon and dist (removing either turns the battery red);
+ *  13. red control: a SABOTAGED source (the 0.85-alpha background restored
+ *      + the veil inert) must reproduce the pre-fix red values the live
+ *      assertions reject — the checker flags the ORIGINAL bug state; plus
+ *      the geometric red control (a full-viewport V-STASIS rect at scroll 0).
  *
  * The battery unconditionally reclaims the browser process and temp directory.
  */
@@ -75,6 +102,7 @@ function probeChromium() {
 const CHROMIUM_BIN = probeChromium();
 
 const TOTAL_ITEMS = 150; // 150 > CACHE_LIMIT(80): prune path exercised from batch one
+const TOTAL_MEDIA = 151; // 150 image posts + 1 video post (the pause-rider target)
 
 /* Schema-A REST v1 feed page (items + next_max_id) — the shape harvestJSON()
  * normalizes first. Each item: image post, unique pk/code, same UID. */
@@ -98,6 +126,18 @@ function buildFeedItems(offset, count) {
 function buildIgFixtureHtml(scriptSource) {
   const safe = String(scriptSource).replace(/<\/script>/gi, "<\\/script>");
   const feed = { items: buildFeedItems(0, TOTAL_ITEMS), next_max_id: "CURSOR-1", status: "ok" };
+  /* One VIDEO post at the tail (SAFE_ZONE-protected, so it stays a live
+   * <video> node in the wall): the pause-rider assertion needs a genuinely
+   * playing WALL video that the body-scoped rider must never touch. */
+  feed.items.push({
+    pk: String(100000 + TOTAL_ITEMS),
+    id: `${100000 + TOTAL_ITEMS}_1`,
+    code: `CODE${String(TOTAL_ITEMS).padStart(4, "0")}`,
+    user: { pk: "42", username: "fixtureuser" },
+    taken_at: 1700000000 + TOTAL_ITEMS,
+    media_type: 2,
+    video_versions: [{ url: `/gen/img-${TOTAL_ITEMS}.png`, width: 640, height: 640, type: 101 }],
+  });
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -112,6 +152,14 @@ function buildIgFixtureHtml(scriptSource) {
                           height: 52px; padding: 0 16px; background: #0a131a; }
     div[role="tablist"] > span { opacity: .6; font-size: 13px; }
     main { padding: 24px; font-size: 12px; color: #445; }
+    /* v13.2.4 veil fixture: the adversarial bright NATIVE CENTER COLUMN —
+     * exactly the ghost the 0.85-alpha wall let through (it must read as
+     * retired-from-painting under the veil, while its geometry survives). */
+    #native-feed-column { width: 630px; height: 12000px; margin: 0 auto;
+                          background: repeating-linear-gradient(180deg,
+                          #ff0055 0 40px, #00E5FF 40px 80px); }
+    #native-video { display: block; width: 320px; height: 180px;
+                    margin: 12px auto; background: #111; }
   </style>
   <script>
     /* ---- GM shim (synchronous — Instagram++ consumes sync storage) ---- */
@@ -131,11 +179,30 @@ function buildIgFixtureHtml(scriptSource) {
 </head>
 <body>
   <div role="tablist"><span>PROFILE</span><span>REELS</span><span>TAGGED</span></div>
-  <main>native profile shell (fixture)</main>
+  <main>native profile shell (fixture)
+    <div id="native-feed-column">
+      <video id="native-video" muted autoplay playsinline></video>
+    </div>
+  </main>
 
   <!-- Server-rendered feed payload: Schema A, 150 items, harvested at boot
        by MediaOverlay.start() -> harvestInlineJSON() (kernel-less path). -->
   <script type="application/json">${JSON.stringify(feed)}</script>
+
+  <!-- The native feed video: a canvas-captured stream — GENUINELY PLAYING
+       before the wall opens (no media file needed). The v13.2.4 pause rider
+       must pause exactly this one and never the wall's own videos. -->
+  <script>
+    (function () {
+      try {
+        var c = document.createElement('canvas'); c.width = 8; c.height = 8;
+        var x = c.getContext('2d'); x.fillStyle = '#ff0055'; x.fillRect(0, 0, 8, 8);
+        var v = document.getElementById('native-video');
+        v.srcObject = c.captureStream(10);
+        var p = v.play(); if (p && p.catch) p.catch(function () {});
+      } catch (e) { /* assertion 11 surfaces a never-playing video below */ }
+    })();
+  </script>
 
   <script>
     ${safe}
@@ -293,6 +360,17 @@ export async function runIgWallBrowserBattery() {
   const canonVersion = (canonSource.match(/^\/\/ @version\s+(\S+)/m) || [])[1] || null;
   const GATE_LINE = "if (!this.isOffscreen(item)) return;";
   const HYDRATE_LINE = "if (item.isPruned && !this.isOffscreen(item)) this.hydrate(item);";
+  /* v13.2.4 veil tripwires — removing any of these turns the battery red
+   * (live or structural fallback): the opaque palette token, the veil
+   * stylesheet injection, the visibility rule itself, the reload exit, and
+   * the operator-directed header labels. */
+  const VEIL_ID_LINE = "veil.id = 'ares-veil';";
+  const VEIL_RULE_LINE = "veil.textContent = 'body { visibility: hidden !important; }';";
+  const OPAQUE_BG_RE = /BG:\s*'rgb\(10,19,26\)'/;
+  const RELOAD_EXIT_LINE = "window.location.reload();";
+  const FEED_BTN_LINE = "mkBtn('ares-feed', 'SHOW FEED'";
+  const DUMP_LABEL_LINE = "mkBtn('ares-dump', 'DOWNLOAD ALL'";
+  const DLALL_LABEL_LINE = "mkBtn('ares-dlall', '⭳ SAVE ALL MEDIA'";
 
   const checks = [];
   function assert(name, cond, detail = "") {
@@ -312,6 +390,16 @@ export async function runIgWallBrowserBattery() {
       /CACHE_LIMIT:\s*80/.test(distSource) && /SAFE_ZONE:\s*15/.test(distSource));
     assert("5. red-control: original-bug geometry (V-STASIS rect covering viewport) is detected",
       rectsIntersect({ left: 0, top: 0, right: 1280, bottom: 800 }, { left: 0, top: 0, right: 1280, bottom: 800 }) === true);
+    assert("6. structural tripwire: OPAQUE wall palette token (canon+dist)",
+      OPAQUE_BG_RE.test(distSource) && OPAQUE_BG_RE.test(canonSource));
+    assert("7. structural tripwire: #ares-veil injection + visibility rule + reload exit (canon+dist)",
+      distSource.includes(VEIL_ID_LINE) && canonSource.includes(VEIL_ID_LINE) &&
+        distSource.includes(VEIL_RULE_LINE) && canonSource.includes(VEIL_RULE_LINE) &&
+        distSource.includes(RELOAD_EXIT_LINE) && canonSource.includes(RELOAD_EXIT_LINE));
+    assert("8. structural tripwire: operator-directed header labels (canon+dist)",
+      distSource.includes(FEED_BTN_LINE) && canonSource.includes(FEED_BTN_LINE) &&
+        distSource.includes(DUMP_LABEL_LINE) && canonSource.includes(DUMP_LABEL_LINE) &&
+        distSource.includes(DLALL_LABEL_LINE) && canonSource.includes(DLALL_LABEL_LINE));
     const failedStructural = checks.filter((c) => !c.pass);
     return {
       passed: checks.length - failedStructural.length,
@@ -330,10 +418,17 @@ export async function runIgWallBrowserBattery() {
 
   try {
     let mode = "dist";
+    /* v13.2.4 sabotage red-control source: the pre-fix ghost state — the
+     * 0.85-alpha pane restored + the veil rule emptied (inert). Derived from
+     * the DIST source at battery start; served only for the final phase. */
+    const sabotageSource = distSource
+      .replace("BG:          'rgb(10,19,26)',", "BG:          'rgba(10,19,26,0.85)',")
+      .replace("veil.textContent = 'body { visibility: hidden !important; }';", "veil.textContent = '';");
     server = http.createServer((req, res) => {
       if (req.url && /^\/fixtureuser\/?$/.test(req.url)) {
         res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-        res.end(buildIgFixtureHtml(mode === "canon" ? canonSource : distSource));
+        const source = mode === "canon" ? canonSource : (mode === "sabotage" ? sabotageSource : distSource);
+        res.end(buildIgFixtureHtml(source));
         return;
       }
       if (req.url && req.url.startsWith("/gen/")) {
@@ -533,6 +628,174 @@ export async function runIgWallBrowserBattery() {
       JSON.stringify(backUp)
     );
 
+    /* ── v13.2.4 THE NATIVE RETIREMENT VEIL — live assertions ─────────────── */
+
+    const veilState = await evalInPage(`(function() {
+      const gui = document.getElementById('igBigContainer');
+      const veil = document.getElementById('ares-veil');
+      const nativeCol = document.getElementById('native-feed-column');
+      const main = document.querySelector('main');
+      return {
+        wallBg: gui ? getComputedStyle(gui).backgroundColor : null,
+        veilPresent: !!veil,
+        bodyVisibility: getComputedStyle(document.body).visibility,
+        mainVisibility: main ? getComputedStyle(main).visibility : null,
+        mainRectHeight: main ? main.getBoundingClientRect().height : 0,
+        nativeColRectHeight: nativeCol ? nativeCol.getBoundingClientRect().height : 0,
+        docTallerThanViewport: document.documentElement.scrollHeight > window.innerHeight,
+      };
+    })()`);
+    assert(
+      "7. (get) VEIL: the wall computes OPAQUE rgb(10,19,26) — the 0.85-alpha pane that ghosted the native feed is gone",
+      veilState.wallBg === "rgb(10, 19, 26)",
+      JSON.stringify(veilState.wallBg)
+    );
+    assert(
+      "8. (get) VEIL: #ares-veil live and body retired from painting (the native center column + sidebars no longer ghost through)",
+      veilState.veilPresent === true && veilState.bodyVisibility === "hidden" && veilState.mainVisibility === "hidden",
+      JSON.stringify({ veil: veilState.veilPresent, body: veilState.bodyVisibility, main: veilState.mainVisibility })
+    );
+    assert(
+      "9. (get) GEOMETRY SURVIVES the veil (the anti-display:none tripwire): native rects keep real height, document stays scrollable-tall",
+      veilState.mainRectHeight > 0 && veilState.nativeColRectHeight > 0 && veilState.docTallerThanViewport === true,
+      JSON.stringify({ mainH: veilState.mainRectHeight, colH: veilState.nativeColRectHeight, tall: veilState.docTallerThanViewport })
+    );
+
+    /* Driver viability + the body-scoped pause rider — needs >2 driver ticks
+     * (1500 ms cadence) after the wall opened. */
+    const driverState = await evalInPage(`(async function() {
+      await new Promise(r => setTimeout(r, 3400));
+      const native = document.getElementById('native-video');
+      const wallVid = document.querySelector('#igAllImages video');
+      let wallPlaying = false;
+      if (wallVid) {
+        try {
+          const c = document.createElement('canvas'); c.width = 8; c.height = 8;
+          const x = c.getContext('2d'); x.fillStyle = '#00E5FF'; x.fillRect(0, 0, 8, 8);
+          wallVid.muted = true;
+          wallVid.srcObject = c.captureStream(10);
+          await wallVid.play().catch(function(){});
+          wallPlaying = !wallVid.paused;
+          await new Promise(r => setTimeout(r, 1700)); /* one more rider tick */
+          wallPlaying = !wallVid.paused;
+        } catch (e) { wallPlaying = false; }
+      }
+      return {
+        scrollY: Math.round(window.scrollY),
+        scrollHeight: document.documentElement.scrollHeight,
+        nativeFound: !!native,
+        nativePaused: native ? native.paused : null,
+        wallOutsideBody: wallVid ? !document.body.contains(wallVid) : false,
+        wallStillPlaying: wallPlaying,
+      };
+    })()`);
+    assert(
+      "10. (wait, get) DRIVER VIABILITY under the veil: NativeScrollDriver still moves the real document scroll",
+      driverState.scrollY > 0 && driverState.scrollHeight > 800,
+      JSON.stringify({ scrollY: driverState.scrollY, scrollHeight: driverState.scrollHeight })
+    );
+    assert(
+      "11. (wait, get) PAUSE RIDER is body-scoped: the genuinely-playing NATIVE video is paused by the rider; the genuinely-playing WALL video is never touched (it lives outside body by construction)",
+      driverState.nativeFound === true && driverState.nativePaused === true &&
+        driverState.wallOutsideBody === true && driverState.wallStillPlaying === true,
+      JSON.stringify(driverState)
+    );
+
+    /* Operator-directed header labels (round-12 transmission). */
+    const labels = await evalInPage(`(function() {
+      const dump = document.getElementById('ares-dump');
+      const dlall = document.getElementById('ares-dlall');
+      const feed = document.getElementById('ares-feed');
+      return {
+        dump: dump ? dump.textContent : null,
+        dlall: dlall ? dlall.textContent : null,
+        feed: feed ? feed.textContent : null,
+      };
+    })()`);
+    assert(
+      "12. (get) HEADER LABELS: the whole-grid artifact is DOWNLOAD ALL; the media-file downloader is ⭳ SAVE ALL MEDIA; the toggle is SHOW FEED",
+      labels.dump === "DOWNLOAD ALL" && labels.dlall === "⭳ SAVE ALL MEDIA" && labels.feed === "SHOW FEED",
+      JSON.stringify(labels)
+    );
+
+    /* The FEED toggle roundtrip — lift the veil, verify the ghost view, restore. */
+    const feedToggle = await evalInPage(`(async function() {
+      const btn = document.getElementById('ares-feed');
+      if (!btn) return { found: false };
+      const gui = document.getElementById('igBigContainer');
+      const col = document.getElementById('native-feed-column');
+      const snap = () => ({
+        body: getComputedStyle(document.body).visibility,
+        bg: getComputedStyle(gui).backgroundColor,
+        col: col ? getComputedStyle(col).visibility : null,
+        label: btn.textContent,
+      });
+      const before = snap();
+      btn.click();
+      await new Promise(r => setTimeout(r, 250));
+      const lifted = snap();
+      btn.click();
+      await new Promise(r => setTimeout(r, 250));
+      const restored = snap();
+      return { found: true, before, lifted, restored };
+    })()`);
+    assert(
+      "13. (click, get) FEED TOGGLE: default retired (hidden+opaque+SHOW FEED) → lifted (visible+translucent+HIDE FEED) → restored byte-exact",
+      feedToggle.found === true &&
+        feedToggle.before.body === "hidden" && feedToggle.before.bg === "rgb(10, 19, 26)" && feedToggle.before.label === "SHOW FEED" &&
+        feedToggle.lifted.body === "visible" && /^rgba\(10, 19, 26, 0\.85\)$/.test(feedToggle.lifted.bg) &&
+        feedToggle.lifted.label === "HIDE FEED" && feedToggle.lifted.col === "visible" &&
+        feedToggle.restored.body === "hidden" && feedToggle.restored.bg === "rgb(10, 19, 26)" &&
+        feedToggle.restored.label === "SHOW FEED" && feedToggle.restored.col === "hidden",
+      JSON.stringify(feedToggle)
+    );
+
+    /* Real-file downloads under the veil: a wall badge AND the data-driven
+     * grid artifact. CDP download behavior + a real click on each control. */
+    const dlDir = path.join(tmpDir, "dl");
+    fs.mkdirSync(dlDir, { recursive: true });
+    try {
+      await cdp.send("Browser.setDownloadBehavior", { behavior: "allow", downloadPath: dlDir });
+    } catch (_) {
+      await cdp.send("Page.setDownloadBehavior", { behavior: "allow", downloadPath: dlDir });
+    }
+    async function waitForDownload(predicate, timeoutMs) {
+      const deadline = Date.now() + timeoutMs;
+      while (Date.now() < deadline) {
+        const files = fs.existsSync(dlDir) ? fs.readdirSync(dlDir) : [];
+        const hit = files.find(predicate);
+        if (hit) return path.join(dlDir, hit);
+        await new Promise(r => setTimeout(r, 250));
+      }
+      return null;
+    }
+    await evalInPage(`(async function() {
+      const badge = document.querySelector('#igAllImages .ares-dl-badge');
+      if (!badge) return false;
+      badge.click();
+      return true;
+    })()`);
+    const badgeFile = await waitForDownload(f => /^42_CODE\d+_1of1\.(jpg|png)$/.test(f), 20000);
+    assert(
+      "14. (click, wait) a wall download badge under the veil delivers a REAL FILE to disk (saveBlob anchor rides the hidden body)",
+      !!badgeFile,
+      badgeFile || "no file matched ^42_CODE\\d+_1of1\\.(jpg|png)$ within 20s"
+    );
+    await evalInPage("document.getElementById('ares-dump').click();");
+    const dumpFile = await waitForDownload(f => /^4ndr0666_dump_42\.html$/.test(f), 20000);
+    let dumpCells = 0;
+    let dumpPlaceholders = 0;
+    if (dumpFile) {
+      const dumpText = fs.readFileSync(dumpFile, "utf8");
+      dumpCells = (dumpText.match(/<div class="cell">/g) || []).length;
+      dumpPlaceholders = (dumpText.match(/V-STASIS/g) || []).length;
+    }
+    assert(
+      "15. (click, wait, get) DOWNLOAD ALL delivers the DATA-DRIVEN grid artifact: every known media item, zero V-STASIS placeholders",
+      !!dumpFile && dumpCells >= 100 && dumpPlaceholders === 0,
+      dumpFile ? `cells=${dumpCells}, placeholders=${dumpPlaceholders}` : "no 4ndr0666_dump_42.html within 20s"
+    );
+
     /* Canon kernel-less parity — same fixture, canon source. */
     mode = "canon";
     await cdp.send("Page.reload", { ignoreCache: true });
@@ -566,20 +829,30 @@ export async function runIgWallBrowserBattery() {
         wallOpen: true,
         covering: spans.map(s => s.getBoundingClientRect()).filter(hit).length,
         imgsInViewport: imgs.filter(hit).length,
+        wallBg: getComputedStyle(document.getElementById("igBigContainer")).backgroundColor,
+        bodyVisibility: getComputedStyle(document.body).visibility,
+        mainRectHeight: (document.querySelector("main") || { getBoundingClientRect: () => ({ height: 0 }) }).getBoundingClientRect().height,
+        feedLabel: (document.getElementById("ares-feed") || {}).textContent || null,
       };
     })()`);
     assert(
-      "7. canon kernel-less live parity: same wall, same invariant (zero V-STASIS in viewport at open)",
-      canonState.wallOpen && canonState.covering === 0 && canonState.imgsInViewport >= 1,
+      "16. canon kernel-less live parity: same wall, same invariant, SAME VEIL (zero V-STASIS in viewport at open; opaque wall; body retired; geometry alive)",
+      canonState.wallOpen && canonState.covering === 0 && canonState.imgsInViewport >= 1 &&
+        canonState.wallBg === "rgb(10, 19, 26)" && canonState.bodyVisibility === "hidden" &&
+        canonState.mainRectHeight > 0 && canonState.feedLabel === "SHOW FEED",
       JSON.stringify(canonState)
     );
 
     /* Structural tripwires derived from the artifact — a future round that
      * removes the gate turns the battery red, live or fallback. */
     assert(
-      "8. structural tripwire: the isOffscreen prune gate + batch hydrateNear survive in canon AND dist",
+      "17. structural tripwire: the isOffscreen prune gate + batch hydrateNear + the veil tokens survive in canon AND dist",
       distSource.includes(GATE_LINE) && canonSource.includes(GATE_LINE) &&
         distSource.includes(HYDRATE_LINE) && canonSource.includes(HYDRATE_LINE) &&
+        distSource.includes(VEIL_ID_LINE) && canonSource.includes(VEIL_ID_LINE) &&
+        distSource.includes(VEIL_RULE_LINE) && canonSource.includes(VEIL_RULE_LINE) &&
+        OPAQUE_BG_RE.test(distSource) && OPAQUE_BG_RE.test(canonSource) &&
+        distSource.includes(RELOAD_EXIT_LINE) && canonSource.includes(RELOAD_EXIT_LINE) &&
         distVersion === canonVersion,
       `dist=${distVersion}, canon=${canonVersion}`
     );
@@ -591,8 +864,54 @@ export async function runIgWallBrowserBattery() {
         { left: 0, top: 0, right: 1280, bottom: 800 }
       ) === true;
     assert(
-      "9. red-control: original-bug geometry (full-viewport V-STASIS rect at scroll 0) is detected",
+      "18. red-control: original-bug geometry (full-viewport V-STASIS rect at scroll 0) is detected",
       redControl
+    );
+
+    /* v13.2.4 SABOTAGE RED CONTROL — the pre-fix ghost state must be exactly
+     * what the new assertions reject: the CFG.BG restored to the 0.85-alpha
+     * pane and the veil rule emptied (inert). This is the operator's field
+     * report reconstructed on purpose: the native feed ghosting through a
+     * translucent wall, never hidden. */
+    mode = "sabotage";
+    await cdp.send("Page.reload", { ignoreCache: true });
+    const sabotageState = await evalInPage(`(async function() {
+      let dock = null;
+      for (let i = 0; i < 120; i++) {
+        dock = document.getElementById("4ndr0666-dock");
+        if (dock) break;
+        await new Promise(r => setTimeout(r, 250));
+      }
+      if (!dock) return { dockFound: false };
+      dock.click();
+      for (let i = 0; i < 120; i++) {
+        if (document.getElementById("igBigContainer")) break;
+        await new Promise(r => setTimeout(r, 100));
+      }
+      ${rafSettle}
+      await new Promise(r => setTimeout(r, 250));
+      const gui = document.getElementById("igBigContainer");
+      if (!gui) return { dockFound: true, wallOpen: false };
+      const main = document.querySelector("main");
+      return {
+        dockFound: true,
+        wallOpen: true,
+        wallBg: getComputedStyle(gui).backgroundColor,
+        bodyVisibility: getComputedStyle(document.body).visibility,
+        nativeColVisibility: (document.getElementById("native-feed-column") || {}).computedStyleMap ? getComputedStyle(document.getElementById("native-feed-column")).visibility : null,
+        mainRectHeight: main ? main.getBoundingClientRect().height : 0,
+      };
+    })()`);
+    /* The pre-fix bug state, characterized exactly: a TRANSLUCENT wall and a
+     * VISIBLE body — the assertions above (7/8) reject precisely this pair. */
+    const preFixBugReproduced =
+      sabotageState.wallOpen === true &&
+      /^rgba\(10, 19, 26, 0\.85\)$/.test(sabotageState.wallBg || "") &&
+      sabotageState.bodyVisibility === "visible";
+    assert(
+      "19. red-control (sabotage load): the PRE-FIX ghost state (translucent wall + visible body) is reproduced and REJECTED by assertions 7/8",
+      preFixBugReproduced === true,
+      JSON.stringify(sabotageState)
     );
   } finally {
     if (cdp) cdp.close();
@@ -610,8 +929,9 @@ export async function runIgWallBrowserBattery() {
     passed: checks.length - failed.length,
     total: checks.length,
     clean: failed.length === 0,
-    /* WO-01 round-3 (3-a F12): mode disclosed — dist + canon-parity reload. */
-    mode: "dist+canon",
+    /* WO-01 round-3 (3-a F12): mode disclosed — dist + canon-parity reload
+     * + the round-12 sabotage red control. */
+    mode: "dist+canon+sabotage-red-control",
     checks,
     failed,
   };

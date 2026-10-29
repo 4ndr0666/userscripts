@@ -8,12 +8,16 @@
  * Bunkr++ fake-stats/sniffer/abort, Recon MITM/pacification, Stream
  * Interceptor SVG veto/pass_md5, Filester++/Instagram++/m3u8++ traffic
  * observers, GooglePhotosandDrive++/Gofile++/Pixeldrain++/Blob2URL transport
- * facades, and HostWarp/PageCraft kernel modules) with red controls.
+ * facades, and HostWarp/PageCraft kernel modules) with red controls — plus
+ * the round-12 Hailuo++ BlobSanitizer family (the operator's REAL attack
+ * sample head, byte-embedded): the Windows-1252-then-UTF-8 double-encoding
+ * repair, proven by full roundtrip + negative controls + wiring tripwires.
  * ═══════════════════════════════════════════════════════════════════════════ */
 
 import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
+import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -561,6 +565,80 @@ forceImmediateAnswer();`, hwCtx);
         lmSrc.includes("hasRedirectLink(n)")
     );
 
+    /* ── 5. Hailuo++ 6.2.0 BlobSanitizer Fixtures (round 12) ────────────── */
+    // 5A. The SHIPPED sanitizer executes against the operator's REAL round-12
+    // attack-sample head (512 mangled bytes, base64-embedded) — the exact
+    // bytes from the field report — plus a synthetic full roundtrip, the
+    // negative controls, and the vault wiring tripwires.
+    const hailuoSrc = fs.readFileSync(
+        path.join(root, "canon", "_promoted", "4ndr0tools - Hailuo++.user.js"),
+        "utf8"
+    );
+    const bsStart = hailuoSrc.indexOf("const BlobSanitizer = {");
+    if (bsStart < 0) throw new Error("BlobSanitizer not found in Hailuo++ canon");
+    let bsDepth = 0, bsEnd = -1;
+    for (let i = hailuoSrc.indexOf("{", bsStart); i < hailuoSrc.length; i++) {
+        if (hailuoSrc[i] === "{") bsDepth++;
+        else if (hailuoSrc[i] === "}") { bsDepth--; if (bsDepth === 0) { bsEnd = i + 1; break; } }
+    }
+    /* The extracted object's free `Logger` reference must resolve in THIS
+     * scope or every repair silently no-ops into its catch — a silent-`null`
+     * trap the fail-visible discipline exists to prevent. */
+    const Logger = { debug() {}, info() {}, warn() {}, error() {} };
+    const BlobSanitizer = eval("(" + hailuoSrc.slice(bsStart, bsEnd).replace(/^const BlobSanitizer = /, "") + ")");
+
+    const R12_SAMPLE_HEAD_B64 =
+        "w7/DmMO/w6AAEEpGSUYAAQEAAAEAAQAAw7/DogHDmElDQ19QUk9GSUxFAAEBAAABw4gAAAAABDAAAG1udHJSR0IgWFlaIAfDoAABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAw7bDlgABAAAAAMOTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAAw7AAAAAkclhZWgAAARQAAAAUZ1hZWgAAASgAAAAUYlhZWgAAATwAAAAUd3RwdAAAAVAAAAAUclRSQwAAAWQAAAAoZ1RSQwAAAWQAAAAoYlRSQwAAAWQAAAAoY3BydAAAAcWSAAAAPG1sdWMAAAAAAAAAAQAAAAxlblVTAAAACAAAABwAcwBSAEcAQlhZWiAAAAAAAABvwqIAADjDtQAAA8KQWFlaIAAAAAAAAGLihKIAAMK34oCmAAAYw5pYWVogAAAAAAAAJMKgAAAP4oCeAADCtsOPWFlaIAAAAAAAAMO2w5YAAQAAAADDky1wYXJhAAAAAAAEAAAAAmZmAADDssKnAAANWQAAE8OQAAAKWwAAAAAAAAAAbWx1YwAAAAAAAAABAAAADGVuVVMAAAAgAAAAHABHAG8AbwBnAGwAZQAgAEk=";
+    const r12Head = Buffer.from(R12_SAMPLE_HEAD_B64, "base64");
+    const EXPECTED_CLEAN_HEAD = Buffer.from("ffd8ffe000104a46494600010100000100010000ffe201d8", "hex");
+    const r12Repaired = await BlobSanitizer.repairBlob(new Blob([r12Head], { type: "image/png" }));
+    let r12Bytes = null;
+    if (r12Repaired) r12Bytes = Buffer.from(await r12Repaired.arrayBuffer());
+    assert(
+        "5A. Hailuo++ BlobSanitizer repairs the operator's REAL round-12 attack-sample head (Windows-1252-then-UTF-8 double-encoded JPEG; ffd8ffe0 magic + clean prefix byte-exact + corrected MIME)",
+        !!r12Repaired && r12Bytes.subarray(0, EXPECTED_CLEAN_HEAD.length).equals(EXPECTED_CLEAN_HEAD) && r12Repaired.type === "image/jpeg",
+        r12Repaired ? `size=${r12Bytes.length} mime=${r12Repaired.type}` : "repair returned null"
+    );
+
+    // 5B. Synthetic full roundtrip: an "original" binary with a JPEG magic and
+    // every byte value present, mangled through the standard cp1252 decoder +
+    // UTF-8 encoder (the exact corruption pipeline), then repaired — the
+    // result must be byte-identical to the original.
+    const syntheticOriginal = Buffer.alloc(4096);
+    for (let i = 0; i < syntheticOriginal.length; i++) syntheticOriginal[i] = (i * 7 + 13) & 0xff;
+    syntheticOriginal[0] = 0xff; syntheticOriginal[1] = 0xd8; syntheticOriginal[2] = 0xff;
+    const mangledViaCp1252 = Buffer.from(new TextDecoder("windows-1252").decode(syntheticOriginal), "utf8");
+    const syntheticRepaired = await BlobSanitizer.repairBlob(new Blob([mangledViaCp1252], { type: "" }));
+    let syntheticBytes = null;
+    if (syntheticRepaired) syntheticBytes = Buffer.from(await syntheticRepaired.arrayBuffer());
+    assert(
+        "5B. BlobSanitizer synthetic full roundtrip: original binary (all 256 byte values, JPEG magic) -> cp1252/UTF-8 mangle -> repair -> BYTE-IDENTICAL to the original",
+        !!syntheticRepaired && syntheticBytes.equals(syntheticOriginal) && syntheticRepaired.type === "image/jpeg",
+        syntheticRepaired ? `size=${syntheticBytes.length}` : "repair returned null"
+    );
+
+    // 5C. Negative controls — the sanitizer never touches what it must not.
+    const cleanJpegHead = Buffer.from("ffd8ffe000104a4649460001010000010001", "hex");
+    const cleanBlob = new Blob([cleanJpegHead], { type: "image/jpeg" });
+    const cleanResult = await BlobSanitizer.repairBlob(cleanBlob);
+    const asciiResult = await BlobSanitizer.repairBlob(new Blob([Buffer.from("plain ascii text, not media")]));
+    const wideResult = await BlobSanitizer.repairBlob(new Blob([Buffer.from("héllo ✓ wörld — em-dash", "utf8")]));
+    const randomResult = await BlobSanitizer.repairBlob(new Blob([crypto.randomBytes(256)]));
+    assert(
+        "5C. BlobSanitizer negative controls: clean JPEG / ASCII / wide-char UTF-8 (✓) / random binary are ALL returned untouched (null — never worse)",
+        cleanResult === null && asciiResult === null && wideResult === null && randomResult === null
+    );
+
+    // 5D. Vault wiring tripwires — the sanitizer is live at both boundaries.
+    assert(
+        "5D. Hailuo++ 6.2.0 vault wiring tripwires: the wrap repairs the registry entry (async, post-URL), SAVE sanitizes before filename/mint, and the version surfaces are stamped",
+        hailuoSrc.includes("BlobSanitizer.repairBlob(rawClone)") &&
+        hailuoSrc.includes("repairRegistryEntry(url, repaired)") &&
+        hailuoSrc.includes("blobPayload = await BlobSanitizer.ensureClean(blobPayload);") &&
+        hailuoSrc.includes("window.__andr0HailuoIntercept = '6.2.0';") &&
+        /^\/\/ @version\s+6\.2\.0/m.test(hailuoSrc)
+    );
+
     return { problems, passed, total };
 }
 
@@ -571,5 +649,5 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToP
         for (const p of r.problems) console.error(`  ✗ ${p}`);
         process.exit(1);
     }
-    console.log("  ✓ per-family contract fixture battery verified (Zai Exporter 3-strategy ladder, NetHook v6 veto/respond/traffic/onNode/gmFetch, red controls)");
+    console.log("  ✓ per-family contract fixture battery verified (Zai Exporter 3-strategy ladder, NetHook v6 veto/respond/traffic/onNode/gmFetch, red controls, Hailuo++ BlobSanitizer real-sample repair)");
 }
