@@ -1,4 +1,4 @@
-# Zai Exporter · v1.0.1
+# Zai Exporter · v1.0.2
 
 > Z.ai conversation exfiltration — `sovereign platforms` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ Zai Exporter turns the Z.ai GLM web chat into an artifact you own: one click on 
 
 | Dimension | Value |
 |---|---|
-| Version | `1.0.1` |
+| Version | `1.0.2` |
 | Matches | `https://chat.z.ai/*`, `https://z.ai/*` |
 | Run-at | `document-end` |
-| Size | 45.4 KB · 1122 lines |
+| Size | 46.7 KB · 1140 lines |
 | Install | [dist/4ndr0tools - Zai Exporter.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Zai%20Exporter.user.js) |
 
 ## Feature Inventory

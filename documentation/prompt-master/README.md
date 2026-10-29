@@ -1,4 +1,4 @@
-# Prompt Master · v28.8.1
+# Prompt Master · v28.8.2
 
 > Prompt library command deck — `sovereign platforms` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ Prompt Master is a manager's toolkit for AI prompt libraries — originally Goog
 
 | Dimension | Value |
 |---|---|
-| Version | `28.8.1` |
+| Version | `28.8.2` |
 | Matches | `*://geminigen.ai/*`, `*://gist.github.com/*`, `*://gemini.google.com/*`, `*://labs.google/fx/*` (+2 more) |
 | Run-at | `document-end` |
-| Size | 1141.1 KB · 23968 lines |
+| Size | 1144.7 KB · 24026 lines |
 | Install | [dist/4ndr0tools - Prompt Master.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Prompt%20Master.user.js) |
 
 ## Feature Inventory

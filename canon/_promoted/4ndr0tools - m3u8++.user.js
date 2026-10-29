@@ -337,10 +337,10 @@
                 for (const k of keys) {
                     const m = String(k).match(/^top-title-(\d+)/);
                     if (m && Number(m[1]) < cutoff) {
-                        try { await mgmapi.deleteValue(k); } catch (e) { /* best-effort */ }
+                        try { await mgmapi.deleteValue(k); } catch (e) { console.debug("m3u8 interceptor: orphan sweep delete rejected:", e && e.message); /* best-effort */ }
                     }
                 }
-            } catch (e) { /* managers without listValues keep the old behavior */ }
+            } catch (e) { console.debug("m3u8 interceptor: orphan sweep unavailable (no listValues?):", e && e.message); /* managers without listValues keep the old behavior */ }
         })();
     }
 

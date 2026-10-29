@@ -1,4 +1,4 @@
-# LinkMasterΨ · v6.3.4
+# LinkMasterΨ · v6.3.5
 
 > The universal link intelligence platform — `media & links` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ LinkMasterΨ decodes, previews, exports, validates, and scrapes every link on an
 
 | Dimension | Value |
 |---|---|
-| Version | `6.3.4` |
+| Version | `6.3.5` |
 | Matches | `*://*/*`, `*://*.instagram.com/*` |
 | Run-at | `document-start` |
-| Size | 257.2 KB · 5106 lines |
+| Size | 262.5 KB · 5187 lines |
 | Install | [dist/4ndr0tools - LinkMasterΨ.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js) |
 
 ## Feature Inventory

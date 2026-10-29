@@ -7,15 +7,27 @@
 > three Anti-* ICC scripts folded into Akasha Silence at merge; Zai Exporter
 > arrived later), 9 BETA promotions (Stream Interceptor v1.3.0; Forum Link
 > Xtractor's second candidate promotion), 3 merges (Akasha Silence), 38
-> dist installables at 118,284 lines (the WO-01 round-12
-> two-field-report settlement — 8 canon bumps: Instagram++ v13.2.3 →
-> v13.2.4 (THE NATIVE RETIREMENT VEIL — the opaque wall + the #ares-veil
-> body retirement + the SHOW FEED toggle + the operator-directed button
-> renames + the data-driven DOWNLOAD ALL grid artifact + the bounded
-> body-phase transport), Hailuo++ v6.1.2 → v6.2.0 (THE BLOB SANITIZER —
-> the Windows-1252-then-UTF-8 double-encoding repair at both vault
-> boundaries, proven lossless on both operator attack samples), MAM
-> v2.0.2 → v2.0.3, serviceguard Companion v7.4.1 → v7.4.2, Recon v9.1.1
+> dist installables at 118,786 lines (the WO-01 round-13
+> twin-divergence settlement — 16 canon bumps: LinkMasterΨ v6.3.4 →
+> v6.3.5 (THE CRITICAL matchAll g-flag rebuild — a non-global pattern
+> was a tab hang — plus the canon's last unguarded boot-time settings
+> parse and five Forums++ hardenings never ported to the twin), Forums++
+> v1.13.6 → v1.13.7 (the kemono ?f= dead-code recovery, the query-aware
+> Pixeldrain resolver, the ThreadCache empty-page freeze, the Bunkr ''
+> dedup key, the dotless-basename hidden-dotfile class), Login Form
+> Autofiller v2.0.10 → v2.0.11 (THE CROSS-SITE CREDENTIAL GATE — the
+> substring domain match served the previous site's BugMeNot credentials
+> into lookalike domains), serviceguard Companion v7.4.2 → v7.4.3 (THE
+> HOMOGRAPH GATE — the URL parser is the IDN normalizer now), Watermark++
+> v2.1.2 → v2.1.3, Prompt Master v28.8.1 → v28.8.2 (GlobalFiles bounded),
+> Zai Exporter v1.0.1 → v1.0.2, Instagram++ v13.2.4 → v13.2.5 (the
+> operator's button contract adjudicated in-code + self-documenting
+> titles), Pixeldrain++ v1.2.4 → v1.2.5, m3u8++ v5.1.2 → v5.1.3, WCP
+> v5.3.1 → v5.3.2, MPC v8.1.4 → v8.1.5, ModelSearch v4.0.4 → v4.0.5,
+> YRVR v2.0.5 → v2.0.6, YTPM v1.7.4 → v1.7.5, YT Filter v2.5.1 →
+> v2.5.2 — plus the two new gate instruments: norm-symmetry-smoke (45
+> assertions) and tt-browser-smoke (the Trusted-Types harness finally
+> gate-wired, 8/8 live) — measured after the round-12
 > → v9.1.2, Zai Exporter v1.0.0 → v1.0.1, AlwaysNewWindow v1.0.2 →
 > v1.0.3, LFA v2.0.9 → v2.0.10 — over the WO-01 round-11
 > operator-battery settlement — 11 canon bumps over the operator's first

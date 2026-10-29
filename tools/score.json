@@ -1,15 +1,15 @@
 {
-  "round": "v1.20.0",
-  "total": 66,
+  "round": "v1.21.0",
+  "total": 100,
   "threshold": 90,
   "dimensions": [
     {
       "dimension": "Correctness",
       "weight": 20,
-      "score": 0,
+      "score": 20,
       "inputs": [
         "kernel-smoke: 160/160 ALL PASS",
-        "check-gate failures: 65"
+        "check-gate failures: 0"
       ]
     },
     {
@@ -29,12 +29,12 @@
     {
       "dimension": "Performance",
       "weight": 15,
-      "score": 12,
+      "score": 15,
       "inputs": [
         "polling census clean: true (42 sites)",
         "observer census clean: true (59 sites)",
         "cache census clean: true (147 registries)",
-        "size budget clean: false"
+        "size budget clean: true"
       ]
     },
     {
@@ -51,20 +51,20 @@
     {
       "dimension": "ErrorHandling",
       "weight": 10,
-      "score": 4,
+      "score": 10,
       "inputs": [
         "kernel typed-error family (NetError/NetTimeoutError/NetHttpError) — smoke battery: true",
-        "non-kernel catch census: 1003 sites — 9 typed, 503 debug-logged, 488 handled, 3 silent (clean: false)"
+        "non-kernel catch census: 1003 sites — 9 typed, 506 debug-logged, 488 handled, 0 silent (clean: true)"
       ],
       "coverage": 1
     },
     {
       "dimension": "Maintainability",
       "weight": 20,
-      "score": 15,
+      "score": 20,
       "inputs": [
         "style audit 38/38: true",
-        "docs truthfulness (0 drift): false",
+        "docs truthfulness (0 drift): true",
         "identity-ledger evidence coverage: 63/63"
       ]
     },

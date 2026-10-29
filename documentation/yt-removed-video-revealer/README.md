@@ -1,4 +1,4 @@
-# Youtube Removed Video Revealer · v2.0.5
+# Youtube Removed Video Revealer · v2.0.6
 
 > Deleted-video title restoration — `video & players` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ The Revealer restores titles for removed or private videos in YouTube playlists 
 
 | Dimension | Value |
 |---|---|
-| Version | `2.0.5` |
+| Version | `2.0.6` |
 | Matches | `*://*.youtube.com/*` |
 | Run-at | `document-idle` |
-| Size | 30.6 KB · 632 lines |
+| Size | 31.1 KB · 639 lines |
 | Install | [dist/4ndr0tools - Youtube Removed Video Revealer.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Youtube%20Removed%20Video%20Revealer.user.js) |
 
 ## Feature Inventory

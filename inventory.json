@@ -35,9 +35,9 @@
    "version": "7.4.3",
    "description": "Stealth Service Worker / WebSocket / SharedWorker firewall companion for the 4ndr0serviceguard extension. Default-deny with a three-way action model: AUTHORIZE (real), SPOOF (pacified live-looking socket) or DENY (native-faithful failure). Whitelist authorizes, spooflist auto-spoofs silently, the blacklist is an absolute prohibition. Defers to the extension's Gatekeeper whenever the extension is present — and routes list edits to it through the extension's confirm bar. v7.4.0: survives sandboxed frames (opaque origins) — privileged APIs are captured defensively and the WebSocket gate still arms there. v7.4.1: harness/doc alignment with the post-release rename + the 2026-10-12 console-debrief classification (no behavior change).",
    "family": "privacy & security",
-   "sha256": "4b5ac5cc1b5fda15b3fe3ce649578e9ca61d68549b66296feec243c487216c93",
+   "sha256": "05f1969cfa300bb150cf9337b21b3e7a761d41b47b836b84ac43795effc90607",
    "lines": 1327,
-   "bytes": 57031,
+   "bytes": 57126,
    "matches": [
     "*://*/*"
    ],
@@ -1565,9 +1565,9 @@
    "version": "5.1.3",
    "description": "Automatically displays the m3u8 url for ANY video playing in the top right corner of the video. Click url to copy or click download to use the webapp \"tools.thatwind.com\". Also injects Play buttons next to magnet links on every page, relaying them to www.diancigaoshou.com.",
    "family": "media & links",
-   "sha256": "2c3bf9c1c49754fc2abae0f0fd09e3f16428804c3968f03a696a556e9f87306e",
+   "sha256": "1ccbf8bbd375a19bb914cc35b8708d6b7f6c93139b7e12999455329e9b3d9210",
    "lines": 2110,
-   "bytes": 109886,
+   "bytes": 110063,
    "matches": [
     "*://*/*"
    ],
@@ -1689,5 +1689,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "d7d90858d1474b6b49e47487e47e9bec0e14f102660c67c6d942c5e621488ea2"
+ "digest": "c889b5ec1f55f373187dfacc88a8e7aac6d10bada3aca0c9f731dff1f8c6829f"
 }

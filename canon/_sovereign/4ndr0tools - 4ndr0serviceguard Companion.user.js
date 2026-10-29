@@ -139,7 +139,7 @@
     if (!s) return '';
     try {
       s = new win.URL('http://' + s).hostname;
-    } catch (e) { /* keep the pre-URL shape */ }
+    } catch (e) { console.debug('[4ndr0serviceguard] domain normalize kept the pre-URL shape:', e && e.message); /* keep the pre-URL shape */ }
     return s;
   }
 
