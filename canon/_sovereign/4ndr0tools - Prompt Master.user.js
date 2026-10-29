@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name                4ndr0tools - Prompt Master
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version             28.8.1
+// @version             28.8.2
 // @author              4ndr0666
 // @icon                data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @license             MIT
@@ -46,6 +46,28 @@
   let __mpSortMode;
   let __apCustomShortcutsMap;
 
+// 28.8.2 (WO-01 round 13): the storage round-trip round — the two lenses
+// the r12 handoff proposed (storage symmetry + normalization symmetry)
+// found the suite's densest persistence surface here. (1) GlobalFiles is
+// BOUNDED now: the attachment vault had no cap and no pruning — every
+// attached file lived as full base64 in GM storage forever (a 5 MB file
+// stores as ~6.7 MB), and the auto-backup proxy then DOUBLED it into the
+// AutoBackup key after every debounced write; quota exhaustion turned
+// every later save into an unhandled rejection. LRU eviction (64 entries
+// / 20 MB, oldest first — the array is append-ordered) + the save is
+// caught and logged (13a-F02). (2) getGlobalFiles shape-guards its store
+// at the single choke point — a hand-edited or cross-shape backup import
+// could persist a non-array and every consumer (.find/.push/.filter/
+// .forEach) then died in unhandled rejections (13a-F03). (3) The backup
+// manager's defaultVal table now matches the writers: Prompts is an
+// object map keyed by id (the table said []) and GlobalFiles is an array
+// (the table said {}) — the field is currently unconsumed, but it is
+// exactly the doc/value drift that bred the MAM-F01 class; any future
+// 'reset to defaults' consumer would have corrupted both stores
+// (13a-F12). (4) togglePinData's fire-and-forget savePinsToDB rethrows
+// on IndexedDB failure — caught now (memory state stays correct;
+// console noise gone) (13a-F13). (5) takeAutoBackup's quota-rejection
+// catch escalates debug→warn — a silent quota death is how (1) hid.
 // 28.7.7 (suite v1.8.2, GUP v7.0.1 Media Slideshow & Palette Hardening):
 // (1) Media Slideshow collection scoping & visibility gate — removed
 // [role="dialog"] and .cdk-overlay-container from SLIDESHOW_EXCLUDE (which
@@ -406,13 +428,36 @@
     };
   let currentActiveFileIds = new Set();
   async function getGlobalFiles() {
-    return await GM_getValue("GlobalFiles", []);
+    /* v28.8.2 (13a-F03): shape guard at the single choke point — a
+     * cross-shape backup import could persist a non-array here and every
+     * consumer (.find/.push/.filter/.forEach) died in unhandled
+     * rejections. */
+    const v = await GM_getValue("GlobalFiles", []);
+    return Array.isArray(v) ? v : [];
   }
   async function saveGlobalFile(e) {
     const t = await getGlobalFiles();
     const n = t.find((t) => t.name === e.name && t.size === e.size);
     if (n) return n;
-    return (t.push(e), await GM_setValue("GlobalFiles", t), e);
+    t.push(e);
+    /* v28.8.2 (13a-F02): bounded — no cap, no pruning, and the auto-backup
+     * proxy doubled every byte into AutoBackup after each debounced write;
+     * quota exhaustion then turned every later save into an unhandled
+     * rejection. LRU: the array is append-ordered, index 0 is the oldest.
+     * At least the file being saved always survives (t.length > 1). */
+    const bytesOf = (f) => (f && typeof f.data === "string" ? f.data.length : 0);
+    let total = t.reduce((a, f) => a + bytesOf(f), 0);
+    while (t.length > 1 && (t.length > 64 || total > 20 * 1024 * 1024)) {
+      const dropped = t.shift();
+      total -= bytesOf(dropped);
+      console.warn("[Prompt Master] GlobalFiles budget reached — evicted oldest attachment:", dropped && dropped.name);
+    }
+    try {
+      await GM_setValue("GlobalFiles", t);
+    } catch (err) {
+      console.error("[Prompt Master] GlobalFiles save rejected (manager quota?):", err && err.message);
+    }
+    return e;
   }
   async function deleteGlobalFile(e) {
     let t = await getGlobalFiles();
@@ -5149,14 +5194,19 @@
         label: "Prompts",
         desc: "All saved prompts",
         storageKey: "Prompts",
-        defaultVal: [],
+        /* v28.8.2 (13a-F12): matches the writer — getRawPrompts defaults {}
+         * and promptsToStorage builds an id-keyed map; the old [] was the
+         * doc/value drift class that bred MAM-F01. */
+        defaultVal: {},
       },
       {
         key: "globalFiles",
         label: "Global Files",
         desc: "Files or attachments saved globally",
         storageKey: "GlobalFiles",
-        defaultVal: {},
+        /* v28.8.2 (13a-F12): matches the writer — saveGlobalFile pushes
+         * onto an array; the old {} inverted the Prompts error. */
+        defaultVal: [],
       },
       {
         key: "tags",
@@ -15693,7 +15743,11 @@
             timestamp: Date.now(),
           }),
           (r = !0)),
-      savePinsToDB(currentChatId, savedPins),
+      /* v28.8.2 (13a-F13): caught — savePinsToDB rethrows on IndexedDB
+       * failure and this was a fire-and-forget (unhandled rejection noise;
+       * the in-memory pin state stays correct either way). */
+      savePinsToDB(currentChatId, savedPins).catch((e) =>
+        console.warn("[Prompt Master] pin save rejected:", e && e.message)),
       updateActivePins(),
       r
     );
@@ -18317,7 +18371,11 @@
       if (Object.keys(snapshot).length > 0) {
         await GM_setValue(AUTO_BACKUP_KEY, JSON.stringify(snapshot));
       }
-    } catch (e) { console.debug("PM interceptor:", e);}
+    } catch (e) {
+      /* v28.8.2 (13a-F02): debug→warn — a quota-rejected auto-backup is a
+       * real storage-health signal, not chatter. */
+      console.warn("[Prompt Master] auto-backup rejected:", e);
+    }
   }
   function scheduleAutoBackup() {
     if (_autoBackupTimer) clearTimeout(_autoBackupTimer);

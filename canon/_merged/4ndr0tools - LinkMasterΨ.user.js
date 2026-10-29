@@ -2,7 +2,7 @@
 // @name           4ndr0tools - LinkMasterΨ
 // @namespace      https://github.com/4ndr0666/userscripts
 // @author         4ndr0666
-// @version      6.3.4
+// @version      6.3.5
 // @description    Accurately decodes, previews, exports, validates and scrapes all links. (Dual MPV Support + Ψ IG Harvester + sexyforums premium-link unwrap + GitHub raw-URL harvest + Ψ2 forum deep-scrape engine)
 // @downloadURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
 // @updateURL      https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
@@ -44,6 +44,32 @@
 // @connect        fbcdn.net
 // @connect        instagram.com
 // ==/UserScript==
+// 6.3.5 (WO-01 round 13): THE TWIN-DIVERGENCE SETTLEMENT — the r13
+// normalization-symmetry lens found ~40 resolver twins shared with the
+// sovereign Forums++, and five hardenings that shipped to Forums++ only.
+// All ported, plus this script's own classes: (1) CRITICAL — h.re.matchAll
+// re-executed the caller's pattern WITHOUT the g-flag rebuild the Forums++
+// twin has had since round 5: a non-global pattern (the live ibb.co
+// auth_token lookbehind is exactly that shape) re-executes from index 0
+// forever, pushing the identical match each pass — a TAB HANG, live-
+// verified against the exact helper code (13b-F06). (2) The pornhub
+// media-var extractor's exec()[0] access threw TypeError when a
+// concatenation fragment wasn't a plain var reference, and the fragment
+// was interpolated into the RegExp source unescaped (13b-F05). (3) The
+// ibb album walk: an unguarded image-count querySelector (null TypeError),
+// a NaN page-count that made the loop never run (silent zero-file album),
+// and the data-object decode lost the seekEnd pagination token on the
+// first malformed item — the page AND every later page of the album
+// silently vanished; the decode now degrades per-item (the 5-c F01 twin)
+// (13b-F02/F07). (4) basename/fnNoExt: trailing-slash URLs yielded ''
+// basenames (empty saved filenames) and dotless basenames popped to ''
+// (the Forums++ 13b-F01 twin) (13b-F10). (5) The pixhost og:title and ibb
+// header-content reads were unguarded null dereferences (13b-F05b).
+// (6) STORAGE (13a-F01): loadSettings ran the canon's LAST unguarded
+// boot-time JSON.parse of persisted GM storage — one corrupt stored string
+// killed the whole script on every page load (the MAM-F01 class, caught
+// here before an operator ever hit it). Defaults now, corrupt string
+// discarded with a console warning, never a boot crash.
 // 6.3.4 (suite v1.15.0, WO-01 round 8): the promise family's last settle
 // path — a manager-aborted request never rejected gm_promise (timeout and
 // error were covered; the abort arm was the only missing reject).
@@ -2094,10 +2120,20 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
     isNullOrUndef: (v) => v === null || v === undefined || typeof v === "undefined",
     basename: (path) =>
       path
-        .replace(/(\s+)?$/, "")
+        /* 6.3.5 (13b-F10): trailing-slash strip — the Forums++ twin's exact
+         * shape; a slash-terminated URL yielded a '' basename (empty saved
+         * filenames, and '' dedup keys that swallowed siblings). */
+        .replace(/\/(\s+)?$/, "")
         .split("/")
-        .reverse()[0],
-    fnNoExt: (path) => path.trim().split(".").reverse().slice(1).reverse().join("."),
+        .reverse()[0] ?? '',
+    fnNoExt: (path) => {
+      /* 6.3.5 (13b-F10): a dotless basename is its own stem — the old
+       * pop-then-join returned '' for 'photo' (the Forums++ 13b-F01 twin). */
+      const trimmed = String(path).trim();
+      const parts = trimmed.split(".");
+      if (parts.length < 2) return trimmed;
+      return parts.slice(0, -1).join(".");
+    },
     ext: (path) => {
       if (!path || path.indexOf(".") < 0) return null;
       const parts = path.split(".").reverse()[0].split("?")[0];
@@ -2234,8 +2270,15 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
       matchAll: (pattern, subject) => {
         const matches = [];
         let m;
-        while ((m = pattern.exec(subject)) !== null) {
-          if (m.index === pattern.lastIndex) pattern.lastIndex++;
+        /* 6.3.5 (13b-F06, CRITICAL): g-flag rebuild — the Forums++ twin's
+         * exact guard. Without it a NON-global pattern re-executes from
+         * index 0 forever and pushes the identical match each pass: a tab
+         * hang + memory explosion. The live caller
+         * /(?<=auth_token=").*?(?=")/i (ibb.co album token) is exactly
+         * that shape; every /gis-flagged caller was immune. */
+        const regex = new RegExp(pattern.source, "g" + (pattern.flags?.replace("g", "") || ""));
+        while ((m = regex.exec(subject)) !== null) {
+          if (m.index === regex.lastIndex) regex.lastIndex++;
           matches.push(m[0]);
         }
         return matches;
@@ -2760,7 +2803,9 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
           return images;
         };
         const resolved = await resolvePageImages(dom);
-        return { dom, source, folderName: dom.querySelector('meta[property="og:title"]').content.trim(), resolved };
+        /* 6.3.5 (13b-F05b): guarded og:title — a missing meta made the
+         * resolver throw and drop the whole gallery link. */
+        return { dom, source, folderName: dom?.querySelector('meta[property="og:title"]')?.content?.trim() || "untitled_gallery", resolved };
       }
     ],
     [
@@ -2768,7 +2813,11 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
       async (url, http) => {
         try {
           const { dom } = await http.get(url);
-          return dom.querySelector(".header-content-right > a").getAttribute("href");
+          /* 6.3.5 (13b-F05b): guarded header read — a missing anchor made the
+           * resolver throw; degrade to the album url (the outer catch's
+           * behavior, without losing the single-image case). */
+          const albumHref = dom?.querySelector(".header-content-right > a")?.getAttribute("href");
+          return albumHref || url;
         } catch {
           return url;
         }
@@ -2780,8 +2829,12 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
       async (url, http) => {
         const albumId = url.replace(/\?.*/, "").split("/").reverse()[0];
         const { source, dom } = await http.get(url);
-        const imageCount = Number(dom.querySelector('span[data-text="image-count"]').innerText);
-        const pageCount = Math.ceil(imageCount / 32);
+        /* 6.3.5 (13b-F02): the Forums++ twin's NaN-proof count — a missing
+         * count node or comma-formatted count made pageCount NaN, the page
+         * loop never ran, and the album silently resolved to zero files. */
+        const countText = String(dom?.querySelector('span[data-text="image-count"]')?.innerText || "").replace(/[^0-9]/g, "");
+        const imageCount = parseInt(countText, 10) || 0;
+        const pageCount = Math.max(1, Math.ceil(imageCount / 32));
         const authToken = h.re.matchAll(/(?<=auth_token=").*?(?=")/i, source)[0];
         const fetchPageData = async (albumId, page, seekEnd, authToken) => {
           const seek = seekEnd || "";
@@ -2797,8 +2850,20 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
             parsed = JSON.parse(response);
             if (parsed && parsed.status_code && parsed.status_code === 200) {
               const html = parsed.html.replace('"', '"');
+              /* 6.3.5 (13b-F07): the 5-c F01 twin — a bare '%' in one
+               * data-object aborted the whole album page into the catch,
+               * losing seekEnd and every later page with it. Decode and
+               * parse degrade PER ITEM now; the pagination token keeps
+               * flowing. */
+              const safeDecode = (v) => { try { return decodeURIComponent(v); } catch { return null; } };
               return {
-                urls: h.re.matchAll(/(?<=data-object=').*?(?=')/gi, html).map((o) => JSON.parse(decodeURIComponent(o)).url),
+                urls: h.re.matchAll(/(?<=data-object=').*?(?=')/gi, html)
+                  .map((o) => {
+                    const d = safeDecode(o);
+                    if (d == null) return null;
+                    try { return JSON.parse(d)?.url ?? null; } catch { return null; }
+                  })
+                  .filter((u) => typeof u === "string" && u),
                 parsed
               };
             }
@@ -2976,8 +3041,14 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
                 .split("+")
                 .map((s) => s.trim())
                 .map((s) => {
-                  let value = new RegExp(`var ${s}=".*?"`, "isg").exec(script)[0];
-                  const match = value.match(/^[^"]*"([^"]*)"/s);
+                  /* 6.3.5 (13b-F05): guard + escape — exec() returns null
+                   * when the fragment isn't a plain var reference (a raw
+                   * string literal in the concatenation), and the old [0]
+                   * access threw, killing the whole pornhub extractor;
+                   * metachars are escaped before interpolation. */
+                  const frag = String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+                  const value = new RegExp(`var ${frag}=".*?"`, "is").exec(script);
+                  const match = value ? value[0].match(/^[^"]*"([^"]*)"/s) : null;
                   return match ? match[1] : "";
                 })
                 .join("");
@@ -3805,7 +3876,17 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
       defaultGenerateLog: false,
       defaultSkipDuplicates: true,
     };
-    Object.assign(globalConfig, defaults, saved ? JSON.parse(saved) : {});
+    /* 6.3.5 (13a-F01): the canon's last unguarded boot-time JSON.parse of
+     * persisted GM storage (the MAM-F01 class) — one corrupt stored string
+     * killed the whole script on every page load: no dock, no harvest, no
+     * IG module, until the key was cleared by hand. Corrupt = discard with
+     * a console warning and boot on defaults. */
+    let parsed = null;
+    if (saved) {
+      try { parsed = JSON.parse(saved); }
+      catch (e) { console.warn('[LinkMasterΨ] stored settings were corrupt — booting on defaults:', e && e.message); }
+    }
+    Object.assign(globalConfig, defaults, parsed && typeof parsed === 'object' ? parsed : {});
   }
 
   const processPost = (post) => {

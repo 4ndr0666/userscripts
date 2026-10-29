@@ -2,7 +2,7 @@
 // @name         4ndr0tools - Website Control Panel
 // @namespace    https://github.com/4ndr0666/userscripts
 // @description  Draggable Cyberdeck HUD, DOM Zapper, Ad suppression, validated-selector compiled deep-cleaning, per-site HUD suppression + Alt+Shift+H hotkey.
-// @version      5.3.1
+// @version      5.3.2
 // @author       4ndr0666
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Website%20Control%20Panel.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Website%20Control%20Panel.user.js
@@ -15,6 +15,17 @@
 // @grant        GM_registerMenuCommand
 // @run-at       document-idle
 // ==/UserScript==
+
+/* ═══ v5.3.2 — STORAGE ROUND-TRIP PASS (WO-01 round 13) ══════════════
+ *   One tolerant toBool reader for every persisted boolean. The toggles
+ *   write NATIVE booleans (GM_setValue(id, classList.contains('active')))
+ *   but read with plain truthiness — on any manager that coerces stored
+ *   values to strings, "false" is TRUTHY and every feature the operator
+ *   had switched OFF silently re-enabled itself at next load: state
+ *   inversion for adblock, autoskip, ageskip, deepclean, killnags AND the
+ *   HUD's own hud_hidden flag (a hidden HUD resurrected itself). All
+ *   seven reads route through toBool now (AlwaysNewWindow's model).
+ * ═══════════════════════════════════════════════════════════════════ */
 
 /* ═══ v5.3.0 — HUD SOVEREIGNTY PASS (suite v1.3.0) ═════════════════════
  * The v5.2 HUD was welded onto every page with no way to dismiss it short
@@ -49,7 +60,7 @@
 (function () {
   'use strict';
 
-  const WCP_VERSION = '5.3.1';
+  const WCP_VERSION = '5.3.2';
   const DEBUG = (() => { try { return localStorage.getItem('psi_wcp_debug') === '1'; } catch (e) { return false; } })();
   const dbg = (...args) => { if (DEBUG) console.log('%c[4NDR0666OS] WCP v' + WCP_VERSION, 'color:#00E5FF;font-family:monospace;font-weight:bold;', ...args); };
   dbg('CYBERDECK HUD INITIATING');
@@ -215,6 +226,13 @@
   const writeJson = (key, value) => {
     try { GM_setValue(key, JSON.stringify(value)); } catch (e) { console.debug('WCP interceptor:', e); /* quota — non-fatal */ }
   };
+  /* v5.3.2 (13a-F08): one tolerant boolean reader for every toggle — on a
+   * string-coercing manager the stored "false" is a truthy string, so
+   * plain truthiness silently re-enabled every feature the operator had
+   * switched OFF (state inversion: autoskip, ageskip, deepclean, killnags,
+   * adblock, and the HUD's own hidden flag). AlwaysNewWindow's toBool is
+   * the model. */
+  const toBool = (v) => v === true || v === 1 || v === '1' || v === 'true';
 
   const siteSuppressed = () => {
     const list = readJson(SITE_BLOCKLIST_KEY, []);
@@ -227,7 +245,7 @@
     writeJson(SITE_BLOCKLIST_KEY, next);
   };
 
-  const hudGloballyHidden = () => GM_getValue(HUD_HIDDEN_KEY, false) || siteSuppressed();
+  const hudGloballyHidden = () => toBool(GM_getValue(HUD_HIDDEN_KEY, false)) || siteSuppressed();
   let panelEl = null;
 
   const applyHudVisibility = () => {
@@ -335,7 +353,7 @@
     // State Hydration
     const defaults = { adblock: true, autoskip: false, ageskip: false, deepclean: false, killnags: false };
     ['adblock', 'autoskip', 'ageskip', 'deepclean', 'killnags'].forEach(f => {
-      if (GM_getValue(f, defaults[f])) {
+      if (toBool(GM_getValue(f, defaults[f]))) {
         document.getElementById(`toggle-${f}`).classList.add('active');
       }
     });
@@ -402,7 +420,7 @@
   // MODULE 4: CORE PURIFICATION ROUTINES
   // ==========================================
   const blockAds = () => {
-    if (!GM_getValue('adblock', true)) return;
+    if (!toBool(GM_getValue('adblock', true))) return;
     document.querySelectorAll('video').forEach(v => {
       // v5.2: duration alone is not an ad signal — the old `< 12s` rule
       // nuked legitimate short clips (previews, looping embeds) on every
@@ -417,20 +435,20 @@
   };
 
   const autoSkip = () => {
-    if (!GM_getValue('autoskip', false)) return;
+    if (!toBool(GM_getValue('autoskip', false))) return;
     // v5.2: .ytp-skip-ad-button added — YouTube's newer skip control.
     const skipBtns = document.querySelectorAll('.ytp-ad-skip-button, .ytp-skip-ad-button, .skip-button, [class*="skip-ad"], button[aria-label="Skip Ad"], button[aria-label="Skip ad"]');
     skipBtns.forEach(btn => btn.click());
   };
 
   const bypassAge = () => {
-    if (!GM_getValue('ageskip', false)) return;
+    if (!toBool(GM_getValue('ageskip', false))) return;
     document.querySelector('button[aria-label="Agree"], .consent-button')?.click();
     document.querySelector('.html5-video-player')?.classList.remove('age-restricted-mode');
   };
 
   const deepClean = () => {
-    if (!GM_getValue('deepclean', false)) return;
+    if (!toBool(GM_getValue('deepclean', false))) return;
     if (!DEEP_CLEAN_SELECTORS) return;
     try {
         document.querySelectorAll(DEEP_CLEAN_SELECTORS).forEach(el => el.remove());
@@ -440,7 +458,7 @@
   };
 
   const killNags = () => {
-    if (!GM_getValue('killnags', false)) return;
+    if (!toBool(GM_getValue('killnags', false))) return;
     if (!NAG_SELECTORS) return;
     try {
         document.querySelectorAll(NAG_SELECTORS).forEach(el => {

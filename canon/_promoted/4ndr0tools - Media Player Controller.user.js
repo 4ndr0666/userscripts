@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Media Player Controller
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      8.1.4
+// @version      8.1.5
 // @author       4ndr0666
 // @description  Speed • Fine Rate ±0.1 • Alt+Shift rAF Zoom/Pan • Rotation • Smart Maximize • Native Fullscreen • PiP • Play • DblClick • Pause-on-Acquire • Virtual DOM Nodes • Shadow-DOM Discovery • Cyan-Glass Scrub Bar • Download Button (fetch + blob capture) • Screenshot • Volume/Mute • Frame Step • Seek Hotkeys • IG Story Nav (3-Layer) • Story Repeat (3-Layer) • Active-Media Observer • YouTube Ad Auto-Skip • Toast Feedback • Draggable HUD • Full Hotkey Suite
 // @license      MIT
@@ -16,6 +16,15 @@
 // @all_frames   true
 // @run-at       document-end
 // ==/UserScript==
+// 8.1.5 (WO-01 round 13): the storage round-trip riders. (1) media_speed
+// reads through Number() with a sane clamp — a string-shaped store (manager
+// coercion / hand edit) threw TypeError in UI init (speed.toFixed is not a
+// function) and desynced every active-button compare (13a-F10). (2) The
+// ad-skip toggle reads through toBool at BOTH the boot read and the
+// cross-frame change listener — a string "false" is truthy, so !!val and
+// plain truthiness re-enabled the sweep the operator had switched OFF
+// (13a-F08). (3) media_pos shape-guards its store — a non-object value
+// degraded to ignored CSS assignments (13a-F11).
 // 8.1.4 (suite v1.18.0, WO-01 round 10): the vnode localStorage orphan purge now
 // materializes IN-SESSION — purgeOrphanVNodes previously ran only at
 // beforeunload, so an infinite-scroll SPA that never unloads grew the vnode
@@ -77,7 +86,13 @@
 
     let activeVideo = null;
     let activeImage = null; // Image-based story/post media — no play/scrub semantics, but trackable for download
-    let targetSpeed = GM_getValue('media_speed', 1.0);
+    /* 8.1.5 (13a-F10): Number() + clamp at the read — a string-shaped
+     * media_speed store threw in UI init (toFixed) and desynced the active-
+     * button compare. */
+    let targetSpeed = (() => {
+        const v = Number(GM_getValue('media_speed', 1.0));
+        return isFinite(v) && v > 0 ? v : 1.0;
+    })();
 
     // Top-frame-only UI hooks. Declared here (shared scope) as null and
     // assigned inside the top-frame section, so shared-section event
@@ -1149,7 +1164,9 @@
 
     // Cross-frame speed sync
     GM_addValueChangeListener('media_speed', (_, __, val) => {
-        targetSpeed = val;
+        /* 8.1.5 (13a-F10): coerce at the sync boundary too. */
+        const v = Number(val);
+        targetSpeed = isFinite(v) && v > 0 ? v : 1.0;
         applyMediaState();
         if (IS_TOP && updateActiveSpeed) {
             updateActiveSpeed(targetSpeed);
@@ -1158,7 +1175,9 @@
 
     // Cross-frame ad-skip toggle sync
     GM_addValueChangeListener('adskip_enabled', (_, __, val) => {
-        adSkipEnabled = !!val;
+        /* 8.1.5 (13a-F08): toBool — a string "false" is truthy; !!val
+         * re-enabled the sweep the operator had switched OFF. */
+        adSkipEnabled = val === true || val === 1 || val === '1' || val === 'true';
     });
 
     // ==========================================
@@ -1218,7 +1237,11 @@
     // is a no-op everywhere else. The fpsbooster heuristic (pause/remove any
     // video under 10s) was audited and REJECTED as destructive — the
     // duration-rewind below only touches the dedicated ad-showing creative.
-    let adSkipEnabled = GM_getValue('adskip_enabled', true);
+    let adSkipEnabled = (() => {
+        /* 8.1.5 (13a-F08): toBool at the read — see the listener twin. */
+        const v = GM_getValue('adskip_enabled', true);
+        return v === false || v === 0 || v === '0' || v === 'false' ? false : true;
+    })();
 
     function runAdSkipSweep() {
         if (!adSkipEnabled || document.hidden) return;
@@ -1473,8 +1496,10 @@
         }
     });
 
+    /* 8.1.5 (13a-F11): shape guard — a non-object media_pos store degraded
+     * to ignored CSS assignments; require a left/top-bearing object. */
     const savedPos = GM_getValue('media_pos');
-    if (savedPos) {
+    if (savedPos && typeof savedPos === 'object' && typeof savedPos.left === 'string' && typeof savedPos.top === 'string') {
         ui.style.left = savedPos.left;
         ui.style.top  = savedPos.top;
     } else {

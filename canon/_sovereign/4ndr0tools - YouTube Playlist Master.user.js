@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - YouTube Playlist Master
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.7.4
+// @version      1.7.5
 // @description  Channel playlist buttons (All / Popular / Videos / Shorts / Streams / Members-only), Random play (prefer newest/oldest), reverse autoplay order, playlist autoplay toggle, duration sort, bulk copy/move/delete, JSON + plaintext export/import, snapshots with deleted-video detection, quick watch_videos playlists, queue & watch-later overlays, playlist close button, date/view metadata, episode auto-expand, huge-playlist browser, live settings (no reload), always-available Ψ deck, playlist row filter, duplicate finder & purge, global hotkeys (Alt+Shift+U/S/X), failsafe deck rescue, 404-proof navigation guards, Trusted-Types-immune rendering, fully-visible fit-content modal dialogs.
 // @author       4ndr0666
 // @license      MIT
@@ -19,6 +19,11 @@
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YouTube%20Playlist%20Master.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YouTube%20Playlist%20Master.user.js
 // ==/UserScript==
+// 1.7.5 (WO-01 round 13): the bare-ID fallback of parsePlaylistId requires
+// a real playlist-id shape — any 13+ char token in pasted text (a long
+// word, a base64 blob) used to be accepted as the playlist id and produced
+// a guaranteed-404 import; the fallback now demands a known id prefix
+// (PL/OL/RD/UU/FL) with the same minimum length (13b-F18).
 // 1.7.4 (suite v1.19.0, WO-01 round 11): the activateSort wedge + the
 // stale watched-mark (11b-F04/F09). (1) PHASE-2 WEDGE: the inner wait
 // loop's brute-force scroll arm had NO retry cap and allAnchors is a
@@ -2453,7 +2458,9 @@ dialog .modal-card { width: min(560px, 92vw); max-height: 84vh; }
 
         function parsePlaylistId(s) {
             try { const l = new URL(s, location.origin).searchParams.get('list'); if (l) return l; } catch (e) { console.debug('YTPM interceptor:', e); /* fall through */ }
-            const m = String(s).match(/[A-Za-z0-9_-]{13,}/);
+            /* 1.7.5 (13b-F18): shape-gated fallback — a known playlist-id
+             * prefix plus the same 13-char minimum the old matcher had. */
+            const m = String(s).trim().match(/^(?:PL|OL|RD|UU|FL)[A-Za-z0-9_-]{11,}$/);
             return m ? m[0] : null;
         }
 

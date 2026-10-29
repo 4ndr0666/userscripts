@@ -2,7 +2,7 @@
 // @author       4ndr0666
 // @name        4ndr0tools - Login Form Autofiller
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version     2.0.10
+// @version     2.0.11
 // @description It integrates BugMeNot into any login form (it retrieves all matching logins from bugmenot.com and autofills the login form)
 // @authors     4ndr0666
 // @icon        data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -21,6 +21,18 @@
 // @noframes
 // @run-at      document-idle
 // ==/UserScript==
+// 2.0.11 (WO-01 round 13): the cached-credential domain gate —
+// FIX 14's indexOf test was a SUBSTRING match: a previous site at
+// https://notexample.com/ contains 'example.com', so the shared counter
+// was NOT reset when the operator moved between lookalike domains, and the
+// cached branch then served notexample.com's BugMeNot credentials into
+// example.com's login form (a cross-site fill — submitted credentials leak
+// to the wrong origin). The gate now parses the stored URL's hostname and
+// accepts only equality or a dot-suffix (subdomain) of the current domain
+// (13a-F05). Rider: parseInt(...) || 0 at both counter reads — a corrupt
+// non-numeric store parsed to NaN, which round-tripped, permanently failed
+// the next-login test, and (NaN > 0 being false) hid the only in-page reset
+// link on that domain (13a-F06).
 // 2.0.10 (WO-01 round 12): storage parse guards (12b-F09 — four
 // unguarded JSON.parse(await GM.getValue(...)) of stored state: corrupt
 // storage = unhandled rejection + silent feature death for that pass; every
@@ -328,7 +340,8 @@ function updateGetLoginLinkLabel(bmnWrapper) {
         var list = [];
         try { list = JSON.parse(stored) || []; } catch (e) { console.debug('LFA: allUsernames store rejected, defaults kept', e); }
         var total          = list.length;
-        var currentCounter = parseInt(await GM.getValue('counter', 0));
+        /* 2.0.11 (13a-F06): NaN-proof — see the bootstrap twin. */
+        var currentCounter = parseInt(await GM.getValue('counter', 0), 10) || 0;
 
         var newText, newTitle;
         if (currentCounter + 1 <= total) {
@@ -1002,11 +1015,24 @@ function textToXml(t) {
 (async function () {
     var lastURL = await GM.getValue('lastURL', '');
 
-    if (lastURL.indexOf(domainname) === -1) {
+    /* 2.0.11 (13a-F05): hostname equality or dot-suffix — the old indexOf
+     * substring test let notexample.com satisfy an example.com gate, so
+     * the shared BugMeNot counter survived the domain move and the cached
+     * branch filled the PREVIOUS site's credentials into the new site's
+     * form. A parse failure resets the counter (the safe side). */
+    var sameDomain = false;
+    try {
+        var lastHost = new URL(lastURL).hostname;
+        sameDomain = (lastHost === domainname) || (lastHost.endsWith('.' + domainname));
+    } catch (e) { sameDomain = false; }
+
+    if (!sameDomain) {
         counter = 0;
         await GM.setValue('counter', 0);
     } else {
-        counter = parseInt(await GM.getValue('counter', 0));
+        /* 2.0.11 (13a-F06): NaN lockout — a corrupt non-numeric store parsed
+         * to NaN, round-tripped forever, and hid the reset link (NaN > 0). */
+        counter = parseInt(await GM.getValue('counter', 0), 10) || 0;
     }
 
     main();

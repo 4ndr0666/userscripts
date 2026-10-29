@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - m3u8++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      5.1.2
+// @version      5.1.3
 // @author       4ndr0666
 // @description  Automatically displays the m3u8 url for ANY video playing in the top right corner of the video. Click url to copy or click download to use the webapp "tools.thatwind.com". Also injects Play buttons next to magnet links on every page, relaying them to www.diancigaoshou.com.
 // @license      MIT
@@ -21,11 +21,23 @@
 // @grant        GM.setValue
 // @grant        GM_deleteValue
 // @grant        GM.deleteValue
+// @grant        GM_listValues
+// @grant        GM.listValues
 // @grant        GM_xmlhttpRequest
 // @grant        GM.xmlHttpRequest
 // @grant        GM_download
 // @run-at       document-start
 // ==/UserScript==
+// 5.1.3 (WO-01 round 13): storage round-trip riders. (1) The title
+// handshake's orphan sweep — every timed-out or late-answered handshake
+// leaked one top-title-* key into GM storage forever (the child deletes
+// the key only on a correlated answer inside its 2 s bound; the writer
+// in the top frame has no such bound). The top frame now sweeps
+// top-title-* keys older than a minute, once per boot (13a-F07).
+// (2) The panel's 'shown' toggle reads through a toBool — on a
+// string-coercing manager the stored "false" is a truthy string, so
+// !shown evaluated false and a hidden panel could never be shown again
+// (13a-F08).
 // 5.1.2 (suite v1.18.0, WO-01 round 10): the handshake + proxy hardening
 // batch. (1) getTopTitle gains request-id correlation and a 2 s bound
 // (10b F06/F07 — the cross-frame handshake resolved on ANY matching
@@ -133,6 +145,14 @@
         },
         async deleteValue(name) {
             return await ((typeof GM_deleteValue === "function") ? GM_deleteValue : GM.deleteValue)(name);
+        },
+        /* 5.1.3 (13a-F07): listValues — the orphan sweep's iterator; managers
+         * without any list API keep the old behavior via the catch at the
+         * sweep site. */
+        async listValues() {
+            if (typeof GM_listValues === "function") return GM_listValues();
+            if (typeof GM !== "undefined" && GM && typeof GM.listValues === "function") return await GM.listValues();
+            return [];
         },
         openInTab(url, open_in_background = false) {
             return ((typeof GM_openInTab === "function") ? GM_openInTab : GM.openInTab)(url, open_in_background);
@@ -305,6 +325,24 @@
                 : `3j4t9uj349-gm-top-title-name:${name}`, "*");
         }
     });
+
+    /* 5.1.3 (13a-F07): the orphan sweep — see the changelog. Top frame only:
+     * the writer that mints the keys lives there, and one sweeper per
+     * window is enough (GM storage is shared across the script's frames). */
+    if (window.top === window) {
+        (async function sweepStaleTitleKeys() {
+            try {
+                const keys = await mgmapi.listValues();
+                const cutoff = Date.now() - 60000;
+                for (const k of keys) {
+                    const m = String(k).match(/^top-title-(\d+)/);
+                    if (m && Number(m[1]) < cutoff) {
+                        try { await mgmapi.deleteValue(k); } catch (e) { /* best-effort */ }
+                    }
+                }
+            } catch (e) { /* managers without listValues keep the old behavior */ }
+        })();
+    }
 
     function getTopTitle() {
         /* 5.1.2 (10b F06/F07): request-id correlation + the 2 s bound. The
@@ -510,7 +548,11 @@
 
     (async function () {
 
+        /* 5.1.3 (13a-F08): toBool at the read — on a string-coercing manager
+         * the stored "false" is a truthy string, so !shown evaluated false
+         * and a hidden panel could never be shown again. */
         let shown = await mgmapi.getValue("shown", true);
+        shown = (shown === true || shown === 1 || shown === "1" || shown === "true");
         wrapper.setAttribute("data-shown", shown);
 
 

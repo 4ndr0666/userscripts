@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - YT Filter
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      2.5.1
+// @version      2.5.2
 // @author       4ndr0666
 // @description  Electric-Glass YouTube video filter — views, date, duration
 // @license      MIT
@@ -12,8 +12,12 @@
 // @grant        GM_addStyle
 // @run-at       document-end
 // ==/UserScript==
+// 2.5.2 (WO-01 round 13): the view-threshold validator admits exactly one
+// decimal point — '1.2.3' passed /^[\d.]+[KMBkmb]?$/ and parseFloat
+// silently accepted 1.2 as the threshold; the shape is now
+// /^\d+(\.\d+)?[KMBkmb]?$/ (13b-F19).
 // 2.5 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: YT Filter.user v2.5.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: YT Filter.user v2.5.2 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 (() => {
   'use strict';
@@ -584,7 +588,9 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: YT Filter.user v2.5.1 �
     if (value === '' || value == null) return { valid: true, value: null };
     const cleaned = value.replace(/[,\s]/g, '');
     if (allowSuffix) {
-      if (!/^[\d.]+[KMBkmb]?$/.test(cleaned))
+      /* 2.5.2 (13b-F19): one decimal point — '1.2.3' passed the old
+       * [\d.]+ class and parseFloat silently accepted 1.2. */
+      if (!/^\d+(\.\d+)?[KMBkmb]?$/.test(cleaned))
         return { valid: false, error: 'Format: 1.5K, 10M, or 1,234' };
       return { valid: true, value: parseNumberWithSuffix(value) };
     }

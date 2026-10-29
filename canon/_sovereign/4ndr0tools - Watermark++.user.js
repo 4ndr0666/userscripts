@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Watermark++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      2.1.2
+// @version      2.1.3
 // @description  Security research and alignment testing only.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @author       4ndr0666
@@ -15,6 +15,19 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Watermark++.user.js
 // @license      MIT
 // ==/UserScript==
+// 2.1.3 (WO-01 round 13): the normalization-symmetry round. (1) The RPC
+// body decode loop applied its '+'→'%20' substitution on EVERY pass — a
+// legitimately encoded %2B decoded to '+' on pass one and was rewritten to
+// a space on pass two (Gemini asset filenames 'a+b.jpg' → 'a b.jpg' →
+// unmatchable download URLs). First attempt only now (13b-F08). (2) The
+// jslog draft capture accepted the 'draft_' spelling but the normalizer
+// required the 'rc_' prefix — every draft_-spelled capture was silently
+// nulled, half the pattern dead; the draft spelling maps onto the rc_
+// canonical form so both register the session (13b-F15). (3) The two
+// asset-id normalizers share one failure sentinel — normalizeAssetId
+// returned '' while its twin returned null; all callers are falsy-safe
+// today, but any future === null check would have silently accepted ''
+// (13b-F20).
 // 2.1.2 (suite v1.15.0, WO-01 round 8): every transport settles (8c
 // F01/F02/F04). The GM transport had NO timeout and NO onabort — a stalled
 // connection or a manager abort left fetchBlobWithUserscriptRequest's
@@ -356,11 +369,14 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.1.2 
   // src/shared/imageSessionStore.js
   function normalizeAssetId(value, prefix) {
     if (typeof value !== "string") {
-      return "";
+      /* v2.1.3 (13b-F20): null — the twin normalizeGeminiAssetId's failure
+       * sentinel; '' and null diverging across twins is how silent
+       * accept-anything bugs breed. */
+      return null;
     }
     const trimmed = value.trim();
     if (!trimmed.startsWith(prefix) || trimmed.length <= prefix.length) {
-      return "";
+      return null;
     }
     return trimmed;
   }
@@ -887,7 +903,15 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.1.2 
     }
     const responseId = normalizeGeminiAssetId(jslog.match(/"((?:r|resp)_[^"]+)"/)?.[1] || null, "r_");
     const conversationId = normalizeGeminiAssetId(jslog.match(/"((?:c|conv)_[^"]+)"/)?.[1] || null, "c_");
-    const draftId = normalizeGeminiAssetId(jslog.match(/"((?:rc|draft)_[^"]+)"/)?.[1] || null, "rc_");
+    /* v2.1.3 (13b-F15): the jslog 'draft_' spelling — the capture accepted
+     * it but the normalizer required the 'rc_' prefix, so every
+     * draft_-spelled capture was silently nulled (half the pattern dead).
+     * The draft spelling maps onto the rc_ canonical form. */
+    const draftRaw = jslog.match(/"((?:rc|draft)_[^"]+)"/)?.[1] || null;
+    const draftId = normalizeGeminiAssetId(
+      draftRaw && draftRaw.startsWith("draft_") ? `rc_${draftRaw.slice("draft_".length)}` : draftRaw,
+      "rc_"
+    );
     if (!responseId && !conversationId && !draftId) {
       return null;
     }
@@ -12380,7 +12404,12 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Watermark++.user v2.1.2 
       previous = decodedText;
       attempts += 1;
       try {
-        decodedText = decodeURIComponent(decodedText.replace(/\+/g, "%20"));
+        /* v2.1.3 (13b-F08): the '+'→'%20' substitution applies on the FIRST
+         * attempt only — a legitimately encoded %2B decodes to '+', and the
+         * next loop pass rewrote that '+' into a space ('a+b.jpg' →
+         * 'a b.jpg' → unmatchable download URLs). */
+        const input = attempts === 1 ? decodedText.replace(/\+/g, "%20") : decodedText;
+        decodedText = decodeURIComponent(input);
       } catch {
         break;
       }

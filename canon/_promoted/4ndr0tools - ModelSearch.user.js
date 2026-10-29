@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - ModelSearch
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      4.0.4
+// @version      4.0.5
 // @description  Covert SimpCity search UI directly from any website. (Electric-Glass + Alt+S Hotkey Only)
 // @author       4ndr0666
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20ModelSearch.user.js
@@ -15,6 +15,12 @@
 // @license      MIT
 // @run-at       document-start
 // ==/UserScript==
+// 4.0.5 (WO-01 round 13): ONE tolerant reader for the remote-fonts toggle.
+// The constructor read plain truthiness while the menu read === true — on
+// a string-coercing manager the stored "false" satisfied BOTH wrong ways:
+// the constructor phantom-injected the remote fonts (truthy string) while
+// the menu computed !false and wrote true (the toggle could only ever turn
+// ON). Both sites share one toBool-shaped reader now (13a-F09).
 // 4.0.4 (suite v1.18.0, WO-01 round 10): hotkey/dispatch pair from the
 // rotation audit — the Alt+S keydown now early-returns on IME composition
 // and key auto-repeat (event.isComposing || event.repeat, the suite hotkey
@@ -77,6 +83,14 @@ Changelog:
 (function () {
     'use strict';
 
+    /* 4.0.5 (13a-F09): the single tolerant reader — see the changelog. The
+     * constructor and the menu toggle MUST agree or the toggle can only
+     * ever turn ON on a string-coercing manager. */
+    const mstRemoteFontsOn = () => {
+        const v = GM_getValue('mst_remote_fonts', false);
+        return v === true || v === 1 || v === '1' || v === 'true';
+    };
+
     /**
      * @class ModelSearchTool
      * @description Covert model-search UI via Shadow DOM + Alt+S hotkey.
@@ -110,7 +124,7 @@ Changelog:
          */
         constructor() {
             try {
-                if (GM_getValue('mst_remote_fonts', false)) this.#injectFonts(); // OPSEC: opt-in remote fonts
+                if (mstRemoteFontsOn()) this.#injectFonts(); // OPSEC: opt-in remote fonts
                 this.#createUI();
                 this.#bindEvents();
             } catch (error) {
@@ -507,7 +521,7 @@ Changelog:
     // applies on the next load — the reload IS the honest apply mechanism.
     // typeof-guards keep the boot sequence alive in hosts that strip grants.
     if (typeof GM_registerMenuCommand === 'function' && typeof GM_setValue === 'function') {
-        const remoteFontsOn = () => GM_getValue('mst_remote_fonts', false) === true;
+        const remoteFontsOn = mstRemoteFontsOn; // 4.0.5 (13a-F09): the one shared reader
         GM_registerMenuCommand(
             `Ψ ModelSearch — Remote Fonts: ${remoteFontsOn() ? 'ON' : 'OFF'} (click to toggle)`,
             () => {
