@@ -54,13 +54,13 @@ check-scraped flow; paste-to-check remains at the top of the Check tab.
 
 | You had | Install instead | Then uninstall |
 |---|---|---|
-| Images++ v3.0.0 (universal) | [Images++ v4.0.6](../dist/4ndr0tools%20-%20Images%2B%2B.user.js) | Images++ (old) |
-| Images++BETA v2.1.0 (IG-scoped) | [Images++ v4.0.6](../dist/4ndr0tools%20-%20Images%2B%2B.user.js) — see note | Images++BETA |
+| Images++ v3.0.0 (universal) | [Images++ v4.1.0](../dist/4ndr0tools%20-%20Images%2B%2B.user.js) | Images++ (old) |
+| Images++BETA v2.1.0 (IG-scoped) | [Images++ v4.1.0](../dist/4ndr0tools%20-%20Images%2B%2B.user.js) — see note | Images++BETA |
 
 Note: the BETA was a divergent IG/imagefap-scoped branch. Its one unique
-feature — configurable collapse hotkey — is in v4.0.6. If you relied on the
+feature — configurable collapse hotkey — is in v4.1.0. If you relied on the
 BETA's IG-specific hover behavior, the universal stable behavior (also in
-v4.0.6) covers it; Instagram++ remains the dedicated IG tool.
+v4.1.0) covers it; Instagram++ remains the dedicated IG tool.
 
 ### Privacy trio (three → one)
 

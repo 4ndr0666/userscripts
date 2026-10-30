@@ -7,7 +7,18 @@
 > three Anti-* ICC scripts folded into Akasha Silence at merge; Zai Exporter
 > arrived later), 9 BETA promotions (Stream Interceptor v1.3.0; Forum Link
 > Xtractor's second candidate promotion), 3 merges (Akasha Silence), 38
-> dist installables at 118,786 lines (the WO-01 round-13
+> dist installables at 119,372 lines (the WO-01 round-14 grid-wall
+> settlement — 3 canon bumps: Instagram++ v13.2.5 → v13.3.0 (THE GRID
+> WALL — the wall's own single-column layout was the obstruction the
+> operator reported all along, never the native ghost; the grid is the
+> default now, the feed column strictly opt-in per-session, 'DUMP HTML'
+> back on the artifact button per the directive, and the lineage's wall
+> snapshot (catalog offload + precise scroll restore) wired), Prompt
+> Master v28.8.2 → v28.9.0 (six normalization fixes incl. the
+> contenteditable escape and the flow host-family superset the battery
+> caught live), Images++ v4.0.6 → v4.1.0 (twelve fixes incl. the CSP
+> boundary dot and the NaN-persist heal); prior re-stamp 118,786 lines
+> at the WO-01 round-13
 > twin-divergence settlement — 16 canon bumps: LinkMasterΨ v6.3.4 →
 > v6.3.5 (THE CRITICAL matchAll g-flag rebuild — a non-global pattern
 > was a tab hang — plus the canon's last unguarded boot-time settings

@@ -821,12 +821,12 @@
   {
    "file": "4ndr0tools - Images++.user.js",
    "name": "4ndr0tools - Images++",
-   "version": "4.0.6",
+   "version": "4.1.0",
    "description": "Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. Collapse-mode hotkey is configurable.",
    "family": "images",
-   "sha256": "8665e1923cb6dfe744e3d376b5b15b6ec6cb57af4df851a6dd09c947e0763c0e",
-   "lines": 4656,
-   "bytes": 140840,
+   "sha256": "701dcb8dfda11898d677b409a5a98e2d3f7e5545602ccac4d5d1f42e18b39582",
+   "lines": 4711,
+   "bytes": 144871,
    "matches": [
     "*://*/*"
    ],
@@ -883,12 +883,12 @@
   {
    "file": "4ndr0tools - Instagram++.user.js",
    "name": "4ndr0tools - Instagram++",
-   "version": "13.2.5",
+   "version": "13.3.0",
    "description": "Tab-Bar + Dock Integration. Hotkey trigger (Alt+I). Ad-Blocking. Deep-Stack Recovery. Resilient cursor-based pagination. Stories support. Image/video download engine.",
    "family": "sovereign platforms",
-   "sha256": "711d5379607859cd3acd50970840dc853831498be3c5682b0c480606d5040428",
-   "lines": 2854,
-   "bytes": 155305,
+   "sha256": "9511aa415449c6b27fba47afe22b9974983f4affd6d71aeeee588acd1b721925",
+   "lines": 3281,
+   "bytes": 179923,
    "matches": [
     "*://*.instagram.com/*"
    ],
@@ -1183,12 +1183,12 @@
   {
    "file": "4ndr0tools - Prompt Master.user.js",
    "name": "4ndr0tools - Prompt Master",
-   "version": "28.8.2",
+   "version": "28.9.0",
    "description": "Google Flow prompt manager toolkit (works on any AI, just add url) - persisted unit ledger meters every generation click, organization engine: collections, saved views, favorites, ratings, archive, group-by, and insights for large prompt libraries, dedupe, media slideshow, ai prompt enhancer, auto gist syncing, hotkeys, much more.",
    "family": "sovereign platforms",
-   "sha256": "175e1b2ee13954d9c0420c09d4e6cdb941bd420aab351d1ae9505d380b1eab0c",
-   "lines": 24026,
-   "bytes": 1172132,
+   "sha256": "bf22b08cc84cc166f882d96b0b1cdec3c7c69a7a2923dabe6704563d41410d09",
+   "lines": 24130,
+   "bytes": 1178959,
    "matches": [
     "*://geminigen.ai/*",
     "*://gist.github.com/*",
@@ -1689,5 +1689,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "c889b5ec1f55f373187dfacc88a8e7aac6d10bada3aca0c9f731dff1f8c6829f"
+ "digest": "d4f4c4916c9484115a980aa3b8049ccd6e085ab4ce30f31fca70f5cad821310a"
 }

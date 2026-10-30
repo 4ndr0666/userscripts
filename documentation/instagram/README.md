@@ -1,19 +1,19 @@
-# Instagram++ · v13.2.5
+# Instagram++ · v13.3.0
 
 > Instagram desktop sovereignty — `sovereign platforms` family · [suite 4ndr0666tools](../INDEX.md)
 
 ## Mission
 
-Instagram++ rebuilds the Instagram web surface for power use: tab-bar + dock integration, an Alt+I hotkey trigger, ad-blocking, deep-stack recovery from the site's own broken states, resilient cursor-based pagination that survives the API's scroll-locked model, stories support, and a full image/video download engine. It carries the suite's [TRUSTED TYPES BYPASS] block — creating the 'default' policy — because its intercept engine feeds page-context innerHTML writes that TT would otherwise kill.
+Instagram++ rebuilds the Instagram web surface for power use: tab-bar + dock integration, an Alt+I hotkey trigger, ad-blocking, deep-stack recovery from the site's own broken states, resilient cursor-based pagination that survives the API's scroll-locked model, stories support, and a full image/video download engine — all feeding the ARES media wall: a responsive grid display of every harvested media item on a profile (the single-column feed view is per-session opt-in; the native retirement veil is permanently engaged — the wall IS the view), with the wall snapshot (catalog offload + precise scroll restore across accidental navigation). It carries the suite's [TRUSTED TYPES BYPASS] block — creating the 'default' policy — because its intercept engine feeds page-context innerHTML writes that TT would otherwise kill.
 
 ## Scope
 
 | Dimension | Value |
 |---|---|
-| Version | `13.2.5` |
+| Version | `13.3.0` |
 | Matches | `*://*.instagram.com/*` |
 | Run-at | `document-start` |
-| Size | 151.7 KB · 2854 lines |
+| Size | 175.7 KB · 3281 lines |
 | Install | [dist/4ndr0tools - Instagram++.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Instagram%2B%2B.user.js) |
 
 ## Feature Inventory
@@ -24,6 +24,7 @@ Instagram++ rebuilds the Instagram web surface for power use: tab-bar + dock int
 - Deep-stack recovery (self-healing from SPA failures)
 - Resilient cursor-based pagination
 - Stories support
+- ARES media wall — responsive grid display (opt-in feed column), 80-node NeuralDOM budget with aspect-ratio reservations, localStorage wall snapshot with precise scroll restore
 - Image/video download engine
 - Trusted Types default-policy bypass for page-context rendering
 

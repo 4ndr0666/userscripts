@@ -68,7 +68,7 @@ const PROMISE_ADJUDICATED = [
     {
         file: "canon/_sovereign/4ndr0tools - Prompt Master.user.js",
         count: 1,
-        expiry: "v1.22.0",
+        expiry: "v1.23.0",
     },
 ];
 

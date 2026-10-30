@@ -955,10 +955,10 @@
 
 ### IG-ARES-01
 
-**ARES wall harvest: wall opens, entries present, BUFFERED at most 500** — `4ndr0tools - Instagram++.user.js` v13.2.5 · provenance: 8c F03 — 03dccb2 (IG 13.2.3); the ARES family is long-standing
+**ARES wall harvest: wall opens, entries present, BUFFERED at most 500** — `4ndr0tools - Instagram++.user.js` v13.3.0 · provenance: 8c F03 — 03dccb2 (IG 13.2.3); the ARES family is long-standing
 
 - **Closes residual**: ig-ares-harvest
-- **Anchor**: canon/_sovereign/4ndr0tools - Instagram++.user.js @ 13.2.5 — `pendingItems` — lines 166, 435, 436, 746 …+7 more at render · `BUFFERED:` — lines 1437 at render · `ARES-9` — lines 182, 1250, 1353, 1360 …+4 more at render
+- **Anchor**: canon/_sovereign/4ndr0tools - Instagram++.user.js @ 13.3.0 — `pendingItems` — lines 225, 505, 506, 819 …+8 more at render · `BUFFERED:` — lines 1847 at render · `ARES-9` — lines 253, 1654, 1763, 1770 …+4 more at render
 - **Environment**: chrome / tampermonkey-mv3 / sites: https://www.instagram.com/ logged-in
 - **Prerequisites**: scroll a feed/reels/profile for 1-2 minutes WITHOUT opening the wall (this accumulates pendingItems)
 - **Risk**: download none · network your own IG account; heavy scrolling mimics normal use · ToS moderate — authenticated DOM/wire as capture surface (the suite's standing stance)

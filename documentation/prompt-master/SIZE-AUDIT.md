@@ -1,6 +1,6 @@
-# SIZE-AUDIT — 4ndr0tools - Prompt Master.user.js (suite v1.21.0, G6 record)
+# SIZE-AUDIT — 4ndr0tools - Prompt Master.user.js (suite v1.22.0, G6 record)
 
-**Artifact:** `dist/4ndr0tools - Prompt Master.user.js` — 1,172,132 B (re-measured 2026-10-29 at suite v1.21.0, script v28.8.2 — the WO-01 round-13 storage round-trip batch: GlobalFiles LRU bounds (64 entries / 20 MB, oldest-first) + the caught save, the getGlobalFiles Array.isArray choke point, the backup-table defaultVal corrections, the caught pin save, the debug-to-warn auto-backup catch; +3,602 B / +59 lines), prior re-measure 1,168,530 B at suite v1.20.0 (2026-10-28 — the WO-01 round-12 pin ride-along: PM canon and kernel byte-identical that round), prior re-measure 2026-10-27 at suite v1.19.0 (the WO-01 round-11 pin ride-along: canon and kernel byte-identical that round), prior re-measure 1,168,530 B at suite v1.18.0 (2026-10-27, the WO-01 round-10 pin ride-along: canon and kernel byte-identical that round), prior re-measure 1,168,530 B at suite v1.17.0 (2026-10-27, the WO-01 round-9 pin ride-along: canon and kernel byte-identical that round), prior re-measure 1,168,530 B at suite v1.16.0 (2026-10-26, the WO-01 round-8 connection-hygiene batch: the memoized IndexedDB open + the SCRIPT_VERSION fallback re-stamp; +561 B / +7 lines), prior re-measure 1,167,969 B at suite v1.15.0 (the WO-01 round-7 pin ride-along: PM/WM canon and kernel byte-identical this round), prior re-measure 2026-10-26 at suite v1.14.0 (the WO-01 round-6 pin ride-along: canon/kernel byte-identical that round), prior re-measure 2026-10-25 at suite v1.13.0, script v28.8.0 — the WO-01 round-5 MIT license adoption re-measure: the @license meta value flip (−27 B; partition: −22 comment-mass by stripper-diff + −5 in-comment spaces), prior re-measure 1,167,996 B at suite v1.12.0 with the round-4 kernel truth batch riding the inlined kernel chunk; prior 1,166,403 B at suite v1.10.0; the v1.8.2-round "unchanged" claim was already wrong at its own commit — the tree measured 1,160,241 B that day; v1.4.10 baseline 1,122,838 B). The byte count in this line is machine-verified by tools/size-budget.mjs since WO-01 round-2.
+**Artifact:** `dist/4ndr0tools - Prompt Master.user.js` — 1,178,959 B (re-measured 2026-10-30 at suite v1.22.0, script v28.9.0 — the WO-01 round-14 normalization-symmetry batch: the insertPrompt contenteditable escape (PM-F01), raw-ingest + render-escape for shared prompts (PM-F02), the detectPlatform hostEq gates (PM-F03), the compareVersions numeric-prefix parse (PM-F04), the per-run random placeholder sentinels (PM-F05), the SCRIPT_VERSION fallback sync (PM-F06); +6,827 B / +103 lines), prior re-measure 1,172,132 B at suite v1.21.0 (2026-10-29, script v28.8.2 — the WO-01 round-13 storage round-trip batch: GlobalFiles LRU bounds (64 entries / 20 MB, oldest-first) + the caught save, the getGlobalFiles Array.isArray choke point, the backup-table defaultVal corrections, the caught pin save, the debug-to-warn auto-backup catch; +3,602 B / +59 lines), prior re-measure 1,168,530 B at suite v1.20.0 (2026-10-28 — the WO-01 round-12 pin ride-along: PM canon and kernel byte-identical that round), prior re-measure 2026-10-27 at suite v1.19.0 (the WO-01 round-11 pin ride-along: canon and kernel byte-identical that round), prior re-measure 1,168,530 B at suite v1.18.0 (2026-10-27, the WO-01 round-10 pin ride-along: canon and kernel byte-identical that round), prior re-measure 1,168,530 B at suite v1.17.0 (2026-10-27, the WO-01 round-9 pin ride-along: canon and kernel byte-identical that round), prior re-measure 1,168,530 B at suite v1.16.0 (2026-10-26, the WO-01 round-8 connection-hygiene batch: the memoized IndexedDB open + the SCRIPT_VERSION fallback re-stamp; +561 B / +7 lines), prior re-measure 1,167,969 B at suite v1.15.0 (the WO-01 round-7 pin ride-along: PM/WM canon and kernel byte-identical this round), prior re-measure 2026-10-26 at suite v1.14.0 (the WO-01 round-6 pin ride-along: canon/kernel byte-identical that round), prior re-measure 2026-10-25 at suite v1.13.0, script v28.8.0 — the WO-01 round-5 MIT license adoption re-measure: the @license meta value flip (−27 B; partition: −22 comment-mass by stripper-diff + −5 in-comment spaces), prior re-measure 1,167,996 B at suite v1.12.0 with the round-4 kernel truth batch riding the inlined kernel chunk; prior 1,166,403 B at suite v1.10.0; the v1.8.2-round "unchanged" claim was already wrong at its own commit — the tree measured 1,160,241 B that day; v1.4.10 baseline 1,122,838 B). The byte count in this line is machine-verified by tools/size-budget.mjs since WO-01 round-2.
 **Gate:** tools/size-budget.mjs (1,300,000 B hard budget; 1,000,000 B audit line — this record satisfies the latter; byte count VERIFIED against the live artifact).
 
 ## Composition analysis (machine-measured, this round — partitions exactly)
@@ -9,9 +9,9 @@
 |---|---|---|
 | Embedded base64/data-URI payloads | **0 B** (0 blobs — the @icon SVG is the only data URI, ~2 KB) | nothing material to externalize on the asset axis |
 | Embedded fonts / images | **0 B** | WCP-local font stack; no font payloads |
-| Comment mass | ~163 KB across 3,163 comment lines (scan-kit stripper-diff method — the shared scanner's own comment-blanked chars) | dense documentation-in-source is deliberate |
-| Application code | ~1,009 KB across 20,863 lines (avg 48 B/line) | the prompt-management application |
-| **Total** | **1,172,132 B / 24,026 lines** | 3,163 comment + 20,863 code = 24,026 ✓ (byte partition: 163,464 comment + 1,008,668 code = 1,172,132 ✓) |
+| Comment mass | ~167 KB across 3,227 comment lines (scan-kit stripper-diff method — the shared scanner's own comment-blanked chars) | dense documentation-in-source is deliberate |
+| Application code | ~1,012 KB across 20,902 lines (avg 48 B/line) | the prompt-management application |
+| **Total** | **1,178,959 B / 24,129 lines** | 3,227 comment + 20,902 code = 24,129 ✓ (byte partition: 166,990 comment + 1,011,969 code = 1,178,959 ✓) |
 
 ## What the weight IS
 
@@ -36,9 +36,9 @@ interactive critical path.
 
 ## Justification
 
-Ships as-is at 1,168,530 B (re-verified 2026-10-27, suite v1.18.0): under the 1.3 MB hard budget, above the audit
+Ships as-is at 1,178,959 B (re-verified 2026-10-30, suite v1.22.0): under the 1.3 MB hard budget, above the audit
 line by design, with this record as the audited decision. Watch item: the
-comment mass (~156 KB) is the one *reversible* component if a future round
+comment mass (~167 KB) is the one *reversible* component if a future round
 needs headroom — moving the v-series changelogs into
 `documentation/prompt-master/CHANGELOG.md` and keeping per-feature notes in
 source would reclaim the mass without any asset externalization.
