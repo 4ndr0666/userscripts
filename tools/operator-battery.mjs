@@ -277,6 +277,24 @@ export function runOperatorBatteryCheck() {
         problems.push("results: tools/operator-battery/results.json missing");
     }
 
+    /* (6) r14a-F01: rendered-checklist freshness — the committed checklist
+     * must byte-equal a fresh render. The r14 pin rolled package.json
+     * 1.21.0→1.22.0 and the results expiry AFTER the checklist's last
+     * render: the shipped template said "suite 1.21.0" while the ingest's
+     * own F06b suite-version check REFUSES exactly that header — a
+     * paste-back the shipped doc itself coaches would bounce. The class
+     * closes by making the gate refuse the stale pair (read-only compare;
+     * the check never writes). */
+    if (!fs.existsSync(DOC_PATH)) {
+        problems.push("render: documentation/operator-battery/README.md missing — re-render: npm run battery");
+    } else {
+        const committed = fs.readFileSync(DOC_PATH, "utf8");
+        const fresh = buildOperatorBatteryDoc();
+        if (committed !== fresh) {
+            problems.push("render: documentation/operator-battery/README.md is STALE — it does not byte-equal a fresh render (suite-version / expiry / manifest / results drift; the paste-back template would mis-state the tree). Re-render: npm run battery");
+        }
+    }
+
     return { problems, ...stats };
 }
 
@@ -310,7 +328,10 @@ function anchorLineRefs(file, tok) {
     return hits.length > 4 ? `${shown} …+${hits.length - 4} more` : shown;
 }
 
-export function renderOperatorBatteryDoc() {
+/* r14a-F01: the builder is separated from the writer — the check must be
+ * able to render the doc to a STRING (read-only) and byte-compare it
+ * against the committed checklist without ever touching the tree. */
+export function buildOperatorBatteryDoc() {
     const manifest = readJson(MANIFEST_PATH);
     const pkg = readJson(PKG_PATH);
     const results = fs.existsSync(RESULTS_PATH) ? readJson(RESULTS_PATH) : { adjudications: {} };
@@ -413,8 +434,13 @@ export function renderOperatorBatteryDoc() {
     L.push("---");
     L.push("");
     L.push(`*Rendered by \`node tools/operator-battery.mjs render\` — deterministic; re-render after any bump. The manifest is the source of truth; this doc is its operator-facing projection (residual map + anchor line refs included). Results ingested by \`node tools/operator-battery.mjs ingest <report.md>\` land in \`tools/operator-battery/results.json\` (adjudication ledger, expiry ${results.expiry || "v1.18.0"}); a partial report needs \`--partial\`. UNTESTED is the ledger's default — never a report row.*`);
+    return L.join("\n") + "\n";
+}
+
+export function renderOperatorBatteryDoc() {
+    const doc = buildOperatorBatteryDoc();
     fs.mkdirSync(path.dirname(DOC_PATH), { recursive: true });
-    fs.writeFileSync(DOC_PATH, L.join("\n") + "\n", "utf8");
+    fs.writeFileSync(DOC_PATH, doc, "utf8");
     return DOC_PATH;
 }
 
@@ -543,7 +569,7 @@ if (isMain) {
             for (const p of problems) console.log(`  ✗ ${p}`);
             process.exit(1);
         }
-        console.log("  ✓ manifest schema valid; every anchor live at its stamped version; residual coverage total; dist installable; results ledger disciplined (expiry live)");
+        console.log("  ✓ manifest schema valid; every anchor live at its stamped version; residual coverage total; dist installable; results ledger disciplined (expiry live); rendered checklist fresh (byte-equal to a fresh render)");
     } else if (cmd === "render") {
         console.log(`  ✓ wrote ${renderOperatorBatteryDoc()}`);
     } else if (cmd === "ingest") {
@@ -553,6 +579,14 @@ if (isMain) {
         const { parsed, rejected, problems } = ingestOperatorReport(reportPath, { partial });
         console.log(`ingest: ${parsed} rows parsed, ${rejected} rejected${partial ? " (partial mode)" : ""}`);
         for (const p of problems) console.log(`  ✗ ${p}`);
+        /* r14a-F01: a CLEAN ingest re-renders the checklist — results.json
+         * and its operator-facing projection move together; committing one
+         * without the other is exactly the staleness the check now
+         * refuses. A REFUSED ingest writes nothing and renders nothing. */
+        if (!problems.length) {
+            renderOperatorBatteryDoc();
+            console.log("  ✓ checklist re-rendered (results.json + README.md move together — commit both)");
+        }
         process.exit(problems.length ? 1 : 0);
     } else {
         console.error("usage: node tools/operator-battery.mjs [check|render|ingest <report.md> [--partial]]");

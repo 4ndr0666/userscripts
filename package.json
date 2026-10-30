@@ -14,7 +14,7 @@
         "qr": "node tools/qr-verify.mjs",
         "docs": "node tools/gen-docs.mjs",
         "smoke": "node tools/family-fixture-smoke.mjs && node tools/watermark-batch-smoke.mjs && node tools/kernel-boundary-smoke.mjs && node tools/flow-chip-browser-smoke.mjs && node tools/ig-wall-browser-smoke.mjs && node tools/pm-grid-browser-smoke.mjs && node tools/norm-symmetry-smoke.mjs && node tools/tt-browser-smoke.mjs",
-        "battery": "node tools/operator-battery.mjs check && node tools/operator-battery.mjs render"
+        "battery": "node tools/operator-battery.mjs render && node tools/operator-battery.mjs check"
     },
     "devDependencies": {}
 }
