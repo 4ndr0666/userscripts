@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name                4ndr0tools - Prompt Master
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version             28.8.2
+// @version             28.9.0
 // @author              4ndr0666
 // @icon                data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @license             MIT
@@ -1214,6 +1214,38 @@ const __4NDR0_NET_API__ = (function () {
   let __mpSortMode;
   let __apCustomShortcutsMap;
 
+// 28.9.0 (WO-01 round 14): the normalization-symmetry round — six
+// verified fixes, the write/read symmetry the r13 lens demanded.
+// (1) PM-F01: the insertPrompt contenteditable branch (claude/grok/
+// dreamina) built its insertHTML payload line-by-line WITHOUT
+// escapeHtmlText — the v28.1.0 textarea-escape class, missed here: a
+// community-gist prompt body carrying <img src=x onerror=...> injected
+// live markup into the AI platform's page the moment it was inserted.
+// Every <p> line is escaped now; <p>/<br> stay the only tags minted.
+// (2) PM-F02: fetchSharedPromptData stores RAW and the HTML sinks
+// escape at render — the v28.1.0 ingest-escape PERSISTED display-
+// escaped strings (entities in every textContent menu, a double-escape
+// at the shared-manager modal sink, and escaped operands handed to
+// compareVersions). Normalization only at ingest (newline-strip + the
+// 50/40/200/80 caps); escapeHtmlText at the confirm-modal and manager
+// interpolation points. (3) PM-F03: detectPlatform's 30+ bare
+// e.includes("host") substring gates are hostname-equality/dot-suffix
+// gates (hostEq) — a user-added @match on a lookalike host
+// (notchatgpt.com.evil.org) no longer lands in the chatgpt branch; gate
+// ORDER preserved exactly (arena.ai4bharat.org still precedes
+// arena.ai), the bare "qianwen" token gate stays substring by design,
+// and the path/query checks are unchanged. (4) PM-F04: compareVersions
+// parses each dot segment's numeric prefix (an optional "v" tolerated)
+// with an isFinite guard — "1.2-beta" vs "1.1" previously collapsed
+// the suffixed segment to NaN||0 = 0 and silently read every suffixed
+// remote version as older (update never offered). (5) PM-F05: the
+// placeholder-sentinel mint sites carry a per-run random suffix
+// (__QUOTE_<run>_<n>__ etc.) — a user-typed literal __QUOTE_2__ could
+// collide with a deterministic minted key and get clobbered at restore;
+// the two shape-matching regexes (the select-body __QUOTE_ alternative,
+// the modal's FILE|INPUT|SELECT sweep) match the new [a-z0-9]{6} form.
+// (6) PM-F06: the SCRIPT_VERSION sandbox fallback synced to 28.9.0
+// (was 28.8.1, two releases stale).
 // 28.8.2 (WO-01 round 13): the storage round-trip round — the two lenses
 // the r12 handoff proposed (storage symmetry + normalization symmetry)
 // found the suite's densest persistence surface here. (1) GlobalFiles is
@@ -4579,6 +4611,16 @@ const __4NDR0_NET_API__ = (function () {
       i = 0,
       l = 0,
       c = 0;
+    // v28.9.0 (PM-F05): per-run sentinel suffix — every minted placeholder
+    // key below embeds a random RUN token, so a user-typed literal like
+    // __QUOTE_2__ can never collide with a minted key (the deterministic
+    // counters made the mint names guessable, and the restore's
+    // split(key).join(content) then clobbered the user's literal with the
+    // block content). The restore paths are exact-key split/join (shape-
+    // agnostic); only the two shape-matching regexes (the select-body
+    // __QUOTE_ alternative below and the modal's FILE|INPUT|SELECT sweep)
+    // know the [a-z0-9]{6} run form.
+    const RUN = Math.random().toString(36).slice(2, 8);
     const d = (e) => {
         if (!e) return "";
         let t = e.replace(/^[ \t]*\r?\n/, "");
@@ -4597,16 +4639,16 @@ const __4NDR0_NET_API__ = (function () {
     ((t = t.replace(
       /([ \t]*)(#+)ignore[ \t]*(?:\r?\n)?([\s\S]*?)(?:\r?\n)?[ \t]*\2end/g,
       (e, t, a, o) => {
-        const r = `__IGNORE_BLK_${s++}__`;
+        const r = `__IGNORE_BLK_${RUN}_${s++}__`;
         return (n.set(r, o), r);
       },
     )),
       (t = t.replace(/\\([#\[\]{}:])/g, (e, t) => {
-        const a = `__ESC_CHAR_${s++}__`;
+        const a = `__ESC_CHAR_${RUN}_${s++}__`;
         return (n.set(a, t), a);
       })));
     ((t = t.replace(/('{2,})((?:(?!\1)[\s\S])*)\1/g, (e, t, a) => {
-      const o = `__QUOTE_${s++}__`;
+      const o = `__QUOTE_${RUN}_${s++}__`;
       return (n.set(o, a), o);
     })),
       (t = t.replace(
@@ -4649,19 +4691,19 @@ const __4NDR0_NET_API__ = (function () {
             break;
           }
         if (a) return a;
-        const o = `__FILE_${c++}__`;
+        const o = `__FILE_${RUN}_${c++}__`;
         return (r.set(o, { title: n }), o);
       })));
     return (
       (t = t.replace(
         /([ \t]*)(#+)start[ \t]*(?:\r?\n)?([\s\S]*?)(?:\r?\n)?[ \t]*\2end/g,
         (e, t, o, r) => {
-          const s = `__SELECT_${i++}__`,
+          const s = `__SELECT_${RUN}_${i++}__`,
             l = [];
           let c = null;
           const m = !r.includes("\n"),
             u =
-              /(?:#\s*(?!start|end)(.*?)(?:\(([^)]*)\))?\s*(?=\/\/|\r?\n|$))|(?:([+\-]|\d+)\s*\[([^\]]*)\](?:\(([^)]*)\))?)|(?:(\[#\])(?:\(([^)]*)\))?)|(?:(__QUOTE_\d+__)|'([^'\\]*(?:\\.[^'\\]*)*)')/g;
+              /(?:#\s*(?!start|end)(.*?)(?:\(([^)]*)\))?\s*(?=\/\/|\r?\n|$))|(?:([+\-]|\d+)\s*\[([^\]]*)\](?:\(([^)]*)\))?)|(?:(\[#\])(?:\(([^)]*)\))?)|(?:(__QUOTE_[a-z0-9]{6}_\d+__)|'([^'\\]*(?:\\.[^'\\]*)*)')/g;
           let g;
           for (; null !== (g = u.exec(r));)
             if (void 0 !== g[1]) {
@@ -4740,7 +4782,7 @@ const __4NDR0_NET_API__ = (function () {
         /\[([^\]=:]+?)\s*=\s*(\$[a-zA-Z0-9_]+)(?:\s*::\s*([^\]]*?))?\](?:\(([^)]*)\))?/g,
         (e, t, n, a, r) => {
           if (t.startsWith("__") && t.endsWith("__")) return e;
-          const s = `__INPUT_${l++}__`;
+          const s = `__INPUT_${RUN}_${l++}__`;
           let i = r || "";
           return (
             o.set(s, {
@@ -4758,7 +4800,7 @@ const __4NDR0_NET_API__ = (function () {
         /\{([^}=:]+?)\s*=\s*(\$[a-zA-Z0-9_]+)(?:\s*::\s*([^}]*?))?\}(?:\(([^)]*)\))?/g,
         (e, t, n, a, r) => {
           if (t.startsWith("__") && t.endsWith("__")) return e;
-          const s = `__INPUT_${l++}__`;
+          const s = `__INPUT_${RUN}_${l++}__`;
           let i = r || "";
           return (
             o.set(s, {
@@ -4782,7 +4824,7 @@ const __4NDR0_NET_API__ = (function () {
           r = "";
         const s = t.indexOf("::");
         -1 !== s && ((a = t.substring(0, s)), (r = t.substring(s + 2)));
-        const i = `__INPUT_${l++}__`;
+        const i = `__INPUT_${RUN}_${l++}__`;
         let c = n || "";
         return (
           o.set(i, {
@@ -5556,8 +5598,20 @@ const __4NDR0_NET_API__ = (function () {
     }
   }
   function compareVersions(e, t) {
-    const n = (e || "0").split(".").map(Number),
-      a = (t || "0").split(".").map(Number);
+    // v28.9.0 (PM-F04): numeric-prefix segment parse + isFinite — the
+    // old .map(Number) turned "2-beta" into NaN and the `n[e] || 0`
+    // fallback then read the suffixed segment as 0, so a remote
+    // "1.2-beta" silently compared OLDER than the local "1.1" and the
+    // update was never offered. Each dot segment now parses its leading
+    // digits (an optional "v" prefix tolerated); non-numeric segments
+    // fall back to 0 exactly as before.
+    const seg = (x) => {
+      const m = /^v?(\d+)/.exec(String(x));
+      const v = m ? +m[1] : NaN;
+      return Number.isFinite(v) ? v : 0;
+    };
+    const n = (e || "0").split(".").map(seg),
+      a = (t || "0").split(".").map(seg);
     for (let e = 0; e < Math.max(n.length, a.length); e++) {
       const t = n[e] || 0,
         o = a[e] || 0;
@@ -5823,18 +5877,25 @@ const __4NDR0_NET_API__ = (function () {
     }
     if (!t.title || !t.version || !t.prompt)
       throw new Error("Invalid JSON. title, version, and prompt are required.");
-    t.title = escapeHtmlText(t.title.replace(/\n/g, "").substring(0, 50));
-    // v28.1.0: version was the one unescaped field of the shared-prompt
-    // metadata trio (title/summary/author were escaped) — a remote gist
-    // JSON carrying "version": "<img src=x onerror=...>" executed in the
-    // page the moment the confirm modal or manager rendered it.
-    t.version = escapeHtmlText(
-      String(t.version).replace(/\n/g, "").substring(0, 40),
-    );
-    const n = escapeHtmlText(
-        (t.summary || "").replace(/\n/g, "").substring(0, 200),
-      ),
-      a = escapeHtmlText(t.author || "");
+    // v28.9.0 (PM-F02): ingest stores RAW — the v28.1.0 fix escaped these
+    // fields here and PERSISTED the display-escaped strings (entities in
+    // every textContent menu, a double-escape at the shared-manager modal
+    // sink, and escaped operands handed to compareVersions). This is now
+    // normalization only (newline-strip + the 50/40/200/80 caps); every
+    // HTML sink escapes at render (the confirm modal, the manager), and
+    // the textContent/.value sinks need nothing.
+    t.title = String(t.title || "")
+      .replace(/\n/g, "")
+      .substring(0, 50);
+    t.version = String(t.version || "")
+      .replace(/\n/g, "")
+      .substring(0, 40);
+    const n = String(t.summary || "")
+        .replace(/\n/g, "")
+        .substring(0, 200),
+      a = String(t.author || "")
+        .replace(/\n/g, "")
+        .substring(0, 80);
     if (
       !isValidWhiteListUrl(t.prompt, ".txt") &&
       !isValidWhiteListUrl(t.prompt, ".md")
@@ -5873,9 +5934,12 @@ const __4NDR0_NET_API__ = (function () {
       const i = !e || "0.0.0" === e.version,
         l = a || "Update Available";
       let c = "";
+      // v28.9.0 (PM-F02): escape at interpolation — the fetched/stored
+      // metadata is raw now (see fetchSharedPromptData), so every HTML
+      // sink in this modal escapes at render.
       c = i
-        ? `<span class="mp-shared-version-highlight">${t.version}</span>`
-        : `${e.version} &rarr; <span class="mp-shared-version-highlight">${t.version}</span>`;
+        ? `<span class="mp-shared-version-highlight">${escapeHtmlText(t.version)}</span>`
+        : `${escapeHtmlText(e.version)} &rarr; <span class="mp-shared-version-highlight">${escapeHtmlText(t.version)}</span>`;
       let d = "";
       if (i)
         d = ` <div class="mp-diff-column mp-diff-column-full"><div class="mp-diff-label">${"Prompt"}</div><div class="mp-diff-view">${t.promptText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div></div> `;
@@ -5885,7 +5949,7 @@ const __4NDR0_NET_API__ = (function () {
       }
       (setSafeInnerHTML(
         s,
-        ` <button id="__ap_diff_close" class="mp-modal-close-btn">${ICONS.close}</button><h2 class="modal-title">${l}</h2><div class="mp-shared-info"><div class="mp-shared-info-header"><div class="mp-shared-info-list"><div><strong class="mp-shared-info-label">${"Title"}:</strong> ${t.title}</div><div><strong class="mp-shared-info-label">${"Version"}:</strong> ${c}</div><div><strong class="mp-shared-info-label">${"Author"}:</strong> ${t.author || "N/A"}</div> ${t.summary ? `<div><strong class="mp-shared-info-label">${"Summary"}:</strong> ${t.summary}</div>` : ""} </div> ${n ? `<button id="__ap_toggle_changelog" class="save-button mp-shared-btn-secondary">${"README"}</button>` : ""} </div></div><div class="mp-diff-container"> ${d} </div><div class="mp-diff-actions"><button id="__ap_diff_cancel" class="save-button mp-shared-btn-cancel">${"Cancel"}</button><button id="__ap_diff_accept" class="save-button">${i ? "Import Prompt" : "Update Now"}</button></div> `,
+        ` <button id="__ap_diff_close" class="mp-modal-close-btn">${ICONS.close}</button><h2 class="modal-title">${l}</h2><div class="mp-shared-info"><div class="mp-shared-info-header"><div class="mp-shared-info-list"><div><strong class="mp-shared-info-label">${"Title"}:</strong> ${escapeHtmlText(t.title)}</div><div><strong class="mp-shared-info-label">${"Version"}:</strong> ${c}</div><div><strong class="mp-shared-info-label">${"Author"}:</strong> ${escapeHtmlText(t.author || "N/A")}</div> ${t.summary ? `<div><strong class="mp-shared-info-label">${"Summary"}:</strong> ${escapeHtmlText(t.summary)}</div>` : ""} </div> ${n ? `<button id="__ap_toggle_changelog" class="save-button mp-shared-btn-secondary">${"README"}</button>` : ""} </div></div><div class="mp-diff-container"> ${d} </div><div class="mp-diff-actions"><button id="__ap_diff_cancel" class="save-button mp-shared-btn-cancel">${"Cancel"}</button><button id="__ap_diff_accept" class="save-button">${i ? "Import Prompt" : "Update Now"}</button></div> `,
       ),
         r.appendChild(s),
         document.body.appendChild(r),
@@ -5902,7 +5966,7 @@ const __4NDR0_NET_API__ = (function () {
             ((a.className = "mp-modal-box mp-shared-cl-box"),
               setSafeInnerHTML(
                 a,
-                ` <button id="__ap_close_cl_update" class="mp-modal-close-btn">${ICONS.close}</button><h2 class="modal-title mp-shared-cl-title">${t.title}</h2><div class="mp-shared-changelog-content mp-shared-cl-body"> ${n} </div> `,
+                ` <button id="__ap_close_cl_update" class="mp-modal-close-btn">${ICONS.close}</button><h2 class="modal-title mp-shared-cl-title">${escapeHtmlText(t.title)}</h2><div class="mp-shared-changelog-content mp-shared-cl-body"> ${n} </div> `,
               ),
               e.appendChild(a),
               document.body.appendChild(e));
@@ -6148,7 +6212,7 @@ const __4NDR0_NET_API__ = (function () {
         ((a.className = "mp-modal-box mp-shared-cl-box"),
           setSafeInnerHTML(
             a,
-            `<button id="__ap_close_cl_modal" class="mp-modal-close-btn">${ICONS.close}</button><h2 class="modal-title mp-shared-cl-title">${t.title}</h2><div class="mp-shared-changelog-content mp-shared-cl-body">${e}</div>`,
+            `<button id="__ap_close_cl_modal" class="mp-modal-close-btn">${ICONS.close}</button><h2 class="modal-title mp-shared-cl-title">${escapeHtmlText(t.title)}</h2><div class="mp-shared-changelog-content mp-shared-cl-body">${e}</div>`,
           ),
           n.appendChild(a),
           document.body.appendChild(n));
@@ -10308,7 +10372,7 @@ const __4NDR0_NET_API__ = (function () {
       currentPlaceholderModal._tempFiles ||
         (currentPlaceholderModal._tempFiles = new Map()),
       currentPlaceholderModal._tempFiles.clear());
-    const l = t.match(/__(FILE|INPUT|SELECT)_\d+__/g) || [],
+    const l = t.match(/__(FILE|INPUT|SELECT)_[a-z0-9]{6}_\d+__/g) || [],
       c = new Set();
     (l.forEach((e) => {
       if (!c.has(e))
@@ -19519,7 +19583,7 @@ const __4NDR0_NET_API__ = (function () {
     GM_info.script &&
     GM_info.script.version
       ? GM_info.script.version
-      : "28.8.1"; // v28.8.1: the fallback stays stamped with the release
+      : "28.9.0"; // v28.9.0: the fallback stays stamped with the release
   // v27.0.12: canonical backup snapshot helper. The beta's Gist push
   // called snapshotKeys() before it existed anywhere, so every "Sync Now"
   // threw a ReferenceError; takeAutoBackup() now shares this one helper
@@ -20163,103 +20227,134 @@ const __4NDR0_NET_API__ = (function () {
   // removal changes nothing on any supported page.
   function detectPlatform() {
     const e = window.location.hostname;
-    return e.includes("chatgpt.com")
+    // v28.9.0 (PM-F03): hostname equality / dot-suffix gates — the bare
+    // e.includes("host") substring gates matched lookalike hosts on
+    // user-added @match entries (notchatgpt.com.evil.org landed in the
+    // chatgpt branch). hostEq admits the domain itself and its subdomains
+    // only. Gate ORDER preserved exactly (arena.ai4bharat.org still
+    // precedes arena.ai); the bare "qianwen" token gate stays substring
+    // by design (it matches a host family, not one hostname), and the
+    // path/query checks (labs.google /tools/flow, google.com /search
+    // udm=50) are unchanged.
+    const hostEq = (h, d) => h === d || h.endsWith("." + d);
+    return hostEq(e, "chatgpt.com")
       ? "chatgpt"
-      : e.includes("deepseek.com")
+      : hostEq(e, "deepseek.com")
         ? "deepseek"
-        : e.includes("aistudio.google.com")
+        : hostEq(e, "aistudio.google.com")
           ? "googleaistudio"
-          : e.includes("chat.qwen.ai")
+          : hostEq(e, "chat.qwen.ai")
             ? "qwen"
-            : e.includes("chat.z.ai")
+            : hostEq(e, "chat.z.ai")
               ? "zai"
-              : e.includes("gemini.google.com")
+              : hostEq(e, "gemini.google.com")
                 ? "gemini"
-                : e.includes("arena.ai4bharat.org")
+                : hostEq(e, "arena.ai4bharat.org")
                   ? "indicArena"
-                  : e.includes("arena.ai")
+                  : hostEq(e, "arena.ai")
                     ? "arena"
-                    : e.includes("kimi.com")
+                    : hostEq(e, "kimi.com")
                       ? "kimi"
-                      : e.includes("claude.ai")
+                      : hostEq(e, "claude.ai")
                         ? "claude"
-                        : e.includes("grok.com")
+                        : hostEq(e, "grok.com")
                           ? "grok"
-                          : e.includes("www.perplexity.ai")
+                          : hostEq(e, "www.perplexity.ai")
                             ? "perplexity"
-                            : e.includes("longcat.chat")
+                            : hostEq(e, "longcat.chat")
                               ? "longcat"
-                              : e.includes("mistral.ai")
+                              : hostEq(e, "mistral.ai")
                                 ? "mistral"
-                                : e.includes("yuanbao.tencent.com")
+                                : hostEq(e, "yuanbao.tencent.com")
                                   ? "yuanbao"
-                                  : e.includes("chatglm.cn")
+                                  : hostEq(e, "chatglm.cn")
                                     ? "chatglm"
-                                    : e.includes("poe.com")
+                                    : hostEq(e, "poe.com")
                                       ? "poe"
-                                      : e.includes("notebooklm.google.com")
+                                      : hostEq(e, "notebooklm.google.com")
                                         ? "notebooklm"
-                                        : e.includes("doubao.com")
+                                        : hostEq(e, "doubao.com")
                                           ? "doubao"
-                                          : e.includes("copilot.microsoft.com")
+                                          : hostEq(e, "copilot.microsoft.com")
                                             ? "copilot"
-                                            : e.includes("image.z.ai")
+                                            : hostEq(e, "image.z.ai")
                                               ? "glmimage"
-                                              : e.includes("ernie.baidu.com")
+                                              : hostEq(e, "ernie.baidu.com")
                                                 ? "ernie"
-                                                : e.includes(
+                                                : hostEq(
+                                                      e,
                                                       "dreamina.capcut.com",
                                                     )
                                                   ? "dreamina"
-                                                  : e.includes(
+                                                  : hostEq(
+                                                        e,
                                                         "jimeng.jianying.com",
                                                       )
                                                     ? "jimengJianying"
-                                                    : e.includes(
+                                                    : hostEq(
+                                                          e,
                                                           "build.nvidia.com",
                                                         )
                                                       ? "nvidiaNim"
                                                       : e.includes("qianwen")
                                                         ? "qianwen"
-                                                        : e.includes(
+                                                        : hostEq(
+                                                              e,
                                                               "geminigen.ai",
                                                             )
                                                           ? "geminigen"
-                                                          : e.includes(
+                                                          : hostEq(
+                                                                e,
                                                                 "aistudio.tencent.com",
                                                               )
                                                             ? "hunyuan"
-                                                            : e.includes(
+                                                            : hostEq(
+                                                                  e,
                                                                   "bing.com",
                                                                 )
                                                               ? "bing"
-                                                              : e.includes(
+                                                              : hostEq(
+                                                                    e,
                                                                     "gist.github.com",
                                                                   )
                                                                 ? "gist"
-                                                                : e.includes(
+                                                                : hostEq(
+                                                                      e,
                                                                       "meta.ai",
                                                                     )
                                                                   ? "meta"
-                                                                  : e.includes(
+                                                                  : hostEq(
+                                                                        e,
                                                                         "manus.im",
                                                                       )
                                                                     ? "manus"
-                                                                    : e.includes(
+                                                                    : hostEq(
+                                                                          e,
                                                                           "aistudio.xiaomimimo.com",
                                                                         )
                                                                       ? "xiaomi"
-                                                                      : (e.includes(
+                                                                      : (hostEq(
+                                                                            e,
                                                                             "labs.google",
-                                                                          ) &&
+                                                                          ) ||
+                                                                          hostEq(
+                                                                            e,
+                                                                            "labs.google.com",
+                                                                          )) &&
                                                                           window.location.pathname.includes(
                                                                             "/tools/flow",
-                                                                          )) ||
-                                                                          e.includes(
+                                                                          ) ||
+                                                                          hostEq(
+                                                                            e,
+                                                                            "flow.google.com",
+                                                                          ) ||
+                                                                          hostEq(
+                                                                            e,
                                                                             "flow.google",
                                                                           )
                                                                         ? "flow"
-                                                                        : e.includes(
+                                                                        : hostEq(
+                                                                              e,
                                                                               "google.com",
                                                                             ) &&
                                                                             window.location.pathname.includes(
@@ -20786,7 +20881,16 @@ const __4NDR0_NET_API__ = (function () {
             const r = e.text.split("\n");
             let s = "";
             r.forEach((e) => {
-              "" === e.trim() ? (s += "<p><br></p>") : (s += `<p>${e}</p>`);
+              // v28.9.0 (PM-F01): the v28.1.0 textarea-escape class, missed
+              // on this contenteditable branch — the prompt body went into
+              // insertHTML (and the paste DataTransfer's text/html) as raw
+              // markup, so a community-gist prompt carrying
+              // <img src=x onerror=...> injected live markup into the AI
+              // platform's page. Each line is escaped; <p>/<br> remain the
+              // only tags minted here.
+              "" === e.trim()
+                ? (s += "<p><br></p>")
+                : (s += `<p>${escapeHtmlText(e)}</p>`);
             });
             if (!document.execCommand("insertHTML", !1, s)) {
               const t = new DataTransfer();

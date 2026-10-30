@@ -2,7 +2,7 @@
 // @name         4ndr0tools - Instagram++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666
-// @version      13.2.5
+// @version      13.3.0
 // @description  Tab-Bar + Dock Integration. Hotkey trigger (Alt+I). Ad-Blocking. Deep-Stack Recovery. Resilient cursor-based pagination. Stories support. Image/video download engine.
 // @license      MIT
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Instagram++.user.js
@@ -21,6 +21,60 @@
 // @connect      *.instagram.com
 // @run-at       document-start
 // ==/UserScript==
+// 13.3.0 (WO-01 round 14): THE GRID WALL — the operator's lineage restored
+// as the default. The round-14 transmission settled the three-round misread
+// for good: the "obstructed, single column of vertically scrollable media"
+// was never the native page ghosting through a translucent pane (the
+// round-12 veil's target) — it was the WALL'S OWN layout: a centered flex
+// column stacking one full-size media card at a time down the middle. The
+// wall's main function — the lineage contract, "load every single media
+// item on a profile in a grid display that fills the entire wall" — never
+// shipped as the default; the column did, with no way to hide it. Fixes,
+// per the directive:
+// (1) THE GRID IS THE WALL. #igAllImages now lays out as a CSS grid — the
+//     dump artifact's own proven track shape
+//     (repeat(auto-fill,minmax(220px,1fr))) — filling the entire wall width
+//     at every viewport, responsive by construction; cards keep their
+//     natural aspect (object-fit:contain, height-capped) so the grid reads
+//     as a media wall, not a crop.
+// (2) THE FEED COLUMN IS THE ADDITION — strictly opt-in, never the default.
+//     The SHOW FEED button (relabelled HIDE FEED while active) now toggles
+//     the WALL'S OWN LAYOUT between the grid (default) and the
+//     single-column feed view; the layout is per-session state and is
+//     NEVER persisted, so every wall opens as the grid. The round-12
+//     veil-lift ghost view (translucent wall + visible native page) is
+//     retired with it: that toggle answered the misread, and it is why the
+//     SHOW FEED button never hid what the operator meant by "feed". The
+//     native retirement veil itself is unchanged and permanently engaged —
+//     the wall IS the view (the r12 core, validated).
+// (3) 'DOWN ALL' IS 'DUMP HTML' AGAIN, per the directive: the whole-grid
+//     HTML artifact button keeps its truthful name (it dumps the
+//     self-contained HTML grid); the per-file media downloader keeps its
+//     distinct label '⭳ SAVE ALL MEDIA'. Two buttons, two functions, zero
+//     redundancy.
+// (4) THE LINEAGE'S WALL SNAPSHOT: intelligent localStorage offloading
+//     follows the operator's own integration — every rendered batch
+//     offloads the harvested catalog (the "avoid reloading everytime"
+//     cache: re-opening the wall rebuilds instantly instead of
+//     re-harvesting page by page), and wall scroll past a threshold
+//     snapshots the precise scrollTop ("ensuring to always be able to
+//     return to that position in the event of accidental navigation or
+//     failure"). Restore seeds catalog + cursor + scroll position before
+//     the first fetch, pre-seeds _seen so live re-delivery dedupes, and
+//     self-disables quietly where localStorage refuses (sandboxed frames,
+//     full quota).
+// (5) THE UNLOAD VIOLATION, CLOSED OUT: the round-13 adjudication stands
+//     (U99l6HEALpy.js:248 is Instagram's own bundle chunk; this script
+//     registers zero unload/beforeunload listeners) — and the round-14
+//     transmission confirms the console line was a clue, not the issue.
+//     The issue was the column; the column is now opt-in. The veil-lift
+//     path that exercised IG's own lazy-chunk initialization is gone with
+//     (2).
+// RIDERS: the pagination sentinel is factored into armSentinel()
+// (renderBatch + snapshot restore share one implementation); the driver's
+// video-pause rider is unconditional (the veil never lifts); NeuralDOM
+// placeholders carry the layout's rhythm (grid gap vs the feed's 80px card
+// margin) so parked geometry matches live geometry in both layouts.
 // 13.2.5 (WO-01 round 13): the round-13 transmission adjudication + the
 // normalization riders. THE BUTTON CONTRACT, RESTATED WITH PROOF: the
 // operator asked (r12) for 'dump html' to be RENAMED 'download all'. That
@@ -145,6 +199,11 @@
         FETCH_TIMEOUT_MS:    15000,  // hard ceiling on any single API/network call
         DOWNLOAD_TIMEOUT_MS: 120000, // media bytes are much larger than API JSON
         DOWNLOAD_STAGGER_MS: 350,    // pacing between queued downloads
+        GRID_MIN_PX:         220,    // v13.3.0: the grid wall's minimum track —
+                                     // the dump artifact's own minmax(220px,1fr)
+        SNAPSHOT_KEY:        'igpp_wall_snapshot_v1',
+        SNAPSHOT_MAX_KIDS:   600,    // offload cap: the freshest 600 media children
+        SNAPSHOT_MIN_SCROLL: 1000,   // lineage: snapshot "after scrolling a certain distance"
     };
 
     // =========================================================
@@ -157,22 +216,34 @@
         totalLoaded:  0,
         domNodes:     [],       // wall nodes. v13.2.4 disclosure: the ARRAY is
                                 // page-lifetime BY DESIGN — each entry's .data
-                                // powers DOWNLOAD ALL and hydrate(); the
-                                // CACHE_LIMIT budget caps LIVE DOM nodes, not
-                                // the data ledger. Bounding the array would
-                                // silently shrink DOWNLOAD ALL's catalog.
+                                // powers DUMP HTML + ⭳ SAVE ALL MEDIA and
+                                // hydrate(); the CACHE_LIMIT budget caps LIVE
+                                // DOM nodes, not the data ledger. Bounding the
+                                // array would silently shrink that catalog.
         _seen:        new Set(),
         cursors:      {},       // mode -> next cursor from intercept
         pendingItems: [],       // items buffered before UI exists
         uiReady:      false,
-        veilEngaged:  true,      // v13.2.4: the native retirement veil's state —
-                                // true = native feed retired (default, the main
-                                // feature unobstructed); false = the optional
-                                // live-feed ghost view (SHOW FEED toggle).
         injected:     false,
         executed:     false,
         lastError:    null,
         sentinelObserver: null,  // IntersectionObserver driving pagination; never bound to a content node
+        wallLayout:     'grid',  // v13.3.0: 'grid' = the wall (the main function,
+                                // the default, never persisted); 'feed' = the
+                                // single-column addition, strictly opt-in via
+                                // the SHOW FEED / HIDE FEED toggle. (The r12
+                                // veilEngaged flag is gone with the ghost view —
+                                // the veil is permanently engaged now.)
+        snapshotOK:     true,    // v13.3.0: flips false when localStorage refuses
+                                // (sandboxed frame / quota) — the wall never
+                                // depends on the snapshot.
+        snapshotSeeded: false,   // v13.3.0: true once a snapshot restored the
+                                // catalog this open (executeRecon then skips the
+                                // page-1 refetch; the sentinel owns continuation).
+        wallLoc:       null,     // v13.3.0: the wall's own location.pathname,
+                                // captured at buildUI — the snapshot identity
+                                // gate (a uid-less record can never restore
+                                // across profiles: the path IS the identity).
     };
 
     // Use unsafeWindow so monkey-patches affect the real page context
@@ -265,12 +336,11 @@
             // v13.2.4: pause native media as the driver moves the page — new
             // feed items autoplay under the veil (IG autoplays muted videos
             // on scroll-into-view; visibility does not stop them). BODY-SCOPED
-            // so the WALL's own videos are never touched — and ENGAGED-gated:
-            // when the operator lifts the veil (SHOW FEED) the native feed's
-            // own autoplay rules govern again, the rider stops re-pausing.
-            if (STATE.veilEngaged) {
-                document.body.querySelectorAll('video').forEach(v => { v.pause(); });
-            }
+            // so the WALL's own videos are never touched. v13.3.0: the veil is
+            // permanently engaged (the wall IS the view — the ghost-view
+            // toggle retired with the round-14 layout contract), so the rider
+            // no longer carries the engagement gate.
+            document.body.querySelectorAll('video').forEach(v => { v.pause(); });
             const before = STATE.totalLoaded;
             window.scrollTo(0, document.documentElement.scrollHeight);
 
@@ -644,11 +714,14 @@
             const best = vids.length ? vids.reduce((a, b) => a.width > b.width ? a : b) : null;
             let url = best?.url || media.video_url || '';
             if (!url && media.video_dash_manifest) url = bestDashUrl(media.video_dash_manifest) || '';
-            return { url, isVideo: true };
+            // v13.3.0: the picked candidate's dimensions ride along (0 when
+            // unknown) — the WallSnapshot offload stores them so a restored
+            // card carries honest metadata, not zeros.
+            return { url, isVideo: true, width: best?.width || 0, height: best?.height || 0 };
         }
         const cands = media.image_versions2?.candidates || media.display_resources || [];
         const best  = cands.length ? cands.reduce((a, b) => a.width > b.width ? a : b) : null;
-        return { url: best?.url || media.url || media.display_url || '', isVideo: false };
+        return { url: best?.url || media.url || media.display_url || '', isVideo: false, width: best?.width || 0, height: best?.height || 0 };
     }
 
     // =========================================================
@@ -746,8 +819,8 @@
     // both STATE.pendingItems (harvested before the wall UI ever got built —
     // buildUI() drains this into domNodes the moment it runs, so the two
     // never overlap) and STATE.domNodes (rendered items, data survives
-    // virtualization pruning). Used by both the wall's DOWNLOAD ALL button
-    // and the always-present global button, so there is one implementation,
+    // virtualization pruning). Used by both the wall's ⭳ SAVE ALL MEDIA
+    // button and the always-present global button, so there is one implementation,
     // not two that can drift.
     function downloadAllKnownMedia() {
         const items = [...STATE.pendingItems, ...STATE.domNodes.map(n => n.data)].filter(Boolean);
@@ -957,8 +1030,12 @@
             item.height = rect.height || item.height || 800;
             item.node.querySelectorAll('video').forEach(v => { v.pause(); v.src = ''; });
             const ph = document.createElement('div');
-            ph.style.cssText = `height:${item.height}px;width:100%;margin-bottom:80px;background:rgba(10,19,26,0.85);
-                border:1px solid rgba(0,229,255,0.2);display:flex;align-items:center;justify-content:center;`;
+            // v13.3.0: the placeholder carries the ACTIVE layout's rhythm
+            // (the grid's gap vs the feed's 80px card margin) so parked
+            // geometry matches live geometry in both layouts and the scroll
+            // position never jumps when a node parks or hydrates.
+            ph.style.cssText = `height:${item.height}px;width:100%;margin-bottom:${STATE.wallLayout === 'grid' ? 0 : 80}px;background:rgba(10,19,26,0.85);` +
+                'border:1px solid rgba(0,229,255,0.2);display:flex;align-items:center;justify-content:center;';
             const vs = document.createElement('span');
             vs.style.cssText = "color:rgba(103,232,249,0.5);font-family:'JetBrains Mono',monospace;font-size:10px;";
             vs.textContent = 'V-STASIS';
@@ -1000,12 +1077,266 @@
             STATE.domNodes.forEach(item => {
                 if (item.isPruned && !this.isOffscreen(item)) this.hydrate(item);
             });
+        },
+
+        // v13.3.0: the budget walk, factored — every caller shares it:
+        // renderBatch (at append + after the settle rAF), the snapshot
+        // restore, and the media-settle hook below. The grid's compact
+        // pre-settle geometry (media at intrinsic/zero height before the
+        // aspect-ratio or the load lands) can hold the whole wall inside
+        // the one-viewport prune margin at append time — a single
+        // synchronous pass left 150 live nodes standing. The load hook
+        // re-runs the walk the moment any media settles.
+        enforceBudget() {
+            if (STATE.domNodes.length <= CFG.CACHE_LIMIT) return;
+            const excess = STATE.domNodes.length - CFG.CACHE_LIMIT;
+            let parked = 0;
+            for (const item of STATE.domNodes) {
+                if (parked >= excess) break;
+                if (item.isPruned) { parked++; continue; }
+                const before = item.isPruned;
+                this.prune(item);
+                if (!before && item.isPruned) parked++;
+            }
+        },
+
+        _budgetTimer: null,
+        // v13.3.0: coalesced post-settle pass — one walk per 300ms window,
+        // armed by every card media's load/error/loadedmetadata event, so
+        // the budget holds even when the aspect-ratio reservation is
+        // unavailable (dimension-less candidates) and geometry arrives
+        // only with the bytes.
+        scheduleBudgetPass() {
+            if (this._budgetTimer) return;
+            this._budgetTimer = setTimeout(() => {
+                this._budgetTimer = null;
+                this.enforceBudget();
+                this.hydrateNear();
+            }, 300);
         }
     };
 
     // =========================================================
     // [RENDERING ENGINE]
     // =========================================================
+    // v13.3.0: the pagination sentinel, factored — renderBatch and the
+    // snapshot restore share one implementation (the restore path must arm
+    // continuation from the stored frontier exactly as a live batch would).
+    // A dedicated, non-content node — never registered in STATE.domNodes —
+    // so NeuralDOM virtualization can never detach or replace it out from
+    // under a live IntersectionObserver. (Previously the observer targeted
+    // a real content node's item.node; pruning later swapped that exact node
+    // for a placeholder, permanently orphaning the trigger with zero visible
+    // error.)
+    function armSentinel(cursor) {
+        if (STATE.sentinelObserver) {
+            STATE.sentinelObserver.disconnect();
+            STATE.sentinelObserver = null;
+        }
+        document.getElementById('ares-sentinel')?.remove();
+        if (!cursor) return;
+
+        const container = document.querySelector('#igBigContainer');
+        const wall      = document.querySelector('#igAllImages');
+        if (!container || !wall) return;
+
+        const sentinel  = document.createElement('div');
+        sentinel.id = 'ares-sentinel';
+        sentinel.style.cssText = 'height:1px;width:100%;';
+        wall.appendChild(sentinel);
+
+        const obs = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting) {
+                obs.disconnect();
+                STATE.sentinelObserver = null;
+                activeFetch(cursor);
+            }
+        }, { root: container, rootMargin: '1500px' });
+        obs.observe(sentinel);
+        STATE.sentinelObserver = obs;
+    }
+
+    // =========================================================
+    // [WALL SNAPSHOT — the lineage's intelligent localStorage offload]
+    // v13.3.0 (round 14): follows the operator's lineage contract — the
+    // wall is a long, scrollable surface; accidental navigation or failure
+    // must never cost the operator their place. Two offload triggers:
+    // (1) every rendered batch offloads the catalog (the "avoid reloading
+    // everytime" cache — re-opening the wall rebuilds instantly from
+    // storage instead of re-harvesting page by page); (2) wall scroll past
+    // a threshold patches the precise scrollTop into the record (the
+    // "snapshot"), debounced to spare I/O. Restore: on wall build, a
+    // matching uid+mode record seeds catalog + cursor + scroll position
+    // before the first fetch; _seen is pre-seeded with the stored parent
+    // pks so live re-delivery of the same pages dedupes instead of
+    // double-rendering. Storage is try/catch-wrapped end to end: a
+    // sandboxed frame or a full quota self-disables the feature for the
+    // session (one log line) — the wall itself never depends on it. The
+    // slim kids stay pickMediaAsset-compatible (hydrate, DUMP HTML and
+    // ⭳ SAVE ALL MEDIA all re-pick from these fields unchanged), so a
+    // restored card is behaviorally identical to a live one.
+    // =========================================================
+    const WallSnapshot = {
+        _rec: null,
+
+        read() {
+            if (!STATE.snapshotOK) return null;
+            try {
+                const raw = localStorage.getItem(CFG.SNAPSHOT_KEY);
+                if (!raw) return null;
+                const rec = JSON.parse(raw);
+                if (!rec || rec.v !== 1 || !Array.isArray(rec.kids)) return null;
+                return rec;
+            } catch (_) { STATE.snapshotOK = false; return null; }
+        },
+
+        write(rec) {
+            if (!STATE.snapshotOK) return;
+            try {
+                localStorage.setItem(CFG.SNAPSHOT_KEY, JSON.stringify(rec));
+            } catch (_) {
+                // Quota/refusal: halve the payload once, then disable quietly —
+                // the wall never depends on the snapshot.
+                try {
+                    rec.kids = rec.kids.slice(-Math.ceil(rec.kids.length / 2));
+                    localStorage.setItem(CFG.SNAPSHOT_KEY, JSON.stringify(rec));
+                } catch (__) {
+                    STATE.snapshotOK = false;
+                    log('Wall snapshot disabled — localStorage refused the write.');
+                }
+            }
+        },
+
+        // The slim child: the picked asset (url + dimensions + video flag),
+        // the identity fields (code/pk + the parent's code/pk for _seen
+        // pre-seeding), and the render meta (carousel cur/total).
+        slimKid(child, parent, cur, total) {
+            const asset = pickMediaAsset(child);
+            if (!asset.url) return null;
+            return {
+                c: child.code || '', p: child.pk || child.id || '',
+                pp: parent?.pk || parent?.id || '', k: parent?.code || '',
+                n: cur || 1, N: total || 1,
+                u: asset.url, w: asset.width || 0, h: asset.height || 0,
+                v: asset.isVideo ? 1 : 0,
+            };
+        },
+
+        offloadCatalog() {
+            if (!STATE.snapshotOK || !STATE.uiReady) return;
+            const kids = [];
+            for (const item of STATE.domNodes) {
+                if (!item || !item.data) continue;
+                const k = this.slimKid(item.data, item.parent, item.meta?.cur, item.meta?.total);
+                if (k) kids.push(k);
+            }
+            if (!kids.length) return;
+            const prev = (this._rec && this._rec.loc === STATE.wallLoc &&
+                          String(this._rec.uid) === String(STATE.userId || '') &&
+                          this._rec.mode === STATE.MODE) ? this._rec : null;
+            const rec = {
+                v: 1, t: Date.now(),
+                uid: String(STATE.userId || ''), mode: STATE.MODE, loc: STATE.wallLoc,
+                scrollTop: prev ? prev.scrollTop : 0,
+                cursor: STATE.cursors[STATE.MODE] || STATE.cursors['profile'] || null,
+                kids: kids.slice(-CFG.SNAPSHOT_MAX_KIDS),
+            };
+            this._rec = rec;
+            this.write(rec);
+        },
+
+        patchScroll(scrollTop) {
+            const rec = this._rec || this.read();
+            if (!rec) return;
+            if (rec.loc !== STATE.wallLoc || rec.mode !== STATE.MODE) return;
+            rec.scrollTop = scrollTop;
+            rec.t = Date.now();
+            this._rec = rec;
+            this.write(rec);
+        },
+
+        // Restore at buildUI time, before any fetch. Returns the Set of
+        // seeded parent pks (for the pre-UI drain filter) or null. Identity
+        // is double-gated: the wall's own pathname (the URL IS the profile)
+        // AND the resolved uid when both are known — a uid-less record can
+        // never leap onto a different profile's wall.
+        restore() {
+            const rec = this.read();
+            if (!rec) return null;
+            if (rec.loc !== STATE.wallLoc || rec.mode !== STATE.MODE) return null;
+            if (rec.uid && STATE.userId && String(rec.uid) !== String(STATE.userId)) return null;
+            if (!rec.kids.length) return null;
+            const wall = document.querySelector('#igAllImages');
+            if (!wall) return null;
+
+            // Rehydrate the slim kids into pickMediaAsset-compatible synthetic
+            // children; render each as its own card (the carousel was already
+            // expanded at offload time — cur/total preserve the lineage label).
+            const seeded = new Set();
+            const frag   = document.createDocumentFragment();
+            rec.kids.forEach(k => {
+                const child = {
+                    code: k.c, pk: k.p,
+                    image_versions2: { candidates: [{ url: k.u, width: k.w, height: k.h }] },
+                };
+                if (k.v) child.video_versions = [{ url: k.u, width: k.w }];
+                const parent = { code: k.k || k.c, pk: k.pp || k.p };
+                const node = createMediaComponent(child, parent, k.n, k.N);
+                frag.appendChild(node);
+                STATE.domNodes.push({
+                    data: child, parent, node,
+                    isPruned: false, height: 800,
+                    meta: { cur: k.n, total: k.N },
+                });
+                STATE.totalLoaded++;
+                // v13.3.0: dual-form seeding — the live harvest filter checks
+                // the RAW pk (numeric on real IG, string on some schemas and
+                // in this fixture), so both the raw stored form AND its string
+                // spelling go into _seen; a live re-delivery of the same page
+                // dedupes under either typing. (The drain filter below compares
+                // stringified on both sides — seeded stays string-keyed.)
+                if (k.pp) { seeded.add(String(k.pp)); STATE._seen.add(k.pp); STATE._seen.add(String(k.pp)); }
+            });
+            wall.appendChild(frag);
+
+            // Same cache discipline as renderBatch: park the offscreen excess
+            // (placeholders preserve geometry), so the jump below lands on
+            // stable ground. The uid gate above already refused cross-profile
+            // restores; a null STATE.userId only passes when the record itself
+            // was written uid-less (home walls).
+            if (STATE.domNodes.length > CFG.CACHE_LIMIT) {
+                const excess = STATE.domNodes.length - CFG.CACHE_LIMIT;
+                let parked = 0;
+                for (const item of STATE.domNodes) {
+                    if (parked >= excess) break;
+                    if (item.isPruned) { parked++; continue; }
+                    const before = item.isPruned;
+                    NeuralDOM.prune(item);
+                    if (!before && item.isPruned) parked++;
+                }
+            }
+
+            // Continuation resumes from the stored frontier — exactly as a
+            // live batch would arm it.
+            if (rec.cursor && !STATE.cursors[STATE.MODE]) STATE.cursors[STATE.MODE] = rec.cursor;
+            armSentinel(rec.cursor || STATE.cursors[STATE.MODE] || null);
+
+            STATE.snapshotSeeded = true;
+            this._rec = rec;
+            log(`Wall snapshot restored: ${rec.kids.length} media item(s), scroll ${Math.round(rec.scrollTop || 0)}px.`);
+
+            // The precise-scroll return: after the first layout pass, jump
+            // the wall to the snapshot position and hydrate whatever lands
+            // in view.
+            window.requestAnimationFrame(() => {
+                const gui = document.getElementById('igBigContainer');
+                if (gui) gui.scrollTop = rec.scrollTop || 0;
+                window.requestAnimationFrame(() => NeuralDOM.hydrateNear());
+            });
+            return seeded;
+        },
+    };
+
     function renderBatch(items, cursor) {
         const wall = document.querySelector('#igAllImages');
         if (!wall) return;
@@ -1032,8 +1363,8 @@
 
         wall.appendChild(frag);
 
-        // Prune head if over cache limit — v13.2.1 (WO-02): the loop is
-        // now VIEWPORT-AWARE. The old positional slice pruned the oldest
+        // Prune head if over cache limit — v13.2.1 (WO-02): the walk is
+        // VIEWPORT-AWARE. The old positional slice pruned the oldest
         // nodes unconditionally; on a profile the wall opens at the top,
         // so those nodes were exactly what the user was looking at, and
         // each background batch re-pruned them — the wall read as a
@@ -1044,60 +1375,42 @@
         // replaced. Memory stays bounded on the same 80-node budget
         // (on-screen nodes are a handful; the excess still parks), and
         // the SAFE_ZONE tail guard inside prune() is unchanged.
-        if (STATE.domNodes.length > CFG.CACHE_LIMIT) {
-            const excess = STATE.domNodes.length - CFG.CACHE_LIMIT;
-            let parked = 0;
-            for (const item of STATE.domNodes) {
-                if (parked >= excess) break;
-                if (item.isPruned) { parked++; continue; }
-                // Prune() re-checks the SAFE_ZONE tail; the offscreen gate
-                // inside prune() skips (and does not count) visible nodes.
-                const before = item.isPruned;
-                NeuralDOM.prune(item);
-                if (!before && item.isPruned) parked++;
-            }
-        }
+        // v13.3.0: factored into NeuralDOM.enforceBudget() — renderBatch
+        // (at append AND after the settle rAF below), the snapshot
+        // restore, and the media-settle hook all share this one walk.
+        NeuralDOM.enforceBudget();
 
         // v13.2.1 (WO-02): batch arrival is a hydration trigger too — any
         // node parked earlier that now intersects the viewport comes back
         // immediately (rAF), so visible geometry is always real media.
-        window.requestAnimationFrame(() => NeuralDOM.hydrateNear());
+        // v13.3.0: the rAF also re-runs the budget walk — the aspect-ratio
+        // reservation makes grid geometry final at insert, but a slow-
+        // metadata video or a dimension-less candidate settles late, and
+        // the 80-node budget must hold regardless.
+        window.requestAnimationFrame(() => {
+            NeuralDOM.hydrateNear();
+            NeuralDOM.enforceBudget();
+        });
 
-        // Pagination sentinel: a dedicated, non-content node — never registered
-        // in STATE.domNodes — so NeuralDOM virtualization can never detach or
-        // replace it out from under a live IntersectionObserver. (Previously
-        // the observer targeted a real content node's item.node; pruning
-        // later swapped that exact node for a placeholder, permanently
-        // orphaning the trigger with zero visible error.)
-        if (STATE.sentinelObserver) {
-            STATE.sentinelObserver.disconnect();
-            STATE.sentinelObserver = null;
-        }
-        document.getElementById('ares-sentinel')?.remove();
+        // v13.3.0: the batch arrived — offload the grown catalog (the
+        // lineage's "avoid reloading everytime" cache).
+        WallSnapshot.offloadCatalog();
 
-        if (cursor) {
-            const container = document.querySelector('#igBigContainer');
-            const sentinel  = document.createElement('div');
-            sentinel.id = 'ares-sentinel';
-            sentinel.style.cssText = 'height:1px;width:100%;';
-            wall.appendChild(sentinel);
-
-            const obs = new IntersectionObserver(entries => {
-                if (entries[0].isIntersecting) {
-                    obs.disconnect();
-                    STATE.sentinelObserver = null;
-                    activeFetch(cursor);
-                }
-            }, { root: container, rootMargin: '1500px' });
-            obs.observe(sentinel);
-            STATE.sentinelObserver = obs;
-        }
+        // Pagination sentinel: factored v13.3.0 into armSentinel() — the
+        // snapshot restore shares this exact implementation.
+        armSentinel(cursor);
     }
 
     function createMediaComponent(media, parent, cur, total) {
         const wrapper = document.createElement('div');
+        wrapper.dataset.aresCard = '1';   // v13.3.0: applyWallLayout's restyle walk target
+        // v13.3.0: the wall's layout decides the card's rhythm — the grid
+        // (default) lets the grid gap do the spacing; the feed column keeps
+        // the full-size card's 80px air. applyWallLayout() restyles live cards
+        // on toggle; creation reads the current mode so NeuralDOM hydration
+        // always rebuilds in the active layout.
         wrapper.style.cssText =
-            'margin-bottom:80px;display:flex;flex-direction:column;align-items:center;width:100%;' +
+            `margin-bottom:${STATE.wallLayout === 'grid' ? 0 : 80}px;display:flex;flex-direction:column;align-items:center;width:100%;` +
             'transition:opacity 0.3s;pointer-events:auto;';
 
         const code  = media.code || parent?.code || '';
@@ -1108,8 +1421,30 @@
         // position:relative) so the badge's top:8px;right:8px lands on that
         // specific media's own corner — not the wider card, which matters
         // once a post has more than one photo/video.
+        // v13.3.0: the box is LAYOUT-CONDITIONAL — the grid needs a definite
+        // width chain (block, 100%) so the media's width:100% + aspect-ratio
+        // reservation resolve against the TRACK, not a shrink-to-fit box (an
+        // inline-block mediaBox strangles the grid media to its intrinsic
+        // size — the 1px-PNG class); the feed keeps the r12/r13 shrink-to-fit
+        // contract (media sizes to itself, badge on the media's corner).
+        // applyWallLayout() restyles it with the cards on toggle.
         const mediaBox = document.createElement('div');
-        mediaBox.style.cssText = 'position:relative;display:inline-block;max-width:100%;';
+        mediaBox.dataset.aresMbox = '1';
+        mediaBox.style.cssText = STATE.wallLayout === 'grid'
+            ? 'position:relative;display:block;width:100%;max-width:100%;'
+            : 'position:relative;display:inline-block;max-width:100%;';
+
+        // v13.3.0: the ASPECT-RATIO RESERVATION — when the picked asset
+        // carries dimensions, the grid card's box is final AT INSERT
+        // (width:100% + aspect-ratio + the 360px cap), so the budget walk
+        // at append time already sees honest geometry and parks the
+        // offscreen excess with real heights (the scroll position can
+        // never jump when a node parks or hydrates). Dimension-less
+        // candidates (width-only video_versions is the common IG shape)
+        // skip the reservation and lean on the settle hook below. The
+        // ratio rides a data attribute so applyWallLayout() can re-apply
+        // or clear it per layout without re-picking the asset.
+        const ar = (asset.width > 0 && asset.height > 0) ? `${asset.width}/${asset.height}` : '';
 
         if (asset.isVideo) {
             const vid  = document.createElement('video');
@@ -1117,19 +1452,38 @@
             vid.controls   = true;
             vid.volume     = CFG.VOLUME;
             vid.preload    = 'metadata';
-            vid.style.cssText =
-                `max-height:${window.innerHeight * CFG.H_PCT}px;` +
-                `max-width:${window.innerWidth  * CFG.W_PCT}px;` +
-                `border:2px solid ${CFG.ACCENT};display:block;pointer-events:auto;`;
+            // v13.3.0: grid cards fill their cell (natural aspect, height-
+            // capped, contain); feed cards size to the viewport (the
+            // full-size column view).
+            vid.style.cssText = STATE.wallLayout === 'grid'
+                ? `width:100%;height:auto;max-height:360px;object-fit:contain;${ar ? `aspect-ratio:${ar};` : ''}border:2px solid ${CFG.ACCENT};display:block;pointer-events:auto;`
+                : `max-height:${window.innerHeight * CFG.H_PCT}px;` +
+                  `max-width:${window.innerWidth  * CFG.W_PCT}px;` +
+                  `border:2px solid ${CFG.ACCENT};display:block;pointer-events:auto;`;
+            if (ar) vid.dataset.aresAr = ar;
+            // v13.3.0: the settle hook — metadata landing (or the load
+            // failing) is a geometry event: the coalesced budget pass
+            // re-runs the walk so the 80-node budget holds even for
+            // dimension-less candidates whose box only materializes
+            // with the bytes.
+            vid.addEventListener('loadedmetadata', () => NeuralDOM.scheduleBudgetPass());
+            vid.addEventListener('error', () => NeuralDOM.scheduleBudgetPass());
             mediaBox.appendChild(vid);
         } else {
             const img   = document.createElement('img');
             img.src             = asset.url;
             img.loading         = 'lazy';
-            img.style.cssText   =
-                `max-height:${window.innerHeight * CFG.H_PCT}px;` +
-                `max-width:${window.innerWidth  * CFG.W_PCT}px;` +
-                `border:1px solid rgba(0,229,255,0.35);display:block;cursor:pointer;pointer-events:auto;`;
+            img.style.cssText   = STATE.wallLayout === 'grid'
+                ? `width:100%;height:auto;max-height:360px;object-fit:contain;${ar ? `aspect-ratio:${ar};` : ''}border:1px solid rgba(0,229,255,0.35);display:block;cursor:pointer;pointer-events:auto;`
+                : `max-height:${window.innerHeight * CFG.H_PCT}px;` +
+                  `max-width:${window.innerWidth  * CFG.W_PCT}px;` +
+                  `border:1px solid rgba(0,229,255,0.35);display:block;cursor:pointer;pointer-events:auto;`;
+            if (ar) img.dataset.aresAr = ar;
+            // v13.3.0: the settle hook — every card media's load/error is
+            // a geometry event (see the video branch); one coalesced walk
+            // per 300ms window keeps the budget flat under lazy loading.
+            img.addEventListener('load',  () => NeuralDOM.scheduleBudgetPass());
+            img.addEventListener('error', () => NeuralDOM.scheduleBudgetPass());
             const a    = document.createElement('a');
             a.href     = link;
             a.target   = '_blank';
@@ -1161,6 +1515,51 @@
         wrapper.appendChild(footer);
 
         return wrapper;
+    }
+
+    // v13.3.0: THE LAYOUT TOGGLE — grid (the wall, the main function, the
+    // default) and the feed column (the operator-acknowledged addition,
+    // strictly opt-in). One walk restyles the wall + every live card;
+    // parked placeholders and future hydrations pick the mode up from
+    // STATE.wallLayout at creation. Per-session by design: the layout is
+    // never persisted, so the wall always OPENS as the grid.
+    function applyWallLayout(mode) {
+        STATE.wallLayout = mode === 'feed' ? 'feed' : 'grid';
+        const wall = document.getElementById('igAllImages');
+        if (wall) {
+            wall.style.cssText = STATE.wallLayout === 'grid'
+                ? `padding:24px 24px 300px;display:grid;grid-template-columns:repeat(auto-fill,minmax(${CFG.GRID_MIN_PX}px,1fr));gap:14px;align-items:start;justify-items:center;`
+                : 'padding:80px 0 300px;display:flex;flex-direction:column;align-items:center;';
+        }
+        document.querySelectorAll('#igAllImages [data-ares-card]').forEach(card => {
+            const media = card.querySelector('img, video');
+            const mbox  = card.querySelector('[data-ares-mbox]');
+            card.style.marginBottom = STATE.wallLayout === 'grid' ? '0' : '80px';
+            // v13.3.0: the mediaBox rides the layout with the media — the
+            // grid's definite width chain vs the feed's shrink-to-fit box.
+            if (mbox) {
+                mbox.style.display = STATE.wallLayout === 'grid' ? 'block' : 'inline-block';
+                mbox.style.width   = STATE.wallLayout === 'grid' ? '100%' : '';
+            }
+            if (!media) return;
+            if (STATE.wallLayout === 'grid') {
+                media.style.width     = '100%';
+                media.style.height    = 'auto';
+                media.style.maxHeight = '360px';
+                media.style.maxWidth  = '100%';
+                media.style.objectFit = 'contain';
+                media.style.aspectRatio = media.dataset.aresAr || '';
+            } else {
+                media.style.width     = '';
+                media.style.height    = '';
+                media.style.maxHeight = `${window.innerHeight * CFG.H_PCT}px`;
+                media.style.maxWidth  = `${window.innerWidth  * CFG.W_PCT}px`;
+                media.style.objectFit = '';
+                media.style.aspectRatio = '';   // feed sizing is intrinsic (the r12/r13 contract)
+            }
+        });
+        const btn = document.getElementById('ares-feed');
+        if (btn) btn.textContent = STATE.wallLayout === 'grid' ? 'SHOW FEED' : 'HIDE FEED';
     }
 
     // =========================================================
@@ -1218,6 +1617,11 @@
         if (document.getElementById('igBigContainer')) return;
         log('Building UI...');
 
+        // v13.3.0: the wall's own page identity — captured ONCE, at build:
+        // the snapshot record's loc gate (an SPA navigation after the wall
+        // opened must never re-stamp the record onto a different page).
+        STATE.wallLoc = location.pathname;
+
         // Hide dock glyph while viewer is open
         const dock = document.getElementById('4ndr0666-dock');
         if (dock) dock.style.display = 'none';
@@ -1264,32 +1668,36 @@
         };
         hdrBtns.append(
             mkBtn('ares-more', 'LOAD MORE', `background:rgba(10,19,26,0.85);color:${CFG.ACCENT};border:1px solid ${CFG.ACCENT};padding:6px 14px;cursor:pointer;font-family:monospace;font-weight:bold;`),
-            /* v13.2.4 (operator directive) + v13.2.5 (13c, self-documenting):
-             * the media-file downloader keeps its ORIGINAL function (it has
-             * existed since the suite's origin, v1.1.0) under a distinct,
-             * truthful label — 'SAVE ALL MEDIA' — so the one-button
-             * 'DOWNLOAD ALL' name could live where the operator uses it: on
-             * the whole-grid artifact (the HTML dump button below, RENAMED
-             * from 'DUMP HTML' per the round-12 transmission — same handler,
-             * no duplicate). The titles make the split explicit at hover. */
+            /* v13.3.0 (round-14 directive): the per-file media downloader
+             * keeps its distinct, truthful label '⭳ SAVE ALL MEDIA' — and
+             * the whole-grid HTML artifact button is 'DUMP HTML' again:
+             * two buttons, two functions, zero redundancy (the r12 rename
+             * made the dump button read as a second media downloader; the
+             * operator directed the truthful name back). */
             Object.assign(mkBtn('ares-dlall', '⭳ SAVE ALL MEDIA', `background:transparent;color:${CFG.ACCENT};border:1px solid ${CFG.ACCENT};padding:6px 14px;cursor:pointer;font-family:monospace;`),
                 { title: 'Download every harvested media FILE to disk — sequential, one at a time, 350ms pacing, 120s per-file timeout, 3-tier fallback (GM_download → GM_xmlhttpRequest → fetch).' }),
-            Object.assign(mkBtn('ares-dump', 'DOWNLOAD ALL', 'background:transparent;color:#67E8F9;border:1px solid rgba(0,229,255,0.35);padding:6px 14px;cursor:pointer;font-family:monospace;'),
-                { title: 'Download the whole-grid HTML artifact — one self-contained page with every known media item embedded at full size (the former DUMP HTML button, renamed per the round-12 directive).' }),
-            /* v13.2.4: the optional-feature toggle the field report demanded —
-             * 'not collapsible and never hidden with zero option to suggest
-             * otherwise'. Default: the native feed is retired (veil engaged,
-             * opaque wall — the grid wall IS the view). One click: the native
-             * live feed ghosts back through (veil lifted, wall translucent)
-             * for as long as the operator wants it; another click restores
-             * the default. The button relabels itself — the option is always
-             * visible and self-documenting. */
+            Object.assign(mkBtn('ares-dump', 'DUMP HTML', 'background:transparent;color:#67E8F9;border:1px solid rgba(0,229,255,0.35);padding:6px 14px;cursor:pointer;font-family:monospace;'),
+                { title: 'Dump the whole-grid HTML artifact — one self-contained page with every known media item embedded at full size.' }),
+            /* v13.3.0: THE LAYOUT TOGGLE — the operator's "hide feed"
+             * button, aimed at what the operator meant all along: the
+             * single-column feed view (the addition), NOT the native page.
+             * Default: the GRID wall (the main function). SHOW FEED switches
+             * the wall to the column; HIDE FEED returns the grid. Per-session
+             * state, never persisted — the wall always opens as the grid.
+             * (The r12 ghost-view toggle — veil lift + translucent wall — is
+             * retired; the native retirement veil stays permanently engaged.) */
             mkBtn('ares-feed', 'SHOW FEED', 'background:transparent;color:#67E8F9;border:1px solid rgba(0,229,255,0.35);padding:6px 14px;cursor:pointer;font-family:monospace;'),
             mkBtn('ares-exit', 'EXIT', `background:transparent;color:${CFG.ERROR};border:1px solid #ff0055;padding:6px 16px;cursor:pointer;font-family:monospace;font-weight:bold;`));
         hdr.append(hdrText, hdrBtns);
         const imgWall = document.createElement('div');
         imgWall.id = 'igAllImages';
-        imgWall.style.cssText = 'padding:80px 0 300px;display:flex;flex-direction:column;align-items:center;';
+        // v13.3.0: THE GRID WALL — the lineage's main function as the
+        // default: a CSS grid filling the entire wall (the dump artifact's
+        // own proven track shape), responsive at every viewport. The
+        // single-column feed view is opt-in via the SHOW FEED toggle
+        // (applyWallLayout); the layout is never persisted.
+        imgWall.style.cssText =
+            `padding:24px 24px 300px;display:grid;grid-template-columns:repeat(auto-fill,minmax(${CFG.GRID_MIN_PX}px,1fr));gap:14px;align-items:start;justify-items:center;`;
         gui.append(hdr, imgWall);
 
         document.documentElement.appendChild(gui);
@@ -1302,7 +1710,9 @@
         // keep firing (native lazy-load + the infinite-scroll the driver
         // feeds on), window.scrollTo keeps moving, and the native page is
         // simply never painted. EXIT is a full reload — no restore path
-        // exists or is needed.
+        // exists or is needed. v13.3.0: permanently engaged — the ghost-view
+        // lift retired with the round-14 layout contract (the wall IS the
+        // view; the SHOW FEED button now toggles the wall's own layout).
         const veil = document.createElement('style');
         veil.id = 'ares-veil';
         veil.textContent = 'body { visibility: hidden !important; }';
@@ -1376,24 +1786,12 @@
         };
 
         document.getElementById('ares-feed').onclick = () => {
-            // v13.2.4: the optional native-feed toggle — see the 13.2.4
-            // changelog. Lifting the veil restores body visibility and makes
-            // the wall translucent again (the ghost view the field report
-            // described — now strictly opt-in); re-engaging restores the
-            // default opaque retirement and re-pauses native media.
-            STATE.veilEngaged = !STATE.veilEngaged;
-            const veil = document.getElementById('ares-veil');
-            const gui  = document.getElementById('igBigContainer');
-            const btn  = document.getElementById('ares-feed');
-            if (veil) veil.textContent = STATE.veilEngaged ? 'body { visibility: hidden !important; }' : '';
-            if (gui)  gui.style.background = STATE.veilEngaged ? CFG.BG : 'rgba(10,19,26,0.85)';
-            if (btn)  btn.textContent = STATE.veilEngaged ? 'SHOW FEED' : 'HIDE FEED';
-            if (STATE.veilEngaged) {
-                document.body.querySelectorAll('video').forEach(v => { v.pause(); });
-                log('Native feed retired — the wall is the view.');
-            } else {
-                log('Native feed engaged — the wall is translucent; the live feed is visible behind it.');
-            }
+            // v13.3.0: the layout toggle — grid (the wall, default) ↔ feed
+            // (the single-column addition). See applyWallLayout.
+            applyWallLayout(STATE.wallLayout === 'grid' ? 'feed' : 'grid');
+            log(STATE.wallLayout === 'grid'
+                ? 'Grid wall engaged — the wall is the view.'
+                : 'Feed column engaged — one click on HIDE FEED returns the grid.');
         };
 
         document.getElementById('ares-more').onclick = () => {
@@ -1411,6 +1809,18 @@
         };
 
         NeuralDOM.observe(gui);
+
+        // v13.3.0: the scroll snapshot — debounced and threshold-gated (the
+        // lineage's "after scrolling a certain distance": tiny walls never
+        // write), patching the precise scrollTop into the offloaded record.
+        let snapTimer = null;
+        gui.addEventListener('scroll', () => {
+            if (snapTimer) return;
+            snapTimer = setTimeout(() => {
+                snapTimer = null;
+                if (gui.scrollTop >= CFG.SNAPSHOT_MIN_SCROLL) WallSnapshot.patchScroll(gui.scrollTop);
+            }, 600);
+        }, { passive: true });
 
         // B.1 (suite v1.5.0): the stat updater parks after 30 min with the
         // header gone (nothing left to update); any user click or tab
@@ -1452,9 +1862,23 @@
             NativeScrollDriver.start();
         }
 
+        // v13.3.0: THE WALL SNAPSHOT RESTORE — before any fetch: a matching
+        // record rebuilds catalog + cursor + precise scroll position (the
+        // lineage's "return to that position" contract). _seen is pre-seeded
+        // with the stored parent pks, so the pre-UI drain below filters its
+        // buffered items against the seeded set — an item harvested this
+        // page-load whose cards are already on the wall from the snapshot
+        // renders exactly once.
+        const seededPks = WallSnapshot.restore();
+
         // Drain items buffered before UI existed
         if (STATE.pendingItems.length) {
-            const drained = STATE.pendingItems.splice(0);
+            const drained = seededPks
+                ? STATE.pendingItems.splice(0).filter(it => {
+                      const id = String(it.pk || it.id || it.code || '');
+                      return !id || !seededPks.has(id);
+                  })
+                : STATE.pendingItems.splice(0);
             const cur     = STATE.cursors[STATE.MODE] || STATE.cursors['profile'] || null;
             renderBatch(drained, cur);
         }
@@ -1480,9 +1904,12 @@
         resolveUserId();
         buildUI();
 
-        // Trigger a first active fetch — if intercept already caught something
-        // the dedupe will suppress duplicates gracefully.
-        activeFetch(null);
+        // v13.3.0: a seeded snapshot skips the page-1 refetch — the catalog
+        // is already on the wall and pagination resumes from the stored
+        // frontier (the sentinel). Otherwise, trigger a first active fetch —
+        // if intercept already caught something the dedupe will suppress
+        // duplicates gracefully.
+        if (!STATE.snapshotSeeded) activeFetch(null);
     }
 
     // =========================================================

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Images++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      4.0.6
+// @version      4.1.0
 // @description  Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. Collapse-mode hotkey is configurable.
 // @author       4ndr0666
 // @match        *://*/*
@@ -51,6 +51,26 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Images++.user.js
 // @license      MIT
 // ==/UserScript==
+// 4.1.0 (WO-01 round 14): the normalization-symmetry settlement — the r13
+// lens finally pointed at this file (the declared round-14 candidate with
+// Prompt Master). Twelve audited, node-verified fixes: (F01) Ruler.parse
+// now DROPS non-CSP broken custom rules (a kept broken rule threw on every
+// hover, killing ALL previews site-wide); (F02) cleared number/range
+// settings fields can no longer persist NaN→null (dialog-unit defaults at
+// collect + an always-run numeric heal at Config read — ≤4.0.6 null records
+// self-heal on first load); (F03) the imgur gallery fallback guards
+// info.media; (F04) the twimg proxy rule's atob is try/catch'd (malformed
+// base64 threw on the hover path); (F05) the tumblr rule's exec()[0] is
+// null-safe; (F06) all four rule.d domain gates are hostname
+// equality/dot-suffix (substring gates activated custom rules on lookalike
+// hosts); (F07) the flickr rule rides tryJSON with optional chaining (the
+// file's only unguarded response JSON.parse); (F08) the ebay/radikal/
+// pic.twitter q-handlers use the file's own never-null |$ idiom; (F09) an
+// empty basename saves as 'image.jpg', not the hidden dotfile '.jpg';
+// (F10) the CSP wildcard compiler makes the domain-boundary dot mandatory
+// (*.example.com no longer accepts notexample.com); (F11) the collapse-mode
+// hotkey read trims the stored value; (F12) UrlMatcher string arms and
+// runU inputs are case-fold symmetric (the '^' regex arm was already 'i').
 // 4.0.6 (suite v1.18.0, WO-01 round 10): Req.gmXhr gains onabort (10c F04 —
 // the supersede path aborts the in-flight request via tryCatch(ai.req.abort),
 // and the aborted promise NEVER settled: timeout and error covered, a
@@ -965,6 +985,15 @@ class Config {
     }
     if (!isArray(c.scales))
       c.scales = [];
+    // v4.1.0 (IMG-F02 heal): number-typed fields must never read as
+    // null/NaN — a cleared dialog field under ≤4.0.6 stored NaN (JSON
+    // null), and the version-gated migration above skips same-version
+    // records, so the null survived every load (delay/uiInfoHide === null
+    // → 0ms timers). Always runs; cheap and idempotent.
+    for (const key in DEFAULTS)
+      if (typeof DEFAULTS[key] === 'number' &&
+          (typeof c[key] !== 'number' || Number.isNaN(c[key])))
+        c[key] = DEFAULTS[key];
     c.scales = [...new Set(c.scales)].sort((a, b) => parseFloat(a) - parseFloat(b));
     Object.assign(this, DEFAULTS, c);
   }
@@ -1102,7 +1131,7 @@ const CspSniffer = {
             item
             .replace(/[.+?^$|()[\]{}]/g, '\\$&')
             .replace(/(\\\.)?(\*)(\\\.)?/g, (_, a, b, c) =>
-              `${a ? '\\.?' : ''}[^:/]*${c ? '\\.?' : ''}`)
+              `${a ? '\\.?' : ''}[^:/]*${c ? '\\.' : ''}`)
             .replace(/[^/]$/, '$&/'));
         }
       });
@@ -1239,7 +1268,7 @@ const Events = {
 
     // Global hotkeys (no popup required) — v4.0.0: configurable via
     // cfg.collapseModeHotkey (default '!KeyX' = Alt+X, settings-dialog editable).
-    if (key === cfg.collapseModeHotkey) {
+    if (key === String(cfg.collapseModeHotkey || '').trim()) {
       CollapseMode.toggle();
       dropEvent(e);
       return;
@@ -1970,7 +1999,7 @@ const Ruler = {
             format: 'json',
             nojsoncallback: 1,
           }).toString()}`,
-        q: text => JSON.parse(text).sizes.size.pop().source,
+        q: text => tryJSON(text)?.sizes?.size?.pop()?.source,
         anonymous: true,
       }); break;
 
@@ -2081,7 +2110,7 @@ const Ruler = {
 
       case 'tumblr': rules.push({
         e: 'div.photo_stage_img, div.photo_stage > canvas',
-        s: (m, node) => /http[^"]+/.exec(node.style.cssText + node.getAttribute('data-img-src'))[0],
+        s: (m, node) => (/http[^"]+/.exec(node.style.cssText + node.getAttribute('data-img-src')) || [])[0],
         follow: true,
       }); break;
 
@@ -2142,7 +2171,7 @@ const Ruler = {
       {
         r: /[./]ebay\.[^/]+\/itm\//,
         q: text =>
-          text.match(/https?:\/\/i\.ebayimg\.com\/[^.]+\.JPG/i)[0]
+          text.match(/https?:\/\/i\.ebayimg\.com\/[^.]+\.JPG|$/i)[0]
             .replace(/~~60_\d+/, '~~60_57'),
       },
       {
@@ -2339,7 +2368,7 @@ const Ruler = {
           if (!images[0]) {
             info = (await Req.gmXhr(ai.url)).responseText.match(/postDataJSON=(".*?")<|$/)[1];
             info = tryJSON(tryJSON(info)) ?? 0;
-            images = info.media;
+            images = info?.media ?? [];
           }
           const items = [];
           for (const img of images) {
@@ -2477,7 +2506,7 @@ const Ruler = {
         s: (m, node, rule) =>
           m[2] && /radikal\.ru[\w%/]+?(\.\w+)/.test($propUp(node, 'href')) ? m[2] + RegExp.$1 :
             Ruler.toggle(rule, 'q', m[1]) ? m.input : [m[2] + '.jpg', m[2] + '.png'],
-        _q: text => text.match(/https?:\/\/\w+\.radikal\.ru[\w/]+\.(jpg|gif|png)/i)[0],
+        _q: text => text.match(/https?:\/\/\w+\.radikal\.ru[\w/]+\.(jpg|gif|png)|$/i)[0],
       },
       {
         u: '||tumblr.com',
@@ -2497,7 +2526,7 @@ const Ruler = {
       {
         u: '||twimg.com/1/proxy',
         r: /t=([^&_]+)/i,
-        s: m => atob(m[1]).match(/http.+/),
+        s: m => { try { return atob(m[1]).match(/http.+/); } catch { return; } },
       },
       {
         u: '||twimg.com/',
@@ -2507,7 +2536,7 @@ const Ruler = {
       {
         u: '||pic.twitter.com/',
         r: /\.com\/[a-z0-9]+/i,
-        q: text => text.match(/https?:\/\/twitter\.com\/[^/]+\/status\/\d+\/photo\/\d+/i)[0],
+        q: text => text.match(/https?:\/\/twitter\.com\/[^/]+\/status\/\d+\/photo\/\d+|$/i)[0],
         follow: true,
       },
       {
@@ -2587,7 +2616,7 @@ const Ruler = {
         rule = JSON.parse(rule);
       if ('d' in rule && typeof rule.d !== 'string')
         rule.d = undefined;
-      else if (isBatchOp && rule.d && !hostname.includes(rule.d))
+      else if (isBatchOp && rule.d && !(hostname === rule.d || hostname.endsWith('.' + rule.d)))
         return false;
       let {e} = rule;
       if (e != null) {
@@ -2621,7 +2650,11 @@ const Ruler = {
     } catch (err) {
       if (isBatchOp) {
         this.set(rule, err);
-        return rule;
+        // v4.1.0 (IMG-F01): only CSP/eval-blocked rules stay (the supersede
+        // path needs rules.indexOf(rule) to find them); every other parse
+        // error DROPS the rule — returning it kept a broken r/e in the walk
+        // and every hover threw before any built-in rule could run.
+        return RX_EVAL_BLOCKED.test(err) ? rule : false;
       } else {
         return err;
       }
@@ -2703,7 +2736,11 @@ const Ruler = {
   /** @returns {boolean} */
   runU(rule, url) {
     const u = rule[SYM_U] || (rule[SYM_U] = UrlMatcher(rule.u));
-    return u.fn.call(u.data, url);
+    // v4.1.0 (IMG-F12): case-fold symmetry — the '^' regex arm always
+    // compiled 'i', but the string arms compared raw dataset URLs against
+    // lowercase needles, so a sloppy mixed-case host in a data-url never
+    // matched. Both sides lowercase now (needles in UrlMatcher below).
+    return u.fn.call(u.data, String(url).toLowerCase());
   },
 
   substituteSingle(s, m) {
@@ -2943,6 +2980,11 @@ const Req = {
   async saveFile() {
     const url = ai.popup.src || ai.popup.currentSrc;
     let name = Req.getFileName(ai.imageUrl || url);
+    if (!name)
+      // v4.1.0 (IMG-F09): a trailing-slash or query-only URL yields an
+      // empty basename — appending '.jpg' minted the hidden dotfile '.jpg'
+      // (the Forums++ 13b-F01 class).
+      name = 'image';
     if (!name.includes('.'))
       name += '.jpg';
     if (url.startsWith('blob:') || url.startsWith('data:')) {
@@ -3090,7 +3132,8 @@ const UrlMatcher = (() => {
       const pinStart = !pinDomain && s.startsWith('|');
       const endSep = s.endsWith('^');
       let fn;
-      let needle = s.slice(pinDomain * 2 + pinStart, -endSep || undefined);
+      let needle = s.slice(pinDomain * 2 + pinStart, -endSep || undefined)
+        .toLowerCase(); // v4.1.0 (IMG-F12): symmetric with runU's lowered URLs
       if (needle.includes('^')) {
         let plain = '';
         for (const part of needle.split('^'))
@@ -3539,13 +3582,25 @@ async function setup({rule} = {}) {
     let data = {};
     for (const el of $$('input[id], select[id]', root))
       data[el.id] = el.type === 'checkbox' ? el.checked :
+        (el.type === 'number' || el.type === 'range') && !Number.isFinite(el.valueAsNumber) ?
+          // v4.1.0 (IMG-F02): a cleared number/range field reads NaN — store
+          // the field's dialog-unit default, never NaN (JSON persists NaN as
+          // null, and same-version records skip the migration block below).
+          // delay is seconds and scale is percent HERE (cfg-form conversion
+          // happens in the Object.assign below); every other field's cfg
+          // unit IS its dialog unit.
+          (el.id === 'delay' ? Config.DEFAULTS.delay / 1000 :
+           el.id === 'scale' ? Math.round((Config.DEFAULTS.scale - 1) * 100) :
+           Config.DEFAULTS[el.id]) :
         (el.type === 'number' || el.type === 'range') ? el.valueAsNumber :
           el.value || '';
     Object.assign(data, {
       css: UI.css.value.trim(),
-      delay: UI.delay.valueAsNumber * 1000,
+      delay: (Number.isFinite(UI.delay.valueAsNumber) ? UI.delay.valueAsNumber
+        : Config.DEFAULTS.delay / 1000) * 1000,
       hosts: collectRules(),
-      scale: clamp(UI.scale.valueAsNumber / 100, 0, 1) + 1,
+      scale: clamp((Number.isFinite(UI.scale.valueAsNumber) ? UI.scale.valueAsNumber
+        : Math.round((Config.DEFAULTS.scale - 1) * 100)) / 100, 0, 1) + 1,
       scales: UI.scales.value
         .trim()
         .split(/[,;]*\s+/)
@@ -3576,7 +3631,7 @@ async function setup({rule} = {}) {
       title = [invalidDomain && 'Disabled due to invalid characters in "d"', error]
         .filter(Boolean).join('\n');
       el.classList.toggle('invalid-domain', invalidDomain);
-      el.classList.toggle('matching-domain', !!json.d && hostname.includes(json.d));
+      el.classList.toggle('matching-domain', !!json.d && (hostname === json.d || hostname.endsWith('.' + json.d)));
       if (!prev)
         el.insertAdjacentElement('beforebegin', blankRuleElement.cloneNode());
     } else if (prev) {
@@ -3724,7 +3779,7 @@ async function setupRuleInstaller(e) {
         Ruler.fromElement(tr.cells[1]),
       ])
       .filter(([name, r]) =>
-        name && r && (!r.d || hostname.includes(r.d)))
+        name && r && (!r.d || hostname === r.d || hostname.endsWith('.' + r.d)))
       .sort(([a], [b]) =>
         (a = a.toLowerCase()) < (b = b.toLowerCase()) ? -1 :
           a > b ? 1 :
@@ -3735,7 +3790,7 @@ async function setupRuleInstaller(e) {
     const dottedHost = `.${hostname}.`;
     let maxCount = 0, maxIndex = 0, index = 0;
     for (const [name, {d}] of rules) {
-      let count = !!(d && hostname.includes(d)) * 10;
+      let count = !!(d && (hostname === d || hostname.endsWith('.' + d))) * 10;
       for (const part of name.toLowerCase().split(/[^a-z\d.-]+/i))
         count += dottedHost.includes(`.${part}.`) && part.length;
       if (count > maxCount) {
