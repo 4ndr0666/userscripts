@@ -369,8 +369,23 @@ export async function runIgWallBrowserBattery() {
   const OPAQUE_BG_RE = /BG:\s*'rgb\(10,19,26\)'/;
   const RELOAD_EXIT_LINE = "window.location.reload();";
   const FEED_BTN_LINE = "mkBtn('ares-feed', 'SHOW FEED'";
-  const DUMP_LABEL_LINE = "mkBtn('ares-dump', 'DOWNLOAD ALL'";
+  const DUMP_LABEL_LINE = "mkBtn('ares-dump', 'DUMP HTML'";
   const DLALL_LABEL_LINE = "mkBtn('ares-dlall', '⭳ SAVE ALL MEDIA'";
+  /* v13.3.0 round-14 tripwires — removing any of these turns the battery
+   * red (live or structural fallback): the grid wall statement (the r13
+   * single-column default is the obstruction the operator reported), the
+   * layout toggle, the wall snapshot (key + restore call), the sentinel
+   * factoring, and the retired ghost-view state. */
+  const GRID_WALL_STMT =
+    "imgWall.style.cssText =\n            `padding:24px 24px 300px;display:grid;grid-template-columns:repeat(auto-fill,minmax(${CFG.GRID_MIN_PX}px,1fr));gap:14px;align-items:start;justify-items:center;`;";
+  const FEED_WALL_STMT =
+    "imgWall.style.cssText = 'padding:80px 0 300px;display:flex;flex-direction:column;align-items:center;';";
+  const APPLY_LAYOUT_LINE = "function applyWallLayout(mode) {";
+  const SNAPSHOT_KEY_LINE = "SNAPSHOT_KEY:        'igpp_wall_snapshot_v1',";
+  const SNAPSHOT_RESTORE_LINE = "const seededPks = WallSnapshot.restore();";
+  const ARM_SENTINEL_LINE = "function armSentinel(cursor) {";
+  const VEILENGAGED_ABSENT =
+    !/STATE\.veilEngaged/.test(distSource) && !/STATE\.veilEngaged/.test(canonSource);
 
   const checks = [];
   function assert(name, cond, detail = "") {
@@ -400,6 +415,14 @@ export async function runIgWallBrowserBattery() {
       distSource.includes(FEED_BTN_LINE) && canonSource.includes(FEED_BTN_LINE) &&
         distSource.includes(DUMP_LABEL_LINE) && canonSource.includes(DUMP_LABEL_LINE) &&
         distSource.includes(DLALL_LABEL_LINE) && canonSource.includes(DLALL_LABEL_LINE));
+    assert("8b. structural tripwire: the round-14 GRID WALL contract (canon+dist)",
+      distSource.includes(GRID_WALL_STMT) && canonSource.includes(GRID_WALL_STMT) &&
+        distSource.includes(APPLY_LAYOUT_LINE) && canonSource.includes(APPLY_LAYOUT_LINE) &&
+        distSource.includes(SNAPSHOT_KEY_LINE) && canonSource.includes(SNAPSHOT_KEY_LINE) &&
+        distSource.includes(SNAPSHOT_RESTORE_LINE) && canonSource.includes(SNAPSHOT_RESTORE_LINE) &&
+        distSource.includes(ARM_SENTINEL_LINE) && canonSource.includes(ARM_SENTINEL_LINE) &&
+        VEILENGAGED_ABSENT,
+      `gridStmt=${distSource.includes(GRID_WALL_STMT)}/${canonSource.includes(GRID_WALL_STMT)}, applyLayout=${distSource.includes(APPLY_LAYOUT_LINE)}, snapKey=${distSource.includes(SNAPSHOT_KEY_LINE)}, restore=${distSource.includes(SNAPSHOT_RESTORE_LINE)}, sentinel=${distSource.includes(ARM_SENTINEL_LINE)}, veilEngagedAbsent=${VEILENGAGED_ABSENT}`);
     const failedStructural = checks.filter((c) => !c.pass);
     return {
       passed: checks.length - failedStructural.length,
@@ -424,10 +447,18 @@ export async function runIgWallBrowserBattery() {
     const sabotageSource = distSource
       .replace("BG:          'rgb(10,19,26)',", "BG:          'rgba(10,19,26,0.85)',")
       .replace("veil.textContent = 'body { visibility: hidden !important; }';", "veil.textContent = '';");
+    /* v13.3.0 layout sabotage red-control source: the r13 SINGLE-COLUMN
+     * default — the exact obstruction the operator reported (one centered
+     * full-size media card at a time instead of the grid wall). Both the
+     * wall statement AND the card layout default revert; the snapshot and
+     * everything else stays live so the revert is isolated to the layout. */
+    const sabotageLayoutSource = distSource
+      .replace(GRID_WALL_STMT, FEED_WALL_STMT)
+      .replace("wallLayout:     'grid',", "wallLayout:     'feed',");
     server = http.createServer((req, res) => {
       if (req.url && /^\/fixtureuser\/?$/.test(req.url)) {
         res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-        const source = mode === "canon" ? canonSource : (mode === "sabotage" ? sabotageSource : distSource);
+        const source = mode === "canon" ? canonSource : (mode === "sabotage" ? sabotageSource : (mode === "sabotage-layout" ? sabotageLayoutSource : distSource));
         res.end(buildIgFixtureHtml(source));
         return;
       }
@@ -701,7 +732,7 @@ export async function runIgWallBrowserBattery() {
       JSON.stringify(driverState)
     );
 
-    /* Operator-directed header labels (round-12 transmission). */
+    /* Operator-directed header labels (round-12 + round-14 transmissions). */
     const labels = await evalInPage(`(function() {
       const dump = document.getElementById('ares-dump');
       const dlall = document.getElementById('ares-dlall');
@@ -713,41 +744,145 @@ export async function runIgWallBrowserBattery() {
       };
     })()`);
     assert(
-      "12. (get) HEADER LABELS: the whole-grid artifact is DOWNLOAD ALL; the media-file downloader is ⭳ SAVE ALL MEDIA; the toggle is SHOW FEED",
-      labels.dump === "DOWNLOAD ALL" && labels.dlall === "⭳ SAVE ALL MEDIA" && labels.feed === "SHOW FEED",
+      "12. (get) HEADER LABELS: the whole-grid artifact is DUMP HTML (the r14 directive — the truthful name back); the media-file downloader is ⭳ SAVE ALL MEDIA; the layout toggle is SHOW FEED (grid default)",
+      labels.dump === "DUMP HTML" && labels.dlall === "⭳ SAVE ALL MEDIA" && labels.feed === "SHOW FEED",
       JSON.stringify(labels)
     );
 
-    /* The FEED toggle roundtrip — lift the veil, verify the ghost view, restore. */
-    const feedToggle = await evalInPage(`(async function() {
+    /* v13.3.0 THE LAYOUT TOGGLE — the operator's \"hide feed\" button aimed at
+     * the wall's own layout: grid (default, the main function) ↔ the feed
+     * column (the opt-in addition). The r12 veil-ghost view is retired: the
+     * body stays retired and the wall stays opaque through the whole cycle. */
+    const layoutToggle = await evalInPage(`(async function() {
       const btn = document.getElementById('ares-feed');
       if (!btn) return { found: false };
       const gui = document.getElementById('igBigContainer');
-      const col = document.getElementById('native-feed-column');
+      const wall = document.getElementById('igAllImages');
       const snap = () => ({
-        body: getComputedStyle(document.body).visibility,
-        bg: getComputedStyle(gui).backgroundColor,
-        col: col ? getComputedStyle(col).visibility : null,
+        display: getComputedStyle(wall).display,
+        flexDirection: getComputedStyle(wall).flexDirection,
+        tracks: (getComputedStyle(wall).gridTemplateColumns || '').split(' ').filter(x => /px$/.test(x)).length,
         label: btn.textContent,
+        bodyVisibility: getComputedStyle(document.body).visibility,
+        wallBg: getComputedStyle(gui).backgroundColor,
       });
       const before = snap();
       btn.click();
-      await new Promise(r => setTimeout(r, 250));
-      const lifted = snap();
+      ${rafSettle}
+      const feed = snap();
       btn.click();
-      await new Promise(r => setTimeout(r, 250));
+      ${rafSettle}
       const restored = snap();
-      return { found: true, before, lifted, restored };
+      return { found: true, before, feed, restored };
     })()`);
     assert(
-      "13. (click, get) FEED TOGGLE: default retired (hidden+opaque+SHOW FEED) → lifted (visible+translucent+HIDE FEED) → restored byte-exact",
-      feedToggle.found === true &&
-        feedToggle.before.body === "hidden" && feedToggle.before.bg === "rgb(10, 19, 26)" && feedToggle.before.label === "SHOW FEED" &&
-        feedToggle.lifted.body === "visible" && /^rgba\(10, 19, 26, 0\.85\)$/.test(feedToggle.lifted.bg) &&
-        feedToggle.lifted.label === "HIDE FEED" && feedToggle.lifted.col === "visible" &&
-        feedToggle.restored.body === "hidden" && feedToggle.restored.bg === "rgb(10, 19, 26)" &&
-        feedToggle.restored.label === "SHOW FEED" && feedToggle.restored.col === "hidden",
-      JSON.stringify(feedToggle)
+      "13. (click, get) LAYOUT TOGGLE: default GRID (display:grid, multi-track, SHOW FEED) → FEED column (flex+column, HIDE FEED) → GRID restored — and the veil never lifts through the cycle",
+      layoutToggle.found === true &&
+        layoutToggle.before.display === "grid" && layoutToggle.before.tracks >= 4 && layoutToggle.before.label === "SHOW FEED" &&
+        layoutToggle.feed.display === "flex" && layoutToggle.feed.flexDirection === "column" && layoutToggle.feed.label === "HIDE FEED" &&
+        layoutToggle.restored.display === "grid" && layoutToggle.restored.tracks >= 4 && layoutToggle.restored.label === "SHOW FEED" &&
+        layoutToggle.before.bodyVisibility === "hidden" && layoutToggle.feed.bodyVisibility === "hidden" && layoutToggle.restored.bodyVisibility === "hidden" &&
+        layoutToggle.before.wallBg === "rgb(10, 19, 26)" && layoutToggle.feed.wallBg === "rgb(10, 19, 26)" && layoutToggle.restored.wallBg === "rgb(10, 19, 26)",
+      JSON.stringify(layoutToggle)
+    );
+
+    /* v13.3.0 THE GRID FILLS THE WALL — the lineage contract's geometry:
+     * multiple cards per row, edge-to-edge. The r13 single centered column
+     * is exactly what this rejects. */
+    const gridGeometry = await evalInPage(`(function() {
+      const wall = document.getElementById('igAllImages');
+      const cards = [...wall.querySelectorAll('[data-ares-card]')];
+      const rects = cards.slice(0, 12).map(c => c.getBoundingClientRect());
+      const rowTop = rects.length ? rects[0].top : -1;
+      const sameRow = rects.filter(r => Math.abs(r.top - rowTop) < 40).length;
+      const lefts = rects.map(r => r.left), rights = rects.map(r => r.right);
+      return {
+        cardCount: cards.length,
+        leftmost: lefts.length ? Math.min(...lefts) : null,
+        rightmost: rights.length ? Math.max(...rights) : null,
+        firstRowCards: sameRow,
+        vw: window.innerWidth,
+      };
+    })()`);
+    assert(
+      "13b. (get) THE GRID FILLS THE WALL: multiple cards per row, edge-to-edge — the single centered column is NOT the default",
+      gridGeometry.cardCount >= 8 && gridGeometry.firstRowCards >= 3 &&
+        gridGeometry.leftmost !== null && gridGeometry.leftmost < 80 &&
+        gridGeometry.rightmost !== null && gridGeometry.rightmost > 1200,
+      JSON.stringify(gridGeometry)
+    );
+
+    /* v13.3.0 THE WALL SNAPSHOT — write path: scroll past the lineage's
+     * \"certain distance\", the debounced patch stores the precise position
+     * alongside the offloaded catalog. */
+    const snapWrite = await evalInPage(`(async function() {
+      const gui = document.getElementById('igBigContainer');
+      gui.scrollTop = 4000;
+      await new Promise(r => setTimeout(r, 1100));
+      ${rafSettle}
+      let rec = null;
+      try { rec = JSON.parse(localStorage.getItem('igpp_wall_snapshot_v1') || 'null'); } catch (e) { rec = null; }
+      return {
+        scrollTop: Math.round(gui.scrollTop),
+        stored: !!rec,
+        kids: rec && Array.isArray(rec.kids) ? rec.kids.length : 0,
+        storedScroll: rec ? Math.round(rec.scrollTop || 0) : null,
+        loc: rec ? rec.loc : null,
+        path: location.pathname,
+      };
+    })()`);
+    assert(
+      "14. (get) WALL SNAPSHOT WRITE: scrolling past the threshold offloads the catalog + the precise scroll position (the lineage contract)",
+      snapWrite.scrollTop >= 3900 && snapWrite.stored === true && snapWrite.kids >= 100 &&
+        snapWrite.storedScroll >= 3900 && snapWrite.loc === snapWrite.path,
+      JSON.stringify(snapWrite)
+    );
+
+    /* v13.3.0 THE WALL SNAPSHOT — restore path: a reload (the accidental-
+     * navigation case) reopens the wall AT THE SNAPSHOT POSITION, instantly,
+     * with the seeded catalog and zero duplicates. */
+    await cdp.send("Page.reload", { ignoreCache: true });
+    const snapRestore = await evalInPage(`(async function() {
+      let dock = null;
+      for (let i = 0; i < 120; i++) {
+        dock = document.getElementById("4ndr0666-dock");
+        if (dock) break;
+        await new Promise(r => setTimeout(r, 250));
+      }
+      if (!dock) return { dockFound: false };
+      dock.click();
+      let gui = null;
+      for (let i = 0; i < 120; i++) {
+        gui = document.getElementById("igBigContainer");
+        if (gui) break;
+        await new Promise(r => setTimeout(r, 100));
+      }
+      if (!gui) return { dockFound: true, wallOpen: false };
+      await new Promise(r => setTimeout(r, 900));
+      ${rafSettle}
+      await new Promise(r => setTimeout(r, 400));
+      const wall = document.getElementById('igAllImages');
+      const vw = { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight };
+      const hit = (r) => !(r.right <= vw.left || r.left >= vw.right || r.bottom <= vw.top || r.top >= vw.bottom);
+      const spans = [...wall.querySelectorAll("span")].filter(s => s.textContent === "V-STASIS");
+      const imgs = [...wall.querySelectorAll("img")];
+      let rec = null;
+      try { rec = JSON.parse(localStorage.getItem('igpp_wall_snapshot_v1') || 'null'); } catch (e) { rec = null; }
+      return {
+        dockFound: true, wallOpen: true,
+        scrollTop: Math.round(gui.scrollTop),
+        cards: wall.querySelectorAll('[data-ares-card]').length,
+        vstasisCovering: spans.map(s => s.getBoundingClientRect()).filter(hit).length,
+        imgsInViewport: imgs.map(im => im.getBoundingClientRect()).filter(hit).length,
+        storedKids: rec && Array.isArray(rec.kids) ? rec.kids.length : 0,
+      };
+    })()`);
+    assert(
+      "15. (reload, click, get) WALL SNAPSHOT RESTORE: after a reload the wall reopens AT THE SNAPSHOT POSITION — seeded catalog, restored scroll, hydrated viewport, zero duplicates",
+      snapRestore.wallOpen === true && snapRestore.scrollTop >= 3000 &&
+        snapRestore.cards >= 60 && snapRestore.vstasisCovering === 0 &&
+        snapRestore.imgsInViewport >= 1 && snapRestore.storedKids >= 100,
+      JSON.stringify(snapRestore)
     );
 
     /* Real-file downloads under the veil: a wall badge AND the data-driven
@@ -777,7 +912,7 @@ export async function runIgWallBrowserBattery() {
     })()`);
     const badgeFile = await waitForDownload(f => /^42_CODE\d+_1of1\.(jpg|png)$/.test(f), 20000);
     assert(
-      "14. (click, wait) a wall download badge under the veil delivers a REAL FILE to disk (saveBlob anchor rides the hidden body)",
+      "16. (click, wait) a wall download badge under the veil delivers a REAL FILE to disk (saveBlob anchor rides the hidden body)",
       !!badgeFile,
       badgeFile || "no file matched ^42_CODE\\d+_1of1\\.(jpg|png)$ within 20s"
     );
@@ -791,7 +926,7 @@ export async function runIgWallBrowserBattery() {
       dumpPlaceholders = (dumpText.match(/V-STASIS/g) || []).length;
     }
     assert(
-      "15. (click, wait, get) DOWNLOAD ALL delivers the DATA-DRIVEN grid artifact: every known media item, zero V-STASIS placeholders",
+      "17. (click, wait, get) DUMP HTML delivers the DATA-DRIVEN grid artifact: every known media item, zero V-STASIS placeholders",
       !!dumpFile && dumpCells >= 100 && dumpPlaceholders === 0,
       dumpFile ? `cells=${dumpCells}, placeholders=${dumpPlaceholders}` : "no 4ndr0666_dump_42.html within 20s"
     );
@@ -830,15 +965,17 @@ export async function runIgWallBrowserBattery() {
         covering: spans.map(s => s.getBoundingClientRect()).filter(hit).length,
         imgsInViewport: imgs.filter(hit).length,
         wallBg: getComputedStyle(document.getElementById("igBigContainer")).backgroundColor,
+        wallDisplay: wall ? getComputedStyle(wall).display : null,
         bodyVisibility: getComputedStyle(document.body).visibility,
         mainRectHeight: (document.querySelector("main") || { getBoundingClientRect: () => ({ height: 0 }) }).getBoundingClientRect().height,
         feedLabel: (document.getElementById("ares-feed") || {}).textContent || null,
       };
     })()`);
     assert(
-      "16. canon kernel-less live parity: same wall, same invariant, SAME VEIL (zero V-STASIS in viewport at open; opaque wall; body retired; geometry alive)",
+      "18. canon kernel-less live parity: same wall, same invariant, SAME VEIL + SAME GRID (zero V-STASIS in viewport; opaque wall; body retired; geometry alive; display:grid)",
       canonState.wallOpen && canonState.covering === 0 && canonState.imgsInViewport >= 1 &&
         canonState.wallBg === "rgb(10, 19, 26)" && canonState.bodyVisibility === "hidden" &&
+        canonState.wallDisplay === "grid" &&
         canonState.mainRectHeight > 0 && canonState.feedLabel === "SHOW FEED",
       JSON.stringify(canonState)
     );
@@ -846,13 +983,17 @@ export async function runIgWallBrowserBattery() {
     /* Structural tripwires derived from the artifact — a future round that
      * removes the gate turns the battery red, live or fallback. */
     assert(
-      "17. structural tripwire: the isOffscreen prune gate + batch hydrateNear + the veil tokens survive in canon AND dist",
+      "19. structural tripwire: the isOffscreen prune gate + batch hydrateNear + the veil tokens + the round-14 grid-wall tokens survive in canon AND dist",
       distSource.includes(GATE_LINE) && canonSource.includes(GATE_LINE) &&
         distSource.includes(HYDRATE_LINE) && canonSource.includes(HYDRATE_LINE) &&
         distSource.includes(VEIL_ID_LINE) && canonSource.includes(VEIL_ID_LINE) &&
         distSource.includes(VEIL_RULE_LINE) && canonSource.includes(VEIL_RULE_LINE) &&
         OPAQUE_BG_RE.test(distSource) && OPAQUE_BG_RE.test(canonSource) &&
         distSource.includes(RELOAD_EXIT_LINE) && canonSource.includes(RELOAD_EXIT_LINE) &&
+        distSource.includes(GRID_WALL_STMT) && canonSource.includes(GRID_WALL_STMT) &&
+        distSource.includes(SNAPSHOT_KEY_LINE) && canonSource.includes(SNAPSHOT_KEY_LINE) &&
+        distSource.includes(DUMP_LABEL_LINE) && canonSource.includes(DUMP_LABEL_LINE) &&
+        VEILENGAGED_ABSENT &&
         distVersion === canonVersion,
       `dist=${distVersion}, canon=${canonVersion}`
     );
@@ -864,7 +1005,7 @@ export async function runIgWallBrowserBattery() {
         { left: 0, top: 0, right: 1280, bottom: 800 }
       ) === true;
     assert(
-      "18. red-control: original-bug geometry (full-viewport V-STASIS rect at scroll 0) is detected",
+      "20. red-control: original-bug geometry (full-viewport V-STASIS rect at scroll 0) is detected",
       redControl
     );
 
@@ -909,9 +1050,56 @@ export async function runIgWallBrowserBattery() {
       /^rgba\(10, 19, 26, 0\.85\)$/.test(sabotageState.wallBg || "") &&
       sabotageState.bodyVisibility === "visible";
     assert(
-      "19. red-control (sabotage load): the PRE-FIX ghost state (translucent wall + visible body) is reproduced and REJECTED by assertions 7/8",
+      "21. red-control (sabotage load): the PRE-FIX ghost state (translucent wall + visible body) is reproduced and REJECTED by assertions 7/8",
       preFixBugReproduced === true,
       JSON.stringify(sabotageState)
+    );
+
+    /* v13.3.0 LAYOUT SABOTAGE RED CONTROL — the r13 SINGLE-COLUMN default
+     * (the operator's obstruction) reconstructed on purpose: the wall
+     * statement reverted to the flex column AND the card default to feed.
+     * Assertions 13/13b are exactly what reject this state; the guard also
+     * fails closed if the sabotage replace ever stops matching the source. */
+    mode = "sabotage-layout";
+    await cdp.send("Page.reload", { ignoreCache: true });
+    const layoutSabState = await evalInPage(`(async function() {
+      let dock = null;
+      for (let i = 0; i < 120; i++) {
+        dock = document.getElementById("4ndr0666-dock");
+        if (dock) break;
+        await new Promise(r => setTimeout(r, 250));
+      }
+      if (!dock) return { dockFound: false };
+      dock.click();
+      let gui = null;
+      for (let i = 0; i < 120; i++) {
+        gui = document.getElementById("igBigContainer");
+        if (gui) break;
+        await new Promise(r => setTimeout(r, 100));
+      }
+      if (!gui) return { dockFound: true, wallOpen: false };
+      await new Promise(r => setTimeout(r, 900));
+      ${rafSettle}
+      const wall = document.getElementById('igAllImages');
+      const first = wall ? wall.querySelector('[data-ares-card] img, [data-ares-card] video') : null;
+      const r = first ? first.getBoundingClientRect() : null;
+      return {
+        dockFound: true, wallOpen: true,
+        display: wall ? getComputedStyle(wall).display : null,
+        flexDirection: wall ? getComputedStyle(wall).flexDirection : null,
+        firstMediaLeft: r ? Math.round(r.left) : null,
+        firstMediaWidth: r ? Math.round(r.width) : null,
+        vw: window.innerWidth,
+      };
+    })()`);
+    const layoutBugReproduced =
+      layoutSabState.wallOpen === true &&
+      layoutSabState.display === "flex" && layoutSabState.flexDirection === "column" &&
+      layoutSabState.firstMediaLeft !== null && layoutSabState.firstMediaLeft > 200;
+    assert(
+      "22. red-control (layout sabotage load): the r13 SINGLE-COLUMN default (the obstruction) is reproduced and REJECTED by assertions 13/13b",
+      layoutBugReproduced === true && sabotageLayoutSource !== distSource,
+      JSON.stringify({ ...layoutSabState, replaceMatched: sabotageLayoutSource !== distSource })
     );
   } finally {
     if (cdp) cdp.close();
@@ -930,8 +1118,8 @@ export async function runIgWallBrowserBattery() {
     total: checks.length,
     clean: failed.length === 0,
     /* WO-01 round-3 (3-a F12): mode disclosed — dist + canon-parity reload
-     * + the round-12 sabotage red control. */
-    mode: "dist+canon+sabotage-red-control",
+     * + the round-12 sabotage red control + the round-14 layout red control. */
+    mode: "dist+canon+sabotage+layout-red-control",
     checks,
     failed,
   };

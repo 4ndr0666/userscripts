@@ -26,6 +26,21 @@
  *   11. GlobalFiles LRU bounds           (Prompt Master 28.8.2)
  *   12. toBool toggle readers            (WCP 5.3.2, MPC 8.1.5, m3u8++ 5.1.3,
  *                                       ModelSearch 4.0.5)
+ *   13. round-14 IG++ contract            (13.3.0 — DUMP HTML back, grid
+ *                                       wall default, wall snapshot)
+ *   14. Prompt Master 28.9.0              (insertPrompt escape, raw ingest,
+ *                                       hostEq gates, compareVersions,
+ *                                       per-run sentinels, fallback stamp)
+ *   15. Images++ 4.1.0                    (CSP boundary dot, numeric heal,
+ *                                       never-null handlers, domain gates,
+ *                                       broken-rule drop, case-fold)
+ *
+ * WO-01 round 14: the r13 residual closed — the property-arrow sites
+ * (fnNoExt, matchAll, the pixeldrain resolver) now run EXTRACTED from the
+ * canon (not inline copies), the button contract re-pinned to the round-14
+ * directive (DUMP HTML back on the artifact button), and the round-14
+ * normalization fixes (PM + Images++) pinned with fixtures + wiring
+ * tripwires + red controls.
  *
  * Discipline (SUK v1.2 Part V): totals derive from execution; every inline
  * fixture carries a WIRING TRIPWIRE asserting the canon carries the fixed
@@ -63,6 +78,38 @@ function extractFn(src, fnName) {
     throw new Error(`Unbalanced function ${fnName}`);
 }
 
+/* v(r14): the property-arrow extractor — `name: (args) => { ... }` object
+ * members (the LMPsi/Forums helper tables). Scans occurrences line-by-line
+ * so changelog PROSE naming `fnNoExt:` never shadows the real definition;
+ * reconstructs a plain function so the battery executes the canon's OWN
+ * code, not a copy of its shape. */
+function extractPropFn(src, propName) {
+    const headerRe = new RegExp(`^${propName}:\\s*(\\([^()]*\\)|[\\w$]+)\\s*=>\\s*\\{`);
+    let idx = -1;
+    for (let pos = 0; pos < src.length; ) {
+        const at = src.indexOf(`${propName}:`, pos);
+        if (at === -1) break;
+        const line = src.slice(at, (src.indexOf("\n", at) + 1) || src.length);
+        if (headerRe.test(line)) { idx = at; break; }
+        pos = at + 1;
+    }
+    if (idx === -1) throw new Error(`Missing arrow property ${propName}`);
+    const arrow = src.indexOf("=>", idx);
+    const bodyStart = src.indexOf("{", arrow);
+    let depth = 0;
+    for (let i = bodyStart; i < src.length; i++) {
+        if (src[i] === "{") depth++;
+        else if (src[i] === "}") {
+            depth--;
+            if (depth === 0) {
+                const params = src.slice(idx + propName.length + 1, arrow).trim().replace(/^\(|\)$/g, "");
+                return `function(${params}) ${src.slice(bodyStart, i + 1)}`;
+            }
+        }
+    }
+    throw new Error(`Unbalanced property ${propName}`);
+}
+
 const readCanon = (tier, name) =>
     fs.readFileSync(path.join(ROOT, "canon", tier, `4ndr0tools - ${name}.user.js`), "utf8");
 
@@ -92,46 +139,32 @@ export async function runNormSymmetrySmoke(root = ROOT) {
     const mst    = readCanon("_promoted", "ModelSearch");
     const ig     = readCanon("_sovereign", "Instagram++");
     const pxd    = readCanon("_sovereign", "Pixeldrain++");
+    const imgs   = readCanon("_merged", "Images++");
+    const igDist = fs.readFileSync(path.join(ROOT, "dist", "4ndr0tools - Instagram++.user.js"), "utf8");
 
-    /* ── 1. fnNoExt / basename symmetry ─────────────────────────────────── */
-    const fnNoExt = (p) => {
-        const trimmed = String(p).trim();
-        const parts = trimmed.split(".");
-        if (parts.length < 2) return trimmed;
-        parts.pop();
-        return parts.join(".");
-    };
-    assert("1a. fnNoExt fixture: dotless basename is its own stem (the '.mp4' hidden-dotfile fix)", fnNoExt("photo") === "photo" && fnNoExt("video.mp4") === "video" && fnNoExt("a.b.c.jpg") === "a.b.c" && fnNoExt("") === "");
+    /* ── 1. fnNoExt / basename symmetry (EXTRACTED from both twins) ────── */
+    const forumsFnNoExt = eval(`(${extractPropFn(forums, "fnNoExt")})`);
+    const lmpsiFnNoExt  = eval(`(${extractPropFn(lmpsi, "fnNoExt")})`);
+    assert("1a. fnNoExt fixtures (EXTRACTED from BOTH twins): dotless basename is its own stem, multi-dot keeps interior dots, empty stays empty",
+      ["photo", "video.mp4", "a.b.c.jpg", ""].every((s) => forumsFnNoExt(s) === lmpsiFnNoExt(s)) &&
+        forumsFnNoExt("photo") === "photo" && forumsFnNoExt("video.mp4") === "video" && forumsFnNoExt("a.b.c.jpg") === "a.b.c" && forumsFnNoExt("") === "" &&
+        lmpsiFnNoExt("photo") === "photo" && lmpsiFnNoExt("  x.y ") === "x");
     assert("1b. fnNoExt wiring: BOTH twins carry the dotless guard", forums.includes("if (parts.length < 2) return trimmed;") && lmpsi.includes("if (parts.length < 2) return trimmed;"));
     assert("1c. basename wiring: the LMPsi twin strips the trailing slash like Forums++", lmpsi.includes('.replace(/\\/(\\s+)?$/, "")') && forums.includes("path.replace(/\\/(\\s+)?$/, '')"));
     assert("1d. RED CONTROL: the pre-fix pop-to-empty shape is absent from both twins", !forums.includes("parts.pop(); // Remove extension\n        return parts.join('.');\n    },\n    /**\n     * @param {string} path\n     * @returns {string|null}\n     */\n    ext: path => {\n      if (!path") && !lmpsi.includes('fnNoExt: (path) => path.trim().split(".").reverse().slice(1).reverse().join(".")'));
 
-    /* ── 2. matchAll g-flag rebuild (the CRITICAL tab-hang) ─────────────── */
-    const matchAll = (pattern, subject) => {
-        const matches = [];
-        let m;
-        const regex = new RegExp(pattern.source, "g" + (pattern.flags?.replace("g", "") || ""));
-        while ((m = regex.exec(subject)) !== null) {
-            if (m.index === regex.lastIndex) regex.lastIndex++;
-            matches.push(m[0]);
-        }
-        return matches;
-    };
-    let execCount = 0;
-    const matchAllCounted = (pattern, subject) => {
-        const matches = [];
-        let m;
-        const regex = new RegExp(pattern.source, "g" + (pattern.flags?.replace("g", "") || ""));
-        while ((m = regex.exec(subject)) !== null) {
-            if (++execCount > 50) throw new Error("runaway");
-            if (m.index === regex.lastIndex) regex.lastIndex++;
-            matches.push(m[0]);
-        }
-        return matches;
-    };
-    assert("2a. matchAll fixture: a NON-global pattern terminates and matches (the live ibb auth_token lookbehind shape)", eq(matchAll(/(?<=auth_token=").*?(?=")/i, 'x auth_token="ABC" y'), ["ABC"]) && eq(matchAll(/zzz/i, "abc"), []));
-    assert("2b. matchAll fixture: global callers unaffected", matchAll(/data-object='/gi, "a data-object='1' b data-object='2'").length === 2);
-    assert("2c. matchAll bounded-exec proof: the non-global run stays under 50 execs (the pre-fix shape pushed identical matches forever)", (() => { try { matchAllCounted(/(?<=a=).*?(?=&)/i, "zzz a=1&b=2 y"); return execCount > 0 && execCount <= 50; } catch { return false; } })());
+    /* ── 2. matchAll g-flag rebuild (the CRITICAL tab-hang, EXTRACTED) ── */
+    const lmpsiMatchAll = eval(`(${extractPropFn(lmpsi, "matchAll")})`);
+    assert("2a. matchAll fixture (EXTRACTED from the LMPsi twin): a NON-global pattern terminates and matches (the live ibb auth_token lookbehind shape)", eq(lmpsiMatchAll(/(?<=auth_token=").*?(?=")/i, 'x auth_token="ABC" y'), ["ABC"]) && eq(lmpsiMatchAll(/zzz/i, "abc"), []));
+    assert("2b. matchAll fixture (EXTRACTED): global callers unaffected", lmpsiMatchAll(/data-object='/gi, "a data-object='1' b data-object='2'").length === 2);
+    assert("2c. matchAll bounded-exec proof (EXTRACTED, exec-instrumented): the non-global run stays under 200 RegExp execs (the pre-fix shape pushed identical matches forever)", (() => {
+        let execCalls = 0;
+        const origExec = RegExp.prototype.exec;
+        RegExp.prototype.exec = function (...a) { if (++execCalls > 200) { RegExp.prototype.exec = origExec; throw new Error("runaway"); } return origExec.apply(this, a); };
+        try { const r = lmpsiMatchAll(/(?<=a=).*?(?=&)/i, "zzz a=1&b=2 y"); return execCalls > 0 && execCalls <= 200 && eq(r, ["1"]); }
+        catch { return false; }
+        finally { RegExp.prototype.exec = origExec; }
+    })());
     assert("2d. matchAll wiring: the LMPsi twin carries the g-rebuild; the raw-exec pre-fix shape is GONE", lmpsi.includes('const regex = new RegExp(pattern.source, "g" + (pattern.flags?.replace("g", "") || ""));') && !lmpsi.includes("while ((m = pattern.exec(subject)) !== null)"));
     assert("2e. RED CONTROL: the LMPsi ibb token call site rides matchAll (never a bare exec loop)", lmpsi.includes('h.re.matchAll(/(?<=auth_token=").*?(?=")/i, source)[0]'));
 
@@ -145,20 +178,18 @@ export async function runNormSymmetrySmoke(root = ROOT) {
     assert("3b. ibb count wiring: BOTH twins carry the digits-only extraction + one-page floor", forums.includes("replace(/[^0-9]/g, '');") && lmpsi.includes('replace(/[^0-9]/g, "")') && forums.includes("Math.max(1, Math.ceil(imageCount / 32));") && lmpsi.includes("Math.max(1, Math.ceil(imageCount / 32));"));
     assert("3c. RED CONTROL: the pre-fix raw Number() count is absent from both twins", !forums.includes("const imageCount = Number(dom.querySelector('span[data-text=\"image-count\"]')?.innerText);") && !lmpsi.includes("const imageCount = Number(dom.querySelector('span[data-text=\"image-count\"]').innerText);"));
 
-    /* ── 4. Pixeldrain query-aware resolver ─────────────────────────────── */
-    const pxdResolve = (url) => {
-        try {
-            const u = new URL(url);
-            if (u.pathname.includes("/l/")) {
-                u.pathname = u.pathname.replace("/l/", "/api/list/").replace(/\/+$/, "") + "/zip";
-                return u.toString();
-            }
-            u.pathname = u.pathname.replace("/u/", "/api/file/");
-            if (u.search) { u.searchParams.set("download", ""); return u.toString(); }
-            return `${u.origin}${u.pathname}?download`;
-        } catch { return url; }
-    };
-    assert("4a. pixeldrain fixture: clean URLs byte-match the old output; query-bearing URLs are constructed, never glued", pxdResolve("https://pixeldrain.com/u/abc") === "https://pixeldrain.com/api/file/abc?download" && pxdResolve("https://pixeldrain.com/u/abc?x=1") === "https://pixeldrain.com/api/file/abc?x=1&download=" && pxdResolve("https://pixeldrain.com/l/abc") === "https://pixeldrain.com/api/list/abc/zip" && pxdResolve("https://pixeldrain.com/l/abc?x=1") === "https://pixeldrain.com/api/list/abc/zip?x=1");
+    /* ── 4. Pixeldrain query-aware resolver (EXTRACTED from canon) ─────── */
+    const pxdStart = forums.indexOf("const u = new URL(url);");
+    const pxdEndMarker = "return `${u.origin}${u.pathname}?download`;";
+    const pxdEnd = forums.indexOf(pxdEndMarker, pxdStart);
+    const pxdResolve = pxdStart !== -1 && pxdEnd !== -1
+        ? eval(`((url) => { ${forums.slice(pxdStart, pxdEnd + pxdEndMarker.length)} })`)
+        : null;
+    assert("4a. pixeldrain fixture (EXTRACTED from the Forums++ resolver body): clean URLs byte-match the old output; query-bearing URLs are constructed, never glued", pxdResolve !== null &&
+      pxdResolve("https://pixeldrain.com/u/abc") === "https://pixeldrain.com/api/file/abc?download" &&
+      pxdResolve("https://pixeldrain.com/u/abc?x=1") === "https://pixeldrain.com/api/file/abc?x=1&download=" &&
+      pxdResolve("https://pixeldrain.com/l/abc") === "https://pixeldrain.com/api/list/abc/zip" &&
+      pxdResolve("https://pixeldrain.com/l/abc?x=1") === "https://pixeldrain.com/api/list/abc/zip?x=1");
     assert("4b. pixeldrain wiring: the Forums++ resolver builds via URL (the string-splice pre-fix shape is gone)", forums.includes("u.pathname.replace('/l/', '/api/list/')") && !forums.includes("resolved = h.contains('/api/list', resolved) ? `${resolved}/zip` : resolved;"));
 
     /* ── 5. kemono ?f= original-URL recovery ────────────────────────────── */
@@ -247,10 +278,101 @@ export async function runNormSymmetrySmoke(root = ROOT) {
     assert("13b. sanitizer wiring: both scripts carry the [. ]+$ strip", ig.includes(".replace(/[. ]+$/, '')") && pxd.includes(".replace(/[. ]+$/, '')"));
     assert("13c. Pixeldrain content-length wiring: both parses are NaN-proofed", pxd.includes("|| size || '0', 10) || 0") && !pxd.includes("|| size || '0', 10);\n                    const start"));
 
-    /* ── 14. THE OPERATOR'S ROUND-13 TRANSMISSION — the button contract ─── */
-    assert("14a. IG++ button contract: DOWNLOAD ALL is the renamed dump (ares-dump handler, no DUMP HTML button label remains); SAVE ALL MEDIA is the original per-file downloader (sequential drain + 350ms stagger + 120s timeout + 3-tier fallback)", ig.includes("mkBtn('ares-dump', 'DOWNLOAD ALL'") && !ig.includes("mkBtn('ares-dump', 'DUMP HTML'") && ig.includes("DOWNLOAD_STAGGER_MS: 350") && ig.includes("DOWNLOAD_TIMEOUT_MS: 120000") && ig.includes("gmFetchBlob(url, CFG.DOWNLOAD_TIMEOUT_MS)") && ig.includes("await new Promise(r => setTimeout(r, CFG.DOWNLOAD_STAGGER_MS));"));
-    assert("14b. IG++ button contract: both buttons carry self-documenting titles", ig.includes("title: 'Download every harvested media FILE to disk") && ig.includes("title: 'Download the whole-grid HTML artifact"));
-    assert("14c. IG++ unload adjudication: ZERO unload/beforeunload registrations in canon AND dist", !/\bunload\b/.test(ig.replace(/unload is not allowed|unload-listener|beforeunload listeners|ZERO unload/g, "")) === true || (!ig.includes("addEventListener('unload'") && !ig.includes('addEventListener("unload"') && !ig.includes("addEventListener('beforeunload'") && !ig.includes('addEventListener("beforeunload"')));
+    /* ── 14. THE OPERATOR'S ROUND-14 TRANSMISSION — the button contract, ──
+     * restated per the round-14 directive: 'DUMP HTML' is the truthful
+     * name back on the whole-grid artifact button (the r12 rename made it
+     * read as a second media downloader — redundant next to the real one);
+     * '⭳ SAVE ALL MEDIA' keeps the per-file media downloader (the suite's
+     * original engine, v1.1.0). The grid wall is the DEFAULT; the feed
+     * column is the opt-in addition. */
+    assert("14a. IG++ button contract (ROUND-14 DIRECTIVE): DUMP HTML is back on the whole-grid artifact (ares-dump); ⭳ SAVE ALL MEDIA keeps the per-file downloader (sequential drain + 350ms stagger + 120s timeout + gmFetchBlob tier); NO second media-downloader label exists",
+      ig.includes("mkBtn('ares-dump', 'DUMP HTML'") && ig.includes("mkBtn('ares-dlall', '⭳ SAVE ALL MEDIA'") &&
+        !ig.includes("mkBtn('ares-dump', 'DOWNLOAD ALL'") && ig.includes("DOWNLOAD_STAGGER_MS: 350") &&
+        ig.includes("DOWNLOAD_TIMEOUT_MS: 120000") && ig.includes("gmFetchBlob(url, CFG.DOWNLOAD_TIMEOUT_MS)") &&
+        ig.includes("await new Promise(r => setTimeout(r, CFG.DOWNLOAD_STAGGER_MS));"));
+    assert("14b. IG++ button contract: both buttons carry self-documenting titles (the r14 dump title names the HTML artifact)",
+      ig.includes("title: 'Download every harvested media FILE to disk") && ig.includes("title: 'Dump the whole-grid HTML artifact"));
+    assert("14c. IG++ unload adjudication (r13, standing): ZERO unload/beforeunload registrations in canon AND dist", (!ig.includes("addEventListener('unload'") && !ig.includes('addEventListener("unload"') && !ig.includes("addEventListener('beforeunload'") && !ig.includes('addEventListener("beforeunload"')) && (!igDist.includes("addEventListener('unload'") && !igDist.includes('addEventListener("unload"') && !igDist.includes("addEventListener('beforeunload'") && !igDist.includes('addEventListener("beforeunload"')));
+
+    /* ── 15. THE ROUND-14 GRID WALL — structural tripwires (the live 23- ──
+     * assertion battery is tools/ig-wall-browser-smoke.mjs; these pin the
+     * canon+dist SOURCE shapes so a source-level revert goes red even
+     * outside a browser run). */
+    const GRID_WALL_STMT =
+      "imgWall.style.cssText =\n            `padding:24px 24px 300px;display:grid;grid-template-columns:repeat(auto-fill,minmax(${CFG.GRID_MIN_PX}px,1fr));gap:14px;align-items:start;justify-items:center;`;";
+    assert("15a. IG++ grid wall (round-14 core): the GRID is the DEFAULT buildUI layout in canon AND dist; the layout toggle exists; the r13 single-column DEFAULT statement is gone from CODE",
+      ig.includes(GRID_WALL_STMT) && igDist.includes(GRID_WALL_STMT) &&
+        ig.includes("function applyWallLayout(mode) {") && igDist.includes("function applyWallLayout(mode) {") &&
+        !ig.includes("imgWall.style.cssText = 'padding:80px 0 300px;display:flex;flex-direction:column;align-items:center;';"));
+    assert("15b. IG++ wall snapshot (the lineage contract): the snapshot key + threshold + the restore call + the scroll patch are live in canon AND dist",
+      ig.includes("SNAPSHOT_KEY:        'igpp_wall_snapshot_v1',") && igDist.includes("igpp_wall_snapshot_v1") &&
+        ig.includes("SNAPSHOT_MIN_SCROLL: 1000,") && ig.includes("const seededPks = WallSnapshot.restore();") &&
+        ig.includes("WallSnapshot.patchScroll(gui.scrollTop)") && igDist.includes("WallSnapshot.patchScroll(gui.scrollTop)"));
+    assert("15c. IG++ grid geometry: the aspect-ratio reservation, the media-settle budget pass, the layout-conditional mediaBox, and the factored sentinel are all wired (canon AND dist)",
+      ig.includes("const ar = (asset.width > 0 && asset.height > 0)") && igDist.includes("const ar = (asset.width > 0 && asset.height > 0)") &&
+        ig.includes("NeuralDOM.scheduleBudgetPass()") && igDist.includes("NeuralDOM.scheduleBudgetPass()") &&
+        ig.includes("data-ares-mbox") && igDist.includes("data-ares-mbox") &&
+        ig.includes("function armSentinel(cursor) {") && igDist.includes("function armSentinel(cursor) {"));
+    assert("15d. RED CONTROL: the r12 ghost-view toggle (veilEngaged) is fully retired — the veil is permanently engaged",
+      !/STATE\.veilEngaged/.test(ig) && !/STATE\.veilEngaged/.test(igDist));
+
+    /* ── 16. Prompt Master 28.9.0 — the round-14 normalization fixes ───── */
+    const pmCmpV = eval(`(${extractFn(pm, "compareVersions").replace(/^function\s+\w+\s*\(/, "function(")})`);
+    assert("16a. PM compareVersions fixture (EXTRACTED from canon 28.9.0): a suffixed segment parses its numeric prefix — '1.2-beta' now reads NEWER than '1.1' (the pre-fix NaN||0 collapse read it older and the update was never offered); 'v'-prefixed and equal forms behave",
+      pmCmpV("1.2-beta", "1.1") === 1 && pmCmpV("v2.0", "1.9") === 1 && pmCmpV("1.1", "1.1") === 0 && pmCmpV("1.1", "1.2") === -1);
+    assert("16b. PM-F03 wiring: detectPlatform gates are hostname equality/dot-suffix (hostEq); the bare substring gates are gone from CODE",
+      pm.includes('const hostEq = (h, d) => h === d || h.endsWith("." + d);') &&
+        !pm.includes('return e.includes("chatgpt.com")') && !pm.includes('e.includes("deepseek.com")'));
+    assert("16c. PM-F01 wiring: the insertPrompt contenteditable branch escapes every line — the raw `<p>${e}</p>` mint is gone",
+      pm.includes("`<p>${escapeHtmlText(e)}</p>") && !pm.includes("(s += `<p>${e}</p>`)"));
+    assert("16d. PM-F02 wiring: shared-prompt ingest stores RAW (normalization only) and every HTML sink escapes at render; the persisted-escape pre-fix shape is gone",
+      pm.includes('t.title = String(t.title || "")') && pm.includes("${escapeHtmlText(t.title)}") &&
+        pm.includes("${escapeHtmlText(t.author || \"N/A\")}") && !pm.includes("t.title = escapeHtmlText("));
+    assert("16e. PM-F05 wiring: per-run random sentinel suffix on every minted placeholder key; both shape-matching regexes know the [a-z0-9]{6} run form",
+      pm.includes("const RUN = Math.random().toString(36).slice(2, 8);") &&
+        pm.includes("__(FILE|INPUT|SELECT)_[a-z0-9]{6}_\\d+__") &&
+        pm.includes("(__QUOTE_[a-z0-9]{6}_\\d+__)") &&
+        !pm.includes("`__QUOTE_${s++}__`"));
+    assert("16f. PM-F05 fixture: a user-typed deterministic literal can never collide with a minted key under the new sweep shape",
+      /__(FILE|INPUT|SELECT)_[a-z0-9]{6}_\d+__/g.test("__INPUT_ab12cd_2__") === true &&
+        /__(FILE|INPUT|SELECT)_[a-z0-9]{6}_\d+__/g.test("__INPUT_2__") === false &&
+        /__QUOTE_[a-z0-9]{6}_\d+__/.test("__QUOTE_2__") === false);
+    assert("16g. PM-F06 wiring: the SCRIPT_VERSION sandbox fallback is stamped 28.9.0 (the two-releases-stale 28.8.1 is gone)",
+      pm.includes(': "28.9.0";') && !pm.includes(': "28.8.1";'));
+
+    /* ── 17. Images++ 4.1.0 — the round-14 normalization fixes ─────────── */
+    const cspItem = (item) =>
+        item.replace(/[.+?^$|()[\]{}]/g, "\\$&")
+            .replace(/(\\\.)?(\*)(\\\.)?/g, (_, a, b, c) => `${a ? "\\.?" : ""}[^:/]*${c ? "\\." : ""}`)
+            .replace(/[^/]$/, "$&/");
+    const starDomain = new RegExp(cspItem("*.example.com"), "i");
+    assert("17a. IMG-F10 fixture (the canon compiler shape, unanchored like the CspSniffer's join): the trailing-star boundary dot is MANDATORY — notexample.com and the apex are rejected, subdomains pass",
+      starDomain.test("https://a.example.com/x") === true && starDomain.test("https://deep.a.example.com/x") === true &&
+        starDomain.test("https://notexample.com/x") === false && starDomain.test("https://example.com/x") === false);
+    /* the canon's c-arm literally contains a double backslash before the
+     * dot — built by code point so no escaping layer can eat it */
+    const canonDot = String.fromCharCode(92, 92) + ".";
+    const cArmFixed = "[^:/]*${c ? '" + canonDot + "' : ''}";
+    const cArmPre   = "${c ? '" + canonDot + "?' : ''}";
+    assert("17b. IMG-F10 wiring + RED: the canon carries the mandatory-dot c-arm; the optional-dot pre-fix c-arm is gone",
+      imgs.includes(cArmFixed) && !imgs.includes(cArmPre));
+    assert("17c. IMG-F06 wiring: all rule.d domain gates are hostname equality/dot-suffix (both the batch walk and the settings highlight)",
+      imgs.includes("!(hostname === rule.d || hostname.endsWith('.' + rule.d))") &&
+        imgs.includes("(hostname === json.d || hostname.endsWith('.' + json.d))"));
+    assert("17d. IMG-F01 wiring: a broken custom rule is DROPPED from the batch walk (only CSP/eval-blocked rules survive the catch)",
+      imgs.includes("return RX_EVAL_BLOCKED.test(err) ? rule : false;"));
+    assert("17e. IMG-F02 wiring: cleared number/range fields never persist NaN — dialog-unit defaults at collect AND the always-run numeric heal at Config read",
+      imgs.includes("(el.type === 'number' || el.type === 'range') && !Number.isFinite(el.valueAsNumber)") &&
+        imgs.includes("typeof DEFAULTS[key] === 'number' &&"));
+    assert("17f. IMG-F03/F04/F05/F08 wiring: the never-null q-handler shapes are live (flickr optional chain, twimg atob guard, tumblr exec()[0] guard, the |$/i idiom)",
+      imgs.includes("tryJSON(text)?.sizes?.size?.pop()?.source") &&
+        imgs.includes("try { return atob(m[1]).match(/http.+/); } catch { return; }") &&
+        imgs.includes('(/http[^"]+/.exec(node.style.cssText + node.getAttribute(\'data-img-src\')) || [])[0]') &&
+        imgs.includes(".JPG|$/i)[0]") && imgs.includes(".(jpg|gif|png)|$/i)[0]"));
+    assert("17g. IMG-F09/F11/F12 wiring: the empty-basename 'image' fallback, the trimmed hotkey read, and the case-fold symmetry are live",
+      imgs.includes("name = 'image';") &&
+        imgs.includes("String(cfg.collapseModeHotkey || '').trim()") &&
+        imgs.includes("String(url).toLowerCase()") && imgs.includes(".slice(pinDomain * 2 + pinStart, -endSep || undefined)\n        .toLowerCase();"));
 
     return { problems, passed, total };
 }
@@ -262,5 +384,5 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToP
         for (const p of r.problems) console.error(`  ✗ ${p}`);
         process.exit(1);
     }
-    console.log("  ✓ normalization & storage symmetry battery verified (twin-divergence settlements, homograph gate, cross-site credential gate, toBool class, LRU bounds, IG++ button contract — the round-13 lens pinned)");
+    console.log("  ✓ normalization & storage symmetry battery verified (twin-divergence settlements, homograph gate, cross-site credential gate, toBool class, LRU bounds, the ROUND-14 button contract, the grid-wall tripwires, PM 28.9.0 + Images++ 4.1.0, and the property-arrow EXTRACTION upgrade — the r13 residual closed)");
 }
