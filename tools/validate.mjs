@@ -1462,7 +1462,7 @@ async function gateD() {
     if (famSmoke.problems.length) {
         for (const p of famSmoke.problems) failures.push(`[D] family-fixture smoke: ${p}`);
     } else {
-        passes.push(`[D] per-family contract fixture battery verified (${famSmoke.passed}/${famSmoke.total} assertions: Zai Exporter 3-strategy ladder + NetHook v6 family fixtures + v1.7.1/v1.7.2 gap-mitigation fixtures + the round-12 Hailuo++ BlobSanitizer family (real attack-sample repair) + red control)`);
+        passes.push(`[D] per-family contract fixture battery verified (${famSmoke.passed}/${famSmoke.total} assertions: Zai Exporter 3-strategy ladder + NetHook v6 family fixtures + v1.7.1/v1.7.2 gap-mitigation fixtures + the round-12 Hailuo++ BlobSanitizer family (real attack-sample repair) + the round-15 Forums++/CB field-settlement contracts (the qualified quick-download guard, the malformed saint-link refusals, the Bunkr fail-visible floor, the upload-channel synergy gate — each with its sabotage red control) + red control)`);
     }
 
     const flowBrowser = await runFlowChipBrowserBattery();

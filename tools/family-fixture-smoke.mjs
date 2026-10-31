@@ -639,6 +639,188 @@ forceImmediateAnswer();`, hwCtx);
         /^\/\/ @version\s+6\.2\.0/m.test(hailuoSrc)
     );
 
+    /* ── 6. The round-15 field settlement (Forums++ 1.13.8 + CB 4.1.5) ───────
+     * The operator's 2026-10-30 battery (userscript_battery.md): three tests
+     * died at the quick-download guard (`postId is not defined`), Bunkr
+     * albums ended "FOUND 0 RESOURCE(S)" with zero diagnostics, a bare
+     * turbo.cr/embed link died generically — and Maximize_Any_Media's iframe
+     * control tokens were being embedded into the open editor by CB's upload
+     * receiver. Every contract below pins its fix; every red control
+     * reconstructs the shipped defect in a copied source and proves this
+     * battery rejects it. */
+    // 6A. The quick-download re-entry guard is qualified (15a F01) — the
+    // v1.13.1 (7d F05) guard read a bare `postId` that never existed in the
+    // per-post button's closure, so EVERY click died as a ReferenceError
+    // before downloadPostGuarded ran; the Download-Page sibling was always
+    // qualified. Static + sabotage red control.
+    const r15GuardOk =
+        fppSrc.includes("p.postId === parsedPost.postId && p.processing") &&
+        !fppSrc.includes("p.postId === postId && p.processing");
+    assert(
+        "6A. Forums++ 1.13.8 quick-download guard reads parsedPost.postId (15a F01) — the bare-postId ReferenceError class is gone and no sibling guard regressed",
+        r15GuardOk
+    );
+    const r15Sabotaged = fppSrc.replace(
+        "p.postId === parsedPost.postId && p.processing",
+        "p.postId === postId && p.processing"
+    );
+    const r15SabotagedContractOk =
+        r15Sabotaged.includes("p.postId === parsedPost.postId && p.processing") &&
+        !r15Sabotaged.includes("p.postId === postId && p.processing");
+    assert(
+        "6A-red. sabotage control: the r14 bare-postId guard reconstructed in a copied source is REJECTED by the same contract (a battery that cannot fail is a liar)",
+        !r15SabotagedContractOk && r15Sabotaged !== fppSrc
+    );
+
+    // 6B. The turbo/saint2 malformed-link contracts, EXECUTED against the
+    // shipped resolver code (the norm-symmetry extraction precedent — the
+    // code under test is the canon, not an inline copy). Stubs carry the
+    // free references; the no-id branches return before touching any of
+    // the network machinery.
+    const r15Errors = [];
+    const log = { host: { error: (...a) => r15Errors.push(a), info() {}, warn() {} } };
+    const turboIdBySignedUrl = new Map();
+    const xfpdTurboOrigin = () => "https://turbo.cr";
+    const xfpdTurboSignUrlWithTimeout = async () => null;
+    const r15Http = { get: async () => ({ dom: { querySelector: () => null } }) };
+    const extractSaintResolver = marker => {
+        const idx = fppSrc.indexOf(marker);
+        if (idx === -1) throw new Error(`saint resolver marker missing: ${marker}`);
+        const fnIdx = fppSrc.indexOf("async (url", idx);
+        if (fnIdx === -1 || fnIdx - idx > 400) throw new Error("resolver function not adjacent to marker");
+        const bodyOpen = fppSrc.indexOf("{", fnIdx);
+        let depth = 1;
+        for (let i = bodyOpen + 1; i < fppSrc.length; i++) {
+            if (fppSrc[i] === "{") depth++;
+            else if (fppSrc[i] === "}") { depth--; if (depth === 0) return fppSrc.slice(fnIdx, i + 1); }
+        }
+        throw new Error("unbalanced saint resolver body");
+    };
+    const VD_MARKER = "[/(([\\w-]+\\.)?(saint2.(su|pk|cr)|turbo\\.cr))\\/(v|d)\\//],";
+    const EMBED_MARKER = "[/(([\\w-]+\\.)?(saint2.(su|pk|cr)|turbo\\.cr))\\/embed\\//],";
+    const vdResolver = eval("(" + extractSaintResolver(VD_MARKER) + ")");
+    const embedResolver = eval("(" + extractSaintResolver(EMBED_MARKER) + ")");
+
+    const embedNoId = await embedResolver("https://turbo.cr/embed", r15Http, [], "POST-T1");
+    const vdNoId = await vdResolver("https://turbo.cr/v", r15Http, [], "POST-T2");
+    const namedEmbed = r15Errors.some(a => String(a[1]).includes("Malformed turbo/saint2 embed link") && a[2] === "turbo.cr");
+    const namedVd = r15Errors.some(a => String(a[1]).includes("Malformed turbo/saint2 link (no id)") && a[2] === "turbo.cr");
+    assert(
+        "6B. the shipped saint resolvers refuse malformed no-id links with NAMED host errors (15a F02/F03): bare /embed -> null + 'Malformed turbo/saint2 embed link', bare /v -> null + 'Malformed turbo/saint2 link (no id)' — never a generic could-not-resolve, never the page URL as media",
+        embedNoId === null && vdNoId === null && namedEmbed && namedVd
+    );
+    const vdQueryLegacy = await vdResolver("https://turbo.cr/d?id=x", r15Http, [], "POST-T3");
+    const vdRealId = await vdResolver("https://turbo.cr/v/abc123", r15Http, [], "POST-T4");
+    assert(
+        "6B2. superset guard: the /v|d resolver's legacy query passthrough ('https://turbo.cr/d?id=x' returned verbatim) and the real-id ladder (sign miss -> embed DOM miss -> the /d/{id} direct-route fallback 'https://turbo.cr/d/abc123') are intact",
+        vdQueryLegacy === "https://turbo.cr/d?id=x" && vdRealId === "https://turbo.cr/d/abc123"
+    );
+
+    // 6C. The Bunkr fail-visible floor (15a F04/F05/F06): the fallback anchor
+    // sweep (container-agnostic — a markup redesign cannot orphan the album),
+    // the two named silent-empty exits, and the uniform consumer-level floor.
+    assert(
+        "6C. Bunkr album fail-visible floor: the /f|v|d anchor fallback sweep, 'Bunkr album unreachable on every mirror', 'Bunkr album page yielded no file links', and the uniform 'Album resolved 0 file(s)' consumer floor are all live in the canon",
+        fppSrc.includes('a[href*="/f/"], a[href*="/v/"], a[href*="/d/"]') &&
+        fppSrc.includes("Bunkr album unreachable on every mirror") &&
+        fppSrc.includes("Bunkr album page yielded no file links") &&
+        fppSrc.includes("Album resolved 0 file(s)") &&
+        fppSrc.includes("if (url.includes('?')) return url;")
+    );
+
+    // 6D. The upload-channel synergy gate (15a F07), EXECUTED: CB's turbo.cr
+    // receiver embedded MAM's control tokens into the open editor (the
+    // operator's battery log shows 'Media payload embedded: iframeVideo'
+    // firing on every hover). The gate pair: a live upload session + the
+    // control-token refusal.
+    const cbSrc = fs.readFileSync(
+        path.join(root, "canon", "_promoted", "4ndr0tools - Confirmation Bypass.user.js"),
+        "utf8"
+    );
+    const CB_RECV_MARKER = "const receivePostMessage = (e) => {";
+    const cbIdx = cbSrc.indexOf(CB_RECV_MARKER);
+    if (cbIdx === -1) throw new Error("receivePostMessage not found in CB canon");
+    let cbDepth = 1;
+    let cbEnd = -1;
+    for (let i = cbIdx + CB_RECV_MARKER.length; i < cbSrc.length; i++) {
+        if (cbSrc[i] === "{") cbDepth++;
+        else if (cbSrc[i] === "}") { cbDepth--; if (cbDepth === 0) { cbEnd = i + 1; break; } }
+    }
+    const cbRecvSrc = cbSrc.slice(cbIdx, cbEnd);
+
+    const cbLog = [];
+    const cbCloseCalls = [];
+    const makeCbSandbox = () => {
+        /* ONE stable textarea object per sandbox — the receiver appends to
+         * the object it queried, so the readback must see THAT object, not a
+         * freshly constructed one per querySelectorAll call. */
+        const textarea = { value: "" };
+        const sandbox = {
+            URL,
+            ALLOWED_MESSAGE_HOSTS: new Set(["turbo.cr"]),
+            MAM_CONTROL_TOKENS: new Set(["iframeVideo", "iframePicInPic", "parentFull", "parentSmall", "innerFull", "innerSmall"]),
+            console: { log: (s) => cbLog.push(String(s)) },
+            document: {
+                getElementsByClassName: (cls) =>
+                    cls === "fr-element" ? [{}] : (cls === "fr-wrapper" ? [{ style: { display: "none" } }] : []),
+                querySelectorAll: (sel) => (sel.includes("Rich text box") ? [textarea] : []),
+            },
+            window: { __turboUploadWin: null },
+        };
+        return { sandbox, textarea };
+    };
+    const runReceiver = (recvSrc, uploadWin, origin, data) => {
+        cbLog.length = 0;
+        cbCloseCalls.length = 0;
+        const { sandbox, textarea } = makeCbSandbox();
+        if (uploadWin) sandbox.window.__turboUploadWin = uploadWin;
+        const ctx = vm.createContext(sandbox);
+        vm.runInContext(`${recvSrc}\nglobalThis.__recv = receivePostMessage;`, ctx);
+        ctx.__recv({ origin, data });
+        return {
+            textarea: textarea.value,
+            logs: [...cbLog],
+            closed: cbCloseCalls.length,
+        };
+    };
+    const liveWin = { closed: false, close: () => cbCloseCalls.push(1) };
+
+    const t1 = runReceiver(cbRecvSrc, null, "https://turbo.cr", "iframeVideo");
+    const t2 = runReceiver(cbRecvSrc, liveWin, "https://turbo.cr", "iframeVideo");
+    const t3 = runReceiver(cbRecvSrc, liveWin, "https://turbo.cr", "https://turbo.cr/v/abc123");
+    const t4 = runReceiver(cbRecvSrc, { closed: true }, "https://turbo.cr", "some-payload");
+    const t5 = runReceiver(cbRecvSrc, liveWin, "https://turbo.cr", "done-close");
+    const t6 = runReceiver(cbRecvSrc, liveWin, "https://evil.example", "https://turbo.cr/v/abc123");
+    assert(
+        "6D. the shipped upload receiver gates the channel (15a F07): MAM's 'iframeVideo' token embeds NOTHING with or without a session, a REAL payload embeds only when the upload window is live ('[MEDIA=saint_vid]…[/MEDIA]' + the console line), a dead session is ignored, 'close' fires only on the live window, and a foreign origin is still refused",
+        t1.textarea === "" && t1.logs.length === 0 &&
+        t2.textarea === "" && t2.logs.length === 0 &&
+        t3.textarea === "[MEDIA=saint_vid]https://turbo.cr/v/abc123[/MEDIA]" && t3.logs.length === 1 &&
+        t4.textarea === "" && t4.logs.length === 0 &&
+        t5.closed === 1 && t5.textarea === "" &&
+        t6.textarea === "" && t6.logs.length === 0
+    );
+
+    // 6D-red. Both gates stripped from a copied source reproduces the r14
+    // field defect (the token embeds as garbage) — the battery sees it.
+    const cbSabotaged = cbRecvSrc
+        .replace("if (!uploadSessionLive) return;", "")
+        .replace("if (MAM_CONTROL_TOKENS.has(String(e.data))) return;", "");
+    const tRed = runReceiver(cbSabotaged, null, "https://turbo.cr", "iframeVideo");
+    assert(
+        "6D-red. sabotage control: with both gates stripped, 'iframeVideo' embeds as [MEDIA=saint_vid]iframeVideo[/MEDIA] garbage — the exact r14 field defect this round closes (the gate pair is load-bearing)",
+        tRed.textarea.includes("iframeVideo") && cbSabotaged !== cbRecvSrc
+    );
+
+    // 6E. Version stamps + the CB static contract surface.
+    assert(
+        "6E. the round-15 stamps: Forums++ canon at 1.13.8, Confirmation Bypass canon at 4.1.5, and CB carries the MAM_CONTROL_TOKENS vocabulary + the uploadSessionLive gate verbatim",
+        /^\/\/ @version\s+1\.13\.8/m.test(fppSrc) &&
+        /^\/\/ @version\s+4\.1\.5/m.test(cbSrc) &&
+        cbSrc.includes("MAM_CONTROL_TOKENS") &&
+        cbSrc.includes("uploadSessionLive")
+    );
+
     return { problems, passed, total };
 }
 
@@ -649,5 +831,5 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToP
         for (const p of r.problems) console.error(`  ✗ ${p}`);
         process.exit(1);
     }
-    console.log("  ✓ per-family contract fixture battery verified (Zai Exporter 3-strategy ladder, NetHook v6 veto/respond/traffic/onNode/gmFetch, red controls, Hailuo++ BlobSanitizer real-sample repair)");
+    console.log("  ✓ per-family contract fixture battery verified (Zai Exporter 3-strategy ladder, NetHook v6 veto/respond/traffic/onNode/gmFetch, red controls, Hailuo++ BlobSanitizer real-sample repair, the round-15 Forums++/CB field-settlement contracts with sabotage red controls)");
 }
