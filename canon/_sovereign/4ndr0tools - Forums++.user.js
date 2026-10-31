@@ -3,7 +3,7 @@
 // @name        4ndr0tools - Forums++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     1.13.7
+// @version     1.13.8
 // @description Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @match       https://simpcity.su/threads/*
@@ -3437,7 +3437,7 @@ const resolvers = [
     ],
     [
         [/bunkrr?r?\.(ac|at|ax|bi|black|by|cat|ci|cm|cr|cx|fi|is|lu|lv|media|nu|pk|ph|ps|red|ru|se|si|site|sk|sx|ws|su|org)\/a\//],
-        async (url, http, _, ___, ____, progressCB) => {
+        async (url, http, _, postId, ____, progressCB) => {
             try {
                 const cleanUrl = String(url || '').split('#')[0];
                 const baseUrl = cleanUrl.split('?')[0].replace(/\/+$/, '');
@@ -3483,6 +3483,23 @@ const resolvers = [
                             } catch (e) {
                                 console.debug('[Forums++] bunkr album name hint rejected:', e && e.message);
                             }
+                        }
+                    }
+
+                    /* v1.13.8 (15a F04): the grid walk stays the primary,
+                     * but a redesigned album page must not silently yield an
+                     * empty album (FPP-RES-03: page fetched, 0 slugs, ZERO
+                     * diagnostics — the run ended in a bare "FOUND 0
+                     * RESOURCE(S)" naming no cause). Before giving up, sweep
+                     * every /f|v|d anchor on the page — container-agnostic,
+                     * so a markup restructure that drops or renames
+                     * .grid-images cannot orphan the album. */
+                    if (!slugs.length) {
+                        const anchors = dom?.querySelectorAll?.('a[href*="/f/"], a[href*="/v/"], a[href*="/d/"]') || [];
+                        for (const a of anchors) {
+                            const href = a?.getAttribute?.('href') || '';
+                            const m = href.match(/\/(f|v|d)\/([^\/?#]+)/i);
+                            if (m && m[2] && !slugs.includes(m[2])) slugs.push(m[2]);
                         }
                     }
 
@@ -3559,8 +3576,23 @@ const resolvers = [
                         break;
                     }
 
-                    if (!dom) break;
-                    if (!slugs.length) break;
+                    /* v1.13.8 (15a F05): both silent-empty exits are named
+                     * now — every mirror unreachable, and a page-1 that
+                     * yields no file links even after the fallback sweep
+                     * (markup redesign, an empty album, or an undetected
+                     * challenge). A LATER page running dry is the normal
+                     * end-of-album, not a defect — only page 1 is a named
+                     * failure. */
+                    if (!dom) {
+                        log.host.error(postId, `::Bunkr album unreachable on every mirror::: ${baseUrl}`, 'Bunkr');
+                        break;
+                    }
+                    if (!slugs.length) {
+                        if (page === 1) {
+                            log.host.error(postId, `::Bunkr album page yielded no file links (markup redesign, empty album, or undetected challenge)::: ${baseUrl}`, 'Bunkr');
+                        }
+                        break;
+                    }
 
                     if (page === 1) {
                         firstDom = dom;
@@ -4550,10 +4582,20 @@ const resolvers = [
     ],
     [
         [/(([\w-]+\.)?(saint2.(su|pk|cr)|turbo\.cr))\/(v|d)\//],
-        async (url, http) => {
+        async (url, http, _, postId) => {
             const mm = url.match(/\/(v|d)\/([^\/?#]+)/i);
             const id = mm ? mm[2] : null;
-            if (!id) return url;
+            /* v1.13.8 (15a F03): a bare /v or /d route with no id used to
+             * be RETURNED as the resolved media URL — the downloader then
+             * fetched an HTML page as the "video" (silent wrong-behavior,
+             * the FPP-RES-09 sibling class). Named and refused now; a
+             * query-carrying URL keeps the legacy pass-through (it may
+             * still be a genuine direct route). */
+            if (!id) {
+                if (url.includes('?')) return url;
+                log.host.error(postId, `::Malformed turbo/saint2 link (no id)::: ${url}`, 'turbo.cr');
+                return null;
+            }
 
             const origin = xfpdTurboOrigin(url);
             const embedUrl = `${origin}/embed/${id}`;
@@ -4586,10 +4628,18 @@ const resolvers = [
     ],
     [
         [/(([\w-]+\.)?(saint2.(su|pk|cr)|turbo\.cr))\/embed\//],
-        async (url, http) => {
+        async (url, http, _, postId) => {
             const m = url.match(/\/embed\/([^\/?#]+)/i);
             const id = m ? m[1] : null;
-            if (!id) return null;
+            /* v1.13.8 (15a F02): the bare embed — an href ".../embed/" walks
+             * to "https://turbo.cr/embed" once the trailing slash is
+             * stripped — died as a generic "could not resolve" with zero
+             * diagnosis (FPP-RES-09). Named now: the link itself carries
+             * no id; no resolver can invent one. */
+            if (!id) {
+                log.host.error(postId, `::Malformed turbo/saint2 embed link (no id)::: ${url}`, 'turbo.cr');
+                return null;
+            }
 
             try {
                 const signed = await xfpdTurboSignUrlWithTimeout(id, url, null);
@@ -5955,6 +6005,15 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
             };
 
             if (h.isArray(r.resolved)) { // If resolver returned an album/list of URLs
+                /* v1.13.8 (15a F06): the uniform fail-visible floor — an
+                 * album walk that fetched its pages and resolved ZERO files
+                 * used to end in a bare "FOUND 0 RESOURCE(S)" with no named
+                 * cause (FPP-RES-03). One line here covers every album host
+                 * in the table; the host-specific resolvers layer their own
+                 * why on top. */
+                if (!r.resolved.length) {
+                    log.post.error(postId, `::Album resolved 0 file(s)::: ${resource}`, postNumber);
+                }
                 r.resolved.forEach(url => addResolved(url, r.folderName));
             } else { // If resolver returned a single URL
                 addResolved(r, null);
@@ -7232,8 +7291,16 @@ const selectedPosts = [];
                 /* v1.13.1 (7d F05): re-entry guard — a double-click (or a
                  * Download-Page launch) while a run is active must not stack
                  * a second pipeline over the same resources (double
-                 * downloads, torn progress bars, double auto-reaction). */
-                if (processing.find(p => p.postId === postId && p.processing)) return;
+                 * downloads, torn progress bars, double auto-reaction).
+                 * v1.13.8 (15a F01): the guard read a bare `postId` that has
+                 * never existed in this closure — EVERY quick-download
+                 * button click died as `ReferenceError: postId is not
+                 * defined` before downloadPostGuarded could run (field-run
+                 * proven: the operator's 2026-10-30 battery, FPP-WRM-02 /
+                 * RES-03 / RES-09 all crashed at this line). The Download-
+                 * Page sibling always qualified the id through the post
+                 * object; this handler now does too. */
+                if (processing.find(p => p.postId === parsedPost.postId && p.processing)) return;
                 downloadPostGuarded(parsedPost, parsedHosts, getEnabledHostsCB, resolvers, getSettingsCB, statusUI, postDownloadCallbacks);
             });
         });

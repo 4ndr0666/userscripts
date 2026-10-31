@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Confirmation Bypass
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      4.1.4
+// @version      4.1.5
 // @author       4ndr0666
 // @description  Reveals forum invisi-text, view all replies, rewrite redirect links. Download Gate: bypass all confirmation pages on all sites, glass overlay copy/download URL (incl. vidara embeds on xcandid), auto-solve Altcha, auto-click download. Turbo: embed routing, upload injector. Util: external link safety, right-click scrollbar to top.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -722,6 +722,24 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
         // origin and compare the real hostname instead.
         const ALLOWED_MESSAGE_HOSTS = new Set(['turbo.cr']);
 
+        // v4.1.5 (15a F07): Maximize_Any_Media's control vocabulary. It runs
+        // inside turbo.cr video embeds and posts these tokens to the parent
+        // page on every hover — same origin as the upload window's messages,
+        // so the origin allowlist alone cannot tell them apart. They are
+        // NEVER media payloads; refusing them by name keeps the two scripts
+        // a synergy instead of a conflict (field-run proven: the operator's
+        // 2026-10-30 battery log shows "Media payload embedded: iframeVideo"
+        // firing on every hover — an open editor draft was collecting
+        // [MEDIA=saint_vid]iframeVideo[/MEDIA] garbage all run long).
+        const MAM_CONTROL_TOKENS = new Set([
+            'iframeVideo',
+            'iframePicInPic',
+            'parentFull',
+            'parentSmall',
+            'innerFull',
+            'innerSmall',
+        ]);
+
         const receivePostMessage = (e) => {
             let originHost;
             try {
@@ -731,10 +749,28 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
             }
             if (!ALLOWED_MESSAGE_HOSTS.has(originHost)) return;
 
+            // v4.1.5 (15a F07): the upload channel carries ONLY upload-session
+            // traffic. A live upload window (opened by __cb4OpenUpload, not
+            // yet closed — `closed` is one of the cross-origin-readable Window
+            // properties) is the session gate; without it, turbo.cr-origin
+            // traffic is MAM's control chatter and is ignored. The token set
+            // is the second gate: even mid-session, a control token is never
+            // a media payload and is never embedded.
+            const uploadSessionLive = (() => {
+                try {
+                    return Boolean(window.__turboUploadWin && !window.__turboUploadWin.closed);
+                } catch {
+                    return false;
+                }
+            })();
+
             if (String(e.data).includes('close')) {
-                window.__turboUploadWin?.close();
+                if (uploadSessionLive) window.__turboUploadWin?.close();
                 return;
             }
+
+            if (!uploadSessionLive) return;
+            if (MAM_CONTROL_TOKENS.has(String(e.data))) return;
             // Cherry-picked from C: index-safe access (frElements[0], boxes[0])
             const frElements = document.getElementsByClassName('fr-element');
             if (frElements.length === 0) return;
