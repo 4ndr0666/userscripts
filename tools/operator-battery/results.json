@@ -1,28 +1,49 @@
 {
     "operatorBatteryResults": "1.0.0",
-    "expiry": "v1.23.0",
+    "expiry": "v1.24.0",
     "note": "The adjudication ledger for operator-side test runs (the sink-census ADJUDICATED idiom). Every entry is re-adjudicated at each pin (the G9 cycle) and the expiry rolls with the suite. FAIL entries MUST carry evidence + note (the fail-visible chain). BLOCKED is a first-class state. Entries for unknown test ids fail the check (orphan sweep).",
     "adjudications": {
         "FPP-GBX-01": {
             "status": "FAIL",
-            "env": "chrome / tampermonkey (MV3 — injected-web.js stack frames) / OS unstated / dist @ cd669db / sites: simpcity.cr threads",
-            "evidence": "console excerpt (15:49:10.264): '4ndr0tools - Forums++.user.js:7471 Uncaught ReferenceError: resolve is not defined at finishSuccessfulLoad (Forums++.user.js:7471:21) at onload (Forums++.user.js:7716:25) at HttpRequested (injected-web.js:1:6781)' — full excerpt in the operator's forums_battery.txt",
-            "note": "Uncaught ReferenceError at the per-post download success handler — the batch wedged with its concurrency slots never freed. Root cause adjudicated r11 as OBI-F01: finishSuccessfulLoad referenced the downloadPromise executor's resolve param from outside its binding scope (a free variable since 1.12.1). FIXED in Forums++ 1.13.6 (the settle callback is a parameter now); re-run of this test against 1.13.6 pending.",
-            "date": "2026-10-27"
+            "env": "chrome / tampermonkey (MV3) / dist Forums++ 1.13.7 @ r14-tip ac70626 (Forums++ untouched by r14) / sites: simpcity.cr threads",
+            "evidence": "not re-run on 2026-10-30 (the session covered GBX-02, WRM-01/02, RES-03, RES-09); prior evidence: console excerpt 15:49:10.264 'Uncaught ReferenceError: resolve is not defined at finishSuccessfulLoad' — full excerpt in the operator's forums_battery.txt",
+            "note": "OBI-F01 was fixed in Forums++ 1.13.6; the re-run is still pending for THIS test — but its sibling FPP-GBX-02 ran GREEN at 1.13.7 on 2026-10-30 (the force-bridge handshake walked end-to-end and the same success handler completed three downloads with zero ReferenceErrors), so the shared crash class is field-cleared. The formal P2-only re-run remains open until the operator fires it.",
+            "date": "2026-10-30"
         },
         "FPP-GBX-02": {
-            "status": "FAIL",
-            "env": "chrome / tampermonkey (MV3 — injected-web.js stack frames) / OS unstated / dist @ cd669db / sites: simpcity.cr threads",
-            "evidence": "console excerpt (15:51:15.609 localStorage.setItem('xfpd_gbx_force_bridge','true') set; 15:51:59.450 + 15:51:59.458 the same 'resolve is not defined' crash ×2) — full excerpt in the operator's forums_battery_tag.txt",
-            "note": "The force-bridge debug flag was accepted and the bridge path was taken — then the same OBI-F01 crash fired twice at the success handler. The P2 handshake instrumentation itself did its job; the download pipeline wedged behind it. FIXED in 1.13.6; re-run pending.",
-            "date": "2026-10-27"
+            "status": "PASS",
+            "env": "chrome / tampermonkey (MV3) / dist Forums++ 1.13.7 @ r14-tip ac70626 (Forums++ untouched by r14) / sites: simpcity.cr threads",
+            "evidence": "console excerpt 19:06:23-19:06:48: localStorage force-bridge flag set; '[goonbox.cr] BRIDGE FORCED (DEBUG FLAG)' then 'BRIDGE OK (200)' three times; POST #655 resolved 3 resources through simp6.cuckcapital.cr panda URLs; all three COMPLETED + SAVING AS lines; 'DOWNLOAD COMPLETED' at 19:06:48 — zero ReferenceErrors anywhere in the run",
+            "note": "The force-bridge debug flag exercised the whole P2 handshake independent of CF state — green at 1.13.7. The OBI-F01 crash class that failed this test on 2026-10-27 did not fire.",
+            "date": "2026-10-30"
         },
         "FPP-WRM-01": {
+            "status": "PASS",
+            "env": "chrome / tampermonkey (MV3) / dist Forums++ 1.13.7 @ r14-tip ac70626 (Forums++ untouched by r14) / sites: simpcity.cr threads",
+            "evidence": "console excerpt 19:11:34-19:11:35: POST #395 USING 1 HOST(S): Gofile; URL RESOLUTION STARTED; 7 resources RESOLVED across store-na-phx-1/store8/store9/store3.gofile.io; URL RESOLUTION COMPLETED; FOUND 7 RESOURCE(S); SKIPPING DOWNLOAD honored (the large-file caveat route) — no crashes",
+            "note": "Green at 1.13.7 — the gofile guest-token bridge + resolution ladder held with skip-download exercising the full resolve-only path.",
+            "date": "2026-10-30"
+        },
+        "FPP-WRM-02": {
             "status": "FAIL",
-            "env": "chrome / tampermonkey (MV3 — injected-web.js stack frames) / OS unstated / dist @ cd669db / sites: simpcity.cr threads",
-            "evidence": "console excerpt (15:58:00.755): the same 'resolve is not defined at finishSuccessfulLoad' crash — full excerpt in the operator's forums_batter_gofile.txt; free-form: 'As I was on FPP-WRM-01 I went ahead and fired up gofile++ to absolutely zero avail'",
-            "note": "The gofile warm-up bridge ran and the same OBI-F01 crash killed the batch at its first successful load. The 'zero avail' observation on Gofile++ itself was adjudicated separately this round (11a-F01..F04: the @match exact-host hole, the #index_main observer pin, the dead pre-2023 Cookie/wt auth — Gofile++ 2.3.0); Forums++ side FIXED in 1.13.6; re-run pending.",
-            "date": "2026-10-27"
+            "env": "chrome / tampermonkey (MV3) / dist Forums++ 1.13.7 @ r14-tip ac70626 (Forums++ untouched by r14) / sites: simpcity.cr threads",
+            "evidence": "console excerpt 19:17:57-19:18:26: the cyberdrop /f/ link itself resolved GREEN (1 resource, cdn.cyberdrop.cr token URL, skip-download honored) — then the per-post quick-download button click threw 'Uncaught ReferenceError: postId is not defined at 4ndr0tools - Forums++.user.js:8431:55' (Array.find callback inside the HTMLAnchorElement handler at 8431:32; downloadPostGuarded never reached). Both attempts failed at the same line; the same crash fired again in RES-03 (19:27:10) and RES-09 (19:30:46)",
+            "note": "15a F01: the v1.13.1 (7d F05) re-entry guard read a bare `postId` that never existed in the per-post button's closure — EVERY quick-download click died before downloadPostGuarded ran (the form-submit path was the only working route, which is why GBX-02's form-driven download still passed). FIXED in Forums++ 1.13.8: the guard now qualifies through parsedPost.postId exactly like its Download-Page sibling.",
+            "date": "2026-10-30"
+        },
+        "FPP-RES-03": {
+            "status": "FAIL",
+            "env": "chrome / tampermonkey (MV3) / dist Forums++ 1.13.7 @ r14-tip ac70626 (Forums++ untouched by r14) / sites: simpcity.cr threads",
+            "evidence": "console excerpt 19:26:27-19:26:28: POST #3,017 USING 1 HOST(S): Bunkr; URL RESOLUTION STARTED; URL RESOLUTION COMPLETED; FOUND 0 RESOURCE(S) — with ZERO diagnostic lines of any kind. Two attempts (verbose logging + link validation; then generate-links) both ended 0",
+            "note": "15a F04/F05/F06: the album walk could end silently empty three ways — page fetched but no slugs extracted (markup redesign), every mirror unreachable, or slugs found with every per-slug resolution failing; none of them logged. FIXED in Forums++ 1.13.8: a container-agnostic /f|v|d anchor fallback sweep (the grid walk stays primary), named page-1 and all-mirrors host errors, and the uniform 'Album resolved 0 file(s)' floor at the consumer — the re-run will name WHICH class hit.",
+            "date": "2026-10-30"
+        },
+        "FPP-RES-09": {
+            "status": "FAIL",
+            "env": "chrome / tampermonkey (MV3) / dist Forums++ 1.13.7 @ r14-tip ac70626 (Forums++ untouched by r14) / sites: simpcity.cr threads",
+            "evidence": "console excerpt 19:30:30-19:30:46: POST #659 USING 1 HOST(S): Saint; URL RESOLUTION STARTED; '[ERROR] COULD NOT RESOLVE: https://turbo.cr/embed' (a bare /embed/ href — the walker strips the trailing slash so no id survives) — plus the same postId ReferenceError at 8431 on the button click. Both attempts failed",
+            "note": "15a F02/F03: a bare turbo.cr embed link (no id) died as a generic could-not-resolve with zero diagnosis; the /v|d sibling resolver was worse — it RETURNED the bare page URL as the 'resolved' media, so the downloader fetched an HTML page as the video. FIXED in Forums++ 1.13.8: both malformed-link classes are named at host level and refused; a query-carrying /v|d URL keeps the legacy pass-through.",
+            "date": "2026-10-30"
         }
     }
 }

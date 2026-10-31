@@ -416,12 +416,12 @@
   {
    "file": "4ndr0tools - Confirmation Bypass.user.js",
    "name": "4ndr0tools - Confirmation Bypass",
-   "version": "4.1.4",
+   "version": "4.1.5",
    "description": "Reveals forum invisi-text, view all replies, rewrite redirect links. Download Gate: bypass all confirmation pages on all sites, glass overlay copy/download URL (incl. vidara embeds on xcandid), auto-solve Altcha, auto-click download. Turbo: embed routing, upload injector. Util: external link safety, right-click scrollbar to top.",
    "family": "forums",
-   "sha256": "26a82305aef54fec8276aeda6ab19ac97ae0ecb104afd0b19b8f706d8f0eb836",
-   "lines": 1413,
-   "bytes": 77596,
+   "sha256": "b772c39aff28af734c75a178418014c8b4a9fa4022c51fa95fdf01006b7f11bb",
+   "lines": 1449,
+   "bytes": 79419,
    "matches": [
     "*://forums.socialmediagirls.com/*",
     "*://forums.socialmediagirls.com/goto/link-confirmation*",
@@ -522,12 +522,12 @@
   {
    "file": "4ndr0tools - Forums++.user.js",
    "name": "4ndr0tools - Forums++",
-   "version": "1.13.7",
+   "version": "1.13.8",
    "description": "Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.",
    "family": "forums",
-   "sha256": "183e9eb8faa34d7e8d7e6a80400fd5596b66201532216e3119fe2a7f21e9c73b",
-   "lines": 8603,
-   "bytes": 415870,
+   "sha256": "e3f033530bc94f8f90d91b394fefad32998605db5b470be658aabf942bc18fe2",
+   "lines": 8670,
+   "bytes": 420194,
    "matches": [
     "https://simpcity.su/threads/*",
     "https://simpcity.cr/threads/*",
@@ -1689,5 +1689,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "d4f4c4916c9484115a980aa3b8049ccd6e085ab4ce30f31fca70f5cad821310a"
+ "digest": "7c6939ee60e9eb98a5a025a3bf52868f1ba1f5f9992b30e6e4cc9f3fa24ba8ac"
 }

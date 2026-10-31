@@ -1,5 +1,5 @@
 {
-  "round": "v1.22.0",
+  "round": "v1.23.0",
   "total": 100,
   "threshold": 90,
   "dimensions": [
@@ -33,7 +33,7 @@
       "inputs": [
         "polling census clean: true (42 sites)",
         "observer census clean: true (59 sites)",
-        "cache census clean: true (148 registries)",
+        "cache census clean: true (149 registries)",
         "size budget clean: true"
       ]
     },
@@ -54,7 +54,7 @@
       "score": 10,
       "inputs": [
         "kernel typed-error family (NetError/NetTimeoutError/NetHttpError) — smoke battery: true",
-        "non-kernel catch census: 1007 sites — 9 typed, 506 debug-logged, 492 handled, 0 silent (clean: true)"
+        "non-kernel catch census: 1008 sites — 9 typed, 506 debug-logged, 493 handled, 0 silent (clean: true)"
       ],
       "coverage": 1
     },

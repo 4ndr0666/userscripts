@@ -1,7 +1,7 @@
 {
   "operatorBattery": "1.0.0",
-  "suiteRound": "v1.21.0",
-  "authoredAgainst": "f661774",
+  "suiteRound": "v1.23.0",
+  "authoredAgainst": "ac70626",
   "purpose": "The operator-side regression battery: every verification the machine gate cannot make — live site behavior, real browsers, real userscript managers, real network endpoints. The machine certifies this manifest is well-formed and aimed at living code (anchor liveness, version stamps, residual coverage); the OPERATOR certifies the code works by running the checklist in documentation/operator-battery/README.md and pasting the report back. BLOCKED is a first-class state (network/ToS/transient conditions) — honest states, never silent.",
   "conventions": {
     "install": "Install dist/ files via the raw-GitHub URLs in inventory.json (https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/<name>.user.js).",
@@ -166,6 +166,12 @@
       "tests": [
         "WM-BOOT-01"
       ]
+    },
+    {
+      "residual": "turbo-upload-channel-cross-talk",
+      "tests": [
+        "CB-TRG-05"
+      ]
     }
   ],
   "tests": [
@@ -174,7 +180,7 @@
       "family": "cross-tab-bridges",
       "title": "goonbox.cr helper tab opens once, handshakes, and resolves (the flagship P2-only residual)",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.7",
+      "scriptVersion": "1.13.8",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -184,7 +190,7 @@
             "gbxEnsureTab",
             "gbxBindListeners"
           ],
-          "atVersion": "1.13.7"
+          "atVersion": "1.13.8"
         }
       ],
       "env": {
@@ -250,7 +256,7 @@
       "family": "cross-tab-bridges",
       "title": "the force-bridge debug flag proves the whole P2 handshake independent of CF state",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.7",
+      "scriptVersion": "1.13.8",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -258,7 +264,7 @@
             "xfpd_gbx_force_bridge",
             "Bridge forced"
           ],
-          "atVersion": "1.13.7"
+          "atVersion": "1.13.8"
         }
       ],
       "env": {
@@ -303,7 +309,7 @@
       "family": "cross-tab-bridges",
       "title": "gofile.io warm-up tab + guest-token/cookie bridge, cookie restored after idle",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.7",
+      "scriptVersion": "1.13.8",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -312,7 +318,7 @@
             "gofileRestoreCookie",
             "gofileWarmupOpenTab"
           ],
-          "atVersion": "1.13.7"
+          "atVersion": "1.13.8"
         }
       ],
       "env": {
@@ -364,14 +370,15 @@
       "family": "cross-tab-bridges",
       "title": "cyberdrop warm-up tab fires at most once per origin",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.7",
+      "scriptVersion": "1.13.8",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
           "mustContain": [
-            "cyberdropWarmupOnce"
+            "cyberdropWarmupOnce",
+            "p.postId === parsedPost.postId && p.processing"
           ],
-          "atVersion": "1.13.7"
+          "atVersion": "1.13.8"
         }
       ],
       "env": {
@@ -401,7 +408,7 @@
           "reportEvidence": "per-post log excerpt"
         }
       ],
-      "provenance": "r6 port (2-e F31) + the r7 backtick fix (ae8fdf2)",
+      "provenance": "r6 port (2-e F31) + the r7 backtick fix (ae8fdf2) + the r15 field settlement (15a F01)",
       "risk": {
         "downloadVolume": "low",
         "networkExposure": "one tab per origin",
@@ -413,14 +420,14 @@
       "family": "resolver-liveness",
       "title": "kemono.su/.cr direct links resolve with zero network (identity resolver)",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.7",
+      "scriptVersion": "1.13.8",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
           "mustContain": [
             "kemono:direct link"
           ],
-          "atVersion": "1.13.7"
+          "atVersion": "1.13.8"
         }
       ],
       "env": {
@@ -471,7 +478,7 @@
       "family": "resolver-liveness",
       "title": "coomer.su AND coomer.st profile walkers enumerate multi-page",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.7",
+      "scriptVersion": "1.13.8",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -479,7 +486,7 @@
             "Coomer:Profiles",
             "Resolved page"
           ],
-          "atVersion": "1.13.7"
+          "atVersion": "1.13.8"
         }
       ],
       "env": {
@@ -524,15 +531,16 @@
       "family": "resolver-liveness",
       "title": "bunkr family resolves: TLD alternation + CF retry + CDN signing (bunkr.org/bunkrr.org/bunkrrr.org/gigachad-cdn)",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.7",
+      "scriptVersion": "1.13.8",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
           "mustContain": [
             "xfpdBunkrSignCdnUrl",
-            "isBunkrUrl"
+            "isBunkrUrl",
+            "a[href*=\"/f/\"], a[href*=\"/v/\"], a[href*=\"/d/\"]"
           ],
-          "atVersion": "1.13.7"
+          "atVersion": "1.13.8"
         }
       ],
       "env": {
@@ -566,7 +574,7 @@
           "reportEvidence": "console excerpt"
         }
       ],
-      "provenance": "r6 restoration (14500cb) + r8 c866a50 (8b F02 family widening)",
+      "provenance": "r6 restoration (14500cb) + r8 c866a50 (8b F02 family widening) + the r15 field settlement (15a F04/F05/F06)",
       "risk": {
         "downloadVolume": "none (liveness-only)",
         "networkExposure": "low — API GETs",
@@ -578,7 +586,7 @@
       "family": "resolver-liveness",
       "title": "cyberdrop ladder: api.<root> runtime arms + literal api.cyberdrop.cr fallbacks",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.7",
+      "scriptVersion": "1.13.8",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -586,7 +594,7 @@
             "apiCandidates",
             "api.cyberdrop.cr"
           ],
-          "atVersion": "1.13.7"
+          "atVersion": "1.13.8"
         }
       ],
       "env": {
@@ -628,7 +636,7 @@
       "family": "resolver-liveness",
       "title": "jpg/jpeg no-digit family: NO manager prompt on first dispatch (the engine's first live catch)",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.7",
+      "scriptVersion": "1.13.8",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -638,7 +646,7 @@
             "@connect jpg.pet",
             "@connect jpeg.pet"
           ],
-          "atVersion": "1.13.7"
+          "atVersion": "1.13.8"
         }
       ],
       "env": {
@@ -681,7 +689,7 @@
       "family": "resolver-liveness",
       "title": "pixeldrain .com/.net/pixeldra.in — all three domains resolve",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.7",
+      "scriptVersion": "1.13.8",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -689,7 +697,7 @@
             "Pixeldrain:",
             "isPixeldrainUrl"
           ],
-          "atVersion": "1.13.7"
+          "atVersion": "1.13.8"
         }
       ],
       "env": {
@@ -724,7 +732,7 @@
       "family": "resolver-liveness",
       "title": "yandex disk resolves via the POST ladder; prompts disclose the non-enumerable TLD horizon",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.7",
+      "scriptVersion": "1.13.8",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -734,7 +742,7 @@
             "@connect yandex.kz",
             "disk.yandex.ru"
           ],
-          "atVersion": "1.13.7"
+          "atVersion": "1.13.8"
         }
       ],
       "env": {
@@ -776,7 +784,7 @@
       "family": "resolver-liveness",
       "title": "redgifs: ONE boot token fetch on /threads/ pages only + token refresh on stale",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.7",
+      "scriptVersion": "1.13.8",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -784,7 +792,7 @@
             "redgifsFetchTempToken",
             "/threads/"
           ],
-          "atVersion": "1.13.7"
+          "atVersion": "1.13.8"
         }
       ],
       "env": {
@@ -827,15 +835,16 @@
       "family": "resolver-liveness",
       "title": "saint2/turbo: origin derivation + sign API + embed links",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.7",
+      "scriptVersion": "1.13.8",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
           "mustContain": [
             "xfpdTurboOrigin",
-            "glb-apisign.cdn.cr"
+            "glb-apisign.cdn.cr",
+            "Malformed turbo/saint2 embed link"
           ],
-          "atVersion": "1.13.7"
+          "atVersion": "1.13.8"
         }
       ],
       "env": {
@@ -865,7 +874,7 @@
           "reportEvidence": "the resolved URL"
         }
       ],
-      "provenance": "r6 restoration (14500cb turbo sign port) + r9 F02 (the template-arm derivation)",
+      "provenance": "r6 restoration (14500cb turbo sign port) + r9 F02 (the template-arm derivation) + the r15 field settlement (15a F02/F03)",
       "risk": {
         "downloadVolume": "low",
         "networkExposure": "tiny sign requests",
@@ -877,14 +886,14 @@
       "family": "resolver-liveness",
       "title": "filester v2 API + cache-host probe sweep",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.7",
+      "scriptVersion": "1.13.8",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
           "mustContain": [
             "filesterResolveV2"
           ],
-          "atVersion": "1.13.7"
+          "atVersion": "1.13.8"
         }
       ],
       "env": {
@@ -919,14 +928,14 @@
       "family": "resolver-liveness",
       "title": "imagebam view/gallery + full-embed CDN links",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.7",
+      "scriptVersion": "1.13.8",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
           "mustContain": [
             "imagebam"
           ],
-          "atVersion": "1.13.7"
+          "atVersion": "1.13.8"
         }
       ],
       "env": {
@@ -961,7 +970,7 @@
       "family": "resolver-liveness",
       "title": "ibb.co albums walk via JSON; postimg/pixxxels rewrite correctly",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.7",
+      "scriptVersion": "1.13.8",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -969,7 +978,7 @@
             "Ibb:image",
             "Postimg:image"
           ],
-          "atVersion": "1.13.7"
+          "atVersion": "1.13.8"
         }
       ],
       "env": {
@@ -1011,7 +1020,7 @@
       "family": "download-pipeline",
       "title": "safeThreadTitle on a ':'-containing thread title (zip gate + generated.zip names)",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.7",
+      "scriptVersion": "1.13.8",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -1019,7 +1028,7 @@
             "safeThreadTitle",
             "generated.zip"
           ],
-          "atVersion": "1.13.7"
+          "atVersion": "1.13.8"
         }
       ],
       "env": {
@@ -1070,7 +1079,7 @@
       "family": "download-pipeline",
       "title": "isBunkrUrl maint guard: a maintenance placeholder is NEVER saved as a real file",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.7",
+      "scriptVersion": "1.13.8",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -1079,7 +1088,7 @@
             "maintenance redirect (maint.mp4)",
             "blob.slice(0, 8192)"
           ],
-          "atVersion": "1.13.7"
+          "atVersion": "1.13.8"
         }
       ],
       "env": {
@@ -1129,7 +1138,7 @@
       "family": "download-pipeline",
       "title": "the 500 MB bunkr DIRECT switch fires mid-download",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.7",
+      "scriptVersion": "1.13.8",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -1137,7 +1146,7 @@
             "BUNKR_DIRECT_MIN_BYTES",
             "Bunkr large file"
           ],
-          "atVersion": "1.13.7"
+          "atVersion": "1.13.8"
         }
       ],
       "env": {
@@ -1188,14 +1197,14 @@
       "family": "download-pipeline",
       "title": "FF per-file saveAs arm vs Chrome GM_download arm (the named FF residual)",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.7",
+      "scriptVersion": "1.13.8",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
           "mustContain": [
             "const isFF"
           ],
-          "atVersion": "1.13.7"
+          "atVersion": "1.13.8"
         }
       ],
       "env": {
@@ -1245,7 +1254,7 @@
       "family": "download-pipeline",
       "title": "light vs dark theme tooltip pair + search input ink",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.7",
+      "scriptVersion": "1.13.8",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -1253,7 +1262,7 @@
             "getTooltipBackgroundColor",
             "isLightTheme"
           ],
-          "atVersion": "1.13.7"
+          "atVersion": "1.13.8"
         }
       ],
       "env": {
@@ -1296,7 +1305,7 @@
       "family": "download-pipeline",
       "title": "zip-gate FileSaver fallback fires on a GM_download error (both arms)",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.7",
+      "scriptVersion": "1.13.8",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -1305,7 +1314,7 @@
             "Zip dispatch failed",
             "Generated.zip dispatch failed"
           ],
-          "atVersion": "1.13.7"
+          "atVersion": "1.13.8"
         }
       ],
       "env": {
@@ -1349,14 +1358,14 @@
       "family": "download-pipeline",
       "title": "turbo stall, re-sign ladder, DIRECT fallback under adversarial network",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.7",
+      "scriptVersion": "1.13.8",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
           "mustContain": [
             "Turbo stalled"
           ],
-          "atVersion": "1.13.7"
+          "atVersion": "1.13.8"
         }
       ],
       "env": {
@@ -1907,7 +1916,7 @@
       "family": "confirmation-bypass",
       "title": "overlay right-click, turbo.cr landing, GRACE_MS auto-click of the download button",
       "script": "4ndr0tools - Confirmation Bypass.user.js",
-      "scriptVersion": "4.1.4",
+      "scriptVersion": "4.1.5",
       "anchors": [
         {
           "file": "canon/_promoted/4ndr0tools - Confirmation Bypass.user.js",
@@ -1915,7 +1924,7 @@
             "GRACE_MS  = 300",
             "Download button triggered."
           ],
-          "atVersion": "4.1.4"
+          "atVersion": "4.1.5"
         }
       ],
       "env": {
@@ -1965,7 +1974,7 @@
       "family": "confirmation-bypass",
       "title": "the 1.5s reaction window: second click ONLY when the page didn't react",
       "script": "4ndr0tools - Confirmation Bypass.user.js",
-      "scriptVersion": "4.1.4",
+      "scriptVersion": "4.1.5",
       "anchors": [
         {
           "file": "canon/_promoted/4ndr0tools - Confirmation Bypass.user.js",
@@ -1973,7 +1982,7 @@
             "pageReacted",
             "REARM_MS  = 1600"
           ],
-          "atVersion": "4.1.4"
+          "atVersion": "4.1.5"
         }
       ],
       "env": {
@@ -2021,14 +2030,14 @@
       "family": "confirmation-bypass",
       "title": "node-swap treated as reacted (a fresh control never receives click #2)",
       "script": "4ndr0tools - Confirmation Bypass.user.js",
-      "scriptVersion": "4.1.4",
+      "scriptVersion": "4.1.5",
       "anchors": [
         {
           "file": "canon/_promoted/4ndr0tools - Confirmation Bypass.user.js",
           "mustContain": [
             "clickedNode"
           ],
-          "atVersion": "4.1.4"
+          "atVersion": "4.1.5"
         }
       ],
       "env": {
@@ -2065,14 +2074,14 @@
       "family": "confirmation-bypass",
       "title": "glyph-tolerant anchored fallback ('Download File' with icon glyph) — the drift-time selector",
       "script": "4ndr0tools - Confirmation Bypass.user.js",
-      "scriptVersion": "4.1.4",
+      "scriptVersion": "4.1.5",
       "anchors": [
         {
           "file": "canon/_promoted/4ndr0tools - Confirmation Bypass.user.js",
           "mustContain": [
             "TEXT_FALLBACK"
           ],
-          "atVersion": "4.1.4"
+          "atVersion": "4.1.5"
         }
       ],
       "env": {
@@ -2109,6 +2118,60 @@
         "downloadVolume": "none (selector check)",
         "networkExposure": "none",
         "tosSensitivity": "none"
+      }
+    },
+    {
+      "id": "CB-TRG-05",
+      "family": "confirmation-bypass",
+      "title": "turbo upload channel ignores MAM control tokens and dead sessions (the synergy gate)",
+      "script": "4ndr0tools - Confirmation Bypass.user.js",
+      "scriptVersion": "4.1.5",
+      "anchors": [
+        {
+          "file": "canon/_promoted/4ndr0tools - Confirmation Bypass.user.js",
+          "mustContain": [
+            "MAM_CONTROL_TOKENS",
+            "uploadSessionLive"
+          ],
+          "atVersion": "4.1.5"
+        }
+      ],
+      "env": {
+        "browser": "chrome",
+        "manager": "tampermonkey-mv3",
+        "sites": [
+          "a simpcity thread embedding turbo.cr videos with the reply editor open"
+        ],
+        "prerequisites": [
+          "4ndr0tools - Maximize_Any_Media.user.js installed and enabled"
+        ]
+      },
+      "steps": [
+        "Open the reply editor and leave some draft text in it",
+        "Hover back and forth over a turbo.cr video embed several times (MAM announces 'iframeVideo' to the parent on every hover)",
+        "Check the draft text and the console for '[4ndr0tools] Media payload embedded:' lines",
+        "Then click Upload Video, complete a real upload in the popup, and watch the same console line"
+      ],
+      "expected": "Hovering embeds with the editor open leaves the draft untouched and emits ZERO 'Media payload embedded' lines (MAM's control tokens are refused by name and the dead upload session gates the channel); a REAL upload session still embeds its payload exactly once with the '[4ndr0tools] Media payload embedded: <payload>' console line.",
+      "failureModes": [
+        {
+          "mode": "draft accumulates [MEDIA=saint_vid]iframeVideo[/MEDIA] garbage",
+          "meaning": "the r15 upload-channel gate regressed (15a F07)",
+          "mitigation": "revert-pin; report the draft excerpt",
+          "reportEvidence": "editor screenshot + console excerpt"
+        },
+        {
+          "mode": "a real upload payload no longer embeds",
+          "meaning": "the session gate is too strict (popup closed-semantics changed)",
+          "mitigation": "revert-pin; report the popup state and console",
+          "reportEvidence": "console excerpt"
+        }
+      ],
+      "provenance": "r15 field settlement (15a F07) — the operator's 2026-10-30 battery log",
+      "risk": {
+        "downloadVolume": "low",
+        "networkExposure": "the upload flow itself only",
+        "tosSensitivity": "low"
       }
     },
     {
@@ -2398,7 +2461,7 @@
           "mustContain": [
             "gbxBindListeners"
           ],
-          "atVersion": "1.13.7"
+          "atVersion": "1.13.8"
         }
       ],
       "env": {
@@ -2445,7 +2508,7 @@
           "mustContain": [
             "typeof GM_cookie"
           ],
-          "atVersion": "1.13.7"
+          "atVersion": "1.13.8"
         }
       ],
       "env": {
