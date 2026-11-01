@@ -416,12 +416,12 @@
   {
    "file": "4ndr0tools - Confirmation Bypass.user.js",
    "name": "4ndr0tools - Confirmation Bypass",
-   "version": "4.1.5",
+   "version": "4.1.6",
    "description": "Reveals forum invisi-text, view all replies, rewrite redirect links. Download Gate: bypass all confirmation pages on all sites, glass overlay copy/download URL (incl. vidara embeds on xcandid), auto-solve Altcha, auto-click download. Turbo: embed routing, upload injector. Util: external link safety, right-click scrollbar to top.",
    "family": "forums",
-   "sha256": "b772c39aff28af734c75a178418014c8b4a9fa4022c51fa95fdf01006b7f11bb",
-   "lines": 1449,
-   "bytes": 79419,
+   "sha256": "06dd15ab802784e9a82c811fd14870908ebf9544e31de577b625f311abc9d57d",
+   "lines": 1520,
+   "bytes": 83705,
    "matches": [
     "*://forums.socialmediagirls.com/*",
     "*://forums.socialmediagirls.com/goto/link-confirmation*",
@@ -522,12 +522,12 @@
   {
    "file": "4ndr0tools - Forums++.user.js",
    "name": "4ndr0tools - Forums++",
-   "version": "1.13.8",
+   "version": "1.13.9",
    "description": "Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.",
    "family": "forums",
-   "sha256": "e3f033530bc94f8f90d91b394fefad32998605db5b470be658aabf942bc18fe2",
-   "lines": 8670,
-   "bytes": 420194,
+   "sha256": "df6464b35d8a08b1d1dc8c7ff189fe079c68cc16499fd6bd8645d19c7ab1ed90",
+   "lines": 8747,
+   "bytes": 425001,
    "matches": [
     "https://simpcity.su/threads/*",
     "https://simpcity.cr/threads/*",
@@ -824,7 +824,7 @@
    "version": "4.1.0",
    "description": "Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. Collapse-mode hotkey is configurable.",
    "family": "images",
-   "sha256": "701dcb8dfda11898d677b409a5a98e2d3f7e5545602ccac4d5d1f42e18b39582",
+   "sha256": "1f2e317e2502cf9aef1ccc3ab9a600cd0ebbbe9423cbebace523e05df2541aff",
    "lines": 4711,
    "bytes": 144871,
    "matches": [
@@ -966,9 +966,9 @@
    "version": "2.0.11",
    "description": "It integrates BugMeNot into any login form (it retrieves all matching logins from bugmenot.com and autofills the login form)",
    "family": "ux utilities",
-   "sha256": "09f21b4bfbeaf43b43e407e66b59b4918a892a885cb8123687ecea2e304ec12f",
+   "sha256": "f62f4f02bb95559816800e618c244c9597510142c4e3bdf0824103d7b15fb3e5",
    "lines": 1085,
-   "bytes": 50134,
+   "bytes": 50135,
    "matches": [],
    "includes": [
     "http://*",
@@ -1121,7 +1121,7 @@
    "version": "1.2.5",
    "description": "Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.",
    "family": "media & links",
-   "sha256": "e4e876ef24209f89383443ecb4096470eecfddc3ad98217f5df50cc5e15916c4",
+   "sha256": "23afeae2e52e8e17aae23ecc0c5f074f05a14e6770e0c96399bce9c1e4fe723a",
    "lines": 3884,
    "bytes": 217722,
    "matches": [
@@ -1333,7 +1333,7 @@
    "version": "2.1.3",
    "description": "Security research and alignment testing only.",
    "family": "sovereign platforms",
-   "sha256": "86ef20a9c8e9d6169beb3f08deeb9ae11b61084285e8a7dce16940c327e0aa8c",
+   "sha256": "8ca69b9e4d733585454dc18a4c3a755f325ba74adb06c148d5f342b2d2dec022",
    "lines": 15591,
    "bytes": 1297172,
    "matches": [
@@ -1503,7 +1503,7 @@
    "version": "2.0.6",
    "description": "Restores titles for removed or private videos in YouTube playlists",
    "family": "video & players",
-   "sha256": "a4a26d1845c60ef0254f965078715f82a5ca71135b0a9eb47a83adabf28f1b9d",
+   "sha256": "e9e63251c845bc92fff09f515500064f365b81716d19afabb950da2748941dd9",
    "lines": 639,
    "bytes": 31813,
    "matches": [
@@ -1689,5 +1689,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "7c6939ee60e9eb98a5a025a3bf52868f1ba1f5f9992b30e6e4cc9f3fa24ba8ac"
+ "digest": "2bc0796dff4e1fa47a81792511d5a39ad658fb96c722ff609890d46d450dc696"
 }

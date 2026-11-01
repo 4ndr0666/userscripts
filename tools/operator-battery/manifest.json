@@ -1,14 +1,14 @@
 {
   "operatorBattery": "1.0.0",
-  "suiteRound": "v1.23.0",
-  "authoredAgainst": "ac70626",
-  "purpose": "The operator-side regression battery: every verification the machine gate cannot make — live site behavior, real browsers, real userscript managers, real network endpoints. The machine certifies this manifest is well-formed and aimed at living code (anchor liveness, version stamps, residual coverage); the OPERATOR certifies the code works by running the checklist in documentation/operator-battery/README.md and pasting the report back. BLOCKED is a first-class state (network/ToS/transient conditions) — honest states, never silent.",
+  "suiteRound": "v1.24.0",
+  "authoredAgainst": "cea68e0",
+  "purpose": "The operator-side regression battery: every verification the machine gate cannot make \u2014 live site behavior, real browsers, real userscript managers, real network endpoints. The machine certifies this manifest is well-formed and aimed at living code (anchor liveness, version stamps, residual coverage); the OPERATOR certifies the code works by running the checklist in documentation/operator-battery/README.md and pasting the report back. BLOCKED is a first-class state (network/ToS/transient conditions) \u2014 honest states, never silent.",
   "conventions": {
     "install": "Install dist/ files via the raw-GitHub URLs in inventory.json (https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/<name>.user.js).",
     "consolePrefixes": "Forums++ machinery logs as '[Forums++]' (console.debug/warn); Hailuo++ as '[4ndr0tools][INFO|WARN|DEBUG|ERROR]'; CB as plain '[4ndr0tools]' lines; Instagram++ as '[ARES-9 V7.0]'.",
     "evidence": "Every test: screenshot of the observable + console excerpt (filtered on the prefix above) + manager/browser versions + the URL visited.",
     "blocked": "A thread without the host under test at hand is BLOCKED, not FAIL. Transient site states (maintenance, CF interstitials absent) are BLOCKED with a note.",
-    "rollback": "Immediate mitigation is disable-the-toggle or revert-pin the dist file: git checkout <prior-round-tip> -- dist/… (round tips: r7 6c1b7ea, r8 9a18c04, r9 = this round's pin)."
+    "rollback": "Immediate mitigation is disable-the-toggle or revert-pin the dist file: git checkout <prior-round-tip> -- dist/\u2026 (round tips: r7 6c1b7ea, r8 9a18c04, r9 = this round's pin)."
   },
   "residualCoverage": [
     {
@@ -172,6 +172,20 @@
       "tests": [
         "CB-TRG-05"
       ]
+    },
+    {
+      "residual": "saint-bare-link-field-recovery-live",
+      "tests": [
+        "FPP-RES-09"
+      ],
+      "note": "the table-reachability + recovery ladder is fixture-executed (6B3-6B5); the live field shape (which named WHY the bare route actually serves) only a re-run on the operator's post-#173-class thread can tell"
+    },
+    {
+      "residual": "cb-captcha-timing-live-field",
+      "tests": [
+        "CB-TRG-06"
+      ],
+      "note": "the four timing scenarios are fixture-executed (6F) on the shipped trigger; the live PoW duration distribution is field-only"
     }
   ],
   "tests": [
@@ -180,7 +194,7 @@
       "family": "cross-tab-bridges",
       "title": "goonbox.cr helper tab opens once, handshakes, and resolves (the flagship P2-only residual)",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.8",
+      "scriptVersion": "1.13.9",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -190,7 +204,7 @@
             "gbxEnsureTab",
             "gbxBindListeners"
           ],
-          "atVersion": "1.13.8"
+          "atVersion": "1.13.9"
         }
       ],
       "env": {
@@ -208,7 +222,7 @@
         "Open the thread; open the per-post config form (the t-arrow tippy) and leave goonbox hosts enabled",
         "Trigger the per-post Download",
         "Watch the tab strip: an INACTIVE goonbox.cr tab opens with ?xfpd_gbx=1 in its URL",
-        "DevTools on the forum tab: filter console on '[Forums++]' — watch the gbx lines",
+        "DevTools on the forum tab: filter console on '[Forums++]' \u2014 watch the gbx lines",
         "Observe the goonbox resolver rows in the per-post status label"
       ],
       "expected": "The helper tab opens exactly once; the per-post log shows goonbox.cr rows resolving (direct, or '::API direct failed (403) -> bridge::' followed by resolution); no 'gbx bridge response not ready yet' spam beyond the first per-request debug; the helper tab closes after its idle window; a user browsing goonbox.cr normally never becomes a bridge (the marker gate).",
@@ -227,7 +241,7 @@
         },
         {
           "mode": "resolution succeeds direct-only, bridge never exercised",
-          "meaning": "the test never touched the CF path — not a failure",
+          "meaning": "the test never touched the CF path \u2014 not a failure",
           "mitigation": "re-run with FPP-GBX-02 (the force flag) to isolate the bridge path",
           "reportEvidence": "note it as direct-path PASS"
         },
@@ -248,7 +262,7 @@
       "risk": {
         "downloadVolume": "low",
         "networkExposure": "one inactive tab",
-        "tosSensitivity": "moderate — CF-protected hosting; do not solve CAPTCHAs beyond your own account's comfort"
+        "tosSensitivity": "moderate \u2014 CF-protected hosting; do not solve CAPTCHAs beyond your own account's comfort"
       }
     },
     {
@@ -256,7 +270,7 @@
       "family": "cross-tab-bridges",
       "title": "the force-bridge debug flag proves the whole P2 handshake independent of CF state",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.8",
+      "scriptVersion": "1.13.9",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -264,7 +278,7 @@
             "xfpd_gbx_force_bridge",
             "Bridge forced"
           ],
-          "atVersion": "1.13.8"
+          "atVersion": "1.13.9"
         }
       ],
       "env": {
@@ -282,7 +296,7 @@
         "Run a goonbox-linked post download",
         "Observe the per-post log, then REMOVE the flag afterwards"
       ],
-      "expected": "The per-post log shows '::Bridge forced (debug flag)::' and the bridge tab path is taken even when direct would succeed — proving the whole P2 handshake independent of CF state.",
+      "expected": "The per-post log shows '::Bridge forced (debug flag)::' and the bridge tab path is taken even when direct would succeed \u2014 proving the whole P2 handshake independent of CF state.",
       "failureModes": [
         {
           "mode": "flag ignored (no 'Bridge forced' line)",
@@ -309,7 +323,7 @@
       "family": "cross-tab-bridges",
       "title": "gofile.io warm-up tab + guest-token/cookie bridge, cookie restored after idle",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.8",
+      "scriptVersion": "1.13.9",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -318,7 +332,7 @@
             "gofileRestoreCookie",
             "gofileWarmupOpenTab"
           ],
-          "atVersion": "1.13.8"
+          "atVersion": "1.13.9"
         }
       ],
       "env": {
@@ -333,9 +347,9 @@
       },
       "steps": [
         "Download a post with gofile links",
-        "Watch for the warm-up tab (fires only on the guest gate — 403/gate responses): '::GoFile gate -> warm-up tab (3s) then retry [1/2]::'",
+        "Watch for the warm-up tab (fires only on the guest gate \u2014 403/gate responses): '::GoFile gate -> warm-up tab (3s) then retry [1/2]::'",
         "Observe the gofile resolver rows complete on retry",
-        "After completion, open gofile.io: your original cookie state should be restored (DevTools → Application → Cookies → gofile.io accountToken back to pre-test value or absent)"
+        "After completion, open gofile.io: your original cookie state should be restored (DevTools \u2192 Application \u2192 Cookies \u2192 gofile.io accountToken back to pre-test value or absent)"
       ],
       "expected": "The gate line appears when gated; a 3s inactive gofile tab opens and closes; resolution succeeds on retry; no '[GoFile] GM_cookie.set failed' warnings; cookie restored after idle.",
       "failureModes": [
@@ -347,7 +361,7 @@
         },
         {
           "mode": "[GoFile] GM_cookie warnings",
-          "meaning": "manager cookie-grant surface (TM needs cookie access enabled; Violentmonkey lacks GM_cookie entirely — the documented degradation)",
+          "meaning": "manager cookie-grant surface (TM needs cookie access enabled; Violentmonkey lacks GM_cookie entirely \u2014 the documented degradation)",
           "mitigation": "enable TM's cookie access or accept the VM degradation and record it as the documented matrix difference",
           "reportEvidence": "warning text + manager"
         },
@@ -362,7 +376,7 @@
       "risk": {
         "downloadVolume": "low",
         "networkExposure": "one tab, one guest account creation",
-        "tosSensitivity": "low — the guest flow is the site's own API path"
+        "tosSensitivity": "low \u2014 the guest flow is the site's own API path"
       }
     },
     {
@@ -370,7 +384,7 @@
       "family": "cross-tab-bridges",
       "title": "cyberdrop warm-up tab fires at most once per origin",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.8",
+      "scriptVersion": "1.13.9",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -378,7 +392,7 @@
             "cyberdropWarmupOnce",
             "p.postId === parsedPost.postId && p.processing"
           ],
-          "atVersion": "1.13.8"
+          "atVersion": "1.13.9"
         }
       ],
       "env": {
@@ -403,7 +417,7 @@
         },
         {
           "mode": "resolution fails entirely",
-          "meaning": "ladder failure — see FPP-RES-04 taxonomy",
+          "meaning": "ladder failure \u2014 see FPP-RES-04 taxonomy",
           "mitigation": "see FPP-RES-04",
           "reportEvidence": "per-post log excerpt"
         }
@@ -420,14 +434,14 @@
       "family": "resolver-liveness",
       "title": "kemono.su/.cr direct links resolve with zero network (identity resolver)",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.8",
+      "scriptVersion": "1.13.9",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
           "mustContain": [
             "kemono:direct link"
           ],
-          "atVersion": "1.13.8"
+          "atVersion": "1.13.9"
         }
       ],
       "env": {
@@ -455,8 +469,8 @@
         },
         {
           "mode": "manager @connect prompt naming an undeclared host",
-          "meaning": "token gap — the prompt text names the host",
-          "mitigation": "screenshot the prompt; the fix is a header token — file the exact host string",
+          "meaning": "token gap \u2014 the prompt text names the host",
+          "mitigation": "screenshot the prompt; the fix is a header token \u2014 file the exact host string",
           "reportEvidence": "the prompt screenshot"
         },
         {
@@ -470,7 +484,7 @@
       "risk": {
         "downloadVolume": "none (liveness-only)",
         "networkExposure": "zero extra on PASS",
-        "tosSensitivity": "moderate — aggregator site; zero extra traffic on PASS"
+        "tosSensitivity": "moderate \u2014 aggregator site; zero extra traffic on PASS"
       }
     },
     {
@@ -478,7 +492,7 @@
       "family": "resolver-liveness",
       "title": "coomer.su AND coomer.st profile walkers enumerate multi-page",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.8",
+      "scriptVersion": "1.13.9",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -486,7 +500,7 @@
             "Coomer:Profiles",
             "Resolved page"
           ],
-          "atVersion": "1.13.8"
+          "atVersion": "1.13.9"
         }
       ],
       "env": {
@@ -504,7 +518,7 @@
         "Repeat with a .st link",
         "Watch for 'Resolving profile:' and multiple 'Resolved page N' lines"
       ],
-      "expected": "The multi-page walker enumerates (several 'Resolved page' lines); BOTH TLDs resolve — the r7 F01 fix made the resolvers TLD-symmetric.",
+      "expected": "The multi-page walker enumerates (several 'Resolved page' lines); BOTH TLDs resolve \u2014 the r7 F01 fix made the resolvers TLD-symmetric.",
       "failureModes": [
         {
           "mode": ".st links collected but 'Could not resolve'",
@@ -519,11 +533,11 @@
           "reportEvidence": "log excerpt"
         }
       ],
-      "provenance": "r6 restoration + r7 ae8fdf2 (7a F01 — the coomer .st dead-end fixed)",
+      "provenance": "r6 restoration + r7 ae8fdf2 (7a F01 \u2014 the coomer .st dead-end fixed)",
       "risk": {
         "downloadVolume": "none (liveness-only)",
-        "networkExposure": "moderate — several page GETs",
-        "tosSensitivity": "moderate — adult aggregator; keep posts small"
+        "networkExposure": "moderate \u2014 several page GETs",
+        "tosSensitivity": "moderate \u2014 adult aggregator; keep posts small"
       }
     },
     {
@@ -531,7 +545,7 @@
       "family": "resolver-liveness",
       "title": "bunkr family resolves: TLD alternation + CF retry + CDN signing (bunkr.org/bunkrr.org/bunkrrr.org/gigachad-cdn)",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.8",
+      "scriptVersion": "1.13.9",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -540,7 +554,7 @@
             "isBunkrUrl",
             "a[href*=\"/f/\"], a[href*=\"/v/\"], a[href*=\"/d/\"]"
           ],
-          "atVersion": "1.13.8"
+          "atVersion": "1.13.9"
         }
       ],
       "env": {
@@ -559,12 +573,12 @@
         "Observe single files resolving via the /f/ page + API",
         "If a CF-403 fires: the warm-up + blacklist machinery engages ('[Forums++] bunkr CF warm-up rejected' only on failure)"
       ],
-      "expected": "Album walker enumerates; single files resolve; CF-403 triggers warm-up; the derived links point at signed CDN URLs. This also exercises the isBunkrUrl family (rate-defense/maint/500MB arms — see FPP-DLP-02/03).",
+      "expected": "Album walker enumerates; single files resolve; CF-403 triggers warm-up; the derived links point at signed CDN URLs. This also exercises the isBunkrUrl family (rate-defense/maint/500MB arms \u2014 see FPP-DLP-02/03).",
       "failureModes": [
         {
           "mode": "'Could not resolve' on a bunkrrr.org or gigachad-cdn URL",
           "meaning": "the isBunkrUrl/alternation family regressed (the 8b F02 class)",
-          "mitigation": "revert-pin; report the EXACT CDN hostname — it feeds the next widening",
+          "mitigation": "revert-pin; report the EXACT CDN hostname \u2014 it feeds the next widening",
           "reportEvidence": "the CDN hostname + log lines"
         },
         {
@@ -577,8 +591,8 @@
       "provenance": "r6 restoration (14500cb) + r8 c866a50 (8b F02 family widening) + the r15 field settlement (15a F04/F05/F06)",
       "risk": {
         "downloadVolume": "none (liveness-only)",
-        "networkExposure": "low — API GETs",
-        "tosSensitivity": "moderate — file host, adult content; pick a small album"
+        "networkExposure": "low \u2014 API GETs",
+        "tosSensitivity": "moderate \u2014 file host, adult content; pick a small album"
       }
     },
     {
@@ -586,7 +600,7 @@
       "family": "resolver-liveness",
       "title": "cyberdrop ladder: api.<root> runtime arms + literal api.cyberdrop.cr fallbacks",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.8",
+      "scriptVersion": "1.13.9",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -594,7 +608,7 @@
             "apiCandidates",
             "api.cyberdrop.cr"
           ],
-          "atVersion": "1.13.8"
+          "atVersion": "1.13.9"
         }
       ],
       "env": {
@@ -607,9 +621,9 @@
       },
       "steps": [
         "Run the post download on the cyberdrop link",
-        "DevTools Network: watch the ladder probe info→auth→url in order"
+        "DevTools Network: watch the ladder probe info\u2192auth\u2192url in order"
       ],
-      "expected": "A cyberdrop.to link resolves via api.cyberdrop.to (the root arm); a non-declared TLD falls back to the literal api.cyberdrop.cr arms (the r7 backtick fix — the single-quote interpolation bug is gone).",
+      "expected": "A cyberdrop.to link resolves via api.cyberdrop.to (the root arm); a non-declared TLD falls back to the literal api.cyberdrop.cr arms (the r7 backtick fix \u2014 the single-quote interpolation bug is gone).",
       "failureModes": [
         {
           "mode": "requests to URLs containing literal '${slug}' text",
@@ -628,7 +642,7 @@
       "risk": {
         "downloadVolume": "low",
         "networkExposure": "tiny GETs",
-        "tosSensitivity": "low — public host"
+        "tosSensitivity": "low \u2014 public host"
       }
     },
     {
@@ -636,7 +650,7 @@
       "family": "resolver-liveness",
       "title": "jpg/jpeg no-digit family: NO manager prompt on first dispatch (the engine's first live catch)",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.8",
+      "scriptVersion": "1.13.9",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -646,7 +660,7 @@
             "@connect jpg.pet",
             "@connect jpeg.pet"
           ],
-          "atVersion": "1.13.8"
+          "atVersion": "1.13.9"
         }
       ],
       "env": {
@@ -662,7 +676,7 @@
         "Watch for ANY manager @connect prompt",
         "Observe the resolver rows completing"
       ],
-      "expected": "First dispatch must NOT prompt (the 8+4 tokens are declared) and must resolve. If ANY prompt appears, screenshot it — the named host is either a token gap or proof of resolver over-reach. Album links exercise the password-spoiler path ('::Password protected album' when the post hides it).",
+      "expected": "First dispatch must NOT prompt (the 8+4 tokens are declared) and must resolve. If ANY prompt appears, screenshot it \u2014 the named host is either a token gap or proof of resolver over-reach. Album links exercise the password-spoiler path ('::Password protected album' when the post hides it).",
       "failureModes": [
         {
           "mode": "manager prompt naming a jpg/jpeg family host",
@@ -677,19 +691,19 @@
           "reportEvidence": "status codes"
         }
       ],
-      "provenance": "r8 836f5bc — the derivation engine's first live catch (8 tokens declared)",
+      "provenance": "r8 836f5bc \u2014 the derivation engine's first live catch (8 tokens declared)",
       "risk": {
         "downloadVolume": "low",
         "networkExposure": "image GETs",
-        "tosSensitivity": "moderate — image boards, adult content"
+        "tosSensitivity": "moderate \u2014 image boards, adult content"
       }
     },
     {
       "id": "FPP-RES-06",
       "family": "resolver-liveness",
-      "title": "pixeldrain .com/.net/pixeldra.in — all three domains resolve",
+      "title": "pixeldrain .com/.net/pixeldra.in \u2014 all three domains resolve",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.8",
+      "scriptVersion": "1.13.9",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -697,7 +711,7 @@
             "Pixeldrain:",
             "isPixeldrainUrl"
           ],
-          "atVersion": "1.13.8"
+          "atVersion": "1.13.9"
         }
       ],
       "env": {
@@ -711,7 +725,7 @@
       "steps": [
         "Run the post download on the pixeldrain links"
       ],
-      "expected": "All three domains resolve (the r7 F05 fix — the resolver was .com-only while the host table matched three).",
+      "expected": "All three domains resolve (the r7 F05 fix \u2014 the resolver was .com-only while the host table matched three).",
       "failureModes": [
         {
           "mode": "pixeldrain.net/.in 'Could not resolve'",
@@ -732,7 +746,7 @@
       "family": "resolver-liveness",
       "title": "yandex disk resolves via the POST ladder; prompts disclose the non-enumerable TLD horizon",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.8",
+      "scriptVersion": "1.13.9",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -742,7 +756,7 @@
             "@connect yandex.kz",
             "disk.yandex.ru"
           ],
-          "atVersion": "1.13.8"
+          "atVersion": "1.13.9"
         }
       ],
       "env": {
@@ -757,7 +771,7 @@
         "Run the post download on the yandex link",
         "DevTools shows the POST to disk.yandex.ru"
       ],
-      "expected": "The link resolves to a direct download URL; no prompt for disk.yandex.ru (declared). A prompt naming another yandex TLD (disk.yandex.com) is the DISCLOSED non-enumerable-family residual — record it, do not fail it.",
+      "expected": "The link resolves to a direct download URL; no prompt for disk.yandex.ru (declared). A prompt naming another yandex TLD (disk.yandex.com) is the DISCLOSED non-enumerable-family residual \u2014 record it, do not fail it.",
       "failureModes": [
         {
           "mode": "prompt for disk.yandex.ru",
@@ -767,12 +781,12 @@
         },
         {
           "mode": "prompt for another yandex TLD",
-          "meaning": "the disclosed [a-z]+ TLD-family residual — by design",
+          "meaning": "the disclosed [a-z]+ TLD-family residual \u2014 by design",
           "mitigation": "record the hostname; it joins the next token batch",
           "reportEvidence": "prompt screenshot (valuable data, not a failure)"
         }
       ],
-      "provenance": "r7 ae8fdf2 (7a F04 — the missing yandex tokens)",
+      "provenance": "r7 ae8fdf2 (7a F04 \u2014 the missing yandex tokens)",
       "risk": {
         "downloadVolume": "low",
         "networkExposure": "one POST",
@@ -784,7 +798,7 @@
       "family": "resolver-liveness",
       "title": "redgifs: ONE boot token fetch on /threads/ pages only + token refresh on stale",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.8",
+      "scriptVersion": "1.13.9",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -792,7 +806,7 @@
             "redgifsFetchTempToken",
             "/threads/"
           ],
-          "atVersion": "1.13.8"
+          "atVersion": "1.13.9"
         }
       ],
       "env": {
@@ -808,7 +822,7 @@
         "Open the goonbox helper tab (or gofile.io): NO redgifs request there (the /threads/ boot gate)",
         "A redgifs-linked post resolves"
       ],
-      "expected": "One anonymous temporary-token GET per thread page; none on helper tabs (the r7 F10 fix); redgifs posts resolve; refresh fires on 401/403/429 (hard to force — BLOCKED-acceptable).",
+      "expected": "One anonymous temporary-token GET per thread page; none on helper tabs (the r7 F10 fix); redgifs posts resolve; refresh fires on 401/403/429 (hard to force \u2014 BLOCKED-acceptable).",
       "failureModes": [
         {
           "mode": "redgifs requests on helper tabs",
@@ -833,18 +847,19 @@
     {
       "id": "FPP-RES-09",
       "family": "resolver-liveness",
-      "title": "saint2/turbo: origin derivation + sign API + embed links",
+      "title": "saint2/turbo: origin derivation + sign API + embed links + the bare-link recovery",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.8",
+      "scriptVersion": "1.13.9",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
           "mustContain": [
             "xfpdTurboOrigin",
             "glb-apisign.cdn.cr",
-            "Malformed turbo/saint2 embed link"
+            "Malformed turbo/saint2 embed link",
+            "xfpdTurboRecoverBareRoute"
           ],
-          "atVersion": "1.13.8"
+          "atVersion": "1.13.9"
         }
       ],
       "env": {
@@ -857,9 +872,10 @@
       },
       "steps": [
         "Run the post download on the turbo/saint2 links",
-        "DevTools shows the sign request (glb-apisign.cdn.cr or the turbo/saint2 origin)"
+        "DevTools shows the sign request (glb-apisign.cdn.cr or the turbo/saint2 origin)",
+        "Include a bare link (href \".../embed/\" or a bare /v|/d|/a paste) if the thread carries one"
       ],
-      "expected": "A turbo.cr video link resolves via the sign API; saint2 links derive their origin (saint2 su/pk/cr to origin, else turbo.cr default); embed links resolve. The r9 F02 template fix makes glb-apisign.cdn.cr a machine-derived partial — live confirmation proves the dispatch actually flows.",
+      "expected": "A turbo.cr video link resolves via the sign API; saint2 links derive their origin (saint2 su/pk/cr to origin, else turbo.cr default); a BARE link (walker-stripped \".../embed\", \"/v\", \"/d\", \"/a\") never dies as the generic could-not-resolve: the bare-route recovery resolves a site-side single-id move, and otherwise the named refusal carries the WHY (no id / route names N videos (a listing) / route fetch failed / no slug). The r16 re-run on post #173-class links shows the named line, not \"FOUND 0 RESOURCE(S)\" with zero diagnosis.",
       "failureModes": [
         {
           "mode": "sign request 403s repeatedly",
@@ -878,7 +894,7 @@
       "risk": {
         "downloadVolume": "low",
         "networkExposure": "tiny sign requests",
-        "tosSensitivity": "moderate — adult video host"
+        "tosSensitivity": "moderate \u2014 adult video host"
       }
     },
     {
@@ -886,14 +902,14 @@
       "family": "resolver-liveness",
       "title": "filester v2 API + cache-host probe sweep",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.8",
+      "scriptVersion": "1.13.9",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
           "mustContain": [
             "filesterResolveV2"
           ],
-          "atVersion": "1.13.8"
+          "atVersion": "1.13.9"
         }
       ],
       "env": {
@@ -928,14 +944,14 @@
       "family": "resolver-liveness",
       "title": "imagebam view/gallery + full-embed CDN links",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.8",
+      "scriptVersion": "1.13.9",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
           "mustContain": [
             "imagebam"
           ],
-          "atVersion": "1.13.8"
+          "atVersion": "1.13.9"
         }
       ],
       "env": {
@@ -962,7 +978,7 @@
       "risk": {
         "downloadVolume": "low",
         "networkExposure": "image GETs",
-        "tosSensitivity": "moderate — image host, adult content"
+        "tosSensitivity": "moderate \u2014 image host, adult content"
       }
     },
     {
@@ -970,7 +986,7 @@
       "family": "resolver-liveness",
       "title": "ibb.co albums walk via JSON; postimg/pixxxels rewrite correctly",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.8",
+      "scriptVersion": "1.13.9",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -978,7 +994,7 @@
             "Ibb:image",
             "Postimg:image"
           ],
-          "atVersion": "1.13.8"
+          "atVersion": "1.13.9"
         }
       ],
       "env": {
@@ -993,7 +1009,7 @@
         "Run the post download on the links",
         "DevTools shows the ibb.co/json POST for the album"
       ],
-      "expected": "Single-image pass-through for i.ibb.co; the album link walks pages (JSON POST visible); postimg.cc 8-char links rewrite to the direct form. The r9 engine work widened the postimg/pixxxels gate family — live runs confirm the derivation matches reality.",
+      "expected": "Single-image pass-through for i.ibb.co; the album link walks pages (JSON POST visible); postimg.cc 8-char links rewrite to the direct form. The r9 engine work widened the postimg/pixxxels gate family \u2014 live runs confirm the derivation matches reality.",
       "failureModes": [
         {
           "mode": "album resolves only page 1",
@@ -1020,7 +1036,7 @@
       "family": "download-pipeline",
       "title": "safeThreadTitle on a ':'-containing thread title (zip gate + generated.zip names)",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.8",
+      "scriptVersion": "1.13.9",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -1028,7 +1044,7 @@
             "safeThreadTitle",
             "generated.zip"
           ],
-          "atVersion": "1.13.8"
+          "atVersion": "1.13.9"
         }
       ],
       "env": {
@@ -1050,7 +1066,7 @@
       "failureModes": [
         {
           "mode": "'Error writing zipped file to disk' name-validation + FileSaver fallback fired",
-          "meaning": "the 8b-F01 fix regressed (raw title reached GM_download) — FAIL-with-safety-net: the file still lands but the primary arm is broken",
+          "meaning": "the 8b-F01 fix regressed (raw title reached GM_download) \u2014 FAIL-with-safety-net: the file still lands but the primary arm is broken",
           "mitigation": "re-run with a colon-free thread (workaround); revert-pin",
           "reportEvidence": "the exact filename + per-post log lines"
         },
@@ -1069,7 +1085,7 @@
       ],
       "provenance": "7d F22 filed (partial fix), 8b F01 completed (c866a50), 9a F05 (the dispatch guards)",
       "risk": {
-        "downloadVolume": "one zip per post — use a small post",
+        "downloadVolume": "one zip per post \u2014 use a small post",
         "networkExposure": "low",
         "tosSensitivity": "low"
       }
@@ -1079,7 +1095,7 @@
       "family": "download-pipeline",
       "title": "isBunkrUrl maint guard: a maintenance placeholder is NEVER saved as a real file",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.8",
+      "scriptVersion": "1.13.9",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -1088,7 +1104,7 @@
             "maintenance redirect (maint.mp4)",
             "blob.slice(0, 8192)"
           ],
-          "atVersion": "1.13.8"
+          "atVersion": "1.13.9"
         }
       ],
       "env": {
@@ -1098,7 +1114,7 @@
           "a bunkr link that is in maintenance (bunkr rotates a maint.mp4 placeholder when a CDN is down)"
         ],
         "prerequisites": [
-          "maintenance is transient — BLOCKED is acceptable when no maint link is findable that session; re-try later"
+          "maintenance is transient \u2014 BLOCKED is acceptable when no maint link is findable that session; re-try later"
         ]
       },
       "steps": [
@@ -1109,7 +1125,7 @@
       "failureModes": [
         {
           "mode": "a tiny maint.mp4 (or the placeholder name) lands in Downloads/zip",
-          "meaning": "isBunkrUrl family regression (the 8b F02 class — check whether the URL's host is a NEW bunkr CDN form outside the widened family)",
+          "meaning": "isBunkrUrl family regression (the 8b F02 class \u2014 check whether the URL's host is a NEW bunkr CDN form outside the widened family)",
           "mitigation": "delete the stray file; revert-pin",
           "reportEvidence": "the exact CDN hostname (it feeds the next isBunkrUrl widening) + the stray filename"
         },
@@ -1138,7 +1154,7 @@
       "family": "download-pipeline",
       "title": "the 500 MB bunkr DIRECT switch fires mid-download",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.8",
+      "scriptVersion": "1.13.9",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -1146,7 +1162,7 @@
             "BUNKR_DIRECT_MIN_BYTES",
             "Bunkr large file"
           ],
-          "atVersion": "1.13.8"
+          "atVersion": "1.13.9"
         }
       ],
       "env": {
@@ -1157,7 +1173,7 @@
         ],
         "prerequisites": [
           "Zipped ON so the switch is observable as an exit from the zip path",
-          "HIGH download volume — schedule on an unmetered connection; one file only"
+          "HIGH download volume \u2014 schedule on an unmetered connection; one file only"
         ]
       },
       "steps": [
@@ -1167,7 +1183,7 @@
       "expected": "'::Bunkr large file (N bytes > 500MB) -> switch to DIRECT::' fires; the download shelf shows the bare file; the post completes with the file counted; the zip (if other files) excludes it.",
       "failureModes": [
         {
-          "mode": "no switch — blob path continues past 500 MB",
+          "mode": "no switch \u2014 blob path continues past 500 MB",
           "meaning": "MV3 blob-size hazard re-exposed",
           "mitigation": "abort the run to save bandwidth; revert-pin",
           "reportEvidence": "console + log excerpt"
@@ -1180,7 +1196,7 @@
         },
         {
           "mode": "Content-Length unknown, no switch",
-          "meaning": "the disclosed DIRECT-threshold-blind case (7d F26) — known behavior, not FAIL",
+          "meaning": "the disclosed DIRECT-threshold-blind case (7d F26) \u2014 known behavior, not FAIL",
           "mitigation": "re-test with the file's page open first (warms Content-Length)",
           "reportEvidence": "note it as known-behavior"
         }
@@ -1197,14 +1213,14 @@
       "family": "download-pipeline",
       "title": "FF per-file saveAs arm vs Chrome GM_download arm (the named FF residual)",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.8",
+      "scriptVersion": "1.13.9",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
           "mustContain": [
             "const isFF"
           ],
-          "atVersion": "1.13.8"
+          "atVersion": "1.13.9"
         }
       ],
       "env": {
@@ -1216,10 +1232,10 @@
         "prerequisites": []
       },
       "steps": [
-        "FF: a post with Zipped UNCHECKED — per-file saves land as 'Title #N - name.ext' (dash-joined, no subfolder)",
-        "FF: Zipped CHECKED — single zip via saveAs: 'Title #N.zip'",
-        "FF: open the config form — the custom-filename input is present; fill a ':title: :#:' variant and verify substitution",
-        "Chrome: same post, Zipped off — per-file GM_download with 'Title/name.ext' folder-qualified names; the filename input is ABSENT"
+        "FF: a post with Zipped UNCHECKED \u2014 per-file saves land as 'Title #N - name.ext' (dash-joined, no subfolder)",
+        "FF: Zipped CHECKED \u2014 single zip via saveAs: 'Title #N.zip'",
+        "FF: open the config form \u2014 the custom-filename input is present; fill a ':title: :#:' variant and verify substitution",
+        "Chrome: same post, Zipped off \u2014 per-file GM_download with 'Title/name.ext' folder-qualified names; the filename input is ABSENT"
       ],
       "expected": "FF per-file saves honor the Zipped checkbox (the 2e-F08 fix); the OS save dialog per file is EXPECTED saveAs semantics (note it, don't fail it); Chrome names carry the folder prefix.",
       "failureModes": [
@@ -1254,7 +1270,7 @@
       "family": "download-pipeline",
       "title": "light vs dark theme tooltip pair + search input ink",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.8",
+      "scriptVersion": "1.13.9",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -1262,7 +1278,7 @@
             "getTooltipBackgroundColor",
             "isLightTheme"
           ],
-          "atVersion": "1.13.8"
+          "atVersion": "1.13.9"
         }
       ],
       "env": {
@@ -1274,16 +1290,16 @@
         "prerequisites": []
       },
       "steps": [
-        "Set the site theme DARK — open a per-post config form (tippy tooltip) + run the in-thread cached-post search",
-        "Switch theme to LIGHT (may need reload) — reopen both",
+        "Set the site theme DARK \u2014 open a per-post config form (tippy tooltip) + run the in-thread cached-post search",
+        "Switch theme to LIGHT (may need reload) \u2014 reopen both",
         "Inspect element: the .tippy-box computed background matches the branch values (#EDF0F3 light vs rgba(10,19,26,0.85) dark)"
       ],
-      "expected": "Dark: translucent dark tooltip, light search-input ink. Light: #EDF0F3 tooltip surface, dark ink — no dark-on-dark / light-on-light.",
+      "expected": "Dark: translucent dark tooltip, light search-input ink. Light: #EDF0F3 tooltip surface, dark ink \u2014 no dark-on-dark / light-on-light.",
       "failureModes": [
         {
           "mode": "light theme shows the dark-translucent panel",
           "meaning": "the pre-fix no-op ternary class back (2e F16)",
-          "mitigation": "cosmetic — no functional mitigation; report the computed style",
+          "mitigation": "cosmetic \u2014 no functional mitigation; report the computed style",
           "reportEvidence": "screenshot both themes + computed style"
         },
         {
@@ -1305,7 +1321,7 @@
       "family": "download-pipeline",
       "title": "zip-gate FileSaver fallback fires on a GM_download error (both arms)",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.8",
+      "scriptVersion": "1.13.9",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
@@ -1314,7 +1330,7 @@
             "Zip dispatch failed",
             "Generated.zip dispatch failed"
           ],
-          "atVersion": "1.13.8"
+          "atVersion": "1.13.9"
         }
       ],
       "env": {
@@ -1358,14 +1374,14 @@
       "family": "download-pipeline",
       "title": "turbo stall, re-sign ladder, DIRECT fallback under adversarial network",
       "script": "4ndr0tools - Forums++.user.js",
-      "scriptVersion": "1.13.8",
+      "scriptVersion": "1.13.9",
       "anchors": [
         {
           "file": "canon/_sovereign/4ndr0tools - Forums++.user.js",
           "mustContain": [
             "Turbo stalled"
           ],
-          "atVersion": "1.13.8"
+          "atVersion": "1.13.9"
         }
       ],
       "env": {
@@ -1436,8 +1452,8 @@
         ],
         "prerequisites": [
           "the HUD boots (Ctrl+Alt+H toggles visibility)",
-          "'Auto Fetch Asset' is ON (sw-dl, runtimeSwitches.autoGrab; ALL SWITCHES DEFAULT OFF — the operator MUST enable it)",
-          "the console shows '[4ndr0tools][INFO] Interception platform armed' — if absent every HL test is BLOCKED at boot"
+          "'Auto Fetch Asset' is ON (sw-dl, runtimeSwitches.autoGrab; ALL SWITCHES DEFAULT OFF \u2014 the operator MUST enable it)",
+          "the console shows '[4ndr0tools][INFO] Interception platform armed' \u2014 if absent every HL test is BLOCKED at boot"
         ]
       },
       "steps": [
@@ -1502,7 +1518,7 @@
       "steps": [
         "Request a canvas-rendered generation",
         "Watch the console for the canvas commit line",
-        "Repeat the identical frame — no re-entry"
+        "Repeat the identical frame \u2014 no re-entry"
       ],
       "expected": "'[4ndr0tools][INFO] Canvas commit captured into the vault (sha256 xxxxxxxx, N bytes).' fires; a bay thumbnail shows the canvas content; identical frames do NOT re-enter (dedup).",
       "failureModes": [
@@ -1561,13 +1577,13 @@
       "steps": [
         "Generate a video",
         "Watch the bay for a blob: entry with playable hover preview",
-        "Click SAVE on it — zero network (the clone is served locally)"
+        "Click SAVE on it \u2014 zero network (the clone is served locally)"
       ],
-      "expected": "A bay thumbnail with playable hover preview for the blob asset (blob: admitted — the pre-v6.1 gates rejected them); SAVE works with zero network.",
+      "expected": "A bay thumbnail with playable hover preview for the blob asset (blob: admitted \u2014 the pre-v6.1 gates rejected them); SAVE works with zero network.",
       "failureModes": [
         {
           "mode": "blob assets never enter the bay",
-          "meaning": "isBlobLike duck-typing regression (7b F06 cross-realm class — check the manager)",
+          "meaning": "isBlobLike duck-typing regression (7b F06 cross-realm class \u2014 check the manager)",
           "mitigation": "revert-pin; report the manager",
           "reportEvidence": "console + manager version"
         },
@@ -1631,7 +1647,7 @@
           "reportEvidence": "the WARN line"
         },
         {
-          "mode": "SAVE hangs at '····' past 60s",
+          "mode": "SAVE hangs at '\u00b7\u00b7\u00b7\u00b7' past 60s",
           "meaning": "fetch fallback ceiling regression",
           "mitigation": "revert-pin",
           "reportEvidence": "timing"
@@ -1643,7 +1659,7 @@
           "reportEvidence": "console excerpt"
         }
       ],
-      "provenance": "r8 9d82511 (8b F05/F06/F15 — the flagship r8 Hailuo fix)",
+      "provenance": "r8 9d82511 (8b F05/F06/F15 \u2014 the flagship r8 Hailuo fix)",
       "risk": {
         "downloadVolume": "disk space for saved assets",
         "networkExposure": "own account",
@@ -1779,13 +1795,13 @@
           "https://hailuoai.video/ with a captured CDN-URL asset"
         ],
         "prerequisites": [
-          "simulate expiry: DevTools request-block the CDN host so the thumb errors (safe) — or keep the session open for hours"
+          "simulate expiry: DevTools request-block the CDN host so the thumb errors (safe) \u2014 or keep the session open for hours"
         ]
       },
       "steps": [
         "Block the CDN host (or wait for real expiry)",
         "Observe the EXPIRED badge on the thumb",
-        "Click it — the re-mint path engages"
+        "Click it \u2014 the re-mint path engages"
       ],
       "expected": "The thumb shows the EXPIRED badge; clicking re-mints from the vault clone and opens a working new window; the old entry retires (no 2x budget count).",
       "failureModes": [
@@ -1899,7 +1915,7 @@
         },
         {
           "mode": "console [4ndr0tools][ERROR] lines",
-          "meaning": "any ERROR is a finding — capture them",
+          "meaning": "any ERROR is a finding \u2014 capture them",
           "mitigation": "revert-pin if attributable",
           "reportEvidence": "the ERROR lines"
         }
@@ -1916,7 +1932,7 @@
       "family": "confirmation-bypass",
       "title": "overlay right-click, turbo.cr landing, GRACE_MS auto-click of the download button",
       "script": "4ndr0tools - Confirmation Bypass.user.js",
-      "scriptVersion": "4.1.5",
+      "scriptVersion": "4.1.6",
       "anchors": [
         {
           "file": "canon/_promoted/4ndr0tools - Confirmation Bypass.user.js",
@@ -1924,7 +1940,7 @@
             "GRACE_MS  = 300",
             "Download button triggered."
           ],
-          "atVersion": "4.1.5"
+          "atVersion": "4.1.6"
         }
       ],
       "env": {
@@ -1941,7 +1957,7 @@
         "Wait through the Altcha PoW",
         "Watch the LANDING tab's console"
       ],
-      "expected": "After the download button appears/enables, within ~300ms the console line '[4ndr0tools] Download button triggered.' fires and the download begins — with NO operator click. Exactly one click per page (the data-cb4-dl-clicked guard).",
+      "expected": "After the download button appears/enables, within ~300ms the console line '[4ndr0tools] Download button triggered.' fires and the download begins \u2014 with NO operator click. Exactly one click per page (the data-cb4-dl-clicked guard).",
       "failureModes": [
         {
           "mode": "no console line, no download, button sits enabled",
@@ -1951,7 +1967,7 @@
         },
         {
           "mode": "console line but no download",
-          "meaning": "the page's handler wasn't ready — the re-arm should fire (see CB-TRG-02)",
+          "meaning": "the page's handler wasn't ready \u2014 the re-arm should fire (see CB-TRG-02)",
           "mitigation": "see CB-TRG-02",
           "reportEvidence": "console timing"
         },
@@ -1974,7 +1990,7 @@
       "family": "confirmation-bypass",
       "title": "the 1.5s reaction window: second click ONLY when the page didn't react",
       "script": "4ndr0tools - Confirmation Bypass.user.js",
-      "scriptVersion": "4.1.5",
+      "scriptVersion": "4.1.6",
       "anchors": [
         {
           "file": "canon/_promoted/4ndr0tools - Confirmation Bypass.user.js",
@@ -1982,7 +1998,7 @@
             "pageReacted",
             "REARM_MS  = 1600"
           ],
-          "atVersion": "4.1.5"
+          "atVersion": "4.1.6"
         }
       ],
       "env": {
@@ -1994,14 +2010,14 @@
         "prerequisites": []
       },
       "steps": [
-        "PASS path: repeat CB-TRG-01 on a normal turbo link — the page reacts (spinner/label swap/navigation) — observe NO second trigger line within 1.6s",
-        "Re-arm path: throttle the landing tab's network to offline-at-headers BEFORE the button enables, then restore — the handler-not-ready case yields exactly ONE re-click line at ~1.6s"
+        "PASS path: repeat CB-TRG-01 on a normal turbo link \u2014 the page reacts (spinner/label swap/navigation) \u2014 observe NO second trigger line within 1.6s",
+        "Re-arm path: throttle the landing tab's network to offline-at-headers BEFORE the button enables, then restore \u2014 the handler-not-ready case yields exactly ONE re-click line at ~1.6s"
       ],
       "expected": "Reacted page: a single click total. Silent page: exactly two trigger lines total (300ms + ~1.9s), never three.",
       "failureModes": [
         {
           "mode": "second click on a reacted page (double download)",
-          "meaning": "the 8b F07 class back — now including the r9 9a-F01 handler-side-touch class (a toast/progress node appended outside the button)",
+          "meaning": "the 8b F07 class back \u2014 now including the r9 9a-F01 handler-side-touch class (a toast/progress node appended outside the button)",
           "mitigation": "delete the duplicate download; revert-pin",
           "reportEvidence": "timestamps of the console lines (the 300ms/1.6s cadence is the diagnostic)"
         },
@@ -2030,14 +2046,14 @@
       "family": "confirmation-bypass",
       "title": "node-swap treated as reacted (a fresh control never receives click #2)",
       "script": "4ndr0tools - Confirmation Bypass.user.js",
-      "scriptVersion": "4.1.5",
+      "scriptVersion": "4.1.6",
       "anchors": [
         {
           "file": "canon/_promoted/4ndr0tools - Confirmation Bypass.user.js",
           "mustContain": [
             "clickedNode"
           ],
-          "atVersion": "4.1.5"
+          "atVersion": "4.1.6"
         }
       ],
       "env": {
@@ -2047,7 +2063,7 @@
           "as CB-TRG-01"
         ],
         "prerequisites": [
-          "hard to force deterministically on live turbo.cr — run opportunistically when TRG-01/02 show the control re-rendering; otherwise BLOCKED-acceptable"
+          "hard to force deterministically on live turbo.cr \u2014 run opportunistically when TRG-01/02 show the control re-rendering; otherwise BLOCKED-acceptable"
         ]
       },
       "steps": [
@@ -2072,16 +2088,16 @@
     {
       "id": "CB-TRG-04",
       "family": "confirmation-bypass",
-      "title": "glyph-tolerant anchored fallback ('Download File' with icon glyph) — the drift-time selector",
+      "title": "glyph-tolerant anchored fallback ('Download File' with icon glyph) \u2014 the drift-time selector",
       "script": "4ndr0tools - Confirmation Bypass.user.js",
-      "scriptVersion": "4.1.5",
+      "scriptVersion": "4.1.6",
       "anchors": [
         {
           "file": "canon/_promoted/4ndr0tools - Confirmation Bypass.user.js",
           "mustContain": [
             "TEXT_FALLBACK"
           ],
-          "atVersion": "4.1.5"
+          "atVersion": "4.1.6"
         }
       ],
       "env": {
@@ -2091,7 +2107,7 @@
           "as CB-TRG-01"
         ],
         "prerequisites": [
-          "exercisable only if turbo.cr renames/removes #downloadBtn markup (markup drift). TODAY: run document.querySelector('#downloadBtn') in DevTools — when present the primary selector wins and the fallback is untested (BLOCKED-acceptable)"
+          "exercisable only if turbo.cr renames/removes #downloadBtn markup (markup drift). TODAY: run document.querySelector('#downloadBtn') in DevTools \u2014 when present the primary selector wins and the fallback is untested (BLOCKED-acceptable)"
         ]
       },
       "steps": [
@@ -2125,7 +2141,7 @@
       "family": "confirmation-bypass",
       "title": "turbo upload channel ignores MAM control tokens and dead sessions (the synergy gate)",
       "script": "4ndr0tools - Confirmation Bypass.user.js",
-      "scriptVersion": "4.1.5",
+      "scriptVersion": "4.1.6",
       "anchors": [
         {
           "file": "canon/_promoted/4ndr0tools - Confirmation Bypass.user.js",
@@ -2133,7 +2149,7 @@
             "MAM_CONTROL_TOKENS",
             "uploadSessionLive"
           ],
-          "atVersion": "4.1.5"
+          "atVersion": "4.1.6"
         }
       ],
       "env": {
@@ -2167,10 +2183,64 @@
           "reportEvidence": "console excerpt"
         }
       ],
-      "provenance": "r15 field settlement (15a F07) — the operator's 2026-10-30 battery log",
+      "provenance": "r15 field settlement (15a F07) \u2014 the operator's 2026-10-30 battery log",
       "risk": {
         "downloadVolume": "low",
         "networkExposure": "the upload flow itself only",
+        "tosSensitivity": "low"
+      }
+    },
+    {
+      "id": "CB-TRG-06",
+      "family": "confirmation-bypass",
+      "title": "captcha-aware click timing: the download click defers while the Altcha solves, lands on the verified flip (no-captcha pages keep the fast click)",
+      "script": "4ndr0tools - Confirmation Bypass.user.js",
+      "scriptVersion": "4.1.6",
+      "anchors": [
+        {
+          "file": "canon/_promoted/4ndr0tools - Confirmation Bypass.user.js",
+          "mustContain": [
+            "ALTCHA_UNVERIFIED_SEL",
+            "CAPTCHA_WAIT_MAX_MS",
+            "Download click deferred",
+            "captcha gate expired"
+          ],
+          "atVersion": "4.1.6"
+        }
+      ],
+      "env": {
+        "browser": "chrome",
+        "manager": "tampermonkey-mv3",
+        "sites": [
+          "a turbo.cr download landing WITH an Altcha widget (a /d/{id} route), and one WITHOUT (the operator's no-captcha successful log shape)"
+        ],
+        "prerequisites": []
+      },
+      "steps": [
+        "NO-CAPTCHA path: open a landing with no Altcha widget \u2014 the trigger line lands ~300ms after the button appears (the legacy timing, no deferral line)",
+        "CAPTCHA path: open a landing whose Altcha is unverified \u2014 watch for \"[4ndr0tools] Download click deferred \u2014 Altcha solving.\" and NO trigger line while the PoW runs",
+        "Watch the Altcha data-state flip to verified \u2014 the trigger line lands shortly after (observer + grace), not before",
+        "If a widget never verifies, the \"captcha gate expired\" line fires at the 15s cap and the legacy click still lands"
+      ],
+      "expected": "The click timing ADJUSTS to the captcha state (the operator's r16 report): solving -> deferred (zero clicks spent into the closed PoW gate); verified -> the click lands within ~0.5s of the flip; no captcha -> the fast legacy click (the operator's successful log: trigger ~370ms after boot). MAX_CLICKS still bounds the total; the 4.1.5 fixed-grace swallow class is gone.",
+      "failureModes": [
+        {
+          "mode": "trigger line appears BEFORE the Altcha verified flip (the 4.1.5 fixed-grace timing)",
+          "meaning": "the 16a F02 class back \u2014 the click budget was spent into the closed PoW gate (the button enabled before verification; the handler gates on the captcha state)",
+          "mitigation": "revert-pin the captchaGated() wiring; the deferred line is the first diagnostic",
+          "reportEvidence": "timestamps of the deferral line, the Altcha data-state flip, and the trigger line (the deferral->flip->trigger ordering is the diagnostic)"
+        },
+        {
+          "mode": "no click ever lands on a slow-PoW page",
+          "meaning": "the 15s cap failed to fire (captchaCapTimer armed but cleared, or the gate probe threw repeatedly and degraded closed)",
+          "mitigation": "revert-pin the cap timer; the expiry line is the diagnostic",
+          "reportEvidence": "console showing the deferral line with no expiry line and no trigger line within 20s"
+        }
+      ],
+      "provenance": "WO-01 round-16 (16a F02): the operator's r16 field report \u2014 the confirmation bypass auto-click timing must adjust for the download button when solving a captcha vs not (the successful no-captcha log shows the trigger ~370ms after boot; a solving page swallowed the fixed-grace clicks).",
+      "risk": {
+        "downloadVolume": "the landing's own download only",
+        "networkExposure": "none beyond the landing page itself",
         "tosSensitivity": "low"
       }
     },
@@ -2203,9 +2273,9 @@
       },
       "steps": [
         "Hover the response's copy button; click it; immediately paste into a scratch pad; time it",
-        "Network-throttle gemini's image CDN to a slow profile once and repeat — the bounded wait must hold"
+        "Network-throttle gemini's image CDN to a slow profile once and repeat \u2014 the bounded wait must hold"
       ],
-      "expected": "The copy completes (clipboard holds the image — the processed/replacement variant when processing is on) within normal time; under throttling it settles within 20s (either processed or the original fallback) — the button NEVER wedges permanently (the pre-2.1.2 defect: pending-forever because ontimeout could never fire).",
+      "expected": "The copy completes (clipboard holds the image \u2014 the processed/replacement variant when processing is on) within normal time; under throttling it settles within 20s (either processed or the original fallback) \u2014 the button NEVER wedges permanently (the pre-2.1.2 defect: pending-forever because ontimeout could never fire).",
       "failureModes": [
         {
           "mode": "copy button dead past 20s / forever",
@@ -2215,7 +2285,7 @@
         },
         {
           "mode": "copy completes but the image is unprocessed silently",
-          "meaning": "replacement flow broken — see WM-CLP-02",
+          "meaning": "replacement flow broken \u2014 see WM-CLP-02",
           "mitigation": "see WM-CLP-02",
           "reportEvidence": "the pasted image"
         },
@@ -2226,7 +2296,7 @@
           "reportEvidence": "the error lines"
         }
       ],
-      "provenance": "8c F01/F04 (MAJOR) — 03dccb2 (WM 2.1.2) — the named WM Gemini clipboard residual",
+      "provenance": "8c F01/F04 (MAJOR) \u2014 03dccb2 (WM 2.1.2) \u2014 the named WM Gemini clipboard residual",
       "risk": {
         "downloadVolume": "none",
         "networkExposure": "your own Gemini account",
@@ -2263,7 +2333,7 @@
         "Paste into an image-capable surface",
         "Compare with the original"
       ],
-      "expected": "The pasted image is the processed (watermark-removed) variant when processing succeeded; when the original is unavailable, the ORIGINAL unprocessed image still lands (graceful degradation — never an empty clipboard).",
+      "expected": "The pasted image is the processed (watermark-removed) variant when processing succeeded; when the original is unavailable, the ORIGINAL unprocessed image still lands (graceful degradation \u2014 never an empty clipboard).",
       "failureModes": [
         {
           "mode": "empty clipboard on processing failure",
@@ -2273,7 +2343,7 @@
         },
         {
           "mode": "unprocessed always",
-          "meaning": "processing pipeline idle — check WM's own status UI/console",
+          "meaning": "processing pipeline idle \u2014 check WM's own status UI/console",
           "mitigation": "report the status state",
           "reportEvidence": "status UI screenshot"
         }
@@ -2330,7 +2400,7 @@
           "reportEvidence": "the lines"
         }
       ],
-      "provenance": "8c F02 — 03dccb2 (the 15s AbortController ceiling)",
+      "provenance": "8c F02 \u2014 03dccb2 (the 15s AbortController ceiling)",
       "risk": {
         "downloadVolume": "none",
         "networkExposure": "own account",
@@ -2391,11 +2461,11 @@
           "reportEvidence": "console excerpt"
         }
       ],
-      "provenance": "8c F03 — 03dccb2 (IG 13.2.3); the ARES family is long-standing",
+      "provenance": "8c F03 \u2014 03dccb2 (IG 13.2.3); the ARES family is long-standing",
       "risk": {
         "downloadVolume": "none",
         "networkExposure": "your own IG account; heavy scrolling mimics normal use",
-        "tosSensitivity": "moderate — authenticated DOM/wire as capture surface (the suite's standing stance)"
+        "tosSensitivity": "moderate \u2014 authenticated DOM/wire as capture surface (the suite's standing stance)"
       }
     },
     {
@@ -2424,7 +2494,7 @@
       "steps": [
         "Run the full battery on this matrix",
         "Additional: GM_download folder-qualified names land (DLP-04 Chrome arm)",
-        "GM_cookie live (WRM-01 — TM requires its cookie setting enabled)",
+        "GM_cookie live (WRM-01 \u2014 TM requires its cookie setting enabled)",
         "MV3 service-worker suspension must NOT kill long Forums++ downloads: verify a bunkr album completes while the tab is backgrounded"
       ],
       "expected": "All suite behaviors under the primary matrix; no [Forums++] / [4ndr0tools] error attributable to grant surfaces.",
@@ -2461,7 +2531,7 @@
           "mustContain": [
             "gbxBindListeners"
           ],
-          "atVersion": "1.13.8"
+          "atVersion": "1.13.9"
         }
       ],
       "env": {
@@ -2480,11 +2550,11 @@
         "Run FPP-GBX-01/02 (the poll-blindness lesson's designed path)",
         "Spot-check 3 resolver families + HL-SAV-01"
       ],
-      "expected": "Per-family expectations; FF-specific: per-file OS save dialogs are EXPECTED (saveAs semantics — note, don't fail).",
+      "expected": "Per-family expectations; FF-specific: per-file OS save dialogs are EXPECTED (saveAs semantics \u2014 note, don't fail).",
       "failureModes": [
         {
           "mode": "per-file names silently flip to the Chrome shape",
-          "meaning": "isFF (InstallTrigger) detection failed — a FUTURE Firefox dropping InstallTrigger is the named watch-item for this test",
+          "meaning": "isFF (InstallTrigger) detection failed \u2014 a FUTURE Firefox dropping InstallTrigger is the named watch-item for this test",
           "mitigation": "record the Firefox version; report",
           "reportEvidence": "the filename shapes + FF version"
         }
@@ -2508,7 +2578,7 @@
           "mustContain": [
             "typeof GM_cookie"
           ],
-          "atVersion": "1.13.8"
+          "atVersion": "1.13.9"
         }
       ],
       "env": {
@@ -2521,15 +2591,15 @@
       },
       "steps": [
         "Install Forums++ + Hailuo++ + Blob2URL on Violentmonkey",
-        "gofile flow: GM_cookie is NOT provided by VM — resolution must still work via the guest token in GM storage (only the cookie-sync warning appears)",
+        "gofile flow: GM_cookie is NOT provided by VM \u2014 resolution must still work via the guest token in GM storage (only the cookie-sync warning appears)",
         "gbx handshake: GM_addValueChangeListener works on VM (if not, the polling fallback must carry the bridge)",
-        "GM_download works (zip gate); Hailuo boots (the armed log line still required — document-start timing differs slightly on VM)"
+        "GM_download works (zip gate); Hailuo boots (the armed log line still required \u2014 document-start timing differs slightly on VM)"
       ],
       "expected": "No crash, no uncaught suite errors; only the documented degradations.",
       "failureModes": [
         {
           "mode": "uncaught 'GM_cookie is not defined'",
-          "meaning": "typeof-guard regression (the fail-closed contract broken) — the r1 'Forums++ Violentmonkey transport crash' class back",
+          "meaning": "typeof-guard regression (the fail-closed contract broken) \u2014 the r1 'Forums++ Violentmonkey transport crash' class back",
           "mitigation": "revert-pin",
           "reportEvidence": "the uncaught error + stack"
         },
@@ -2546,11 +2616,11 @@
           "reportEvidence": "the VM version + console"
         }
       ],
-      "provenance": "the manager-matrix family; the guards hardened r1 — regression watch since",
+      "provenance": "the manager-matrix family; the guards hardened r1 \u2014 regression watch since",
       "risk": {
         "downloadVolume": "low",
         "networkExposure": "low",
-        "tosSensitivity": "low — spot-check tier: a failure here is a finding, not a release blocker unless it is the crash class"
+        "tosSensitivity": "low \u2014 spot-check tier: a failure here is a finding, not a release blocker unless it is the crash class"
       }
     },
     {
@@ -2577,17 +2647,17 @@
         "prerequisites": []
       },
       "steps": [
-        "Load the site — assert HL's armed log fires",
+        "Load the site \u2014 assert HL's armed log fires",
         "Run HL-CAN-01 (canvas generation)",
         "Run HL-GEN-01 (video generation + bay)",
         "Open B2U's vault panel and confirm it still populates",
         "DevTools console: filter errors"
       ],
-      "expected": "No double-canvas-hook crash (both scripts wrap the same prototypes — whichever arms second must chain to the first's wrap; a TypeError or infinite recursion in canvas calls is the failure). HL canvas captures still land — NOTE: if Akasha's blinding blanks the canvas BEFORE HL's hook sees the commit, that is the documented semantic interference: record it as a finding (step AKS down to core/off via its valve and re-run — if capture then works, it's the semantic conflict, not a regression). B2U's NetHook wrap and HL's private wraps coexist; zero console errors attributable to any of the three.",
+      "expected": "No double-canvas-hook crash (both scripts wrap the same prototypes \u2014 whichever arms second must chain to the first's wrap; a TypeError or infinite recursion in canvas calls is the failure). HL canvas captures still land \u2014 NOTE: if Akasha's blinding blanks the canvas BEFORE HL's hook sees the commit, that is the documented semantic interference: record it as a finding (step AKS down to core/off via its valve and re-run \u2014 if capture then works, it's the semantic conflict, not a regression). B2U's NetHook wrap and HL's private wraps coexist; zero console errors attributable to any of the three.",
       "failureModes": [
         {
           "mode": "canvas call crashes (page rendering breaks)",
-          "meaning": "wrap-chaining regression — the exact class NetHook was built to fix for fetch/XHR; canvas has no shared hub",
+          "meaning": "wrap-chaining regression \u2014 the exact class NetHook was built to fix for fetch/XHR; canvas has no shared hub",
           "mitigation": "set AKS's valve to core/off on hailuoai.video; disable one wrapper; revert-pin",
           "reportEvidence": "which script armed second (console order) + the TypeError"
         },
@@ -2604,7 +2674,7 @@
           "reportEvidence": "console excerpt"
         }
       ],
-      "provenance": "the r6 2-c audit's co-install interference class — standing surface (FEATURE-MATRIX co-install domains)",
+      "provenance": "the r6 2-c audit's co-install interference class \u2014 standing surface (FEATURE-MATRIX co-install domains)",
       "risk": {
         "downloadVolume": "one generation",
         "networkExposure": "own account",
@@ -2645,13 +2715,13 @@
         "Install all 38",
         "Visit the five surfaces",
         "On each, DevTools console open for 60s+ of interaction (scroll, open/close the panels the suites inject)",
-        "Record every console error; attribute each (stack frame — script or not)"
+        "Record every console error; attribute each (stack frame \u2014 script or not)"
       ],
-      "expected": "Zero console errors whose stack lands inside a suite script (warnings/debug lines are designed observables — fine); every script that should surface on the page does.",
+      "expected": "Zero console errors whose stack lands inside a suite script (warnings/debug lines are designed observables \u2014 fine); every script that should surface on the page does.",
       "failureModes": [
         {
           "mode": "error at document-start on ANY page",
-          "meaning": "the e8072ea boot-death class — unguarded realm refs",
+          "meaning": "the e8072ea boot-death class \u2014 unguarded realm refs",
           "mitigation": "disable the offending script for the session; revert-pin",
           "reportEvidence": "the stack + page"
         },
@@ -2663,12 +2733,12 @@
         },
         {
           "mode": "a script's UI absent with no error",
-          "meaning": "SILENT boot failure — the worst class",
+          "meaning": "SILENT boot failure \u2014 the worst class",
           "mitigation": "record which script; disable for the session",
           "reportEvidence": "which script + screenshot"
         }
       ],
-      "provenance": "the standing suite-wide contract — every round's gate-certified claim has never had a live complement; this is the battery's capstone",
+      "provenance": "the standing suite-wide contract \u2014 every round's gate-certified claim has never had a live complement; this is the battery's capstone",
       "risk": {
         "downloadVolume": "low (5 sites, one profile)",
         "networkExposure": "moderate time",
