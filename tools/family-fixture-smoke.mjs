@@ -750,8 +750,23 @@ forceImmediateAnswer();`, hwCtx);
     const vdTable = mkTable(VD_MARKER);
     const embedTable = mkTable(EMBED_MARKER);
     const albumTable = mkTable(ALBUM_MARKER);
-    const harvestBoundary = new RegExp("((\\w+\\.)?(saint2.(su|pk|cr)|turbo\\.cr)\\/(embed|v|d)(?=[^a-z0-9]|$))", "i");
-    const harvestAlbumBoundary = new RegExp("((\\w+\\.)?(saint2.(su|pk|cr)|turbo\\.cr)\\/a(?=[^a-z0-9]|$))", "i");
+    /* 16a F01 (r16a amendment): the harvest patterns are EXTRACTED from the
+     * canon too — an inline copy would re-open the exact fixture-bypass
+     * class this assertion closes (a later revert of the canon's boundary
+     * would leave the fixture green, lying about reachability). */
+    const harvestSrcOf = hostMarker => {
+        const i = fppSrc.indexOf(hostMarker);
+        if (i === -1) throw new Error(`harvest marker missing: ${hostMarker}`);
+        const open = fppSrc.indexOf("[/", i);
+        const close = fppSrc.indexOf("/]]", open);
+        if (open === -1 || close === -1 || close - open > 400) throw new Error(`harvest pattern not adjacent to marker: ${hostMarker}`);
+        /* the pipeline's own placeholder substitution (parseHosts): ~an@ -> a
+         * class, the <no_qs>/<keep_ts> options stripped — the extracted form
+         * must be the one the walker actually compiles. */
+        return fppSrc.slice(open + 2, close).replace(/<no_qs>|<keep_ts>|~an@/g, mm => (mm === "~an@" ? "[a-zA-Z0-9]" : ""));
+    };
+    const harvestBoundary = new RegExp(harvestSrcOf("['Saint:video', ["), "i");
+    const harvestAlbumBoundary = new RegExp(harvestSrcOf("['Saint:albums', ["), "i");
     assert(
         "6B3. table+harvest reachability for the walker-stripped forms (16a F01): bare '/embed', '/v', '/d' and '/a' MATCH their resolvers through the real dispatch; id-carrying and query forms still match; '/videos', '/api/sign?v=x', '/embedx', '/about' stay out (no false positives); the harvest boundary accepts slashless bare hrefs while rejecting route-lookalikes",
         vdTable.test("https://turbo.cr/v") && vdTable.test("https://turbo.cr/d") &&
