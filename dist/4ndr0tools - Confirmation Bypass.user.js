@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Confirmation Bypass
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      4.1.5
+// @version      4.1.6
 // @author       4ndr0666
 // @description  Reveals forum invisi-text, view all replies, rewrite redirect links. Download Gate: bypass all confirmation pages on all sites, glass overlay copy/download URL (incl. vidara embeds on xcandid), auto-solve Altcha, auto-click download. Turbo: embed routing, upload injector. Util: external link safety, right-click scrollbar to top.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -94,7 +94,7 @@
 // identities in one console since promotion; 4-c F04); the v4.0.4 suite
 // banner at boot is the single identity.
 // 4.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1.4 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1.6 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px');
 
 
 /* ═══ SUITE PROMOTION 4.0.0 ═══════════════════════════════════════════
@@ -890,6 +890,16 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
     // buttons; and if the page has not navigated REARM_MS after the click,
     // the trigger re-arms exactly once (a handler that was not ready in
     // time can swallow click #1 — MAX_CLICKS bounds the loop).
+    // 4.1.6 (16a F02): CAPTCHA-AWARE CLICK TIMING — the operator's r16 field
+    // report: the fixed grace is tuned for the no-captcha page (click #1
+    // ~370 ms after boot — the successful log) but a page whose Altcha is
+    // still solving can swallow the click: the button may enable BEFORE the
+    // PoW verifies, the handler checks the captcha state internally, and
+    // both MAX_CLICKS are spent into the closed gate. The trigger now
+    // defers the click while any .altcha widget is unverified/verifying
+    // (the solver's own state vocabulary) and lands it after the verified
+    // flip; a bounded cap preserves the legacy fast click if a widget never
+    // resolves — never worse than the 4.1.5 timing.
     // ══════════════════════════════════════════════════════════════════════════
     function initializeDownloadTrigger() {
         const SELECTOR  = '#downloadBtn';
@@ -903,10 +913,19 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
         const GRACE_MS  = 300;  // legacy v3.5.2 grace — restored 4.1.0 (2-b F03)
         const REARM_MS  = 1600; // swallow window before the single re-arm
         const MAX_CLICKS = 2;
+        /* v4.1.6 (16a F02): the PoW gate — .altcha state vocabulary shared
+         * with U_Altcha_Solver's own scan ('unverified' | 'verifying'). An
+         * 'error' widget does NOT gate (the click is legacy-timed — earlier
+         * is more diagnostic than never). */
+        const ALTCHA_UNVERIFIED_SEL = '.altcha[data-state="unverified"], .altcha[data-state="verifying"]';
+        const CAPTCHA_WAIT_MAX_MS = 15000; // bounded: the legacy click still fires if a widget never resolves
 
         const landingHref = window.location.href;
         const scheduled = new WeakSet();
         let clicks = 0;
+        let captchaCapped = false;      // 16a F02: the wait cap fired — gate opens permanently
+        let captchaCapTimer = null;     // 16a F02: the one-shot cap timer
+        let captchaDeferredLogged = false; // 16a F02: the single deferral evidence line
         let obs = null;
         let rearmLabel = ''; // 7b F17: the label at click time — a busy control usually swaps it
         let clickedNode = null; // 8b F07/F16: element identity of click #1
@@ -926,9 +945,46 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
             return null;
         };
 
+        /* v4.1.6 (16a F02): the captcha-aware timing helpers — see the unit
+         * header. altchaSolving reads the PAGE's own truth (the widget's
+         * data-state), never our solver's dispatch: a synthetic check event
+         * proves intent, the state flip proves the PoW actually ran. The
+         * probe itself is fail-open (a throw degrades to the legacy timing,
+         * never a wedged trigger). */
+        const altchaSolving = () => {
+            try {
+                return document.querySelector(ALTCHA_UNVERIFIED_SEL) !== null;
+            } catch (probeError) {
+                console.debug('[4ndr0tools] altcha state probe rejected:', probeError && probeError.message);
+                return false;
+            }
+        };
+
+        const armCaptchaCap = () => {
+            if (captchaCapTimer || captchaCapped) return;
+            captchaCapTimer = window.setTimeout(() => {
+                captchaCapTimer = null;
+                captchaCapped = true;
+                console.log('[4ndr0tools] Altcha not verified after ' + CAPTCHA_WAIT_MAX_MS + ' ms — proceeding with the download click (captcha gate expired).');
+                attempt();
+            }, CAPTCHA_WAIT_MAX_MS);
+        };
+
+        const captchaGated = () => {
+            if (captchaCapped) return false;
+            if (!altchaSolving()) return false;
+            if (!captchaDeferredLogged) {
+                captchaDeferredLogged = true;
+                console.log('[4ndr0tools] Download click deferred — Altcha solving.');
+            }
+            armCaptchaCap();
+            return true;
+        };
+
         const clickDownload = (btn) => {
             if (btn.hasAttribute('data-cb4-dl-clicked')) return true;
             if (btn.disabled) return false; // captcha still solving — stay armed
+            if (captchaGated()) return false; // 16a F02: never spend a click into the closed PoW gate
             btn.setAttribute('data-cb4-dl-clicked', 'true');
             clicks += 1;
             clickedNode = btn; // 8b F07/F16: identity, not visual state
@@ -1015,7 +1071,17 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
                             || (btn.textContent || '').trim() !== rearmLabel;
                         if (busy) return;
                         btn.removeAttribute('data-cb4-dl-clicked');
-                        window.setTimeout(() => { clickDownload(btn); }, GRACE_MS);
+                        window.setTimeout(() => {
+                            if (clickDownload(btn)) return;
+                            /* v4.1.6 (16a F02): the re-click was gated (the
+                             * captcha re-armed, or the button re-disabled) —
+                             * make the node re-attemptable and route the retry
+                             * through the observer path so the verified flip
+                             * still lands click #2 within its MAX_CLICKS
+                             * budget instead of dead-ending the trigger. */
+                            scheduled.delete(btn);
+                            attempt();
+                        }, GRACE_MS);
                     }
                 }
             }, REARM_MS);
@@ -1025,6 +1091,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
             const btn = findButton();
             if (!btn) return false;
             if (btn.disabled) return false; // G6: stay armed for the flip
+            if (captchaGated()) return false; // 16a F02: the click budget waits for the verified flip
             if (scheduled.has(btn)) return false;
             scheduled.add(btn);
             // The restored grace sleep: dispatch after GRACE_MS so the
@@ -1069,12 +1136,16 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
             childList:       true,
             subtree:         true,
             attributes:      true,
-            attributeFilter: ['disabled'],
+            /* v4.1.6 (16a F02): 'data-state' joins the filter — the Altcha
+             * verified flip is an ATTRIBUTE change with no childList churn,
+             * and it is the exact moment the deferred click must land. */
+            attributeFilter: ['disabled', 'data-state'],
         });
         window.addEventListener('beforeunload', () => {
             if (obs) obs.disconnect();
             if (attemptDebounce) { window.clearTimeout(attemptDebounce); attemptDebounce = null; } // 8b F17
             if (reactionObs) { reactionObs.disconnect(); reactionObs = null; } // 8b F07
+            if (captchaCapTimer) { window.clearTimeout(captchaCapTimer); captchaCapTimer = null; } // 16a F02
         }, { once: true });
     }
 

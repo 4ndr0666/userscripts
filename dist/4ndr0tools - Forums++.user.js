@@ -3,7 +3,7 @@
 // @name        4ndr0tools - Forums++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     1.13.8
+// @version     1.13.9
 // @description Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @match       https://simpcity.su/threads/*
@@ -1540,7 +1540,7 @@ const __4NDR0_NET_API__ = (function () {
 // Content-Disposition filename decodeURIComponent site degrades losslessly
 // on malformed input instead of throwing (4-c F05).
 // 1.9.2 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Forums++.user v1.13.6 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Forums++.user v1.13.9 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 /* global JSZip, tippy, GM_xmlhttpRequest, saveAs, sha256, GM_download, GM_getValue, GM_setValue, GM_addValueChangeListener, GM_openInTab, GM_cookie, GM_deleteValue */
 
@@ -3006,6 +3006,39 @@ const xfpdTurboSignUrlWithTimeout = async (turboId, refererUrl, nameHint) => {
     return signed;
 };
 
+/* v1.13.9 (16a F01): the bare-route recovery — a walker-stripped saint link
+ * ("https://turbo.cr/embed", "/v", "/d") carries no id, but the ROUTE itself
+ * may still name the media (a site-side move of the id, a redirect-to-video,
+ * a single-item page). One bounded fetch decides: exactly ONE distinct
+ * video id -> the caller runs the normal sign ladder on it; a direct
+ * <source>/<video> on an otherwise id-free page -> the direct URL; zero or
+ * MANY ids -> dead route or a listing, and the named refusal carries the
+ * route's answer (the operator's r16 field report — "FOUND 0 RESOURCE(S)"
+ * on "https://turbo.cr/embed" — gets a WHY either way). The v1.13.8 refusal
+ * was correct but UNREACHABLE: the table regex demanded the very trailing
+ * slash the walker strips, so the bare form fell to the generic line and the
+ * fixture (which called the resolver directly) never saw it. */
+const xfpdTurboRecoverBareRoute = async (http, url) => {
+    try {
+        const { dom, source } = await http.get(url, {}, { Referer: url });
+        const ids = [...new Set(Array.from(
+            String(source || '').matchAll(/\/(?:embed|v|d)\/([a-zA-Z0-9_-]{4,})/gi),
+            m => m[1]
+        ))];
+        if (ids.length === 1) return { id: ids[0], direct: null, named: 1 };
+        if (ids.length === 0) {
+            const src = dom?.querySelector('source[src]')?.getAttribute('src')
+                || dom?.querySelector('video[src]')?.getAttribute('src')
+                || null;
+            if (src) return { id: null, direct: new URL(src, url).toString(), named: 0 };
+        }
+        return { id: null, direct: null, named: ids.length };
+    } catch (e) {
+        console.debug('[Forums++] turbo bare-route recovery rejected:', e && e.message);
+        return { id: null, direct: null, named: -1 };
+    }
+};
+
 /* ── Goonbox same-origin API bridge (lineage L598-1071) ──────────────────
  * Goonbox's API sits behind Cloudflare and needs first-party cookies; a
  * GM_xmlhttpRequest from the forum tab is third-party and 403s on Firefox.
@@ -4017,8 +4050,8 @@ const hosts = [
     ['Pixhost:image', [/(t|img)(\d+)?\.pixhost.to\//, /pixhost.to\/gallery\//]],
     ['Imagebam:image', [/imagebam.com\/(view|gallery)/]],
     ['Imagebam:full embed', [/images\d.imagebam.com/]],
-    ['Saint:video', [/((\w+\.)?(saint2.(su|pk|cr)|turbo\.cr)\/(embed|v|d)\/)|(([~an@]+\.)?saint2.(su|pk|cr)\/videos)/]],
-    ['Saint:albums', [/((\w+\.)?(saint2.(su|pk|cr)|turbo\.cr)\/a\/)/]],
+    ['Saint:video', [/((\w+\.)?(saint2.(su|pk|cr)|turbo\.cr)\/(embed|v|d)(?=[^a-z0-9]|$))|(([~an@]+\.)?saint2.(su|pk|cr)\/videos)/]],
+    ['Saint:albums', [/((\w+\.)?(saint2.(su|pk|cr)|turbo\.cr)\/a(?=[^a-z0-9]|$))/]],
     ['Redgifs:video', [/!!redgifs.com(\/|\\\/)(ifr|watch|gifs\/detail|gifs\/watch).*?(?="|&quot;)/]],
     ['Redgifs:user', [/redgifs\.com\/users\//]],
     ['Bunkr:',
@@ -5638,15 +5671,23 @@ const resolvers = [
      * 2 jittered retries, fn= filename preservation), embed <source>/<video> DOM
      * fallback, then the /d/ route as the last resort (lineage L4376-4542). */
     [
-        [/(([\w-]+\.)?(saint2.(su|pk|cr)|turbo\.cr))\/a\//],
+        [/(([\w-]+\.)?(saint2.(su|pk|cr)|turbo\.cr))\/a(\/|$|\?|#)/],
         async (url, http, spoilers, postId) => {
+            /* v1.13.9 (16a F01): the stripped bare /a route must refuse BEFORE
+             * the fetch — the table regex now matches the walker-stripped form
+             * ("https://turbo.cr/a"), and walking the site's album INDEX as
+             * if it were one album would download the wrong thing. */
+            const mAlbum = url.match(/\/a\/([^\/?#]+)/i);
+            const albumId = mAlbum ? mAlbum[1] : null;
+            if (!albumId) {
+                log.host.error(postId, `::Malformed turbo/saint2 album link (no slug)::: ${url}`, 'turbo.cr');
+                return null;
+            }
             try {
                 const { dom, source } = await http.get(url);
 
                 // Album folder naming (stable + readable): turbo_<albumId> - <title>
-                const mAlbum = url.match(/\/a\/([^\/?#]+)/i);
-                const albumId = mAlbum ? mAlbum[1] : null;
-                const base = albumId ? `turbo_${albumId}` : 'turbo_album';
+                const base = `turbo_${albumId}`;
 
                 const rawTitle = dom?.querySelector('h1')?.textContent?.trim() || '';
                 const invalidSub = settings.naming.invalidCharSubstitute || '_';
@@ -5749,20 +5790,31 @@ const resolvers = [
         },
     ],
     [
-        [/(([\w-]+\.)?(saint2.(su|pk|cr)|turbo\.cr))\/(v|d)\//],
+        [/(([\w-]+\.)?(saint2.(su|pk|cr)|turbo\.cr))\/(v|d)(\/|$|\?|#)/],
         async (url, http, _, postId) => {
-            const mm = url.match(/\/(v|d)\/([^\/?#]+)/i);
-            const id = mm ? mm[2] : null;
+            let mm = url.match(/\/(v|d)\/([^\/?#]+)/i);
+            let id = mm ? mm[2] : null;
             /* v1.13.8 (15a F03): a bare /v or /d route with no id used to
              * be RETURNED as the resolved media URL — the downloader then
              * fetched an HTML page as the "video" (silent wrong-behavior,
              * the FPP-RES-09 sibling class). Named and refused now; a
              * query-carrying URL keeps the legacy pass-through (it may
-             * still be a genuine direct route). */
+             * still be a genuine direct route).
+             * v1.13.9 (16a F01): REACHABLE now — the table regex demanded
+             * the trailing slash the walker strips, so the v1.13.8 refusal
+             * never fired through the pipeline; and before refusing, the
+             * bare-route recovery gives a site-side move of the id one
+             * bounded chance to resolve. */
             if (!id) {
                 if (url.includes('?')) return url;
-                log.host.error(postId, `::Malformed turbo/saint2 link (no id)::: ${url}`, 'turbo.cr');
-                return null;
+                const rec = await xfpdTurboRecoverBareRoute(http, url);
+                if (rec.direct) return rec.direct;
+                if (rec.id) {
+                    id = rec.id;
+                } else {
+                    log.host.error(postId, `::Malformed turbo/saint2 link (no id${rec.named > 1 ? ` — route names ${rec.named} videos (a listing)` : rec.named < 0 ? ' — route fetch failed' : ''})::: ${url}`, 'turbo.cr');
+                    return null;
+                }
             }
 
             const origin = xfpdTurboOrigin(url);
@@ -5795,18 +5847,36 @@ const resolvers = [
         },
     ],
     [
-        [/(([\w-]+\.)?(saint2.(su|pk|cr)|turbo\.cr))\/embed\//],
+        [/(([\w-]+\.)?(saint2.(su|pk|cr)|turbo\.cr))\/embed(\/|$|\?|#)/],
         async (url, http, _, postId) => {
-            const m = url.match(/\/embed\/([^\/?#]+)/i);
-            const id = m ? m[1] : null;
+            let m = url.match(/\/embed\/([^\/?#]+)/i);
+            let id = m ? m[1] : null;
             /* v1.13.8 (15a F02): the bare embed — an href ".../embed/" walks
              * to "https://turbo.cr/embed" once the trailing slash is
              * stripped — died as a generic "could not resolve" with zero
-             * diagnosis (FPP-RES-09). Named now: the link itself carries
-             * no id; no resolver can invent one. */
+             * diagnosis (FPP-RES-09). Named: the link itself carries no id.
+             * v1.13.9 (16a F01): REACHABLE now — the v1.13.8 table regex
+             * demanded the very slash the walker strips, so the named
+             * refusal NEVER fired through the real pipeline (the fixture
+             * called the resolver directly and never saw the stripped form;
+             * the operator's r16 re-run still got the generic line). The
+             * bare-route recovery runs first: if the site moved the id, the
+             * download still completes; if the route is dead or a listing,
+             * the named refusal now carries the route's answer. */
             if (!id) {
-                log.host.error(postId, `::Malformed turbo/saint2 embed link (no id)::: ${url}`, 'turbo.cr');
-                return null;
+                const rec = await xfpdTurboRecoverBareRoute(http, url);
+                if (rec.direct) return rec.direct;
+                if (rec.id) {
+                    id = rec.id;
+                    /* The recovered id resolves EXACTLY like an id-carrying
+                     * embed link: the downstream sign referer and the DOM
+                     * fallback must target the CANONICAL embed page, not the
+                     * bare route the recovery just fetched. */
+                    url = `${xfpdTurboOrigin(url)}/embed/${id}`;
+                } else {
+                    log.host.error(postId, `::Malformed turbo/saint2 embed link (no id${rec.named > 1 ? ` — route names ${rec.named} videos (a listing)` : rec.named < 0 ? ' — route fetch failed' : ''})::: ${url}`, 'turbo.cr');
+                    return null;
+                }
             }
 
             try {
@@ -5831,7 +5901,14 @@ const resolvers = [
                 console.debug('[Forums++] turbo embed DOM fallback rejected:', e && e.message);
             }
 
-            return null;
+            /* v1.13.9 (16a F01): the /d/ direct-route last resort — the
+             * round-6 family contract named it for the whole turbo/saint2
+             * family and BOTH siblings (the /v|d resolver and the album
+             * walker) end there, but the embed resolver dead-ended at null:
+             * an id-carrying embed link with sign + DOM both failing (a
+             * CF-gated embed page, a sign outage) resolved NOTHING. The
+             * family's asymmetry closes here. */
+            return `${xfpdTurboOrigin(url)}/d/${id}`;
         },
     ],
     /* v1.12.0 (round 6): Redgifs users pagination walker — count=80 pages,
