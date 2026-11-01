@@ -1307,12 +1307,34 @@ async function gateD() {
      * canon-kernel wiring gate cross-checks the dist splice separately). */
     const suiteRound = "v" + readJsonCached("package.json").version;   /* WO-01 round-2 (6-a F09): cached single read */
     let netConsumerCount = 0;
+    /* WO-01 round-16 (16a F03): the banner-symmetry gate — the round-2
+     * 6-a F16 class, finally closed repo-wide: a version roll that updates
+     * @version but not the init banner leaves the console lying about what
+     * is running (the operator's r16 field log printed CB "v4.1.4" from a
+     * 4.1.5 canon — misdating the evidence; six more stale banners swept
+     * the same round: Forums++ 1.13.6, LFA 2.0.9, Pixeldrain 1.2.4,
+     * Watermark 2.1.2, YTERB 2.0.5, Images++ 4.0.6). Fail-closed: every
+     * canon script whose banner names a version must name ITS @version. */
+    const bannerDrift = [];
+    let bannerScripts = 0;
     for (const cd of ["_sovereign", "_promoted", "_merged"]) {
         const dir = path.join(ROOT, "canon", cd);
         if (!fs.existsSync(dir)) continue;
         for (const f of fs.readdirSync(dir).filter((x) => x.endsWith(".user.js"))) {
-            if (fs.readFileSync(path.join(dir, f), "utf8").includes("__4NDR0_NET_API__")) netConsumerCount++;
+            const src = fs.readFileSync(path.join(dir, f), "utf8");
+            if (src.includes("__4NDR0_NET_API__")) netConsumerCount++;
+            const vm = src.match(/^\/\/ @version\s+(\S+)/m);
+            const bm = src.match(/console\.log\('%c[^']*\]:\s*([^'—]+?)\s*v(\d+\.\d+\.\d+)/);
+            if (vm && bm) {
+                bannerScripts++;
+                if (bm[2] !== vm[1]) bannerDrift.push(`${cd}/${f} (@version ${vm[1]} vs banner v${bm[2]})`);
+            }
         }
+    }
+    if (bannerDrift.length) {
+        failures.push(`[D] banner/version symmetry violated (${bannerDrift.join(", ")}) — a version roll that leaves the init banner stale makes the console misdate the running build (the round-2 6-a F16 class; gate wired round-16 after six stale banners were swept)`);
+    } else {
+        passes.push(`[D] banner/version symmetry verified (${bannerScripts} canon banners, zero drift — the init banner names the @version it ships)`);
     }
     /* WO-01 round-2 (6-a F09/g): the inventory-parity verdict now computes
      * BEFORE the production score writes tools/score.json — the round-1

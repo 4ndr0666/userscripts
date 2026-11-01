@@ -677,6 +677,10 @@ forceImmediateAnswer();`, hwCtx);
     // code under test is the canon, not an inline copy). Stubs carry the
     // free references; the no-id branches return before touching any of
     // the network machinery.
+    // 16a F01: the v1.13.8 contracts were correct but UNREACHABLE — the
+    // fixture called the resolver directly while the pipeline's walker
+    // strips the trailing slash the TABLE regex demanded (6B3 pins the
+    // reachability now; the recovery ladder lands in 6B4).
     const r15Errors = [];
     const log = { host: { error: (...a) => r15Errors.push(a), info() {}, warn() {} } };
     const turboIdBySignedUrl = new Map();
@@ -687,7 +691,7 @@ forceImmediateAnswer();`, hwCtx);
         const idx = fppSrc.indexOf(marker);
         if (idx === -1) throw new Error(`saint resolver marker missing: ${marker}`);
         const fnIdx = fppSrc.indexOf("async (url", idx);
-        if (fnIdx === -1 || fnIdx - idx > 400) throw new Error("resolver function not adjacent to marker");
+        if (fnIdx === -1 || fnIdx - idx > 600) throw new Error("resolver function not adjacent to marker");
         const bodyOpen = fppSrc.indexOf("{", fnIdx);
         let depth = 1;
         for (let i = bodyOpen + 1; i < fppSrc.length; i++) {
@@ -696,10 +700,27 @@ forceImmediateAnswer();`, hwCtx);
         }
         throw new Error("unbalanced saint resolver body");
     };
-    const VD_MARKER = "[/(([\\w-]+\\.)?(saint2.(su|pk|cr)|turbo\\.cr))\\/(v|d)\\//],";
-    const EMBED_MARKER = "[/(([\\w-]+\\.)?(saint2.(su|pk|cr)|turbo\\.cr))\\/embed\\//],";
+    const VD_MARKER = "[/(([\\w-]+\\.)?(saint2.(su|pk|cr)|turbo\\.cr))\\/(v|d)(\\/|$|\\?|#)/],";
+    const EMBED_MARKER = "[/(([\\w-]+\\.)?(saint2.(su|pk|cr)|turbo\\.cr))\\/embed(\\/|$|\\?|#)/],";
+    const ALBUM_MARKER = "[/(([\\w-]+\\.)?(saint2.(su|pk|cr)|turbo\\.cr))\\/a(\\/|$|\\?|#)/],";
+    /* 16a F01: the recovery helper is the SHIPPED code too — extracted and
+     * executed, never stubbed, so the no-id refusals below run the real
+     * ladder against the dead-route mock. */
+    const REC_MARKER = "const xfpdTurboRecoverBareRoute = async (http, url) => {";
+    const recIdx = fppSrc.indexOf(REC_MARKER);
+    if (recIdx === -1) throw new Error("bare-route recovery helper not found in canon");
+    const recFnIdx = fppSrc.indexOf("async (http, url) => {", recIdx);
+    const recBodyOpen = fppSrc.indexOf("{", recFnIdx);
+    let recDepth = 1;
+    let recEnd = -1;
+    for (let i = recBodyOpen + 1; i < fppSrc.length; i++) {
+        if (fppSrc[i] === "{") recDepth++;
+        else if (fppSrc[i] === "}") { recDepth--; if (recDepth === 0) { recEnd = i + 1; break; } }
+    }
+    const xfpdTurboRecoverBareRoute = eval("(" + fppSrc.slice(recFnIdx, recEnd) + ")");
     const vdResolver = eval("(" + extractSaintResolver(VD_MARKER) + ")");
     const embedResolver = eval("(" + extractSaintResolver(EMBED_MARKER) + ")");
+    const albumResolver = eval("(" + extractSaintResolver(ALBUM_MARKER) + ")");
 
     const embedNoId = await embedResolver("https://turbo.cr/embed", r15Http, [], "POST-T1");
     const vdNoId = await vdResolver("https://turbo.cr/v", r15Http, [], "POST-T2");
@@ -714,6 +735,79 @@ forceImmediateAnswer();`, hwCtx);
     assert(
         "6B2. superset guard: the /v|d resolver's legacy query passthrough ('https://turbo.cr/d?id=x' returned verbatim) and the real-id ladder (sign miss -> embed DOM miss -> the /d/{id} direct-route fallback 'https://turbo.cr/d/abc123') are intact",
         vdQueryLegacy === "https://turbo.cr/d?id=x" && vdRealId === "https://turbo.cr/d/abc123"
+    );
+
+    // 6B3. THE PIPELINE-REACHABILITY PIN (16a F01) — the r15 defect class:
+    // the walker strips the trailing slash (parseHosts' stripTrailingSlash
+    // has no <keep_ts> on the Saint matchers), so the bare href
+    // 'https://turbo.cr/embed/' presents as 'https://turbo.cr/embed' — and
+    // the v1.13.8 table regexes demanded the stripped slash, so the named
+    // refusals NEVER fired through the real dispatch (the operator's r16
+    // re-run still got the generic 'Could not resolve' + 'FOUND 0
+    // RESOURCE(S)'). The table and harvest patterns are rebuilt from the
+    // canon and tested against the PIPELINE-NORMALIZED forms.
+    const mkTable = marker => new RegExp(marker.slice(2, marker.lastIndexOf("/],")), "is");
+    const vdTable = mkTable(VD_MARKER);
+    const embedTable = mkTable(EMBED_MARKER);
+    const albumTable = mkTable(ALBUM_MARKER);
+    const harvestBoundary = new RegExp("((\\w+\\.)?(saint2.(su|pk|cr)|turbo\\.cr)\\/(embed|v|d)(?=[^a-z0-9]|$))", "i");
+    const harvestAlbumBoundary = new RegExp("((\\w+\\.)?(saint2.(su|pk|cr)|turbo\\.cr)\\/a(?=[^a-z0-9]|$))", "i");
+    assert(
+        "6B3. table+harvest reachability for the walker-stripped forms (16a F01): bare '/embed', '/v', '/d' and '/a' MATCH their resolvers through the real dispatch; id-carrying and query forms still match; '/videos', '/api/sign?v=x', '/embedx', '/about' stay out (no false positives); the harvest boundary accepts slashless bare hrefs while rejecting route-lookalikes",
+        vdTable.test("https://turbo.cr/v") && vdTable.test("https://turbo.cr/d") &&
+        embedTable.test("https://turbo.cr/embed") && albumTable.test("https://turbo.cr/a") &&
+        embedTable.test("https://turbo.cr/embed/abc123") && vdTable.test("https://turbo.cr/v/abc123") && albumTable.test("https://turbo.cr/a/slug1") &&
+        vdTable.test("https://turbo.cr/d?id=x") && embedTable.test("https://turbo.cr/embed?x=1") &&
+        !vdTable.test("https://turbo.cr/videos") && !vdTable.test("https://turbo.cr/api/sign?v=x") &&
+        !embedTable.test("https://turbo.cr/embedx") && !albumTable.test("https://turbo.cr/about") &&
+        harvestBoundary.test("https://turbo.cr/embed") && harvestBoundary.test("https://turbo.cr/embed/") &&
+        !harvestBoundary.test("https://turbo.cr/embedx") && !harvestBoundary.test("https://turbo.cr/videos") &&
+        harvestAlbumBoundary.test("https://turbo.cr/a") && !harvestAlbumBoundary.test("https://turbo.cr/about")
+    );
+
+    // 6B4. THE BARE-ROUTE RECOVERY, EXECUTED (16a F01) — the shipped helper
+    // decides the bare link's fate: exactly ONE id named by the route -> the
+    // normal ladder resolves it; a direct <source>/<video> on an id-free
+    // page -> the direct URL; a listing (many ids) -> the named refusal
+    // carries the count; an unreachable route -> the named refusal carries
+    // the fetch failure. The operator's 'FOUND 0 RESOURCE(S)' gets a WHY in
+    // every branch — and a site-side move of the id still downloads.
+    const singleIdHttp = { get: async () => ({ dom: { querySelector: () => null }, source: '<a href="/embed/abc123">v</a>' }) };
+    const listingHttp = { get: async () => ({ dom: { querySelector: () => null }, source: '<a href="/embed/aaa111">1</a><a href="/embed/bbb222">2</a><a href="/v/ccc333">3</a>' }) };
+    const directHttp = { get: async () => ({ dom: { querySelector: () => ({ getAttribute: () => "https://cdn.turbo.cr/v/xyz.mp4" }) }, source: "<p>no route links</p>" }) };
+    const throwHttp = { get: async () => { throw new Error("403 CF"); } };
+    const embedRecovered = await embedResolver("https://turbo.cr/embed", singleIdHttp, [], "POST-T5");
+    const vdRecovered = await vdResolver("https://turbo.cr/v", singleIdHttp, [], "POST-T6");
+    const embedDirect = await embedResolver("https://turbo.cr/embed", directHttp, [], "POST-T7");
+    r15Errors.length = 0;
+    const embedListing = await embedResolver("https://turbo.cr/embed", listingHttp, [], "POST-T8");
+    const listingRefusal = r15Errors.some(a => String(a[1]).includes("route names 3 videos (a listing)"));
+    r15Errors.length = 0;
+    const embedUnreachable = await embedResolver("https://turbo.cr/embed", throwHttp, [], "POST-T9");
+    const unreachableRefusal = r15Errors.some(a => String(a[1]).includes("route fetch failed"));
+    assert(
+        "6B4. the bare-route recovery ladder, EXECUTED from the shipped helper (16a F01): single-id route -> recovered -> the /d/{id} direct route (both resolvers); id-free page with <source> -> the direct media URL; listing -> null + 'route names N videos (a listing)'; unreachable -> null + 'route fetch failed' — every no-id branch names its WHY, and a site-side move of the id still resolves",
+        embedRecovered === "https://turbo.cr/d/abc123" && vdRecovered === "https://turbo.cr/d/abc123" &&
+        embedDirect === "https://cdn.turbo.cr/v/xyz.mp4" &&
+        embedListing === null && listingRefusal &&
+        embedUnreachable === null && unreachableRefusal
+    );
+
+    // 6B5. THE FAMILY SYMMETRY (16a F01) — the bare /a route refuses NAMED
+    // ('no slug') BEFORE any fetch (the site's album INDEX can never be
+    // walked as one album), and the embed resolver now ends at the /d/{id}
+    // direct route like BOTH its siblings — the round-6 family contract
+    // ('then the /d/ route as the last resort') finally holds for all
+    // three resolvers.
+    let albumFetches = 0;
+    const albumHttp = { get: async () => { albumFetches += 1; return { dom: { querySelectorAll: () => [] }, source: "" }; } };
+    r15Errors.length = 0;
+    const albumBare = await albumResolver("https://turbo.cr/a", albumHttp, [], "POST-T10");
+    const albumRefusal = r15Errors.some(a => String(a[1]).includes("Malformed turbo/saint2 album link (no slug)"));
+    assert(
+        "6B5. family symmetry: bare '/a' -> null + 'Malformed turbo/saint2 album link (no slug)' with ZERO fetches, and the embed resolver's real-id ladder now ends at the /d/{id} last resort (sign miss + DOM miss -> 'https://turbo.cr/d/abc123') exactly like its /v|d and album siblings",
+        albumBare === null && albumFetches === 0 && albumRefusal &&
+        (await embedResolver("https://turbo.cr/embed/abc123", r15Http, [], "POST-T11")) === "https://turbo.cr/d/abc123"
     );
 
     // 6C. The Bunkr fail-visible floor (15a F04/F05/F06): the fallback anchor
@@ -814,11 +908,121 @@ forceImmediateAnswer();`, hwCtx);
 
     // 6E. Version stamps + the CB static contract surface.
     assert(
-        "6E. the round-15 stamps: Forums++ canon at 1.13.8, Confirmation Bypass canon at 4.1.5, and CB carries the MAM_CONTROL_TOKENS vocabulary + the uploadSessionLive gate verbatim",
-        /^\/\/ @version\s+1\.13\.8/m.test(fppSrc) &&
-        /^\/\/ @version\s+4\.1\.5/m.test(cbSrc) &&
+        "6E. the round-16 stamps: Forums++ canon at 1.13.9, Confirmation Bypass canon at 4.1.6 (header AND banner — the r15 banner drift closed), and CB carries the MAM_CONTROL_TOKENS vocabulary + the uploadSessionLive gate verbatim",
+        /^\/\/ @version\s+1\.13\.9/m.test(fppSrc) &&
+        /^\/\/ @version\s+4\.1\.6/m.test(cbSrc) &&
+        cbSrc.includes("Confirmation Bypass v4.1.6") &&
         cbSrc.includes("MAM_CONTROL_TOKENS") &&
         cbSrc.includes("uploadSessionLive")
+    );
+
+    // 6F. THE CAPTCHA-AWARE CLICK TIMING (16a F02), EXECUTED against the
+    // shipped initializeDownloadTrigger in a stub-DOM/timer sandbox: the
+    // operator's r16 field report — the fixed 300 ms grace is tuned for the
+    // no-captcha page (their successful log: trigger ~370 ms after boot)
+    // but a page whose Altcha is still solving can swallow the click (the
+    // button enables before the PoW verifies; the handler gates on the
+    // captcha state; both MAX_CLICKS are spent into the closed gate).
+    // Scenarios: (1) no captcha -> the legacy fast click; (2) solving ->
+    // DEFERRED with one evidence line; (3) the verified flip lands the
+    // click; (4) a never-verifying widget -> the bounded cap still delivers
+    // the legacy click (never worse than 4.1.5).
+    const TRIG_MARKER = "function initializeDownloadTrigger() {";
+    const trigIdx = cbSrc.indexOf(TRIG_MARKER);
+    if (trigIdx === -1) throw new Error("initializeDownloadTrigger not found in CB canon");
+    let trigDepth = 1;
+    let trigEnd = -1;
+    for (let i = trigIdx + TRIG_MARKER.length; i < cbSrc.length; i++) {
+        if (cbSrc[i] === "{") trigDepth++;
+        else if (cbSrc[i] === "}") { trigDepth--; if (trigDepth === 0) { trigEnd = i + 1; break; } }
+    }
+    const trigSrc = cbSrc.slice(trigIdx, trigEnd);
+
+    const bootTrigger = (altchaState, src = trigSrc) => {
+        const logs = [];
+        const timers = [];
+        const observers = [];
+        const btn = {
+            disabled: false,
+            attrs: {},
+            hasAttribute: a => a in btn.attrs,
+            getAttribute: a => (a in btn.attrs ? btn.attrs[a] : null),
+            setAttribute: (a, v) => { btn.attrs[a] = String(v); },
+            removeAttribute: a => { delete btn.attrs[a]; },
+            get textContent() { return "Download File"; },
+            get className() { return ""; },
+            dispatchEvent: () => true,
+        };
+        let state = altchaState;
+        const doc = {
+            setAltcha: s => { state = s; observers.forEach(o => o.cb()); },
+            querySelector: sel => {
+                if (sel === "#downloadBtn") return btn;
+                if (sel.includes(".altcha")) return (state === "unverified" || state === "verifying") ? { getAttribute: () => state } : null;
+                return null;
+            },
+            querySelectorAll: () => [],
+            addEventListener: () => {},
+        };
+        const win = {
+            location: { href: "https://turbo.cr/d/abc" },
+            setTimeout: (fn, ms) => { const t = { fn, ms, fired: false }; timers.push(t); return t; },
+            clearTimeout: () => {},
+            addEventListener: () => {},
+            MutationObserver: class { constructor(cb) { observers.push({ cb }); } observe() {} disconnect() {} },
+        };
+        const fakeConsole = { log: s => logs.push(String(s)), debug: () => {}, error: () => {} };
+        const fn = new Function("window", "document", "console", "MouseEvent", "MutationObserver", `'use strict'; return (${src})();`);
+        fn(win, doc, fakeConsole, class MouseEvent {}, win.MutationObserver);
+        const drain = maxSimMs => {
+            for (;;) {
+                const pending = timers.filter(t => !t.fired).sort((a, b) => a.ms - b.ms);
+                if (!pending.length || pending[0].ms > maxSimMs) break;
+                pending[0].fired = true;
+                pending[0].fn();
+            }
+        };
+        return { logs, btn, doc, drain };
+    };
+
+    const s1 = bootTrigger(null);
+    s1.drain(10000);
+    const noCaptcha = s1.btn.attrs["data-cb4-dl-clicked"] === "true" &&
+        s1.logs.some(l => l.includes("Download button triggered.")) &&
+        !s1.logs.some(l => l.includes("deferred"));
+
+    const s2 = bootTrigger("unverified");
+    s2.drain(5000);
+    const deferred = s2.btn.attrs["data-cb4-dl-clicked"] === undefined &&
+        s2.logs.some(l => l.includes("Download click deferred")) &&
+        !s2.logs.some(l => l.includes("Download button triggered."));
+
+    const s3 = bootTrigger("unverified");
+    s3.drain(5000);
+    s3.doc.setAltcha("verified");
+    s3.drain(2000);
+    const verifiedLands = s3.btn.attrs["data-cb4-dl-clicked"] === "true" &&
+        s3.logs.some(l => l.includes("Download button triggered."));
+
+    const s4 = bootTrigger("unverified");
+    s4.drain(20000);
+    const capDelivers = s4.logs.some(l => l.includes("captcha gate expired")) &&
+        s4.btn.attrs["data-cb4-dl-clicked"] === "true";
+
+    assert(
+        "6F. captcha-aware click timing, EXECUTED from the shipped trigger (16a F02): no-captcha page keeps the legacy fast click (trigger line, zero deferral); a solving Altcha DEFERS the click (guard unset + the evidence line); the verified flip lands the click; a never-verifying widget still gets the legacy click via the bounded cap — never worse than 4.1.5",
+        noCaptcha && deferred && verifiedLands && capDelivers
+    );
+
+    // 6F-red. The PoW gate stripped from a copied source reproduces the
+    // 4.1.5 timing defect: the with-captcha page spends its clicks while
+    // the Altcha is still solving — the battery sees it.
+    const trigSabotaged = trigSrc.split("if (captchaGated()) return false;").join("");
+    const sRed = bootTrigger("unverified", trigSabotaged);
+    sRed.drain(5000);
+    assert(
+        "6F-red. sabotage control: with the captchaGated() checks stripped, the solving page clicks immediately (guard set inside the 5 s window) — the exact 4.1.5 timing defect this round closes (the gate is load-bearing)",
+        sRed.btn.attrs["data-cb4-dl-clicked"] === "true" && trigSabotaged !== trigSrc
     );
 
     return { problems, passed, total };
@@ -831,5 +1035,5 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToP
         for (const p of r.problems) console.error(`  ✗ ${p}`);
         process.exit(1);
     }
-    console.log("  ✓ per-family contract fixture battery verified (Zai Exporter 3-strategy ladder, NetHook v6 veto/respond/traffic/onNode/gmFetch, red controls, Hailuo++ BlobSanitizer real-sample repair, the round-15 Forums++/CB field-settlement contracts with sabotage red controls)");
+    console.log("  ✓ per-family contract fixture battery verified (Zai Exporter 3-strategy ladder, NetHook v6 veto/respond/traffic/onNode/gmFetch, red controls, Hailuo++ BlobSanitizer real-sample repair, the round-15 Forums++/CB field-settlement contracts with sabotage red controls, the round-16 saint pipeline-reachability + bare-route recovery + family-symmetry contracts, and the round-16 captcha-aware click timing with its sabotage red control)");
 }
