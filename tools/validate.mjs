@@ -1341,13 +1341,17 @@ async function gateD() {
     } else {
         passes.push(`[D] banner/version symmetry verified (${bannerScripts} canon banners, zero drift — the init banner names the @version it ships)`);
     }
-    /* WO-01 round-17 (F09): the CONSTANT-DRIVEN banner class — YTPM's
-     * CFG.SCRIPT_VERSION read 1.7.4 while @version read 1.7.5 (the deck
+    /* WO-01 round-17 (F09, amended r17a): the CONSTANT-DRIVEN banner class —
+     * YTPM's CFG.SCRIPT_VERSION read 1.7.4 while @version read 1.7.5 (the deck
      * header, greet banner and diagnostics all misdated the build; the
      * literal-banner gate above cannot see an interpolated constant).
-     * Every SCREAMING_SNAKE *VERSION* constant assigned a semver literal
-     * must equal its file's @version — the Bunkr/WCP/Akasha/YTPM shapes
-     * all match today; any future drift fails closed naming the file. */
+     * Every SCREAMING_SNAKE *VERSION* constant assigned a semver literal —
+     * BOTH the declaration form (const SCRIPT_VERSION = '…') AND the object-
+     * property form (SCRIPT_VERSION: '…', the YTPM shape) — must equal its
+     * file's @version. The r17a amendment: the battery's own red control
+     * caught the first draft demanding the `const` prefix, which left the
+     * property form invisible — the gate's motivating case; both forms now
+     * match (Bunkr/WCP/Akasha declarations + the YTPM property, 4 total). */
     const constVersionDrift = [];
     let constVersionCount = 0;
     for (const cd of ["_sovereign", "_promoted", "_merged"]) {
@@ -1357,9 +1361,11 @@ async function gateD() {
             const src = fs.readFileSync(path.join(dir, f), "utf8");
             const vm = src.match(/^\/\/ @version\s+(\S+)/m);
             if (!vm) continue;
-            for (const cm of src.matchAll(/(?:const|let|var)\s+([A-Z][A-Z0-9_]*VERSION[A-Z0-9_]*)\s*[:=]\s*['"](\d+\.\d+\.\d+[^'"]*)['"]/g)) {
+            for (const cm of src.matchAll(/(?:const|let|var)\s+([A-Z][A-Z0-9_]*VERSION[A-Z0-9_]*)\s*=\s*['"](\d+\.\d+\.\d+[^'"]*)['"]|(?:^|[,{\n])\s*([A-Z][A-Z0-9_]*VERSION[A-Z0-9_]*)\s*:\s*['"](\d+\.\d+\.\d+[^'"]*)['"]/gm)) {
+                const name = cm[1] || cm[3];
+                const val = cm[2] || cm[4];
                 constVersionCount++;
-                if (cm[2] !== vm[1]) constVersionDrift.push(`${cd}/${f} (@version ${vm[1]} vs ${cm[1]} '${cm[2]}')`);
+                if (val !== vm[1]) constVersionDrift.push(`${cd}/${f} (@version ${vm[1]} vs ${name} '${val}')`);
             }
         }
     }

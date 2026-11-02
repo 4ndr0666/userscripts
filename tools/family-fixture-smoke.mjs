@@ -1347,5 +1347,5 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToP
         for (const p of r.problems) console.error(`  ✗ ${p}`);
         process.exit(1);
     }
-    console.log("  ✓ per-family contract fixture battery verified (Zai Exporter 3-strategy ladder, NetHook v6 veto/respond/traffic/onNode/gmFetch, red controls, Hailuo++ BlobSanitizer real-sample repair, the round-15 Forums++/CB field-settlement contracts with sabotage red controls, the round-16 saint pipeline-reachability + bare-route recovery + family-symmetry contracts, and the round-16 captcha-aware click timing with its sabotage red control)");
+    console.log("  ✓ per-family contract fixture battery verified (Zai Exporter 3-strategy ladder with the r17 constant-extraction pin, NetHook v6 veto/respond/traffic/onNode/gmFetch, red controls, Hailuo++ BlobSanitizer real-sample repair, the round-15 Forums++/CB field-settlement contracts with sabotage red controls, the round-16 saint pipeline-reachability + bare-route recovery + family-symmetry contracts, the round-16 captcha-aware click timing with its sabotage red control, and the round-17 unseen-pipeline contracts: the harvest alternation split, the finished CB timing state machine, the hardened upload receiver, and the MAM hover-announcement dedupe)");
 }
