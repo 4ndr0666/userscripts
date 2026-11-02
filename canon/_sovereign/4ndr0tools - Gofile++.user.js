@@ -2,7 +2,7 @@
 // @name        4ndr0tools - GoFile++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     2.3.0
+// @version     2.4.0
 // @description Directly batch-download GoFiles with a robust UI. Supports recursive folder scans, direct links, and download managers (Aria2, IDM). Fixing SPA persistence and Sandbox access.
 // @match       *://*.gofile.io/*
 // @icon        data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -16,6 +16,16 @@
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Gofile++.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Gofile++.user.js
 // ==/UserScript==
+// 2.4.0 (WO-01 round 17): THE DISPATCH AUTH ERA — the external-manager
+// dispatches (ABDM, aria2, IDM .ef2 export) still attached the pre-2023
+// `Cookie: document.cookie` credential the script's own v2.3.0 note
+// declares DEAD (guest context lives in the account token, not the page
+// jar): the recursive scan succeeded via Bearer while the dispatched
+// downloads 401/403'd on token-gated content — the scan and the download
+// disagreed about the auth model. All three dispatch surfaces now carry
+// the live guest-account token as the accountToken cookie (browser-session
+// parity for the web download links the resolver emits), and the dead
+// utils.getToken() helper is retired with them (zero callers remain).
 // 2.3.0 (suite v1.19.0, WO-01 round 11): THE ZERO-AVAIL BATCH — the
 // operator's battery run fired Gofile++ up 'to absolutely zero avail'
 // (11a-F01..F04). (1) @match widens to *://*.gofile.io/* — the exact-host
@@ -36,7 +46,7 @@
 // panel's liveness keeper (11a-F08), and the dead classList remnant is
 // gone (11a-F09).
 // 2.1.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.3.0 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.4.0 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 
 ; (function () {
@@ -548,7 +558,10 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.3.0 —
             const lang = I18N[navigator.language] ? navigator.language : DEFAULT_LANGUAGE
             return I18N[lang][key] || key
         },
-        getToken: () => document.cookie, /* v2.3.0: no longer the API auth path (11a-F03) — kept for diagnostics */
+        /* v2.4.0 (r17 F07): getToken() retired — the pre-2023
+         * `Cookie: document.cookie` dispatch credential it served is dead
+         * (see the v2.3.0 getContent note) and its three call sites now
+         * carry the guest-account token instead. */
         goDirectLinks(links) {
             let blocked = 0;
             links.forEach((link) => {
@@ -673,9 +686,14 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.3.0 —
                 })
             }
         },
-        sendToABDM(tbdItems) {
+        async sendToABDM(tbdItems) {
             const { abdmPort, abdmDownloadFolder } = utils.getAllSettings('ABDM')
-            const cookie = utils.getToken()
+            /* v2.4.0 (r17 F07): the dispatch rides the CURRENT auth era —
+             * the guest-account token as the accountToken cookie
+             * (browser-session parity for the web download links), not the
+             * dead pre-2023 page-jar credential. */
+            const token = await getGuestToken()
+            const cookie = token ? `accountToken=${token}` : ''
 
             if (!abdmPort) {
                 return createNotification(utils.getTranslation('error'), utils.getTranslation('abdm_port_not_configured'), 'error')
@@ -685,9 +703,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.3.0 —
                 return {
                     downloadSource: {
                         link: item.link,
-                        headers: {
-                            cookie,
-                        },
+                        headers: cookie ? { cookie } : {},
                     },
                     name: item.name,
                     folder: item.downloadFolder || (abdmDownloadFolder === '' ? '/' : abdmDownloadFolder),
@@ -756,9 +772,11 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.3.0 —
         async sendToAria2(tbdItems) {
             const { rpcAddress, rpcSecret, rpcDir } = utils.getAllSettings('Aria2')
 
-            const cookie = utils.getToken()
-
-            const header = [`Cookie: ${cookie}`]
+            /* v2.4.0 (r17 F07): the dispatch rides the CURRENT auth era —
+             * see sendToABDM. */
+            const token = await getGuestToken()
+            const cookie = token ? `accountToken=${token}` : ''
+            const header = cookie ? [`Cookie: ${cookie}`] : []
 
             const rpcData = tbdItems.map((item) => {
                 return {
@@ -799,11 +817,15 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Gofile++.user v2.3.0 —
                 createNotification(utils.getTranslation('error'), utils.getTranslation('failed_to_send_to_aria2'), 'error')
             }
         },
-        exportToIDM(tbdItems) {
-            const cookie = utils.getToken()
+        async exportToIDM(tbdItems) {
+            /* v2.4.0 (r17 F07): the dispatch rides the CURRENT auth era —
+             * see sendToABDM. The cookie line is emitted only when a token
+             * exists (an empty `cookie:` line is noise in the .ef2). */
+            const token = await getGuestToken()
+            const cookie = token ? `accountToken=${token}` : ''
             const IDMFormatContent = tbdItems
                 .map((item) => {
-                    return `<${CRLF}${item.link}${CRLF}cookie: ${cookie}${CRLF}>${CRLF}`
+                    return `<${CRLF}${item.link}${CRLF}${cookie ? `cookie: ${cookie}${CRLF}` : ''}>${CRLF}`
                 })
                 .join('')
 

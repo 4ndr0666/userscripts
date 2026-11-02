@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Pixeldrain++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.2.5
+// @version      1.2.6
 // @description  Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.
 // @author       4ndr0666
 // @license      MIT
@@ -1218,6 +1218,18 @@ const __4NDR0_NET_API__ = (function () {
     return api;
 })();
 
+// 1.2.6 (WO-01 round 17): THE RANGE-200 FLOOR + THE RACE BAND — a
+// mirror that strips the Range header answers 200 with the FULL file,
+// and every ranged strategy (speed_multiplied, multi_proxy_ranged,
+// single_host_ranged) accepted it and wrote those bytes at
+// `position: from`: misaligned bytes past the chunk's span, a file that
+// grew past `size`, and a corruption reported as ok:true. A 200 is now
+// honored only when the chunk starts at 0 (the full-file body covers
+// it — written at 0, progress capped at the chunk span); any other 200
+// is a NAMED refusal the retry ladder routes around. ProxyManager.race()
+// treated HTTP 403 as a winning mirror (`< 405`) while its own check()
+// marks 403 as hard-blocked — the race can no longer select a
+// Cloudflare-blocked mirror as 'best'.
 // 1.2.5 (WO-01 round 13): filename/progress symmetry — sanitizeFilename
 // can emit a name ending in a trailing dot (slice-cut or original), which
 // Windows rejects; the Forums++ sibling sanitizeWinSegment strips [\. ]+$
@@ -1268,7 +1280,7 @@ const __4NDR0_NET_API__ = (function () {
 // /d/ pathname no longer aborts the setTimeout callback before the
 // fs-fallback injector and auto-trigger block; 4-c F05).
 // 1.1.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.5 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.6 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 /* eslint-disable no-undef */
 (function () {
@@ -1842,7 +1854,12 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.5
                     gmXHR({ method: 'HEAD', url: this.url(p, id), timeout: SETTINGS.healthCheckTimeoutMs })
                         .then(r => {
                             if (resolved) return;
-                            if (r.status >= 200 && r.status < 405) {
+                            /* v1.2.6 (r17 F04): 403 is never a winning mirror —
+                             * check() marks it hard-blocked; the old `< 405` band
+                             * let the race select a Cloudflare-blocked mirror as
+                             * 'best' and fail the dispatch best() would have
+                             * survived. */
+                            if (r.status >= 200 && r.status < 405 && r.status !== 403) {
                                 resolved = true;
                                 CircuitBreaker.record(p.host, true);
                                 resolve(p);
@@ -2149,11 +2166,18 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.5
                             throw new Error('blocked');
                         }
                         if (r.status === 429) { const e = new Error('Rate-limited'); e.code = 'CAPTCHA'; throw e; }
-                        if (r.status !== 206 && r.status !== 200) throw new Error(`HTTP ${r.status}`);
+                        /* v1.2.6 (r17 F04): THE RANGE-200 FLOOR — a mirror that
+                         * ignores the Range header answers 200 with the FULL
+                         * file; the old acceptance wrote it at `position: from`
+                         * (misaligned corruption, size overshoot, ok:true on a
+                         * broken file). A 200 is honored only when this chunk
+                         * starts at 0 — the full-file body covers it, written
+                         * at 0 with progress capped at the span. */
+                        if (r.status !== 206 && !(r.status === 200 && from === 0)) throw new Error(`HTTP ${r.status} (range ignored)`);
 
                         const data = new Uint8Array(r.response);
-                        await writable.write({ type: 'write', position: from, data });
-                        loadedArr[idx] += data.byteLength;
+                        await writable.write({ type: 'write', position: r.status === 206 ? from : 0, data });
+                        loadedArr[idx] += Math.min(data.byteLength, to - from + 1);
                         CircuitBreaker.record(mirror.host, true);
                         reportProgress();
                         if (resumeJobId) ResumeManager.updateChunk(resumeJobId, idx, loadedArr[idx], mirror.host);
@@ -2270,10 +2294,12 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.5
                             throw new Error('blocked');
                         }
                         if (r.status === 429) { const e = new Error('Rate-limited'); e.code = 'CAPTCHA'; throw e; }
-                        if (r.status !== 206 && r.status !== 200) throw new Error(`HTTP ${r.status}`);
+                        /* v1.2.6 (r17 F04): THE RANGE-200 FLOOR — see the
+                         * speed_multiplied site for the full rationale. */
+                        if (r.status !== 206 && !(r.status === 200 && from === 0)) throw new Error(`HTTP ${r.status} (range ignored)`);
                         const data = new Uint8Array(r.response);
-                        await writable.write({ type: 'write', position: from, data });
-                        loadedArr[idx] += data.byteLength;
+                        await writable.write({ type: 'write', position: r.status === 206 ? from : 0, data });
+                        loadedArr[idx] += Math.min(data.byteLength, to - from + 1);
                         CircuitBreaker.record(proxy.host, true);
                         reportProgress();
                         if (resumeJobId) ResumeManager.updateChunk(resumeJobId, idx, loadedArr[idx], proxy.host);
@@ -2428,10 +2454,12 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.5
                             headers: Object.assign({}, SPOOF_HEADERS, { 'Range': `bytes=${from}-${to}` }),
                             timeout: SETTINGS.downloadTimeoutMs, signal
                         });
-                        if (r.status !== 206 && r.status !== 200) throw new Error(`HTTP ${r.status}`);
+                        /* v1.2.6 (r17 F04): THE RANGE-200 FLOOR — see the
+                         * speed_multiplied site for the full rationale. */
+                        if (r.status !== 206 && !(r.status === 200 && from === 0)) throw new Error(`HTTP ${r.status} (range ignored)`);
                         const data = new Uint8Array(r.response);
-                        await writable.write({ type: 'write', position: from, data });
-                        loadedArr[idx] += data.byteLength;
+                        await writable.write({ type: 'write', position: r.status === 206 ? from : 0, data });
+                        loadedArr[idx] += Math.min(data.byteLength, to - from + 1);
                         const sum = loadedArr.reduce((a, b) => a + b, 0);
                         const elapsed = (performance.now() - start) / 1000;
                         onProgress && onProgress({ loaded: sum, total: size, speed: sum / Math.max(elapsed, 0.001) });

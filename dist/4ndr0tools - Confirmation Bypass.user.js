@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Confirmation Bypass
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      4.1.6
+// @version      4.1.7
 // @author       4ndr0666
 // @description  Reveals forum invisi-text, view all replies, rewrite redirect links. Download Gate: bypass all confirmation pages on all sites, glass overlay copy/download URL (incl. vidara embeds on xcandid), auto-solve Altcha, auto-click download. Turbo: embed routing, upload injector. Util: external link safety, right-click scrollbar to top.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -23,6 +23,27 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Confirmation%20Bypass.user.js
 // @license      MIT
 // ==/UserScript==
+// 4.1.7 (WO-01 round 17): THE TIMING STATE MACHINE, FINISHED — three
+// half-wirings the 4.1.6 audit caught in the captcha-aware trigger: (1)
+// the rearm-gated retry claimed to route through the observer path but
+// the observer was already disconnected at click #1's success, so a
+// re-armed captcha's verified flip woke nothing until the stale 15 s cap
+// — the observer is now RE-ARMED on that path and the flip lands click
+// #2 ~420 ms later as documented; (2) the cap timer cleared only in
+// beforeunload, so every successfully solved page that stayed open
+// logged a FALSE 'captcha gate expired' line at t=15 s and latched the
+// gate open for good — the timer now dies with the LANDED click and the
+// deferral evidence line re-arms for any genuinely NEW deferral; (3)
+// MAX_CLICKS was enforced only when scheduling the rearm — the budget
+// is now enforced at the clickDownload choke point every path flows
+// through (a cap-timer attempt on a swapped node could spend click #3
+// with MAX_CLICKS = 2). The upload receiver is hardened the same round:
+// the close token is an EXACT match (the old substring test dropped any
+// payload merely containing 'close' and killed the live session),
+// non-string payloads are refused (an object used to coerce to
+// '[object Object]' garbage through both string gates), and exactly-once
+// is enforced at the receiver with a FIFO-capped seen-set (a retried or
+// double-fired postMessage used to append a second [MEDIA] block).
 // 4.1.4 (suite v1.18.0, WO-01 round 10): the reaction flag becomes
 // PER-WINDOW (10b F04 — the shared pageReacted boolean was the unclosed
 // stale-flag half of the same instance-capture class 9a F04 closed for
@@ -94,7 +115,7 @@
 // identities in one console since promotion; 4-c F04); the v4.0.4 suite
 // banner at boot is the single identity.
 // 4.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1.6 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1.7 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px');
 
 
 /* ═══ SUITE PROMOTION 4.0.0 ═══════════════════════════════════════════
@@ -721,6 +742,10 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
         // match an attacker origin like https://turbo.cr.evil.com. Parse the
         // origin and compare the real hostname instead.
         const ALLOWED_MESSAGE_HOSTS = new Set(['turbo.cr']);
+        // v4.1.7 (r17 F02): the receiver-side exactly-once latch — FIFO-capped
+        // at 64 so the registry can never grow unbounded (the cache-census
+        // contract).
+        const embeddedPayloads = new Set();
 
         // v4.1.5 (15a F07): Maximize_Any_Media's control vocabulary. It runs
         // inside turbo.cr video embeds and posts these tokens to the parent
@@ -764,16 +789,37 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
                 }
             })();
 
-            if (String(e.data).includes('close')) {
+            /* v4.1.7 (r17 F02): the close token is an EXACT match — the old
+             * substring test dropped any real payload whose id/slug/URL
+             * merely CONTAINED 'close' ('closeup-video', a
+             * '?disposition=close' parameter) and closed the live session
+             * window on it, killing every subsequent payload of that
+             * session. Control vocabularies are exact-string by name, the
+             * same discipline as MAM_CONTROL_TOKENS below. */
+            if (typeof e.data === 'string' && e.data.trim() === 'close') {
                 if (uploadSessionLive) window.__turboUploadWin?.close();
                 return;
             }
 
             if (!uploadSessionLive) return;
-            if (MAM_CONTROL_TOKENS.has(String(e.data))) return;
+            /* v4.1.7 (r17 F02): only STRING payloads are embeddable — an
+             * object coerces to '[object Object]' and used to sail through
+             * both string gates into the open draft as garbage (no XSS —
+             * textContent only — but silent draft pollution). */
+            if (typeof e.data !== 'string') return;
+            if (MAM_CONTROL_TOKENS.has(e.data)) return;
             // Cherry-picked from C: index-safe access (frElements[0], boxes[0])
             const frElements = document.getElementsByClassName('fr-element');
             if (frElements.length === 0) return;
+
+            /* v4.1.7 (r17 F02): exactly-once enforced at the RECEIVER — the
+             * sender's single post is the happy path, but a retried or
+             * double-fired message used to append a second
+             * [MEDIA=saint_vid] block to the open draft (the same garbage
+             * class the v4.1.5 gate closed, through a different door). */
+            if (embeddedPayloads.has(e.data)) return;
+            if (embeddedPayloads.size >= 64) embeddedPayloads.delete(embeddedPayloads.values().next().value);
+            embeddedPayloads.add(e.data);
 
             // e.data is cross-origin postMessage input — never trusted as HTML.
             const bb       = `[MEDIA=saint_vid]${e.data}[/MEDIA]`;
@@ -983,10 +1029,26 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
 
         const clickDownload = (btn) => {
             if (btn.hasAttribute('data-cb4-dl-clicked')) return true;
+            /* v4.1.7 (r17 F02): the click budget is enforced at the ONE choke
+             * point every path flows through (boot attempt, observer
+             * attempt, rearm re-click, cap-timer attempt) — the old code
+             * checked it only when SCHEDULING a rearm, so a node swap plus
+             * the still-armed cap timer could spend click #3 with
+             * MAX_CLICKS = 2. Settled-like-the-already-clicked: a no-op,
+             * never a new dispatch. */
+            if (clicks >= MAX_CLICKS) return true;
             if (btn.disabled) return false; // captcha still solving — stay armed
             if (captchaGated()) return false; // 16a F02: never spend a click into the closed PoW gate
             btn.setAttribute('data-cb4-dl-clicked', 'true');
             clicks += 1;
+            /* v4.1.7 (r17 F02): a LANDED click settles the wait — the cap
+             * timer used to run to term on every successfully solved page
+             * (it cleared only in beforeunload) and print a FALSE 'captcha
+             * gate expired' evidence line at t=15 s, latching captchaCapped
+             * for good. The timer dies with the click; the deferral line
+             * re-arms so a genuinely NEW deferral logs its own evidence. */
+            if (captchaCapTimer) { window.clearTimeout(captchaCapTimer); captchaCapTimer = null; }
+            captchaDeferredLogged = false;
             clickedNode = btn; // 8b F07/F16: identity, not visual state
             rearmLabel = (btn.textContent || '').trim(); // 7b F17: label at click time
             console.log('[4ndr0tools] Download button triggered.');
@@ -1073,13 +1135,29 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Confirmation Bypass v4.1
                         btn.removeAttribute('data-cb4-dl-clicked');
                         window.setTimeout(() => {
                             if (clickDownload(btn)) return;
-                            /* v4.1.6 (16a F02): the re-click was gated (the
+                            /* v4.1.7 (r17 F02): the re-click was gated (the
                              * captcha re-armed, or the button re-disabled) —
-                             * make the node re-attemptable and route the retry
-                             * through the observer path so the verified flip
-                             * still lands click #2 within its MAX_CLICKS
-                             * budget instead of dead-ending the trigger. */
+                             * the 4.1.6 comment promised an observer path,
+                             * but the observer was already disconnected at
+                             * click #1's success, so the gated retry's only
+                             * wake-up was the stale 15 s cap timer (click #2
+                             * arriving ~12.6 s late on the exact path the
+                             * deferral was built for). The observer is
+                             * RE-ARMED here with the same filter vocabulary,
+                             * so the verified data-state flip actually lands
+                             * click #2 ~420 ms later — the promise, made
+                             * real. attempt() is still called now for the
+                             * not-yet-gated cases (it is a no-op while the
+                             * gate holds). */
                             scheduled.delete(btn);
+                            if (obs) {
+                                obs.observe(document.documentElement, {
+                                    childList:       true,
+                                    subtree:         true,
+                                    attributes:      true,
+                                    attributeFilter: ['disabled', 'data-state'],
+                                });
+                            }
                             attempt();
                         }, GRACE_MS);
                     }

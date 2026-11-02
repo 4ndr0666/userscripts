@@ -3,7 +3,7 @@
 // @name        4ndr0tools - Forums++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
-// @version     1.13.9
+// @version     1.14.0
 // @description Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @match       https://simpcity.su/threads/*
@@ -372,7 +372,29 @@
 // Content-Disposition filename decodeURIComponent site degrades losslessly
 // on malformed input instead of throwing (4-c F05).
 // 1.9.2 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Forums++.user v1.13.9 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+// 1.14.0 (WO-01 round 17): THE UNREACHABLE PIPELINE, SETTLED AT THE HARVEST —
+// the default harvest wrapper interpolated each host matcher into its
+// two-branch template WITHOUT grouping, so any matcher carrying a
+// top-level `A|B` alternation (Saint:video since r10, Cyberdrop's fs-
+// single) split the composed regex into four branches and the
+// id-capturing lazy tails attached only to the `/videos` arm: EVERY
+// id-carrying turbo/saint2 link harvested as its bare route (the id
+// stripped before a resolver ever ran — the resolver ladder the r15/r16
+// fixtures certified was pipeline-unreachable for href-embedded links:
+// the fixture-bypass class at the harvest layer) and Cyberdrop fs- CDN
+// links lost their whole path. The interpolated matcher is now wrapped
+// in a non-capturing group at both sites — alternation-safe for every
+// matcher, present and future. Plus this round's sweep: the goonbox
+// thumbnail-fallback connection completed (goonboxThumbByUrl was read,
+// never written — the album walk now indexes thumbs); three write-only
+// hint registries retired (gofileNameById, cyberdropNameBySlug,
+// filesterNameBySlug, filesterSlugByUrl — the ByUrl/Ref twins carry the
+// reads); the 65-line dead prettyBytes helper removed; the guarded
+// wrapper's catch is fail-visible (post-level error line + status reset
+// + log cleanup instead of a console.debug swallow); the per-post
+// config tooltip wires once (the 7d F12 accumulation class, closed
+// here too).
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Forums++.user v1.14.0 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 /* global JSZip, tippy, GM_xmlhttpRequest, saveAs, sha256, GM_download, GM_getValue, GM_setValue, GM_addValueChangeListener, GM_openInTab, GM_cookie, GM_deleteValue */
 
@@ -659,76 +681,10 @@ const h = {
         }
         return [...new Set(items)];
     },
-    /**
-     * @param {number} number
-     * @param {object} [options={}]
-     * @returns {string}
-     */
-    prettyBytes: (number, options = {}) => {
-        const BYTE_UNITS = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-        const BIBYTE_UNITS = ['B', 'kiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
-        const BIT_UNITS = ['b', 'kbit', 'Mbit', 'Gbit', 'Tbit', 'Pbit', 'Ebit', 'Zbit', 'Ybit'];
-        const BIBIT_UNITS = ['b', 'kibit', 'Mibit', 'Gibit', 'Tibit', 'Pibit', 'Eibit', 'Zibit', 'Yibit'];
-
-        const toLocaleString = (num, locale, opts) => {
-            let result = num;
-            if (typeof locale === 'string' || h.isArray(locale)) {
-                result = num.toLocaleString(locale, opts);
-            } else if (locale === true || opts !== undefined) {
-                result = num.toLocaleString(undefined, opts);
-            }
-            return result;
-        };
-
-        if (!Number.isFinite(number)) {
-            throw new TypeError(`Expected a finite number, got ${typeof number}: ${number}`);
-        }
-
-        options = {
-            bits: false,
-            binary: false,
-            space: true,
-            ...options,
-        };
-
-        const UNITS = options.bits ? (options.binary ? BIBIT_UNITS : BIT_UNITS) : options.binary ? BIBYTE_UNITS : BYTE_UNITS;
-        const separator = options.space ? ' ' : '';
-
-        if (options.signed && number === 0) {
-            return ` 0${separator}${UNITS[0]}`;
-        }
-
-        const isNegative = number < 0;
-        const prefix = isNegative ? '-' : options.signed ? '+' : '';
-
-        if (isNegative) {
-            number = -number;
-        }
-
-        let localeOptions;
-        if (options.minimumFractionDigits !== undefined) {
-            localeOptions = { minimumFractionDigits: options.minimumFractionDigits };
-        }
-        if (options.maximumFractionDigits !== undefined) {
-            localeOptions = { maximumFractionDigits: options.maximumFractionDigits, ...localeOptions };
-        }
-
-        if (number < 1) {
-            const numberString = toLocaleString(number, options.locale, localeOptions);
-            return prefix + numberString + separator + UNITS[0];
-        }
-
-        const exponent = Math.min(Math.floor(options.binary ? Math.log(number) / Math.log(1024) : Math.log10(number) / 3), UNITS.length - 1);
-        number /= (options.binary ? 1024 : 1000) ** exponent;
-
-        if (!localeOptions) {
-            number = Number(number.toPrecision(3));
-        }
-
-        const numberString = toLocaleString(number, options.locale, localeOptions);
-        const unit = UNITS[exponent];
-        return prefix + numberString + separator + unit;
-    },
+    /* v1.14.0 (r17 F01): the 65-line prettyBytes helper removed — zero call
+     * sites across the entire lineage (orphan since the r6 lineage
+     * restoration; the size formatters that ARE live live next to their
+     * consumers). */
     ui: {
         /**
          * @param {HTMLElement} element
@@ -991,7 +947,21 @@ const parsers = {
                         patternStr = patternStr.replace('!!', '');
                         pattern = h.re.toRegExp(h.re.toString(patternStr), 'igs');
                     } else { // Default pattern for href, src, data-url attributes or direct URLs
-                        const pat = `(?<=data-url="|src="|href=")${h.re.toString(patternStr)}.*?(?=")|https?:\/\/(www.)?${h.re.toString(patternStr)}.*?(?=("|<|$|\\]|'))`;
+                        /* v1.14.0 (r17 F01): THE HARVEST ALTERNATION SPLIT —
+                         * interpolating a matcher with a top-level `A|B`
+                         * alternation into this template used to split the
+                         * composed regex into FOUR branches (the lazy
+                         * id-capturing tails attached only to the last arm
+                         * of each half), stripping the id from every
+                         * id-carrying turbo/saint2 link and the path from
+                         * every Cyberdrop fs- link before any resolver
+                         * ran. The matcher is wrapped in a non-capturing
+                         * group at both sites so the alternation stays
+                         * INSIDE the branch and the tail follows the FULL
+                         * matcher — single-branch matchers are unaffected
+                         * (grouping is match-neutral), and the composition
+                         * is alternation-safe for every future matcher. */
+                        const pat = `(?<=data-url="|src="|href=")(?:${h.re.toString(patternStr)}).*?(?=")|https?:\/\/(www.)?(?:${h.re.toString(patternStr)}).*?(?=("|<|$|\\]|'))`;
                         pattern = h.re.toRegExp(pat, 'igs');
                     }
 
@@ -1479,6 +1449,15 @@ const ui = {
 
                     ui.tooltip(btnDownloadPost, configForm, {
                         onShown: instance => {
+                            /* v1.14.0 (r17 F01): wire ONCE — the tooltip
+                             * content persists across shows, so every
+                             * onShown re-registered the full listener set
+                             * (the 7d F12 handler-accumulation class, fixed
+                             * for the Download-Page tooltip in v1.13.2 but
+                             * never for this one). */
+                            const formAnchor = h.element(`#download-config-form-${postId}`) || h.element(`#filename-input-${postId}`);
+                            if (formAnchor && formAnchor.dataset.wired === 'true') return;
+                            if (formAnchor) formAnchor.dataset.wired = 'true';
                             const inputEl = h.element(`#filename-input-${postId}`);
                             if (inputEl) {
                                 inputEl.addEventListener('input', e => {
@@ -1699,12 +1678,14 @@ const hintMap = (cap = 2000) => {
     };
 };
 
-const gofileNameById = hintMap(4000);
+/* v1.14.0 (r17 F01): three write-only registries retired — gofileNameById,
+ * cyberdropNameBySlug and filesterNameBySlug were populated across the
+ * lineage but never READ (the ByUrl twins carry every consumer);
+ * zero-reader state is dead weight the cache census cannot see.
+ * filesterSlugByUrl STAYS — isFilesterUrl() reads it via .has(). */
 const gofileNameByUrl = hintMap(4000);
-const cyberdropNameBySlug = hintMap(4000);
 const cyberdropNameByUrl = hintMap(4000);
 const bunkrNameByUrl = hintMap(4000);
-const filesterNameBySlug = hintMap(4000);
 const filesterNameByUrl = hintMap(4000);
 const filesterSlugByUrl = hintMap(4000);
 const filesterRefByUrl = hintMap(4000);
@@ -2779,7 +2760,6 @@ const filesterResolveV2 = async (v2Http, apiBase, slug) => {
 
         filesterSlugByUrl.set(String(streamUrl), String(s));
         filesterRefByUrl.set(String(streamUrl), String(ref));
-        filesterNameBySlug.set(String(s), String(finalName));
         filesterNameByUrl.set(String(streamUrl), String(finalName));
 
         return { url: streamUrl, name: finalName, ref, token, server, file };
@@ -3221,13 +3201,34 @@ const resolvers = [
                 const first = await fetchPage(1);
                 if (!first || !h.isArray(first.images)) return null;
 
+                /* v1.14.0 (r17 F01): the thumbnail-fallback connection
+                 * completed — goonboxThumbByUrl was READ (the single-image
+                 * resolver's last-resort fallback) but never WRITTEN
+                 * anywhere in the lineage, so the fallback was structurally
+                 * dead. The album walk sees every image's id and thumbnail;
+                 * a post that links BOTH the album and a single /img/ page
+                 * now gets a live fallback when the single-image API path
+                 * fails (resource order within the post decides which
+                 * resolves first). Absent fields simply skip the set. */
+                const indexThumbs = images => {
+                    for (const img of images) {
+                        const thumbId = img && (img.id ?? img.image_id);
+                        const thumb = img && (img.thumb_url || img.thumbnail || img.thumb);
+                        if (thumbId && typeof thumb === 'string' && /^https?:\/\//i.test(thumb)) {
+                            goonboxThumbByUrl.set(`https://goonbox.cr/img/${String(thumbId).split('?')[0]}`, thumb);
+                        }
+                    }
+                };
+
                 const resolved = first.images.map(img => img.original_url).filter(Boolean);
+                indexThumbs(first.images);
                 const lastPage = first.pagination?.last_page || 1;
 
                 for (let page = 2; page <= lastPage; page++) {
                     const data = await fetchPage(page);
                     if (data && h.isArray(data.images)) {
                         resolved.push(...data.images.map(img => img.original_url).filter(Boolean));
+                        indexThumbs(data.images);
                     }
                 }
 
@@ -4128,8 +4129,7 @@ const resolvers = [
                     candidates[0] ||
                     (fileId ? `https://gofile.io/download/web/${fileId}/${fileName}` : null);
 
-                if (link && obj.name && fileId) {
-                    gofileNameById.set(String(fileId), String(obj.name));
+                if (link && obj.name) {
                     gofileNameByUrl.set(String(link), String(obj.name));
                 }
 
@@ -5045,20 +5045,6 @@ const resolvers = [
 
                 const folderName = pickTitle(html);
 
-                // Per-file names from the album page (regex form — the album grid
-                // carries title= hints) so downloads keep extensions.
-                try {
-                    const rxName = /href=["']\/f\/([A-Za-z0-9]+)["'][^>]*\btitle=["']([^"']+)["']/gi;
-                    let m;
-                    while ((m = rxName.exec(html)) !== null) {
-                        const slug = m[1];
-                        const nm = String(m[2]).trim();
-                        if (nm) cyberdropNameBySlug.set(slug, nm);
-                    }
-                } catch (e) {
-                    console.debug('[Forums++] cyberdrop album name hints rejected:', e && e.message);
-                }
-
                 const host = (() => { try { return new URL(pageUrl).hostname; } catch (e) { return ''; } })();
                 const root = (String(host || '').match(/cyberdrop\.[a-z]+$/i) || [null])[0];
                 const apiBases = [];
@@ -5337,8 +5323,6 @@ const resolvers = [
                                     console.debug('[Forums++] cyberdrop auth step rejected:', e && e.message);
                                 }
                             }
-
-                            if (resolvedName) cyberdropNameBySlug.set(String(slug), String(resolvedName));
 
                             if (resolvedDirect && typeof resolvedDirect === 'string') {
                                 if (resolvedName) cyberdropNameByUrl.set(String(resolvedDirect), String(resolvedName));
@@ -7123,6 +7107,18 @@ const downloadPostGuarded = async (parsedPost, parsedHosts, enabledHostsCB, reso
         await downloadPost(parsedPost, parsedHosts, enabledHostsCB, resolversArg, getSettingsCB, statusUI, callbacks);
     } catch (e) {
         console.debug('[Forums++] downloadPost threw:', e && (e.message || e));
+        /* v1.14.0 (r17 F01): fail-visible — a thrown run used to surface
+         * only as a console.debug: no post-level error line, the status
+         * label frozen at its last "Resolving: N/M" state, and the per-post
+         * log entries leaked (the exit-side cleanup at the end of
+         * downloadPost never ran). The catch now owns the same settlement
+         * the normal exit owns. */
+        log.post.error(parsedPost.postId, `::Download aborted (internal error)::: ${e && (e.message || e)}`, parsedPost.postNumber);
+        logs = logs.filter(l => l.postId !== parsedPost.postId);
+        if (statusUI && statusUI.status && statusUI.status.el) {
+            h.ui.setText(statusUI.status.el, 'Download aborted (internal error)');
+            h.ui.setElProps(statusUI.status.el, { color: '#ff0055', fontWeight: 'bold' });
+        }
     } finally {
         setProcessing(false, parsedPost.postId);
         if (!processing.find(p => p.processing)) {

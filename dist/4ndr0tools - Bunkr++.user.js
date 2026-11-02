@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Bunkr++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      7.7.1
+// @version      7.7.2
 // @author       4ndr0666
 // @description  Direct URL routing, auto-sort, hide visited, bypass dl gateway, bulk download, m3u8/CDN URL aggregation (page-context net-hook + per-item stream glyphs + album-wide STREAMS aggregation), broken-link repair, power-user hotkeys, LinkMaster-grade m3u8 stream resolution with gateway fallback, MPV dispatch (URI/bridge), web-archive dead-CDN resurrection (archive.org / archive.is), captcha-aware transport retry
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -1195,6 +1195,16 @@ const __4NDR0_NET_API__ = (function () {
     return api;
 })();
 
+// v7.7.2 (WO-01 round 17): THE PRISTINE-SNAPSHOT GUARD — the broken-link
+// fixer stored psiOrigSrc UNCONDITIONALLY on every error event, so the
+// second error (whose src is already the REWRITTEN canonical-domain
+// retry — the rewritten form still carries the legacy subdomain and
+// re-enters the same handler) OVERWROTE the pristine original URL the
+// Wayback last-chance tier exists to probe: a dead bunkrrr.is image
+// archived only under its original host probed with the rewritten
+// bunkr.cr URL, missed, and was marked .psi-img-dead even though the
+// archive held it. The snapshot is now write-once per element — the
+// FIRST error's src is the pristine one, by definition.
 // v7.7.1 (suite v1.19.0, WO-01 round 11): the seven 'BUNKR interceptor:
 // unbound' catch messages are NAMED (11b-F15 — the 10c-F10 idiom the r10
 // Pixeldrain fix established, never propagated here): every visited-cache
@@ -1400,7 +1410,7 @@ const __4NDR0_NET_API__ = (function () {
         _sentinelRoot.setAttribute(_SENTINEL_ATTR, String(Date.now()));
     } catch (_) { console.debug('BUNKR interceptor:', _); /* EAFP — proceed; guards below absorb re-runs */ }
 
-    const SCRIPT_VERSION = '7.7.1';
+    const SCRIPT_VERSION = '7.7.2';
     console.log(`%c[4NDR0tools] Bunkr++ v${SCRIPT_VERSION}-Ψ`, 'color:#00E5FF; font-family:monospace; font-weight:bold;');
 
     // =========================================================================
@@ -4394,7 +4404,16 @@ const __4NDR0_NET_API__ = (function () {
             // v7.2.0 [A4]: remember the pristine URL — by the time the
             // second error fires, el.src is already the rewritten (still
             // dead) canonical-domain retry.
-            el.dataset.psiOrigSrc = src;
+            // v7.7.2 (r17 F05): WRITE-ONCE — the assignment used to run on
+            // EVERY error event, so the second error (src = the rewritten
+            // canonical retry, which still matches the legacy-subdomain
+            // pattern and re-enters this handler) overwrote the pristine
+            // original with the rewritten URL; the Wayback probe then
+            // queried the wrong host and dead-marked images the archive
+            // actually holds under the original.
+            if (!el.dataset.psiOrigSrc) {
+                el.dataset.psiOrigSrc = src;
+            }
 
             if (el.dataset.psiImgRetry) {
                 // v7.2.0 [A4]: last-chance resurrection — probe the Wayback

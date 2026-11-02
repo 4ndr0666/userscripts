@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Maximize_Any_Media
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      2.0.3
+// @version      2.0.4
 // @author       4ndr0666
 // @description  Maximize + Pip controls to any media anywhere - video, images, embedded and shadow-DOM players, on any site. 3lectric-Glass spec. Ψ
 // @license      MIT
@@ -16,6 +16,17 @@
 // @grant        GM_setValue
 // @grant        GM_registerMenuCommand
 // ==/UserScript==
+// 2.0.4 (WO-01 round 17): THE HOVER-ANNOUNCEMENT DEDUPE — the r15 field
+// residual (the r16 handoff's named r17 candidate): inside a half-full
+// iframe video, EVERY mouseover (the video, its overlay children, the
+// controls bar) re-ran setButton.init() and re-posted the "iframeVideo"
+// control token to the parent — the operator's console storm. One
+// announcement per hover-ENTRY now: the announced player's identity is
+// remembered, handle.leavePlayer() re-arms it when the pointer leaves
+// the player region, and a different player announces immediately. The
+// first announcement (the load-bearing handshake: the parent learns to
+// treat this iframe as its player) and the re-entry re-show contract are
+// byte-identical — only the intra-hover repeats die.
 // 2.0.3 (WO-01 round 12): the settings round-trip fix (12b-F01) — save()
 // persists JSON.stringify(cache) (a STRING), but load() fed the stored
 // string straight to valid(), whose typeof-obj!=="object" guard rejected
@@ -49,7 +60,7 @@
      * again. */
     version: (typeof GM_info !== 'undefined' && GM_info && GM_info.script && GM_info.script.version)
       ? GM_info.script.version
-      : "2.0.3",
+      : "2.0.4",
     spec: "3lectric-Glass",
   }
 
@@ -59,6 +70,17 @@
     autoCheckCount: 0,
     booted: false,
     tipTimers: { show: 0, hide: 0, remove: 0 },
+    /* 2.0.4 (r17 F03): the iframeVideo hover-announcement dedupe — the
+     * last player element this frame announced to the parent. Every
+     * mouseover inside a half-full iframe video (the video itself, its
+     * overlay children, the controls bar) re-ran setButton.init() and
+     * re-posted the token to the parent on EVERY hover event — the r15
+     * field's console storm (the parent re-printed messege:iframeVideo
+     * for each). One announcement per hover-ENTRY now: the identity is
+     * re-armed in handle.leavePlayer() the moment the pointer leaves the
+     * player region, so a re-entry (or a NEW player) announces again and
+     * the parent-side re-show contract is preserved. */
+    iframeVideoAnnounced: null,
   }
 
   // HTML5 rules [outermost player container], applicable to adaptive-size HTML5 players that cannot be automatically detected
@@ -509,7 +531,16 @@
         init()
       }
       if (gv.isIframe && tool.isHalfFullClient(gv.player)) {
-        window.parent.postMessage("iframeVideo", "*")
+        /* 2.0.4 (r17 F03): ONE announcement per hover-entry — see the gv
+         * declaration. The FIRST announcement (the load-bearing one: the
+         * parent learns to treat this iframe as its player) is unchanged;
+         * only the intra-hover repeats are suppressed. A different player
+         * element announces immediately (identity change), and the
+         * leavePlayer re-arm keeps re-entries announcing. */
+        if (gv.iframeVideoAnnounced !== gv.player) {
+          gv.iframeVideoAnnounced = gv.player
+          window.parent.postMessage("iframeVideo", "*")
+        }
         return
       }
       this.show()
@@ -671,6 +702,12 @@
       return tempPlayer
     },
     leavePlayer() {
+      /* 2.0.4 (r17 F03): re-arm the hover announcement — the pointer left
+       * the player region (default case of the mouseover switch), so the
+       * NEXT hover-entry is a NEW announcement. Deliberately BEFORE the
+       * visibility guard: in the iframe path the button was never shown,
+       * but the announcement tracking is independent of button state. */
+      gv.iframeVideoAnnounced = null
       if (gv.controlBtn && gv.controlBtn.style.visibility == "visible") {
         gv.controlBtn.style.opacity = ""
         gv.controlBtn.style.visibility = ""
