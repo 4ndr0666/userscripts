@@ -1,4 +1,4 @@
-# Maximize_Any_Media · v2.0.3
+# Maximize_Any_Media · v2.0.4
 
 > Universal media maximize + PiP — `video & players` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,11 +10,11 @@ Maximize_Any_Media gives any media — video, images, embedded and shadow-DOM pl
 
 | Dimension | Value |
 |---|---|
-| Version | `2.0.3` |
+| Version | `2.0.4` |
 | Matches | @include: `*` |
 | Excludes | `*www.w3school.com.*`, `*www.w3schools.com.*` |
 | Run-at | `document-end` |
-| Size | 51.2 KB · 1271 lines |
+| Size | 53.6 KB · 1308 lines |
 | Install | [dist/4ndr0tools - Maximize_Any_Media.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Maximize_Any_Media.user.js) |
 
 ## Feature Inventory

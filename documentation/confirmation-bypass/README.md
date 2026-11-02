@@ -1,4 +1,4 @@
-# Confirmation Bypass · v4.1.6
+# Confirmation Bypass · v4.1.7
 
 > Forum friction eliminator — `forums` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ Confirmation Bypass removes every friction layer forums put between the operator
 
 | Dimension | Value |
 |---|---|
-| Version | `4.1.6` |
+| Version | `4.1.7` |
 | Matches | `*://forums.socialmediagirls.com/*`, `*://forums.socialmediagirls.com/goto/link-confirmation*`, `*://simpcity.cr/*`, `*://simpcity.cr/redirect/*` (+4 more) |
 | Run-at | `document-idle` |
-| Size | 81.7 KB · 1520 lines |
+| Size | 86.9 KB · 1598 lines |
 | Install | [dist/4ndr0tools - Confirmation Bypass.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Confirmation%20Bypass.user.js) |
 
 ## Feature Inventory

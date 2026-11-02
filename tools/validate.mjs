@@ -995,9 +995,14 @@ async function gateD() {
     // OPSEC invariant (suite v1.4.0): zero remote asset fetches — a
     // counter-surveillance suite must never phone home to font CDNs
     // (IP leak + fingerprint vector on every page load). Local stacks only.
+    /* WO-01 round-17 (F09): the matcher widened — the old single literal
+     * ('@import url(\'http') caught only one quoting of one scheme; the
+     * double-quoted, scheme-less and unquoted remote-import forms all
+     * rode green while the pass line claimed a ban. */
+    const remoteImportRe = /@import\s+(?:url\()?\s*['"]?\s*https?:\/\//i;
     const remoteImports = [];
     for (const f of fs.readdirSync(DIST).filter(f => f.endsWith(".user.js"))) {
-        if (fs.readFileSync(path.join(DIST, f), "utf8").includes("@import url('http")) {
+        if (remoteImportRe.test(fs.readFileSync(path.join(DIST, f), "utf8"))) {
             remoteImports.push(f);
         }
     }
@@ -1335,6 +1340,33 @@ async function gateD() {
         failures.push(`[D] banner/version symmetry violated (${bannerDrift.join(", ")}) — a version roll that leaves the init banner stale makes the console misdate the running build (the round-2 6-a F16 class; gate wired round-16 after six stale banners were swept)`);
     } else {
         passes.push(`[D] banner/version symmetry verified (${bannerScripts} canon banners, zero drift — the init banner names the @version it ships)`);
+    }
+    /* WO-01 round-17 (F09): the CONSTANT-DRIVEN banner class — YTPM's
+     * CFG.SCRIPT_VERSION read 1.7.4 while @version read 1.7.5 (the deck
+     * header, greet banner and diagnostics all misdated the build; the
+     * literal-banner gate above cannot see an interpolated constant).
+     * Every SCREAMING_SNAKE *VERSION* constant assigned a semver literal
+     * must equal its file's @version — the Bunkr/WCP/Akasha/YTPM shapes
+     * all match today; any future drift fails closed naming the file. */
+    const constVersionDrift = [];
+    let constVersionCount = 0;
+    for (const cd of ["_sovereign", "_promoted", "_merged"]) {
+        const dir = path.join(ROOT, "canon", cd);
+        if (!fs.existsSync(dir)) continue;
+        for (const f of fs.readdirSync(dir).filter((x) => x.endsWith(".user.js"))) {
+            const src = fs.readFileSync(path.join(dir, f), "utf8");
+            const vm = src.match(/^\/\/ @version\s+(\S+)/m);
+            if (!vm) continue;
+            for (const cm of src.matchAll(/(?:const|let|var)\s+([A-Z][A-Z0-9_]*VERSION[A-Z0-9_]*)\s*[:=]\s*['"](\d+\.\d+\.\d+[^'"]*)['"]/g)) {
+                constVersionCount++;
+                if (cm[2] !== vm[1]) constVersionDrift.push(`${cd}/${f} (@version ${vm[1]} vs ${cm[1]} '${cm[2]}')`);
+            }
+        }
+    }
+    if (constVersionDrift.length) {
+        failures.push(`[D] constant/version symmetry violated (${constVersionDrift.join(", ")}) — an interpolated SCRIPT_VERSION that lags @version misdates every banner it feeds (the YTPM 1.7.4/1.7.5 class; gate wired round-17)`);
+    } else {
+        passes.push(`[D] constant/version symmetry verified (${constVersionCount} SCREAMING_SNAKE version constants, zero drift — every interpolated banner constant names the @version it ships)`);
     }
     /* WO-01 round-2 (6-a F09/g): the inventory-parity verdict now computes
      * BEFORE the production score writes tools/score.json — the round-1

@@ -86,6 +86,22 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { CURRENT_ROUND, roundLt } from "./census-round.mjs";
+import { stripCommentsKeepStrings } from "./scan-kit.mjs";
+
+/* r17 (F12): anchor liveness reads the CODE, not the comments — the raw-text
+ * read let an anchor token certify comment prose about retired code
+ * (CB-TRG-02's `pageReacted` lives only in comments at 4.1.x; the live
+ * per-window flag is win.reacted). The userscript metadata header is
+ * preserved verbatim: @connect/@match-style anchors legitimately pin
+ * header lines, which are line-comments by syntax. */
+const stripCommentsKeepHeader = (src) => {
+    const open = src.indexOf("// ==UserScript==");
+    const close = src.indexOf("// ==/UserScript==");
+    if (open === -1 || close === -1) return stripCommentsKeepStrings(src);
+    const header = src.slice(open, close + "// ==/UserScript==".length);
+    const body = src.slice(close + "// ==/UserScript==".length);
+    return header + stripCommentsKeepStrings(body);
+};
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const MANIFEST_PATH = path.join(ROOT, "tools", "operator-battery", "manifest.json");
@@ -189,8 +205,9 @@ export function runOperatorBatteryCheck() {
                 continue;
             }
             const src = fs.readFileSync(fp, "utf8");
+            const codeView = stripCommentsKeepHeader(src);
             for (const tok of a.mustContain) {
-                if (!src.includes(tok)) {
+                if (!codeView.includes(tok)) {
                     problems.push(`anchor: test ${t.id} token NOT LIVE in ${a.file}: '${tok}' — the code the test aims at moved or vanished; re-adjudicate the test`);
                 }
             }

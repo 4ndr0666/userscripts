@@ -184,12 +184,12 @@
   {
    "file": "4ndr0tools - Bunkr++.user.js",
    "name": "4ndr0tools - Bunkr++",
-   "version": "7.7.1",
+   "version": "7.7.2",
    "description": "Direct URL routing, auto-sort, hide visited, bypass dl gateway, bulk download, m3u8/CDN URL aggregation (page-context net-hook + per-item stream glyphs + album-wide STREAMS aggregation), broken-link repair, power-user hotkeys, LinkMaster-grade m3u8 stream resolution with gateway fallback, MPV dispatch (URI/bridge), web-archive dead-CDN resurrection (archive.org / archive.is), captcha-aware transport retry",
    "family": "media & links",
-   "sha256": "b93e0dc5659aacdd2f8fd76b4978ca775b1a0042b93c664f7b7ff15c8403b92f",
-   "lines": 5087,
-   "bytes": 270576,
+   "sha256": "e9ec6213c311ccbdc16738cf23f1beb9a709cccfd899d61a91954d80e12dbb2f",
+   "lines": 5106,
+   "bytes": 271823,
    "matches": [],
    "includes": [
     "/^[^:]*?:\\/\\/bunkr{1,3}\\.[^/]*?\\/.*?$/",
@@ -416,12 +416,12 @@
   {
    "file": "4ndr0tools - Confirmation Bypass.user.js",
    "name": "4ndr0tools - Confirmation Bypass",
-   "version": "4.1.6",
+   "version": "4.1.7",
    "description": "Reveals forum invisi-text, view all replies, rewrite redirect links. Download Gate: bypass all confirmation pages on all sites, glass overlay copy/download URL (incl. vidara embeds on xcandid), auto-solve Altcha, auto-click download. Turbo: embed routing, upload injector. Util: external link safety, right-click scrollbar to top.",
    "family": "forums",
-   "sha256": "06dd15ab802784e9a82c811fd14870908ebf9544e31de577b625f311abc9d57d",
-   "lines": 1520,
-   "bytes": 83705,
+   "sha256": "2768d68747abe337dd0aebf44c14fa2b3fa643b3d4ff48420119b75e8745f188",
+   "lines": 1598,
+   "bytes": 88989,
    "matches": [
     "*://forums.socialmediagirls.com/*",
     "*://forums.socialmediagirls.com/goto/link-confirmation*",
@@ -522,12 +522,12 @@
   {
    "file": "4ndr0tools - Forums++.user.js",
    "name": "4ndr0tools - Forums++",
-   "version": "1.13.9",
+   "version": "1.14.0",
    "description": "Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.",
    "family": "forums",
-   "sha256": "df6464b35d8a08b1d1dc8c7ff189fe079c68cc16499fd6bd8645d19c7ab1ed90",
-   "lines": 8747,
-   "bytes": 425001,
+   "sha256": "42afc597463d00009ceb3a5425bd8d9f01ebce64a2fc67567437ac0591b5dc5f",
+   "lines": 8743,
+   "bytes": 427265,
    "matches": [
     "https://simpcity.su/threads/*",
     "https://simpcity.cr/threads/*",
@@ -687,12 +687,12 @@
   {
    "file": "4ndr0tools - Gofile++.user.js",
    "name": "4ndr0tools - GoFile++",
-   "version": "2.3.0",
+   "version": "2.4.0",
    "description": "Directly batch-download GoFiles with a robust UI. Supports recursive folder scans, direct links, and download managers (Aria2, IDM). Fixing SPA persistence and Sandbox access.",
    "family": "media & links",
-   "sha256": "9f6964d4c0767c6c90c395d7d1391a6a8b637626a5e0534e3a915da1bcca40f4",
-   "lines": 2375,
-   "bytes": 125960,
+   "sha256": "1c06274728433dda97b1883e3e345d36cdcd4372d94b96e52973f186aee95f98",
+   "lines": 2397,
+   "bytes": 127652,
    "matches": [
     "*://*.gofile.io/*"
    ],
@@ -998,12 +998,12 @@
   {
    "file": "4ndr0tools - Maximize_Any_Media.user.js",
    "name": "4ndr0tools - Maximize_Any_Media",
-   "version": "2.0.3",
+   "version": "2.0.4",
    "description": "Maximize + Pip controls to any media anywhere - video, images, embedded and shadow-DOM players, on any site. 3lectric-Glass spec. Ψ",
    "family": "video & players",
-   "sha256": "e05df57db59079fbad8487c804f28ea65bd54777bf426b02edf3b0916330ab70",
-   "lines": 1271,
-   "bytes": 52411,
+   "sha256": "0eece482faa91350e904de26fab5313e2104af7af3e8377ddeb11e93b30ca793",
+   "lines": 1308,
+   "bytes": 54879,
    "matches": [],
    "includes": [
     "*"
@@ -1118,12 +1118,12 @@
   {
    "file": "4ndr0tools - Pixeldrain++.user.js",
    "name": "4ndr0tools - Pixeldrain++",
-   "version": "1.2.5",
+   "version": "1.2.6",
    "description": "Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.",
    "family": "media & links",
-   "sha256": "23afeae2e52e8e17aae23ecc0c5f074f05a14e6770e0c96399bce9c1e4fe723a",
-   "lines": 3884,
-   "bytes": 217722,
+   "sha256": "ff8c0c7a7226a533674578847da37388bac41ad0d893ed07db6fad25ee73f160",
+   "lines": 3912,
+   "bytes": 220020,
    "matches": [
     "https://pixeldrain.com/*",
     "https://pixeldrain.net/*",
@@ -1442,12 +1442,12 @@
   {
    "file": "4ndr0tools - YouTube Playlist Master.user.js",
    "name": "4ndr0tools - YouTube Playlist Master",
-   "version": "1.7.5",
+   "version": "1.7.6",
    "description": "Channel playlist buttons (All / Popular / Videos / Shorts / Streams / Members-only), Random play (prefer newest/oldest), reverse autoplay order, playlist autoplay toggle, duration sort, bulk copy/move/delete, JSON + plaintext export/import, snapshots with deleted-video detection, quick watch_videos playlists, queue & watch-later overlays, playlist close button, date/view metadata, episode auto-expand, huge-playlist browser, live settings (no reload), always-available Ψ deck, playlist row filter, duplicate finder & purge, global hotkeys (Alt+Shift+U/S/X), failsafe deck rescue, 404-proof navigation guards, Trusted-Types-immune rendering, fully-visible fit-content modal dialogs.",
    "family": "video & players",
-   "sha256": "24c95d86a71b5bf5c031d3fda71d9382b1d0b2b4f5e037730cfb002ae8b42a79",
-   "lines": 6726,
-   "bytes": 352059,
+   "sha256": "33bdf313040a6cd1bc9a7fffe275320cf8face65b40399015bdf045b813c99a8",
+   "lines": 6743,
+   "bytes": 353237,
    "matches": [
     "https://*.youtube.com/*",
     "https://youtube.com/*"
@@ -1689,5 +1689,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "2bc0796dff4e1fa47a81792511d5a39ad658fb96c722ff609890d46d450dc696"
+ "digest": "31b41b94ad592763c27a37187cc6c6267eca1632ef26ea85392b27eee4d93007"
 }

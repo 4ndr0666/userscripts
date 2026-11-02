@@ -49,9 +49,13 @@ function extractFunctionSpan(src, fnName) {
 export function runWatermarkBatchSmoke(root = ROOT) {
     const problems = [];
     let passed = 0;
+    /* r17 (F11): the total is DERIVED from the checks actually registered —
+     * the hardcoded 15 printed an impossible 16/15 the moment a check was
+     * added (the 3-a F01 class this battery's own header derides). */
+    let total = 0;
     const canonPath = path.join(root, "canon", "_sovereign", "4ndr0tools - Watermark++.user.js");
     if (!fs.existsSync(canonPath)) {
-        return { problems: ["Watermark++ canon file missing"], passed: 0, total: 15 };
+        return { problems: ["Watermark++ canon file missing"], passed: 0, total: 0 };
     }
     const src = fs.readFileSync(canonPath, "utf8");
 
@@ -123,6 +127,7 @@ export function runWatermarkBatchSmoke(root = ROOT) {
     const api = sandbox.__exports;
 
     const check = (label, cond) => {
+        total++;
         if (cond) passed++;
         else problems.push(`Watermark++ batch smoke failed: ${label}`);
     };
@@ -267,7 +272,7 @@ export function runWatermarkBatchSmoke(root = ROOT) {
     check("red control: guard-removed mutant fails the coalescing invariant (harness detects un-coalesced schedules)",
         mutated !== extracted && redArmed > 1);
 
-    return { problems, passed, total: 15 };
+    return { problems, passed, total };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {

@@ -144,12 +144,46 @@ export async function runFamilyFixtureSmoke(root = ROOT) {
     let queryOneHook = () => null;
     let treeWalkerTexts = [];
 
+    /* r17 (F08): the constants ride the EXTRACTION discipline — the
+     * hand-copied selector subsets above had already drifted (2 of 11
+     * candidate selectors, 2 of 7 region selectors: the fixture certified
+     * a stale 2-selector ladder while the shipped script walks the full
+     * one — the fixture-bypass class at the CONSTANT layer, the exact
+     * shape the r16 6B3/6B4/6F precedent closes for behavior). The canon's
+     * OWN blocks are sliced and evaluated; the 1Z-red control below
+     * reverts to the stale copy and proves the extraction is load-bearing
+     * (the export misses the testid-only node). */
+    const extractZaiConst = (src, name, kind) => {
+        const start = src.indexOf(`const ${name} = `);
+        if (start === -1) throw new Error(`${name} not found in Zai canon`);
+        if (kind === "line") {
+            const nl = src.indexOf("\n", start);
+            return src.slice(start, nl).trim();
+        }
+        let depth = 0, end = -1, inStr = null;
+        for (let i = start; i < src.length; i++) {
+            const c = src[i];
+            if (inStr) { if (c === inStr && src[i - 1] !== "\\") inStr = null; continue; }
+            if (c === '"' || c === "'" || c === "`") { inStr = c; continue; }
+            if (c === "[" || c === "(" || c === "{") depth++;
+            else if (c === "]" || c === ")" || c === "}") { depth--; if (depth === 0) { end = i + 1; break; } }
+        }
+        if (end === -1) throw new Error(`${name} block unterminated`);
+        return src.slice(start, end) + ";";
+    };
+    const evalZaiConst = (blockSrc, name) => new Function(`${blockSrc}\nreturn ${name};`)();
+    const zaiCandidateSelectors = evalZaiConst(extractZaiConst(zaiSrc, "CANDIDATE_SELECTORS", "block"), "CANDIDATE_SELECTORS");
+    const zaiRegionSelectors = evalZaiConst(extractZaiConst(zaiSrc, "REGION_SELECTORS", "block"), "REGION_SELECTORS");
+    const zaiUserRoleRe = evalZaiConst(extractZaiConst(zaiSrc, "USER_ROLE_RE", "line"), "USER_ROLE_RE");
+    const zaiAssistantRoleRe = evalZaiConst(extractZaiConst(zaiSrc, "ASSISTANT_ROLE_RE", "line"), "ASSISTANT_ROLE_RE");
+
     const zaiCtx = vm.createContext({
         SCRIPT: { name: "4ndr0tools - Zai Exporter", version: "1.0.0", tag: "[Ψ-ZaiExporter]" },
-        CANDIDATE_SELECTORS: ["[data-message-id]", "[data-role]"],
-        REGION_SELECTORS: ["main", '[role="main"]'],
-        USER_ROLE_RE: /\b(user|human|self|visitor|query|prompt|sender)\b/i,
-        ASSISTANT_ROLE_RE: /\b(assistant|bot|ai[-_ ]?reply|glm|model|response|answer|agent)\b/i,
+        /* r17 (F08): the canon's OWN constants — extracted, never copied. */
+        CANDIDATE_SELECTORS: zaiCandidateSelectors,
+        REGION_SELECTORS: zaiRegionSelectors,
+        USER_ROLE_RE: zaiUserRoleRe,
+        ASSISTANT_ROLE_RE: zaiAssistantRoleRe,
         Node: { DOCUMENT_POSITION_FOLLOWING: 4, DOCUMENT_POSITION_PRECEDING: 2 },
         NodeFilter: { SHOW_TEXT: 4 },
         document: {
@@ -236,6 +270,51 @@ export async function runFamilyFixtureSmoke(root = ROOT) {
     const rcHonest = zaiCtx.__zai.classifyAll(rcUnrepairable);
     assert("Zai Exporter red control: alternation repair fixes sandwiched gaps AND leaves un-repairable runs honestly unknown",
         rcRepaired[1] === "assistant" && rcHonest.every((r) => r === "unknown"));
+
+    // 1Z. r17 (F08): THE CONSTANT-EXTRACTION PIN — a node discoverable ONLY
+    // by a canon selector the stale hand-copy lacked still exports (the
+    // extracted 11-selector ladder queries '[data-testid^="message" i]';
+    // the stale 2-selector copy never does).
+    const testidNode = new MockEl("DIV", { attrs: { "data-testid": "message-7" }, text: "testid-only harvest" });
+    testidNode.order = 4;
+    queryAllHook = (sel) => (sel === '[data-testid^="message" i]' ? [testidNode] : []);
+    queryOneHook = () => null;
+    treeWalkerTexts = [];
+    const convZ = zaiCtx.__zai.extractConversation();
+    const zTxt = zaiCtx.__zai.compose(convZ, "txt", true);
+    const extractionLive = zTxt.includes("testid-only harvest");
+
+    // 1Z-red. The stale hand-copied constants in a copied context MISS the
+    // node — the extraction is load-bearing (this control fails if anyone
+    // reverts the constants to a hand-copy).
+    const staleCtx = vm.createContext({
+        SCRIPT: { name: "4ndr0tools - Zai Exporter", version: "1.0.0", tag: "[Ψ-ZaiExporter]" },
+        CANDIDATE_SELECTORS: ["[data-message-id]", "[data-role]"],
+        REGION_SELECTORS: ["main", '[role="main"]'],
+        USER_ROLE_RE: /\b(user|human|self|visitor|query|prompt|sender)\b/i,
+        ASSISTANT_ROLE_RE: /\b(assistant|bot|ai[-_ ]?reply|glm|model|response|answer|agent)\b/i,
+        Node: { DOCUMENT_POSITION_FOLLOWING: 4, DOCUMENT_POSITION_PRECEDING: 2 },
+        NodeFilter: { SHOW_TEXT: 4 },
+        document: {
+            title: "Z.ai GLM-4.6 Audit Thread",
+            body: {},
+            querySelectorAll: (sel) => queryAllHook(sel),
+            querySelector: (sel) => queryOneHook(sel),
+            createTextNode: (t) => new MockEl("#TEXT", { text: t }),
+            createTreeWalker: () => { let idx = 0; return { nextNode: () => (idx < treeWalkerTexts.length ? { nodeValue: treeWalkerTexts[idx++] } : null) }; },
+        },
+        location: { href: "https://chat.z.ai/c/test-session" },
+        Date, Set, Array, Object, String, JSON, console,
+    });
+    vm.runInContext(`${zaiFns}\nglobalThis.__zai = { extractConversation, compose, classifyAll };`, staleCtx);
+    const convZRed = staleCtx.__zai.extractConversation();
+    /* The stale ladder may legitimately degrade to null (no attributes, no
+     * region, no fallback texts) — the MISS is the point, not a crash. */
+    const zTxtRed = convZRed ? staleCtx.__zai.compose(convZRed, "txt", true) : "";
+    assert(
+        "1Z. the constant-extraction pin (r17 F08): the extracted 11-selector ladder exports a testid-only node the stale hand-copied 2-selector constants MISS — the fixture's constants are the canon's own, and the 1Z-red control proves the extraction load-bearing",
+        extractionLive && !zTxtRed.includes("testid-only harvest")
+    );
 
     /* ── 2. Kernel NetHook v6 + Consumer Family Contract Fixtures ────────── */
     const netSrc = fs.readFileSync(path.join(root, "kernel", "net.js"), "utf8");
@@ -868,6 +947,9 @@ forceImmediateAnswer();`, hwCtx);
             URL,
             ALLOWED_MESSAGE_HOSTS: new Set(["turbo.cr"]),
             MAM_CONTROL_TOKENS: new Set(["iframeVideo", "iframePicInPic", "parentFull", "parentSmall", "innerFull", "innerSmall"]),
+            /* r17 (F02): the receiver's exactly-once latch rides the sandbox
+             * (the closure dependency the extracted function needs). */
+            embeddedPayloads: new Set(),
             console: { log: (s) => cbLog.push(String(s)) },
             document: {
                 getElementsByClassName: (cls) =>
@@ -898,23 +980,40 @@ forceImmediateAnswer();`, hwCtx);
     const t2 = runReceiver(cbRecvSrc, liveWin, "https://turbo.cr", "iframeVideo");
     const t3 = runReceiver(cbRecvSrc, liveWin, "https://turbo.cr", "https://turbo.cr/v/abc123");
     const t4 = runReceiver(cbRecvSrc, { closed: true }, "https://turbo.cr", "some-payload");
-    const t5 = runReceiver(cbRecvSrc, liveWin, "https://turbo.cr", "done-close");
+    const t5 = runReceiver(cbRecvSrc, liveWin, "https://turbo.cr", "close");
     const t6 = runReceiver(cbRecvSrc, liveWin, "https://evil.example", "https://turbo.cr/v/abc123");
+    /* r17 (F02): the hardened receiver — 'done-close' is a PAYLOAD now (the
+     * close token is exact), an object payload is refused, and a duplicate
+     * post embeds exactly once (same context, two posts). */
+    const t7 = runReceiver(cbRecvSrc, liveWin, "https://turbo.cr", "done-close");
+    const t8 = runReceiver(cbRecvSrc, liveWin, "https://turbo.cr", { token: "iframeVideo" });
+    cbLog.length = 0;
+    cbCloseCalls.length = 0;
+    const { sandbox: dedupeSandbox, textarea: dedupeTextarea } = makeCbSandbox();
+    dedupeSandbox.window.__turboUploadWin = liveWin;
+    const dedupeCtx = vm.createContext(dedupeSandbox);
+    vm.runInContext(`${cbRecvSrc}\nglobalThis.__recv = receivePostMessage;`, dedupeCtx);
+    dedupeCtx.__recv({ origin: "https://turbo.cr", data: "dup-payload" });
+    dedupeCtx.__recv({ origin: "https://turbo.cr", data: "dup-payload" });
+    const t9 = { textarea: dedupeTextarea.value, logs: [...cbLog] };
     assert(
-        "6D. the shipped upload receiver gates the channel (15a F07): MAM's 'iframeVideo' token embeds NOTHING with or without a session, a REAL payload embeds only when the upload window is live ('[MEDIA=saint_vid]…[/MEDIA]' + the console line), a dead session is ignored, 'close' fires only on the live window, and a foreign origin is still refused",
+        "6D. the shipped upload receiver gates the channel (15a F07 + r17 F02): MAM's 'iframeVideo' token embeds NOTHING with or without a session, a REAL payload embeds only when the upload window is live ('[MEDIA=saint_vid]…[/MEDIA]' + the console line), a dead session is ignored, the EXACT 'close' token fires only on the live window, a foreign origin is refused, 'done-close' is a payload (never a close — the substring trap), an object payload is refused outright, and a duplicate post embeds exactly once",
         t1.textarea === "" && t1.logs.length === 0 &&
         t2.textarea === "" && t2.logs.length === 0 &&
         t3.textarea === "[MEDIA=saint_vid]https://turbo.cr/v/abc123[/MEDIA]" && t3.logs.length === 1 &&
         t4.textarea === "" && t4.logs.length === 0 &&
         t5.closed === 1 && t5.textarea === "" &&
-        t6.textarea === "" && t6.logs.length === 0
+        t6.textarea === "" && t6.logs.length === 0 &&
+        t7.closed === 0 && t7.textarea === "[MEDIA=saint_vid]done-close[/MEDIA]" &&
+        t8.textarea === "" && t8.logs.length === 0 &&
+        t9.textarea === "[MEDIA=saint_vid]dup-payload[/MEDIA]" && t9.logs.length === 1
     );
 
     // 6D-red. Both gates stripped from a copied source reproduces the r14
     // field defect (the token embeds as garbage) — the battery sees it.
     const cbSabotaged = cbRecvSrc
         .replace("if (!uploadSessionLive) return;", "")
-        .replace("if (MAM_CONTROL_TOKENS.has(String(e.data))) return;", "");
+        .replace("if (MAM_CONTROL_TOKENS.has(e.data)) return;", "");
     const tRed = runReceiver(cbSabotaged, null, "https://turbo.cr", "iframeVideo");
     assert(
         "6D-red. sabotage control: with both gates stripped, 'iframeVideo' embeds as [MEDIA=saint_vid]iframeVideo[/MEDIA] garbage — the exact r14 field defect this round closes (the gate pair is load-bearing)",
@@ -923,10 +1022,10 @@ forceImmediateAnswer();`, hwCtx);
 
     // 6E. Version stamps + the CB static contract surface.
     assert(
-        "6E. the round-16 stamps: Forums++ canon at 1.13.9, Confirmation Bypass canon at 4.1.6 (header AND banner — the r15 banner drift closed), and CB carries the MAM_CONTROL_TOKENS vocabulary + the uploadSessionLive gate verbatim",
-        /^\/\/ @version\s+1\.13\.9/m.test(fppSrc) &&
-        /^\/\/ @version\s+4\.1\.6/m.test(cbSrc) &&
-        cbSrc.includes("Confirmation Bypass v4.1.6") &&
+        "6E. the round-17 stamps: Forums++ canon at 1.14.0, Confirmation Bypass canon at 4.1.7 (header AND banner), and CB carries the MAM_CONTROL_TOKENS vocabulary + the uploadSessionLive gate verbatim",
+        /^\/\/ @version\s+1\.14\.0/m.test(fppSrc) &&
+        /^\/\/ @version\s+4\.1\.7/m.test(cbSrc) &&
+        cbSrc.includes("Confirmation Bypass v4.1.7") &&
         cbSrc.includes("MAM_CONTROL_TOKENS") &&
         cbSrc.includes("uploadSessionLive")
     );
@@ -957,22 +1056,30 @@ forceImmediateAnswer();`, hwCtx);
         const logs = [];
         const timers = [];
         const observers = [];
-        const btn = {
+        /* r17 (F02): the button is a FACTORY + a swappable current pointer
+         * (the budget scenario swaps the node the way an SPA re-render
+         * does), the observer stub honors observe()/disconnect() (the
+         * re-arm semantics are only testable when a disconnected observer
+         * stops firing), and clearTimeout actually cancels (the cap-timer
+         * clear must be visible to the virtual clock). */
+        const makeBtn = () => ({
             disabled: false,
             attrs: {},
-            hasAttribute: a => a in btn.attrs,
-            getAttribute: a => (a in btn.attrs ? btn.attrs[a] : null),
-            setAttribute: (a, v) => { btn.attrs[a] = String(v); },
-            removeAttribute: a => { delete btn.attrs[a]; },
+            hasAttribute(a) { return a in this.attrs; },
+            getAttribute(a) { return a in this.attrs ? this.attrs[a] : null; },
+            setAttribute(a, v) { this.attrs[a] = String(v); },
+            removeAttribute(a) { delete this.attrs[a]; },
             get textContent() { return "Download File"; },
             get className() { return ""; },
             dispatchEvent: () => true,
-        };
+        });
+        let currentBtn = makeBtn();
         let state = altchaState;
         const doc = {
-            setAltcha: s => { state = s; observers.forEach(o => o.cb()); },
+            setAltcha: s => { state = s; observers.forEach(o => { if (o._observing) o._cb(); }); },
+            swapButton: () => { currentBtn = makeBtn(); },
             querySelector: sel => {
-                if (sel === "#downloadBtn") return btn;
+                if (sel === "#downloadBtn") return currentBtn;
                 if (sel.includes(".altcha")) return (state === "unverified" || state === "verifying") ? { getAttribute: () => state } : null;
                 return null;
             },
@@ -982,9 +1089,13 @@ forceImmediateAnswer();`, hwCtx);
         const win = {
             location: { href: "https://turbo.cr/d/abc" },
             setTimeout: (fn, ms) => { const t = { fn, ms, fired: false }; timers.push(t); return t; },
-            clearTimeout: () => {},
+            clearTimeout: (t) => { if (t) t.fired = true; },
             addEventListener: () => {},
-            MutationObserver: class { constructor(cb) { observers.push({ cb }); } observe() {} disconnect() {} },
+            MutationObserver: class {
+                constructor(cb) { this._cb = cb; this._observing = false; observers.push(this); }
+                observe() { this._observing = true; }
+                disconnect() { this._observing = false; }
+            },
         };
         const fakeConsole = { log: s => logs.push(String(s)), debug: () => {}, error: () => {} };
         const fn = new Function("window", "document", "console", "MouseEvent", "MutationObserver", `'use strict'; return (${src})();`);
@@ -997,7 +1108,7 @@ forceImmediateAnswer();`, hwCtx);
                 pending[0].fn();
             }
         };
-        return { logs, btn, doc, drain };
+        return { logs, btn: currentBtn, doc, drain };
     };
 
     const s1 = bootTrigger(null);
@@ -1018,6 +1129,12 @@ forceImmediateAnswer();`, hwCtx);
     s3.drain(2000);
     const verifiedLands = s3.btn.attrs["data-cb4-dl-clicked"] === "true" &&
         s3.logs.some(l => l.includes("Download button triggered."));
+    /* r17 (F02): the solved page's cap timer DIES with the landed click —
+     * draining past 15 s must NOT print the false 'captcha gate expired'
+     * evidence line the 4.1.6 machine logged on every successfully solved
+     * page that stayed open. */
+    s3.drain(20000);
+    const noFalseCapLine = !s3.logs.some(l => l.includes("captcha gate expired"));
 
     const s4 = bootTrigger("unverified");
     s4.drain(20000);
@@ -1025,8 +1142,188 @@ forceImmediateAnswer();`, hwCtx);
         s4.btn.attrs["data-cb4-dl-clicked"] === "true";
 
     assert(
-        "6F. captcha-aware click timing, EXECUTED from the shipped trigger (16a F02): no-captcha page keeps the legacy fast click (trigger line, zero deferral); a solving Altcha DEFERS the click (guard unset + the evidence line); the verified flip lands the click; a never-verifying widget still gets the legacy click via the bounded cap — never worse than 4.1.5",
-        noCaptcha && deferred && verifiedLands && capDelivers
+        "6F. captcha-aware click timing, EXECUTED from the shipped trigger (16a F02 + r17 F02): no-captcha page keeps the legacy fast click (trigger line, zero deferral); a solving Altcha DEFERS the click (guard unset + the evidence line); the verified flip lands the click; a never-verifying widget still gets the legacy click via the bounded cap — never worse than 4.1.5; and the solved page logs NO false 'gate expired' line past the cap window (the timer dies with the landed click)",
+        noCaptcha && deferred && verifiedLands && capDelivers && noFalseCapLine
+    );
+
+    // 6F2 (r17 F02): THE RE-ARMED CAPTCHA, WIRED — the 4.1.6 comment
+    // promised the gated retry would route through the observer path, but
+    // the observer was already disconnected at click #1's success; the
+    // observer is re-armed on that path now, so the re-verified flip lands
+    // click #2 within ~720 ms of the flip — not at the stale 15 s cap.
+    // (The captcha re-arms BETWEEN click #1 and the rearm timer, so the
+    // rearm's re-click is gated and takes the re-observe path.)
+    const s5 = bootTrigger("unverified");
+    s5.drain(5000);
+    s5.doc.setAltcha("verified");
+    s5.drain(1000);
+    const clicksAfterFirst = s5.logs.filter(l => l.includes("Download button triggered.")).length;
+    /* The captcha re-arms AFTER the 1.5 s reaction window closes (a re-arm
+     * inside the window legitimately trips the reaction observer and
+     * suppresses the re-click — the page reacted). Only the between-windows
+     * re-arm reaches the gated re-click path this fixture pins. */
+    s5.drain(1500);
+    s5.doc.setAltcha("unverified");
+    s5.drain(1600);
+    s5.doc.setAltcha("verified");
+    s5.drain(1000);
+    const s5Triggers = s5.logs.filter(l => l.includes("Download button triggered.")).length;
+    const s5Deferrals = s5.logs.filter(l => l.includes("Download click deferred")).length;
+    const s5NoFalseCap = !s5.logs.some(l => l.includes("captcha gate expired"));
+    assert(
+        "6F2. the re-armed captcha, wired (r17 F02): after click #1 and a captcha re-arm, the gated re-click re-arms the OBSERVER and the re-verified flip lands click #2 (2 trigger lines, 2 deferral lines — the second deferral is NEW evidence, the log-once flag re-arms), with no false cap line",
+        clicksAfterFirst === 1 && s5Triggers === 2 && s5Deferrals === 2 && s5NoFalseCap
+    );
+
+    // 6F3 (r17 F02): THE BUDGET AT THE CHOKE POINT — a node swap plus the
+    // original cap timer cannot spend click #3 with MAX_CLICKS = 2 (the
+    // 4.1.6 machine enforced the budget only when scheduling the rearm).
+    const s6 = bootTrigger("unverified");
+    s6.drain(5000);
+    s6.doc.setAltcha("verified");
+    s6.drain(2000);
+    s6.drain(2500);
+    s6.doc.swapButton();
+    s6.drain(16000);
+    const s6Triggers = s6.logs.filter(l => l.includes("Download button triggered.")).length;
+    assert(
+        "6F3. the click budget at the choke point (r17 F02): with both MAX_CLICKS spent and the page re-rendering a fresh control, the original cap timer's attempt is refused — exactly 2 trigger lines, never a third",
+        s6Triggers === 2
+    );
+
+    // 6F3-red. Both budget mitigations stripped from a copied source
+    // reconstruct the 4.1.6 defect: the never-cleared cap fires at 15 s on
+    // a swapped node and spends click #3.
+    const trigSabotagedBudget = trigSrc
+        .replace("if (captchaCapTimer) { window.clearTimeout(captchaCapTimer); captchaCapTimer = null; }", "")
+        .replace("if (clicks >= MAX_CLICKS) return true;", "");
+    const s6Red = bootTrigger("unverified", trigSabotagedBudget);
+    s6Red.drain(5000);
+    s6Red.doc.setAltcha("verified");
+    s6Red.drain(2000);
+    s6Red.drain(2500);
+    s6Red.doc.swapButton();
+    s6Red.drain(16000);
+    const s6RedTriggers = s6Red.logs.filter(l => l.includes("Download button triggered.")).length;
+    assert(
+        "6F3-red. sabotage control: with the cap-clear and the budget guard both stripped, the stale cap timer fires on the swapped node and spends click #3 (3 trigger lines) — the exact 4.1.6 defect the pair closes (the mitigations are load-bearing)",
+        s6RedTriggers === 3 && trigSabotagedBudget !== trigSrc
+    );
+
+    // 6G. THE HARVEST ALTERNATION SPLIT, SETTLED (r17 F01) — the composed
+    // wrapper is EXTRACTED from the canon (the `const pat` line inside
+    // execMatcher) and composed with the EXTRACTED Saint:video, Cyberdrop
+    // and Pixeldrain matchers exactly the way parseHosts compiles them:
+    // id-carrying turbo/saint2 links must harvest WITH their ids (the
+    // resolver ladder the r15/r16 fixtures certified was
+    // pipeline-unreachable before), Cyberdrop fs- links keep their path,
+    // bare forms stay bare, boundary false-positives stay out, and
+    // single-branch matchers are unaffected (the grouping is match-neutral).
+    const patTemplate = (() => {
+        const m = fppSrc.match(/^ *const pat = `.*`;\s*$/m);
+        if (!m) throw new Error("wrapper template (const pat) not found in Forums++ canon");
+        return m[0].trim().replace("const pat = `", "").replace("`;", "");
+    })();
+    const matcherSrcOf = marker => {
+        const i = fppSrc.indexOf(marker);
+        if (i === -1) throw new Error(`matcher marker missing: ${marker}`);
+        const open = fppSrc.indexOf("[/", i);
+        const close = fppSrc.indexOf("/]", open);
+        if (open === -1 || close === -1) throw new Error(`matcher pattern not adjacent to marker: ${marker}`);
+        return fppSrc.slice(open + 2, close);
+    };
+    const composeHarvest = (matcherSrc, template = patTemplate) => {
+        let patternStr = String(matcherSrc);
+        patternStr = patternStr.replace(/<no_qs>|<keep_ts>|~an@/g, mm => (mm === "~an@" ? "[a-zA-Z0-9]" : ""));
+        return new RegExp(template.replaceAll("${h.re.toString(patternStr)}", patternStr), "igs");
+    };
+    const harvestOf = (matcherSrc, post, template) => {
+        const pattern = composeHarvest(matcherSrc, template);
+        const raw = [...post.matchAll(pattern)].map(m => m[0].trim());
+        return [...new Set(raw.map(u => (u.endsWith("/") ? u.slice(0, -1) : u)))];
+    };
+    const saintMatcher = matcherSrcOf("['Saint:video', [");
+    const cyberMatcher = matcherSrcOf("['Cyberdrop:', [");
+    const pdMatcher = matcherSrcOf("['Pixeldrain:', [");
+    const g1 = harvestOf(saintMatcher, `<a href="https://turbo.cr/v/abc123">v</a>`);
+    const g2 = harvestOf(saintMatcher, `<a href="https://turbo.cr/embed/abc123">v</a>`);
+    const g3 = harvestOf(saintMatcher, `<a href="https://saint2.su/d/xyz789">v</a>`);
+    const g4 = harvestOf(saintMatcher, `<a href="https://turbo.cr/embed/">v</a>`);
+    const g5 = harvestOf(saintMatcher, `<a href="https://turbo.cr/videosx">v</a><a href="https://turbo.cr/embedx">v</a><a href="https://turbo.cr/about">v</a>`);
+    const g6 = harvestOf(cyberMatcher, `<a href="https://fs-1.cyberdrop.to/file.jpg">x</a>`);
+    const g7 = harvestOf(pdMatcher, `<a href="https://pixeldrain.com/u/abc123">x</a>`);
+    assert(
+        "6G. the harvest alternation split, settled (r17 F01): through the REAL composed wrapper, id-carrying /v, /embed and /d links harvest WITH their ids; the bare /embed/ form harvests bare (walker-stripped parity); /videosx, /embedx and /about stay out; Cyberdrop fs- keeps its full path; and the single-branch Pixeldrain control is byte-identical (the grouping is match-neutral where it must be)",
+        JSON.stringify(g1) === '["https://turbo.cr/v/abc123"]' &&
+        JSON.stringify(g2) === '["https://turbo.cr/embed/abc123"]' &&
+        JSON.stringify(g3) === '["https://saint2.su/d/xyz789"]' &&
+        JSON.stringify(g4) === '["https://turbo.cr/embed"]' &&
+        JSON.stringify(g5) === "[]" &&
+        JSON.stringify(g6) === '["https://fs-1.cyberdrop.to/file.jpg"]' &&
+        JSON.stringify(g7) === '["https://pixeldrain.com/u/abc123"]'
+    );
+
+    // 6G-red. The r16 composition (no grouping) reconstructed in a copied
+    // template strips the id — the pin is load-bearing (a revert of the
+    // grouping ships silently otherwise).
+    const r16Template = patTemplate.replaceAll(`(?:${"${h.re.toString(patternStr)}"})`, "${h.re.toString(patternStr)}");
+    const gRed = harvestOf(saintMatcher, `<a href="https://turbo.cr/v/abc123">v</a>`, r16Template);
+    assert(
+        "6G-red. sabotage control: the un-grouped r16 composition strips the id from the id-carrying href ('https://turbo.cr/v' — the defect this round settles) — the grouping is load-bearing",
+        JSON.stringify(gRed) === '["https://turbo.cr/v"]' && r16Template !== patTemplate
+    );
+
+    // 6H. THE HOVER-ANNOUNCEMENT DEDUPE (r17 F03), EXECUTED from the shipped
+    // setButton.init + handle.leavePlayer: one announcement per hover-ENTRY
+    // (the r15 field's console storm), re-armed by leavePlayer, immediate
+    // for a different player — the first announcement and the re-entry
+    // contract preserved.
+    const mamSrc = fs.readFileSync(
+        path.join(root, "canon", "_sovereign", "4ndr0tools - Maximize_Any_Media.user.js"),
+        "utf8"
+    );
+    const sliceBraceBlock = (src, marker) => {
+        const i = src.indexOf(marker);
+        if (i === -1) throw new Error(`marker missing in MAM canon: ${marker}`);
+        let depth = 0, start = -1, end = -1, inStr = null;
+        for (let j = i; j < src.length; j++) {
+            const c = src[j];
+            if (inStr) { if (c === inStr && src[j - 1] !== "\\") inStr = null; continue; }
+            if (c === '"' || c === "'" || c === "`") { inStr = c; continue; }
+            if (c === "{") { depth++; if (start === -1) start = j; }
+            else if (c === "}") { depth--; if (depth === 0) { end = j + 1; break; } }
+        }
+        if (end === -1) throw new Error(`block unterminated: ${marker}`);
+        return src.slice(i, end);
+    };
+    const mamSetButtonSrc = sliceBraceBlock(mamSrc, "const setButton = {");
+    const mamLeaveSrc = sliceBraceBlock(mamSrc, "    leavePlayer() {");
+    const mamSent = [];
+    const mamGv = { isIframe: true, player: null, iframeVideoAnnounced: null, controlBtn: { style: { visibility: "" } }, picinpicBtn: null };
+    const mamCtx = vm.createContext({
+        gv: mamGv,
+        tool: { isHalfFullClient: () => true },
+        init: () => {},
+        window: { parent: { postMessage: m => mamSent.push(m) } },
+        document: { getElementById: () => ({}) },
+    });
+    vm.runInContext(`${mamSetButtonSrc}\nconst handle = { ${mamLeaveSrc} };\nglobalThis.__setInit = setButton.init; globalThis.__leave = handle.leavePlayer;`, mamCtx);
+    const playerA = { nodeName: "VIDEO" };
+    const playerB = { nodeName: "VIDEO" };
+    mamGv.player = playerA;
+    mamCtx.__setInit();
+    mamCtx.__setInit();
+    mamCtx.__setInit();
+    const afterStorm = mamSent.length;
+    mamCtx.__leave();
+    mamCtx.__setInit();
+    const afterReentry = mamSent.length;
+    mamGv.player = playerB;
+    mamCtx.__setInit();
+    const afterNewPlayer = mamSent.length;
+    assert(
+        "6H. the hover-announcement dedupe, EXECUTED from the shipped setButton.init + leavePlayer (r17 F03): a three-mouseover storm on one player posts 'iframeVideo' exactly ONCE; leavePlayer re-arms and the re-entry posts again; a different player posts immediately — the first-announcement handshake and the re-entry re-show contract preserved",
+        afterStorm === 1 && afterReentry === 2 && afterNewPlayer === 3 && mamSent.every(m => m === "iframeVideo")
     );
 
     // 6F-red. The PoW gate stripped from a copied source reproduces the

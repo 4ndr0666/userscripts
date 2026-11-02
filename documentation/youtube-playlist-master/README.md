@@ -1,4 +1,4 @@
-# YouTube Playlist Master · v1.7.5
+# YouTube Playlist Master · v1.7.6
 
 > The YouTube playlist command deck — `video & players` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ YTPM is the playlist command deck for YouTube: channel playlist buttons (All/Pop
 
 | Dimension | Value |
 |---|---|
-| Version | `1.7.5` |
+| Version | `1.7.6` |
 | Matches | `https://*.youtube.com/*`, `https://youtube.com/*` |
 | Run-at | `document-idle` |
-| Size | 343.8 KB · 6726 lines |
+| Size | 345.0 KB · 6743 lines |
 | Install | [dist/4ndr0tools - YouTube Playlist Master.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YouTube%20Playlist%20Master.user.js) |
 
 ## Feature Inventory
