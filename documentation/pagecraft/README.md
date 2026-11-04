@@ -1,4 +1,4 @@
-# PageCraft · v1.1.3
+# PageCraft · v1.1.4
 
 > All-sites page utility belt — `ux utilities` family · [suite 4ndr0666tools](../INDEX.md)
 
@@ -10,10 +10,10 @@ PageCraft is the every-page utility belt: bulk checkbox control with range and a
 
 | Dimension | Value |
 |---|---|
-| Version | `1.1.3` |
+| Version | `1.1.4` |
 | Matches | `*://*/*` |
 | Run-at | `document-start` |
-| Size | 87.4 KB · 1747 lines |
+| Size | 88.4 KB · 1765 lines |
 | Install | [dist/4ndr0tools - PageCraft.user.js](https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20PageCraft.user.js) |
 
 ## Feature Inventory

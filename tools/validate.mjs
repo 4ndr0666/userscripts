@@ -1403,75 +1403,18 @@ async function gateD() {
         failures.push(`[D] inventory determinism check failed: ${e.message}`);
     }
 
-    const scoreCtx = { /* v1.6.2: named ctx — the determinism gate below re-runs the scorer with the SAME inputs */
-        smoke: { pass: smokePass, count: smokeCount, floor: 160 }, /* floor = shrinkage guard (NOT derived from the battery's self-report — that would make it a tautology); 160 = WO-01 round-4 executed size (157 pre-round-3 + the a4-scope toast tripwire, f73a7e0, + the waitFor timeout/abort pins, this round). Regex-counting kernel-smoke.mjs assert( sites yields 161 — the extra one is the deliberate unreachable glass-switch guard; the floor is the EXECUTED count. */
-        otherGateFailures: failures.length,
-        censuses: {
-            sink: { clean: !sinks.problems.length },
-            transport: { clean: !transport.problems.length },
-            global: { clean: !globals.problems.length },
-            hotkey: { clean: !census.problems.length && !census.collisions.length && !census.stale.length },
-            polling: { clean: !polling.problems.length, sites: polling.sites },
-            observer: { clean: !observers.problems.length, sites: observers.sites },
-            cache: { clean: !caches.problems.length, registries: caches.registries },
-            size: { clean: !sizes.problems.length },
-            connect: { clean: !connects.problems.length, derived: connects.dispatchDerived, partial: connects.dispatchPartial, residual: connects.dispatchResidual },
-            operatorBattery: { clean: !battery.problems.length, tests: battery.tests, families: battery.families, residuals: battery.residuals, adjudicated: battery.adjudicated },
-            domain: { clean: !domains.problems.length },
-            error: { clean: !errors.problems.length, catchSites: errors.catchSites, typed: errors.typed, debug: errors.debug, handled: errors.handled, silent: errors.silent },
-            scope: { clean: !scopes.problems.length, files: scopes.filesScanned }, /* r11 (11c-F07): the 13th instrument rides the score context — the OBI-F01 binding census */
-        },
-        opsec: opsecClean,
-        netHook: { consumers: netConsumerCount },
-        inventoryDeterministic: invParityOk,   /* WO-01 round-2 (6-a F09/g): live parity verdict, was hardcoded true */
-        style: stylePass,
-        styleCounts, /* v1.6.2: derived label — see the audit parse above */
-        docsTruthful,
-        ledger: ledgerStats,
-        qr: qrPass,
-        /* v1.6.1: derived from the live inventory — was hardcoded 37, which
-         * silently misreported coverage the moment a 38th script landed. */
-        docsCoverage: { readmes: readmeCount, scripts: readJsonCached("inventory.json").scripts.length },
-        round: suiteRound,
-    };
-    const score = runProductionScore(ROOT, scoreCtx);
-    if (score.problems.length) {
-        for (const sc of score.problems) failures.push(`[D] production score: ${sc}`);
-    } else {
-        passes.push(`[D] production score verified (${score.total}/100, threshold ${SCORE_THRESHOLD}; recorded tools/score.json — dims: ${score.dims.map((d) => `${d.dimension}=${d.score}/${d.weight}`).join(", ")})`);
-    }
-
-    // Score-record determinism (suite v1.6.2 — same contract as the v1.4.3
-    // inventory fix): tools/score.json used to carry a wall-clock
-    // `generatedAt`, so every `npm run check` rewrote the file and a
-    // post-apply re-verification always left the staged canon drifted
-    // (operator field report, v1.6.1 apply — the kit had to discard the
-    // verifier's side-effects by hand). The record is now round-addressed;
-    // this gate re-runs the scorer with the SAME inputs and demands a
-    // byte-identical rewrite, and pins the schema to non-volatile keys so
-    // the bug class cannot silently return.
-    try {
-        const scorePath = path.join(ROOT, "tools", "score.json");
-        const firstBytes = fs.readFileSync(scorePath, "utf8");
-        const parsed = JSON.parse(firstBytes);
-        const ALLOWED_SCORE_KEYS = new Set(["round", "total", "threshold", "dimensions"]);
-        const volatileKeys = Object.keys(parsed).filter((k) => !ALLOWED_SCORE_KEYS.has(k));
-        if (volatileKeys.length) {
-            failures.push(`[D] score record carries non-deterministic field(s): ${volatileKeys.join(", ")} — wall-clock addressing is forbidden (see the v1.4.3 inventory precedent)`);
-        } else if (parsed.round !== suiteRound) {
-            failures.push(`[D] score record round is ${parsed.round}, expected ${suiteRound} (stale record — rerun npm run check)`);
-        } else {
-            runProductionScore(ROOT, scoreCtx);
-            const secondBytes = fs.readFileSync(scorePath, "utf8");
-            if (firstBytes !== secondBytes) {
-                failures.push(`[D] score record regeneration drift — the record is not deterministic (same inputs must rewrite byte-identical bytes)`);
-            } else {
-                passes.push(`[D] score record regeneration deterministic (round-addressed, schema pinned, byte-identical on re-run)`);
-            }
-        }
-    } catch (e) {
-        failures.push(`[D] score determinism check failed: ${e.message}`);
-    }
+    /* r18 (R18-F18): THE SCORE WRITES LAST. The production score used to
+     * be computed and PERSISTED to tools/score.json here — five gates
+     * BEFORE the end of the chain (canon-kernel wiring, kernel-boundary,
+     * family-fixture, the three browser batteries, norm-symmetry, TT,
+     * MIGRATION). A late-gate failure then exited 1 while the freshly
+     * written record still said total:100 / "check-gate failures: 0" — a
+     * perfect evidence record from a FAILED run (the exact false-
+     * certification window the round-1 inventoryDeterministic fix closed
+     * for the inventory input alone). The ctx and the write now live at
+     * the END of gateD, after every required gate has pushed its verdict,
+     * so otherGateFailures counts the WHOLE run and a failed run can
+     * never leave an unqualified perfect score on disk. */
 
     // Canon-kernel wiring (suite v1.4.3): kernel modules consumed by
     // canon-carried scripts (build.mjs CANON_KERNEL) must be inlined
@@ -1522,7 +1465,7 @@ async function gateD() {
     if (famSmoke.problems.length) {
         for (const p of famSmoke.problems) failures.push(`[D] family-fixture smoke: ${p}`);
     } else {
-        passes.push(`[D] per-family contract fixture battery verified (${famSmoke.passed}/${famSmoke.total} assertions: Zai Exporter 3-strategy ladder + NetHook v6 family fixtures + v1.7.1/v1.7.2 gap-mitigation fixtures + the round-12 Hailuo++ BlobSanitizer family (real attack-sample repair) + the round-15 Forums++/CB field-settlement contracts (the qualified quick-download guard, the malformed saint-link refusals, the Bunkr fail-visible floor, the upload-channel synergy gate — each with its sabotage red control) + red control)`);
+        passes.push(`[D] per-family contract fixture battery verified (${famSmoke.passed}/${famSmoke.total} assertions: Zai Exporter 3-strategy ladder + NetHook v6 family fixtures + v1.7.1/v1.7.2 gap-mitigation fixtures + the round-12 Hailuo++ BlobSanitizer family (real attack-sample repair) + the round-15 Forums++/CB field-settlement contracts (the qualified quick-download guard, the malformed saint-link refusals, the Bunkr fail-visible floor, the upload-channel synergy gate — each with its sabotage red control) + the round-18 cross-training contracts (the hosts retry contract, the shared-ns watcher registry, the LinkMasterΨ harvest grouping + ZIP allocation, the popup data:-media admission, the canvas serializer stability, the PM import gate + Gist truncated branch, the short-206 contract, the rebased YTPM verifier, the Yandex tranche ordering, the Recon hook identity, the MPC vnode retention + identity, the FLX aggregation, the m3u8 facade decode, the ingest provenance, the score-writes-last ordering — each with its red control))`);
     }
 
     const flowBrowser = await runFlowChipBrowserBattery();
@@ -1590,6 +1533,81 @@ async function gateD() {
         if (brokenOpeners) failures.push(`[D] MIGRATION.md: ${brokenOpeners} dist link(s) missing a well-formed [label](href) opener`);
         else if (drift.length) { for (const d of drift) failures.push(`[D] MIGRATION.md label drift: ${d}`); }
         else passes.push(`[D] MIGRATION.md successor table verified (${linked} versioned dist links, zero label drift, zero broken openers)`);
+    }
+
+    /* r18 (R18-F18): the production score — computed and persisted HERE,
+     * after EVERY required gate above has pushed its verdict. The ctx's
+     * otherGateFailures now counts the whole run, so a late failing gate
+     * both fails the exit AND is priced into the persisted record; a
+     * failed run can no longer leave an unqualified 100/100 on disk. */
+    const scoreCtx = { /* v1.6.2: named ctx — the determinism gate below re-runs the scorer with the SAME inputs */
+        smoke: { pass: smokePass, count: smokeCount, floor: 160 }, /* floor = shrinkage guard (NOT derived from the battery's self-report — that would make it a tautology); 160 = WO-01 round-4 executed size (157 pre-round-3 + the a4-scope toast tripwire, f73a7e0, + the waitFor timeout/abort pins, this round). Regex-counting kernel-smoke.mjs assert( sites yields 161 — the extra one is the deliberate unreachable glass-switch guard; the floor is the EXECUTED count. */
+        otherGateFailures: failures.length,
+        censuses: {
+            sink: { clean: !sinks.problems.length },
+            transport: { clean: !transport.problems.length },
+            global: { clean: !globals.problems.length },
+            hotkey: { clean: !census.problems.length && !census.collisions.length && !census.stale.length },
+            polling: { clean: !polling.problems.length, sites: polling.sites },
+            observer: { clean: !observers.problems.length, sites: observers.sites },
+            cache: { clean: !caches.problems.length, registries: caches.registries },
+            size: { clean: !sizes.problems.length },
+            connect: { clean: !connects.problems.length, derived: connects.dispatchDerived, partial: connects.dispatchPartial, residual: connects.dispatchResidual },
+            operatorBattery: { clean: !battery.problems.length, tests: battery.tests, families: battery.families, residuals: battery.residuals, adjudicated: battery.adjudicated },
+            domain: { clean: !domains.problems.length },
+            error: { clean: !errors.problems.length, catchSites: errors.catchSites, typed: errors.typed, debug: errors.debug, handled: errors.handled, silent: errors.silent },
+            scope: { clean: !scopes.problems.length, files: scopes.filesScanned }, /* r11 (11c-F07): the 13th instrument rides the score context — the OBI-F01 binding census */
+        },
+        opsec: opsecClean,
+        netHook: { consumers: netConsumers },
+        inventoryDeterministic: invParityOk,   /* WO-01 round-2 (6-a F09/g): live parity verdict, was hardcoded true */
+        style: stylePass,
+        styleCounts, /* v1.6.2: derived label — see the audit parse above */
+        docsTruthful,
+        ledger: ledgerStats,
+        qr: qrPass,
+        /* v1.6.1: derived from the live inventory — was hardcoded 37, which
+         * silently misreported coverage the moment a 38th script landed. */
+        docsCoverage: { readmes: readmeCount, scripts: readJsonCached("inventory.json").scripts.length },
+        round: suiteRound,
+    };
+    const score = runProductionScore(ROOT, scoreCtx);
+    if (score.problems.length) {
+        for (const sc of score.problems) failures.push(`[D] production score: ${sc}`);
+    } else {
+        passes.push(`[D] production score verified (${score.total}/100, threshold ${SCORE_THRESHOLD}; recorded tools/score.json — dims: ${score.dims.map((d) => `${d.dimension}=${d.score}/${d.weight}`).join(", ")})`);
+    }
+
+    // Score-record determinism (suite v1.6.2 — same contract as the v1.4.3
+    // inventory fix): tools/score.json used to carry a wall-clock
+    // `generatedAt`, so every `npm run check` rewrote the file and a
+    // post-apply re-verification always left the staged canon drifted
+    // (operator field report, v1.6.1 apply — the kit had to discard the
+    // verifier's side-effects by hand). The record is now round-addressed;
+    // this gate re-runs the scorer with the SAME inputs and demands a
+    // byte-identical rewrite, and pins the schema to non-volatile keys so
+    // the bug class cannot silently return.
+    try {
+        const scorePath = path.join(ROOT, "tools", "score.json");
+        const firstBytes = fs.readFileSync(scorePath, "utf8");
+        const parsed = JSON.parse(firstBytes);
+        const ALLOWED_SCORE_KEYS = new Set(["round", "total", "threshold", "dimensions"]);
+        const volatileKeys = Object.keys(parsed).filter((k) => !ALLOWED_SCORE_KEYS.has(k));
+        if (volatileKeys.length) {
+            failures.push(`[D] score record carries non-deterministic field(s): ${volatileKeys.join(", ")} — wall-clock addressing is forbidden (see the v1.4.3 inventory precedent)`);
+        } else if (parsed.round !== suiteRound) {
+            failures.push(`[D] score record round is ${parsed.round}, expected ${suiteRound} (stale record — rerun npm run check)`);
+        } else {
+            runProductionScore(ROOT, scoreCtx);
+            const secondBytes = fs.readFileSync(scorePath, "utf8");
+            if (firstBytes !== secondBytes) {
+                failures.push(`[D] score record regeneration drift — the record is not deterministic (same inputs must rewrite byte-identical bytes)`);
+            } else {
+                passes.push(`[D] score record regeneration deterministic (round-addressed, schema pinned, byte-identical on re-run)`);
+            }
+        }
+    } catch (e) {
+        failures.push(`[D] score determinism check failed: ${e.message}`);
     }
 }
 

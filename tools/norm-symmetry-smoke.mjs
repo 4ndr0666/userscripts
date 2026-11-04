@@ -342,8 +342,8 @@ export async function runNormSymmetrySmoke(root = ROOT) {
       /__(FILE|INPUT|SELECT)_[a-z0-9]{6}_\d+__/g.test("__INPUT_ab12cd_2__") === true &&
         /__(FILE|INPUT|SELECT)_[a-z0-9]{6}_\d+__/g.test("__INPUT_2__") === false &&
         /__QUOTE_[a-z0-9]{6}_\d+__/.test("__QUOTE_2__") === false);
-    assert("16g. PM-F06 wiring: the SCRIPT_VERSION sandbox fallback is stamped 28.9.0 (the two-releases-stale 28.8.1 is gone)",
-      pm.includes(': "28.9.0";') && !pm.includes(': "28.8.1";'));
+    assert("16g. PM-F06 wiring: the SCRIPT_VERSION sandbox fallback is stamped 28.9.1 (the two-releases-stale 28.8.1 is gone)",
+      pm.includes(': "28.9.1";') && !pm.includes(': "28.8.1";'));
 
     /* ── 17. Images++ 4.1.0 — the round-14 normalization fixes ─────────── */
     const cspItem = (item) =>

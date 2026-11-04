@@ -1337,6 +1337,986 @@ forceImmediateAnswer();`, hwCtx);
         sRed.btn.attrs["data-cb4-dl-clicked"] === "true" && trigSabotaged !== trigSrc
     );
 
+    /* ── 7. THE ROUND-18 CROSS-TRAINING CONTRACTS ───────────────────────────
+     * The cross-trainee ledger (R18-F01…F18), every fix pinned with an
+     * EXECUTED proof from the shipped source plus a red control that
+     * reconstructs the exact defect — the 6G/6H/6F-red precedent. */
+
+    // 7A (R18-F01): the hosts retry contract, EXECUTED from kernel/hosts.js —
+    // a handler returning false at document-start is NOT latched and the
+    // DOMContentLoaded re-dispatch reaches it; undefined-return handlers keep
+    // the settle-on-first-dispatch superset; a throwing handler is retried,
+    // bounded by the boot pair; a handler calling hosts.run() re-enters
+    // safely (the guard no-ops); the hostwarp body propagates the signal.
+    const hostsSrc = fs.readFileSync(path.join(root, "kernel", "hosts.js"), "utf8");
+    const hostsCtx = vm.createContext({ console: { debug: () => {} }, location: { hostname: "imagetwist.com" } });
+    vm.runInContext("globalThis.Ψ = { core: { uid: (() => { let n = 0; return (p) => p + '-' + (++n); })() } };" + hostsSrc, hostsCtx);
+    const hostsApi = hostsCtx.Ψ.hosts;
+    let hostDomReady = false, hostDispatches = 0;
+    hostsApi.on("imagetwist.com", () => { hostDispatches++; return hostDomReady; }, { id: "retry-me" });
+    const hostsFirst = hostsApi.run();
+    hostDomReady = true;
+    const hostsSecond = hostsApi.run();
+    const hostsThird = hostsApi.run();
+    let settleDispatches = 0;
+    hostsApi.on("imagetwist.com", () => { settleDispatches++; }, { id: "settle-once" });
+    hostsApi.run(); hostsApi.run();
+    let throwDispatches = 0, throwLatched = false;
+    hostsApi.on("imagetwist.com", () => { throwDispatches++; if (!throwLatched) { throwLatched = true; throw new Error("boom"); } }, { id: "thrower" });
+    hostsApi.run(); hostsApi.run();
+    let reentered = 0;
+    hostsApi.on("imagetwist.com", () => { reentered++; const inner = hostsApi.run(); if (inner !== 0) throw new Error("re-entry returned handlers"); }, { id: "reentrant" });
+    hostsApi.run();
+    const hwR18Src = fs.readFileSync(path.join(root, "modules", "hostwarp", "body.js"), "utf8");
+    assert(
+        "7A. the hosts retry contract (r18 R18-F01), EXECUTED from kernel/hosts.js: the document-start dispatch of a DOM-incomplete handler (returns false) does NOT latch it — the DOMContentLoaded re-run re-dispatches and completes it (first=0, second=1, third=0 with exactly 2 dispatches); an undefined-return handler settles on FIRST dispatch (the superset); a throwing handler is retried on the next run (2 dispatches, never latched); a handler calling hosts.run() re-enters through the guard (no loop); and the hostwarp body propagates the signal (return handler()) with the sync click-through shapes",
+        hostsFirst === 0 && hostsSecond === 1 && hostsThird === 0 && hostDispatches === 2 &&
+        settleDispatches === 1 && throwDispatches === 2 && reentered === 1 &&
+        hostsSrc.includes("complete = result !== false;") && hostsSrc.includes("if (dispatching) return 0;") &&
+        hwR18Src.includes("return handler();") && hwR18Src.includes("if (redirectToImage('.pic')) return true;") &&
+        hwR18Src.includes("if (!submitButton) return redirectToImage('.centred');")
+    );
+
+    // 7A-red: the pre-r18 latch (executed.add BEFORE the handler runs)
+    // reconstructed in a copied kernel — the no-op document-start dispatch
+    // consumes the handler and the DOMContentLoaded re-run is a no-op.
+    const sFixStart = hostsSrc.indexOf("let complete = true;");
+    const sFixEndMark = "if (complete) { executed.add(entry.id); ran++; }";
+    const sFixEnd = hostsSrc.indexOf(sFixEndMark);
+    const oldHostsBlock = `executed.add(entry.id);
+                try {
+                    entry.handler({ hostname: location.hostname, domain: hit.domain });
+                    ran++;
+                } catch (e) {
+                    console.debug(\`[a4/hosts] handler "\${entry.id}" failed:\`, (e && e.message) || e);
+                }`;
+    const hostsSabotaged = hostsSrc.slice(0, sFixStart) + oldHostsBlock + hostsSrc.slice(sFixEnd + sFixEndMark.length);
+    const hostsRedCtx = vm.createContext({ console: { debug: () => {} }, location: { hostname: "imagetwist.com" } });
+    vm.runInContext("globalThis.Ψ = { core: { uid: (() => { let n = 0; return (p) => p + '-' + (++n); })() } };" + hostsSabotaged, hostsRedCtx);
+    const hostsRedApi = hostsRedCtx.Ψ.hosts;
+    let redDomReady = false, redDispatches = 0;
+    hostsRedApi.on("imagetwist.com", () => { redDispatches++; return redDomReady; }, { id: "retry-me" });
+    hostsRedApi.run();
+    redDomReady = true;
+    const redSecond = hostsRedApi.run();
+    assert(
+        "7A-red. sabotage control: with the pre-r18 latch reconstructed (executed.add BEFORE the handler runs), the document-start no-op consumes the handler — the DOMContentLoaded re-run reports 0 handlers and 1 total dispatch (the URL stays interstitial — the gate is load-bearing)",
+        redDispatches === 1 && redSecond === 0 && hostsSabotaged !== hostsSrc
+    );
+
+    // 7B (R18-F02): the shared-namespace watcher registry, EXECUTED from
+    // kernel/store.js under storage refusal — two facades of ONE namespace
+    // hear each other's writes; same-facade notifications hold (v1.3.0);
+    // different namespaces stay isolated.
+    const storeSrc = fs.readFileSync(path.join(root, "kernel", "store.js"), "utf8");
+    const makeStoreCtx = (src) => {
+        const ctx = vm.createContext({
+            console: { debug: () => {} },
+            GM_getValue: () => undefined,
+            GM_setValue: () => { throw new Error("refused"); },
+        });
+        vm.runInContext("globalThis.Ψ = {};" + src, ctx);
+        return ctx;
+    };
+    const storeCtx = makeStoreCtx(storeSrc);
+    const facadeA = storeCtx.Ψ.store.ns("pagecraft");
+    const facadeB = storeCtx.Ψ.store.ns("pagecraft");
+    let bodyNotifications = 0;
+    facadeA.watch("collapse", () => { bodyNotifications++; });
+    facadeB.set("collapse", true);            // the console-side write under refusal
+    const viaB = bodyNotifications;
+    facadeA.set("collapse", false);           // same-facade control (v1.3.0)
+    const viaA = bodyNotifications;
+    const otherNs = storeCtx.Ψ.store.ns("hostwarp");
+    let otherNotifications = 0;
+    otherNs.watch("mod:imagehosts", () => { otherNotifications++; });
+    facadeB.set("mod:imagehosts", true);      // different namespace — isolated
+    const savedValue = facadeA.get("collapse", null);
+    assert(
+        "7B. the shared-namespace watcher registry (r18 R18-F02), EXECUTED from kernel/store.js under GM write refusal: the settings-console facade's set() notifies the module body's watcher through the OTHER facade (1 notification — live-apply alive exactly when storage refuses); the same-facade control fires too; a DIFFERENT namespace's watcher hears nothing (isolation held); and the refused write still lands in the shared memory snapshot",
+        viaB === 1 && viaA === 2 && otherNotifications === 0 && savedValue === false
+    );
+
+    // 7B-red: the per-facade watcher arrays (the v1.3.0 shape) reconstructed
+    // in a copied kernel — the body watcher receives ZERO notifications.
+    const regStart = storeSrc.indexOf("let reg = nsRegistries.get(prefix);");
+    const regEndMark = "const gmListenerKeys = reg.gmListenerKeys;";
+    const regEnd = storeSrc.indexOf(regEndMark);
+    const storeSabotaged = storeSrc.slice(0, regStart) + "const watchers = [];\n        const gmListenerKeys = new Set();" + storeSrc.slice(regEnd + regEndMark.length);
+    const storeRedCtx = makeStoreCtx(storeSabotaged);
+    const redA = storeRedCtx.Ψ.store.ns("pagecraft");
+    const redB = storeRedCtx.Ψ.store.ns("pagecraft");
+    let redBodyNotifications = 0;
+    redA.watch("collapse", () => { redBodyNotifications++; });
+    redB.set("collapse", true);
+    assert(
+        "7B-red. sabotage control: with the per-facade watcher arrays reconstructed (the pre-r18 shape), the console facade's write notifies only its OWN watchers — the module body's watcher receives 0 notifications (live-apply dead under storage refusal — the registry sharing is load-bearing)",
+        redBodyNotifications === 0 && storeSabotaged !== storeSrc
+    );
+
+    // 7C (R18-F03): the LinkMasterΨ harvest composition, EXECUTED through
+    // the REAL wrapper template + the REAL Cyberdrop matcher extracted from
+    // the canon — an fs- link harvests WITH its full path and the harvested
+    // form passes the resolver gate; the un-grouped composition strips it
+    // and the gate drops the resource (the r17-F01 twin).
+    const lmPatStart = lmSrc.indexOf("const pat = `");
+    const lmPatEnd = lmSrc.indexOf("`;", lmPatStart);
+    if (lmPatStart < 0 || lmPatEnd < 0) throw new Error("LinkMasterΨ wrapper template not found");
+    const lmTemplate = lmSrc.slice(lmPatStart + "const pat = `".length, lmPatEnd);
+    const lmMatcherSrcOf = (marker) => {
+        const i = lmSrc.indexOf(marker);
+        if (i === -1) throw new Error(`matcher marker missing in LinkMasterΨ: ${marker}`);
+        const open = lmSrc.indexOf("[/", i);
+        /* the SINGLE matcher is the first regex literal in the hosts array —
+         * its body ends at the earliest of `/,` (another matcher follows) or
+         * `/]` (array closes). */
+        const endA = lmSrc.indexOf("/,", open);
+        const endB = lmSrc.indexOf("/]", open);
+        const end = Math.min(endA === -1 ? Infinity : endA, endB === -1 ? Infinity : endB);
+        if (open === -1 || end === Infinity) throw new Error(`matcher pattern not adjacent to marker: ${marker}`);
+        return lmSrc.slice(open + 2, end);
+    };
+    const composeLm = (matcherSrc, template) => {
+        let p = String(matcherSrc).replace(/~an@/g, "a-zA-Z0-9").replace("<no_qs>", "").replace("<keep_ts>", "");
+        let pat = template.split("${h.re.toString(pattern)}").join(p);
+        pat = pat.replace(/\$\{h\.re\.toString\(\s*pattern\s*\)\}/g, p);
+        return new RegExp(pat, "igs");
+    };
+    const lmHarvestOf = (matcherSrc, post, template) => {
+        const pattern = composeLm(matcherSrc, template);
+        const raw = [...post.matchAll(pattern)].map((m) => m[0].trim());
+        return [...new Set(raw.map((u) => (u.endsWith("/") ? u.slice(0, -1) : u)))];
+    };
+    const lmCyberMatcher = lmMatcherSrcOf('["Cyberdrop:", [');
+    const lmCyberPost = `<a href="https://fs-01.cyberdrop.me/AbCdEf12/full-name.mp4">x</a>`;
+    const lmGrouped = lmHarvestOf(lmCyberMatcher, lmCyberPost, lmTemplate);
+    const lmUngroupedTemplate = lmTemplate
+        .replace(/\(\?:\$\{h\.re\.toString\(pattern\)\}\)/g, "${h.re.toString(pattern)}")
+        .replace(/\(\?:\$\{h\.re\.toString\(\s*pattern\s*\)\}\)/g, "${h.re.toString(pattern)}");
+    const lmUngrouped = lmHarvestOf(lmCyberMatcher, lmCyberPost, lmUngroupedTemplate);
+    const lmGateIdx = lmSrc.indexOf("[/fs-\\d+.cyberdrop.(me|to|cc|nl)\\/");
+    const lmGateFirstRegexOf = (idx) => {
+        /* the resolver gate's FIRST matcher — same first-regex-literal logic
+         * as the matcher extraction. */
+        const open = lmSrc.indexOf("[/", idx);
+        const endA = lmSrc.indexOf("/,", open);
+        const endB = lmSrc.indexOf("/]", open);
+        const end = Math.min(endA === -1 ? Infinity : endA, endB === -1 ? Infinity : endB);
+        if (open === -1 || end === Infinity) throw new Error("resolver gate matcher not found");
+        return lmSrc.slice(open + 2, end);
+    };
+    const lmGate = new RegExp(lmGateFirstRegexOf(lmGateIdx), "i");
+    assert(
+        "7C. the LinkMasterΨ harvest alternation settlement (r18 R18-F03), EXECUTED through the REAL wrapper + matcher: the grouped composition harvests the FULL fs- URL (path intact) and the harvested form PASSES the resolver gate's own pattern (pipeline-reachable); the un-grouped r17-shape composition strips it to the bare origin which the gate REJECTS (the resource silently dropped — the twin of the Forums++ r17 F01, closed here)",
+        JSON.stringify(lmGrouped) === '["https://fs-01.cyberdrop.me/AbCdEf12/full-name.mp4"]' &&
+        lmGate.test(lmGrouped[0]) === true &&
+        JSON.stringify(lmUngrouped) === '["https://fs-01.cyberdrop.me"]' &&
+        lmGate.test(lmUngrouped[0]) === false &&
+        lmUngroupedTemplate !== lmTemplate
+    );
+
+    // 7D (R18-F04): the ZIP name allocation, EXECUTED from the shipped
+    // allocation block with a JSZip-shaped add-or-replace stub — distinct
+    // Unicode names that sanitize to the same key allocate DIFFERENT final
+    // paths (both entries survive), the folder separator survives
+    // (!flatten), log.txt/links.txt are reserved against replacement, and
+    // same-name pairs still dedupe.
+    const lmAllocStart = lmSrc.indexOf("let fn = sanitizeSegment(");
+    const lmAllocEndMark = "usedPaths.add(fn);";
+    const lmAllocEnd = lmSrc.indexOf(lmAllocEndMark, lmAllocStart);
+    if (lmAllocStart < 0 || lmAllocEnd < 0) throw new Error("LinkMasterΨ allocation block not found");
+    const lmAllocBody = lmSrc.slice(lmAllocStart, lmAllocEnd + lmAllocEndMark.length);
+    const lmSanStart = lmSrc.indexOf("const sanitizeSegment = (s) =>");
+    const lmSanEnd = lmSrc.indexOf("\n", lmSanStart);
+    const lmSanitizeDef = lmSrc.slice(lmSanStart, lmSanEnd) + ";";
+    const lmExtStart = lmSrc.indexOf("    ext: (path) => {");
+    const lmExtEnd = lmSrc.indexOf("},", lmExtStart);
+    const lmFnNoExtStart = lmSrc.indexOf("    fnNoExt: (path) => {");
+    const lmFnNoExtEnd = lmSrc.indexOf("    },", lmFnNoExtStart) + 5;
+    const lmHelpers = "const __h = {" + lmSrc.slice(lmExtStart + 4, lmExtEnd + 1) + ",\n" + lmSrc.slice(lmFnNoExtStart + 4, lmFnNoExtEnd) + "};";
+    const runAllocShipped = (resources, opts) => {
+        const zipStub = { files: {}, file(n, d) { this.files[n] = d; } };
+        const ctx = vm.createContext({ console: { debug: () => {} } });
+        const reserved = [];
+        if (opts && opts.generateLog) reserved.push("log.txt");
+        if (opts && opts.generateLinks) reserved.push("links.txt");
+        const runnerSrc = `(function makeAlloc() {
+${lmSanitizeDef}
+${lmHelpers}
+    const h = { generateFilename: (u) => u, ext: __h.ext, fnNoExt: __h.fnNoExt };
+    const postSettings = ${JSON.stringify({ flatten: !!(opts && opts.flatten), generateLog: !!(opts && opts.generateLog), generateLinks: !!(opts && opts.generateLinks) })};
+    const zip = globalThis.__zip;
+    const usedPaths = new Set(${JSON.stringify(reserved)});
+    return function alloc(url, folderName, response) {
+${lmAllocBody}
+        zip.file(fn, "payload:" + url);
+        return fn;
+    };
+})()`;
+        ctx.__zip = zipStub;
+        vm.runInContext("globalThis.__alloc = " + runnerSrc + ";", ctx);
+        const allocated = [];
+        for (const r of resources) allocated.push(ctx.__alloc(r.url, r.folderName, { responseHeaders: "" }));
+        return { zipStub, allocated };
+    };
+    const zipCollide = runAllocShipped([
+        { url: "café.jpg", folderName: null },
+        { url: "cafè.jpg", folderName: null },
+        { url: "log.txt", folderName: null },
+    ], { generateLog: true });
+    const zipFolder = runAllocShipped([{ url: "name.jpg", folderName: "album/sub" }], {});
+    const zipLegacyDedupe = runAllocShipped([
+        { url: "same.jpg", folderName: null },
+        { url: "same.jpg", folderName: null },
+    ], {});
+    assert(
+        "7D. the ZIP name allocation (r18 R18-F04), EXECUTED from the shipped block with a JSZip-shaped add-or-replace stub: café.jpg and cafè.jpg (distinct raw names, one sanitized key) allocate DISTINCT final paths — both entries survive in the archive (3 files, not 2); a reserved log.txt pushes the downloaded log.txt to 'log (2).txt' (generated artifacts can never replace downloaded bytes); the !flatten folder separator SURVIVES sanitization (album/sub/name.jpg — the in-zip structure preserved); and a same-name pair still dedupes (same.jpg + same (2).jpg)",
+        Object.keys(zipCollide.zipStub.files).length === 3 &&
+        zipCollide.allocated[0] === "caf_.jpg" && zipCollide.allocated[1] === "caf_ (2).jpg" && zipCollide.allocated[2] === "log (2).txt" &&
+        zipFolder.allocated[0] === "album/sub/name.jpg" &&
+        zipLegacyDedupe.allocated[0] === "same.jpg" && zipLegacyDedupe.allocated[1] === "same (2).jpg"
+    );
+
+    // 7D-red: the pre-r18 order (dedupe the RAW basename, sanitize the whole
+    // path AFTER) reconstructed — both Unicode names collide onto one entry
+    // and the folder separator is eaten.
+    const runAllocOld = (resources) => {
+        const zipStub = { files: {}, file(n, d) { this.files[n] = d; } };
+        const ctx = vm.createContext({});
+        const oldBody = `(function makeAllocOld() {
+    const h = { generateFilename: (u) => u, ext: (p) => { const i = String(p).lastIndexOf("."); return i < 0 ? null : String(p).slice(i + 1).toLowerCase(); }, fnNoExt: (p) => { const i = String(p).lastIndexOf("."); return i < 0 ? String(p) : String(p).slice(0, i); } };
+    const postSettings = { flatten: false };
+    const zip = globalThis.__zip;
+    return function alloc(url, folderName) {
+        const filenames = [];
+        let basename = h.generateFilename(url);
+        const originalBase = basename;
+        let count = 2;
+        while (filenames.includes(basename)) {
+            const ext = h.ext(originalBase);
+            basename = h.fnNoExt(originalBase) + " (" + (count++) + ")" + (ext ? "." + ext : "");
+        }
+        filenames.push(basename);
+        let fn = basename;
+        if (!postSettings.flatten && folderName) fn = folderName.replace(/[^\\u0000-\\u007f]/g, "_").replace(/[<>:"\\/|?*]/g, "_") + "/" + basename;
+        fn = fn.replace(/[\\u0000-\\u001f\\u007f-\\uffff<>:"\\\\/|?*]/g, "_");
+        return fn;
+    };
+})()`;
+        ctx.__zip = zipStub;
+        vm.runInContext("globalThis.__allocOld = " + oldBody + ";", ctx);
+        const allocated = [];
+        for (const r of resources) allocated.push(ctx.__allocOld(r.url, r.folderName));
+        return { zipStub, allocated };
+    };
+    const zipRed = runAllocOld([
+        { url: "café.jpg", folderName: null },
+        { url: "cafè.jpg", folderName: null },
+        { url: "name.jpg", folderName: "album" },
+    ]);
+    assert(
+        "7D-red. sabotage control: the pre-r18 order reconstructed (dedupe the raw basename, sanitize the whole path after) — café.jpg and cafè.jpg both allocate caf_.jpg (JSZip's same-name write REPLACES the first entry: one file where two were downloaded) and the folder separator is eaten (album_name.jpg) — the sanitize-then-dedupe order is load-bearing",
+        zipRed.allocated[0] === "caf_.jpg" && zipRed.allocated[1] === "caf_.jpg" && zipRed.allocated[2] === "album_name.jpg"
+    );
+
+    // 7E (R18-F05): the popup safe-media filter, EXECUTED from the shipped
+    // getSafeMediaSrc — the transport's own data:image/video URLs are
+    // admitted; data:text/html and javascript: stay refused; http/https/blob
+    // hold (the redirect-safety contract unchanged).
+    const igpSrc = fs.readFileSync(path.join(root, "canon", "_merged", "4ndr0tools - Images++.user.js"), "utf8");
+    const gsmStart = igpSrc.indexOf("  getSafeMediaSrc(src) {");
+    let gsmDepth = 0, gsmEnd = -1;
+    for (let i = igpSrc.indexOf("{", gsmStart); i < igpSrc.length; i++) {
+        if (igpSrc[i] === "{") gsmDepth++;
+        else if (igpSrc[i] === "}") { gsmDepth--; if (gsmDepth === 0) { gsmEnd = i; break; } }
+    }
+    if (gsmStart < 0 || gsmEnd < 0) throw new Error("getSafeMediaSrc not found in Images++");
+    const gsmMethod = igpSrc.slice(gsmStart, gsmEnd + 1).trim();
+    const gsmFnSrc = "(" + gsmMethod.replace(/^getSafeMediaSrc\(src\)\s*\{/, "function (src) {").replace(/,\s*$/, "") + ")";
+    const gsmCtx = vm.createContext({ URL, location: { href: "https://host.page/x" } });
+    const gsm = vm.runInContext(gsmFnSrc, gsmCtx);
+    assert(
+        "7E. the popup safe-media admission (r18 R18-F05), EXECUTED from the shipped getSafeMediaSrc: the privileged transport's data:image/png and data:video/webm URLs are admitted (the popup can render its OWN xhr-fetched content — the pre-fix filter blocked every xhr-mode preview); data:text/html and javascript: stay REFUSED (the redirect-safety contract the filter was built for); http/https/blob hold",
+        gsm("data:image/png;base64,iVBORw0KGgo=") === "data:image/png;base64,iVBORw0KGgo=" &&
+        gsm("data:video/webm;codecs=vp8") === "data:video/webm;codecs=vp8" &&
+        gsm("data:text/html;base64,PHNjcmlwdD4=") === null &&
+        gsm("javascript:alert(1)") === null &&
+        gsm("https://cdn.example/img.png") === "https://cdn.example/img.png" &&
+        gsm("blob:https://host.page/uuid") === "blob:https://host.page/uuid"
+    );
+
+    // 7E-red: the pre-fix filter (https?/blob only) reconstructed — the
+    // transport's own data URL is blocked.
+    const gsmRedCtx = vm.createContext({ URL, location: { href: "https://host.page/x" } });
+    vm.runInContext("globalThis.__gsmOld = function (src) { try { const u = new URL(`${src}`, location.href); return /^(https?:|blob:)$/i.test(u.protocol) ? u.href : null; } catch { return null; } };", gsmRedCtx);
+    assert(
+        "7E-red. sabotage control: the pre-fix filter reconstructed (https?/blob only) rejects the transport's own data:image URL (null — 'Blocked unsafe popup URL' on every xhr-mode preview) — the validated-media admission is load-bearing",
+        gsmRedCtx.__gsmOld("data:image/png;base64,iVBORw0KGgo=") === null
+    );
+
+    // 7F (R18-F06): the canvas serializer stability, EXECUTED from the
+    // shipped Akasha seed/perturb/blindedScratch — repeated serializes of
+    // the SAME canvas produce byte-identical perturbed pixels; distinct
+    // canvases diverge; the scratch-keyed seed reconstructed diverges.
+    const akSrc = fs.readFileSync(path.join(root, "canon", "_merged", "4ndr0tools - Akasha Silence.user.js"), "utf8");
+    const akSliceFn = (name) => {
+        const i = akSrc.indexOf("function " + name + "(");
+        if (i < 0) throw new Error("Akasha fn missing: " + name);
+        let dd = 0, start = akSrc.indexOf("{", i);
+        for (let j = start; j < akSrc.length; j++) {
+            if (akSrc[j] === "{") dd++;
+            else if (akSrc[j] === "}") { dd--; if (dd === 0) return akSrc.slice(i, j + 1); }
+        }
+        throw new Error("unbalanced " + name);
+    };
+    const akMulberryIdx = akSrc.indexOf("function mulberry32(");
+    let akMulberryFn = "";
+    if (akMulberryIdx >= 0) {
+        let dd = 0, s = akSrc.indexOf("{", akMulberryIdx);
+        for (let j = s; j < akSrc.length; j++) {
+            if (akSrc[j] === "{") dd++;
+            else if (akSrc[j] === "}") { dd--; if (dd === 0) { akMulberryFn = akSrc.slice(akMulberryIdx, j + 1); break; } }
+        }
+    } else throw new Error("mulberry32 not found in Akasha");
+    const akCtxBase = () => {
+        const scratchPuts = [];
+        const mkCanvas = (w, h) => {
+            const ctx2 = {
+                __canvasPixels: null,
+                drawImage(src) { this.__canvasPixels = src.__canvasPixels; },
+                putImageData(img) { scratchPuts.push(Array.from(img.data)); },
+            };
+            return { width: w, height: h, __canvasPixels: null, getContext: () => ctx2 };
+        };
+        return vm.createContext({
+            document: { createElement: () => mkCanvas(2, 1) },
+            console: { debug: () => {} },
+            __scratchPuts: scratchPuts,
+            __originalGetImageData: { call: (ctx2, x, y, w, h) => ({ data: ctx2.__canvasPixels.slice() }) },
+        });
+    };
+    const akRunSrc = (scratchSrc) =>
+        akMulberryFn + "\nconst canvasSeeds = new WeakMap();\n" + akSliceFn("canvasSeed") + "\n" + akSliceFn("perturbImageData") +
+        "\nconst originalGetImageData = globalThis.__originalGetImageData;\n" + scratchSrc +
+        "\nglobalThis.__run = (srcCanvas) => blindedScratch(srcCanvas);";
+    const akCtx = akCtxBase();
+    vm.runInContext(akRunSrc(akSliceFn("blindedScratch")), akCtx);
+    const akPixelsA = new Uint8ClampedArray([10, 20, 30, 255, 40, 50, 60, 255]);
+    const akPixelsB = new Uint8ClampedArray([99, 20, 30, 255, 40, 50, 60, 255]);
+    const akSource = { width: 2, height: 1, __canvasPixels: akPixelsA };
+    akCtx.__run(akSource);
+    const akPutA1 = akCtx.__scratchPuts[akCtx.__scratchPuts.length - 1];
+    akCtx.__run(akSource);
+    const akPutA2 = akCtx.__scratchPuts[akCtx.__scratchPuts.length - 1];
+    akCtx.__run({ width: 2, height: 1, __canvasPixels: akPixelsB });
+    const akPutB = akCtx.__scratchPuts[akCtx.__scratchPuts.length - 1];
+    const akScratchSabotaged = akSliceFn("blindedScratch").split("perturbImageData(source, img.data);").join("perturbImageData(scratch, img.data);");
+    const akRedCtx = akCtxBase();
+    vm.runInContext(akRunSrc(akScratchSabotaged), akRedCtx);
+    const akRedSource = { width: 2, height: 1, __canvasPixels: akPixelsA };
+    akRedCtx.__run(akRedSource);
+    const akRedPut1 = akRedCtx.__scratchPuts[akRedCtx.__scratchPuts.length - 1];
+    akRedCtx.__run(akRedSource);
+    const akRedPut2 = akRedCtx.__scratchPuts[akRedCtx.__scratchPuts.length - 1];
+    assert(
+        "7F. the canvas serializer stability (r18 R18-F06), EXECUTED from the shipped seed/perturb/blindedScratch: repeated serializes of the SAME canvas produce byte-identical perturbed pixels (the read-twice-compare detector sees a stable canvas); a distinct canvas diverges; the scratch-keyed seed reconstructed (the pre-r18 shape) makes the same canvas's serializes DIVERGE — the source-keyed seed is load-bearing",
+        JSON.stringify(akPutA1) === JSON.stringify(akPutA2) &&
+        JSON.stringify(akPutA1) !== JSON.stringify(akPutB) &&
+        JSON.stringify(akRedPut1) !== JSON.stringify(akRedPut2) &&
+        akSrc.includes("perturbImageData(source, img.data);")
+    );
+
+    // 7G-1 (R18-F07): the individual-export import gate, EXECUTED from the
+    // shipped processAndSavePrompts — a single exported prompt OBJECT
+    // imports; an array imports; garbage still refuses.
+    const pmSrc = fs.readFileSync(path.join(root, "canon", "_sovereign", "4ndr0tools - Prompt Master.user.js"), "utf8");
+    const pmProcessStart = pmSrc.indexOf("async function processAndSavePrompts(e) {");
+    let pmDepth = 0, pmProcessEnd = -1;
+    for (let j = pmSrc.indexOf("{", pmProcessStart); j < pmSrc.length; j++) {
+        if (pmSrc[j] === "{") pmDepth++;
+        else if (pmSrc[j] === "}") { pmDepth--; if (pmDepth === 0) { pmProcessEnd = j; break; } }
+    }
+    const pmProcessFn = pmSrc.slice(pmProcessStart, pmProcessEnd + 1);
+    const pmImportCtx = vm.createContext({
+        console: { debug: () => {}, log: () => {} },
+        getAll: async () => [{ id: "fixed1", isFixed: true }],
+        resolveCollectionPathToId: async () => "col0",
+        generatePromptId: () => "pid",
+        normalizePositions: () => {},
+        saveRawPrompts: async () => {},
+        promptsToStorage: (t) => t,
+        refreshMenu: async () => {},
+    });
+    vm.runInContext(pmProcessFn + "\nglobalThis.__import = processAndSavePrompts;", pmImportCtx);
+    const singleObjectImport = await vm.runInContext("globalThis.__import({ title: 'Solo', text: 'hello' }).then(n => n).catch(e => 'THREW:' + e.message)", pmImportCtx);
+    const arrayImport = await vm.runInContext("globalThis.__import([{ title: 'A' }, { title: 'B' }]).then(n => n).catch(e => 'THREW:' + e.message)", pmImportCtx);
+    const garbageImport = await vm.runInContext("globalThis.__import('garbage').then(() => 'NO-THROW').catch(e => 'THREW')", pmImportCtx);
+    assert(
+        "7G-1. the individual-export import gate (r18 R18-F07), EXECUTED from the shipped processAndSavePrompts: a single exported prompt OBJECT imports (1 record — the separate-files export round-trips); an array imports as before (2); a non-object non-array still refuses (THREW)",
+        singleObjectImport === 1 && arrayImport === 2 && garbageImport === "THREW"
+    );
+
+    // 7G-2 (R18-F08): the Gist truncated branch, EXECUTED from the shipped
+    // block — a truncated:true payload falls to raw_url; a complete inline
+    // content parses directly; a null content still fetches raw (v28.1.0).
+    const pmGistStart = pmSrc.indexOf("const parseAndResolve = (text) => {");
+    const pmGistEndMark = 'return void reject(new Error("Gist has no backup file"));';
+    const pmGistEnd = pmSrc.indexOf(pmGistEndMark, pmGistStart);
+    const pmGistBlock = pmSrc.slice(pmGistStart, pmGistEnd + pmGistEndMark.length);
+    const runGistBranch = (file, rawStatus) => new Promise((outerResolve) => {
+        const requests = [];
+        const ctx = vm.createContext({
+            pat: "test-token",
+            resolve: (v) => outerResolve({ resolved: v, rawRequests: requests.length }),
+            reject: (e) => outerResolve({ rejected: e.message, rawRequests: requests.length }),
+            GM_xmlhttpRequest: (opts) => {
+                requests.push(opts.url);
+                opts.onload({ status: rawStatus, responseText: '{"data":{"full":1},"meta":{}}' });
+            },
+        });
+        vm.runInContext("globalThis.__try = (file) => { try { " + pmGistBlock + "\n; } catch (err) { reject(new Error('Failed to parse Gist content')); } };", ctx);
+        ctx.__try(file);
+    });
+    const gistTruncated = await runGistBranch({ content: '{"data":{"par', truncated: true, raw_url: "https://gist/raw/backup.json" }, 200);
+    const gistComplete = await runGistBranch({ content: '{"data":{"ok":1},"meta":{}}', truncated: false }, 200);
+    const gistNullContent = await runGistBranch({ content: null, raw_url: "https://gist/raw/backup.json" }, 200);
+    assert(
+        "7G-2. the Gist truncated branch (r18 R18-F08), EXECUTED from the shipped block: a truncated:true response with PARTIAL content falls to the raw_url arm (1 raw request, resolves with the full payload); a complete inline content parses directly (0 raw requests); a null content still fetches raw (the v28.1.0 case preserved)",
+        gistTruncated.rawRequests === 1 && gistTruncated.resolved && gistTruncated.resolved.data && gistTruncated.resolved.data.full === 1 &&
+        gistComplete.rawRequests === 0 && gistComplete.resolved && gistComplete.resolved.data && gistComplete.resolved.data.ok === 1 &&
+        gistNullContent.rawRequests === 1 && gistNullContent.resolved && gistNullContent.resolved.data && gistNullContent.resolved.data.full === 1
+    );
+
+    // 7G-2-red: the old branch (content-presence only) reconstructed — the
+    // truncated payload throws with ZERO raw requests.
+    const pmGistOld = pmGistBlock.split("if (file.content != null && !file.truncated) {").join("if (file.content != null) {");
+    const runGistOld = (file) => new Promise((outerResolve) => {
+        let raws = 0;
+        const ctx = vm.createContext({
+            pat: "test-token",
+            resolve: (v) => outerResolve({ resolved: v, raws }),
+            reject: (e) => outerResolve({ rejected: e.message, raws }),
+            GM_xmlhttpRequest: () => { raws++; },
+        });
+        vm.runInContext("globalThis.__try = (file) => { try { " + pmGistOld + "\n; } catch (err) { reject(new Error('Failed to parse Gist content')); } };", ctx);
+        ctx.__try(file);
+    });
+    const gistRed = await runGistOld({ content: '{"data":{"par', truncated: true, raw_url: "https://gist/raw/backup.json" });
+    assert(
+        "7G-2-red. sabotage control: with the pre-r18 branch reconstructed (content-presence only), the truncated payload's parse throws and ZERO raw requests fire (the restore aborts) — the truncated flag is load-bearing",
+        gistRed.rejected === "Failed to parse Gist content" && gistRed.raws === 0 && pmGistOld !== pmGistBlock
+    );
+
+    // 7H (R18-F09): the short-206 contract, EXECUTED from the shipped
+    // single_host_ranged fetchChunk — a short body writes what arrived,
+    // advances the resume cursor, and the retry fetches the REMAINDER; a
+    // stuck-short server exhausts the attempts and fails VISIBLY; the
+    // completeness gate stands in all three strategies.
+    const pdR18Src = fs.readFileSync(path.join(root, "canon", "_sovereign", "4ndr0tools - Pixeldrain++.user.js"), "utf8");
+    const pdFetchChunkStart = pdR18Src.indexOf("const fetchChunk = async (idx) => {", pdR18Src.indexOf("async single_host_ranged("));
+    let pdDepth = 0, pdFetchChunkEnd = -1;
+    for (let j = pdR18Src.indexOf("{", pdFetchChunkStart); j < pdR18Src.length; j++) {
+        if (pdR18Src[j] === "{") pdDepth++;
+        else if (pdR18Src[j] === "}") { pdDepth--; if (pdDepth === 0) { pdFetchChunkEnd = j; break; } }
+    }
+    const pdFetchChunkSrc = pdR18Src.slice(pdFetchChunkStart, pdFetchChunkEnd + 1);
+    const runPdChunk = async (scriptBodies) => {
+        const writes = [];
+        const callLog = [];
+        const script = [...scriptBodies];
+        const ctx = vm.createContext({
+            console: { debug: () => {} },
+            SPOOF_HEADERS: {},
+            SETTINGS: { chunkRetry: 2, downloadTimeoutMs: 5000, retryBackoffMs: 0, retryBackoffMultiplier: 1 },
+            gmXHR: async (opts) => {
+                callLog.push(opts.headers.Range);
+                const body = script.length > 1 ? script.shift() : script[0];
+                return { status: 206, response: new Uint8Array(body).buffer };
+            },
+            writable: { write: async (w) => writes.push({ position: w.position, bytes: Array.from(new Uint8Array(w.data)) }), abort: async () => {}, close: async () => {} },
+            sleep: async () => {},
+            performance: { now: () => 0 },
+            onProgress: null,
+            signal: null,
+            url: "https://proxy/u/id",
+            size: 16,
+            chunkSize: 8,
+            loadedArr: [0, 0],
+            start: 0,
+        });
+        vm.runInContext("globalThis.__fetchChunk = (function () { " + pdFetchChunkSrc + "\n return fetchChunk; })();", ctx);
+        const err = await vm.runInContext("globalThis.__fetchChunk(0).then(() => null).catch(e => e.message)", ctx);
+        return { writes, callLog, loadedArr: ctx.loadedArr, err };
+    };
+    /* short 3-byte body then the 5-byte remainder for bytes=3-7 → the chunk completes via retry */
+    const pdShort = await runPdChunk([[1, 2, 3], [4, 5, 6, 7, 8]]);
+    /* a 1-byte-always server cannot fill an 8-byte span in chunkRetry+1
+     * attempts → the attempts exhaust and the chunk fails VISIBLY */
+    const pdAlwaysShort = await runPdChunk([[1]]);
+    assert(
+        "7H. the short-206 contract (r18 R18-F09), EXECUTED from the shipped single_host_ranged fetchChunk: a short 206 body writes what arrived, advances the resume cursor, and the retry fetches the REMAINDER (bytes=0-7 → bytes=3-7 — the chunk completes with 3+5 bytes at the right offsets, loadedArr=8); an always-short body exhausts the attempts and fails with the NAMED error (ok:true is never committed on an incomplete file); the completeness gate stands in all three strategies and the overshoot slice is present",
+        pdShort.err === null &&
+        pdShort.callLog[0] === "bytes=0-7" && pdShort.callLog[1] === "bytes=3-7" &&
+        pdShort.loadedArr[0] === 8 &&
+        pdShort.writes.length === 2 && pdShort.writes[0].position === 0 && pdShort.writes[0].bytes.length === 3 && pdShort.writes[1].position === 3 && pdShort.writes[1].bytes.length === 5 &&
+        pdAlwaysShort.err !== null && /short 206 body/.test(pdAlwaysShort.err) &&
+        (pdR18Src.match(/receivedTotal !== size/g) || []).length === 3 &&
+        pdR18Src.includes("const chunkData = data.byteLength > span ? data.subarray(0, span) : data;")
+    );
+
+    // 7H-red: the pre-r18 acceptance (write + return on ANY 206) reconstructed.
+    const pdOldChunk = pdFetchChunkSrc
+        .replace(/\/\* v1\.2\.7 \(r18 R18-F09\): THE SHORT-206 CONTRACT[\s\S]*?span = to - from \+ 1;/, "const span = to - from + 1;")
+        .split("if (!data.byteLength) throw new Error(`empty body (0 of ${span} bytes at offset ${from})`);").join("")
+        .split("const chunkData = data.byteLength > span ? data.subarray(0, span) : data;").join("const chunkData = data;")
+        .replace(/if \(chunkData\.byteLength >= span\) return;\n\s*throw new Error\(`short 206 body[^`]*`\);/, "return;");
+    const runPdOld = async () => {
+        const writes = [];
+        const ctx = vm.createContext({
+            console: { debug: () => {} },
+            SPOOF_HEADERS: {},
+            SETTINGS: { chunkRetry: 2, downloadTimeoutMs: 5000, retryBackoffMs: 0, retryBackoffMultiplier: 1 },
+            gmXHR: async () => ({ status: 206, response: new Uint8Array([1, 2, 3]).buffer }),
+            writable: { write: async (w) => writes.push({ position: w.position }), abort: async () => {}, close: async () => {} },
+            sleep: async () => {},
+            performance: { now: () => 0 },
+            onProgress: null, signal: null, url: "u",
+            size: 16, chunkSize: 8, loadedArr: [0, 0], start: 0,
+        });
+        vm.runInContext("globalThis.__oldChunk = (function () { " + pdOldChunk + "\n return fetchChunk; })();", ctx);
+        const err = await vm.runInContext("globalThis.__oldChunk(0).then(() => null).catch(e => e.message)", ctx);
+        return { err, writes, loadedArr: ctx.loadedArr };
+    };
+    const pdRed = await runPdOld();
+    assert(
+        "7H-red. sabotage control: with the pre-r18 acceptance reconstructed (no span validation, return on any 206), the 3-byte short body COMPLETES the chunk silently (no error, loadedArr=3 of 8 — the incomplete download committed as successful) — the span contract is load-bearing",
+        pdRed.err === null && pdRed.loadedArr[0] === 3 && pdOldChunk !== pdFetchChunkSrc
+    );
+
+    // 7I (R18-F10): the rebased verifier, EXECUTED from the shipped
+    // runAndVerifyBatch with YouTube-dedupe semantics — a duplicate-add
+    // batch reports HONESTLY; the stale-baseline reconstruction overcounts.
+    const ytSrc = fs.readFileSync(path.join(root, "canon", "_sovereign", "4ndr0tools - YouTube Playlist Master.user.js"), "utf8");
+    const ytVerifyStart = ytSrc.indexOf("async function runAndVerifyBatch(");
+    let ytDepth = 0, ytVerifyEnd = -1;
+    for (let j = ytSrc.indexOf("{", ytVerifyStart); j < ytSrc.length; j++) {
+        if (ytSrc[j] === "{") ytDepth++;
+        else if (ytSrc[j] === "}") { ytDepth--; if (ytDepth === 0) { ytVerifyEnd = j; break; } }
+    }
+    const ytVerifySrc = ytSrc.slice(ytVerifyStart, ytVerifyEnd + 1);
+    const ytCtxBase = () => {
+        const playlist = [];
+        const ctx = vm.createContext({
+            console: { debug: () => {}, warn: () => {} },
+            CFG: { MAX_BATCH_RETRIES: 3, BATCH_SIZE: 100 },
+            READER: { loadPlaylist: async () => ({ items: playlist.map((v) => ({ videoId: v })) }) },
+            INNERTUBE: { playlistEdit: async ({ actions }) => { for (const a of actions) if (!playlist.includes(a.addedVideoId)) playlist.push(a.addedVideoId); } },
+            PACING: { sleep: async () => {} },
+            LOG: { debug: () => {}, warn: () => {} },
+        });
+        return { ctx, playlist };
+    };
+    const ytFixedRun = ytCtxBase();
+    vm.runInContext(ytVerifySrc + "\nglobalThis.__verify = runAndVerifyBatch;", ytFixedRun.ctx);
+    {
+        const result = { applied: 0, failed: [], retried: 0 };
+        const meta = { mode: "add" };
+        const batch = [{ action: "ACTION_ADD_VIDEO", addedVideoId: "A" }, { action: "ACTION_ADD_VIDEO", addedVideoId: "A" }];
+        ytFixedRun.ctx.__batch = batch; ytFixedRun.ctx.__meta = meta; ytFixedRun.ctx.__result = result;
+        await vm.runInContext("globalThis.__verify('pl', __batch, __meta, __result)", ytFixedRun.ctx);
+        ytFixedRun.result = result;
+    }
+    const ytEntryStart = ytVerifySrc.indexOf("let pre = new Map();");
+    const ytEntryEndMark = "for (const i of preItems) pre.set(i.videoId, (pre.get(i.videoId) || 0) + 1);\n            }";
+    const ytEntryEnd = ytVerifySrc.indexOf(ytEntryEndMark);
+    const ytOldVerify = ytVerifySrc.slice(0, ytEntryStart) + "const pre = meta.preCount || new Map();" + ytVerifySrc.slice(ytEntryEnd + ytEntryEndMark.length);
+    const ytRedRun = ytCtxBase();
+    vm.runInContext(ytOldVerify + "\nglobalThis.__verifyOld = runAndVerifyBatch;", ytRedRun.ctx);
+    {
+        const result = { applied: 0, failed: [], retried: 0 };
+        const meta = { mode: "add", preCount: new Map([["A", 0]]) };
+        const batch = [{ action: "ACTION_ADD_VIDEO", addedVideoId: "A" }, { action: "ACTION_ADD_VIDEO", addedVideoId: "A" }];
+        ytRedRun.ctx.__batch = batch; ytRedRun.ctx.__meta = meta; ytRedRun.ctx.__result = result;
+        await vm.runInContext("globalThis.__verifyOld('pl', __batch, __meta, __result)", ytRedRun.ctx);
+        ytRedRun.result = result;
+    }
+assert(
+        "7I. the rebased verifier (r18 R18-F10), EXECUTED from the shipped runAndVerifyBatch with YouTube-dedupe semantics: a duplicate-add batch ([A, A]) lands ONE copy and the verifier reports it HONESTLY (applied=1, the unlandable second copy fails by name); the stale-baseline reconstruction reports applied=2, failed=[] with ONE copy in the playlist (the exact overcount this round closes)",
+        ytFixedRun.result.applied === 1 && ytFixedRun.result.failed.length === 1 && ytFixedRun.playlist.length === 1 &&
+        ytRedRun.result.applied === 2 && ytRedRun.result.failed.length === 0 && ytRedRun.playlist.length === 1 &&
+        ytOldVerify !== ytVerifySrc
+    );
+
+    // 7J (R18-F11): the Yandex same-tranche viewer replacement, EXECUTED
+    // from the shipped checkViewer — removals before additions + the
+    // reconciliation pass keep the controller alive across a swap.
+    const ydxSrc = fs.readFileSync(path.join(root, "canon", "_sovereign", "4ndr0tools - YandexImageSearch++.user.js"), "utf8");
+    const ydxCheckStart = ydxSrc.indexOf("const checkViewer = () => {");
+    let ydxDepth = 0, ydxCheckEnd = -1;
+    for (let j = ydxSrc.indexOf("{", ydxCheckStart); j < ydxSrc.length; j++) {
+        if (ydxSrc[j] === "{") ydxDepth++;
+        else if (ydxSrc[j] === "}") { ydxDepth--; if (ydxDepth === 0) { ydxCheckEnd = j; break; } }
+    }
+    const ydxCheckSrc = ydxSrc.slice(ydxCheckStart, ydxCheckEnd + 1);
+    const runYdx = (src, tranches) => {
+        let constructed = 0, destroyed = 0;
+        class SlideshowController {
+            constructor() { constructed++; this.id = constructed; }
+            destroy() { destroyed++; }
+        }
+        let liveViewer = null;
+        const ctx = vm.createContext({
+            Node: { ELEMENT_NODE: 1 },
+            CONFIG: { viewerContainerSelector: ".MMViewer" },
+            document: {
+                querySelector: (sel) => (liveViewer && liveViewer.matches ? liveViewer : null),
+            },
+            console: { debug: () => {} },
+        });
+        vm.runInContext("let activeController = null;\nconst pendingAdded = [];\nconst pendingRemoved = [];\n" + src + "\nglobalThis.__flush = () => checkViewer();", ctx);
+        ctx.SlideshowController = SlideshowController;
+        for (const t of tranches) {
+            ctx.__pendingAdded = t.added || [];
+            ctx.__pendingRemoved = t.removed || [];
+            if (t.live) liveViewer = t.live;
+            vm.runInContext("pendingAdded.push(...globalThis.__pendingAdded); pendingRemoved.push(...globalThis.__pendingRemoved);", ctx);
+            ctx.__flush();
+        }
+        return { constructed, destroyed, active: vm.runInContext("activeController", ctx) };
+    };
+    const mkYdxViewer = () => ({ nodeType: 1, matches: () => true, querySelector: () => null });
+    const ydxSwap = runYdx(ydxCheckSrc, [
+        { added: [mkYdxViewer()], removed: [], live: mkYdxViewer() },
+        /* the SAME tranche: old viewer removed + new viewer added (replaceChild) */
+        { added: [mkYdxViewer()], removed: [mkYdxViewer()], live: mkYdxViewer() },
+    ]);
+    /* 7J-red: the pre-r18 shape reconstructed — additions before removals
+     * and NO reconciliation pass (the exact v0.4.3 function). */
+    const ydxRemovedLoop = ydxCheckSrc.slice(ydxCheckSrc.indexOf("for (const node of removed)"), ydxCheckSrc.indexOf("for (const node of added)"));
+    const ydxAddedLoop = ydxCheckSrc.slice(ydxCheckSrc.indexOf("for (const node of added)"), ydxCheckSrc.indexOf("// v0.4.4 (r18 R18-F11): the reconciliation pass"));
+    const ydxOldLoops = ydxCheckSrc.slice(0, ydxCheckSrc.indexOf("for (const node of removed)")) + ydxAddedLoop + ydxRemovedLoop + "\n        };";
+    const ydxOldSwap = runYdx(ydxOldLoops, [
+        { added: [mkYdxViewer()], removed: [], live: mkYdxViewer() },
+        { added: [mkYdxViewer()], removed: [mkYdxViewer()], live: mkYdxViewer() },
+    ]);
+    assert(
+        "7J. the same-tranche viewer replacement (r18 R18-F11), EXECUTED from the shipped checkViewer: the swap tranche destroys the stale controller and mounts a fresh one for the connected viewer (constructed=2, destroyed=1, a live controller remains — badge + keybind survive the swap); the adds-first pre-r18 shape reconstructed loses the controller entirely (constructed=1, destroyed=1, activeController=null — the live viewer unmanaged)",
+        ydxSwap.constructed === 2 && ydxSwap.destroyed === 1 && ydxSwap.active !== null && ydxSwap.active.id === 2 &&
+        ydxOldSwap.constructed === 1 && ydxOldSwap.destroyed === 1 && ydxOldSwap.active === null
+    );
+
+    // 7K (R18-F12): the Recon message hook identity contract, EXECUTED from
+    // the shipped hook against a native-dedup EventTarget — one wrapper per
+    // (listener, capture), receiver forwarded, removal complete.
+    const rcnSrc = fs.readFileSync(path.join(root, "canon", "_sovereign", "4ndr0tools - Recon.user.js"), "utf8");
+    const rcnHookStart = rcnSrc.indexOf("hookPostMessage() {");
+    let rcnDepth = 0, rcnHookEnd = -1;
+    for (let j = rcnSrc.indexOf("{", rcnHookStart); j < rcnSrc.length; j++) {
+        if (rcnSrc[j] === "{") rcnDepth++;
+        else if (rcnSrc[j] === "}") { rcnDepth--; if (rcnDepth === 0) { rcnHookEnd = j; break; } }
+    }
+    const rcnHookBody = rcnSrc.slice(rcnHookStart + "hookPostMessage() {".length, rcnHookEnd);
+    const runRcnHook = (bodySrc) => {
+        const registrations = [];
+        const capOf = (o) => (typeof o === "boolean" ? o : !!(o && o.capture));
+        const window_ = {
+            addEventListener(type, fn, options) {
+                const cap = capOf(options);
+                if (registrations.some((r) => r.type === type && r.fn === fn && r.cap === cap)) return;   /* native dedup */
+                registrations.push({ type, fn, options, cap });
+            },
+            removeEventListener(type, fn, options) {
+                const cap = capOf(options);
+                const i = registrations.findIndex((r) => r.type === type && r.fn === fn && r.cap === cap);
+                if (i >= 0) registrations.splice(i, 1);
+            },
+        };
+        const ctx = vm.createContext({
+            _window: window_,
+            seenMessages: new WeakSet(),
+            Hook: { recordBridge: () => {} },
+            console: { debug: () => {} },
+        });
+        vm.runInContext("const hookPostMessage = function () {" + bodySrc + "}; hookPostMessage();", ctx);
+        const fire = () => {
+            let calls = 0;
+            for (const r of registrations.filter((r) => r.type === "message")) {
+                r.fn.call(window_, { data: "x" + Math.random() });
+                calls++;
+            }
+            return calls;
+        };
+        return { ctx: window_, registrations, fire };
+    };
+    const rcnFixed = runRcnHook(rcnHookBody);
+    let rcnLastThis = null, rcnHostFires = 0;
+    const rcnListener = function () { rcnHostFires++; rcnLastThis = this; };
+    rcnFixed.ctx.addEventListener("message", rcnListener, undefined);
+    rcnFixed.ctx.addEventListener("message", rcnListener, undefined);          /* duplicate registration */
+    const dupRegs = rcnFixed.registrations.filter((r) => r.type === "message").length;   /* passive bridge + ONE host wrapper */
+    rcnFixed.fire();
+    const firedOnceThis = rcnLastThis;
+    const firedOnceCount = rcnHostFires;
+    rcnFixed.ctx.removeEventListener("message", rcnListener, undefined);
+    rcnFixed.fire();
+    const firedAfterRemove = rcnHostFires - firedOnceCount;
+    const rcnCap = runRcnHook(rcnHookBody);
+    rcnCap.ctx.addEventListener("message", rcnListener, { capture: true });
+    rcnCap.ctx.addEventListener("message", rcnListener, undefined);
+    const capPairCount = rcnCap.registrations.filter((r) => r.type === "message").length;   /* passive + capture + bubble */
+    rcnCap.ctx.removeEventListener("message", rcnListener, { capture: true });
+    const capAfterRemove = rcnCap.registrations.filter((r) => r.type === "message").length; /* passive + bubble */
+    /* 7K-red: the pre-r18 hook reconstructed (fresh closure per add, listener-only unwrap key) */
+    const rcnOldBody = "\n            _window.addEventListener('message', (e) => { if (seenMessages.has(e)) return; seenMessages.add(e); Hook.recordBridge(e); });\n            const origAdd = _window.addEventListener;\n            const origRemove = _window.removeEventListener;\n            const unwrap = new WeakMap();\n            _window.addEventListener = function(type, listener, options) {\n                if (type === 'message' && typeof listener === 'function') {\n                    const wrapped = (e) => {\n                        if (!seenMessages.has(e)) { seenMessages.add(e); Hook.recordBridge(e); }\n                        return listener(e);\n                    };\n                    unwrap.set(listener, wrapped);\n                    return origAdd.call(this, type, wrapped, options);\n                }\n                return origAdd.apply(this, arguments);\n            };\n            _window.removeEventListener = function(type, listener, options) {\n                const wrappedListener = (type === 'message' && typeof listener === 'function') ? unwrap.get(listener) : undefined;\n                if (wrappedListener) { unwrap.delete(listener); return origRemove.call(this, type, wrappedListener, options); }\n                return origRemove.apply(this, arguments);\n            };\n";
+    const rcnOld = runRcnHook(rcnOldBody);
+    let oldFires = 0;
+    const oldListener = function () { oldFires++; };
+    rcnOld.ctx.addEventListener("message", oldListener, undefined);
+    rcnOld.ctx.addEventListener("message", oldListener, undefined);
+    const oldDupRegs = rcnOld.registrations.filter((r) => r.type === "message").length;   /* passive + TWO wrappers */
+    rcnOld.fire();
+    const oldFired = oldFires;   /* host-listener invocations: BOTH wrappers fired it */
+    rcnOld.ctx.removeEventListener("message", oldListener, undefined);
+    rcnOld.fire();
+    const oldFiredAfterRemove = oldFires;
+    assert(
+        "7K. the message hook identity contract (r18 R18-F12), EXECUTED from the shipped hook against a native-dedup EventTarget: a duplicate registration resolves to ONE live host wrapper (fires ONCE with the receiver FORWARDED — this === the target window); removeEventListener removes it completely (0 fires after); the capture-pair discipline holds (3 registrations; the capture remove leaves exactly the passive + bubble pair); the pre-r18 hook reconstructed (fresh closure per add) keeps TWO wrappers (double fire) and one callback SURVIVES the removal — the exact double-fire/leak defect",
+        dupRegs === 2 && firedOnceThis === rcnFixed.ctx && firedOnceCount === 1 && firedAfterRemove === 0 &&
+        capPairCount === 3 && capAfterRemove === 2 &&
+        oldDupRegs === 3 && oldFired === 2 && oldFiredAfterRemove === 3
+    );
+
+
+/* ── 7L (R18-F13/F14): MPC vnode retention + identity ────────────────── */
+const mpcSrc = fs.readFileSync(path.join(root, "canon", "_promoted", "4ndr0tools - Media Player Controller.user.js"), "utf8");
+const mpcBlockStart = mpcSrc.indexOf("const nodeNonces = new WeakMap();");
+const mpcBlockEnd = mpcSrc.indexOf("function purgeOrphanVNodes()");
+const mpcBlock = mpcSrc.slice(mpcBlockStart, mpcBlockEnd);
+const runMpc = (blockSrc, storageThrows) => {
+    const storage = new Map();
+    const ctx = vm.createContext({
+        console: { debug: () => {} },
+        isFinite,
+        VNODE_PREFIX: "psi_vnode_",
+        document: { querySelectorAll: () => [] },
+        window: { scrollY: 0, scrollX: 0 },
+        localStorage: {
+            getItem: (k) => { if (storageThrows) throw new Error("refused"); return storage.has(k) ? storage.get(k) : null; },
+            setItem: (k, v) => { if (storageThrows) throw new Error("refused"); storage.set(k, v); },
+            removeItem: (k) => { if (storageThrows) throw new Error("refused"); storage.delete(k); },
+        },
+    });
+    vm.runInContext(blockSrc + "\nglobalThis.__fns = { getStableId, persistVNode, loadVNode, purgeVNode };", ctx);
+    return { ctx, storage };
+};
+const mkVideo = (src, t) => ({ currentSrc: src, currentTime: t || 0, muted: false, volume: 1, loop: false, getBoundingClientRect: () => ({ top: 0, left: 0, width: 100, height: 50 }) });
+const mpcOk = runMpc(mpcBlock, false);
+const vA = mkVideo("https://cdn-one.test/video.mp4", 10);
+const vB = mkVideo("https://cdn-two.test/video.mp4", 20);
+const idA = mpcOk.ctx.__fns.getStableId(vA);
+const idA2 = mpcOk.ctx.__fns.getStableId(vA);
+const idB = mpcOk.ctx.__fns.getStableId(vB);
+const vA2 = mkVideo("https://cdn-one.test/video.mp4", 30);   /* same src, DIFFERENT element */
+const idA2el = mpcOk.ctx.__fns.getStableId(vA2);
+const persistedOk = mpcOk.ctx.__fns.persistVNode(vA);
+const recOk = mpcOk.ctx.__fns.loadVNode(idA);
+mpcOk.ctx.__fns.purgeVNode(idA);
+const afterPurge = mpcOk.ctx.__fns.loadVNode(idA);
+/* F13: storage refusal — the in-memory fallback answers */
+const mpcRefused = runMpc(mpcBlock, true);
+const vRef = mkVideo("https://cdn-ref.test/x.mp4", 42);
+const persistedRef = mpcRefused.ctx.__fns.persistVNode(vRef);
+const idRef = mpcRefused.ctx.__fns.getStableId(vRef);
+const recRef = mpcRefused.ctx.__fns.loadVNode(idRef);
+/* 7L-red (F14): the pre-r18 identity reconstructed — the origin-dropping lossy key */
+const mpcOldIdentity = `
+    function getStableId(video) {
+        const src = video.currentSrc || video.src || '';
+        if (src) {
+            try {
+                const u = new URL(src);
+                return 'src_' + (u.pathname + u.search).slice(0, 80).replace(/[^a-zA-Z0-9_-]/g, '_');
+            } catch (_) {
+                return 'raw_' + src.slice(0, 80).replace(/[^a-zA-Z0-9_-]/g, '_');
+            }
+        }
+        return 'idx_0';
+    }
+`;
+const mpcRedCtx = vm.createContext({ URL });
+vm.runInContext(mpcOldIdentity + "globalThis.__oldId = getStableId;", mpcRedCtx);
+const oldIdA = mpcRedCtx.__oldId(vA);
+const oldIdB = mpcRedCtx.__oldId(vB);
+assert("7L. MPC vnode retention + identity (r18 R18-F13/F14), EXECUTED from the shipped block: the identity is collision-resistant (cdn-one vs cdn-two map to DIFFERENT keys; the same element is stable; a same-src sibling element gets its own key) and INJECTIVE-escaped; persistence under storage REFUSAL still leaves the record recoverable through the in-memory fallback (persistVNode reports false, loadVNode answers with the src); a clean persist round-trips and purge clears both layers; the pre-r18 identity reconstructed collides cdn-one and cdn-two onto ONE key (src__video_mp4 — the overwrite that restored the WRONG source)",
+    idA === idA2 && idA !== idB && idA !== idA2el &&
+    persistedOk === true && recOk && recOk.src === "https://cdn-one.test/video.mp4" && recOk.currentTime === 10 && afterPurge === null &&
+    persistedRef === false && recRef && recRef.src === "https://cdn-ref.test/x.mp4" && recRef.currentTime === 42 &&
+    oldIdA === oldIdB && oldIdA === "src__video_mp4");
+
+/* ── 7M (R18-F15): FLX aggregation ───────────────────────────────────── */
+const flxSrc = fs.readFileSync(path.join(root, "canon", "_promoted", "4ndr0tools - Forum Link Xtractor.user.js"), "utf8");
+const flxThreadStart = flxSrc.indexOf("function currentThreadName() {");
+let d = 0, flxThreadEnd = -1;
+for (let j = flxSrc.indexOf("{", flxThreadStart); j < flxSrc.length; j++) {
+    if (flxSrc[j] === "{") d++;
+    else if (flxSrc[j] === "}") { d--; if (d === 0) { flxThreadEnd = j; break; } }
+}
+const flxThreadFn = flxSrc.slice(flxThreadStart, flxThreadEnd + 1);
+const flxSaveFn = (() => {
+    const i = flxSrc.indexOf("function saveLinksToBuffer(");
+    let d = 0, e = -1;
+    for (let j = flxSrc.indexOf("{", i); j < flxSrc.length; j++) {
+        if (flxSrc[j] === "{") d++;
+        else if (flxSrc[j] === "}") { d--; if (d === 0) { e = j; break; } }
+    }
+    return flxSrc.slice(i, e + 1);
+})();
+const flxFilterBlock = (() => {
+    const i = flxSrc.indexOf("const threadKeys = Object.keys(savedLinks).filter(key => {");
+    let d = 0, e = -1;
+    for (let j = flxSrc.indexOf("{", i); j < flxSrc.length; j++) {
+        if (flxSrc[j] === "{") d++;
+        else if (flxSrc[j] === "}") { d--; if (d === 0) { e = j; break; } }
+    }
+    /* the filter's closing is `});` after the arrow body's closing brace */
+    return flxSrc.slice(i, flxSrc.indexOf(");", e) + 2);
+})();
+const runFlx = () => {
+    const store = new Map();
+    const ctx = vm.createContext({
+        console: { warn: () => {} },
+        localStorage: {
+            getItem: (k) => (store.has(k) ? store.get(k) : null),
+            setItem: (k, v) => store.set(k, v),
+            removeItem: (k) => store.delete(k),
+        },
+    });
+    vm.runInContext(
+        "globalThis.ON_CANDIDSHINY = false; globalThis.window = { location: { pathname: globalThis.__path } };\n" +
+        "globalThis.__setPath = (p) => { globalThis.window = { location: { pathname: p } }; };\n" +
+        flxThreadFn + "\n" + flxSaveFn + "\n" +
+        "globalThis.__threadName = () => currentThreadName();\n" +
+        "globalThis.__save = (u, l, t) => saveLinksToBuffer(u, l, t);\n" +
+        "globalThis.__filter = (savedLinks, threadName) => { " + flxFilterBlock + " return threadKeys; };",
+        ctx
+    );
+    return ctx;
+};
+const flxCtx = runFlx();
+const threadOfThreadPage = vm.runInContext("globalThis.__setPath('/threads/my-thread.123/page-2'); globalThis.__threadName()", flxCtx);
+const threadOfNonThread = vm.runInContext("globalThis.__setPath('/start.me/dashboard'); globalThis.__threadName()", flxCtx);
+flxCtx.__save("https://forum/threads/my-thread.123/", ["l1", "l2"], "my-thread.123");
+flxCtx.__save("https://forum/threads/foobar.9/", ["l3"], "foobar.9");
+flxCtx.__save("https://start.me/dashboard", ["l4"], "extracted_links");
+const buffer = JSON.parse(flxCtx.localStorage.getItem("psi_link_buffer"));
+const threadMatch = vm.runInContext("globalThis.__filter(JSON.parse(globalThis.__bufferStr), 'my-thread.123')", Object.assign(flxCtx, { __bufferStr: flxCtx.localStorage.getItem("psi_link_buffer") }));
+const nonThreadMatch = vm.runInContext("globalThis.__filter(JSON.parse(globalThis.__bufferStr), 'extracted_links')", flxCtx);
+const legacyMatch = vm.runInContext("globalThis.__filter({'https://forum/threads/my-thread.123/?page=3': ['l5'], 'https://forum/threads/foobar.9/': ['l6']}, 'my-thread.123')", flxCtx);
+const unionIdx = flxSrc.indexOf("currentLinks.forEach(link => finalLinksSet.add(link));");
+const filterIdx = flxSrc.indexOf("const threadKeys = Object.keys(savedLinks).filter");
+assert("7M. FLX aggregation (r18 R18-F15), EXECUTED from the shipped currentThreadName + saveLinksToBuffer + the aggregation filter: the thread identity derives from the path (/threads/slug → slug; a non-thread page → 'extracted_links'); buffer entries carry their EXPLICIT thread identity ({thread, links}); the aggregation matches the same thread's explicit entries and legacy URL-substring entries but NOT the cross-thread slug (foobar ≠ my-thread) and NOT the non-thread default; and the always-union line sits AFTER the aggregation block in the canon (current-page links can never be dropped again)",
+    threadOfThreadPage === "my-thread.123" && threadOfNonThread === "extracted_links" &&
+    buffer["https://forum/threads/my-thread.123/"] && buffer["https://forum/threads/my-thread.123/"].thread === "my-thread.123" &&
+    JSON.stringify(buffer["https://forum/threads/my-thread.123/"].links) === '["l1","l2"]' &&
+    JSON.stringify(threadMatch) === '["https://forum/threads/my-thread.123/"]' &&
+    JSON.stringify(nonThreadMatch) === "[]" &&
+    JSON.stringify(legacyMatch) === '["https://forum/threads/my-thread.123/?page=3"]' &&
+    unionIdx > filterIdx);
+
+/* ── 7N (R18-F16): m3u8 facade decode ────────────────────────────────── */
+const m3u8Src = fs.readFileSync(path.join(root, "canon", "_promoted", "4ndr0tools - m3u8++.user.js"), "utf8");
+const m3u8DecodeStart = m3u8Src.indexOf("const decodeText = () => {");
+const m3u8ResolveEnd = m3u8Src.indexOf("});", m3u8DecodeStart);
+const m3u8Block = m3u8Src.slice(m3u8DecodeStart, m3u8ResolveEnd + 3);
+const runM3u8 = (r) => new Promise((res) => {
+    const ctx = vm.createContext({
+        resolve: (v) => res(v),
+        TextDecoder,
+        Blob,
+        Headers: class { constructor() {} },
+    });
+    ctx.__gmResponse = r;
+    /* the block is `const decodeText = ...; resolve({...});` — wrap it: */
+    vm.runInContext("(function (r) { " + m3u8Block + " })(globalThis.__gmResponse);", ctx);
+});
+const m3u8JsonBytes = new TextEncoder().encode('{"a":1,"b":"x"}');
+const m3u8Facade = await runM3u8({ status: 200, response: m3u8JsonBytes.buffer, responseHeaders: "x: y\n", responseText: undefined });
+const m3u8Text = await m3u8Facade.text();
+const m3u8Json = await m3u8Facade.json();
+const m3u8Ab = await m3u8Facade.arrayBuffer();
+const m3u8Blob = await m3u8Facade.blob();
+const m3u8Edge = await runM3u8({ status: 200, response: null, responseHeaders: "x: y\n", responseText: "edge-text" });
+const m3u8EdgeText = await m3u8Edge.text();
+assert("7N. m3u8 facade decode (r18 R18-F16), EXECUTED from the shipped onload facade: an arraybuffer-only GM response yields text() === the decoded JSON string, json() === the parsed object, arrayBuffer() === the same bytes, and blob() a Blob carrying them; a responseText-populated edge (streaming managers) still returns the string verbatim — the pre-fix shape returned undefined/threw on every JSON-parsing webapp call",
+    m3u8Text === '{"a":1,"b":"x"}' && m3u8Json && m3u8Json.a === 1 && m3u8Json.b === "x" &&
+    new Uint8Array(m3u8Ab).length === m3u8JsonBytes.length && m3u8Blob instanceof Blob && m3u8Blob.size === m3u8JsonBytes.length &&
+    m3u8EdgeText === "edge-text");
+
+/* ── 7O (R18-F17): ingest provenance ─────────────────────────────────── */
+const { ingestOperatorReport } = await import(path.join(root, "tools", "operator-battery.mjs"));
+const resultsBefore = fs.readFileSync(path.join(root, "tools", "operator-battery", "results.json"), "utf8");
+const mkReport = (over) => {
+    const base = {
+        header: "## OPERATOR BATTERY REPORT — suite 1.26.0 @ 050e7bd7b770969fb2ac48cc408df95c5d16f07b",
+        env: "ENV: Chrome 130 / Tampermonkey 5.5 / Win11 / dist @ 050e7bd7b770969fb2ac48cc408df95c5d16f07b / date 2026-11-04",
+        ...(over || {}),
+    };
+    return [
+        base.header,
+        base.env,
+        "",
+        "| test | status (PASS/FAIL/BLOCKED) | evidence (link/inline) | note (failure mode if FAIL/BLOCKED) |",
+        "|---|---|---|---|",
+        "| FPP-RES-09 | PASS | inline | |",
+        "",
+        "FREE-FORM FINDINGS:",
+        "- none",
+    ].join("\n");
+};
+const tmpReports = [];
+const writeReport = (text) => { const p = path.join("/home/z", "r18-report-" + tmpReports.length + ".md"); fs.writeFileSync(p, text); tmpReports.push(p); return p; };
+const ingNoHeader = ingestOperatorReport(writeReport(mkReport({ header: "## OPERATOR BATTERY REPORT" })), {});
+const ingZeroSha = ingestOperatorReport(writeReport(mkReport({ header: "## OPERATOR BATTERY REPORT — suite 1.26.0 @ 0000000000000000000000000000000000000000" })), {});
+const ingNoEnv = ingestOperatorReport(writeReport(mkReport({ env: "" })), {});
+const ingNoDate = ingestOperatorReport(writeReport(mkReport({ env: "ENV: Chrome 130 / TM 5.5 / Win11 / dist @ 050e7bd / " })), {});
+const ingWrongSuite = ingestOperatorReport(writeReport(mkReport({ header: "## OPERATOR BATTERY REPORT — suite 9.9.9 @ 050e7bd7b770969fb2ac48cc408df95c5d16f07b" })), {});
+const resultsAfter = fs.readFileSync(path.join(root, "tools", "operator-battery", "results.json"), "utf8");
+for (const p of tmpReports) { try { fs.unlinkSync(p); } catch {} }
+assert("7O. ingest provenance (r18 R18-F17), EXECUTED against the shipped ingestOperatorReport: a report with NO suite header is refused by name; an all-zero git sha (the unfilled template placeholder) is refused; a missing ENV line is refused; a missing stated date is refused (never machine-fabricated); a wrong suite still refuses (the 10a-F06b contract); and every refusal left results.json BYTE-IDENTICAL (refusals never write)",
+    ingNoHeader.problems.length > 0 && /suite <version> @ <git sha>/.test(ingNoHeader.problems.join(" ")) &&
+    ingZeroSha.problems.length > 0 && /all zeros/.test(ingZeroSha.problems.join(" ")) &&
+    ingNoEnv.problems.length > 0 && /no ENV line/.test(ingNoEnv.problems.join(" ")) &&
+    ingNoDate.problems.length > 0 && /date YYYY-MM-DD/.test(ingNoDate.problems.join(" ")) &&
+    ingWrongSuite.problems.length > 0 && /suite 9\.9\.9/.test(ingWrongSuite.problems.join(" ")) &&
+    resultsBefore === resultsAfter);
+
+/* ── 7P (R18-F18): the score writes last ─────────────────────────────── */
+const vSrc = fs.readFileSync(path.join(root, "tools", "validate.mjs"), "utf8");
+const scoreWriteIdx = vSrc.indexOf("const score = runProductionScore(ROOT, scoreCtx);");
+const scoreCtxIdx = vSrc.indexOf("const scoreCtx = {");
+const lastGateIdx = vSrc.indexOf("MIGRATION.md successor table verified");
+const lateGateFailures = [
+    vSrc.indexOf("canon-kernel wiring:"),
+    vSrc.indexOf("kernel-boundary smoke:"),
+    vSrc.indexOf("family-fixture smoke:"),
+    vSrc.indexOf("norm-symmetry smoke:"),
+    vSrc.indexOf("tt browser smoke:"),
+];
+const orderingHolds = scoreWriteIdx > lastGateIdx && scoreCtxIdx > lastGateIdx && lateGateFailures.every((i) => i < scoreCtxIdx);
+/* 7P-red: the pre-r18 order reconstructed — the score block moved BEFORE
+ * the canon-kernel gate trips the ordering check. */
+const scoreBlockStart = vSrc.indexOf("/* r18 (R18-F18): the production score — computed and persisted HERE,");
+const scoreBlockEnd = vSrc.indexOf("score determinism check failed:", scoreBlockStart);
+const scoreBlockEndFull = vSrc.indexOf("}", vSrc.indexOf("}", scoreBlockEnd) + 1) + 1;
+const scoreBlock = vSrc.slice(scoreBlockStart, scoreBlockEndFull);
+const vSabotaged = vSrc.slice(0, scoreBlockStart) + vSrc.slice(scoreBlockEndFull);
+const canonKernelIdx = vSabotaged.indexOf("// Canon-kernel wiring (suite v1.4.3)");
+const vOldOrder = vSabotaged.slice(0, canonKernelIdx) + scoreBlock + "\n" + vSabotaged.slice(canonKernelIdx);
+const oldScoreIdx = vOldOrder.indexOf("const score = runProductionScore(ROOT, scoreCtx);");
+const oldLastGateIdx = vOldOrder.indexOf("MIGRATION.md successor table verified");
+assert("7P. the score writes last (r18 R18-F18), machine-checked against the shipped validate.mjs: the score computation+write AND its ctx sit AFTER the final gate (MIGRATION) and after every late gate's failure site (canon-kernel, kernel-boundary, family-fixture, norm-symmetry, tt) — a late failure is priced into otherGateFailures and can never leave an unqualified 100/100 on disk; the pre-r18 order reconstructed (score block before canon-kernel) fails the same ordering check — the position is load-bearing",
+    orderingHolds && oldScoreIdx < oldLastGateIdx && vOldOrder !== vSrc);
+
     return { problems, passed, total };
 }
 
@@ -1347,5 +2327,5 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToP
         for (const p of r.problems) console.error(`  ✗ ${p}`);
         process.exit(1);
     }
-    console.log("  ✓ per-family contract fixture battery verified (Zai Exporter 3-strategy ladder with the r17 constant-extraction pin, NetHook v6 veto/respond/traffic/onNode/gmFetch, red controls, Hailuo++ BlobSanitizer real-sample repair, the round-15 Forums++/CB field-settlement contracts with sabotage red controls, the round-16 saint pipeline-reachability + bare-route recovery + family-symmetry contracts, the round-16 captcha-aware click timing with its sabotage red control, and the round-17 unseen-pipeline contracts: the harvest alternation split, the finished CB timing state machine, the hardened upload receiver, and the MAM hover-announcement dedupe)");
+    console.log("  ✓ per-family contract fixture battery verified (Zai Exporter 3-strategy ladder with the r17 constant-extraction pin, NetHook v6 veto/respond/traffic/onNode/gmFetch, red controls, Hailuo++ BlobSanitizer real-sample repair, the round-15 Forums++/CB field-settlement contracts with sabotage red controls, the round-16 saint pipeline-reachability + bare-route recovery + family-symmetry contracts, the round-16 captcha-aware click timing with its sabotage red control, the round-17 unseen-pipeline contracts: the harvest alternation split, the finished CB timing state machine, the hardened upload receiver, the MAM hover-announcement dedupe, and the round-18 cross-training contracts: the hosts retry contract, the shared-namespace watcher registry, the LinkMasterΨ harvest grouping + ZIP name allocation, the popup data:-media admission, the canvas serializer stability, the PM import gate + Gist truncated branch, the short-206 contract, the rebased YTPM verifier, the Yandex tranche ordering, the Recon message-hook identity, the MPC vnode retention + collision-resistant identity, the FLX aggregation, the m3u8 facade decode, the ingest provenance refusals, and the score-writes-last ordering — each with its red control)");
 }

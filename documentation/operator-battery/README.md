@@ -1,4 +1,4 @@
-# Operator Regression Battery · suite 1.25.0
+# Operator Regression Battery · suite 1.26.0
 
 > 47 operator-side tests across 10 families — every verification the machine gate cannot make.
 > Manifest: `tools/operator-battery/manifest.json` (machine-checked: anchor liveness, version stamps, residual coverage). This checklist is its rendered form.
@@ -1177,7 +1177,7 @@
 ## Report back (paste this template, filled)
 
 ```markdown
-## OPERATOR BATTERY REPORT — suite 1.25.0 @ <git sha>
+## OPERATOR BATTERY REPORT — suite 1.26.0 @ <git sha>
 ENV: <browser + version> / <manager + version (MV3?)> / <OS> / dist @ <git sha> / date <YYYY-MM-DD>
 
 | test | status (PASS/FAIL/BLOCKED) | evidence (link/inline) | note (failure mode if FAIL/BLOCKED) |
@@ -1236,4 +1236,4 @@ FREE-FORM FINDINGS:
 
 ---
 
-*Rendered by `node tools/operator-battery.mjs render` — deterministic; re-render after any bump. The manifest is the source of truth; this doc is its operator-facing projection (residual map + anchor line refs included). Results ingested by `node tools/operator-battery.mjs ingest <report.md>` land in `tools/operator-battery/results.json` (adjudication ledger, expiry v1.26.0); a partial report needs `--partial`. UNTESTED is the ledger's default — never a report row.*
+*Rendered by `node tools/operator-battery.mjs render` — deterministic; re-render after any bump. The manifest is the source of truth; this doc is its operator-facing projection (residual map + anchor line refs included). Results ingested by `node tools/operator-battery.mjs ingest <report.md>` land in `tools/operator-battery/results.json` (adjudication ledger, expiry v1.27.0); a partial report needs `--partial`. UNTESTED is the ledger's default — never a report row.*

@@ -476,20 +476,53 @@ export function ingestOperatorReport(reportPath, opts = {}) {
     const results = readJson(RESULTS_PATH);
     results.adjudications = results.adjudications || {};
 
+    /* r18 (R18-F17): PROVENANCE IS REQUIRED, NEVER FABRICATED. The old
+     * ingest accepted a report with NO suite header (the wrong-suite check
+     * only fired when a suite token happened to be present), NO commit sha
+     * at all (the header's `@ <git sha>` was never extracted or validated —
+     * an all-zero or garbage sha passed), NO ENV line ("unknown env" was
+     * recorded as if it were a stated environment), and NO date (the
+     * machine date silently fabricated the run date the 10a-F07 comment
+     * explicitly forbids). A paste-back without its header is not evidence:
+     * every missing piece is a NAMED problem and the ingest refuses to
+     * write. The partial mode is untouched — it scopes COVERAGE, not
+     * provenance. */
+    const problems = [];
     const envLine = (/^ENV:\s*(.+)$/m.exec(text) || [])[1]?.trim() || "";
+    if (!envLine) {
+        problems.push("report has no ENV line — expected 'ENV: <browser + version> / <manager + version (MV3?)> / <OS> / dist @ <git sha> / date <YYYY-MM-DD>' (a paste-back without its stated environment is not evidence)");
+    }
     const env = envLine || "unknown env";
     /* 10a F07: the run date is the OPERATOR's stated date (the ENV line's
-     * `date YYYY-MM-DD` field) — the machine date fabricated provenance
-     * whenever the report was written days before the paste-back. */
+     * `date YYYY-MM-DD` field) — r18 (R18-F17): a missing stated date is a
+     * named refusal, never a machine-date fabrication (the write below is
+     * gated on an empty problems list, so the placeholder never lands). */
     const statedDate = (/date\s+(\d{4}-\d{2}-\d{2})/i.exec(envLine) || [])[1] || "";
-    const runDate = statedDate || new Date().toISOString().slice(0, 10);
+    if (!statedDate) {
+        problems.push("report ENV line carries no 'date YYYY-MM-DD' field — the run date is the operator's stated date, never the machine's (10a F07)");
+    }
+    const runDate = statedDate;
 
     /* 10a F06b: suite-version provenance — the report header's suite line
-     * must match the tree the operator ran against. */
-    const problems = [];
-    const suiteVer = (/suite\s+(\S+)\s*@/i.exec(text) || [])[1] || "";
-    if (suiteVer && suiteVer !== pkg.version) {
+     * must match the tree the operator ran against. r18 (R18-F17): the
+     * header itself is REQUIRED (a missing suite line previously slid
+     * through the falsy guard). */
+    const suiteLine = text.split("\n").find((l) => /suite\s+\S+\s*@/i.test(l)) || "";
+    const suiteVer = (/suite\s+(\S+)\s*@/i.exec(suiteLine) || [])[1] || "";
+    if (!suiteVer) {
+        problems.push("report header has no 'suite <version> @ <git sha>' line — suite provenance is required, not optional");
+    } else if (suiteVer !== pkg.version) {
         problems.push(`report header says suite ${suiteVer} but this tree is ${pkg.version} — ingest against the tree the operator ran, or re-verify before ingesting`);
+    }
+
+    /* r18 (R18-F17): the commit sha is extracted from the suite header and
+     * format-validated — 7-40 hex characters; an all-zero sha (the
+     * template's unfilled placeholder) is a named refusal. */
+    const statedSha = (/@\s*([0-9a-f]{7,40})\b/i.exec(suiteLine) || [])[1] || "";
+    if (!statedSha) {
+        problems.push("report header carries no git sha after the '@' — the dist tree the operator ran must be identifiable");
+    } else if (/^0+$/.test(statedSha)) {
+        problems.push("report header's git sha is all zeros — the template placeholder was not filled in");
     }
 
     /* 10a F14: scope rows to the report TABLE — after the header row (plus
