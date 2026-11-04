@@ -1461,6 +1461,37 @@ async function gateD() {
         passes.push(`[D] canon kernel-less boundary verified (${kbSmoke.canonFiles} canon scripts: ${kbSmoke.kernelFreeCount} kernel-free, ${kbSmoke.guardedConsumerCount} typeof-guarded across ${kbSmoke.totalGuardedSites} sites, ${kbSmoke.transportFallbacksVerified}/${kbSmoke.expectedFallbacks} kernel-less gmFetch fallbacks, ${kbSmoke.runtimeAssertions}/${kbSmoke.expectedRuntimeAssertions} runtime+red-control assertions)`); /* WO-01 round-3 (3-a F05): denominators derive from the smoke's own fixture map — the hardcoded /8 /10 go stale the moment a VM fixture is added */
     }
 
+    /* r18a: THE MACHINE-INDEPENDENCE SCAN. The round-18 field failure: the
+     * family-fixture harness wrote its 7O ingest-provenance scratch reports
+     * into a LITERAL absolute home directory minted on the authoring VM —
+     * green through every battery in that environment (the directory
+     * existed there), then ENOENT-dead on the operator's machine the
+     * moment the gate chain ran outside it. A battery on the authoring
+     * machine can NEVER catch this class (the authoring machine always
+     * owns the named path); only a static, machine-independent refusal
+     * can. Every executed instrument is scanned for string literals that
+     * name an absolute home directory (Unix or Windows forms); the lawful
+     * forms are env-derived (os.tmpdir, os.homedir as a probe, env vars)
+     * — never literals. */
+    {
+        const HOME_LITERAL = /(["'`])(?:\/home\/|\/Users\/|\/root\/|[A-Za-z]:[\/\\](?:Users|home|root)[\/\\])/;
+        const offenders = [];
+        const instruments = fs.readdirSync(path.join(ROOT, "tools"))
+            .filter((x) => x.endsWith(".mjs")).sort();
+        for (const f of instruments) {
+            const src = fs.readFileSync(path.join(ROOT, "tools", f), "utf8");
+            const lines = src.split("\n");
+            for (let i = 0; i < lines.length; i++) {
+                if (HOME_LITERAL.test(lines[i])) offenders.push(`${f}:${i + 1}: ${lines[i].trim().slice(0, 100)}`);
+            }
+        }
+        if (offenders.length) {
+            for (const o of offenders) failures.push(`[D] machine-independence: absolute-home path literal in tools/${o} — gate instruments must derive paths from the environment (os.tmpdir/os.homedir/process.env), never name a build machine's filesystem (the r18 field-failure class)`);
+        } else {
+            passes.push(`[D] machine-independence scan verified (${instruments.length} gate instruments carry zero absolute-home path literals — every path is env-derived; the r18a field-failure class, machine-caught)`);
+        }
+    }
+
     const famSmoke = await runFamilyFixtureSmoke(ROOT);
     if (famSmoke.problems.length) {
         for (const p of famSmoke.problems) failures.push(`[D] family-fixture smoke: ${p}`);

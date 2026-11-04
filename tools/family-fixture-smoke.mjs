@@ -17,6 +17,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
+import os from "node:os";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 
@@ -2273,15 +2274,23 @@ const mkReport = (over) => {
         "- none",
     ].join("\n");
 };
+/* r18a: the scratch reports live in a fresh OS temp dir (os.tmpdir honors
+ * TMPDIR — machine-independent by construction). The round-18 original
+ * named the authoring machine's home directory as a string literal: green
+ * through every battery on that machine (the directory existed there),
+ * then ENOENT-dead on the operator's the moment the gate chain ran outside
+ * it. validate.mjs now refuses this literal class repo-wide (the
+ * machine-independence scan). */
+const tmpReportDir = fs.mkdtempSync(path.join(os.tmpdir(), "wo01-ffsmoke-"));
 const tmpReports = [];
-const writeReport = (text) => { const p = path.join("/home/z", "r18-report-" + tmpReports.length + ".md"); fs.writeFileSync(p, text); tmpReports.push(p); return p; };
+const writeReport = (text) => { const p = path.join(tmpReportDir, "r18-report-" + tmpReports.length + ".md"); fs.writeFileSync(p, text); tmpReports.push(p); return p; };
 const ingNoHeader = ingestOperatorReport(writeReport(mkReport({ header: "## OPERATOR BATTERY REPORT" })), {});
 const ingZeroSha = ingestOperatorReport(writeReport(mkReport({ header: "## OPERATOR BATTERY REPORT — suite 1.26.0 @ 0000000000000000000000000000000000000000" })), {});
 const ingNoEnv = ingestOperatorReport(writeReport(mkReport({ env: "" })), {});
 const ingNoDate = ingestOperatorReport(writeReport(mkReport({ env: "ENV: Chrome 130 / TM 5.5 / Win11 / dist @ 050e7bd / " })), {});
 const ingWrongSuite = ingestOperatorReport(writeReport(mkReport({ header: "## OPERATOR BATTERY REPORT — suite 9.9.9 @ 050e7bd7b770969fb2ac48cc408df95c5d16f07b" })), {});
 const resultsAfter = fs.readFileSync(path.join(root, "tools", "operator-battery", "results.json"), "utf8");
-for (const p of tmpReports) { try { fs.unlinkSync(p); } catch {} }
+try { fs.rmSync(tmpReportDir, { recursive: true, force: true }); } catch {}
 assert("7O. ingest provenance (r18 R18-F17), EXECUTED against the shipped ingestOperatorReport: a report with NO suite header is refused by name; an all-zero git sha (the unfilled template placeholder) is refused; a missing ENV line is refused; a missing stated date is refused (never machine-fabricated); a wrong suite still refuses (the 10a-F06b contract); and every refusal left results.json BYTE-IDENTICAL (refusals never write)",
     ingNoHeader.problems.length > 0 && /suite <version> @ <git sha>/.test(ingNoHeader.problems.join(" ")) &&
     ingZeroSha.problems.length > 0 && /all zeros/.test(ingZeroSha.problems.join(" ")) &&
