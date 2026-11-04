@@ -63,21 +63,47 @@
     /**
      * Dispatch every handler whose domain matches the current hostname.
      * Idempotent per handler id (safe to call from document-start AND
-     * document-idle bootstrap paths). Returns the number of handlers run.
+     * document-idle bootstrap paths). Returns the number of handlers that
+     * completed.
+     *
+     * WO-01 round-18 (R18-F01) — the retry-signal contract: the once-only
+     * `executed` latch used to engage BEFORE the handler ran, so the
+     * document-start dispatch consumed DOM-dependent handlers on pages
+     * whose content only exists after the parse (every image-host
+     * interstitial: run #1 found no `.pic` — nothing in the DOM yet —
+     * latched the id, and the DOMContentLoaded re-run was a no-op;
+     * retryHandlersRun=0, the URL stayed interstitial forever). A handler
+     * may now return `false` to signal "incomplete — re-dispatch me on the
+     * next run()"; a THROWN handler is equally not latched. Re-dispatch is
+     * bounded by the boot contract itself (run() is only invoked from the
+     * document-start + DOMContentLoaded pair in the hostwarp body, and the
+     * re-entrancy guard below keeps a handler that calls hosts.run()
+     * from looping). Handlers that return undefined (every handler that
+     * predates the contract) keep the exact settle-on-first-dispatch
+     * semantics they shipped with — the superset holds.
      */
+    let dispatching = false;
     function run() {
+        if (dispatching) return 0;
         const hit = resolve();
         if (!hit) return 0;
         let ran = 0;
-        for (const entry of [...hit.entries]) {
-            if (executed.has(entry.id)) continue;
-            executed.add(entry.id);
-            try {
-                entry.handler({ hostname: location.hostname, domain: hit.domain });
-                ran++;
-            } catch (e) {
-                console.debug(`[a4/hosts] handler "${entry.id}" failed:`, (e && e.message) || e);
+        dispatching = true;
+        try {
+            for (const entry of [...hit.entries]) {
+                if (executed.has(entry.id)) continue;
+                let complete = true;
+                try {
+                    const result = entry.handler({ hostname: location.hostname, domain: hit.domain });
+                    complete = result !== false;
+                } catch (e) {
+                    complete = false;
+                    console.debug(`[a4/hosts] handler "${entry.id}" failed:`, (e && e.message) || e);
+                }
+                if (complete) { executed.add(entry.id); ran++; }
             }
+        } finally {
+            dispatching = false;
         }
         return ran;
     }

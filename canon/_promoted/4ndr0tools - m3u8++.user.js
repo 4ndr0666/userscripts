@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - m3u8++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      5.1.3
+// @version      5.1.4
 // @author       4ndr0666
 // @description  Automatically displays the m3u8 url for ANY video playing in the top right corner of the video. Click url to copy or click download to use the webapp "tools.thatwind.com". Also injects Play buttons next to magnet links on every page, relaying them to www.diancigaoshou.com.
 // @license      MIT
@@ -270,6 +270,26 @@
                             // because the webapp streams large media segments through this channel.
                             timeout: 300000,
                             onload(r) {
+                                /* v5.1.4 (r18 R18-F16): text()/json() decode the
+                                 * response BYTES. The request is issued with
+                                 * responseType:'arraybuffer', so script
+                                 * managers populate r.response and leave
+                                 * r.responseText undefined — text() returned
+                                 * undefined and json() threw SyntaxError on
+                                 * every JSON-parsing webapp call (the G5
+                                 * comment claimed json() worked; the bytes
+                                 * say otherwise). TextDecoder decodes the
+                                 * buffer (with a graceful fallback for the
+                                 * streaming edge where a manager DOES
+                                 * populate responseText), and blob() joins
+                                 * the facade for parity with fetch's
+                                 * Response surface. */
+                                const decodeText = () => {
+                                    if (typeof r.responseText === 'string') return r.responseText;
+                                    if (r.response instanceof ArrayBuffer) return new TextDecoder().decode(r.response);
+                                    if (r.response && r.response.byteLength != null) return new TextDecoder().decode(r.response);
+                                    return '';
+                                };
                                 resolve({
                                     status: r.status,
                                     // G5 (audit v4.5): fetch-compat surface — .ok and .json() were
@@ -278,13 +298,16 @@
                                     ok: r.status >= 200 && r.status < 300,
                                     headers: new Headers(r.responseHeaders.split("\n").filter(n => n).map(s => s.split(/:\s*/)).reduce((all, [a, b]) => { all[a] = b; return all; }, {})),
                                     async text() {
-                                        return r.responseText;
+                                        return decodeText();
                                     },
                                     async json() {
-                                        return JSON.parse(r.responseText);
+                                        return JSON.parse(decodeText());
                                     },
                                     async arrayBuffer() {
                                         return r.response;
+                                    },
+                                    async blob() {
+                                        return new Blob([r.response]);
                                     }
                                 });
                             },

@@ -67,61 +67,64 @@ function redirectToImage(selector) {
 }
 
 const IMAGE_HOST_HANDLERS = [
+    /* WO-01 round-18 (R18-F01): every handler returns a completion signal —
+     * `true` = acted (redirect armed / continue clicked), `false` = nothing
+     * found in the current DOM (the dispatcher re-offers the handler at
+     * DOMContentLoaded instead of latching a document-start no-op). The
+     * acidimg/imx click-throughs return synchronously once the button is
+     * clicked (the waitFor chain is time-based, not dispatch-based) — the
+     * async bodies became sync-signaling .then chains for exactly that. */
     ['imagetwist.com', () => {
-        if (redirectToImage('.pic')) return;
+        if (redirectToImage('.pic')) return true;
         const continueButton = $$('a').find((el) => el.innerText === 'Continue to your image');
-        if (continueButton) continueButton.click();
+        if (continueButton) { continueButton.click(); return true; }
+        return false;
     }],
-    ['imgspice.com', () => { redirectToImage('#imgpreview'); }],
-    ['turboimagehost.com', () => { redirectToImage('.uImage'); }],
-    ['acidimg.cc', async () => {
+    ['imgspice.com', () => redirectToImage('#imgpreview')],
+    ['turboimagehost.com', () => redirectToImage('.uImage')],
+    ['acidimg.cc', () => {
         const submitButton = $('input[type=\'submit\']');
-        if (submitButton) {
-            submitButton.click();
-            try {
-                await waitFor('.centred', { timeout: 3000 });
-                redirectToImage('.centred');
-            } catch (error) {
-                console.error('Ψ-HostWarp:', error.message);
-            }
-        } else {
-            redirectToImage('.centred');
-        }
+        if (!submitButton) return redirectToImage('.centred');
+        submitButton.click();
+        waitFor('.centred', { timeout: 3000 })
+            .then(() => { redirectToImage('.centred'); })
+            .catch((error) => { console.error('Ψ-HostWarp:', error.message); });
+        return true;
     }],
-    ['imx.to', async () => {
+    ['imx.to', () => {
         const blueButton = $('.button') || $('#continuebutton');
-        if (blueButton) {
-            blueButton.click();
-            try {
-                await waitFor('.centred', { timeout: 3000 });
-                redirectToImage('.centred');
-            } catch (error) {
-                console.error('Ψ-HostWarp:', error.message);
-            }
-        } else {
-            redirectToImage('.centred');
-        }
+        if (!blueButton) return redirectToImage('.centred');
+        blueButton.click();
+        waitFor('.centred', { timeout: 3000 })
+            .then(() => { redirectToImage('.centred'); })
+            .catch((error) => { console.error('Ψ-HostWarp:', error.message); });
+        return true;
     }],
-    ['pixhost.to', () => { redirectToImage('img#image'); }],
+    ['pixhost.to', () => redirectToImage('img#image')],
     ['imagebam.com', () => {
-        if (redirectToImage('img.main-image')) return;
+        if (redirectToImage('img.main-image')) return true;
         const anchor = $('#continue > a');
-        if (anchor) anchor.click();
+        if (anchor) { anchor.click(); return true; }
+        return false;
     }],
-    ['imgbox.com', () => { redirectToImage('img.image-content'); }],
+    ['imgbox.com', () => redirectToImage('img.image-content')],
     ['kropic.com', () => {
-        if (redirectToImage('img.pic')) return;
+        if (redirectToImage('img.pic')) return true;
         const continueButton = $$('input[type=\'submit\']').find((el) => el.value === 'Continue to image...');
-        if (continueButton) continueButton.click();
+        if (continueButton) { continueButton.click(); return true; }
+        return false;
     }],
-    ['vipr.im', () => { redirectToImage('.img-responsive'); }],
-    ['imagevenue.com', () => { redirectToImage('#main-image'); }],
+    ['vipr.im', () => redirectToImage('.img-responsive')],
+    ['imagevenue.com', () => redirectToImage('#main-image')],
 ];
 
 for (const [domain, handler] of IMAGE_HOST_HANDLERS) {
     Ψ.hosts.on(domain, () => {
         if (!enabled('imagehosts')) return;
-        handler();
+        /* The handler's completion signal rides through — `false` tells the
+         * dispatcher "DOM not ready / nothing found — re-dispatch me at
+         * DOMContentLoaded" (the r18 retry contract). */
+        return handler();
     }, { id: `imagehosts:${domain}`, script: 'HostWarp' });
 }
 
@@ -467,6 +470,9 @@ if (typeof GM_registerMenuCommand === 'function') {
 }
 
 /* Boot: dispatch at document-start, retry once at DOMContentLoaded for
- * late-registered handlers. Ψ.hosts.run() is idempotent per handler. */
+ * late-registered handlers AND document-start-incomplete handlers (the r18
+ * retry contract: a handler returning false — e.g. an interstitial whose
+ * image is not in the DOM yet — is re-dispatched, not latched). Ψ.hosts.run()
+ * is idempotent per handler id. */
 Ψ.hosts.run();
 document.addEventListener('DOMContentLoaded', () => Ψ.hosts.run(), { once: true });

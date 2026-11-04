@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - PageCraft
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.1.3
+// @version      1.1.4
 // @description  All-sites page utility belt: bulk checkbox control with range/alt-hover selection (de-jQueryed), broken-image auto-repair with cache-busting + frame broadcast, hover-collapse image I/O governor, and Brave infinite scroll — one engine, glass settings console, zero runtime dependencies.
 // @author       4ndr0666
 // @license      MIT
@@ -18,7 +18,7 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20PageCraft.user.js
 // ==/UserScript==
 
-/* 4ndr0tools - PageCraft v1.1.3 — built from modules/pagecraft + kernel {brand, core, glass, store, hotkeys}
+/* 4ndr0tools - PageCraft v1.1.4 — built from modules/pagecraft + kernel {brand, core, glass, store, hotkeys}
  * All-sites page utility belt: bulk checkbox control with range/alt-hover selection (de-jQueryed), broken-image auto-repair with cache-busting + frame broadcast, hover-collapse image I/O governor, and Brave infinite scroll — one engine, glass settings console, zero runtime dependencies.
  * This is a generated file; edit modules/ and run `npm run build`.
  */
@@ -521,11 +521,29 @@
         catch (e) { console.debug('[a4/store] localStorage write failed (quota?):', key, e.message); }
     }
 
-    /** Create a namespaced store facade. */
+    /** Create a namespaced store facade.
+     *
+     * WO-01 round-18 (R18-F02) — facades of the SAME namespace share one
+     * watcher registry + GM-listener set. The v1.3.0 watch() repair bound
+     * them per FACADE, so two facades of one namespace (the module body's
+     * `Ψ.store.ns('pagecraft')` and the settings console's own
+     * `Ψ.store.ns(ns)` from glass.js) never heard each other's writes
+     * under the storage fallback: the console's set() notified only the
+     * console facade's watchers — the module body's watcher received ZERO
+     * notifications (live-apply dead exactly when GM storage refuses,
+     * which is when a settings console matters most). The registry is
+     * keyed by namespace prefix; different namespaces remain fully
+     * isolated (the collision-freedom contract is unchanged). */
+    const nsRegistries = new Map();
     function ns(prefix) {
         if (!prefix || typeof prefix !== 'string') throw new Error('store.ns: prefix required');
-        const watchers = [];
-        const gmListenerKeys = new Set();
+        let reg = nsRegistries.get(prefix);
+        if (!reg) {
+            reg = { watchers: [], gmListenerKeys: new Set() };
+            nsRegistries.set(prefix, reg);
+        }
+        const watchers = reg.watchers;
+        const gmListenerKeys = reg.gmListenerKeys;
 
         /* v1.3.0 watch() repair — two defects fixed:
          *   (a) the GM cross-tab listener was registered ONCE on the literal

@@ -2,7 +2,7 @@
 // @name         4ndr0tools - Recon
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666
-// @version      9.1.2
+// @version      9.1.3
 
 // @description  Alt+Shift+R hotkey — unified forensic recon platform: hardened XHR/fetch/beacon interception through the suite's shared NetHook hub with MITM block & mute rules and failure pacification, console harvesting, WebSocket + postMessage bridge capture, JWT identity harvesting, headless C2 API (reconEngine / chimeraRecon / Hook) and a moveable Shadow-DOM glass dock with full markdown reporting. For security research only.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -1484,31 +1484,52 @@ const __4NDR0_NET_API__ = (function () {
                 seenMessages.add(e);
                 Hook.recordBridge(e);
             });
-            // (b) Intercepting wrapper (recon4 lineage): records before host listeners
-            //     run. removeEventListener is honored via a WeakMap unwrap table
-            //     (fixes recon4's listener leak) and a WeakSet dedupes double capture.
+            // (b) Intercepting wrapper (recon4 lineage): records before host
+            //     listeners run. v9.1.3 (r18 R18-F12): THE IDENTITY CONTRACT —
+            //     ONE wrapper is cached per (listener, capture) pair and
+            //     reused on every registration, so the native dedup sees the
+            //     same function object and fires a duplicate registration
+            //     exactly ONCE (the old hook minted a fresh closure per add:
+            //     double fire); the wrapper is a real function that forwards
+            //     `this` (the event target) to the host listener (the old
+            //     arrow-wrapper called it bare — strict-mode listeners lost
+            //     their receiver); and removal resolves the cached wrapper
+            //     by listener + capture (the old table keyed listener only,
+            //     so a second add overwrote the first wrapper and one live
+            //     callback survived a "successful" remove). handleEvent
+            //     objects and non-message types pass through untouched.
             const origAdd = _window.addEventListener;
             const origRemove = _window.removeEventListener;
-            const unwrap = new WeakMap();
+            const unwrap = new WeakMap(); /* listener -> Map(capture -> wrapper) */
+            const captureOf = (options) => (typeof options === 'boolean' ? options : !!(options && options.capture));
             _window.addEventListener = function(type, listener, options) {
                 if (type === 'message' && typeof listener === 'function') {
-                    const wrapped = (e) => {
-                        if (!seenMessages.has(e)) {
-                            seenMessages.add(e);
-                            Hook.recordBridge(e);
-                        }
-                        return listener(e);
-                    };
-                    unwrap.set(listener, wrapped);
+                    const cap = captureOf(options);
+                    let byCapture = unwrap.get(listener);
+                    if (!byCapture) { byCapture = new Map(); unwrap.set(listener, byCapture); }
+                    let wrapped = byCapture.get(cap);
+                    if (!wrapped) {
+                        wrapped = function (e) {
+                            if (!seenMessages.has(e)) {
+                                seenMessages.add(e);
+                                Hook.recordBridge(e);
+                            }
+                            return listener.call(this, e);
+                        };
+                        byCapture.set(cap, wrapped);
+                    }
                     return origAdd.call(this, type, wrapped, options);
                 }
                 return origAdd.apply(this, arguments);
             };
             _window.removeEventListener = function(type, listener, options) {
-                const wrappedListener = (type === 'message' && typeof listener === 'function') ? unwrap.get(listener) : undefined;
-                if (wrappedListener) {
-                    unwrap.delete(listener);
-                    return origRemove.call(this, type, wrappedListener, options);
+                if (type === 'message' && typeof listener === 'function') {
+                    const byCapture = unwrap.get(listener);
+                    const wrappedListener = byCapture && byCapture.get(captureOf(options));
+                    if (wrappedListener) {
+                        byCapture.delete(captureOf(options));
+                        return origRemove.call(this, type, wrappedListener, options);
+                    }
                 }
                 return origRemove.apply(this, arguments);
             };
@@ -2211,7 +2232,7 @@ const __4NDR0_NET_API__ = (function () {
         window.reconEngine = API;
         window.chimeraRecon = _window.chimeraRecon;
         window.Hook = Hook;
-        HELPERS.log('Ψ-RECON-Ω UNIFIED v9.1.2-Ω initialized. C2 via reconEngine / chimeraRecon / Hook in the console; dock toggles with Alt+Shift+R.');
+        HELPERS.log('Ψ-RECON-Ω UNIFIED v9.1.3-Ω initialized. C2 via reconEngine / chimeraRecon / Hook in the console; dock toggles with Alt+Shift+R.');
     }
 
     initialize();   // interceptors armed at document-start (reconh guarantee)

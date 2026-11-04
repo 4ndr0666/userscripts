@@ -2,7 +2,7 @@
 // @name         4ndr0tools - Yandex Image Search++ 
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666 
-// @version      0.4.3
+// @version      0.4.4
 // @description  Robust, event-driven slideshow, fullscreen preview, and on-screen status for Yandex reverse-image search.
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YandexImageSearch++.user.js
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YandexImageSearch++.user.js
@@ -21,7 +21,7 @@
 // effective behavior now agree (the fade tightens 300 ms → 150 ms, the
 // suite-wide spec value).
 // 0.4.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: YandexImageSearch++.user v0.4.3 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: YandexImageSearch++.user v0.4.4 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 (() => {
     'use strict';
@@ -243,12 +243,32 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: YandexImageSearch++.user
         // mount/unmount checks over the identical node set, coalesced to one
         // flush per 200 ms of DOM churn (mount/unmount are idempotent via the
         // activeController guard).
+        // v0.4.4 (r18 R18-F11): REMOVALS ARE PROCESSED BEFORE ADDITIONS. A
+        // single replaceChild-style swap delivers the old viewer's removal
+        // and the new viewer's addition in the SAME tranche — additions
+        // first meant the new viewer's mount check saw the still-alive old
+        // controller and skipped creation, then the removal destroyed it:
+        // final state activeController=null with a live, unmanaged viewer
+        // (no badge, no keybind). Removal-then-addition lets the swap
+        // destroy the stale controller and mount a fresh one; a
+        // post-flush reconciliation guards the remaining edge (a mount
+        // tranche processed while a disconnected controller lingers).
         const pendingAdded = [];
         const pendingRemoved = [];
         let viewerCheckTimer = null;
         const checkViewer = () => {
             const added = pendingAdded.splice(0, pendingAdded.length);
             const removed = pendingRemoved.splice(0, pendingRemoved.length);
+            for (const node of removed) {
+                // When the viewer container is removed, destroy the active controller to clean up.
+                if (node.nodeType === Node.ELEMENT_NODE &&
+                    (node.matches(CONFIG.viewerContainerSelector) || node.querySelector?.(CONFIG.viewerContainerSelector))) {
+                    if (activeController) {
+                        activeController.destroy();
+                        activeController = null;
+                    }
+                }
+            }
             for (const node of added) {
                 // When the viewer container is added to the DOM, create a new
                 // controller. v0.4: also probe INSIDE the added node — the
@@ -261,16 +281,13 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: YandexImageSearch++.user
                     }
                 }
             }
-            for (const node of removed) {
-                // When the viewer container is removed, destroy the active controller to clean up.
-                if (node.nodeType === Node.ELEMENT_NODE &&
-                    (node.matches(CONFIG.viewerContainerSelector) || node.querySelector?.(CONFIG.viewerContainerSelector))) {
-                    if (activeController) {
-                        activeController.destroy();
-                        activeController = null;
-                    }
-                }
-            }
+            // v0.4.4 (r18 R18-F11): the reconciliation pass — the controller's
+            // existence must match the viewer's connectivity AFTER the
+            // tranche settles (a connected viewer with no controller gets
+            // one; a controller whose viewer is gone is destroyed).
+            const liveViewer = document.querySelector(CONFIG.viewerContainerSelector);
+            if (liveViewer && !activeController) activeController = new SlideshowController();
+            else if (!liveViewer && activeController) { activeController.destroy(); activeController = null; }
         };
         const observer = new MutationObserver((mutations) => {
             for (const mutation of mutations) {

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - YouTube Playlist Master
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.7.6
+// @version      1.7.7
 // @description  Channel playlist buttons (All / Popular / Videos / Shorts / Streams / Members-only), Random play (prefer newest/oldest), reverse autoplay order, playlist autoplay toggle, duration sort, bulk copy/move/delete, JSON + plaintext export/import, snapshots with deleted-video detection, quick watch_videos playlists, queue & watch-later overlays, playlist close button, date/view metadata, episode auto-expand, huge-playlist browser, live settings (no reload), always-available Ψ deck, playlist row filter, duplicate finder & purge, global hotkeys (Alt+Shift+U/S/X), failsafe deck rescue, 404-proof navigation guards, Trusted-Types-immune rendering, fully-visible fit-content modal dialogs.
 // @author       4ndr0666
 // @license      MIT
@@ -1389,7 +1389,7 @@ const __4NDR0_NET_API__ = (function () {
 
     const CFG = {
         SCRIPT_NAME: 'Ψ Playlist Master',
-        SCRIPT_VERSION: '1.7.6',
+        SCRIPT_VERSION: '1.7.7',
         STORAGE_KEY: 'ytpu.settings',
         SNAPSHOT_KEY: 'ytpu.snapshots',
         SNAPSHOT_CAP: 20,
@@ -2749,11 +2749,11 @@ const __4NDR0_NET_API__ = (function () {
             }
             for (let bi = 0; bi < batches.length; bi++) {
                 const batch = batches[bi];
-                if (meta.mode === 'add') {
-                    const { items } = await READER.loadPlaylist(playlistId);
-                    meta.preCount = new Map();
-                    for (const i of items) meta.preCount.set(i.videoId, (meta.preCount.get(i.videoId) || 0) + 1);
-                }
+                /* v1.7.7 (r18 R18-F10): the pre-batch preCount snapshot moved
+                 * INTO runAndVerifyBatch as a per-level ENTRY read — a
+                 * baseline captured here went stale the moment any retry
+                 * level landed additions, and the stale baseline is what
+                 * double-credited already-present videos on retries. */
                 await PACING.serialize(() => runAndVerifyBatch(playlistId, batch, meta, result));
                 if (onProgress) {
                     onProgress({
@@ -2766,6 +2766,21 @@ const __4NDR0_NET_API__ = (function () {
         }
 
         async function runAndVerifyBatch(playlistId, batch, meta, result, depth = 0) {
+            /* v1.7.7 (r18 R18-F10): THE REBASED VERIFIER — this level's
+             * baseline is the playlist AS READ AT ENTRY (pre-edit). The old
+             * baseline was captured once before the top-level batch and
+             * reused by every recursive retry, so a video landed by an
+             * earlier attempt/sibling half was still counted against the
+             * stale pre-batch count: the same act credited "applied" at
+             * every retry level (a duplicate-add batch reported applied:2,
+             * failed:[] with only ONE copy actually in the playlist).
+             * expected = current-at-entry + this batch's acts — each level
+             * can only ever credit growth IT observed. */
+            let pre = new Map();
+            if (meta.mode === 'add') {
+                const { items: preItems } = await READER.loadPlaylist(playlistId);
+                for (const i of preItems) pre.set(i.videoId, (pre.get(i.videoId) || 0) + 1);
+            }
             try {
                 await INNERTUBE.playlistEdit({ playlistId, actions: batch });
             } catch (e) {
@@ -2793,7 +2808,6 @@ const __4NDR0_NET_API__ = (function () {
             const missing = [];
             if (meta.mode === 'add') {
                 const expectedAdds = new Map();
-                const pre = meta.preCount || new Map();
                 for (const act of batch) {
                     const v = act.addedVideoId;
                     expectedAdds.set(v, (expectedAdds.get(v) || pre.get(v) || 0) + 1);

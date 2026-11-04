@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - HostWarp
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.1.6
+// @version      1.1.7
 // @description  Per-host warp drive: bypasses image-host interstitials (imagetwist/imgspice/turboimagehost/acidimg/imx/pixhost/imagebam/imgbox/kropic/vipr/imagevenue), MEGA embed redirect + autoplay, PlanetSuzy mobile skin, t.me Web button, SearXNG sticky preferences, Gemini Answer Now — one engine, glass settings console, every module toggleable.
 // @author       4ndr0666
 // @license      MIT
@@ -18,7 +18,7 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20HostWarp.user.js
 // ==/UserScript==
 
-/* 4ndr0tools - HostWarp v1.1.6 — built from modules/hostwarp + kernel {brand, core, glass, store, hotkeys, hosts}
+/* 4ndr0tools - HostWarp v1.1.7 — built from modules/hostwarp + kernel {brand, core, glass, store, hotkeys, hosts}
  * Per-host warp drive: bypasses image-host interstitials (imagetwist/imgspice/turboimagehost/acidimg/imx/pixhost/imagebam/imgbox/kropic/vipr/imagevenue), MEGA embed redirect + autoplay, PlanetSuzy mobile skin, t.me Web button, SearXNG sticky preferences, Gemini Answer Now — one engine, glass settings console, every module toggleable.
  * This is a generated file; edit modules/ and run `npm run build`.
  */
@@ -521,11 +521,29 @@
         catch (e) { console.debug('[a4/store] localStorage write failed (quota?):', key, e.message); }
     }
 
-    /** Create a namespaced store facade. */
+    /** Create a namespaced store facade.
+     *
+     * WO-01 round-18 (R18-F02) — facades of the SAME namespace share one
+     * watcher registry + GM-listener set. The v1.3.0 watch() repair bound
+     * them per FACADE, so two facades of one namespace (the module body's
+     * `Ψ.store.ns('pagecraft')` and the settings console's own
+     * `Ψ.store.ns(ns)` from glass.js) never heard each other's writes
+     * under the storage fallback: the console's set() notified only the
+     * console facade's watchers — the module body's watcher received ZERO
+     * notifications (live-apply dead exactly when GM storage refuses,
+     * which is when a settings console matters most). The registry is
+     * keyed by namespace prefix; different namespaces remain fully
+     * isolated (the collision-freedom contract is unchanged). */
+    const nsRegistries = new Map();
     function ns(prefix) {
         if (!prefix || typeof prefix !== 'string') throw new Error('store.ns: prefix required');
-        const watchers = [];
-        const gmListenerKeys = new Set();
+        let reg = nsRegistries.get(prefix);
+        if (!reg) {
+            reg = { watchers: [], gmListenerKeys: new Set() };
+            nsRegistries.set(prefix, reg);
+        }
+        const watchers = reg.watchers;
+        const gmListenerKeys = reg.gmListenerKeys;
 
         /* v1.3.0 watch() repair — two defects fixed:
          *   (a) the GM cross-tab listener was registered ONCE on the literal
@@ -1409,21 +1427,47 @@
     /**
      * Dispatch every handler whose domain matches the current hostname.
      * Idempotent per handler id (safe to call from document-start AND
-     * document-idle bootstrap paths). Returns the number of handlers run.
+     * document-idle bootstrap paths). Returns the number of handlers that
+     * completed.
+     *
+     * WO-01 round-18 (R18-F01) — the retry-signal contract: the once-only
+     * `executed` latch used to engage BEFORE the handler ran, so the
+     * document-start dispatch consumed DOM-dependent handlers on pages
+     * whose content only exists after the parse (every image-host
+     * interstitial: run #1 found no `.pic` — nothing in the DOM yet —
+     * latched the id, and the DOMContentLoaded re-run was a no-op;
+     * retryHandlersRun=0, the URL stayed interstitial forever). A handler
+     * may now return `false` to signal "incomplete — re-dispatch me on the
+     * next run()"; a THROWN handler is equally not latched. Re-dispatch is
+     * bounded by the boot contract itself (run() is only invoked from the
+     * document-start + DOMContentLoaded pair in the hostwarp body, and the
+     * re-entrancy guard below keeps a handler that calls hosts.run()
+     * from looping). Handlers that return undefined (every handler that
+     * predates the contract) keep the exact settle-on-first-dispatch
+     * semantics they shipped with — the superset holds.
      */
+    let dispatching = false;
     function run() {
+        if (dispatching) return 0;
         const hit = resolve();
         if (!hit) return 0;
         let ran = 0;
-        for (const entry of [...hit.entries]) {
-            if (executed.has(entry.id)) continue;
-            executed.add(entry.id);
-            try {
-                entry.handler({ hostname: location.hostname, domain: hit.domain });
-                ran++;
-            } catch (e) {
-                console.debug(`[a4/hosts] handler "${entry.id}" failed:`, (e && e.message) || e);
+        dispatching = true;
+        try {
+            for (const entry of [...hit.entries]) {
+                if (executed.has(entry.id)) continue;
+                let complete = true;
+                try {
+                    const result = entry.handler({ hostname: location.hostname, domain: hit.domain });
+                    complete = result !== false;
+                } catch (e) {
+                    complete = false;
+                    console.debug(`[a4/hosts] handler "${entry.id}" failed:`, (e && e.message) || e);
+                }
+                if (complete) { executed.add(entry.id); ran++; }
             }
+        } finally {
+            dispatching = false;
         }
         return ran;
     }
@@ -1506,61 +1550,64 @@ function redirectToImage(selector) {
 }
 
 const IMAGE_HOST_HANDLERS = [
+    /* WO-01 round-18 (R18-F01): every handler returns a completion signal —
+     * `true` = acted (redirect armed / continue clicked), `false` = nothing
+     * found in the current DOM (the dispatcher re-offers the handler at
+     * DOMContentLoaded instead of latching a document-start no-op). The
+     * acidimg/imx click-throughs return synchronously once the button is
+     * clicked (the waitFor chain is time-based, not dispatch-based) — the
+     * async bodies became sync-signaling .then chains for exactly that. */
     ['imagetwist.com', () => {
-        if (redirectToImage('.pic')) return;
+        if (redirectToImage('.pic')) return true;
         const continueButton = $$('a').find((el) => el.innerText === 'Continue to your image');
-        if (continueButton) continueButton.click();
+        if (continueButton) { continueButton.click(); return true; }
+        return false;
     }],
-    ['imgspice.com', () => { redirectToImage('#imgpreview'); }],
-    ['turboimagehost.com', () => { redirectToImage('.uImage'); }],
-    ['acidimg.cc', async () => {
+    ['imgspice.com', () => redirectToImage('#imgpreview')],
+    ['turboimagehost.com', () => redirectToImage('.uImage')],
+    ['acidimg.cc', () => {
         const submitButton = $('input[type=\'submit\']');
-        if (submitButton) {
-            submitButton.click();
-            try {
-                await waitFor('.centred', { timeout: 3000 });
-                redirectToImage('.centred');
-            } catch (error) {
-                console.error('Ψ-HostWarp:', error.message);
-            }
-        } else {
-            redirectToImage('.centred');
-        }
+        if (!submitButton) return redirectToImage('.centred');
+        submitButton.click();
+        waitFor('.centred', { timeout: 3000 })
+            .then(() => { redirectToImage('.centred'); })
+            .catch((error) => { console.error('Ψ-HostWarp:', error.message); });
+        return true;
     }],
-    ['imx.to', async () => {
+    ['imx.to', () => {
         const blueButton = $('.button') || $('#continuebutton');
-        if (blueButton) {
-            blueButton.click();
-            try {
-                await waitFor('.centred', { timeout: 3000 });
-                redirectToImage('.centred');
-            } catch (error) {
-                console.error('Ψ-HostWarp:', error.message);
-            }
-        } else {
-            redirectToImage('.centred');
-        }
+        if (!blueButton) return redirectToImage('.centred');
+        blueButton.click();
+        waitFor('.centred', { timeout: 3000 })
+            .then(() => { redirectToImage('.centred'); })
+            .catch((error) => { console.error('Ψ-HostWarp:', error.message); });
+        return true;
     }],
-    ['pixhost.to', () => { redirectToImage('img#image'); }],
+    ['pixhost.to', () => redirectToImage('img#image')],
     ['imagebam.com', () => {
-        if (redirectToImage('img.main-image')) return;
+        if (redirectToImage('img.main-image')) return true;
         const anchor = $('#continue > a');
-        if (anchor) anchor.click();
+        if (anchor) { anchor.click(); return true; }
+        return false;
     }],
-    ['imgbox.com', () => { redirectToImage('img.image-content'); }],
+    ['imgbox.com', () => redirectToImage('img.image-content')],
     ['kropic.com', () => {
-        if (redirectToImage('img.pic')) return;
+        if (redirectToImage('img.pic')) return true;
         const continueButton = $$('input[type=\'submit\']').find((el) => el.value === 'Continue to image...');
-        if (continueButton) continueButton.click();
+        if (continueButton) { continueButton.click(); return true; }
+        return false;
     }],
-    ['vipr.im', () => { redirectToImage('.img-responsive'); }],
-    ['imagevenue.com', () => { redirectToImage('#main-image'); }],
+    ['vipr.im', () => redirectToImage('.img-responsive')],
+    ['imagevenue.com', () => redirectToImage('#main-image')],
 ];
 
 for (const [domain, handler] of IMAGE_HOST_HANDLERS) {
     Ψ.hosts.on(domain, () => {
         if (!enabled('imagehosts')) return;
-        handler();
+        /* The handler's completion signal rides through — `false` tells the
+         * dispatcher "DOM not ready / nothing found — re-dispatch me at
+         * DOMContentLoaded" (the r18 retry contract). */
+        return handler();
     }, { id: `imagehosts:${domain}`, script: 'HostWarp' });
 }
 
@@ -1906,7 +1953,10 @@ if (typeof GM_registerMenuCommand === 'function') {
 }
 
 /* Boot: dispatch at document-start, retry once at DOMContentLoaded for
- * late-registered handlers. Ψ.hosts.run() is idempotent per handler. */
+ * late-registered handlers AND document-start-incomplete handlers (the r18
+ * retry contract: a handler returning false — e.g. an interstitial whose
+ * image is not in the DOM yet — is re-dispatched, not latched). Ψ.hosts.run()
+ * is idempotent per handler id. */
 Ψ.hosts.run();
 document.addEventListener('DOMContentLoaded', () => Ψ.hosts.run(), { once: true });
 

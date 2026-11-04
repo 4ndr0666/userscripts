@@ -2,7 +2,7 @@
 // @name           4ndr0tools - LinkMasterΨ
 // @namespace      https://github.com/4ndr0666/userscripts
 // @author         4ndr0666
-// @version      6.3.5
+// @version      6.3.6
 // @description    Accurately decodes, previews, exports, validates and scrapes all links. (Dual MPV Support + Ψ IG Harvester + sexyforums premium-link unwrap + GitHub raw-URL harvest + Ψ2 forum deep-scrape engine)
 // @downloadURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
 // @updateURL      https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20LinkMaster%CE%A8.user.js
@@ -44,6 +44,25 @@
 // @connect        fbcdn.net
 // @connect        instagram.com
 // ==/UserScript==
+// 6.3.6 (WO-01 round 18): THE CROSS-TRAINING TWIN SETTLEMENTS — (1) the
+// harvest wrapper interpolates each host matcher into its two-branch
+// template UNGROUPED (the exact r17 Forums++ F01 class the twin never
+// received): a matcher with a top-level A|B alternation (Cyberdrop
+// fs-d+.cyberdrop.(me|to|cc|nl)) split the composed regex into four
+// branches, the lazy tails attached only to the last arm, and every fs-
+// link harvested as its bare origin — which the resolver gate then
+// dropped entirely (its pattern required the very slash the harvest had
+// stripped). The matcher is wrapped in a non-capturing group at both
+// sites, match-neutral for single-branch matchers. (2) THE ZIP NAME
+// COLLISION — downloadPost deduped the RAW basename BEFORE the
+// whole-path sanitizer collapsed distinct names onto one output key
+// (café.jpg + cafè.jpg → both caf_.jpg) and JSZip's same-name file()
+// write silently REPLACED the earlier entry: the archive reopened with
+// one file where two were downloaded. Filenames are sanitized per-SEGMENT
+// first (the folder separator the !flatten branch adds now SURVIVES — the
+// old whole-path class ate it, destroying the in-zip folder structure),
+// deduped on the FINAL in-zip path, and log.txt/links.txt are reserved
+// up front so the generated artifacts can never replace downloaded bytes.
 // 6.3.5 (WO-01 round 13): THE TWIN-DIVERGENCE SETTLEMENT — the r13
 // normalization-symmetry lens found ~40 resolver twins shared with the
 // sovereign Forums++, and five hardenings that shipped to Forums++ only.
@@ -2371,9 +2390,20 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
               pattern = pattern.replace("!!", "");
               pattern = h.re.toRegExp(h.re.toString(pattern), "igs");
             } else {
-              const pat = `(?<=data-url="|src="|href=")${h.re.toString(pattern)}.*?(?=")|https?://(www.)?${h.re.toString(
+              /* v6.3.6 (r18 R18-F03): THE HARVEST ALTERNATION SPLIT — the
+               * twin of the r17 Forums++ F01 fix. Interpolating a matcher
+               * with a top-level `A|B` alternation into this template
+               * without grouping splits the composed regex into four
+               * branches (the lazy tails attach only to the last arm), so
+               * every Cyberdrop fs- link harvested as its bare origin —
+               * and the resolver gate at the fs- pattern then required the
+               * very slash the harvest had stripped, dropping the resource
+               * entirely. The matcher is wrapped in a non-capturing group
+               * at both sites (match-neutral for single-branch matchers,
+               * alternation-safe for every matcher, present and future). */
+              const pat = `(?<=data-url="|src="|href=")(?:${h.re.toString(pattern)}).*?(?=")|https?://(www.)?(?:${h.re.toString(
                               pattern
-                          )}.*?(?=("|<|$|]|'))`;
+                          )}).*?(?=("|<|$|]|'))`;
               pattern = h.re.toRegExp(pat, "igs");
             }
             let matches = h.re.matchAll(pattern, postContent).filter((v, i, a) => a.indexOf(v) === i);
@@ -3512,7 +3542,21 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
 
     if (!postSettings.skipDownload) {
       const resources = resolved.filter((r) => r.url);
-      const filenames = []; // To track filenames and avoid duplicates
+      /* v6.3.6 (r18 R18-F04): normalize FIRST, then allocate a unique final
+       * in-zip path. The old order deduped the RAW basename BEFORE the
+       * whole-path sanitizer collapsed distinct names onto one output
+       * key (café.jpg + cafè.jpg → both caf_.jpg) — and JSZip's same-name
+       * file() write REPLACES the earlier entry, so reopening the archive
+       * yielded one file where two were downloaded. The path is now
+       * sanitized per-SEGMENT (the `/` folder separator the !flatten
+       * branch adds SURVIVES — the old whole-path class ate it, destroying
+       * the in-zip folder structure flatten:false promises), deduped on
+       * the FINAL path key, and log.txt/links.txt are reserved up front so
+       * the generated artifacts can never replace downloaded bytes. */
+      const sanitizeSegment = (s) => String(s).replace(/[\x00-\x1F\x7F-\uFFFF<>:"/\\|?*]/g, '_');
+      const usedPaths = new Set();
+      if (postSettings.generateLog) usedPaths.add('log.txt');
+      if (postSettings.generateLinks) usedPaths.add('links.txt');
       const downloadPromises = resources.map(({ url, host, original, folderName }) => new Promise(async (resolve) => {
         const ellipsedUrl = h.limit(url, 60);
         try {
@@ -3527,18 +3571,15 @@ root.querySelectorAll("button.hud-btn[data-action]").forEach(btn => {
             }
           });
 
-          let basename = h.generateFilename(url, response.responseHeaders);
-          const originalBase = basename;
+          let fn = sanitizeSegment(h.generateFilename(url, response.responseHeaders));
+          if (!postSettings.flatten && folderName) fn = `${folderName.split('/').map(sanitizeSegment).join('/')}/${fn}`;
+          const originalFn = fn;
           let count = 2;
-          while (filenames.includes(basename)) {
-            const ext = h.ext(originalBase);
-            basename = `${h.fnNoExt(originalBase)} (${count++})${ext ? '.' + ext : ''}`;
+          while (usedPaths.has(fn)) {
+            const ext = h.ext(originalFn);
+            fn = `${h.fnNoExt(originalFn)} (${count++})${ext ? '.' + ext : ''}`;
           }
-          filenames.push(basename);
-
-          let fn = basename;
-          if (!postSettings.flatten && folderName) fn = `${folderName.replace(/[\x00-\x1F\x7F-\uFFFF<>:"/\\|?*]/g, '_')}/${basename}`;
-          fn = fn.replace(/[\x00-\x1F\x7F-\uFFFF<>:"/\\|?*]/g, '_');
+          usedPaths.add(fn);
 
           if (isFF || postSettings.zipped) {
             zip.file(fn, response.response);

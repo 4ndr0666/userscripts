@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name                4ndr0tools - Prompt Master
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version             28.9.0
+// @version             28.9.1
 // @author              4ndr0666
 // @icon                data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @license             MIT
@@ -19583,7 +19583,7 @@ const __4NDR0_NET_API__ = (function () {
     GM_info.script &&
     GM_info.script.version
       ? GM_info.script.version
-      : "28.9.0"; // v28.9.0: the fallback stays stamped with the release
+      : "28.9.1"; // v28.9.0: the fallback stays stamped with the release
   // v27.0.12: canonical backup snapshot helper. The beta's Gist push
   // called snapshotKeys() before it existed anywhere, so every "Sync Now"
   // threw a ReferenceError; takeAutoBackup() now shares this one helper
@@ -19857,7 +19857,12 @@ const __4NDR0_NET_API__ = (function () {
                   throw new Error("Invalid backup format in Gist");
                 resolve({ data: parsed.data, meta: parsed.meta || {} });
               };
-              if (file.content != null) {
+              // v28.9.1 (r18 R18-F08): the truncated flag is honored BEFORE
+              // content presence — a truncated:true response carries PARTIAL
+              // content (files over ~1 MB), and parsing the cut text threw
+              // with zero raw requests made; only a complete inline content
+              // is parsed directly, truncated files fall to the raw_url arm.
+              if (file.content != null && !file.truncated) {
                 parseAndResolve(file.content);
               } else if (file.raw_url) {
                 GM_xmlhttpRequest({
@@ -21545,6 +21550,15 @@ const __4NDR0_NET_API__ = (function () {
     openExportMenu(null);
   }
   async function processAndSavePrompts(e) {
+    // v28.9.1 (r18 R18-F07): an individual export ("Separate Files") emits
+    // a bare prompt OBJECT, and the Gist insert path can hand one over too
+    // — the array-only gate rejected the script's OWN export format
+    // ("Error reading JSON file" on importing a single exported prompt,
+    // while the combined array export imported fine). A single non-null
+    // object with a title/text shape is normalized into a one-element
+    // array; anything else that is not an array still refuses exactly as
+    // before.
+    if (e && typeof e === "object" && !Array.isArray(e)) e = [e];
     if (!Array.isArray(e)) throw new Error("Error reading JSON file. Check formatting.");
     const t = await getAll(),
       n = [];

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Pixeldrain++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.2.6
+// @version      1.2.7
 // @description  Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.
 // @author       4ndr0666
 // @license      MIT
@@ -1218,6 +1218,15 @@ const __4NDR0_NET_API__ = (function () {
     return api;
 })();
 
+// 1.2.7 (WO-01 round 18): THE SHORT-206 CONTRACT — a 206 body
+// shorter than its requested span (a mirror under-delivering its
+// Content-Range) no longer completes the chunk: the received byte count
+// is validated against the span, a short body writes what arrived and
+// retries the REMAINDER through the existing attempt loop, an
+// overshooting body is sliced to the span, and every ranged strategy
+// closes only when the received-byte sum equals the expected size
+// (ok:true is never committed on an incomplete file). Plus the
+// single_host_ranged per-attempt from-advance repair.
 // 1.2.6 (WO-01 round 17): THE RANGE-200 FLOOR + THE RACE BAND — a
 // mirror that strips the Range header answers 200 with the FULL file,
 // and every ranged strategy (speed_multiplied, multi_proxy_ranged,
@@ -1280,7 +1289,7 @@ const __4NDR0_NET_API__ = (function () {
 // /d/ pathname no longer aborts the setTimeout callback before the
 // fs-fallback injector and auto-trigger block; 4-c F05).
 // 1.1.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.6 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.7 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 /* eslint-disable no-undef */
 (function () {
@@ -2175,13 +2184,30 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.6
                          * at 0 with progress capped at the span. */
                         if (r.status !== 206 && !(r.status === 200 && from === 0)) throw new Error(`HTTP ${r.status} (range ignored)`);
 
+                        /* v1.2.7 (r18 R18-F09): THE SHORT-206 CONTRACT — the
+                         * received byte count must cover the requested span
+                         * before the chunk completes. A short body writes
+                         * what arrived, advances the resume cursor, and
+                         * throws a NAMED error so the attempt loop fetches
+                         * the REMAINDER (from = baseFrom + loadedArr[idx]
+                         * on the next iteration); exhausted attempts fail
+                         * the chunk VISIBLY instead of committing ok:true
+                         * on an incomplete file. An overshooting body is
+                         * sliced to the span so a protocol-violating 206
+                         * can never extend the file past its expected size. */
+                        const span = to - from + 1;
                         const data = new Uint8Array(r.response);
-                        await writable.write({ type: 'write', position: r.status === 206 ? from : 0, data });
-                        loadedArr[idx] += Math.min(data.byteLength, to - from + 1);
-                        CircuitBreaker.record(mirror.host, true);
+                        if (!data.byteLength) throw new Error(`empty body (0 of ${span} bytes at offset ${from})`);
+                        const chunkData = data.byteLength > span ? data.subarray(0, span) : data;
+                        await writable.write({ type: 'write', position: r.status === 206 ? from : 0, data: chunkData });
+                        loadedArr[idx] += chunkData.byteLength;
                         reportProgress();
                         if (resumeJobId) ResumeManager.updateChunk(resumeJobId, idx, loadedArr[idx], mirror.host);
-                        return;
+                        if (chunkData.byteLength >= span) {
+                            CircuitBreaker.record(mirror.host, true);
+                            return;
+                        }
+                        throw new Error(`short 206 body (${chunkData.byteLength} of ${span} bytes at offset ${from})`);
                     } catch (e) {
                         lastErr = e;
                         CircuitBreaker.record(mirror.host, false);
@@ -2205,6 +2231,14 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.6
 
             try {
                 await Promise.all(workers);
+                /* v1.2.7 (r18 R18-F09): the completeness gate — the
+                 * received-byte sum must equal the expected size before
+                 * close() commits the file; a shortfall aborts the stream
+                 * and fails the download VISIBLY (the old path closed a
+                 * short file and returned ok:true with the pre-flight
+                 * size). */
+                const receivedTotal = loadedArr.reduce((a, b) => a + b, 0);
+                if (receivedTotal !== size) throw new Error(`incomplete download: ${receivedTotal} of ${size} bytes received`);
                 await writable.close();
                 const elapsed = performance.now() - totalStart;
                 if (resumeJobId) ResumeManager.markComplete(resumeJobId, elapsed);
@@ -2297,13 +2331,22 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.6
                         /* v1.2.6 (r17 F04): THE RANGE-200 FLOOR — see the
                          * speed_multiplied site for the full rationale. */
                         if (r.status !== 206 && !(r.status === 200 && from === 0)) throw new Error(`HTTP ${r.status} (range ignored)`);
+                        /* v1.2.7 (r18 R18-F09): THE SHORT-206 CONTRACT — see
+                         * the speed_multiplied site for the full rationale
+                         * (span validation, remainder retry, slice-to-span). */
+                        const span = to - from + 1;
                         const data = new Uint8Array(r.response);
-                        await writable.write({ type: 'write', position: r.status === 206 ? from : 0, data });
-                        loadedArr[idx] += Math.min(data.byteLength, to - from + 1);
-                        CircuitBreaker.record(proxy.host, true);
+                        if (!data.byteLength) throw new Error(`empty body (0 of ${span} bytes at offset ${from})`);
+                        const chunkData = data.byteLength > span ? data.subarray(0, span) : data;
+                        await writable.write({ type: 'write', position: r.status === 206 ? from : 0, data: chunkData });
+                        loadedArr[idx] += chunkData.byteLength;
                         reportProgress();
                         if (resumeJobId) ResumeManager.updateChunk(resumeJobId, idx, loadedArr[idx], proxy.host);
-                        return;
+                        if (chunkData.byteLength >= span) {
+                            CircuitBreaker.record(proxy.host, true);
+                            return;
+                        }
+                        throw new Error(`short 206 body (${chunkData.byteLength} of ${span} bytes at offset ${from})`);
                     } catch (e) {
                         lastErr = e;
                         if (e.kind === 'abort' || e.message === 'aborted') throw e;
@@ -2319,6 +2362,10 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.6
             const workers = Array.from({ length: concurrency }, async () => { while (queue.length) await fetchChunk(queue.shift()); });
             try {
                 await Promise.all(workers);
+                /* v1.2.7 (r18 R18-F09): the completeness gate — see the
+                 * speed_multiplied site for the full rationale. */
+                const receivedTotal = loadedArr.reduce((a, b) => a + b, 0);
+                if (receivedTotal !== size) throw new Error(`incomplete download: ${receivedTotal} of ${size} bytes received`);
                 await writable.close();
                 const elapsed = performance.now() - totalStart;
                 if (resumeJobId) ResumeManager.markComplete(resumeJobId, elapsed);
@@ -2443,11 +2490,18 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.6
             const start = performance.now();
 
             const fetchChunk = async (idx) => {
-                const from = idx * chunkSize + loadedArr[idx];
                 const to = Math.min(size - 1, (idx + 1) * chunkSize - 1);
-                if (from > to) return;
                 let lastErr;
                 for (let attempt = 0; attempt <= SETTINGS.chunkRetry; attempt++) {
+                    /* v1.2.7 (r18 R18-F09): `from` advances per attempt —
+                     * it was computed once outside the loop, so a retry
+                     * after a short body re-fetched the SAME range while
+                     * loadedArr had already advanced (double-counted
+                     * progress, and the completeness gate would then fail
+                     * a healthy file). The two sibling strategies already
+                     * recomputed it per attempt. */
+                    const from = idx * chunkSize + loadedArr[idx];
+                    if (from > to) return;
                     try {
                         const r = await gmXHR({
                             url, responseType: 'arraybuffer',
@@ -2457,13 +2511,20 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.6
                         /* v1.2.6 (r17 F04): THE RANGE-200 FLOOR — see the
                          * speed_multiplied site for the full rationale. */
                         if (r.status !== 206 && !(r.status === 200 && from === 0)) throw new Error(`HTTP ${r.status} (range ignored)`);
+                        /* v1.2.7 (r18 R18-F09): THE SHORT-206 CONTRACT — see
+                         * the speed_multiplied site for the full rationale
+                         * (span validation, remainder retry, slice-to-span). */
+                        const span = to - from + 1;
                         const data = new Uint8Array(r.response);
-                        await writable.write({ type: 'write', position: r.status === 206 ? from : 0, data });
-                        loadedArr[idx] += Math.min(data.byteLength, to - from + 1);
+                        if (!data.byteLength) throw new Error(`empty body (0 of ${span} bytes at offset ${from})`);
+                        const chunkData = data.byteLength > span ? data.subarray(0, span) : data;
+                        await writable.write({ type: 'write', position: r.status === 206 ? from : 0, data: chunkData });
+                        loadedArr[idx] += chunkData.byteLength;
                         const sum = loadedArr.reduce((a, b) => a + b, 0);
                         const elapsed = (performance.now() - start) / 1000;
                         onProgress && onProgress({ loaded: sum, total: size, speed: sum / Math.max(elapsed, 0.001) });
-                        return;
+                        if (chunkData.byteLength >= span) return;
+                        throw new Error(`short 206 body (${chunkData.byteLength} of ${span} bytes at offset ${from})`);
                     } catch (e) {
                         lastErr = e;
                         if (e.kind === 'abort' || e.message === 'aborted') throw e;
@@ -2477,6 +2538,10 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.6
             const workers = Array.from({ length: conns }, async () => { while (queue.length) await fetchChunk(queue.shift()); });
             try {
                 await Promise.all(workers);
+                /* v1.2.7 (r18 R18-F09): the completeness gate — see the
+                 * speed_multiplied site for the full rationale. */
+                const receivedTotal = loadedArr.reduce((a, b) => a + b, 0);
+                if (receivedTotal !== size) throw new Error(`incomplete download: ${receivedTotal} of ${size} bytes received`);
                 await writable.close();
                 CircuitBreaker.record(proxy.host, true);
                 BandwidthTracker.add(size, true);
