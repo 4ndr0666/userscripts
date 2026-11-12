@@ -1,18 +1,12 @@
 // noinspection SpellCheckingInspection,JSUnresolvedVariable,JSUnresolvedFunction,TypeScriptUMDGlobal,JSUnusedGlobalSymbols
 // ==UserScript==
 // @name        4ndr0tools - Forums++
-// @namespace    https://github.com/4ndr0666/userscripts
+// @namespace   https://github.com/4ndr0666/userscripts
 // @author      4ndr0666
 // @version     1.14.0
 // @description Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.
-// @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
-// @match       https://simpcity.su/threads/*
+// @icon        data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @match       https://simpcity.cr/threads/*
-// @match       https://simpcity.is/threads/*
-// @match       https://simpcity.cz/threads/*
-// @match       https://simpcity.hk/threads/*
-// @match       https://simpcity.rs/threads/*
-// @match       https://simpcity.ax/threads/*
 // @match       https://gofile.io/*
 // @match       https://goonbox.cr/*
 // @match       https://*.goonbox.cr/*
@@ -1502,7 +1496,7 @@ const __4NDR0_NET_API__ = (function () {
 // resolution layer is restored to XenForoPostDownloader v3.23 feature parity
 // (the operator's Forums++ directive; every port below carries its machinery
 // complete — no matcher-only dead-ends). HEADER: @match gains the four
-// simpcity TLD mirrors + gofile.io/* + goonbox.cr/* (the goonbox helper-tab
+//  TLD mirrors + gofile.io/* + goonbox.cr/* (the goonbox helper-tab
 // bridge and the gofile cookie sync run in those tabs); @grant gains
 // GM_addValueChangeListener/GM_openInTab/GM_cookie; @connect loses six
 // zero-code tokens (media.tumblr.com, pvvstream.pro, xvideos.com, github.com,
@@ -6746,7 +6740,7 @@ const resolvers = [
         async (url) => {
             // Ensure full URL for local attachments if not already present
             if (url.startsWith('/attachments/') || url.startsWith('/data/video/')) {
-                return `https://simpcity.su${url}`;
+                return `https://simpcity.cr${url}`;
             }
             return url;
         },
@@ -6879,7 +6873,7 @@ const ThreadCache = (() => {
 
     /**
      * Extracts thread ID from the current URL.
-     * Assumes URL format like https://simpcity.su/threads/thread-title.123/page-N
+     * Assumes URL format like https://simpcity.cr/threads/thread-title.123/page-N
      * @returns {string|null} The thread ID or null if not found.
      */
     const getThreadIdFromUrl = () => {
@@ -7548,7 +7542,7 @@ const downloadPost = async (parsedPost, parsedHosts, enabledHostsCB, resolvers, 
                 let basename = resource._filename || h.basename(resource.url).replace(/\?.*/, '').replace(/#.*/, '');
 
                 // Host-specific filename processing
-                if (resource.url.includes('https://simpcity.su/attachments/')) {
+                if (resource.url.includes('https://simpcity.cr/attachments/')) {
                     basename = basename.replace(/(.*)-(.{3,4})\.\d*$/i, '$1.$2');
                 } else if (resource.url.includes('kemono.su') || resource.url.includes('kemono.cr')) {
                     /* v1.13.7 (13b-F03): the ?f= recovery reads the ORIGINAL
