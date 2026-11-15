@@ -151,32 +151,100 @@ Closure work in the resumed session:
 
 ---
 
-## Handoff — priming Round 2
+## Round 2 — silent stepwise gap mitigation (2026-11-14)
 
-**Apply this round:** `bash update-bulkimg-round-1.sh /full/path/to/repo` (works on the
-pristine baseline, a moved HEAD, or an independent lineage via content pinning; fails
-closed on conflicting edits to `chatgptbulk.user.js` — never force past a fail-closed).
+- **Protocol:** 4ndr0neering v8.2.0, tier T3
+- **Baseline:** `3413c7e` — the closed Round 1 state (v1.1.0)
+- **Contract:** re-sealed before implementation — a new acceptance baseline (GUP-C01:
+  the round-2 delivery artifacts carry new names — `round-record-round-2.html`,
+  round-2 kit metadata — so the contract SHA changed and a fresh ledger was initialized;
+  the controller schema stays v1.0). The ten acceptance gates keep their original
+  semantics; the superset rule now explicitly covers v1.0.0 **and** v1.1.0 capabilities.
+- **Candidate:** v1.2.0, commit range `3413c7e..HEAD`
+- **Method:** full-file adversarial re-review of v1.1.0 with fresh eyes, then one
+  focused mitigation commit (`8044d35`) with every finding covered by a new behavioral
+  test (RED-verified against the v1.1.0 artifact) and a new static hardening marker.
+
+### Findings ledger
+
+| # | Finding (v1.1.0 behavior) | Class | Fix |
+|---|---|---|---|
+| R2-1 | Re-running the same chat with a **different prompt** (old jobs still in the gallery) inflated the job ordinal `k` with prior-prompt jobs while the match list filtered by the new prompt — `k` landed out of range, both new jobs stalled to the 15-minute timeout and false-failed | correctness | `8044d35` |
+| R2-2 | An explicit model/effort selection **silently no-ops** when the models list fails to load (a persisted effort survives the failed load), sending every prompt under the page default model with no warning | correctness | `8044d35` |
+| R2-3 | The inter-job delay was an **uninterruptible sleep** (the input allows up to 600 s) and `read()` applied no upper clamp — Stop stayed dead for the whole delay | UX correctness | `8044d35` |
+| R2-4 | Named-project chat opening clicked the **first** `aria-label` match even when hidden (collapsed sidebar), unlike the no-project path that prefers visible controls | robustness | `8044d35` |
+
+### Superset verification (v1.1.0 → v1.2.0)
+
+Static guard: **135/135** — all 27 v1.0.0 definitions, all 66 v1.0.0 feature markers
+(one strengthened: the delay clamp now also enforces the 600 s upper bound), all 19
+v1.1.0 hardening markers (the tail-of-matching marker now tracks the stronger
+per-prompt sibling expression), and 6 new v1.2.0 hardening markers. Behavior suite:
+**64/64** (T1–T10 unchanged and passing; T11a–d added). Every Round 1 fix keeps its
+test. Deliberate behavioral deltas (all strictly additive): a different-prompt re-run
+now pairs correctly instead of timing out; an unresolvable model selection refuses
+the run instead of silently using the page default; Stop cuts the inter-job delay
+within 250 ms; hidden named-project buttons are no longer clicked.
+
+### Verification evidence (round-2 acceptance baseline, 10 mandatory criteria)
+
+| Criterion | Gate | Result |
+|---|---|---|
+| syntax-valid | functional | `node --check` clean |
+| static-superset-guard | regression | 135/135 checks |
+| behavior-suite | functional | 64/64 jsdom checks (T11a–d RED-verified against v1.1.0) |
+| unit-superset-no-missing | regression | 0 MISSING units across the full engagement range `93056fc..HEAD` |
+| perf-gallery-render | performance | paired ratio 0.664 (95 % CI 0.659–0.671), equal stdout, Node 24 + jsdom envelope; contract re-sealed to the v1.2.0 candidate fingerprint before the run |
+| real-browser-fixture | integration | full mocked run in real Chromium + HTTP-origin reload persistence (v1.2.0) |
+| kit-battery-green | delivery | round-2 kit `update-bulkimg-round-2.sh`, P0–P7 + P1B + P1C + RED_CONTROL battery GREEN; kit bytes match `PIN_KIT_SHA` |
+| round-record-pins | delivery | all six round-2 pins present in `round-record-round-2.html` |
+| worklog-handoff | delivery | this file, zero stubs |
+| browser-txt-verification | delivery | delivered v1.2.0 `.txt` rendered in a real browser through both endpoint chains |
+
+### Known boundaries (BOUNDED, not waived) — unchanged from Round 1
+
+1. Userscript-manager injection on a real profile (Tampermonkey/Violentmonkey).
+2. Live authenticated ChatGPT backend.
+3. Real-browser wall-time for the render suppression (jsdom-envelope measurement).
+
+GUP evidence plane: `BOUNDED_PASS` → the round-2 kit is delivered as **Class H
+(Bounded Handoff)**, exactly as Round 1.
+
+---
+
+## Handoff — priming Round 3
+
+**Apply this round:** from the closed Round 1 state run `bash
+update-bulkimg-round-2.sh /full/path/to/repo` (from the pristine v1.0.0 baseline apply
+`update-bulkimg-round-1.sh` first). Both kits work on the pristine baseline, a moved
+HEAD, or an independent lineage via content pinning, and fail closed on conflicting
+edits to `chatgptbulk.user.js` — never force past a fail-closed.
 
 **Operator live-site checklist (closes the two open boundaries):**
 
-1. Install v1.1.0 in Tampermonkey/Violentmonkey on `chatgpt.com`; confirm the FAB appears
-   after idle and no second panel appears on SPA re-renders.
+1. Install v1.2.0 in Tampermonkey/Violentmonkey on `chatgpt.com`; confirm the FAB
+   appears after idle and no second panel appears on SPA re-renders.
 2. Run a 2-image job in fresh-chat mode with default model; confirm limits render, the
    gallery populates, and downloads are named `bulk-1-1.png`, `bulk-2-1.png`.
-3. Pick a model with no effort presets (if the live list has one) and confirm the request
-   model in DevTools matches the selection (finding 6 on real data).
-4. Press Stop during the "Sending…" phase and confirm no extra prompt goes out.
-5. Open a chat that previously produced images (repeat-run scenario) and confirm new jobs
-   pair to the new segments, not yesterday's.
+3. Pick a model with no effort presets (if the live list has one) and confirm the
+   request model in DevTools matches the selection.
+4. Press Stop during the "Sending…" phase and during a long inter-job delay; confirm
+   no extra prompt goes out and the delay cuts short within a second.
+5. Open a chat that previously produced images (repeat-run scenario) and confirm new
+   jobs pair to the new segments; then, without clearing the gallery, run a **different
+   prompt in the same chat** and confirm both images arrive (the R2-1 scenario).
+6. If the models list ever fails to load with a model/effort ticked, confirm the run
+   refuses with "could not load the model list" instead of silently using the default.
 
-**Candidate improvements deliberately deferred** (avoided scope creep in Round 1, all
-superset-safe if wanted later): retry budget for permanently-failing `files/download`
-calls; `save-on-change` for settings (currently saved on run, as in v1.0.0); parallel
-per-conversation polling; download-all button. None are regressions — they are
-additions, and each should carry its own measured justification per PF directives.
+**Candidate improvements still deliberately deferred** (each needs its own measured
+justification per PF directives before adoption): retry budget for late-transient
+`files/download` failures (the per-tick loop already retries while a job is pending);
+`save-on-change` for settings; parallel per-conversation polling; download-all button;
+signed-URL refresh for expired gallery links.
 
-**Round 2 entry point:** re-run the review loop against v1.1.0 with fresh eyes
-("does this code impress me?"), fold in any operator findings from the checklist above,
-re-seal a versioned contract if acceptance changes, and emit `update-bulkimg-round-2.sh`
-from the new commit range. The ledger, tests, fixture, and perf driver in this repo are
-the regression backbone — extend them, never bypass them.
+**Round 3 entry point:** re-run the review loop against v1.2.0 with fresh eyes
+("does this code impress me?"), fold in operator findings from the checklist above,
+re-seal a versioned contract if the acceptance surface changes, and emit
+`update-bulkimg-round-3.sh` from the new commit range. The ledger, tests, fixture,
+and perf driver in this repo are the regression backbone — extend them, never bypass
+them.

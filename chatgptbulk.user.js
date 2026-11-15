@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ChatGPT Bulk Images
 // @namespace    local.chatgpt-scripts.easier-image-gen
-// @version      1.1.0
+// @version      1.2.0
 // @description  Send one image prompt to ChatGPT many times (fresh chat each time, optionally in a project), pick model/effort, watch usage limits, and see the images in a live gallery.
 // @match        https://chatgpt.com/*
 // @grant        none
@@ -19,7 +19,7 @@
   window.__bulkimgLoaded = true;
 
   const TAG = '[BulkImg]';
-  const VERSION = '1.1.0';
+  const VERSION = '1.2.0';
   const STORE_KEY = 'bulkimg:settings';
   const KEEP = '';
   const CURRENT_PROJECT = '__current__';
@@ -35,6 +35,15 @@
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const visible = (el) => !!el && el.getClientRects().length > 0;
   const firstVisible = (s) => $$(s).find(visible);
+  // Sleep that a Stop press can cut short: the inter-job delay must never hold the run
+  // hostage for its full duration (the input allows up to 600 s).
+  const sleepUnless = async (ms, isCancelled) => {
+    const end = Date.now() + ms;
+    while (Date.now() < end) {
+      if (isCancelled()) return;
+      await sleep(Math.min(250, end - Date.now()));
+    }
+  };
   // ChatGPT leaves a hidden Stop button in the DOM after a reply ends, so only a visible one means "generating".
   const generating = () => $$(SEL.stop).some(visible);
   const projectIdOf = (path) => (path.match(/\/g\/(g-p-[0-9a-f]{32})/) || [])[1] || null;
@@ -216,7 +225,10 @@
       if (onBlankPage && projectIdOf(path) === target.id) return;
       btn = firstVisible(`a[href="/g/${target.id}/project"]`);
     } else {
-      btn = $(`button[aria-label="New chat in ${CSS.escape(target.name)}"]`);
+      // Prefer a visible control: a collapsed sidebar leaves a hidden match first in the DOM,
+      // and clicking it does nothing (v1.1.0 could stall to "new chat did not open").
+      btn = firstVisible(`button[aria-label="New chat in ${CSS.escape(target.name)}"]`) ||
+        $(`button[aria-label="New chat in ${CSS.escape(target.name)}"]`);
     }
     if (!btn) throw new Error('could not find a way to open a new chat there');
     btn.click();
@@ -255,18 +267,20 @@
         try { conv = await api(`/backend-api/conversation/${convId}`); } catch (e) { console.warn(TAG, e); continue; }
         const msgs = thread(conv);
         const userIdx = msgs.map((m, i) => (m.author?.role === 'user' ? i : -1)).filter((i) => i >= 0);
-        const convJobs = jobs.filter((j) => j.convId === convId).sort((a, b) => a.k - b.k);
+        const convJobs = jobs.filter((j) => j.convId === convId && j.state === 'pending');
         for (const job of convJobs) {
           // Match each send to its user message. Our sends are the newest user messages whose text
           // matches the prompt: a manual message typed in the same chat is skipped by the text check,
           // and an older identical prompt from a previous run is outranked by the tail selection.
-          // Job k claims the (k+1)-th of those, oldest first — correct pairing even when the user
-          // interleaves their own messages mid-run (v1.0.0 mispaired or stalled those to timeout).
+          // The offset arithmetic counts only this conversation's jobs that SHARE the prompt
+          // (any state) — exactly the sends matchIdx counts. v1.1.0 mixed all prompts into one
+          // k-sequence, so re-running the same chat with a new prompt pushed k out of range and
+          // stalled those jobs to the 15-minute timeout.
           const matchIdx = userIdx.filter((i) => textOf(msgs[i]).slice(0, 80) === job.prompt.trim().slice(0, 80));
-          const off = matchIdx.length >= convJobs.length ? matchIdx.length - convJobs.length + job.k : job.k;
+          const siblings = jobs.filter((j) => j.convId === convId && j.prompt === job.prompt).sort((a, b) => a.k - b.k);
+          const off = matchIdx.length >= siblings.length ? matchIdx.length - siblings.length + job.k : job.k;
           const ui = off >= 0 && off < matchIdx.length ? matchIdx[off] : undefined;
-          if (ui === undefined) break; // this send is not in the thread yet; later jobs cannot match before it
-          if (job.state !== 'pending') continue;
+          if (ui === undefined) continue; // this send is not in the thread yet; other prompt groups may still match
           try {
             const nextUser = userIdx.find((i) => i > ui) ?? msgs.length;
             const seg = msgs.slice(ui + 1, nextUser);
@@ -335,6 +349,9 @@
     let count = s.count;
     try {
       if (!versions) await loadVersions().catch(() => null);
+      // A picked model/effort that cannot be resolved would silently send the page's default
+      // model instead — refuse the run rather than generate with the wrong model.
+      if ((s.version || s.effort) && !versions) throw new Error('could not load the model list — pick "Keep current" or retry');
       limits = await loadLimits().catch(() => limits);
       ui.renderLimits(limits);
 
@@ -366,12 +383,14 @@
         const sentAt = Date.now();
         const convId = await sendPrompt(s.prompt, () => cancelled, wait);
         if (!convId) break; // Stop was pressed before this prompt went out
-        trackJob({ n: jobs.length + 1, convId, k: jobs.filter((j) => j.convId === convId).length, prompt: s.prompt, sentAt, state: 'pending', images: [], note: '' });
+        // k = this prompt's send ordinal within the conversation, so re-runs with a different
+        // prompt in the same chat cannot push it out of the match list's range.
+        trackJob({ n: jobs.length + 1, convId, k: jobs.filter((j) => j.convId === convId && j.prompt === s.prompt).length, prompt: s.prompt, sentAt, state: 'pending', images: [], note: '' });
 
         limits = await loadLimits().catch(() => limits);
         ui.renderLimits(limits);
         if (limits?.imagesLeft === 0 && i < count) { ui.status(`Image limit reached after ${i}. Resets ${resets(limits.imagesReset)}.`); return; }
-        if (i < count && !cancelled) await sleep(s.delay * 1000);
+        if (i < count && !cancelled) await sleepUnless(s.delay * 1000, () => cancelled);
       }
       const capped = count < s.count ? ` (capped at ${count}: that's all the image limit allows)` : '';
       const tail = s.mode === 'new' && !s.wait ? ' Images keep generating in their chats.' : '';
@@ -506,7 +525,7 @@
       read: () => ({
         prompt: q('#p').value,
         count: Math.max(1, Math.min(50, parseInt(q('#n').value, 10) || 1)),
-        delay: Math.max(0, parseFloat(q('#d').value) || 0),
+        delay: Math.max(0, Math.min(600, parseFloat(q('#d').value) || 0)),
         mode: q('#m').value,
         version: q('#ver').value,
         effort: q('#effort').value,
