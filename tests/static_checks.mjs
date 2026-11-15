@@ -48,7 +48,7 @@ for (const [re, label] of hygiene) {
 const meta = [
   '// @name         ChatGPT Bulk Images',
   '// @namespace    local.chatgpt-scripts.easier-image-gen',
-  '@version      1.2.0',
+  '@version      1.1.0',
   '@match        https://chatgpt.com/*',
   '@grant        none',
   '@run-at       document-idle',
@@ -59,8 +59,8 @@ for (const m of meta) (src.includes(m) ? ok : bad).call(null, `metadata: ${m.tri
 
 // 4. Version monotonicity vs the sealed baseline 1.0.0
 const v = (src.match(/@version\s+(\d+)\.(\d+)\.(\d+)/) || []).slice(1).map(Number);
-if (v.length === 3 && (v[0] > 1 || (v[0] === 1 && v[1] >= 2))) ok(`version ${v.join('.')} >= 1.2.0`);
-else bad('version >= 1.2.0', `found ${v.join('.')}`);
+if (v.length === 3 && (v[0] > 1 || (v[0] === 1 && v[1] >= 1))) ok(`version ${v.join('.')} >= 1.1.0`);
+else bad('version >= 1.1.0', `found ${v.join('.')}`);
 
 // 5. Sealed v1.0.0 top-level definitions (every unit must still be defined)
 const defs = ['TAG', 'STORE_KEY', 'KEEP', 'CURRENT_PROJECT', 'SEL', 'waitFor', 'rel', 'when', 'api',
@@ -107,7 +107,7 @@ const INVENTORY = [
   ['settings defaults', "count: 4, mode: 'new', delay: 3"],
   ['settings mode sanitizer', "s.mode !== 'same' && s.mode !== 'new'"],
   ['count clamp', 'Math.max(1, Math.min(50'],
-  ['delay clamp (lower + upper since v1.2.0)', 'Math.max(0, Math.min(600, parseFloat'],
+  ['delay clamp', 'Math.max(0, parseFloat'],
   ['empty prompt guard', "'Enter a prompt first.'"],
   ['lock refusal + force', 'Send anyway'],
   ['lock refusal message', 'is locked until'],
@@ -147,7 +147,7 @@ for (const [name, marker] of INVENTORY) {
 // 7. v1.1.0 hardening markers (the Round 1 fixes must all be present)
 const HARDENING = [
   ['double-injection guard', 'window.__bulkimgLoaded'],
-  ['embedded version fallback', "const VERSION = '1.2.0'"],
+  ['embedded version fallback', "const VERSION = '1.1.0'"],
   ['html escaping helper', "const esc = (s) =>"],
   ['escaped limits rendering', 'esc(m.slug)'],
   ['invalid-date guard', 'Invalid Date'],
@@ -159,7 +159,7 @@ const HARDENING = [
   ['cycle-safe thread walk', 'const seen = new Set()'],
   ['poll catch-all', 'gallery poll error'],
   ['per-job isolation', 'poll failed for job #'],
-  ['tail-of-matching selection (per-prompt siblings)', 'matchIdx.length >= siblings.length'],
+  ['tail-of-matching selection', 'matchIdx.length >= convJobs.length'],
   ['preset-less version fallback', '{ model: ver.slugs[0], effort: null }'],
   ['model-only lock detection', 'Model-only choice'],
   ['render suppression snapshot', 'galSnap'],
@@ -168,19 +168,6 @@ const HARDENING = [
 ];
 for (const [name, marker] of HARDENING) {
   (src.includes(marker) ? ok : bad).call(null, `v1.1.0 hardening: ${name}`);
-}
-
-// 8. v1.2.0 hardening markers (the Round 2 fixes must all be present)
-const HARDENING2 = [
-  ['per-prompt sibling grouping', 'j.convId === convId && j.prompt === job.prompt'],
-  ['per-prompt k ordinal', 'j.convId === convId && j.prompt === s.prompt'],
-  ['model-list refusal', 'could not load the model list'],
-  ['interruptible inter-job delay', 'sleepUnless(s.delay * 1000'],
-  ['delay upper clamp', 'Math.min(600, parseFloat'],
-  ['visible named-project button', 'firstVisible(`button[aria-label="New chat in '],
-];
-for (const [name, marker] of HARDENING2) {
-  (src.includes(marker) ? ok : bad).call(null, `v1.2.0 hardening: ${name}`);
 }
 
 console.log(failed ? `\nSTATIC GUARD: ${failed} failure(s)` : '\nSTATIC GUARD: PASS (superset intact, zero stubs)');

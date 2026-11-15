@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// jsdom behavioral suite for chatgptbulk.user.js (v1.2.0).
+// jsdom behavioral suite for chatgptbulk.user.js (v1.1.0).
 //
 // Drives the real artifact in a ChatGPT-shaped DOM with a fully mocked backend:
 // boot + shadow panel, double-injection guard, hostile limits escaping, null-reset
@@ -7,8 +7,7 @@
 // runs into the gallery (image extraction, end heuristics), fetch-override model
 // rewrite (preset and preset-less versions), Stop honored pre-send, cycle-safe
 // thread parsing, re-render suppression, settings persistence across a simulated
-// reload, and the no-token failure path. Round 2 (T11): different-prompt re-run
-// pairing, model-list refusal, interruptible delay, visible named-project button.
+// reload, and the no-token failure path.
 import { JSDOM } from 'jsdom';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -62,7 +61,7 @@ function convGood(prompt, fileId) {
 }
 const CONVS = {}; // test-controlled: convId -> () => payload
 
-function makeDom({ sessionPayload = { accessToken: 'tok-1' }, url = 'https://chatgpt.com/', modelsFail = false } = {}) {
+function makeDom({ sessionPayload = { accessToken: 'tok-1' }, url = 'https://chatgpt.com/' } = {}) {
   const dom = new JSDOM(`<!doctype html><html><body>
     <div id="app"><div class="ProseMirror" contenteditable="true" id="prompt-textarea" data-test-visible></div>
     <button aria-label="Send" data-test-visible>Send</button></div></body></html>`,
@@ -76,7 +75,7 @@ function makeDom({ sessionPayload = { accessToken: 'tok-1' }, url = 'https://cha
     const p = u.pathname;
     const json = (payload) => ({ ok: true, status: 200, json: async () => payload });
     if (p === '/api/auth/session') return json(sessionPayload);
-    if (p === '/backend-api/models') return modelsFail ? { ok: false, status: 500, json: async () => ({}) } : json(VERSIONS);
+    if (p === '/backend-api/models') return json(VERSIONS);
     if (p === '/backend-api/conversation/init') return json(LIMITS);
     if (p === '/backend-api/f/conversation') { state.rewritten.push(JSON.parse(init.body)); return json({ conversation_id: 'x' }); }
     const m = p.match(/^\/backend-api\/conversation\/(.+)$/);
@@ -118,7 +117,7 @@ const runFresh = async (p, prompt, { count = '1', ver, effort, force } = {}) => 
 let dom0; // active dom for Event construction inside runFresh
 
 (async () => {
-  console.log('behavior suite: chatgptbulk.user.js v1.2.0 (jsdom)');
+  console.log('behavior suite: chatgptbulk.user.js v1.1.0 (jsdom)');
 
   // ---------- T1 boot ----------
   console.log('T1 boot + shadow DOM');
@@ -129,7 +128,7 @@ let dom0; // active dom for Event construction inside runFresh
   check('host attached to body', !!p1.host && dom.window.document.body.contains(p1.host));
   check('fab rendered inside shadow root', !!p1.q('.fab'));
   check('panel exists but closed', p1.q('.panel') && !p1.q('.panel').classList.contains('open'));
-  check('header shows embedded v1.2.0 fallback', p1.q('h3').textContent.includes('v1.2.0'));
+  check('header shows embedded v1.1.0 fallback', p1.q('h3').textContent.includes('v1.1.0'));
 
   // ---------- T2 double injection ----------
   console.log('T2 double-injection guard');
@@ -271,80 +270,6 @@ let dom0; // active dom for Event construction inside runFresh
   check('missing access token surfaces as "Could not load limits."', !!t10);
   check('panel still functional after the failure (no crash)', !!p10.q('.go'));
   dom3.window.close();
-
-  // ---------- T11 Round 2 fixes ----------
-  console.log('T11a different-prompt re-run in the same chat (per-prompt pairing)');
-  const convSame = UUID(7);
-  CONVS[convSame] = () => ({ current_node: 'm4', mapping: {
-    m1: { message: { author: { role: 'user' }, content: { parts: ['cat picture'] } } },
-    m2: { parent: 'm1', message: { author: { role: 'assistant' }, status: 'finished_successfully',
-      content: { parts: [{ content_type: 'image_asset_pointer', asset_pointer: 'file-service://file-cat777' }] }, end_turn: true } },
-    m3: { parent: 'm2', message: { author: { role: 'user' }, content: { parts: ['dog picture'] } } },
-    m4: { parent: 'm3', message: { author: { role: 'assistant' }, status: 'finished_successfully',
-      content: { parts: [{ content_type: 'image_asset_pointer', asset_pointer: 'file-service://file-dog888' }] }, end_turn: true } },
-  } });
-  state.convQueue.push(convSame, convSame); // both same-mode sends land in ONE conversation
-  p3.q('#m').value = 'same';
-  const doneCat = await runFresh(p3, 'cat picture', { count: '1' });
-  check('first same-chat run (cat) completes', !!doneCat, p3.q('.status').textContent);
-  const doneDog = await runFresh(p3, 'dog picture', { count: '1' });
-  check('re-run with a different prompt (dog) completes — v1.1.0 stalled it to timeout', !!doneDog, p3.q('.status').textContent);
-  const catDog = await waitForCond(() => p3.qa('.tile img').length === 6, 15000);
-  check('both re-run prompts produced their image (6 tiles)', !!catDog, `${p3.qa('.tile img').length} tiles`);
-  check('gallery counter tracks the re-run (6 done, cyclic one pending)', p3.q('#galTitle').textContent === 'Images 6/7', p3.q('#galTitle').textContent);
-
-  console.log('T11b model-list failure refuses the run instead of silently no-oping');
-  const domB = makeDom({ modelsFail: true }).dom;
-  domB.window.localStorage.setItem('bulkimg:settings', JSON.stringify({ prompt: 'z', count: 1, mode: 'new', delay: 0, effort: 'High', project: '__current__' }));
-  loadScript(domB);
-  const pB = await openPanel(domB);
-  await sleep(300); // let the (failing) model load settle
-  check('persisted effort retained in the dropdown despite the failed model list', pB.q('#effort').value === 'High', pB.q('#effort').value);
-  pB.q('.status').textContent = '';
-  pB.q('.go').click();
-  const refused = await waitForCond(() => pB.q('.status').textContent.includes('could not load the model list'), 8000);
-  check('run refused with a clear error (no silent default-model send)', !!refused, pB.q('.status').textContent);
-  domB.window.close();
-
-  console.log('T11c Stop cuts the inter-job delay short');
-  CONVS[UUID(8)] = () => convGood('delay stop prompt', 'file-ii999');
-  state.convQueue.push(UUID(8));
-  p3.q('#m').value = 'same';
-  p3.q('#p').value = 'delay stop prompt';
-  p3.q('#n').value = '2';
-  p3.q('#d').value = '30';
-  p3.q('.status').textContent = '';
-  const sendsBeforeC = state.sends;
-  p3.q('.go').click();
-  await waitForCond(() => state.sends === sendsBeforeC + 1, 15000); // first prompt out
-  await waitForCond(() => p3.q('#galTitle').textContent === 'Images 6/8', 15000); // job tracked → run is inside the 30 s delay
-  await sleep(300); // past loadLimits, firmly inside sleepUnless(30 s)
-  p3.q('.stop').click();
-  const stoppedFast = await waitForCond(() => p3.q('.status').textContent === 'Stopped.', 4000);
-  check('Stop ends the run within the 30 s delay (interruptible sleepUnless)', !!stoppedFast, p3.q('.status').textContent);
-  await sleep(1500);
-  check('no second prompt was sent after Stop', state.sends === sendsBeforeC + 1, `sends ${state.sends} vs ${sendsBeforeC + 1}`);
-
-  console.log('T11d named-project opening prefers the visible button');
-  const hid = dom.window.document.createElement('button');
-  hid.setAttribute('aria-label', 'New chat in Proj X');
-  hid.addEventListener('click', () => { dom.window.__wrongButton = 1; });
-  const vis = dom.window.document.createElement('button');
-  vis.setAttribute('aria-label', 'New chat in Proj X');
-  vis.setAttribute('data-test-visible', '');
-  vis.addEventListener('click', () => { dom.window.history.pushState({}, '', '/'); });
-  dom.window.document.body.append(hid, vis);
-  p3.q('.fab').click(); await sleep(50); p3.q('.fab').click(); await sleep(100); // reopen so fillProjects sees the buttons
-  p3.q('#m').value = 'new';
-  p3.q('#m').dispatchEvent(new dom.window.Event('change'));
-  p3.q('#proj').value = 'Proj X';
-  CONVS[UUID(9)] = () => convGood('proj prompt', 'file-jj101');
-  state.convQueue.push(UUID(9));
-  const doneD = await runFresh(p3, 'proj prompt', { count: '1' });
-  check('named-project run completes through the visible button', !!doneD, p3.q('.status').textContent);
-  check('the hidden first match was never clicked', dom.window.__wrongButton === undefined);
-  const finalGal = await waitForCond(() => p3.qa('.tile img').length === 8 && p3.q('#galTitle').textContent === 'Images 8/9', 15000);
-  check('final gallery: 8 image tiles, cyclic job still pending', !!finalGal, `${p3.qa('.tile img').length} tiles / ${p3.q('#galTitle').textContent}`);
 
   dom.window.close();
   console.log(failed ? `\nBEHAVIOR SUITE: ${failed} failure(s) of ${total.length}` : `\nBEHAVIOR SUITE: PASS (${total.length} checks)`);

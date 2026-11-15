@@ -59,7 +59,7 @@ verify_base() {
     *) die "[$label] header line not visible" ;;
   esac
   case "$text" in
-    *'@version      1.2.0'*) step "[$label] version line rendered (1.2.0)" ;;
+    *'@version      1.1.0'*) step "[$label] version line rendered (1.1.0)" ;;
     *) die "[$label] version line not visible" ;;
   esac
   case "$text" in

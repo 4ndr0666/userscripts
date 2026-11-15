@@ -6,7 +6,7 @@
 // pollGallery callback TICKS times back-to-back. The backend mock resolves each
 // conversation with a still-generating thread, so every tick ends in
 // onGalleryChange with unchanged observable state — the exact workload the
-// v1.1.0+ re-render suppression targets (v1.0.0 rebuilds the full tile grid on
+// v1.1.0 re-render suppression targets (v1.0.0 rebuilds the full tile grid on
 // every tick). The printed fingerprint (gallery counter + serialized grid)
 // proves behavioral parity between baseline and candidate.
 //
