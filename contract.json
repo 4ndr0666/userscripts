@@ -1,0 +1,139 @@
+{
+  "version": "1.0",
+  "project": "bulkimg",
+  "acceptance_policy": "No mandatory gate may be reclassified, waived, or renamed by the engineer; partial handoff is never CERTIFIED. Superset rule: every v1.0.0 and v1.1.0 capability must remain present and operational in the v1.2.0 candidate. Round-2 re-seal (new contract SHA, fresh ledger): the delivery-artifact names move to the round-2 kit and round-record-round-2.html while the ten acceptance gates keep their original semantics.",
+  "criteria": [
+    {
+      "id": "syntax-valid",
+      "description": "Candidate userscript parses as valid JavaScript (node --check) with zero syntax errors.",
+      "mandatory": true,
+      "gate": "functional",
+      "owner": "engineer",
+      "command": [
+        "node",
+        "--check",
+        "chatgptbulk.user.js"
+      ],
+      "timeout_seconds": 60
+    },
+    {
+      "id": "static-superset-guard",
+      "description": "Static hygiene + superset gate passes: no TODO/FIXME/placeholder/debugger markers, metadata block intact, version >= 1.2.0, and every sealed v1.0.0 feature marker and top-level definition, every v1.1.0 hardening marker, and every v1.2.0 hardening marker still present in the candidate.",
+      "mandatory": true,
+      "gate": "regression",
+      "owner": "engineer",
+      "command": [
+        "node",
+        "tests/static_checks.mjs"
+      ],
+      "timeout_seconds": 120
+    },
+    {
+      "id": "behavior-suite",
+      "description": "jsdom behavioral suite passes: boot + shadow-DOM panel, duplicate-injection guard, settings persistence round-trip, limits rendering with hostile-string escaping and null-reset safety, model/effort population, run flow with gallery polling and image extraction, fetch-override model rewrite, cancel-honoring, cycle-safe thread parsing, and gallery re-render suppression.",
+      "mandatory": true,
+      "gate": "functional",
+      "owner": "engineer",
+      "command": [
+        "node",
+        "tests/behavior.test.mjs"
+      ],
+      "timeout_seconds": 600
+    },
+    {
+      "id": "unit-superset-no-missing",
+      "description": "Unit comparison over the full engagement range (v1.0.0 import to candidate HEAD) reports zero MISSING units: no baseline lexical unit may be dropped.",
+      "mandatory": true,
+      "gate": "regression",
+      "owner": "engineer",
+      "command": [
+        "python3",
+        "-c",
+        "import json; d=json.load(open('.4ndr0/comparison.json')); rows=d['comparison']; missing=[r for r in rows if r['classification']=='MISSING']; assert not missing, 'MISSING units: %r' % missing; assert d['counts']['MISSING']==0, d['counts']; print('unit superset OK: 0 MISSING units across %d units' % len(rows))"
+      ],
+      "timeout_seconds": 120
+    },
+    {
+      "id": "perf-gallery-render",
+      "description": "Paired, source-fingerprinted wall-time measurement (4ndr0_perf run) of the gallery poll-tick render workload (unchanged-state re-render suppression) passes with equal stdout and no regression beyond the contracted allowance, measured in the Node 24 + jsdom host envelope.",
+      "mandatory": true,
+      "gate": "performance",
+      "owner": "engineer",
+      "command": [
+        "python3",
+        "scripts/4ndr0_perf.py",
+        "run",
+        "--root",
+        ".",
+        "--contract",
+        ".4ndr0/perf/perf.contract.json",
+        "--output",
+        ".4ndr0/perf/perf-result.json"
+      ],
+      "timeout_seconds": 900
+    },
+    {
+      "id": "real-browser-fixture",
+      "description": "Real-Chromium integration fixture passes: the deliverable script boots in a real browser engine against a ChatGPT-shaped DOM with a mocked backend, the FAB/panel open, limits render, a full mocked generate run completes into the gallery, and settings survive an HTTP-origin reload.",
+      "mandatory": true,
+      "gate": "integration",
+      "owner": "engineer",
+      "command": [
+        "bash",
+        "tests/browser_fixture_check.sh"
+      ],
+      "timeout_seconds": 300
+    },
+    {
+      "id": "kit-battery-green",
+      "description": "The emitted round-2 single-file update kit passes its full P0-P7 + P1B (moving-HEAD) + P1C (cross-lineage) + RED_CONTROL battery with status GREEN, and the kit bytes on disk match PIN_KIT_SHA in the round-2 kit metadata.",
+      "mandatory": true,
+      "gate": "delivery",
+      "owner": "engineer",
+      "command": [
+        "python3",
+        "-c",
+        "import json,hashlib; m=json.load(open('.4ndr0/kit-meta.json')); b=m['battery']; assert b['status']=='GREEN', b['status']; kit=open(m['kit_path'],'rb').read(); assert hashlib.sha256(kit).hexdigest()==m['pins']['PIN_KIT_SHA'], 'kit bytes do not match PIN_KIT_SHA'; bad=[c for c in b['checks'] if c['status']!='PASS']; assert not bad, bad; print('kit battery GREEN: %d/%d checks passed; kit bytes match PIN_KIT_SHA' % (b['passed_checks'], b['total_checks']))"
+      ],
+      "timeout_seconds": 120
+    },
+    {
+      "id": "round-record-pins",
+      "description": "The self-contained round-2 HTML round record exists and mechanically contains every kit pin (PIN_KIT_SHA, PIN_TIP, PIN_TIP_TREE, PIN_BUNDLE_SHA, PIN_KEY_SHA, PIN_KEY_BASE_SHA) derived from the round-2 kit metadata.",
+      "mandatory": true,
+      "gate": "delivery",
+      "owner": "engineer",
+      "command": [
+        "python3",
+        "-c",
+        "import json; m=json.load(open('.4ndr0/kit-meta.json')); h=open('.4ndr0/round-record-round-2.html',encoding='utf-8').read(); p=m['pins']; need={'PIN_KIT_SHA':p['PIN_KIT_SHA'],'PIN_TIP':p['PIN_TIP'],'PIN_TIP_TREE':p['PIN_TIP_TREE'],'PIN_BUNDLE_SHA':p['PIN_BUNDLE_SHA'],'PIN_KEY_SHA':p['PIN_KEY_SHA'],'PIN_KEY_BASE_SHA':p['PIN_KEY_BASE_SHA']}; miss=[k for k,v in need.items() if v and v not in h]; assert not miss, miss; print('round-record pin parity OK:', ', '.join(sorted(need)))"
+      ],
+      "timeout_seconds": 120
+    },
+    {
+      "id": "worklog-handoff",
+      "description": "The worklog contains the Round 1 and Round 2 sections, the superset verification tables, and a Round 3 handoff, with zero TODO/TBD stubs.",
+      "mandatory": true,
+      "gate": "delivery",
+      "owner": "engineer",
+      "command": [
+        "python3",
+        "-c",
+        "t=open('worklog.md',encoding='utf-8').read(); need=['Round 1','Superset','Handoff','Round 2']; miss=[s for s in need if s not in t]; assert not miss, miss; assert 'TODO' not in t and 'TBD' not in t, 'unresolved stubs in worklog'; print('worklog handoff sections present, zero stubs')"
+      ],
+      "timeout_seconds": 120
+    },
+    {
+      "id": "browser-txt-verification",
+      "description": "Browser possession proof: the delivered userscript, served as a .txt copy through the file-delivery endpoint (local port chain and the caddy user-facing chain on :81), renders in a real headless browser with the header, version line, IIFE wrapper, final buildUI() call, and closing token all visible, and the rendered line count matches the artifact.",
+      "mandatory": true,
+      "gate": "delivery",
+      "owner": "engineer",
+      "command": [
+        "bash",
+        "tests/verify_delivery.sh"
+      ],
+      "timeout_seconds": 300
+    }
+  ]
+}
