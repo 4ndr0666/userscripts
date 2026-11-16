@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ChatGPT Bulk Images
 // @namespace    local.chatgpt-scripts.easier-image-gen
-// @version      1.2.0
+// @version      1.3.0
 // @description  Send one image prompt to ChatGPT many times (fresh chat each time, optionally in a project), pick model/effort, watch usage limits, and see the images in a live gallery.
 // @match        https://chatgpt.com/*
 // @grant        none
@@ -19,7 +19,7 @@
   window.__bulkimgLoaded = true;
 
   const TAG = '[BulkImg]';
-  const VERSION = '1.2.0';
+  const VERSION = '1.3.0';
   const STORE_KEY = 'bulkimg:settings';
   const KEEP = '';
   const CURRENT_PROJECT = '__current__';
@@ -158,7 +158,10 @@
     try {
       if (override && init && typeof init.body === 'string' && (init.method || '').toUpperCase() === 'POST') {
         const path = new URL(typeof input === 'string' ? input : input.url, location.href).pathname;
-        if (path.startsWith('/backend-api/f/conversation')) {
+        // ChatGPT sends conversations through two shapes — /backend-api/f/conversation and the
+        // plain /backend-api/conversation. The rewrite must catch both: matching only the /f/
+        // shape made the model override a silent no-op whenever the page used the other.
+        if (path.startsWith('/backend-api/f/conversation') || path === '/backend-api/conversation') {
           const b = JSON.parse(init.body);
           if (rewriteBody(b)) {
             init = { ...init, body: JSON.stringify(b) };
@@ -213,7 +216,11 @@
   const projectNames = () => $$('button[aria-label^="New chat in "]').map((b) => b.getAttribute('aria-label').slice('New chat in '.length));
 
   // Opens a fresh conversation in this tab. target: null = no project, or { id } / { name } of a project.
-  async function newChat(target) {
+  // isCancelled: the run's Stop flag — cuts the navigation wait short instead of holding the
+  // run hostage for the full 15 s window (the last uninterruptible segment after Rounds 1–2
+  // made the pre-send waits and the inter-job delay cancellable).
+  async function newChat(target, isCancelled = () => false) {
+    if (isCancelled()) return; // Stop pressed: do not open another chat at all
     const path = location.pathname;
     const onBlankPage = !path.includes('/c/');
     let btn;
@@ -223,7 +230,11 @@
         $$('button, a').find((b) => visible(b) && b.textContent.trim() === 'New chat');
     } else if (target.id) {
       if (onBlankPage && projectIdOf(path) === target.id) return;
-      btn = firstVisible(`a[href="/g/${target.id}/project"]`);
+      // Same hidden-control fallback as the by-name path: a collapsed sidebar hides the
+      // project link entirely, and v1.2.0 aborted the whole run here with "could not find
+      // a way to open a new chat there" — prefer a visible link, fall back to any match.
+      btn = firstVisible(`a[href="/g/${target.id}/project"]`) ||
+        $(`a[href="/g/${target.id}/project"]`);
     } else {
       // Prefer a visible control: a collapsed sidebar leaves a hidden match first in the DOM,
       // and clicking it does nothing (v1.1.0 could stall to "new chat did not open").
@@ -235,7 +246,8 @@
     await sleep(1000);
     // From a blank page the click may legitimately keep the same path (e.g. already on that project's page).
     const opened = () => !location.pathname.includes('/c/') && (onBlankPage || location.pathname !== path) && $(SEL.editor) && !generating();
-    if (!(await waitFor(opened, 15_000))) throw new Error('new chat did not open');
+    if (!(await waitFor(() => isCancelled() || opened(), 15_000))) throw new Error('new chat did not open');
+    if (isCancelled()) return; // skip the settle sleep; the runner breaks before any prompt goes out
     await sleep(500);
   }
 
@@ -256,6 +268,9 @@
     return out;
   }
   const textOf = (m) => (m.content?.parts || []).filter((p) => typeof p === 'string').join('').trim();
+  // Whitespace-normalized comparison key for prompt→message matching: identical text
+  // modulo formatting collapses to one key on both sides.
+  const norm = (s) => String(s).replace(/\s+/g, ' ').trim();
 
   async function pollGallery() {
     if (polling) return;
@@ -269,14 +284,17 @@
         const userIdx = msgs.map((m, i) => (m.author?.role === 'user' ? i : -1)).filter((i) => i >= 0);
         const convJobs = jobs.filter((j) => j.convId === convId && j.state === 'pending');
         for (const job of convJobs) {
-          // Match each send to its user message. Our sends are the newest user messages whose text
-          // matches the prompt: a manual message typed in the same chat is skipped by the text check,
-          // and an older identical prompt from a previous run is outranked by the tail selection.
+          // Match each send to its user message. Our sends are the newest user messages whose
+          // text matches the prompt EXACTLY (modulo whitespace normalization): a manual message
+          // typed in the same chat is skipped by the text check, an older identical prompt from
+          // a previous run is outranked by the tail selection, and — the v1.2.0 defect — two
+          // DISTINCT prompts sharing an 80-char prefix can no longer cross-pair (v1.2.0 matched
+          // on the first 80 characters only, so each could claim the other's segment).
           // The offset arithmetic counts only this conversation's jobs that SHARE the prompt
           // (any state) — exactly the sends matchIdx counts. v1.1.0 mixed all prompts into one
           // k-sequence, so re-running the same chat with a new prompt pushed k out of range and
           // stalled those jobs to the 15-minute timeout.
-          const matchIdx = userIdx.filter((i) => textOf(msgs[i]).slice(0, 80) === job.prompt.trim().slice(0, 80));
+          const matchIdx = userIdx.filter((i) => norm(textOf(msgs[i])) === norm(job.prompt));
           const siblings = jobs.filter((j) => j.convId === convId && j.prompt === job.prompt).sort((a, b) => a.k - b.k);
           const off = matchIdx.length >= siblings.length ? matchIdx.length - siblings.length + job.k : job.k;
           const ui = off >= 0 && off < matchIdx.length ? matchIdx[off] : undefined;
@@ -374,7 +392,7 @@
       for (let i = 1; i <= count && !cancelled; i++) {
         if (s.mode === 'new') {
           ui.status(`Opening chat ${i}/${count}…`);
-          await newChat(target);
+          await newChat(target, () => cancelled);
           if (target?.name) target = { id: projectIdOf(location.pathname) }; // later chats return to the project by id
         }
         // In one chat ChatGPT can't take a new message mid-reply, so "same" mode always waits.
@@ -539,7 +557,7 @@
         const box = q('.limits');
         if (!l) { box.textContent = 'Could not load limits.'; return; }
         const rows = [];
-        if (l.imagesLeft != null) rows.push([`Images left: <b>${l.imagesLeft}</b> · resets ${esc(resets(l.imagesReset))}`, l.imagesLeft < 10]);
+        if (l.imagesLeft != null) rows.push([`Images left: <b>${esc(l.imagesLeft)}</b> · resets ${esc(resets(l.imagesReset))}`, l.imagesLeft < 10]);
         for (const m of l.lockedModels) rows.push([`${esc(m.slug)} locked until ${esc(when(m.until))}${m.until ? ` (${esc(rel(m.until))})` : ''}`, true]);
         if (!l.lockedModels.length) rows.push(['No models locked.', false]);
         for (const n of l.notes) rows.push([esc(n), true]);

@@ -7,9 +7,9 @@ gallery with a lightbox.
 
 - Main artifact: `chatgptbulk.user.js`
 - Baseline: v1.0.0 (imported verbatim from the operator's upload)
-- Current round: Round 2 — silent stepwise gap mitigation under the 4ndr0neering
-  v8.2.0 convergence protocol (superset rule: no v1.0.0 or v1.1.0 capability may be
-  omitted, regressed, or weakened; current artifact v1.2.0).
+- Current round: Round 3 — silent stepwise gap mitigation under the 4ndr0neering
+  v8.2.0 convergence protocol (superset rule: no v1.0.0, v1.1.0, or v1.2.0
+  capability may be omitted, regressed, or weakened; current artifact v1.3.0).
 
 ## Install
 

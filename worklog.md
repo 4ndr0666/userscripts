@@ -212,39 +212,125 @@ GUP evidence plane: `BOUNDED_PASS` → the round-2 kit is delivered as **Class H
 
 ---
 
-## Handoff — priming Round 3
+## Round 3 — silent stepwise gap mitigation (2026-11-16)
 
-**Apply this round:** from the closed Round 1 state run `bash
-update-bulkimg-round-2.sh /full/path/to/repo` (from the pristine v1.0.0 baseline apply
-`update-bulkimg-round-1.sh` first). Both kits work on the pristine baseline, a moved
-HEAD, or an independent lineage via content pinning, and fail closed on conflicting
-edits to `chatgptbulk.user.js` — never force past a fail-closed.
+- **Protocol:** 4ndr0neering v8.2.0, tier T3
+- **Baseline:** `dd10b84` — the closed Round 2 state (v1.2.0); the operator's GitHub
+  HEAD was verified byte-identical to the Round 2 candidate (`chatgptbulk.user.js`
+  SHA-256 `d3d01ec…` = the round-2 `PIN_KEY_SHA`) before any work started
+- **Contract:** re-sealed before implementation — the round-3 delivery artifacts carry
+  new names (`update-bulkimg-round-3.sh`, `round-record-round-3.html`, round-3 kit
+  metadata), so the contract SHA changed and a fresh ledger was initialized (the
+  round-2 ledger is archived as `.4ndr0/ledger-round-2.json` with its criterion logs
+  under `.4ndr0/evidence-round-2/`). The ten acceptance gates keep their original
+  semantics; the superset rule now explicitly covers v1.0.0, v1.1.0, **and** v1.2.0
+  capabilities.
+- **Candidate:** v1.3.0, commit range `dd10b84..HEAD`
+- **Method:** fresh-eyes adversarial re-review of v1.2.0 ("does this code impress
+  me?"), then two focused commits — the `.gitignore` containment ship (R3-6) and one
+  mitigation commit covering the five artifact findings, every one guarded by a new
+  behavioral test **RED-verified against the v1.2.0 artifact** (9 failing checks,
+  logs archived under `.4ndr0/evidence/round3-red/`) and a new static hardening
+  marker. No operator findings were relayed from the Round 2 checklist (none
+  reported), so the round is entirely review-driven.
+
+### Findings ledger
+
+| # | Finding (v1.2.0 behavior) | Class | Fix |
+|---|---|---|---|
+| R3-1 | Prompt→message matching compared only the **first 80 characters** while sibling grouping used full-prompt equality — two distinct prompts sharing an 80-char prefix in one conversation **cross-paired** (RED proof: both jobs bound to the second prompt's image; the first prompt's image was never claimed) | correctness | `171f2d9` |
+| R3-2 | The **by-id project branch** (current-project mode — the default project setting — and every later chat of a named run) never got the hidden-control fallback R2-4 gave the by-name branch: a collapsed sidebar hid the project link and the whole run aborted with "could not find a way to open a new chat there" | robustness | `171f2d9` |
+| R3-3 | The fetch override rewrote only the `/backend-api/f/conversation` send shape; a page POSTing to the plain `/backend-api/conversation` shape got **no rewrite** — the model/effort selection silently no-oped (the R2-2 silent-no-op class at the transport layer) | functional gap | `171f2d9` |
+| R3-4 | Stop was **dead during the new-chat navigation window**: `newChat`'s 15 s opened-wait (plus the fixed settle) never checked the cancel flag — up to ~16.5 s of dead time after Stop, and a stray new chat could still open | UX correctness | `171f2d9` |
+| R3-5 | `renderLimits` interpolated the backend-controlled `imagesLeft` (`limits_progress[].remaining`) into `innerHTML` **unescaped** — the Round 1 escaping fix covered slugs/notes/reset strings but left this field injectable (RED proof: a hostile remaining injected a real `img` element) | security hardening | `171f2d9` |
+| R3-6 | The operator's repository never received the `.4ndr0/` gitignore containment the protocol mandates and the shipped README/worklog both **claim** — running the documented protocol commands there pollutes the worktree with untracked runtime state | repo hygiene | `2b96612` |
+
+Commit map: `2b96612` .gitignore superset ship (operator content verbatim + section 10;
+strict superset, zero WO-01 rule removed) · `171f2d9` the five artifact fixes +
+T12a–e tests + v1.3.0 static markers + harness version pins · `141e2de` contract
+re-seal.
+
+### Superset verification (v1.2.0 → v1.3.0)
+
+Static guard: **140/140** — all 27 v1.0.0 definitions, all 66 v1.0.0 feature
+markers, all 19 v1.1.0 hardening markers, all 6 v1.2.0 hardening markers, and 5
+new v1.3.0 hardening markers. Behavior suite: **81/81** (T1–T11 unchanged and
+passing; T12a–e added and RED-verified against v1.2.0). Unit comparison over the
+full engagement range `93056fc..HEAD`: **0 MISSING** units (14 CHANGED, 126 NEW,
+16 UNCHANGED). Every Round 1 and Round 2 fix keeps its test. Deliberate behavioral
+deltas (all strictly additive): prefix-sharing prompts now pair exactly; a hidden
+project link is clicked as a last resort instead of aborting the run; the model
+override rewrites both conversation-send shapes; Stop cuts the new-chat navigation
+short and never opens a stray chat after it; the images-left value renders escaped.
+
+### Verification evidence (round-3 acceptance baseline, 10 mandatory criteria)
+
+| Criterion | Gate | Result |
+|---|---|---|
+| syntax-valid | functional | `node --check` clean |
+| static-superset-guard | regression | 140/140 checks |
+| behavior-suite | functional | 81/81 jsdom checks (T12a–e RED-verified against v1.2.0) |
+| unit-superset-no-missing | regression | 0 MISSING units across the full engagement range `93056fc..HEAD` |
+| perf-gallery-render | performance | paired ratio 0.727 (95 % CI 0.722–0.735), equal stdout, Node 24 + jsdom envelope; contract re-sealed to the v1.3.0 candidate fingerprint before the run |
+| real-browser-fixture | integration | full mocked run in real Chromium + HTTP-origin reload persistence (v1.3.0) |
+| kit-battery-green | delivery | round-3 kit `update-bulkimg-round-3.sh`, P0–P7 + P1B + P1C + RED_CONTROL battery GREEN (18/18); kit bytes match `PIN_KIT_SHA` |
+| round-record-pins | delivery | all six round-3 pins present in `round-record-round-3.html` |
+| worklog-handoff | delivery | this file, zero stubs |
+| browser-txt-verification | delivery | delivered v1.3.0 `.txt` rendered in a real browser through both endpoint chains (641 lines, 36231 chars, charset-faithful) |
+
+### Known boundaries (BOUNDED, not waived) — unchanged from Rounds 1–2
+
+1. Userscript-manager injection on a real profile (Tampermonkey/Violentmonkey).
+2. Live authenticated ChatGPT backend.
+3. Real-browser wall-time for the render suppression (jsdom-envelope measurement).
+
+GUP evidence plane: `BOUNDED_PASS` → the round-3 kit is delivered as **Class H
+(Bounded Handoff)**, exactly as Rounds 1 and 2.
+
+---
+
+## Handoff — priming Round 4
+
+**Apply this round:** from the closed Round 2 state run `bash
+update-bulkimg-round-3.sh /full/path/to/repo` (from earlier states apply the
+round-1/round-2 kits first). The kit works on the Round 2 state, a moved HEAD, or
+an independent lineage via content pinning (`PIN_KEY_BASE_SHA` = the v1.2.0
+artifact), and fails closed on conflicting edits to `chatgptbulk.user.js` — never
+force past a fail-closed. It also ships the `.gitignore` containment section the
+operator repo has been missing (R3-6), as a strict superset of the operator's
+current ignore rules.
 
 **Operator live-site checklist (closes the two open boundaries):**
 
-1. Install v1.2.0 in Tampermonkey/Violentmonkey on `chatgpt.com`; confirm the FAB
+1. Install v1.3.0 in Tampermonkey/Violentmonkey on `chatgpt.com`; confirm the FAB
    appears after idle and no second panel appears on SPA re-renders.
-2. Run a 2-image job in fresh-chat mode with default model; confirm limits render, the
-   gallery populates, and downloads are named `bulk-1-1.png`, `bulk-2-1.png`.
+2. Run a 2-image job in fresh-chat mode with default model; confirm limits render,
+   the gallery populates, and downloads are named `bulk-1-1.png`, `bulk-2-1.png`.
 3. Pick a model with no effort presets (if the live list has one) and confirm the
-   request model in DevTools matches the selection.
-4. Press Stop during the "Sending…" phase and during a long inter-job delay; confirm
-   no extra prompt goes out and the delay cuts short within a second.
-5. Open a chat that previously produced images (repeat-run scenario) and confirm new
-   jobs pair to the new segments; then, without clearing the gallery, run a **different
-   prompt in the same chat** and confirm both images arrive (the R2-1 scenario).
-6. If the models list ever fails to load with a model/effort ticked, confirm the run
-   refuses with "could not load the model list" instead of silently using the default.
+   request model in DevTools matches the selection — **watch which conversation
+   endpoint the page POSTs to** (`/backend-api/f/conversation` or the plain
+   `/backend-api/conversation`); v1.3.0 rewrites both (R3-3).
+4. Press Stop during the "Sending…" phase, during a long inter-job delay, **and
+   while the status shows "Opening chat N/M…"**; confirm no extra prompt goes out,
+   the delay cuts short within a second, and no stray new chat opens after Stop
+   (R3-4).
+5. Iterate on one long prompt in the same chat, changing only its **tail** (e.g.
+   "…in summer" → "…in winter"); confirm each job claims its own image (R3-1).
+6. Collapse the sidebar and run in current-project mode from inside a project
+   chat; confirm the run still opens the project's chats (R3-2).
+7. If the models list ever fails to load with a model/effort ticked, confirm the
+   run refuses with "could not load the model list" instead of silently using the
+   default.
 
 **Candidate improvements still deliberately deferred** (each needs its own measured
 justification per PF directives before adoption): retry budget for late-transient
-`files/download` failures (the per-tick loop already retries while a job is pending);
-`save-on-change` for settings; parallel per-conversation polling; download-all button;
-signed-URL refresh for expired gallery links.
+`files/download` failures (the per-tick loop already retries while a job is
+pending); `save-on-change` for settings; parallel per-conversation polling;
+download-all button; signed-URL refresh for expired gallery links.
 
-**Round 3 entry point:** re-run the review loop against v1.2.0 with fresh eyes
-("does this code impress me?"), fold in operator findings from the checklist above,
-re-seal a versioned contract if the acceptance surface changes, and emit
-`update-bulkimg-round-3.sh` from the new commit range. The ledger, tests, fixture,
-and perf driver in this repo are the regression backbone — extend them, never bypass
-them.
+**Round 4 entry point:** re-run the review loop against v1.3.0 with fresh eyes
+("does this code impress me?"), fold in operator findings from the checklist above
+(especially the live endpoint-shape observation in item 3), re-seal a versioned
+contract if the acceptance surface changes, and emit `update-bulkimg-round-4.sh`
+from the new commit range. The ledger, tests, fixture, and perf driver in this repo
+are the regression backbone — extend them, never bypass them.

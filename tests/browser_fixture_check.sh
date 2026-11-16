@@ -123,7 +123,7 @@ PROMPT2=$(pe "document.getElementById('bulkimg-host').shadowRoot.getElementById(
 step "panel header shows the version"
 HDR=$(pe "document.getElementById('bulkimg-host').shadowRoot.querySelector('h3').textContent")
 case "$HDR" in
-  *"1.2.0"*) step "header version OK" ;;
+  *"1.3.0"*) step "header version OK" ;;
   *) die "header missing version: $HDR" ;;
 esac
 
