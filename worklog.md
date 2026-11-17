@@ -334,3 +334,228 @@ download-all button; signed-URL refresh for expired gallery links.
 contract if the acceptance surface changes, and emit `update-bulkimg-round-4.sh`
 from the new commit range. The ledger, tests, fixture, and perf driver in this repo
 are the regression backbone — extend them, never bypass them.
+
+---
+
+## Round 4 — silent stepwise gap mitigation (2026-11-17)
+
+- **Protocol:** 4ndr0neering v8.2.0, tier T3
+- **Baseline:** `138d42a` — the closed Round 3 state (v1.3.0); the operator's GitHub
+  HEAD was verified byte-identical to the Round 3 candidate (`chatgptbulk.user.js`
+  SHA-256 `47bd5ff9…` = the round-3 `PIN_KEY_SHA`) before any work started
+- **Operator directives (this round's driver):** the standing exhaustive-audit
+  battery plus four explicit nuances — (1) a forced model selector as in
+  `urzeye/ophel`, (2) the same reference image re-supplied with the prompt on every
+  run, (3) stateless runs via cache dump + hard reload with failed-generation
+  masking as in `4ndr0tools - Hailuo++.user.js`, (4) Hailuo++'s asset vault
+  (intercept blobs and hold their bytes before the URL dies) replicated here.
+- **Contract:** re-sealed before implementation — the round-4 delivery artifacts
+  carry new names (`update-bulkimg-round-4.sh`, `round-record-round-4.html`,
+  round-4 kit metadata), so the contract SHA changed and a fresh ledger was
+  initialized (the round-3 ledger is archived as `.4ndr0/ledger-round-3.json`
+  with its criterion logs under `.4ndr0/evidence-round-3/`). The ten acceptance
+  gates keep their original semantics; the superset rule now explicitly covers
+  v1.0.0, v1.1.0, v1.2.0, **and** v1.3.0 capabilities.
+- **Candidate:** v1.4.0, commit range `138d42a..HEAD`
+- **Method:** fresh-eyes adversarial re-review of v1.3.0 plus the four operator
+  nuances; one mitigation commit covering the eight findings, every one guarded by
+  a new behavioral test (RED-verified against the v1.3.0 artifact: 25 failing
+  checks in the behavior suite + 19 static failures, logs archived under
+  `.4ndr0/evidence/round4-red/`) and a new static hardening marker. The ophel
+  reference was read from source (clone of `urzeye/ophel` @ v1.3.4:
+  `src/core/model-locker.ts` + `src/adapters/chatgpt.ts`/`chatgpt-config.ts`
+  config v10) and the Hailuo++ reference from this repository's own
+  `dist/4ndr0tools - Hailuo++.user.js` (vault clone-at-create, purge masking).
+  **Pre-delivery amendment (r4a, `f1d2213`):** the finalization review
+  ("does this code impress me?") on the assembled candidate found three more
+  gaps — the vault's live-shape join, a vanished-selection silent no-op, and a
+  missing-reference silent degradation — each fixed and RED-verified against the
+  pre-amendment v1.4.0 artifact (7 failing behavior checks + 4 static failures,
+  logs archived under `.4ndr0/evidence/round4a-red/`), bringing the behavior
+  suite to 128 checks and the static guard to 160.
+
+### Findings ledger
+
+| # | Finding (v1.3.0 behavior) | Class | Fix |
+|---|---|---|---|
+| R4-1 | A job whose prompt **never appears in the thread** (send dropped server-side, chat deleted, or the text came back altered) stayed `pending` forever — the 15-minute timeout sat *after* the `ui === undefined` continue, so the unmatched path never reached it (RED proof: a restored 16-minute-old unmatched job stays pending in v1.3.0, fails on the first tick in v1.4.0 while a freshly-sent unmatched sibling stays pending) | correctness | `0d05951` |
+| R4-2 | The gallery "clear" guarded only the page-local `running` flag; with the stateless cycle a pending resume between reload and resume-start could be wiped, orphaning the run | UX correctness | `0d05951` |
+| R4-3 | Model/effort selection applied **only during bulk runs** — the page's own (manual) sends always used the site default, and nothing kept the picker honest after route resets (nuance 1: the ophel forced-model selector) | functional gap | `0d05951` |
+| R4-4 | No reference-image support: a reference image is consumed once by the composer; every bulk prompt went out text-only (nuance 2) | functional gap | `0d05951` |
+| R4-5 | No stateless-run cycle and no failure masking: every job ran in one long-lived SPA session, and failed chats accumulated in the account (nuance 3 — the operator's cache-dump + hard-reload regime and the Hailuo++ purge mask) | functional gap | `0d05951` |
+| R4-6 | No asset vault: images lived behind signed URLs that expire and blob: URLs the page revokes — a late download 403s or dies with the URL (nuance 4 — Hailuo++'s clone-at-create interception) | functional gap | `0d05951` |
+| R4-7 | With an attachment uploading, the send button stays disabled longer than `sendPrompt`'s 10 s window — spurious "send button not available" failures once reference images land | robustness (support) | `0d05951` |
+| R4-8 | With a model/effort selected and the model list unavailable, runs refuse (R2-2) but the panel gave no persistent indication that a ticked lock is inert | polish (support) | `0d05951` |
+| R4-9 | The vault's join key was a **mock-world artifact**: `files/download` returns signed https URLs on the live site, so the page's blob: mint keys could never equal the stored `download_url` — the vault arm of the download chain and the tile re-mint would silently never fire outside the blob-download_url fixture (RED proof: a page-fetched image held under its signed URL re-mints after the signed refresh dies; the pre-amendment artifact served the dead URL) | live-shape gap | `f1d2213` |
+| R4-10 | A **vanished model/effort selection** (retired server-side, arriving through the stateless-resume descriptor or the raw settings store that `lockActive` reads — both bypass the panel's dropdown sanitization) made `rewriteBody` silently no-op: every send left under the page default, the R2-2 failure class at two new entry points (RED proof: a resumed run with a retired model id sends under the page default in the pre-amendment artifact, refuses with a re-pick message after) | correctness | `f1d2213` |
+| R4-11 | A ticked reference with **no loaded bytes** (never picked, unreadable, or too large to survive a stateless reload — the localStorage quota drops it) silently degraded the run to text-only sends, exactly what the feature exists to prevent (RED proof: the pre-amendment artifact sends text-only and reports Done; the amendment refuses with "reference image is ticked but not loaded") | correctness | `f1d2213` |
+
+Commit map: `0d05951` the eight fixes + T13a–h tests + v1.4.0 static markers +
+harness version pins · `0aa3331` contract re-seal + the perf driver's stateless
+guard · `d1d04d2` worklog/README for the round-4 state · `f1d2213` the r4a
+pre-delivery amendment (R4-9/10/11 + T13i–k tests + four static markers) ·
+the worklog/README commit that closes the range.
+
+### What the four nuances became
+
+1. **Forced model selector (ophel-style), two layers.** *Transport:* the fetch
+   rewrite (both conversation-send shapes, R3-3) now stays armed whenever the new
+   "Force model" lock is ticked — every send on the page carries the locked
+   model/effort, not just bulk runs. *UI sync:* an ophel-shaped picker sync keeps
+   the page's own picker honest — selector families from ophel's chatgpt config
+   v10 (composer-pill, `data-composer-navigation-target="reasoning"`,
+   `data-codex-intelligence-trigger`, Model/模型 aria-labels; the Radix model menu;
+   `model-switcher-*` test-id slugs; `.min-w-0` names; `.trailing`/`data-state`/
+   `aria-checked` selected indicators), staged exactly like ophel: button wait →
+   current-model signal check → native click with an `aria-expanded`-verified
+   `pointerdown` fallback → 500 ms menu render delay → item click matched by slug
+   or name → 1.5 s verification polls with two-consecutive stability → bounded
+   relocks (max 2, then respect a manual override) → 3 s re-entry cooldown →
+   500 ms debounce on setting changes → 300 ms relock on `pushState`/`popstate`
+   route changes. With the models list unavailable, the panel warns the lock is
+   inert (R4-8) and the run-refusal from R2-2 still applies. Since r4a the
+   warning judges the **persisted store** (what `applyOverride` actually forces)
+   rather than the sanitized dropdowns and names a dead selection explicitly, a
+   live lock persists dropdown changes immediately (so it can never keep forcing
+   a stale store model), and every run entry — panel Generate and the stateless
+   resume — refuses a selection that no longer resolves against the loaded list
+   (R4-10).
+2. **Reference image re-supply.** The image persists as a data URL under
+   `bulkimg:ref` (localStorage, decoded to a **fresh File per send** so the
+   composer's one-shot consumption never starves the next run; oversized images
+   degrade to page-memory with a status note). Three attach strategies, each
+   followed by an attach-evidence wait: the composer's own (possibly hidden) file
+   input (`input.files` assignment + change event), a paste carrying the file
+   (duck-typed clipboard data when the engine has no `DataTransfer`), and a drop
+   onto the composer. If no strategy produces evidence the run **refuses** with
+   "reference image did not attach" — never a silent text-only send. The
+   send-button wait extends to 30 s while an attachment uploads (R4-7). Since r4a
+   a ticked reference with no loaded bytes also refuses the run — "reference image
+   is ticked but not loaded — pick it again or untick" — covering the never-picked,
+   unreadable, and too-large-to-survive-a-stateless-reload cases (R4-11).
+3. **Stateless runs + failed-generation masking.** After each send (and the pacing
+   delay), a stateless run persists a durable resume descriptor
+   (`bulkimg:run` in sessionStorage — prompt, settings, next index, and the whole
+   job list), dumps every Cache Storage entry, deregisters the service workers,
+   and reloads; the next document restores the gallery, resumes polling, and
+   continues the run at the next index (a 6 h TTL discards stale descriptors;
+   Stop clears the resume; a crash mid-run leaves the last-persisted index
+   durable). Failed jobs **purge** their conversation via
+   `DELETE /backend-api/conversation/<id>` — once per conversation, only when no
+   sibling job is pending or done (never destroy live or successful work), and
+   the failure note records the mask, exactly the Hailuo++ `purgeAccount` shape
+   scoped to what this script owns.
+4. **Asset vault.** `URL.createObjectURL` is wrapped so every image blob the page
+   mints is cloned into a bounded registry (64 entries / 192 MiB, FIFO, duck-typed
+   cross-realm admission) — and, since r4a, the fetch wrapper carries a **response
+   arm**: every GET the page itself makes that answers `image/*` is cloned into the
+   vault under the exact URL the gallery stores. That is the join the signed-URL
+   world needs — the page's blob: mint keys never equal the stored `download_url`,
+   so the blob-keyed arm alone could never fire on the live site (R4-9); the
+   response arm is passive (zero extra requests), GET-only, and silently tolerant
+   of engines whose Response objects cannot be cloned. The download chain tries a
+   fresh signed URL first, then re-mints the vault clone (mime-derived extension,
+   keyed by either arm), then the original URL as last resort; dead gallery tiles
+   re-mint once from the clone. The registry holds the *bytes* — a Blob outlives
+   its URL — so revocation and signed-URL expiry can no longer kill a late
+   download.
+
+### Superset verification (v1.3.0 → v1.4.0)
+
+Static guard: **160/160** — all 27 v1.0.0 definitions, all 66 v1.0.0 feature
+markers, all 19 v1.1.0, 6 v1.2.0, and 5 v1.3.0 hardening markers, and 20 new
+v1.4.0 hardening/feature markers (16 from the mitigation commit, 4 from r4a).
+Behavior suite: **128/128** (T1–T12 unchanged and passing — T11c/T12d now opt out
+of the stateless default explicitly, since they target the delay's and the
+navigation's interruptibility; T13a–h added and RED-verified against v1.3.0;
+T13i–k added and RED-verified against the pre-amendment v1.4.0 artifact). Unit
+comparison over the full engagement range `93056fc..HEAD`: **0 MISSING** units
+(15 CHANGED, 154 NEW, 15 UNCHANGED — 184 total). Every Round 1–3 fix keeps its
+test. Deliberate behavioral deltas (all strictly additive, all operator-directed):
+stateless runs default **on** (the operator's regime; one checkbox disables them
+and the perf driver/seeding tests do exactly that); purge defaults **on** (scoped
+to exclusively-failed conversations); a locked model applies to manual sends too;
+unmatched jobs time out on schedule; a dead selection or a missing reference
+refuses the run instead of degrading silently.
+
+### Verification evidence (round-4 acceptance baseline, 10 mandatory criteria)
+
+| Criterion | Gate | Result |
+|---|---|---|
+| syntax-valid | functional | `node --check` clean |
+| static-superset-guard | regression | 160/160 checks |
+| behavior-suite | functional | 128/128 jsdom checks (T13a–h RED-verified against v1.3.0; T13i–k RED-verified against the pre-amendment v1.4.0) |
+| unit-superset-no-missing | regression | 0 MISSING units across the full engagement range `93056fc..HEAD` (184 units: 15 CHANGED, 154 NEW, 15 UNCHANGED) |
+| perf-gallery-render | performance | paired ratio 0.759 (95 % CI 0.745–0.759), equal stdout, Node 24 + jsdom envelope; perf contract re-sealed to the amended v1.4.0 candidate fingerprint before the run |
+| real-browser-fixture | integration | full mocked run in real Chromium + HTTP-origin reload persistence + round-4 controls verified (v1.4.0) |
+| kit-battery-green | delivery | round-4 kit `update-bulkimg-round-4.sh` (4-commit range `138d42a..f1d2213`), P0–P7 + P1B + P1C + RED_CONTROL battery GREEN (18/18); kit bytes match `PIN_KIT_SHA` |
+| round-record-pins | delivery | all six round-4 pins present in `round-record-round-4.html` |
+| worklog-handoff | delivery | this file, zero stubs |
+| browser-txt-verification | delivery | delivered v1.4.0 `.txt` rendered in a real browser through both endpoint chains (1160 lines, 63705 chars, charset-faithful) |
+
+### Known boundaries (BOUNDED, not waived) — unchanged from Rounds 1–3
+
+1. Userscript-manager injection on a real profile (Tampermonkey/Violentmonkey).
+2. Live authenticated ChatGPT backend — extended this round to the live shape of
+   the model picker (selector families were taken from ophel's actively-maintained
+   chatgpt adapter, config v10, 2026-11) and the attachment-evidence selectors
+   (chip hints verified only against the mocked composer).
+3. Real-browser wall-time for the render suppression (jsdom-envelope measurement).
+
+GUP evidence plane: `BOUNDED_PASS` → the round-4 kit is delivered as **Class H
+(Bounded Handoff)**, exactly as Rounds 1–3.
+
+---
+
+## Handoff — priming Round 5
+
+**Apply this round:** from the closed Round 3 state run `bash
+update-bulkimg-round-4.sh /full/path/to/repo` (from earlier states apply the
+round-1/2/3 kits first). The kit works on the Round 3 state, a moved HEAD, or an
+independent lineage via content pinning (`PIN_KEY_BASE_SHA` = the v1.3.0
+artifact), and fails closed on conflicting edits to `chatgptbulk.user.js` — never
+force past a fail-closed.
+
+**Operator live-site checklist (closes the open boundaries; round-4 items first):**
+
+1. Install v1.4.0 in Tampermonkey/Violentmonkey on `chatgpt.com`; confirm the FAB
+   appears, and the four new controls render: "Force model", the reference-image
+   picker, "Stateless run", and "Purge failed chats".
+2. **Reference image:** pick an image, tick "Attach reference to every prompt",
+   run 2 images, and confirm each chat carries the attachment (the composer shows
+   the chip before each send). If a run ever stops with "reference image did not
+   attach", report which composer surface the live site showed — the attach
+   evidence selectors are the one live-shape guess in this feature.
+3. **Forced model:** tick "Force model" with a model chosen, open a manual chat,
+   send anything, and confirm DevTools shows the locked model in the outgoing
+   `/backend-api/conversation` (or `/f/conversation`) body; navigate around and
+   confirm the page's own picker follows the lock.
+4. **Stateless runs:** run 3 images with the toggle on; watch the page dump caches
+   and reload between images, the gallery restore after each reload, and the run
+   complete 3/3. Press Stop mid-cycle and confirm no further prompts go out and
+   the resume descriptor is gone (the run does not continue after a manual reload).
+5. **Purge:** force one failed generation (e.g. a policy-refusing prompt) and
+   confirm the conversation disappears from the sidebar with the failure note
+   reading "(chat purged — failure masked)"; confirm a *successful* chat is never
+   deleted.
+6. **Asset vault:** after a run, wait a minute (or revoke/expire by closing and
+   reopening the chats), then click a gallery tile → Download: the image must
+   still save (fresh signed URL or the vault clone).
+7. The standing Round 3 checklist items remain valid (limits render, downloads
+   named `bulk-<n>-<i>.png`, Stop during send/delay/navigation, prefix-sharing
+   prompts pair correctly, model-list refusal).
+
+**Candidate improvements still deliberately deferred** (each needs its own measured
+justification per PF directives before adoption): retry budget for late-transient
+`files/download` failures (the per-tick loop already retries while a job is
+pending); `save-on-change` for settings; parallel per-conversation polling;
+download-all button; IndexedDB reference storage beyond the localStorage quota;
+purge pacing/jitter if the API ever rate-limits deletes.
+
+**Round 5 entry point:** re-run the review loop against v1.4.0 with fresh eyes
+("does this code impress me?"), fold in operator findings from the checklist above
+(especially items 2–5 — the live shapes behind this round's four features), re-seal
+a versioned contract if the acceptance surface changes, and emit
+`update-bulkimg-round-5.sh` from the new commit range. The ledger, tests, fixture,
+and perf driver in this repo are the regression backbone — extend them, never
+bypass them.

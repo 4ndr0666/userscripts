@@ -1,15 +1,18 @@
 # ChatGPT Bulk Images (userscript)
 
 A Tampermonkey/Violentmonkey userscript that sends one image prompt to ChatGPT many
-times (a fresh chat each time, optionally inside a project), lets you pick model and
-effort, watches your image usage limits, and shows the generated images in a live
-gallery with a lightbox.
+times (a fresh chat each time, optionally inside a project), lets you pick and
+force model and effort, re-attaches a reference image to every prompt, runs
+statelessly (cache dump + reload between images), purges failed chats to mask
+failed generations, watches your image usage limits, and collects the images
+through a blob-cloning asset vault into a live gallery with a lightbox.
 
 - Main artifact: `chatgptbulk.user.js`
 - Baseline: v1.0.0 (imported verbatim from the operator's upload)
-- Current round: Round 3 — silent stepwise gap mitigation under the 4ndr0neering
-  v8.2.0 convergence protocol (superset rule: no v1.0.0, v1.1.0, or v1.2.0
-  capability may be omitted, regressed, or weakened; current artifact v1.3.0).
+- Current round: Round 4 — silent stepwise gap mitigation under the 4ndr0neering
+  v8.2.0 convergence protocol (superset rule: no v1.0.0, v1.1.0, v1.2.0, or
+  v1.3.0 capability may be omitted, regressed, or weakened; current artifact
+  v1.4.0).
 
 ## Install
 

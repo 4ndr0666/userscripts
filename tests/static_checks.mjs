@@ -48,7 +48,7 @@ for (const [re, label] of hygiene) {
 const meta = [
   '// @name         ChatGPT Bulk Images',
   '// @namespace    local.chatgpt-scripts.easier-image-gen',
-  '@version      1.3.0',
+  '@version      1.4.0',
   '@match        https://chatgpt.com/*',
   '@grant        none',
   '@run-at       document-idle',
@@ -59,8 +59,8 @@ for (const m of meta) (src.includes(m) ? ok : bad).call(null, `metadata: ${m.tri
 
 // 4. Version monotonicity vs the sealed baseline 1.0.0
 const v = (src.match(/@version\s+(\d+)\.(\d+)\.(\d+)/) || []).slice(1).map(Number);
-if (v.length === 3 && (v[0] > 1 || (v[0] === 1 && v[1] >= 3))) ok(`version ${v.join('.')} >= 1.3.0`);
-else bad('version >= 1.3.0', `found ${v.join('.')}`);
+if (v.length === 3 && (v[0] > 1 || (v[0] === 1 && v[1] >= 4))) ok(`version ${v.join('.')} >= 1.4.0`);
+else bad('version >= 1.4.0', `found ${v.join('.')}`);
 
 // 5. Sealed v1.0.0 top-level definitions (every unit must still be defined)
 const defs = ['TAG', 'STORE_KEY', 'KEEP', 'CURRENT_PROJECT', 'SEL', 'waitFor', 'rel', 'when', 'api',
@@ -147,7 +147,7 @@ for (const [name, marker] of INVENTORY) {
 // 7. v1.1.0 hardening markers (the Round 1 fixes must all be present)
 const HARDENING = [
   ['double-injection guard', 'window.__bulkimgLoaded'],
-  ['embedded version fallback', "const VERSION = '1.3.0'"],
+  ['embedded version fallback', "const VERSION = '1.4.0'"],
   ['html escaping helper', "const esc = (s) =>"],
   ['escaped limits rendering', 'esc(m.slug)'],
   ['invalid-date guard', 'Invalid Date'],
@@ -193,6 +193,33 @@ const HARDENING3 = [
 ];
 for (const [name, marker] of HARDENING3) {
   (src.includes(marker) ? ok : bad).call(null, `v1.3.0 hardening: ${name}`);
+}
+
+// 10. v1.4.0 hardening + feature markers (the Round 4 fixes must all be present)
+const HARDENING4 = [
+  ['unmatched-job timeout ahead of the match continue', 'never appears in the thread'],
+  ['forced-model lock gate', 'lockActive'],
+  ['model picker button selectors (ophel config v10 shape)', 'data-composer-navigation-target="reasoning"'],
+  ['picker item slug source', 'model-switcher-'],
+  ['picker re-entry cooldown', 'PICKER_COOLDOWN'],
+  ['reference image persistence key', "'bulkimg:ref'"],
+  ['reference attach refusal', 'reference image did not attach'],
+  ['stateless resume key', "'bulkimg:run'"],
+  ['cache dump before reload', 'caches.keys()'],
+  ['service-worker deregister', 'getRegistrations()'],
+  ['failed-chat purge transport', "method: 'DELETE'"],
+  ['purge mask note', 'failure masked'],
+  ['asset vault createObjectURL wrap', 'URL.createObjectURL = function'],
+  ['vault clone service', 'cloneOf'],
+  ['vault FIFO budget', 'VAULT_MAX_ENTRIES'],
+  ['vault holds page-fetched image bytes (signed-URL join)', 'vault.hold(url, b)'],
+  ['vault response-arm clone', 'res.clone().blob()'],
+  ['vanished-selection run refusal', 'no longer offered'],
+  ['missing-reference run refusal', 'reference image is ticked but not loaded'],
+  ['clear blocked while resume pending', 'resumeState()'],
+];
+for (const [name, marker] of HARDENING4) {
+  (src.includes(marker) ? ok : bad).call(null, `v1.4.0 hardening: ${name}`);
 }
 
 console.log(failed ? `\nSTATIC GUARD: ${failed} failure(s)` : '\nSTATIC GUARD: PASS (superset intact, zero stubs)');

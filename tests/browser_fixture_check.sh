@@ -43,7 +43,7 @@ FAB=$(pe "!!document.getElementById('bulkimg-host').shadowRoot.querySelector('.f
 [ "$FAB" = "true" ] || die "fab missing"
 
 step "seed settings and reload (persistence precondition)"
-agent-browser storage local set bulkimg:settings '{"prompt":"fixture red panda","count":1,"mode":"same","delay":0,"version":"","effort":"","project":"__current__","wait":false,"force":false}' >/dev/null
+agent-browser storage local set bulkimg:settings '{"prompt":"fixture red panda","count":1,"mode":"same","delay":0,"version":"","effort":"","project":"__current__","wait":false,"force":false,"lock":false,"ref":false,"stateless":false,"purge":false}' >/dev/null
 agent-browser reload >/dev/null
 agent-browser wait --load networkidle >/dev/null
 
@@ -52,6 +52,12 @@ sx '.fab'
 sleep 1
 OPEN=$(pe "document.getElementById('bulkimg-host').shadowRoot.querySelector('.panel').classList.contains('open')")
 [ "$OPEN" = "true" ] || die "panel did not open"
+
+step "round-4 controls present in the panel"
+for id in lock refFile stateless purge; do
+  EL=$(pe "!!document.getElementById('bulkimg-host').shadowRoot.getElementById('$id')")
+  [ "$EL" = "true" ] || die "round-4 control missing: #$id"
+done
 
 step "limits render from the mocked backend"
 LIMITS=$(pe "document.getElementById('bulkimg-host').shadowRoot.querySelector('.limits').textContent")
@@ -123,7 +129,7 @@ PROMPT2=$(pe "document.getElementById('bulkimg-host').shadowRoot.getElementById(
 step "panel header shows the version"
 HDR=$(pe "document.getElementById('bulkimg-host').shadowRoot.querySelector('h3').textContent")
 case "$HDR" in
-  *"1.3.0"*) step "header version OK" ;;
+  *"1.4.0"*) step "header version OK" ;;
   *) die "header missing version: $HDR" ;;
 esac
 

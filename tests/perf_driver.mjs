@@ -69,7 +69,7 @@ const threadOf = () => {
 };
 window.fetch = async (input) => {
   const u = new window.URL(String(typeof input === 'string' ? input : input.url), window.location.href);
-  const json = (payload) => ({ ok: true, status: 200, json: async () => payload });
+  const json = (payload) => ({ ok: true, status: 200, json: async () => payload, text: async () => JSON.stringify(payload) });
   if (u.pathname === '/api/auth/session') return json({ accessToken: 'perf-tok' });
   if (u.pathname === '/backend-api/models') return json({ versions: [] });
   if (u.pathname === '/backend-api/conversation/init') return json({ limits_progress: [{ feature_name: 'image_gen', remaining: 999 }], model_limits: [], blocked_features: [] });
@@ -97,6 +97,7 @@ p('#p').value = 'perf prompt';
 p('#n').value = String(JOBS);
 p('#d').value = '0';
 p('#m').value = 'same';
+const stless = p('#stateless'); if (stless) stless.checked = false; // seed all JOBS in one session: the workload measures the poll tick, not the stateless cycle (absent in the sealed v1.0.0 baseline)
 p('.go').click();
 await new Promise((resolve) => {
   const t0 = Date.now();
