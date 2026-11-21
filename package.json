@@ -15,7 +15,8 @@
     "qr": "node tools/qr-verify.mjs",
     "smoke": "node tools/kernel-smoke.mjs && node tools/kernel-boundary-smoke.mjs && node tools/family-fixture-smoke.mjs && node tools/watermark-batch-smoke.mjs && node tools/norm-symmetry-smoke.mjs && node tools/tt-browser-smoke.mjs",
     "smoke:browser": "node tools/flow-chip-browser-smoke.mjs && node tools/ig-wall-browser-smoke.mjs && node tools/pm-grid-browser-smoke.mjs && node tools/tt-browser-smoke.mjs",
-    "smoke:fixture": "bash tests/browser_fixture_check.sh"
+    "smoke:fixture": "bash tests/browser_fixture_check.sh",
+    "perf": "python3 scripts/4ndr0_perf.py run --root . --contract perf.contract.json --output /tmp/4ndr0-perf-result.json"
   },
   "devDependencies": {}
 }

@@ -69,6 +69,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { discoverChromium } from "./chromium-probe.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -76,42 +77,7 @@ const DIST_IG = path.join(ROOT, "dist", "4ndr0tools - Instagram++.user.js");
 const CANON_IG = path.join(ROOT, "src", "4ndr0tools - Instagram++.user.js");
 
 function probeChromium() {
-  for (const envVar of ["CHROME_BIN", "CHROMIUM_BIN", "BROWSER_BIN"]) {
-    const candidate = process.env[envVar];
-    if (candidate && fs.existsSync(candidate)) return candidate;
-  }
-  const fixed = [
-    "/usr/lib/chromium/chromium",
-    "/usr/bin/chromium",
-    "/usr/bin/chromium-browser",
-    "/usr/bin/google-chrome",
-    "/usr/bin/google-chrome-stable",
-    "/usr/bin/brave",
-    "/usr/bin/brave-browser",
-    "/usr/bin/vivaldi",
-    "/usr/bin/vivaldi-stable",
-    "/usr/bin/ungoogled-chromium",
-    "/usr/bin/microsoft-edge-stable",
-    "/usr/bin/microsoft-edge",
-    "/usr/bin/thorium-browser",
-    "/usr/local/bin/chromium",
-  ];
-  for (const p of fixed) if (fs.existsSync(p)) return p;
-  // Playwright-managed Chromium caches (layout moved chrome-linux -> chrome-linux64).
-  const cache = process.env.PLAYWRIGHT_BROWSERS_PATH ||
-    path.join(process.env.HOME || os.homedir(), ".cache", "ms-playwright");
-  try {
-    const dirs = fs.readdirSync(cache)
-      .filter((d) => /^chromium-\d+$/.test(d))
-      .sort((a, b) => Number(b.split("-")[1]) - Number(a.split("-")[1]));
-    for (const d of dirs) {
-      for (const sub of ["chrome-linux64", "chrome-linux"]) {
-        const bin = path.join(cache, d, sub, "chrome");
-        if (fs.existsSync(bin)) return bin;
-      }
-    }
-  } catch (_) { /* no cache dir — fall through */ }
-  return null;
+  return discoverChromium();
 }
 
 const CHROMIUM_BIN = probeChromium();
@@ -411,26 +377,26 @@ export async function runIgWallBrowserBattery() {
     // Structural fallback on hosts without a local Chromium binary — SAME
     // fail-closed contract as the live path (clean === failed.length === 0).
     assert("1. version header present & src/dist parity",
-      !!distVersion && distVersion === canonVersion, `dist=${distVersion}, canon=${canonVersion}`);
-    assert("2. structural tripwire: prune isOffscreen gate present (canon+dist)",
+      !!distVersion && distVersion === canonVersion, `dist=${distVersion}, src=${canonVersion}`);
+    assert("2. structural tripwire: prune isOffscreen gate present (src+dist)",
       distSource.includes(GATE_LINE) && canonSource.includes(GATE_LINE));
-    assert("3. structural tripwire: batch hydrateNear pass present (canon+dist)",
+    assert("3. structural tripwire: batch hydrateNear pass present (src+dist)",
       distSource.includes(HYDRATE_LINE) && canonSource.includes(HYDRATE_LINE));
     assert("4. structural tripwire: 80-node budget + SAFE_ZONE tail unchanged",
       /CACHE_LIMIT:\s*80/.test(distSource) && /SAFE_ZONE:\s*15/.test(distSource));
     assert("5. red-control: original-bug geometry (V-STASIS rect covering viewport) is detected",
       rectsIntersect({ left: 0, top: 0, right: 1280, bottom: 800 }, { left: 0, top: 0, right: 1280, bottom: 800 }) === true);
-    assert("6. structural tripwire: OPAQUE wall palette token (canon+dist)",
+    assert("6. structural tripwire: OPAQUE wall palette token (src+dist)",
       OPAQUE_BG_RE.test(distSource) && OPAQUE_BG_RE.test(canonSource));
-    assert("7. structural tripwire: #ares-veil injection + visibility rule + reload exit (canon+dist)",
+    assert("7. structural tripwire: #ares-veil injection + visibility rule + reload exit (src+dist)",
       distSource.includes(VEIL_ID_LINE) && canonSource.includes(VEIL_ID_LINE) &&
         distSource.includes(VEIL_RULE_LINE) && canonSource.includes(VEIL_RULE_LINE) &&
         distSource.includes(RELOAD_EXIT_LINE) && canonSource.includes(RELOAD_EXIT_LINE));
-    assert("8. structural tripwire: operator-directed header labels (canon+dist)",
+    assert("8. structural tripwire: operator-directed header labels (src+dist)",
       distSource.includes(FEED_BTN_LINE) && canonSource.includes(FEED_BTN_LINE) &&
         distSource.includes(DUMP_LABEL_LINE) && canonSource.includes(DUMP_LABEL_LINE) &&
         distSource.includes(DLALL_LABEL_LINE) && canonSource.includes(DLALL_LABEL_LINE));
-    assert("8b. structural tripwire: the round-14 GRID WALL contract (canon+dist)",
+    assert("8b. structural tripwire: the round-14 GRID WALL contract (src+dist)",
       distSource.includes(GRID_WALL_STMT) && canonSource.includes(GRID_WALL_STMT) &&
         distSource.includes(APPLY_LAYOUT_LINE) && canonSource.includes(APPLY_LAYOUT_LINE) &&
         distSource.includes(SNAPSHOT_KEY_LINE) && canonSource.includes(SNAPSHOT_KEY_LINE) &&
@@ -1011,7 +977,7 @@ export async function runIgWallBrowserBattery() {
         distSource.includes(DUMP_LABEL_LINE) && canonSource.includes(DUMP_LABEL_LINE) &&
         VEILENGAGED_ABSENT &&
         distVersion === canonVersion,
-      `dist=${distVersion}, canon=${canonVersion}`
+      `dist=${distVersion}, src=${canonVersion}`
     );
 
     /* Red control: the checker must reject the ORIGINAL bug geometry. */

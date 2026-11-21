@@ -32,5 +32,8 @@ jobs:
       - name: Delivery & Test Suite Verification
         run: npm test
 
+      - name: Live Browser Proof-of-Possession Smoke Suite
+        run: npm run smoke:browser
+
       - name: Generated Artifact Freshness Gate
         run: test -z "$(git status --porcelain)"

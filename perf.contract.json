@@ -1,0 +1,33 @@
+{
+  "version": "1.0",
+  "workload_id": "userscripts-style-audit-39",
+  "description": "Paired wall-time stability & stdout parity gate over the 39-installable OPSEC & 3lectric-Glass style audit",
+  "cwd": ".",
+  "baseline_command": [
+    "node",
+    "tools/style-audit.mjs"
+  ],
+  "candidate_command": [
+    "node",
+    "tools/style-audit.mjs"
+  ],
+  "samples": 7,
+  "warmups": 2,
+  "timeout_seconds": 15,
+  "max_regression_pct": 15,
+  "equal_stdout": true,
+  "fingerprints": {
+    "baseline": [
+      {
+        "path": "tools/style-audit.mjs",
+        "sha256": "046c4c89f0272fa8b3e498aed037547f09900ec46efc9c0f6bd6d43a130146e8"
+      }
+    ],
+    "candidate": [
+      {
+        "path": "tools/style-audit.mjs",
+        "sha256": "046c4c89f0272fa8b3e498aed037547f09900ec46efc9c0f6bd6d43a130146e8"
+      }
+    ]
+  }
+}

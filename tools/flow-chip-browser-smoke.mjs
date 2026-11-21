@@ -19,6 +19,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { discoverChromium } from "./chromium-probe.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -31,41 +32,7 @@ const CANON_PM = path.join(ROOT, "src", "4ndr0tools - Prompt Master.user.js");
  * now also derives the newest Playwright-managed Chromium (chrome-linux64
  * and legacy chrome-linux layouts). Same binaries, strictly more live proof. */
 function probeChromium() {
-  for (const envVar of ["CHROME_BIN", "CHROMIUM_BIN", "BROWSER_BIN"]) {
-    const candidate = process.env[envVar];
-    if (candidate && fs.existsSync(candidate)) return candidate;
-  }
-  const fixed = [
-    "/usr/lib/chromium/chromium",
-    "/usr/bin/chromium",
-    "/usr/bin/chromium-browser",
-    "/usr/bin/google-chrome",
-    "/usr/bin/google-chrome-stable",
-    "/usr/bin/brave",
-    "/usr/bin/brave-browser",
-    "/usr/bin/vivaldi",
-    "/usr/bin/vivaldi-stable",
-    "/usr/bin/ungoogled-chromium",
-    "/usr/bin/microsoft-edge-stable",
-    "/usr/bin/microsoft-edge",
-    "/usr/bin/thorium-browser",
-    "/usr/local/bin/chromium",
-  ];
-  for (const p of fixed) if (fs.existsSync(p)) return p;
-  const cache = process.env.PLAYWRIGHT_BROWSERS_PATH ||
-    path.join(process.env.HOME || os.homedir(), ".cache", "ms-playwright");
-  try {
-    const dirs = fs.readdirSync(cache)
-      .filter((d) => /^chromium-\d+$/.test(d))
-      .sort((a, b) => Number(b.split("-")[1]) - Number(a.split("-")[1]));
-    for (const d of dirs) {
-      for (const sub of ["chrome-linux64", "chrome-linux"]) {
-        const bin = path.join(cache, d, sub, "chrome");
-        if (fs.existsSync(bin)) return bin;
-      }
-    }
-  } catch (_) { /* no cache dir — fall through */ }
-  return null;
+  return discoverChromium();
 }
 
 const CHROMIUM_BIN = probeChromium();
@@ -407,7 +374,7 @@ export async function runFlowChipBrowserBattery() {
         distSource.includes("flex:0 1 auto;min-width:44px;max-width:240px") &&
         distSource.includes("flex:0 0 auto;font-variant-numeric:tabular-nums") &&
         distSource.includes("min-width:20px;height:4px;border-radius:2px;background:rgba(0,229,255,.14);overflow:hidden;flex:0 1 40px"),
-      `dist=${distVersion}, canon=${canonVersion}`);
+      `dist=${distVersion}, src=${canonVersion}`);
     assert("2. ResizeObserver anchor & dock synchronization present",
       distSource.includes("flowCreditResizeObserver = new ResizeObserver(scheduleFlowCreditPosition)") &&
       distSource.includes("flowCreditResizeObserver.observe(flowCreditResizeEl)"));
@@ -439,7 +406,7 @@ export async function runFlowChipBrowserBattery() {
     assert("8. findFlowAnchorButton & findFlowComposerContainer & findPlatformEditor fallbacks",
       distSource.includes("type: \"gen-button-fallback\"") &&
       distSource.includes("return r.width >= 160 && r.height >= 28 && r.top + r.height / 2 > vh * 0.4;"));
-    assert("9. canon & dist parity on Flow chip counter logic",
+    assert("9. src & dist parity on Flow chip counter logic",
       canonSource.includes("flowCreditResizeObserver = new ResizeObserver(scheduleFlowCreditPosition)"));
     assert("10. GM_registerMenuCommand returns exportFlowCreditLedger promise",
       distSource.includes("GM_registerMenuCommand(\"📋 Flow Credits: Export Ledger\", () =>\n        exportFlowCreditLedger()"));
@@ -957,7 +924,7 @@ export async function runFlowChipBrowserBattery() {
     })()`);
 
     assert(
-      "10. canon kernel-less live Chromium parity (renders NB2 · 200/200 turns left, netObserver=kernel-less)",
+      "10. src kernel-less live Chromium parity (renders NB2 · 200/200 turns left, netObserver=kernel-less)",
       canonState.modelText === "NB2 · 200/200 turns left" &&
         (canonState.netObserver === "kernel-less" || canonState.netObserver === "standalone-passive") &&
         canonState.integrityFails === 0,

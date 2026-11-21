@@ -4,7 +4,7 @@
  * ----------------------------------------------------------------------------
  * Enforces deterministic byte-size ceilings on all built dist/*.user.js
  * installables:
- *   - Hard ceiling: 1,300,000 B (fail closed on any artifact above ceiling).
+ *   - Hard ceiling: 1,350,000 B (fail closed on any artifact above ceiling).
  *   - Audit line:   1,000,000 B (artifacts >= 1.0 MB must be explicitly
  *                   budgeted in AUDITED_LARGE_SCRIPTS with a per-script cap).
  * ═══════════════════════════════════════════════════════════════════════════ */
@@ -15,17 +15,18 @@ import { fileURLToPath } from "node:url";
 
 const DEFAULT_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
-const HARD_LIMIT = 1_300_000;
+const HARD_LIMIT = 1_350_000;
+const HEADROOM_WARN = 10_000;
 const AUDIT_LINE = 1_000_000;
 
 /* Explicitly audited large-asset installables (>= 1.0 MB) and their ceilings */
 const AUDITED_LARGE_SCRIPTS = {
     "4ndr0tools - Prompt Master.user.js": {
-        maxBytes: 1_300_000,
+        maxBytes: 1_350_000,
         rationale: "Embedded prompt library templates, UI assets, and NetHook kernel",
     },
     "4ndr0tools - Watermark++.user.js": {
-        maxBytes: 1_300_000,
+        maxBytes: 1_350_000,
         rationale: "Embedded reverse-alpha watermark removal masks and NetHook kernel",
     },
 };
@@ -56,6 +57,9 @@ export function runSizeBudget(root = DEFAULT_ROOT) {
                 problems.push(`dist/${f}: ${bytes.toLocaleString()} B exceeds its audited budget ceiling of ${budget.maxBytes.toLocaleString()} B`);
             } else {
                 stats.auditedCount++;
+                if (budget.maxBytes - bytes < HEADROOM_WARN) {
+                    console.warn(`  ! low headroom: dist/${f} is within ${(budget.maxBytes - bytes).toLocaleString()} B of its ${budget.maxBytes.toLocaleString()} B cap`);
+                }
             }
         }
     }

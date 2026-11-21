@@ -44,6 +44,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { discoverChromium } from "./chromium-probe.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -51,42 +52,7 @@ const DIST_PM = path.join(ROOT, "dist", "4ndr0tools - Prompt Master.user.js");
 const CANON_PM = path.join(ROOT, "src", "4ndr0tools - Prompt Master.user.js");
 
 function probeChromium() {
-  for (const envVar of ["CHROME_BIN", "CHROMIUM_BIN", "BROWSER_BIN"]) {
-    const candidate = process.env[envVar];
-    if (candidate && fs.existsSync(candidate)) return candidate;
-  }
-  const fixed = [
-    "/usr/lib/chromium/chromium",
-    "/usr/bin/chromium",
-    "/usr/bin/chromium-browser",
-    "/usr/bin/google-chrome",
-    "/usr/bin/google-chrome-stable",
-    "/usr/bin/brave",
-    "/usr/bin/brave-browser",
-    "/usr/bin/vivaldi",
-    "/usr/bin/vivaldi-stable",
-    "/usr/bin/ungoogled-chromium",
-    "/usr/bin/microsoft-edge-stable",
-    "/usr/bin/microsoft-edge",
-    "/usr/bin/thorium-browser",
-    "/usr/local/bin/chromium",
-  ];
-  for (const p of fixed) if (fs.existsSync(p)) return p;
-  // Playwright-managed Chromium caches (layout moved chrome-linux -> chrome-linux64).
-  const cache = process.env.PLAYWRIGHT_BROWSERS_PATH ||
-    path.join(process.env.HOME || os.homedir(), ".cache", "ms-playwright");
-  try {
-    const dirs = fs.readdirSync(cache)
-      .filter((d) => /^chromium-\d+$/.test(d))
-      .sort((a, b) => Number(b.split("-")[1]) - Number(a.split("-")[1]));
-    for (const d of dirs) {
-      for (const sub of ["chrome-linux64", "chrome-linux"]) {
-        const bin = path.join(cache, d, sub, "chrome");
-        if (fs.existsSync(bin)) return bin;
-      }
-    }
-  } catch (_) { /* no cache dir — fall through */ }
-  return null;
+  return discoverChromium();
 }
 
 const CHROMIUM_BIN = probeChromium();
@@ -529,10 +495,10 @@ export async function runPmGridBrowserBattery() {
     // Structural fallback on hosts without a local Chromium binary — SAME
     // fail-closed contract as the live path (clean === failed.length === 0).
     assert("1. version header present & src/dist parity",
-      !!distVersion && distVersion === canonVersion, `dist=${distVersion}, canon=${canonVersion}`);
-    assert("2. structural tripwire: container query + stack rule present (canon+dist)",
+      !!distVersion && distVersion === canonVersion, `dist=${distVersion}, src=${canonVersion}`);
+    assert("2. structural tripwire: container query + stack rule present (src+dist)",
       canonSource.includes(CQ_RULE) && distSource.includes(CQ_RULE));
-    assert("3. structural tripwire: card containment + wrap + title width:100% present (canon+dist)",
+    assert("3. structural tripwire: card containment + wrap + title width:100% present (src+dist)",
       canonSource.includes(CONTAIN_RULE) && distSource.includes(CONTAIN_RULE) &&
       canonSource.includes(TITLE_RULE) && distSource.includes(TITLE_RULE));
     assert("4. red-control: full-viewport intersection still detects covering geometry",
@@ -566,15 +532,15 @@ export async function runPmGridBrowserBattery() {
       const failed = checks.filter((c) => !c.pass);
       return { passed: checks.length - failed.length, total: checks.length, clean: false, checks, failed };
     }
-    assert("0. CSS constants extractable from both artifacts (canon+dist)",
+    assert("0. CSS constants extractable from both artifacts (src+dist)",
       baseCssCanon.length > 1000 && orgCssCanon.length > 1000 &&
       baseCssDist.length > 1000 && orgCssDist.length > 1000);
 
     assert("1. version header present & src/dist parity",
-      !!distVersion && distVersion === canonVersion, `dist=${distVersion}, canon=${canonVersion}`);
-    assert("2. structural tripwire: container query + stack rule present (canon+dist)",
+      !!distVersion && distVersion === canonVersion, `dist=${distVersion}, src=${canonVersion}`);
+    assert("2. structural tripwire: container query + stack rule present (src+dist)",
       canonSource.includes(CQ_RULE) && distSource.includes(CQ_RULE));
-    assert("3. structural tripwire: card containment + wrap + title width:100% present (canon+dist)",
+    assert("3. structural tripwire: card containment + wrap + title width:100% present (src+dist)",
       canonSource.includes(CONTAIN_RULE) && distSource.includes(CONTAIN_RULE) &&
       canonSource.includes(TITLE_RULE) && distSource.includes(TITLE_RULE));
 

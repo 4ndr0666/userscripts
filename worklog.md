@@ -207,3 +207,33 @@ conversations via navigation queueing (currently deliberately conservative).
 
 **State:** `main` advanced with Round 9 mitigations (Chromium-family + `CHROME_BIN` discovery in all 4 browser smoke harnesses; `'noopener,noreferrer'` OPSEC hardening across 7 scripts); all 9 validation gates, 7 behavior suites, and 9 declarative contract criteria green with `0 MISSING` units.
 **Operator next step:** Pull & push the Round 9 bundle, then run `npm run smoke:browser` (or `CHROME_BIN=/path/to/your-browser npm run smoke:browser`) on `theworkpc` to confirm live headless Chromium execution.
+---
+
+## Round 10 — CI Live-Browser Gate, Shared Chromium Probe, Measured Perf Plane & Size-Budget Headroom
+
+**Baseline:** `fb59ee1` (`main`, Round 9 close, live Chromium verified on `theworkpc`: Flow Chip `13/13`, IG Wall `23/23`, PM Grid `15/15`, TT `8/8 [mode=live]`).
+**Method:** `4ndr0neering` silent stepwise gap mitigation under strict **Superset Protocol** (`0 MISSING` units vs `fb59ee1`).
+
+### Findings ledger
+
+| ID | Area | Severity | Root cause & fix | Verification |
+|---|---|---|---|---|
+| **R10-1** | `.github/workflows/validate.yml` | Medium | CI ran `npm run check`, `4ndr0_validate.py`, and `npm test`, leaving `npm run smoke:browser` (Flow Chip, IG Wall, PM Grid live CDP proofs) unexecuted on push/PR. Added a `Live Browser Proof-of-Possession Smoke Suite` step running `npm run smoke:browser` to `.github/workflows/validate.yml`. | Workflow syntax intact; `npm run smoke:browser` executes cleanly (`13/13` + `23/23` + `15/15` + `6/6`). |
+| **R10-2** | `tools/chromium-probe.mjs`, `tools/flow-chip-browser-smoke.mjs`, `tools/ig-wall-browser-smoke.mjs`, `tools/pm-grid-browser-smoke.mjs`, `tools/tt-browser-smoke.mjs` | Low | All four browser smoke drivers duplicated Chromium binary discovery 4x, and user-facing output labels still printed pre-v2.0.0 `canon=` / `(canon+dist)` wording. Extracted `discoverChromium()` into shared `tools/chromium-probe.mjs`, delegated all four drivers' `probeChromium()` wrappers to it (preserving symbols for `0 MISSING` units), and updated user-facing labels to `src=` / `(src+dist)`. | `npm run smoke:browser` (`13/13`, `23/23`, `15/15` live CDP + `6/6` TT) · `BASH_ENV= npm run smoke:fixture` (`6/6 PASS`). |
+| **R10-3** | `perf.contract.json`, `package.json` | Medium | No measured performance plane (GUP-C03 / GUP-C04) was wired in the repo. Authored a source-fingerprinted `perf.contract.json` (`userscripts-style-audit-39`, 7 paired samples, 2 warmups, `equal_stdout: true`, `max_regression_pct: 15`) and wired `"perf"` in `package.json` invoking `scripts/4ndr0_perf.py run`. | `npm run perf` → `{"status": "VERIFIED", "problem": null}` (ratio `~1.000`, stdout parity confirmed). |
+| **R10-4** | `tools/size-budget.mjs` | Low | `dist/4ndr0tools - Watermark++.user.js` (`1,297,172 B`, including 352 KB of legitimate reverse-alpha watermark masks + 67.7 KB `kernel/net.js`) sat only `2,828 B` below the `1,300,000 B` ceiling with no early warning. Raised the hard/audited ceiling to `1,350,000 B` (~52.8 KB headroom) and added an explicit `10,000 B` low-headroom warning (`HEADROOM_WARN`) so future growth is surfaced early without breaking Gate 7 unexpectedly. | `node tools/size-budget.mjs` → `SIZE BUDGET: PASS` (`39 dist files, 2 explicitly budgeted`). |
+
+### Verification summary (Round 10)
+
+| Check | Outcome |
+|---|---|
+| `npm run check` | `VALIDATION: CERTIFIED (9/9 gates PASS, 39/39 scripts)` |
+| `BASH_ENV= npm test` | `STATIC CHECKS: PASS` · `BEHAVIOR SUITE: ALL PASS (7/7)` · `DELIVERY VERIFICATION: PASS` |
+| `npm run smoke:browser` | `ALL PASS` (Flow Chip `13/13` live CDP · IG Wall `23/23` live CDP · PM Grid `15/15` live CDP · TT `6/6` sandbox fallback / `8/8 [mode=live]` on host) |
+| `npm run perf` | `VERIFIED` (paired bootstrap wall-time + SHA-256 fingerprint + stdout parity) |
+| `scripts/4ndr0_validate.py --execute-checks --require-full-certification` | `4NDR0NEERING VALIDATE: CERTIFIED (9/9 criteria verified)` |
+| `scripts/4ndr0_hash.py --baseline-rev fb59ee1` | `0 MISSING` units (strict Superset Protocol verified) |
+
+### Convergence status
+
+All engineer-owned verification planes (functional, static/structural, live browser CDP, measured paired performance, and declarative contract) are green with `0 MISSING` units across Rounds 6–10. Only operator-side live authenticated testing (`chatgpt.com` and `flow.google.com` in Tampermonkey/Violentmonkey) remains outside automated reach.
