@@ -709,8 +709,8 @@ forceImmediateAnswer();`, hwCtx);
         hailuoSrc.includes("BlobSanitizer.repairBlob(rawClone)") &&
         hailuoSrc.includes("repairRegistryEntry(url, repaired)") &&
         hailuoSrc.includes("blobPayload = await BlobSanitizer.ensureClean(blobPayload);") &&
-        hailuoSrc.includes("window.__andr0HailuoIntercept = '6.2.0';") &&
-        /^\/\/ @version\s+6\.2\.0/m.test(hailuoSrc)
+        hailuoSrc.includes("window.__andr0HailuoIntercept = '6.2.1';") &&
+        /^\/\/ @version\s+6\.2\.1/m.test(hailuoSrc)
     );
 
     /* ── 6. The round-15 field settlement (Forums++ 1.13.8 + CB 4.1.5) ───────

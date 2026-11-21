@@ -51,6 +51,8 @@ const base = "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/"
 let parseFails = 0;
 let urlFails = 0;
 let remoteImportFails = 0;
+let grantFails = [];
+let versionDriftFails = [];
 
 for (const f of distFiles) {
     const full = path.join(ROOT, "dist", f);
@@ -62,10 +64,30 @@ for (const f of distFiles) {
     if (!txt.includes(`@downloadURL`) || !txt.includes(want)) urlFails++;
     if (!txt.includes(`@updateURL`) || !txt.includes(want)) urlFails++;
     if (/@import\s+url\(\s*['"]?https?:\/\//i.test(txt)) remoteImportFails++;
+    const hdr = (txt.match(/\/\/ ==UserScript==([\s\S]*?)\/\/ ==\/UserScript==/) || [])[1] || "";
+    const grants = [...hdr.matchAll(/\/\/\s*@grant\s+(\S+)/g)].map((m) => m[1]);
+    if (grants.length === 0 || (grants.includes("none") && grants.length > 1)) {
+        grantFails.push(`${f} (${grants.join(",") || "missing"})`);
+    }
+    const mv = (hdr.match(/\/\/\s*@version\s+(\d+\.\d+(?:\.\d+)?)/) || [])[1];
+    if (mv) {
+        const body = txt.slice(txt.indexOf("// ==/UserScript=="));
+        for (const m of body.matchAll(/\b(?:SCRIPT_VERSION|VERSION)\s*=\s*(?:[^;\n]*?\|\|\s*)?['"]v?(\d+\.\d+(?:\.\d+)?)['"]/g)) {
+            if (m[1] !== mv) versionDriftFails.push(`${f}: @version=${mv} vs ${m[0]}`);
+        }
+        for (const line of body.split("\n")) {
+            if (line.includes("console.log") && line.includes("4NDR0666OS")) {
+                const bv = line.match(/\bv(\d+\.\d+(?:\.\d+)?)\b/);
+                if (bv && bv[1] !== mv) versionDriftFails.push(`${f}: @version=${mv} vs banner=v${bv[1]}`);
+            }
+        }
+    }
 }
 check(`V8 syntax parse (${distFiles.length}/${distFiles.length})`, parseFails === 0, `${parseFails} failed`);
 check(`Canonical @downloadURL & @updateURL (${distFiles.length}/${distFiles.length})`, urlFails === 0, `${urlFails} mismatches`);
 check("OPSEC zero remote @import url(http...)", remoteImportFails === 0, `${remoteImportFails} violations`);
+check(`Explicit non-conflicting @grant (${distFiles.length}/${distFiles.length})`, grantFails.length === 0, grantFails.join("; "));
+check(`Version-surface parity (${distFiles.length}/${distFiles.length})`, versionDriftFails.length === 0, versionDriftFails.join("; "));
 
 if (failures.length > 0) {
     console.error(`\nSTATIC CHECKS FAILED (${failures.length} failure(s))`);

@@ -223,12 +223,12 @@
   {
    "file": "4ndr0tools - BypassPaywalls.user.js",
    "name": "4ndr0tools - Bypass Paywalls",
-   "version": "0.1.8",
+   "version": "0.1.9",
    "description": "A way to bypass paywalls for popular news sites",
    "family": "privacy & security",
-   "sha256": "60ea8945f0d90f107b4e34c24fd3b8f0fa55210a52962d526c28b24509b39415",
-   "lines": 1111,
-   "bytes": 57802,
+   "sha256": "3853f421efd534fc9f61bf998e0d7dde3de64569422e11f0acda9c2966144c82",
+   "lines": 1112,
+   "bytes": 57824,
    "matches": [
     "*://404media.co/*",
     "*://*.adweek.com/*",
@@ -403,7 +403,9 @@
    ],
    "includes": [],
    "excludes": [],
-   "grants": [],
+   "grants": [
+    "none"
+   ],
    "requires": [],
    "connects": [],
    "runAt": "document-end",
@@ -510,10 +512,10 @@
   {
    "file": "4ndr0tools - Forum Link Xtractor.user.js",
    "name": "4ndr0tools - Forum Link Xtractor",
-   "version": "3.2.5",
+   "version": "3.2.6",
    "description": "Link xtractor, Invisitext revealer, and inline post reply viewer.",
    "family": "forums",
-   "sha256": "2518aa932864fa1f4d16c050e66bb71dab6907ffbed9bfc97fd82598c61d9def",
+   "sha256": "9f93b425d7be23b7ee10596ee13630cd5f375322d9481379500776cd8466762a",
    "lines": 865,
    "bytes": 44745,
    "matches": [
@@ -548,10 +550,10 @@
   {
    "file": "4ndr0tools - Forums++.user.js",
    "name": "4ndr0tools - Forums++",
-   "version": "1.14.1",
+   "version": "1.14.2",
    "description": "Forum utils UI with powerful downloading, indexing, link checking, archiving features and more.",
    "family": "forums",
-   "sha256": "ef7a4402060ae10d5bd046aa7a94ad22b9d3fca2ac57a2a846157136b3b85d92",
+   "sha256": "89a7be4e12c805bff1ae6ce62fa72e87638d7960e2163944675728fc32e7f486",
    "lines": 8742,
    "bytes": 427219,
    "matches": [
@@ -779,12 +781,12 @@
   {
    "file": "4ndr0tools - Hailuo++.user.js",
    "name": "4ndr0tools - Hailuo++",
-   "version": "6.2.0",
+   "version": "6.2.1",
    "description": "Enterprise-grade, idempotent automation engine for HailuoAI featuring automated queue management, asset fetching with tracked-download deduplication, an in-HUD Asset Bay thumbnail gallery (click-to-new-window, hover-playable previews, blob downloads that never navigate the session window) with cross-reload persistence, completion notifications, failure-card masking, API hard purge, and interactive asset links — hardened for the 2026-09 MiniMax H3 site generation and the hailuoai.video/agent chat surface. v5.4: editable-context (Slate) DOM guards, self-healing HUD watchdog, HUD collapse + Ctrl+Alt+H toggle, frame isolation, webp-aware blob transport with retry, and non-destructive title telemetry. v6.1: document-start interception platform — canvas toDataURL/toBlob commit hooks, URL.createObjectURL blob-clone vault fortification, and an a/img/video DOM stalker feeding the bay.",
    "family": "sovereign platforms",
-   "sha256": "7c70545b20bd5e80e98fffff96be8e8a74661fef3e1eb641f3263eebc9b865f5",
-   "lines": 2748,
-   "bytes": 148048,
+   "sha256": "2a32d13757681eb2d76d6da1ac883eb23cdf2ed5bde8bb215df8078ce6c23487",
+   "lines": 2754,
+   "bytes": 148303,
    "matches": [
     "https://hailuoai.com/video*",
     "https://hailuoai.video/*"
@@ -1143,10 +1145,10 @@
   {
    "file": "4ndr0tools - Pixeldrain++.user.js",
    "name": "4ndr0tools - Pixeldrain++",
-   "version": "1.2.7",
+   "version": "1.2.8",
    "description": "Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.",
    "family": "media & links",
-   "sha256": "dfc0ce1bf581c7137739490b8caabdf9874cf2f6fbba17febf20d0a161912904",
+   "sha256": "0633322fb90a5aeb19c43153f4d0cbf86fad77e2da0829f4c39f82f64b3a6470",
    "lines": 3977,
    "bytes": 225070,
    "matches": [
@@ -1556,10 +1558,10 @@
   {
    "file": "4ndr0tools - Zai Exporter.user.js",
    "name": "4ndr0tools - Zai Exporter",
-   "version": "1.0.2",
+   "version": "1.0.3",
    "description": "One-click conversation exfiltration for the Z.ai GLM web chat — scrapes the live thread (multi-strategy, no network, no timers) and exports it as Markdown, JSON, or plain text, with metadata and Ψ glass console. Runs entirely page-side: zero privileged transports, zero observers, zero polling.",
    "family": "sovereign platforms",
-   "sha256": "74ddad92725f8b828f6306ca9e859db3a8128fe0017a17b55962cc583fbdb056",
+   "sha256": "53eed3d721780b307966f25bc54a0f2616ee37fee228178c930695001273489f",
    "lines": 1140,
    "bytes": 47774,
    "matches": [
@@ -1706,5 +1708,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "400228b1f89ca85139ea0f9405bfbb7288914c5e34ae48bffe13f63c68e82f0b"
+ "digest": "98bf2aef394de8e94335abacdc02aa60b7adae3bf5860a9a5b4634b67c485ff6"
 }

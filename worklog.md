@@ -148,3 +148,34 @@ conversations via navigation queueing (currently deliberately conservative).
 
 **State:** `main` advanced with Round 7 mitigations (`ChatGPT++ v1.8.2`, `Prompt Master v29.0.4`, all-39-script VM load harness, `smoke:browser` script); all 9 validation gates, 7 behavior suites, and 9 declarative contract criteria green with `0 MISSING` units.
 **Remaining live-site boundary:** Authenticated live testing of ChatGPT++ (`v1.8.2`) and Prompt Master Flow++ (`v29.0.4`) in a real browser profile (Tampermonkey/Violentmonkey) and running `npm run smoke:browser` on an unrestricted host remain operator verification steps.
+---
+
+## Round 8 — Version-Surface Parity, Grant-Scoped VM Sandbox & Timer Hygiene
+
+**Baseline:** `bdfc254` (`main`, Round 7 close).
+**Method:** `4ndr0neering` silent stepwise gap mitigation under strict **Superset Protocol** (`0 MISSING` units vs `bdfc254`).
+
+### Findings ledger
+
+| ID | Area | Severity | Root cause & fix | Verification |
+|---|---|---|---|---|
+| **R8-1** | `src/4ndr0tools - Pixeldrain++.user.js` (`v1.2.7` → `v1.2.8`), `src/4ndr0tools - Zai Exporter.user.js` (`v1.0.2` → `v1.0.3`), `src/4ndr0tools - Forum Link Xtractor.user.js` (`v3.2.5` → `v3.2.6`), `src/4ndr0tools - Forums++.user.js` (`v1.14.1` → `v1.14.2`), `tests/static_checks.mjs` | Medium | Four shipped scripts had stale internal version strings diverging from `@version` (`Pixeldrain++` `VERSION = '1.2.2'` rendered in modal/badge/footer/log; `Zai Exporter` `SCRIPT.version = '1.0.0'` written to exported JSON/MD; `Forum Link Xtractor` `v3.2.4-Ψ` banner; `Forums++` `v1.14.0` banner), with no automated static gate. Synced all internal version constants and banners to `@version` and added an automated `Version-surface parity (39/39)` gate to `tests/static_checks.mjs` (RED-verified when it immediately caught stale `BypassPaywalls` and `Hailuo++` banners before sync). | `node tests/static_checks.mjs` → `Version-surface parity (39/39)` PASS. |
+| **R8-2** | `src/4ndr0tools - Hailuo++.user.js` (`v6.2.0` → `v6.2.1`) | Medium | Primary orchestration `setInterval(..., config.constants.executionInterval)` was untracked with zero `clearInterval` and zero `pagehide` teardown. Bound handle to `this.loopTimer` and added `{ once: true }` `pagehide` teardown clearing `this.loopTimer`. | Rebuilt `dist/` (`39/39 CLEAN`); `node tools/r6-load-harness.mjs` evaluates clean (`39/39`). |
+| **R8-3** | `src/4ndr0tools - BypassPaywalls.user.js` (`v0.1.8` → `v0.1.9`), `tests/static_checks.mjs`, `tools/r6-load-harness.mjs` | Medium | `BypassPaywalls` omitted `@grant` completely (leaving sandbox mode to userscript-manager heuristics), and `tools/r6-load-harness.mjs` injected every `GM_*` API into every VM sandbox regardless of each script's `@grant` header. Added explicit `// @grant none` to `BypassPaywalls`, added an `Explicit non-conflicting @grant (39/39)` check to `tests/static_checks.mjs`, and refactored `tools/r6-load-harness.mjs` to expose only the `GM_*` / `GM.*` APIs declared by each script's own `@grant` header. | `STATIC CHECKS: PASS (39 installables verified)` · `LOAD HARNESS: PASS (39/39 scripts)` under grant-scoped VM isolation. |
+| **R8-4** | `package.json` (`tests/browser_fixture_check.sh`) | Low | `tests/browser_fixture_check.sh` was unreferenced in `package.json`. Wired `"smoke:fixture": "bash tests/browser_fixture_check.sh"` so no test script is orphaned. | `npm run smoke:fixture` → `tt-browser-smoke: 6/6 assertions passed`. |
+
+### Verification summary (Round 8)
+
+| Check | Outcome |
+|---|---|
+| `npm run check` | `VALIDATION: CERTIFIED (9/9 gates PASS, 39/39 scripts)` |
+| `BASH_ENV= npm test` | `STATIC CHECKS: PASS` (incl. `@grant` + Version-surface parity) · `BEHAVIOR SUITE: ALL PASS (7/7)` · `DELIVERY VERIFICATION: PASS` |
+| `node tools/r6-load-harness.mjs` | `LOAD HARNESS: PASS (39/39 scripts)` (grant-scoped VM sandbox) |
+| `npm run smoke` & `npm run smoke:fixture` | `ALL PASS` (`tt-browser-smoke.mjs` runs `6/6 PASS` via `structural-fallback` in sandbox where Chromium policy blocks `127.0.0.1`) |
+| `scripts/4ndr0_validate.py --execute-checks --require-full-certification` | `4NDR0NEERING VALIDATE: CERTIFIED (9/9 criteria verified)` |
+| `scripts/4ndr0_hash.py --baseline-rev bdfc254` | `0 MISSING` units (strict Superset Protocol verified) |
+
+### Handoff — priming Round 9
+
+**State:** `main` advanced with Round 8 mitigations (`Pixeldrain++ v1.2.8`, `Zai Exporter v1.0.3`, `Forum Link Xtractor v3.2.6`, `Forums++ v1.14.2`, `Hailuo++ v6.2.1`, `BypassPaywalls v0.1.9`, automated version-parity & `@grant` static gates, grant-scoped 39-script VM load harness, `smoke:fixture` script); all 9 validation gates, 7 behavior suites, and 9 declarative contract criteria green with `0 MISSING` units.
+**Remaining live-site boundary:** Live authenticated browser testing in Tampermonkey/Violentmonkey and running `npm run smoke:browser` / `npm run smoke:fixture` on an unrestricted host (where `127.0.0.1` is permitted by Chromium policy) remain operator verification steps.

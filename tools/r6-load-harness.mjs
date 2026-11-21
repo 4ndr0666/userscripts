@@ -203,6 +203,24 @@ function runScript(relPath, hostUrl = "https://chatgpt.com/") {
     AudioContext: class AudioContext { createAnalyser() { return { getFloatFrequencyData() {} }; } },
     RTCPeerConnection: class RTCPeerConnection {},
     DOMParser: class DOMParser { parseFromString() { return makeStubDocument(); } },
+    GM_info: { script: { version: "0.0.0-harness", name: path.basename(relPath) } },
+    addEventListener: (t, fn) => { listeners[t] = fn; },
+    removeEventListener: () => {},
+  };
+  sandbox.window = sandbox;
+  sandbox.unsafeWindow = sandbox;
+  sandbox.globalThis = sandbox;
+  sandbox.self = sandbox;
+  sandbox.top = sandbox;
+  sandbox.parent = sandbox;
+  const parseGrants = (text) => {
+    const m = text.match(/\/\/ ==UserScript==([\s\S]*?)\/\/ ==\/UserScript==/);
+    const set = new Set();
+    if (m) for (const g of m[1].matchAll(/\/\/\s*@grant\s+(\S+)/g)) set.add(g[1]);
+    return set;
+  };
+  const grants = parseGrants(src);
+  const gmRegistry = {
     GM_registerMenuCommand: () => 0,
     GM_unregisterMenuCommand: () => {},
     GM_getValue: (_k, d) => d,
@@ -218,25 +236,26 @@ function runScript(relPath, hostUrl = "https://chatgpt.com/") {
     GM_openInTab: () => ({ close() {} }),
     GM_download: () => {},
     GM_xmlhttpRequest: () => ({ abort() {} }),
-    GM: {
-      info: { script: { version: "0.0.0-harness", name: path.basename(relPath) } },
-      getValue: async (_k, d) => d,
-      setValue: async () => {},
-      deleteValue: async () => {},
-      listValues: async () => [],
-      xmlHttpRequest: () => ({ abort() {} }),
-      registerMenuCommand: () => 0,
-    },
-    GM_info: { script: { version: "0.0.0-harness", name: path.basename(relPath) } },
-    addEventListener: (t, fn) => { listeners[t] = fn; },
-    removeEventListener: () => {},
   };
-  sandbox.window = sandbox;
-  sandbox.unsafeWindow = sandbox;
-  sandbox.globalThis = sandbox;
-  sandbox.self = sandbox;
-  sandbox.top = sandbox;
-  sandbox.parent = sandbox;
+  for (const [k, fn] of Object.entries(gmRegistry)) {
+    if (grants.has(k)) sandbox[k] = fn;
+  }
+  const gmDot = { info: sandbox.GM_info };
+  const gmDotMap = {
+    "GM.getValue": ["getValue", async (_k, d) => d],
+    "GM.setValue": ["setValue", async () => {}],
+    "GM.deleteValue": ["deleteValue", async () => {}],
+    "GM.listValues": ["listValues", async () => []],
+    "GM.xmlHttpRequest": ["xmlHttpRequest", () => ({ abort() {} })],
+    "GM.registerMenuCommand": ["registerMenuCommand", () => 0],
+    "GM.openInTab": ["openInTab", () => ({ close() {} })],
+    "GM.setClipboard": ["setClipboard", () => {}],
+    "GM.notification": ["notification", () => {}],
+  };
+  for (const [g, [prop, fn]] of Object.entries(gmDotMap)) {
+    if (grants.has(g)) gmDot[prop] = fn;
+  }
+  if (!grants.has("none")) sandbox.GM = gmDot;
   vm.createContext(sandbox);
   vm.runInContext(src, sandbox, { filename: relPath, timeout: 15000 });
   return { sandbox, doc, listeners, src };
