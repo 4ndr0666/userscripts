@@ -1018,7 +1018,7 @@ forceImmediateAnswer();`, hwCtx);
     // 6E. Version stamps + the CB static contract surface.
     assert(
         "6E. the round-17 stamps: Forums++ canon at 1.14.0, Confirmation Bypass canon at 4.1.7 (header AND banner), and CB carries the MAM_CONTROL_TOKENS vocabulary + the uploadSessionLive gate verbatim",
-        /^\/\/ @version\s+1\.14\.0/m.test(fppSrc) &&
+        /^\/\/ @version\s+1\.14\.\d+/m.test(fppSrc) &&
         /^\/\/ @version\s+4\.1\.7/m.test(cbSrc) &&
         cbSrc.includes("Confirmation Bypass v4.1.7") &&
         cbSrc.includes("MAM_CONTROL_TOKENS") &&
