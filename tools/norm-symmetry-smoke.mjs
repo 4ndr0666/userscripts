@@ -111,7 +111,7 @@ function extractPropFn(src, propName) {
 }
 
 const readCanon = (tier, name) =>
-    fs.readFileSync(path.join(ROOT, "canon", tier, `4ndr0tools - ${name}.user.js`), "utf8");
+    fs.readFileSync(path.join(ROOT, "src", `4ndr0tools - ${name}.user.js`), "utf8");
 
 export async function runNormSymmetrySmoke(root = ROOT) {
     const problems = [];
@@ -259,7 +259,12 @@ export async function runNormSymmetrySmoke(root = ROOT) {
         return files;
     };
     assert("11a. GlobalFiles LRU fixture: byte and entry caps evict oldest-first; the newest file always survives", eq(lru([{ data: "a".repeat(15) }, { data: "b".repeat(10) }, { data: "c".repeat(5) }], 64, 12).map((f) => f.data), ["ccccc"]) && eq(lru([{ data: "a".repeat(15) }, { data: "b".repeat(10) }, { data: "c".repeat(2) }], 64, 12).map((f) => f.data), ["bbbbbbbbbb", "cc"]) && eq(lru([{ data: "x" }, { data: "y" }, { data: "z" }], 2, 1e9).map((f) => f.data), ["y", "z"]));
-    assert("11b. GlobalFiles wiring: the cap loop + caught save + Array.isArray choke point are all live", pm.includes("while (t.length > 1 && (t.length > 64 || total > 20 * 1024 * 1024))") && pm.includes("return Array.isArray(v) ? v : [];") && pm.includes('Object.assign(globalConfig, defaults, parsed && typeof parsed === \'object\' ? parsed : {})' && true));
+    /* r17 (F10): the third clause used to be `'…' && true` — a JSON-level
+     * editing fossil that collapsed to includes(true), i.e. vacuously
+     * green, and its target (the old globalConfig boot merge) no longer
+     * exists in PM anyway. Re-pointed at the LIVE merge-over-defaults
+     * shape (the slideshow config spread + its caught save). */
+    assert("11b. GlobalFiles wiring: the cap loop + caught save + Array.isArray choke point are all live, and the slideshow config merge-over-defaults is the current boot-parse shape", pm.includes("while (t.length > 1 && (t.length > 64 || total > 20 * 1024 * 1024))") && pm.includes("return Array.isArray(v) ? v : [];") && pm.includes("slideshowConfig = { ...slideshowConfig, ...stored };") && pm.includes("config load failed, defaults kept:"));
     assert("11c. LMPsi storage wiring: the canon's LAST unguarded boot-time JSON.parse of persisted storage is guarded", lmpsi.includes("try { parsed = JSON.parse(saved); }") && !lmpsi.includes("saved ? JSON.parse(saved) : {}"));
     assert("11d. Forums++ ThreadCache wiring: empty current pages are never cached; the store read is shape-guarded", forums.includes("if (currentPosts.length) {\n                cachedData[currentPageNumber] = currentPosts;") && forums.includes("return (cachedData && typeof cachedData === 'object' && !Array.isArray(cachedData)) ? cachedData : {};"));
 
@@ -337,8 +342,8 @@ export async function runNormSymmetrySmoke(root = ROOT) {
       /__(FILE|INPUT|SELECT)_[a-z0-9]{6}_\d+__/g.test("__INPUT_ab12cd_2__") === true &&
         /__(FILE|INPUT|SELECT)_[a-z0-9]{6}_\d+__/g.test("__INPUT_2__") === false &&
         /__QUOTE_[a-z0-9]{6}_\d+__/.test("__QUOTE_2__") === false);
-    assert("16g. PM-F06 wiring: the SCRIPT_VERSION sandbox fallback is stamped 28.9.0 (the two-releases-stale 28.8.1 is gone)",
-      pm.includes(': "28.9.0";') && !pm.includes(': "28.8.1";'));
+    assert("16g. PM-F06 wiring: the SCRIPT_VERSION sandbox fallback is stamped 28.9.1 (the two-releases-stale 28.8.1 is gone)",
+      pm.includes(': "28.9.1";') && !pm.includes(': "28.8.1";'));
 
     /* ── 17. Images++ 4.1.0 — the round-14 normalization fixes ─────────── */
     const cspItem = (item) =>

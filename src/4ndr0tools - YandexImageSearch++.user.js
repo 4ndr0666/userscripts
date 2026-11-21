@@ -1,0 +1,311 @@
+// ==UserScript==
+// @name         4ndr0tools - Yandex Image Search++ 
+// @namespace    https://github.com/4ndr0666/userscripts
+// @author       4ndr0666 
+// @version      0.4.4
+// @description  Robust, event-driven slideshow, fullscreen preview, and on-screen status for Yandex reverse-image search.
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YandexImageSearch++.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20YandexImageSearch++.user.js
+// @icon           data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
+// @match        *://yandex.com/images/*
+// @match        *://yandex.ru/images/*
+// @license      MIT
+// @grant        none
+// ==/UserScript==
+// 0.4.3 (suite v1.18.0, WO-01 round 10): dead-CSS dedupe + spec unification
+// (10c-F08) — the #slideshow-indicator-4ndr0 rule declared `transition`
+// twice; the first (`all 150ms ease-in-out`) was dead weight, always
+// overridden by the later `opacity 0.3s ease-in-out`. The duplicate is
+// collapsed to ONE declaration unified on the 3lectric-Glass spec timing
+// (opacity 150ms ease-in-out) — the style audit's mandated token and the
+// effective behavior now agree (the fade tightens 300 ms → 150 ms, the
+// suite-wide spec value).
+// 0.4.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: YandexImageSearch++.user v0.4.4 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+
+(() => {
+    'use strict';
+
+    /**
+     * Configuration
+     * Encapsulates all selectors and settings for easier maintenance.
+     */
+    const CONFIG = {
+        // The main container for the image viewer modal. The script's logic activates when this appears.
+        viewerContainerSelector: '.MMViewer',
+        // The button to advance to the next image. Ordered fallbacks:
+        // the classic CircleButton first, then the newer viewer variants.
+        nextButtonSelectors: ['.CircleButton_type_next', '.MMViewer-ButtonNext', '.MMViewer-Buttons .MMButton-Next'],
+        // Key to toggle the slideshow on and off.
+        toggleKey: 'ArrowDown',
+        // Slideshow delay in milliseconds.
+        intervalMs: 1500,
+        // Injected CSS for fullscreen mode and the status badge.
+        css: `
+            .MMImageContainer, .MMImage-Preview {
+                width: 100% !important;
+                height: 100% !important;
+                background: rgba(10,19,26,0.95) !important;
+                margin: 0;
+                padding: 0;
+            }
+            #slideshow-indicator-4ndr0 {
+                position: fixed;
+                bottom: 15px;
+                right: 15px;
+                background: rgba(10, 19, 26, 0.7);
+                color: #00E5FF;
+                font-size: 16px;
+                padding: 5px 10px;
+                border-radius: 5px;
+                z-index: 2147483647; /* Max z-index */
+                pointer-events: none;
+                font-family: 'JetBrains Mono', monospace;
+                text-shadow: 0 0 5px #00E5FF;
+                opacity: 0;
+                transition: opacity 150ms ease-in-out;
+            }
+            #slideshow-indicator-4ndr0.visible {
+                opacity: 1;
+            }
+        `
+    };
+
+    /**
+     * A centralized error logging utility.
+     * @param {string} module - The name of the function/module where the error occurred.
+     * @param {Error} error - The error object caught.
+     */
+    const logError = (module, error) => {
+        console.error(`[YandexImageSearch++ Error] in ${module}:`, error.message);
+    };
+
+    /**
+     * Injects the script's CSS into the document's <head>.
+     * This is done once when the script first loads.
+     */
+    const injectCSS = () => {
+        try {
+            const style = document.createElement('style');
+            style.id = 'yandex-slideshow-styles';
+            style.textContent = CONFIG.css;
+            document.head.appendChild(style);
+        } catch (error) {
+            logError('injectCSS', error);
+        }
+    };
+
+    /**
+     * Controls the slideshow functionality for an active image viewer instance.
+     */
+    class SlideshowController {
+        constructor() {
+            this.isPlaying = false;
+            this.slideTimer = null;
+            this.badgeElement = null;
+
+            // Bind the context of 'this' for the event handler, ensuring it refers to the class instance.
+            this.handleKeyDown = this.handleKeyDown.bind(this);
+
+            this.init();
+        }
+
+        /**
+         * Initializes the controller by creating the UI and attaching event listeners.
+         */
+        init() {
+            this.createBadge();
+            window.addEventListener('keydown', this.handleKeyDown);
+        }
+
+        /**
+         * Creates and appends the on-screen status badge to the DOM.
+         */
+        createBadge() {
+            if (document.getElementById('slideshow-indicator-4ndr0')) return;
+            this.badgeElement = document.createElement('div');
+            this.badgeElement.id = 'slideshow-indicator-4ndr0';
+            document.body.appendChild(this.badgeElement);
+        }
+
+        /**
+         * Updates the badge's text and visibility based on the slideshow state.
+         */
+        updateBadge() {
+            if (!this.badgeElement) return;
+            if (this.isPlaying) {
+                this.badgeElement.textContent = '▶ Slideshow Active';
+                this.badgeElement.classList.add('visible');
+            } else {
+                this.badgeElement.classList.remove('visible');
+            }
+        }
+
+        /**
+         * Safely finds and clicks the "next" image button if it exists and is visible.
+         */
+        clickNext() {
+            try {
+                for (const sel of CONFIG.nextButtonSelectors) {
+                    const nextButton = document.querySelector(sel);
+                    if (nextButton instanceof HTMLElement) {
+                        nextButton.click();
+                        return;
+                    }
+                }
+            } catch (error) {
+                logError('clickNext', error);
+                this.stop(); // Stop the slideshow if clicking fails.
+            }
+        }
+
+        /**
+         * Starts the slideshow interval.
+         */
+        start() {
+            if (this.isPlaying) return;
+            this.isPlaying = true;
+            this.clickNext(); // Advance to the next slide immediately.
+            this.slideTimer = setInterval(() => this.clickNext(), CONFIG.intervalMs);
+            this.updateBadge();
+        }
+
+        /**
+         * Stops the slideshow interval.
+         */
+        stop() {
+            if (!this.isPlaying) return;
+            this.isPlaying = false;
+            clearInterval(this.slideTimer);
+            this.slideTimer = null;
+            this.updateBadge();
+        }
+
+        /**
+         * Toggles the slideshow state between playing and stopped.
+         */
+        toggle() {
+            this.isPlaying ? this.stop() : this.start();
+        }
+
+        /**
+         * Handles the keydown event to toggle the slideshow.
+         * @param {KeyboardEvent} event - The keyboard event.
+         */
+        handleKeyDown(event) {
+            // Check for the toggle key, ensure it's not a repeated event from holding the key down,
+            // and that no input fields are focused.
+            if (event.key === CONFIG.toggleKey && !event.repeat && !/INPUT|TEXTAREA|SELECT/.test(event.target.tagName)) {
+                event.preventDefault();
+                this.toggle();
+            }
+        }
+
+        /**
+         * Cleans up all resources created by this controller instance.
+         * Removes the badge and event listeners to prevent memory leaks.
+         */
+        destroy() {
+            this.stop();
+            window.removeEventListener('keydown', this.handleKeyDown);
+            if (this.badgeElement) {
+                this.badgeElement.remove();
+            }
+        }
+    }
+
+    /**
+     * Main execution logic.
+     * Sets up a MutationObserver to watch for when the Yandex image viewer is opened or closed.
+     */
+    let bodyWaitTries = 0;
+
+    function main() {
+        // v0.4: body readiness guard — observer.observe(null) throws, and the
+        // script can execute before body exists on slow parses.
+        // v0.4.2 (WO-01 round 3, 3-c F05): the re-arm now has a ceiling —
+        // no @noframes means the script runs in every same-origin frame,
+        // and in XML/SVG/plain frames document.body NEVER materializes:
+        // the old form re-armed every 50 ms for the frame's lifetime.
+        // 200 tries = 10 s, then a loud stand-down.
+        if (!document.body) {
+            if (++bodyWaitTries > 200) {
+                console.warn('[Ψ-4NDR0666] Yandex Image Search++ stood down — document.body never appeared (non-HTML frame).');
+                return;
+            }
+            setTimeout(main, 50);
+            return;
+        }
+        injectCSS();
+        let activeController = null;
+
+        // v1.5.1 observer discipline: buffered tranche — the same viewer
+        // mount/unmount checks over the identical node set, coalesced to one
+        // flush per 200 ms of DOM churn (mount/unmount are idempotent via the
+        // activeController guard).
+        // v0.4.4 (r18 R18-F11): REMOVALS ARE PROCESSED BEFORE ADDITIONS. A
+        // single replaceChild-style swap delivers the old viewer's removal
+        // and the new viewer's addition in the SAME tranche — additions
+        // first meant the new viewer's mount check saw the still-alive old
+        // controller and skipped creation, then the removal destroyed it:
+        // final state activeController=null with a live, unmanaged viewer
+        // (no badge, no keybind). Removal-then-addition lets the swap
+        // destroy the stale controller and mount a fresh one; a
+        // post-flush reconciliation guards the remaining edge (a mount
+        // tranche processed while a disconnected controller lingers).
+        const pendingAdded = [];
+        const pendingRemoved = [];
+        let viewerCheckTimer = null;
+        const checkViewer = () => {
+            const added = pendingAdded.splice(0, pendingAdded.length);
+            const removed = pendingRemoved.splice(0, pendingRemoved.length);
+            for (const node of removed) {
+                // When the viewer container is removed, destroy the active controller to clean up.
+                if (node.nodeType === Node.ELEMENT_NODE &&
+                    (node.matches(CONFIG.viewerContainerSelector) || node.querySelector?.(CONFIG.viewerContainerSelector))) {
+                    if (activeController) {
+                        activeController.destroy();
+                        activeController = null;
+                    }
+                }
+            }
+            for (const node of added) {
+                // When the viewer container is added to the DOM, create a new
+                // controller. v0.4: also probe INSIDE the added node — the
+                // viewer may arrive wrapped in a portal container, which the
+                // direct-children-only observer never saw.
+                if (node.nodeType === Node.ELEMENT_NODE &&
+                    (node.matches(CONFIG.viewerContainerSelector) || node.querySelector?.(CONFIG.viewerContainerSelector))) {
+                    if (!activeController) {
+                        activeController = new SlideshowController();
+                    }
+                }
+            }
+            // v0.4.4 (r18 R18-F11): the reconciliation pass — the controller's
+            // existence must match the viewer's connectivity AFTER the
+            // tranche settles (a connected viewer with no controller gets
+            // one; a controller whose viewer is gone is destroyed).
+            const liveViewer = document.querySelector(CONFIG.viewerContainerSelector);
+            if (liveViewer && !activeController) activeController = new SlideshowController();
+            else if (!liveViewer && activeController) { activeController.destroy(); activeController = null; }
+        };
+        const observer = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+                for (const node of mutation.addedNodes) pendingAdded.push(node);
+                for (const node of mutation.removedNodes) pendingRemoved.push(node);
+            }
+            if (!pendingAdded.length && !pendingRemoved.length) return;
+            clearTimeout(viewerCheckTimer);
+            viewerCheckTimer = setTimeout(checkViewer, 200);
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: false // We only need to watch direct children of the body for the modal.
+        });
+    }
+
+    // Run the main script logic.
+    main();
+
+})();

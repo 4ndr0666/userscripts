@@ -3,7 +3,7 @@
  * tools/hotkey-census.mjs — registration-level hotkey census (Gate D extension)
  * ----------------------------------------------------------------------------
  * Idiom-aware static census of every keyboard-combo registration across the
- * suite (canon/ + modules/), with co-install collision analysis:
+ * suite (src/), with co-install collision analysis:
  *
  *   • registration sites: addEventListener('keydown', …) on document/window
  *     (global) or any element (scoped), el.onkeydown = …, and the kernel
@@ -902,7 +902,7 @@ function allKeyLiterals(b) {
     return [...out];
 }
 /* ──────────────────────────────────────────────────────────────────────────
- * §7 Kernel registrations (modules/)
+ * §7 Kernel registrations (src/<module>/)
  * ────────────────────────────────────────────────────────────────────────── */
 
 function mineKernelRegistrations(code, lineOfIndex) {
@@ -957,15 +957,14 @@ export function runCensus(root = ROOT, opts = {}) {
     let siteTotal = 0;
 
     const files = [
-        ...walk(path.join(root, "canon")),
-        ...walk(path.join(root, "modules")),
+        ...walk(path.join(root, "src")),
     ];
 
     for (const file of files) {
         const raw = fs.readFileSync(file, "utf8");
         const code = stripComments(raw);
         const rel = path.relative(root, file);
-        const isModule = rel.startsWith("modules");
+        const isModule = rel.endsWith("body.js");
         const scriptName = isModule
             ? path.basename(path.dirname(file))
             : path.basename(file).replace(/\.user\.js$/, "").replace(/^4ndr0tools\s*-\s*/, "");

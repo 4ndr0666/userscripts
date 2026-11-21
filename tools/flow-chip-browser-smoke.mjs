@@ -23,7 +23,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 const DIST_PM = path.join(ROOT, "dist", "4ndr0tools - Prompt Master.user.js");
-const CANON_PM = path.join(ROOT, "canon", "_sovereign", "4ndr0tools - Prompt Master.user.js");
+const CANON_PM = path.join(ROOT, "src", "4ndr0tools - Prompt Master.user.js");
 
 /* v1.7.4 (WO-02 round 2): the probe used to be a fixed 3-path list, which
  * meant hosts that DO have a Chromium — via the Playwright browser cache —
@@ -376,7 +376,7 @@ export async function runFlowChipBrowserBattery() {
     // (expectations derive from the artifact, never hardcode; a battery
     // that cannot fail is not a battery):
     // (1) the version pin is DERIVED from the dist's own @version header
-    //     and cross-checked for canon/dist parity — it can never go stale
+    //     and cross-checked for src/dist parity — it can never go stale
     //     again;
     // (2) the return object reports the REAL pass/fail counts and clean
     //     flag, byte-identical contract to the live-Chromium path below,
@@ -385,7 +385,7 @@ export async function runFlowChipBrowserBattery() {
       (distSource.match(/^\/\/ @version\s+(\S+)/m) || [])[1] || null;
     const canonVersion =
       (canonSource.match(/^\/\/ @version\s+(\S+)/m) || [])[1] || null;
-    assert("1. Prompt Master version header present & canon/dist parity & FLOW_CREDIT_CSS flexbox contract",
+    assert("1. Prompt Master version header present & src/dist parity & FLOW_CREDIT_CSS flexbox contract",
       !!distVersion &&
         distVersion === canonVersion &&
         distSource.includes("box-sizing:border-box;overflow:hidden") &&
@@ -480,6 +480,7 @@ export async function runFlowChipBrowserBattery() {
         "--no-sandbox",
         "--disable-gpu",
         "--disable-dev-shm-usage",
+        "--no-proxy-server",
         "--no-first-run",
         "--no-default-browser-check",
         `--user-data-dir=${path.join(tmpDir, "ud")}`,

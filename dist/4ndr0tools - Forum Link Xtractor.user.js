@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Forum Link Xtractor
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      3.2.4
+// @version      3.2.5
 // @description  Link xtractor, Invisitext revealer, and inline post reply viewer.
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @author       4ndr0666
@@ -200,7 +200,7 @@
         } catch { return null; }
     }
 
-    function saveLinksToBuffer(pageURL, linksArray) {
+    function saveLinksToBuffer(pageURL, linksArray, threadName) {
         if (!linksArray || linksArray.length === 0) return;
         try {
             let saved = JSON.parse(localStorage.getItem('psi_link_buffer') || '{}');
@@ -211,7 +211,13 @@
                 delete saved[keys[0]];
             }
 
-            saved[pageURL] = linksArray;
+            /* v3.2.5 (r18 R18-F15): entries carry their EXPLICIT thread
+             * identity — aggregation no longer guesses by URL-substring
+             * (a slug substring also matched unrelated slugs: 'foo' matched
+             * 'foobar'). Legacy array entries stay readable at aggregation. */
+            saved[pageURL] = threadName
+                ? { thread: threadName, links: linksArray }
+                : linksArray;
             localStorage.setItem('psi_link_buffer', JSON.stringify(saved));
         } catch (e) {
             console.warn('[Ψ-4NDR0666] Storage quota exceeded. Buffer save aborted.', e);
@@ -516,40 +522,68 @@
             input.addEventListener('change', () => row3.style.display = rCopy.input.checked ? 'flex' : 'none');
         });
 
+        // v3.2.5 (r18 R18-F15): the thread identity, factored — both the
+        // execBtn aggregation and the buffer saves derive it from ONE
+        // helper (the auto-save previously had no thread concept at all).
+        function currentThreadName() {
+            const pathSegments = window.location.pathname.split('#')[0].split('/');
+            const threadsIdx = pathSegments.indexOf('threads');
+            if (threadsIdx !== -1 && pathSegments[threadsIdx + 1]) {
+                return pathSegments[threadsIdx + 1];
+            }
+            if (ON_CANDIDSHINY && /^lucasd/i.test(pathSegments[1] || '')) {
+                return 'lucasd';
+            }
+            return 'extracted_links';
+        }
+
         execBtn.addEventListener('click', async () => {
             if (execBtn.disabled) return;
 
-            const pathSegments = window.location.pathname.split('#')[0].split('/');
-            let threadName = 'extracted_links';
-            const threadsIdx = pathSegments.indexOf('threads');
-            if (threadsIdx !== -1 && pathSegments[threadsIdx + 1]) {
-                threadName = pathSegments[threadsIdx + 1];
-            } else if (ON_CANDIDSHINY && /^lucasd/i.test(pathSegments[1] || '')) {
-                threadName = 'lucasd';
-            }
+            const threadName = currentThreadName();
             const pageURL = window.location.href.split('#')[0];
 
             // Real-time scan and save
             const currentLinks = scanPage();
-            saveLinksToBuffer(pageURL, currentLinks);
+            saveLinksToBuffer(pageURL, currentLinks, threadName);
 
             let finalLinksSet = new Set();
+            let aggregatedPages = 0;
 
-            if (cCurrent.input.checked) {
-                currentLinks.forEach(link => finalLinksSet.add(link));
-            } else {
+            if (!cCurrent.input.checked) {
                 try {
                     const savedLinks = JSON.parse(localStorage.getItem('psi_link_buffer') || '{}');
-                    const threadKeys = Object.keys(savedLinks).filter(key => key.includes(threadName));
-                    threadKeys.forEach(key => {
-                        savedLinks[key].forEach(link => finalLinksSet.add(link));
+                    /* v3.2.5 (r18 R18-F15): explicit thread identity first
+                     * (new-format entries), URL-substring for legacy array
+                     * entries — and never the 'extracted_links' default as
+                     * an aggregation key (non-thread pages share no
+                     * identity; each keeps its own current-page set). */
+                    const threadKeys = Object.keys(savedLinks).filter(key => {
+                        const entry = savedLinks[key];
+                        if (entry && typeof entry === 'object' && !Array.isArray(entry)) {
+                            return entry.thread === threadName && threadName !== 'extracted_links';
+                        }
+                        return key.includes(threadName) && threadName !== 'extracted_links';
                     });
-                    showToast(`Aggregated ${threadKeys.length} pages.`);
+                    threadKeys.forEach(key => {
+                        const entry = savedLinks[key];
+                        const links = Array.isArray(entry) ? entry : (entry && entry.links) || [];
+                        links.forEach(link => finalLinksSet.add(link));
+                    });
+                    aggregatedPages = threadKeys.length;
                 } catch {
                     showToast('Error reading buffer. Falling back to current page.', 4000);
-                    currentLinks.forEach(link => finalLinksSet.add(link));
                 }
             }
+            /* v3.2.5 (r18 R18-F15): the current page's links are ALWAYS in
+             * the final set. The default aggregation previously matched
+             * saved URL keys by thread-name substring, and on any
+             * non-thread page (forum index, search, start.me) the default
+             * threadName 'extracted_links' matched NOTHING: currentLinks
+             * were saved but never read back and the extraction reported
+             * 'No links found.' on a page full of assets. */
+            currentLinks.forEach(link => finalLinksSet.add(link));
+            showToast(`Aggregated ${aggregatedPages} saved page(s) + current page.`);
 
             let finalLinks = Array.from(finalLinksSet);
 
@@ -637,7 +671,7 @@
 
         // Silent Buffer on Load
         const initialLinks = scanPage();
-        saveLinksToBuffer(window.location.href.split('#')[0], initialLinks);
+        saveLinksToBuffer(window.location.href.split('#')[0], initialLinks, currentThreadName());
         console.log(`[Ψ-4NDR0666] Background index complete. Buffered ${initialLinks.length} entities.`);
     }
 

@@ -1,37 +1,19 @@
 #!/usr/bin/env node
 /* ═══════════════════════════════════════════════════════════════════════════
- * tools/inventory.mjs — the suite inventory & audit system
+ * tools/inventory.mjs — suite inventory & catalog generator (v2.0.0)
  * ----------------------------------------------------------------------------
- * Successor to the legacy tools/update_catalog.mjs. The legacy generator had
- * twelve gaps, each mitigated here:
+ * Generates deterministic inventory.json and README.md from dist/ with full
+ * metadata validation, URL-drift detection, @grant consistency enforcement,
+ * and co-install domain interference reporting.
  *
- *  1. Scanned only the first 80 lines for @description → whole-file metadata
- *     parser (headers with 30+ @match lines no longer truncate).
- *  2. No @version extraction → full version ledger with drift detection.
- *  3. No stable/BETA pair detection → sibling-pair finder flags dual-track
- *     forks before they reach users.
- *  4. No @match collision matrix → co-install interference report (which
- *     scripts fight over the same domains).
- *  5. No metadata validation → missing @license/@author/@updateURL/@grant
- *     surface as CI failures (exit 1).
- *  6. Markdown-only output → emits inventory.json (machine-readable,
- *     GUP-evidence compatible) + README catalog.
- *  7. No hash manifest → SHA-256 per script for drift detection.
- *  8. Ignored archive/plugins/ dead files → tree-wide census.
- *  9. No updateURL/downloadURL filename verification → URL-drift detector
- *     (the class of bug where Gemini Answer Now updated INTO Blob2URL).
- * 10. No family/category classification → family tagging (media, links,
- *     images, forums, privacy, ux, sovereign).
- * 11. Dead code in display-name transform → deterministic naming.
- * 12. No CI mode → structured exit codes: 0 clean, 1 validation failure,
- *     2 structural failure.
+ * Exit codes: 0 clean, 1 validation failure, 2 structural failure.
  * ═══════════════════════════════════════════════════════════════════════ */
 
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { stripCommentsKeepStrings } from "./scan-kit.mjs"; /* WO-01 round-4 (4-a deferred-(a) step 3): the crude `//`-truncating stripper is retired — see the body view below */
+import { stripCommentsKeepStrings } from "./scan-kit.mjs";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const DIST = path.join(ROOT, "dist");
@@ -74,15 +56,6 @@ function familyOf(name) {
 }
 
 function domainOf(match) {
-    /* WO-01 round-3 (3-d F1): the scheme strip now handles `*://` — the
-     * ^\w+: form could not, so 206 host-specific patterns (BPP alone: 170
-     * news domains) poured into the universal `*` bucket and the README's
-     * Co-Install Interference Report printed `*: — 223` (meaningless),
-     * listed 10 scripts as site-universal that have ZERO universal patterns,
-     * missed 5 of 6 real collision domains, and counted a single-script
-     * domain (hailuoai.video) as interference (patterns counted, not
-     * scripts). Host-specific patterns now land on their real domains;
-     * true universal patterns return "" and ride the star-family note. */
     return match.replace(/^\*:/, "").replace(/^\w+:/, "").replace(/^\/\//, "").split("/")[0].replace(/^\*\./, "").replace(/\*$/, "");
 }
 
@@ -90,11 +63,6 @@ function inventory() {
     const files = fs.readdirSync(DIST, { withFileTypes: true })
         .filter((d) => d.isFile() && d.name.endsWith(".user.js"))
         .map((d) => d.name)
-        /* WO-01 round-1 (2-b F-19): codepoint sort — localeCompare is
-         * ICU-collation-dependent (filenames carry Ψ, m3u8 vs Maximize…),
-         * so the same tree can generate different inventory bytes on
-         * differently-built Node runtimes and fail the cross-machine
-         * determinism gate. Codepoint order is byte-stable everywhere. */
         .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
 
     const scripts = [];
@@ -105,22 +73,16 @@ function inventory() {
         const src = fs.readFileSync(full, "utf8");
         const meta = parseMeta(src);
 
-        /* WO-01 round-1 (2-a F2): the !meta guard must run BEFORE the
-         * name extraction — `first(null, …)` throws TypeError, so a dist
-         * file without a metadata block crashed the whole inventory run
-         * instead of failing cleanly with the documented problem line. */
         if (!meta) {
             problems.push(`${file}: no ==UserScript== metadata block`);
             continue;
         }
         const name = first(meta, "name") || file;
 
-        /* Gap 2/5: version + required-field validation. */
         for (const key of ["name", "version", "description", "license", "author"]) {
             if (!meta[key] || !meta[key][0]) problems.push(`${file}: missing @${key}`);
         }
 
-        /* Gap 9: URL-drift — update/download URLs must resolve to THIS file. */
         const enc = encodeURI(file).replace(/#/g, "%23");
         for (const key of ["updateURL", "downloadURL"]) {
             const url = first(meta, key);
@@ -129,30 +91,6 @@ function inventory() {
             }
         }
 
-        /* Gap 5b: grant consistency — scripts using canonical GM_* APIs
-         * without granting them. Comment text is stripped first (changelog
-         * prose mentioning GM_* must not trigger); GM_info is always
-         * available and never requires a grant; local aliases that merely
-         * START with GM_ but are not manager APIs are ignored.
-         * v1.4.8: the kernel/net.js v5 gmFetch transport is injected into
-         * every NetHook consumer, and its capability detection names the
-         * bare manager identifiers WITHOUT the consumer granting them —
-         * by design. Two per-OCCURRENCE detection shapes are sanctioned
-         * (an identifier is whitelisted ONLY where the shape appears,
-         * never blanket): (a) a typeof expression, and (b) the guarded
-         * pickup idiom that immediately returns the identifier inside a
-         * typeof-function guard — the dereference there executes only
-         * when the grant exists, so an ungranted consumer can never
-         * raise a ReferenceError. Any other occurrence is use and still
-         * requires the grant. */
-        /* WO-01 round-4 (4-a deferred-(a) step 3): the strings-kept masked view
-         * from scan-kit replaces the crude per-line stripper — a `//` inside a
-         * URL string used to truncate the line mid-string, so an ungranted
-         * GM_xxx( call after a URL-containing string on the same line was
-         * INVISIBLE to this grant-enforcement check (the F06-P2 class,
-         * /tmp-proven). NOT codeOnly: the sanctioned pickup-idiom strip below
-         * matches the literal 'function' STRING CONTENT, which codeOnly blanks
-         * (probe-proven — five false ungranted-use problems). */
         const body = stripCommentsKeepStrings(src).replace(/==UserScript==[\s\S]*?==\/UserScript==/, "");
         const CANONICAL_GM = new Set([
             "GM_xmlhttpRequest", "GM_download", "GM_addStyle", "GM_addElement",
@@ -162,16 +100,14 @@ function inventory() {
             "GM_addValueChangeListener", "GM_removeValueChangeListener",
             "GM_notification", "GM_closeCurrentTab", "GM_getTab",
         ]);
-        /* strip the sanctioned detection shapes, per occurrence (idiom
-         * first — the typeof strip would eat its guard text) */
         const bodyUses = body
             .replace(/\bif\s*\(\s*typeof\s+(GM_\w+)\s*===?\s*(['"])function\2\s*\)\s*return\s+\1\s*;/g, "")
             .replace(/\btypeof\s+GM_\w+\b/g, "");
         const gmUsed = new Set([...bodyUses.matchAll(/\b(GM_\w+)\b/g)].map((m) => m[1]));
         const gmGranted = new Set([...(meta.grant || [])]);
         for (const g of gmUsed) {
-            if (!CANONICAL_GM.has(g)) continue;        // local alias, not an API
-            if (g === "GM_info") continue;             // always granted implicitly
+            if (!CANONICAL_GM.has(g)) continue;
+            if (g === "GM_info") continue;
             if (!gmGranted.has(g)) {
                 problems.push(`${file}: uses ${g}() without @grant`);
             }
@@ -187,13 +123,6 @@ function inventory() {
             lines: src.split("\n").length,
             bytes: Buffer.byteLength(src),
             matches: meta.match || [],
-            /* WO-01 round-4 (4-c F01/4-d F1): @include is STORED now — the
-             * model discarded it entirely, so the co-install report
-             * under-counted the universal family by 2 true members (LFA
-             * @include http(s)://*, MAM @include * — the machine ledger,
-             * domain-census, has adjudicated a 19-script star family all
-             * along) while gen-docs rendered two DOMAIN-scoped regex-include
-             * scripts as "universal (no @match)". */
             includes: meta.include || [],
             excludes: meta.exclude || [],
             grants: meta.grant || [],
@@ -205,7 +134,6 @@ function inventory() {
         });
     }
 
-    /* Gap 3: sibling-pair detection (any *BETA / *Ψ2 style forks left?). */
     const baseNames = new Set(scripts.map((s) => s.name.replace(/\s*BETA$|BETA$/i, "")));
     const pairs = [];
     for (const s of scripts) {
@@ -216,7 +144,6 @@ function inventory() {
     }
     for (const p of pairs) problems.push(`sibling pair still installed: ${p.stable} + ${p.beta}`);
 
-    /* Gap 4: @match collision matrix (co-install interference surface). */
     const domainMap = new Map();
     for (const s of scripts) {
         for (const m of s.matches) {
@@ -226,31 +153,12 @@ function inventory() {
             domainMap.get(d).push(s.name);
         }
     }
-    /* WO-01 round-3 (3-d F1): interference = more than one DISTINCT script
-     * on the domain (the old form counted patterns, so a script with two
-     * @match rules on one host read as its own interferer) and the count
-     * is the distinct-script count. */
     const hotDomains = [...domainMap.entries()]
         .filter(([, v]) => new Set(v).size > 1)
         .map(([domain, scripts]) => ({ domain, count: new Set(scripts).size, scripts: [...new Set(scripts)] }))
         .sort((a, b) => b.count - a.count || a.domain.localeCompare(b.domain));
 
-    /* Suite v1.4.3: this object is byte-reproducible. The legacy
-     * `generated: new Date().toISOString()` wall-clock field made every
-     * `npm run check` rewrite inventory.json with a fresh timestamp —
-     * kit base detection (content-hash, git-state agnostic) then failed
-     * G1 with "content drift (not base, not applied)" after any
-     * post-apply verification run (operator field report, v1.4.2).
-     * The digest replaces the clock: a content-addressed fingerprint
-     * of everything above, so drift is still detectable while
-     * regeneration is deterministic (validate.mjs enforces byte parity). */
-    /* WO-01 round-3 (3-d F1): the universal-pattern family — scripts whose
-     * @match set includes a true every-site pattern (domainOf → ""), so the
-     * interference report can name them instead of a polluted `*` bucket.
-     * WO-01 round-4 (4-c F01/4-d F1): GLOB-universal @include forms (*,
-     * http://*, https://*) are admitted too — converges with the
-     * domain-census ledger's 19-script star family (was 17 here). */
-    const globInclude = (inc) => inc === "*" || /^https?:\/\/\*\/?$/.test(inc); /* WO-01 round-5 (5-d F04): the /^\*$/ third clause duplicated inc === "*" — dropped (gen-docs.mjs's incGlob carries the same two-form shape). */
+    const globInclude = (inc) => inc === "*" || /^https?:\/\/\*\/?$/.test(inc);
     const starFamily = scripts
         .filter((s) => s.matches.some((m) => !domainOf(m)) || (s.includes || []).some(globInclude))
         .map((s) => s.name);
@@ -273,14 +181,15 @@ function renderCatalog(inv) {
 }
 
 function writeReadme(inv) {
+    const reqScripts = inv.scripts.filter((s) => (s.requires || []).length > 0);
     const tpl = `<!-- generated by tools/inventory.mjs — edit the template in tools/inventory.mjs, not this file -->
 <div align="center">
 
 # ☠️ 4ndr0666tools ☠️
-### An Arsenal for Digital Sovereignty
+### An Arsenal for Digital Sovereignty (v2.0.0)
 
-> A consolidated suite of purpose-built userscripts designed to dismantle anti-user
-> patterns, restore control, and reclaim your digital freedom.
+> A flat, single-source, 4ndr0neering-governed userscript suite designed to dismantle
+> anti-user patterns, restore control, and reclaim your digital freedom.
 > Crafted by [4ndr0666](https://github.com/4ndr0666).
 
 </div>
@@ -289,63 +198,33 @@ function writeReadme(inv) {
 
 ## 🛠️ Installation
 
-1.  Install a userscript manager ([Violentmonkey](https://violentmonkey.github.io/) or [Tampermonkey](https://www.tampermonkey.net/)).
-2.  Open a script in [\`dist/\`](./dist) and click **Raw** — your manager will prompt to install.
+1. Install a userscript manager ([Violentmonkey](https://violentmonkey.github.io/) or [Tampermonkey](https://www.tampermonkey.net/)).
+2. Open a script in [\`dist/\`](./dist) and click **Raw** — your manager will prompt to install.
 
-Upgrading from the old repo? Follow the [**Migration Guide**](./docs/MIGRATION.md)
-(uninstall-then-install per script — never run both). The full audit trail
-(59 => ${inv.scripts.length} consolidation, superset verification, defect fixes) is in the
-[**Consolidation Report**](./docs/CONSOLIDATION.md).
-
-## 🏗️ Suite Architecture
+## 🏗️ Suite Architecture (v2.0.0)
 
 This repository is a **build-time kernel suite**: shared modules (\`kernel/\`) are
-inlined into self-contained installables. WO-01 round-1 (2-d F4): the runtime
-\`@require\` surface is now derived from the live inventory — currently
-${inv.scripts.filter((s) => (s.requires || []).length > 0).length} script(s) carry
-external libraries (${inv.scripts.filter((s) => (s.requires || []).length > 0).map((s) => s.name).join(" · ")}),
-every other installable is fully self-contained — single source of truth for
-the 3lectric-Glass design system.
+inlined into self-contained installables. Currently ${reqScripts.length} script(s) carry
+external \`@require\` libraries (${reqScripts.map((s) => s.name).join(" · ")});
+every other installable is fully self-contained and follows the 3lectric-Glass design system.
 
-\`\`\`
-kernel/    canonical shared modules (brand · core · glass · store · hotkeys · hosts · net) — every module inlined by at least one dist build (zero dead kernel surface; net is consumed via the canon CANON_KERNEL injection)
-modules/   kernel-powered consolidated scripts (HostWarp, PageCraft)
-canon/     consolidated, promoted & merged sources + EVIDENCE.json (per-script transform evidence)
-plugins/   companion plugins (MPV bridge; autopage.json = external-consumer data,
-           fetched from the raw repo URL by out-of-repo autopagers — ledgered
-           mode external-data) — candidshiny.user.js retired WO-01 round-1
-           (orphaned: its only consumer was retired LinkMasterΨ2)
-dist/      BUILT INSTALLABLES — install from here
-docs/      consolidation report + migration guide
-documentation/ per-script references (generated: npm run docs) + deep devlogs
-           (bunkr · hailuo++ · m3u8++) + INDEX.md master catalog +
-           _suite/FEATURE-MATRIX.md (§4.1 feature→function artifact)
-tools/     build.mjs · inventory.mjs · validate.mjs · qr-verify.mjs · style-audit.mjs (npm run check)
-           kernel-order.mjs (kernel assembly single source) · census-round.mjs (G9 round derivation)
-           kernel-smoke.mjs (kernel unit smoke) · gen-docs.mjs (npm run docs)
-           censuses — sink-census.mjs (HTML-string sink + net-tap census, adjudication ledger)
-           · transport · connect · domain · hotkey · polling · observer · error · global ·
-           cache · size-budget · canon-xref · production-score.mjs (+ score.json record)
-           · kernel-export-census.mjs (export surface × consumer, bidirectional)
-           · scan-kit.mjs (the shared lexical-balance + placeholder scanner behind build and validate)
-           smoke batteries (npm run smoke) — family-fixture · watermark-batch ·
-           kernel-boundary · flow-chip-browser · ig-wall-browser · pm-grid-browser ·
-           norm-symmetry · tt-browser
-           (eight runtime contract batteries, CI-wired since v1.7.4; tt-browser
-           drives the tt-smoke harness — closed WO-01 12c-F02)
-           instruments — tt-smoke.mjs (the live Trusted-Types harness tt-browser drives) · xref-adjudicate.mjs (flag triage)
-           evidence chain — baseline.json · ledger.json
+\`\`\`text
+kernel/       7 shared runtime modules (brand · core · glass · store · hotkeys · hosts · net)
+src/          Flat source tree for all ${inv.scripts.length} scripts (36 single-file + hostwarp/ & pagecraft/)
+plugins/      Host companion utilities (bridge.py, autopage.json)
+dist/         Built standalone installables (@updateURL / @downloadURL target)
+scripts/      Unified 4ndr0neering Python toolchain (validate, align, converge, hash, perf, report)
+tools/        Build, inventory, style-audit, qr-verify, hotkey-census, kernel-smoke, and browser smoke gates
+tests/        Verification and delivery harnesses
+contract.json Declarative 4ndr0neering v2.0.0 acceptance contract
 \`\`\`
 
-\`npm run build\` → dist. \`npm run check\` → build + inventory + qr-verify + style-audit + full validation
-(GUP superset contract, fail-closed). \`npm run smoke\` → the eight runtime contract batteries.
-CI runs all of these gates on every push, plus a regenerated-reference freshness gate
-(stale committed artifacts fail the build).
+\`npm run build\` → builds \`dist/\`. \`npm run check\` → runs build, inventory, V8 parse, metadata/URL checks,
+OPSEC & 3lectric-Glass style audit, hotkey collision check, QR verification, and kernel/runtime validation
+fail-closed. \`python3 scripts/4ndr0_validate.py --root . --convergence-contract contract.json --execute-checks --require-full-certification\`
+executes the full declarative 4ndr0neering contract.
 
 ## 🚀 Script Catalog
-
-Per-script references — purpose, scope, features, verified keymap, settings,
-OPSEC notes, lineage — live in [\`documentation/INDEX.md\`](./documentation/INDEX.md).
 
 <!-- BEGIN_CATALOG -->
 ${renderCatalog(inv)}
@@ -371,8 +250,6 @@ ${inv.starFamily.length ? `Universal-pattern scripts (match every site — they 
     fs.writeFileSync(README, tpl);
 }
 
-/* Exported for the determinism gate in tools/validate.mjs (byte-parity
- * between the file on disk and a fresh recomputation) and for gen-docs. */
 export function serialize(inv) {
     return JSON.stringify(inv, null, 1);
 }
@@ -398,10 +275,8 @@ function main() {
     process.exit(1);
 }
 
-/* Exported (determinism gate + docs generator). */
 export { inventory as computeInventory };
 
-/* CLI entry — only when executed directly, not when imported. */
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
     main();
 }

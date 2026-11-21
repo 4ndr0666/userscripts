@@ -181,3 +181,9 @@ update-4ndr0666tools-suite-*.sh
 
 # personal operator manual — local-only reference, never publish
 OPERATOR-MANUAL.md
+
+# == 10. 4NDR0NEERING RUNTIME STATE ==
+# Generated ledger, evidence logs, manifests, update kits, and perf artifacts must
+# stay untracked so application clean-worktree checks are meaningful (protocol
+# v8.2.0 git hygiene; the README and worklog describe .4ndr0/ as gitignored).
+.4ndr0/

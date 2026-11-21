@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Media Player Controller
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      8.1.5
+// @version      8.1.6
 // @author       4ndr0666
 // @description  Speed • Fine Rate ±0.1 • Alt+Shift rAF Zoom/Pan • Rotation • Smart Maximize • Native Fullscreen • PiP • Play • DblClick • Pause-on-Acquire • Virtual DOM Nodes • Shadow-DOM Discovery • Cyan-Glass Scrub Bar • Download Button (fetch + blob capture) • Screenshot • Volume/Mute • Frame Step • Seek Hotkeys • IG Story Nav (3-Layer) • Story Repeat (3-Layer) • Active-Media Observer • YouTube Ad Auto-Skip • Toast Feedback • Draggable HUD • Full Hotkey Suite
 // @license      MIT
@@ -146,22 +146,54 @@
     /**
      * Generates a stable identity string for a video element.
      * Prefers src, falls back to page-order index.
+     *
+     * v8.1.6 (r18 R18-F14): collision-resistant identity — the old key
+     * discarded the ORIGIN and lossily collapsed the path+search
+     * ([^a-zA-Z0-9_-] → '_'), so cdn-one.test/video.mp4 and
+     * cdn-two.test/video.mp4 mapped to the SAME key and the second
+     * video's record overwrote the first (rehydration restored the WRONG
+     * source — a different origin's video — and the purge after the first
+     * rehydrate destroyed the shared record so the second placeholder
+     * never came back). The identity is now the FULL src with only the
+     * storage-hostile characters escaped INJECTIVELY (each escape carries
+     * its char code — two distinct srcs can never collide), plus a
+     * per-node nonce so same-src siblings (one page legitimately hosting
+     * the same stream in two players with different currentTime) hold
+     * distinct records.
      */
+    const nodeNonces = new WeakMap();
+    let nodeNonceSeq = 0;
     function getStableId(video) {
         const src = video.currentSrc || video.src || '';
         if (src) {
-            try {
-                const u = new URL(src);
-                return 'src_' + (u.pathname + u.search).slice(0, 80).replace(/[^a-zA-Z0-9_-]/g, '_');
-            } catch (_) {
-                return 'raw_' + src.slice(0, 80).replace(/[^a-zA-Z0-9_-]/g, '_');
+            const escaped = src.replace(/[^a-zA-Z0-9.\-]/g, (c) => '_' + c.codePointAt(0).toString(16) + '-');
+            let nodeKey = nodeNonces.get(video);
+            if (nodeKey === undefined) {
+                nodeKey = 'n' + (++nodeNonceSeq);
+                nodeNonces.set(video, nodeKey);
             }
+            return 'src_' + nodeKey + '_' + escaped;
         }
         const all = Array.from(document.querySelectorAll('video'));
         return 'idx_' + all.indexOf(video);
     }
 
-    /** Persist current state of a live video element to localStorage. */
+    /* v8.1.6 (r18 R18-F13): the in-memory vnode fallback — a bounded
+     * (FIFO-capped, GUP B.1) map holding every record this page pruned, so
+     * a storage REFUSAL (quota / private mode / sandboxed iframe) can
+     * never strand a pruned video: loadVNode falls back to the in-memory
+     * copy when localStorage holds nothing usable. */
+    const memoryVNodes = new Map();
+    const MEMORY_VNODE_CAP = 24;
+    function rememberVNode(id, record) {
+        memoryVNodes.set(id, record);
+        if (memoryVNodes.size > MEMORY_VNODE_CAP) memoryVNodes.delete(memoryVNodes.keys().next().value);
+    }
+
+    /** Persist current state of a live video element to localStorage.
+     * v8.1.6 (r18 R18-F13): the record is retained in memory FIRST and the
+     * return value reports storage success — the caller gates the original
+     * element's removal on state recoverability (persisted OR retained). */
     function persistVNode(video) {
         const id   = getStableId(video);
         const rect = video.getBoundingClientRect();
@@ -179,21 +211,28 @@
                 height: rect.height
             }
         };
+        rememberVNode(id, record);
         try {
             localStorage.setItem(VNODE_PREFIX + id, JSON.stringify(record));
-        } catch (_) { console.debug('MPC interceptor:', _); /* quota: silently skip */ }
+            return true;
+        } catch (_) { console.debug('MPC interceptor:', _); /* quota: the in-memory record still holds the state */ return false; }
     }
 
-    /** Load a persisted vnode record by stable id. Returns null if missing. */
+    /** Load a persisted vnode record by stable id. Returns null if missing.
+     * v8.1.6 (r18 R18-F13): the in-memory fallback answers when storage
+     * refused the write (or holds unusable bytes). */
     function loadVNode(id) {
         try {
             const raw = localStorage.getItem(VNODE_PREFIX + id);
-            return raw ? JSON.parse(raw) : null;
-        } catch (_) { return null; }
+            if (raw) return JSON.parse(raw);
+        } catch (_) { console.debug('MPC interceptor: vnode load fell back to memory (', _, ')'); /* corrupt or unavailable — the in-memory record answers */ }
+        return memoryVNodes.has(id) ? memoryVNodes.get(id) : null;
     }
 
-    /** Remove a vnode record from localStorage. */
+    /** Remove a vnode record from localStorage. v8.1.6 (r18 R18-F13):
+     * the consumed in-memory copy goes with it. */
     function purgeVNode(id) {
+        memoryVNodes.delete(id);
         try { localStorage.removeItem(VNODE_PREFIX + id); } catch (_) { console.debug('MPC interceptor:', _);}
     }
 
@@ -229,8 +268,17 @@
      */
     function pruneToPlaceholder(video) {
         if (video.dataset.psiPruned === 'true') return;
-        persistVNode(video);
+        const persisted = persistVNode(video);
         const id   = getStableId(video);
+        /* v8.1.6 (r18 R18-F13): the original element is removed ONLY once
+         * its state is recoverable — persisted to storage OR held in the
+         * bounded in-memory fallback. A storage refusal previously lost
+         * the record entirely while the placeholder still replaced the
+         * video (storedRecords=0, every scrolled-out video permanently
+         * stranded as a [psi-node] div). The memory retention makes the
+         * second arm hold in practice; the gate keeps the contract
+         * explicit for any future retention path. */
+        if (!persisted && !memoryVNodes.has(id)) return;
         const rect = video.getBoundingClientRect();
 
         const ph = document.createElement('div');

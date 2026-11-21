@@ -1,0 +1,132 @@
+{
+  "version": "2.0.0",
+  "project": "4ndr0666/userscripts",
+  "architecture": {
+    "source_dir": "src",
+    "kernel_dir": "kernel",
+    "dist_dir": "dist",
+    "kernel_order": [
+      "brand.js",
+      "core.js",
+      "glass.js",
+      "hosts.js",
+      "hotkeys.js",
+      "net.js",
+      "store.js"
+    ],
+    "installables": 38,
+    "canonical_url_base": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/"
+  },
+  "acceptance_policy": "Pure 4ndr0neering v2.0.0 fail-closed contract. Every mandatory criterion must exit 0 with zero regressions across all 38 dist/ installables, unchanged @updateURL/@downloadURL channels, zero remote @import font fetches, full 3lectric-Glass compliance, and zero hotkey collisions.",
+  "criteria": [
+    {
+      "id": "build-and-inventory",
+      "description": "Deterministic suite build (src/ + kernel/ -> dist/) and inventory/README regeneration succeed with 0 problems.",
+      "mandatory": true,
+      "gate": "functional",
+      "owner": "engineer",
+      "command": [
+        "bash",
+        "-c",
+        "node tools/build.mjs && node tools/inventory.mjs"
+      ],
+      "timeout_seconds": 120
+    },
+    {
+      "id": "static-v8-and-metadata",
+      "description": "Flat src/ topology, 7 kernel modules, 1:1 dist/ parity, V8 syntax parse (node --check), canonical @downloadURL/@updateURL endpoints, and OPSEC zero remote @import check pass.",
+      "mandatory": true,
+      "gate": "regression",
+      "owner": "engineer",
+      "command": [
+        "node",
+        "tests/static_checks.mjs"
+      ],
+      "timeout_seconds": 120
+    },
+    {
+      "id": "opsec-and-3lectric-glass-style",
+      "description": "3lectric-Glass universality and OPSEC zero-remote-@import audit passes across all installables.",
+      "mandatory": true,
+      "gate": "structural",
+      "owner": "engineer",
+      "command": [
+        "node",
+        "tools/style-audit.mjs"
+      ],
+      "timeout_seconds": 120
+    },
+    {
+      "id": "hotkey-collision-census",
+      "description": "Static hotkey census confirms zero same-combo + domain-overlap collisions across all scripts in src/.",
+      "mandatory": true,
+      "gate": "structural",
+      "owner": "engineer",
+      "command": [
+        "node",
+        "tools/hotkey-census.mjs"
+      ],
+      "timeout_seconds": 120
+    },
+    {
+      "id": "qr-encoder-roundtrip",
+      "description": "Pixeldrain++ embedded QR encoder passes all 8 payload round-trip checks.",
+      "mandatory": true,
+      "gate": "functional",
+      "owner": "engineer",
+      "command": [
+        "node",
+        "tools/qr-verify.mjs"
+      ],
+      "timeout_seconds": 60
+    },
+    {
+      "id": "size-budget",
+      "description": "All dist/ artifacts remain within the 1.3 MB hard ceiling and audited large-script budgets.",
+      "mandatory": true,
+      "gate": "performance",
+      "owner": "engineer",
+      "command": [
+        "node",
+        "tools/size-budget.mjs"
+      ],
+      "timeout_seconds": 60
+    },
+    {
+      "id": "kernel-and-behavior-smoke",
+      "description": "Kernel unit tests, kernel-boundary safety, family fixtures, watermark batch, and normalization symmetry batteries all pass.",
+      "mandatory": true,
+      "gate": "functional",
+      "owner": "engineer",
+      "command": [
+        "node",
+        "tests/behavior.test.mjs"
+      ],
+      "timeout_seconds": 180
+    },
+    {
+      "id": "trusted-types-browser-smoke",
+      "description": "Trusted Types browser smoke battery passes fail-closed (live headless Chromium CDP or policy-disclosed structural fallback).",
+      "mandatory": true,
+      "gate": "integration",
+      "owner": "engineer",
+      "command": [
+        "node",
+        "tools/tt-browser-smoke.mjs"
+      ],
+      "timeout_seconds": 180
+    },
+    {
+      "id": "delivery-verification",
+      "description": "Delivery verification harness confirms 1:1 src/dist installables, V8 parse, canonical headers, and contract integrity.",
+      "mandatory": true,
+      "gate": "delivery",
+      "owner": "engineer",
+      "command": [
+        "bash",
+        "tests/verify_delivery.sh"
+      ],
+      "timeout_seconds": 120
+    }
+  ]
+}

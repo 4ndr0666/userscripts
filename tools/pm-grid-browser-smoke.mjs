@@ -10,7 +10,7 @@
  * (index badge + title/meta column wrapper + in-flow action strip with six
  * 32px buttons and the five-star buildRowRatingWidget row) styled ONLY by the
  * suite's own extracted CSS constants (MP_EMBEDDED_CSS + MP_ORG_CSS, parsed
- * out of the canon/dist artifacts at runtime — never hardcoded here), and
+ * out of the src/dist artifacts at runtime — never hardcoded here), and
  * verifies the exact invariant the field screenshot demanded:
  *
  *   AN EXPANDED LIBRARY CARD MUST NEVER RENDER ITS TITLE ONE CHARACTER PER LINE.
@@ -48,7 +48,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 const DIST_PM = path.join(ROOT, "dist", "4ndr0tools - Prompt Master.user.js");
-const CANON_PM = path.join(ROOT, "canon", "_sovereign", "4ndr0tools - Prompt Master.user.js");
+const CANON_PM = path.join(ROOT, "src", "4ndr0tools - Prompt Master.user.js");
 
 function probeChromium() {
   const fixed = [
@@ -513,7 +513,7 @@ export async function runPmGridBrowserBattery() {
   if (!CHROMIUM_BIN) {
     // Structural fallback on hosts without a local Chromium binary — SAME
     // fail-closed contract as the live path (clean === failed.length === 0).
-    assert("1. version header present & canon/dist parity",
+    assert("1. version header present & src/dist parity",
       !!distVersion && distVersion === canonVersion, `dist=${distVersion}, canon=${canonVersion}`);
     assert("2. structural tripwire: container query + stack rule present (canon+dist)",
       canonSource.includes(CQ_RULE) && distSource.includes(CQ_RULE));
@@ -555,7 +555,7 @@ export async function runPmGridBrowserBattery() {
       baseCssCanon.length > 1000 && orgCssCanon.length > 1000 &&
       baseCssDist.length > 1000 && orgCssDist.length > 1000);
 
-    assert("1. version header present & canon/dist parity",
+    assert("1. version header present & src/dist parity",
       !!distVersion && distVersion === canonVersion, `dist=${distVersion}, canon=${canonVersion}`);
     assert("2. structural tripwire: container query + stack rule present (canon+dist)",
       canonSource.includes(CQ_RULE) && distSource.includes(CQ_RULE));
@@ -594,6 +594,7 @@ export async function runPmGridBrowserBattery() {
         "--no-sandbox",
         "--disable-gpu",
         "--disable-dev-shm-usage",
+        "--no-proxy-server",
         "--host-resolver-rules=MAP flow.google.com 127.0.0.1",
         `--remote-debugging-port=0`,
         `--user-data-dir=${path.join(tmpDir, "profile")}`,

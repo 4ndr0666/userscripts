@@ -219,7 +219,42 @@ export async function runTtBrowserBattery() {
   const ttSrc = fs.readFileSync(path.join(ROOT, "tools", "tt-smoke.mjs"), "utf8");
   const distFiles = fs.existsSync(DIST) ? fs.readdirSync(DIST).filter((f) => f.endsWith(".user.js")) : [];
 
+  function runStructuralFallback(reason) {
+    checks.length = 0;
+    assert("S1. harness serves all three regimes (enforced / locked / parity)",
+      ttSrc.includes('url.pathname === "/tt/" ? "enforced"') &&
+      ttSrc.includes('url.pathname === "/tt-locked/" ? "locked"') &&
+      ttSrc.includes('url.pathname === "/nott/" ? "none"'));
+    assert("S2. the locked allowlist byte-matches the kernel's TT policy names",
+      ttSrc.includes("trusted-types 4ndr0666tools#dom 4ndr0666tools#dom.2 4ndr0666tools#dom.3"));
+    assert("S3. __SMOKE__ collects page errors, CSP violations, console.error and exposes report()",
+      ttSrc.includes("window.__SMOKE__ = {") && ttSrc.includes("__SMOKE__.report = function ()") &&
+      ttSrc.includes("__SMOKE__.errors.push('pageerror: '") && ttSrc.includes("__SMOKE__.csp.push(e.violatedDirective"));
+    assert("S4. the gm-shim mock + wire/veto/observer probes + ready flag all present",
+      ttSrc.includes("/gm-shim.js") && ttSrc.includes('probeParam === "veto"') &&
+      ttSrc.includes('probeParam === "observer"') && ttSrc.includes("__SMOKE__.ready = true;"));
+    assert("S5. the battery's three driven scripts exist in dist/",
+      distFiles.some((f) => f.includes("Blob2URL")) &&
+      distFiles.some((f) => f.includes("Akasha Silence")) &&
+      distFiles.some((f) => f.includes("Filester")));
+    assert("S6. red control (structural): the enforced + locked regimes carry require-trusted-types-for and the parity regime carries none",
+      ttSrc.includes("require-trusted-types-for 'script'; trusted-types") && ttSrc.includes('? "require-trusted-types-for \'script\'"') &&
+      ttSrc.includes(': "";'));
+    const failedStructural = checks.filter((c) => !c.pass);
+    return {
+      passed: checks.length - failedStructural.length,
+      total: checks.length,
+      clean: failedStructural.length === 0,
+      mode: reason ? `structural-fallback (${reason})` : "structural-fallback",
+      checks,
+      failed: failedStructural,
+    };
+  }
+
   if (!CHROMIUM_BIN) {
+    return runStructuralFallback('no-chromium');
+  }
+  if (false) {
     /* Structural fallback — same fail-closed contract, source tripwires. */
     assert("S1. harness serves all three regimes (enforced / locked / parity)",
       ttSrc.includes('url.pathname === "/tt/" ? "enforced"') &&
@@ -294,6 +329,7 @@ export async function runTtBrowserBattery() {
         "--no-sandbox",
         "--disable-gpu",
         "--disable-dev-shm-usage",
+        "--no-proxy-server",
         "--no-first-run",
         "--no-default-browser-check",
         `--user-data-dir=${path.join(tmpDir, "ud")}`,
@@ -363,6 +399,8 @@ export async function runTtBrowserBattery() {
           `(typeof window.__SMOKE__ !== 'undefined' && __SMOKE__.ready === true) || (Date.now() - ${t0} > ${timeoutMs} && 'TIMEOUT')`
         );
         if (ready === true) break;
+        const href = await evalInPage("location.href");
+        if (typeof href === "string" && href.startsWith("chrome-error://")) throw new Error("POLICY_BLOCKED_LOCALHOST");
         if (ready === "TIMEOUT") throw new Error(`harness never signaled ready for ${relUrl}`);
         await new Promise((r) => setTimeout(r, 200));
       }
@@ -435,6 +473,11 @@ export async function runTtBrowserBattery() {
       assigned
     );
     void ttRed; void nottRed;
+  } catch (err) {
+    if (err && err.message === "POLICY_BLOCKED_LOCALHOST") {
+      return runStructuralFallback("host-policy-blocked-localhost");
+    }
+    throw err;
   } finally {
     try { if (cdp) cdp.close(); } catch (_) {}
     try { if (browser) browser.kill("SIGKILL"); } catch (_) {}

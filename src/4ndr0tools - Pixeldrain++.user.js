@@ -1,0 +1,2808 @@
+// ==UserScript==
+// @name         4ndr0tools - Pixeldrain++
+// @namespace    https://github.com/4ndr0666/userscripts
+// @version      1.2.7
+// @description  Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.
+// @author       4ndr0666
+// @license      MIT
+// @icon           data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
+// @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Pixeldrain++.user.js
+// @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Pixeldrain++.user.js
+// @match           https://pixeldrain.com/*
+// @match           https://pixeldrain.net/*
+// @match           https://pixeldrain.dev/*
+// @match           https://pixeldra.in/*
+// @run-at          document-start
+// @grant           GM_xmlhttpRequest
+// @grant           GM.xmlHttpRequest
+// @grant           GM_download
+// @grant           GM_openInTab
+// @grant           GM_setValue
+// @grant           GM_getValue
+// @grant           GM_deleteValue
+// @grant           GM_registerMenuCommand
+// @grant           GM_addStyle
+// @grant           GM_notification
+// @grant           GM_setClipboard
+// @grant           unsafeWindow
+// @connect         pixeldrain.com
+// @connect         pixeldrain.net
+// @connect         pixeldrain.dev
+// @connect         pixeldra.in
+// @connect         cdn.pixeldrain.eu.cc
+// @connect         pixeldrain.eu.cc
+// @connect         pd.1drv.eu.org
+// @connect         pd.cybar.xyz
+// @connect         pd.zeroken.id
+// @connect         pd.hakimi.uk
+// @connect         pd.512.gay
+// @connect         pd.voidnet.tech
+// @connect         pd.kanibal.xyz
+// @connect         pd.arcjbtc.my.id
+// @connect         pd.ramdani.cloud
+// @connect         pd.noisyfox.io
+// @connect         pd.meridian.pm
+// @connect         pd.dwnld.workers.dev
+// @connect         pd.itsmeonly.workers.dev
+// @connect         pd.blazing.works
+// @connect         pd.unblockit.click
+// @connect         127.0.0.1
+// @connect         localhost
+// @connect         *
+// ==/UserScript==
+// 1.2.7 (WO-01 round 18): THE SHORT-206 CONTRACT — a 206 body
+// shorter than its requested span (a mirror under-delivering its
+// Content-Range) no longer completes the chunk: the received byte count
+// is validated against the span, a short body writes what arrived and
+// retries the REMAINDER through the existing attempt loop, an
+// overshooting body is sliced to the span, and every ranged strategy
+// closes only when the received-byte sum equals the expected size
+// (ok:true is never committed on an incomplete file). Plus the
+// single_host_ranged per-attempt from-advance repair.
+// 1.2.6 (WO-01 round 17): THE RANGE-200 FLOOR + THE RACE BAND — a
+// mirror that strips the Range header answers 200 with the FULL file,
+// and every ranged strategy (speed_multiplied, multi_proxy_ranged,
+// single_host_ranged) accepted it and wrote those bytes at
+// `position: from`: misaligned bytes past the chunk's span, a file that
+// grew past `size`, and a corruption reported as ok:true. A 200 is now
+// honored only when the chunk starts at 0 (the full-file body covers
+// it — written at 0, progress capped at the chunk span); any other 200
+// is a NAMED refusal the retry ladder routes around. ProxyManager.race()
+// treated HTTP 403 as a winning mirror (`< 405`) while its own check()
+// marks 403 as hard-blocked — the race can no longer select a
+// Cloudflare-blocked mirror as 'best'.
+// 1.2.5 (WO-01 round 13): filename/progress symmetry — sanitizeFilename
+// can emit a name ending in a trailing dot (slice-cut or original), which
+// Windows rejects; the Forums++ sibling sanitizeWinSegment strips [\. ]+$
+// and so does this now (13b-F16). The two content-length parses wrap with
+// || 0 — a malformed-but-present header parsed to NaN and the progress
+// bar rendered 'NaN%' (13b-F22).
+// 1.2.4 (suite v1.19.0, WO-01 round 11): the resume-integrity batch
+// (11b-F02/F03/F08/F17). (1) RESUME ZERO-HOLE: an adopted resume job
+// restored the old chunk map into loadedArr while the writable is
+// createWritable({keepExistingData:false}) — an EMPTY swap (FSA aborts
+// discard partials by construction) — and the queue skipped 'completed'
+// chunks: a resumed download wrote ONLY the missing chunks at their
+// offsets, zero-filled the rest, returned {ok:true, size} full-size and
+// toasted success. THE CORRUPTED FILE CLASS. The adopt now keeps the job
+// identity (progress continuity, the 🔄 button) but resets the chunk map
+// via ResumeManager.resetChunks — an honest full re-download (actual
+// chunk-skip resume is structurally impossible against a fresh empty
+// writable; 11b-F02). (2) SECOND-SETTLER RACE: gm_stream_fsa's onload arm
+// raced the onloadstart reader loop that owns the settle — on consumer
+// lag (disk < network) resolve(true) let writable.close() enqueue before
+// trailing writable.write(value) calls (write-after-close → the loop's
+// rejection became a no-op after the already-resolved promise → silent
+// truncation reported ok:true; the loaded===0 variant resolved(false) →
+// a CONCURRENT buffered re-download on the same writable — the 10c-F02
+// class reborn). The onload arm is now a no-op unless the stream never
+// started (11b-F03). (3) PICKER-IN-LOOP: native_fetch called
+// showSaveFilePicker inside the mirror loop — user activation is consumed
+// by call 1, so mirror 2+ threw the PICKER's NotAllowedError instead of
+// the fetch's real error: 6-mirror failover was effectively single-mirror.
+// ONE picker above the loop; each mirror gets a fresh writable from the
+// same handle (11b-F08). (4) The success path's job lookup is
+// null-guarded — cancelAll() may have cleared the map while the download
+// itself succeeded (the mislabeled ✗ toast; 11b-F17).
+// 1.2.3 (suite v1.18.0, WO-01 round 10): the FSA streamed→buffered fallback
+// corruption fix (10c F02 — a non-abort stream failure fell through to an
+// UNPOSITIONED writable.write of the full body onto the N bytes already
+// committed: corrupt file + success toast; the fallback now aborts the
+// partial stream and re-creates the writable, whose implicit truncate
+// guarantees a clean slate); speed_multiplied's all-circuits-open path threw
+// undefined and masked its own reason in Log.warn (10c F03); the modal ESC
+// listener now unbinds on EVERY close path, not only Escape (10c F01 — N
+// opens leaked N live keydown listeners); the misleading
+// 'interceptor: unbound' debug line in ~24 unrelated catch contexts became
+// context-true messages + the duplicate nav-refresh dataset reset dropped
+// (10c F10).
+// 1.2.2 (suite v1.12.0, WO-01 round 4): error-path hardening — fsPath()'s
+// decode degrades losslessly on malformed percent-escapes (a bare '%' in a
+// /d/ pathname no longer aborts the setTimeout callback before the
+// fs-fallback injector and auto-trigger block; 4-c F05).
+// 1.1.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.7 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+
+/* eslint-disable no-undef */
+(function () {
+    'use strict';
+
+    // ================================================================
+    // 0. CONFIG & CONSTANTS
+    // ================================================================
+    const VERSION = '1.2.2';
+    const NS = 'pdbp';
+
+    /* [R3 createElement migration — suite v1.4.4] Local element builder:
+     * every innerHTML template in this script is retired (settings panel,
+     * modals, toasts, pills, export bodies, popup player). Same contract as
+     * the kernel's Ψ.core.$new: variadic children (Nodes/strings/arrays,
+     * null-skipped), style string-or-object, data-dash/aria-dash/role/class
+     * via setAttribute, on-prefixed keys as listeners. Zero HTML-string
+     * sinks — TT-immune by construction. */
+    function el(tag, attrs, ...rest) {
+        const node = document.createElement(tag);
+        if (attrs) {
+            for (const key of Object.keys(attrs)) {
+                const val = attrs[key];
+                if (val == null) continue;
+                if (key === 'style' && typeof val === 'object') Object.assign(node.style, val);
+                else if (key === 'class' || key.startsWith('data-') || key.startsWith('aria-') || key === 'role') node.setAttribute(key, String(val));
+                else if (key.startsWith('on') && typeof val === 'function') node.addEventListener(key.slice(2), val);
+                else if (key in node && typeof val !== 'string') node[key] = val;
+                else node.setAttribute(key, String(val));
+            }
+        }
+        const kids = [];
+        for (const c of rest) { if (Array.isArray(c)) kids.push(...c); else kids.push(c); }
+        for (const c of kids) {
+            if (c == null) continue;
+            node.append(c instanceof Node ? c : document.createTextNode(String(c)));
+        }
+        return node;
+    }
+    const BANDWIDTH_CAP = 6 * 1024 * 1024 * 1024;
+    const SPEED_LIMIT_PER_CONN = 1048576; // 1 MB/s server-enforced per connection
+    const RATE_LIMIT_MAX = 3000;
+    const RECAPTCHA_SITEKEY = '6Lfbzz4UAAAAAAaBgox1R7jU0axiGneLDkOA-PKf';
+
+    // Updated proxy listing containing active community mirrors
+    const PROXY_MIRRORS = [
+        { name: 'pixeldrain.eu.cc',     host: 'cdn.pixeldrain.eu.cc',       priority: 1,  range: true,  zip: true,  weight: 100 },
+        { name: '1drv.eu.org',          host: 'pd.1drv.eu.org',             priority: 2,  range: true,  zip: false, weight: 90  },
+        { name: 'cybar.xyz',            host: 'pd.cybar.xyz',               priority: 3,  range: true,  zip: false, weight: 85  },
+        { name: 'zeroken.id',           host: 'pd.zeroken.id',              priority: 4,  range: true,  zip: false, weight: 80  },
+        { name: 'pixeldrain.eu.cc-alt', host: 'pixeldrain.eu.cc',           priority: 5,  range: true,  zip: false, weight: 75  },
+        { name: 'hakimi.uk',            host: 'pd.hakimi.uk',               priority: 6,  range: true,  zip: false, weight: 70  },
+        { name: '512.gay',              host: 'pd.512.gay',                 priority: 7,  range: true,  zip: false, weight: 65  },
+        { name: 'voidnet.tech',         host: 'pd.voidnet.tech',            priority: 8,  range: true,  zip: false, weight: 60  },
+        { name: 'kanibal.xyz',          host: 'pd.kanibal.xyz',             priority: 9,  range: true,  zip: false, weight: 55  },
+        { name: 'arcjbtc.my.id',        host: 'pd.arcjbtc.my.id',           priority: 10, range: true,  zip: false, weight: 50  },
+        { name: 'ramdani.cloud',        host: 'pd.ramdani.cloud',           priority: 11, range: true,  zip: false, weight: 45  },
+        { name: 'noisyfox.io',          host: 'pd.noisyfox.io',             priority: 12, range: true,  zip: false, weight: 40  },
+        { name: 'meridian.pm',          host: 'pd.meridian.pm',             priority: 13, range: true,  zip: false, weight: 35  },
+        { name: 'dwnld.workers.dev',    host: 'pd.dwnld.workers.dev',       priority: 14, range: true,  zip: false, weight: 30  },
+        { name: 'itsmeonly.workers.dev', host: 'pd.itsmeonly.workers.dev',  priority: 15, range: true,  zip: false, weight: 25  },
+        { name: 'blazing.works',        host: 'pd.blazing.works',           priority: 16, range: true,  zip: false, weight: 20  }
+    ];
+
+    const DIRECT_HOSTS = ['pixeldrain.com', 'pixeldrain.net', 'pixeldrain.dev', 'pixeldra.in'];
+
+    const DEFAULTS = {
+        primaryStrategy: 'auto',
+        autoFailover: true,
+
+        // Auth (Layer A)
+        apiKey: '',
+        useDirectIfAuth: true,
+        preferDirectForLarge: true,
+        directThresholdBytes: 50 * 1024 * 1024,
+
+        // Proxy
+        proxyHealthTtl: 5 * 60 * 1000,
+        healthCheckTimeoutMs: 6000,
+        healthProbeId: '',
+
+        // Speed multiplication (exploit 1MB/s per-connection limit)
+        speedMultiplier: true,
+        connectionsPerMirror: 4,
+        maxTotalConnections: 32,
+
+        // Multi-proxy chunked
+        multiProxyChunks: 16,
+        chunkConcurrency: 16,
+        chunkRetry: 5,
+        chunkSizeMin: 512 * 1024,
+        chunkSizeMax: 8 * 1024 * 1024,
+        adaptiveChunking: true,
+
+        // Circuit breaker
+        circuitBreakerThreshold: 3,
+        circuitBreakerCooldown: 30000,
+
+        // Misc
+        retryBackoffMs: 800,
+        retryBackoffMultiplier: 1.5,
+        maxRetries: 5,
+        downloadTimeoutMs: 60 * 60 * 1000,
+        preflightCheck: true,
+
+        // Bypass
+        bypassVideoLogged: true,
+        bypassViewerContinuous: true,
+        bypassShowAds: true,
+        autoTriggerOnLoad: false,
+        viewPadEnabled: true,
+
+        // Captcha
+        captchaAutoDetect: true,
+        captchaAutoOpen: true,
+        captchaPreCheck: true,
+
+        // Resume
+        resumableEnabled: true,
+        resumeMaxAge: 86400000,
+
+        // Bandwidth tracker
+        bandwidthTracker: true,
+        bandwidthWarningPct: 80,
+
+        // Custom proxy hosts (comma-separated)
+        customProxy: '',
+
+        // External downloaders
+        jdownloaderUrl: 'http://127.0.0.1:9666/flash/addcnl',
+        aria2RpcUrl: 'http://127.0.0.1:6800/jsonrpc',
+        aria2Secret: '',
+        aria2MaxConn: 16,
+        aria2Split: 16,
+
+        // UI
+        notificationsEnabled: true,
+        compactUI: false,
+        showSpeedGraph: true,
+        debugLog: false,
+        downloadStats: { count: 0, bytes: 0, savedBandwidth: 0, lastReset: Date.now() }
+    };
+
+    const STORAGE_KEY = `${NS}_settings_v7`;
+    const RESUME_KEY = `${NS}_resume_jobs_v7`;
+    const BANDWIDTH_KEY = `${NS}_bandwidth_v7`;
+    const HEALTH_KEY = `${NS}_health_scores_v7`;
+
+    const SPOOF_HEADERS = {
+        'Referer': 'https://pixeldrain.com/',
+        'Origin': 'https://pixeldrain.com'
+    };
+
+    // ================================================================
+    // 1. STORAGE
+    // ================================================================
+    const Store = (() => {
+        const hasGM = typeof GM_getValue === 'function';
+        return {
+            get: (k, def) => { try { if (hasGM) return GM_getValue(k, def); const raw = localStorage.getItem(k); return raw == null ? def : JSON.parse(raw); } catch { return def; } },
+            set: (k, v) => { try { if (hasGM) return GM_setValue(k, v); localStorage.setItem(k, JSON.stringify(v)); } catch (e) { console.error(`[${NS}]`, e); } },
+            del: (k) => { try { if (hasGM && typeof GM_deleteValue === 'function') return GM_deleteValue(k); localStorage.removeItem(k); } catch { console.debug('PD store: delete failed'); } }
+        };
+    })();
+    function loadSettings() { return Object.assign({}, DEFAULTS, Store.get(STORAGE_KEY, {}) || {}); }
+    function saveSettings(patch) { const next = Object.assign({}, loadSettings(), patch); Store.set(STORAGE_KEY, next); return next; }
+    let SETTINGS = loadSettings();
+
+    // ================================================================
+    // 2. UTILITIES
+    // ================================================================
+    const Log = {
+        _on: () => SETTINGS.debugLog,
+        info: (...a) => { if (Log._on()) console.log(`[${NS}]`, ...a); },
+        warn: (...a) => console.warn(`[${NS}]`, ...a),
+        error: (...a) => console.error(`[${NS}]`, ...a)
+    };
+    function uuid() { return crypto.randomUUID ? crypto.randomUUID() : 'xxxx-xxxx-xxxx'.replace(/x/g, () => (Math.random() * 16 | 0).toString(16)); }
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+    function escapeHTML(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+    /* 1.2.5 (13b-F16): trailing dot/space strip — Windows rejects names
+     * ending in a dot; the Forums++ sanitizeWinSegment sibling's rule. */
+    function sanitizeFilename(n) { return String(n || 'download').replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').replace(/[. ]+$/, '').trim() || 'download'; }
+    function formatBytes(b) { if (!b) return '0 B'; const u = ['B', 'KB', 'MB', 'GB', 'TB']; const i = Math.min(Math.floor(Math.log(b) / Math.log(1024)), u.length - 1); return (b / Math.pow(1024, i)).toFixed(i ? 1 : 0) + ' ' + u[i]; }
+    function formatSpeed(bps) { return bps ? formatBytes(bps) + '/s' : ''; }
+    function formatETA(rem, spd) { if (!spd) return '--:--'; const s = Math.ceil(rem / spd); return s > 3600 ? `${Math.floor(s / 3600)}h${Math.floor((s % 3600) / 60)}m` : s > 60 ? `${Math.floor(s / 60)}m${s % 60}s` : `${s}s`; }
+    function formatDuration(ms) { const s = Math.floor(ms / 1000); return s > 60 ? `${Math.floor(s / 60)}m${s % 60}s` : `${s}s`; }
+    function b64(s) { try { return btoa(s); } catch { return s; } }
+    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+    function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+
+    // ================================================================
+    // 3. CAPABILITIES DETECTION
+    // ================================================================
+    const Caps = {
+        gmXHR: typeof GM_xmlhttpRequest === 'function' || (typeof GM !== 'undefined' && GM && GM.xmlHttpRequest),
+        gmDownload: typeof GM_download === 'function',
+        gmOpenInTab: typeof GM_openInTab === 'function',
+        gmAddStyle: typeof GM_addStyle === 'function',
+        gmClipboard: typeof GM_setClipboard === 'function',
+        gmNotification: typeof GM_notification === 'function',
+        fsAccess: typeof window.showSaveFilePicker === 'function',
+        streams: typeof ReadableStream !== 'undefined' && typeof WritableStream !== 'undefined',
+        wasm: typeof WebAssembly !== 'undefined',
+        serviceWorker: 'serviceWorker' in navigator,
+        sharedArrayBuffer: typeof SharedArrayBuffer !== 'undefined',
+        transferable: typeof structuredClone === 'function'
+    };
+
+    // ================================================================
+    // 4. GM TRANSPORT FACADE (kernel-routed since v1.2.0, suite v1.4.9)
+    // ================================================================
+    // Transport mechanics live in the kernel now: this is a thin POLICY
+    // facade over __4NDR0_NET_API__.gmFetch (kernel/net.js v5.1) — one
+    // suite-wide implementation of settle-once, grant feature-detection,
+    // the typed NetError taxonomy (kind: timeout|http|transport|abort|
+    // gm-unavailable), AbortSignal wiring (pre-abort rejection, mid-flight
+    // force-settle, retry-chain break, listener detachment), and
+    // progress/onloadstart passthrough. Facade policy kept verbatim:
+    // SPOOF_HEADERS merge (spoof === false opts out), the anonymous
+    // default (credential-free unless explicitly false — premium_direct
+    // passes credentials), the 60 s default timeout, and the raw-response
+    // contract (every status resolves; callers gate — checkStatus:false).
+    // Abort-branching call sites now test e.kind === 'abort' OR the legacy
+    // 'aborted' message (both forms recognized — superset).
+    function pdKernelLessGmFetch(url, opts) {
+        if (typeof GM_xmlhttpRequest !== 'function') return Promise.reject(Object.assign(new Error('kernel-less transport unavailable'), { kind: 'gm-unavailable' }));
+        opts = opts || {};
+        return new Promise((resolve, reject) => {
+            let settled = false;
+            const done = (fn, val) => { if (!settled) { settled = true; fn(val); } };
+            const ctl = GM_xmlhttpRequest({
+                method: opts.method || 'GET',
+                url,
+                headers: opts.headers || {},
+                data: opts.data != null ? opts.data : null,
+                responseType: opts.responseType || 'text',
+                timeout: Math.max(1, opts.timeout || 60000),
+                anonymous: opts.anonymous !== false,
+                onprogress: opts.onprogress,
+                onloadstart: opts.onloadstart,
+                onload: (res) => done(resolve, res),
+                onerror: () => done(reject, Object.assign(new Error('network error'), { kind: 'transport' })),
+                ontimeout: () => done(reject, Object.assign(new Error('gmFetch timeout'), { kind: 'timeout' })),
+                onabort: () => done(reject, Object.assign(new Error('aborted'), { kind: 'abort' })),
+            });
+            if (opts.signal && typeof opts.signal.addEventListener === 'function') {
+                opts.signal.addEventListener('abort', () => {
+                    try { if (ctl && typeof ctl.abort === 'function') ctl.abort(); } catch (e) { console.debug('PD interceptor:', e); }
+                    done(reject, Object.assign(new Error('aborted'), { kind: 'abort' }));
+                }, { once: true });
+            }
+        });
+    }
+    function gmXHR(opts) {
+        return (typeof __4NDR0_NET_API__ === 'undefined' ? pdKernelLessGmFetch : __4NDR0_NET_API__.gmFetch)(opts.url, {
+            method:       opts.method,
+            headers:      Object.assign({}, opts.spoof === false ? {} : SPOOF_HEADERS, opts.headers || {}),
+            data:         opts.data != null ? opts.data : null,
+            responseType: opts.responseType,
+            timeout:      opts.timeout != null ? opts.timeout : 60000,
+            checkStatus:  false,
+            anonymous:    opts.anonymous !== false,
+            signal:       opts.signal,
+            onprogress:   opts.onprogress,
+            onloadstart:  opts.onloadstart,
+        });
+    }
+
+    // ================================================================
+    // 5. BANDWIDTH TRACKER
+    // ================================================================
+    const BandwidthTracker = {
+        _data: null,
+        load() {
+            if (!this._data) {
+                this._data = Store.get(BANDWIDTH_KEY, { used: 0, windowStart: Date.now(), history: [] });
+                if (Date.now() - this._data.windowStart > 86400000) {
+                    this._data = { used: 0, windowStart: Date.now(), history: [] };
+                    this.save();
+                }
+            }
+            return this._data;
+        },
+        save() { Store.set(BANDWIDTH_KEY, this._data); },
+        add(bytes, viaProxy = true) {
+            const d = this.load();
+            if (!viaProxy) d.used += bytes;
+            d.history.push({ ts: Date.now(), bytes, proxy: viaProxy });
+            if (d.history.length > 500) d.history = d.history.slice(-200);
+            this.save();
+        },
+        getUsed() { return this.load().used; },
+        getRemaining() { return Math.max(0, BANDWIDTH_CAP - this.getUsed()); },
+        getPct() { return (this.getUsed() / BANDWIDTH_CAP) * 100; },
+        isNearCap() { return this.getPct() >= SETTINGS.bandwidthWarningPct; },
+        reset() { this._data = { used: 0, windowStart: Date.now(), history: [] }; this.save(); },
+        getSpeedHistory(windowMs = 30000) {
+            const d = this.load();
+            const cutoff = Date.now() - windowMs;
+            return d.history.filter(h => h.ts > cutoff);
+        }
+    };
+
+    // ================================================================
+    // 6. PIXELDRAIN API (metadata + auth-aware + pre-flight)
+    // ================================================================
+    const PDApi = {
+        _authHeader() {
+            const k = (SETTINGS.apiKey || '').trim();
+            return k ? { 'Authorization': 'Basic ' + b64(':' + k) } : null;
+        },
+        _gmFetch(url, opts = {}) {
+            return gmXHR(Object.assign({
+                url,
+                spoof: false,
+                anonymous: !this._authHeader(),
+                headers: Object.assign({ 'Accept': 'application/json' }, this._authHeader() || {}, opts.headers || {})
+            }, opts));
+        },
+        async fileInfo(id) {
+            try {
+                const r = await this._gmFetch(`https://pixeldrain.com/api/file/${id}/info`, { responseType: 'json', timeout: 10000 });
+                if (r.status >= 200 && r.status < 300) return r.response || JSON.parse(r.responseText);
+                throw new Error(`HTTP ${r.status}`);
+            } catch (e) {
+                const r = await fetch(`https://pixeldrain.com/api/file/${id}/info`, { credentials: 'omit' });
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.json();
+            }
+        },
+        async listInfo(id) {
+            const r = await fetch(`https://pixeldrain.com/api/list/${id}`, { credentials: 'omit' });
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json();
+        },
+        async fsPath(path) {
+            const r = await fetch(`https://pixeldrain.com/api/filesystem/${path}?stat`, { credentials: 'omit' });
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json();
+        },
+        async user() {
+            if (!this._authHeader()) return null;
+            try {
+                const r = await this._gmFetch('https://pixeldrain.com/api/user', { responseType: 'json', timeout: 10000 });
+                if (r.status >= 200 && r.status < 300) return r.response || JSON.parse(r.responseText);
+            } catch { console.debug('PD user API: fetch failed'); }
+            return null;
+        },
+        directURL(id, { download = false } = {}) {
+            return `https://pixeldrain.com/api/file/${id}${download ? '?download' : ''}`;
+        },
+        async preflight(id) {
+            try {
+                const info = await this.fileInfo(id);
+                const result = {
+                    ok: true,
+                    id: info.id,
+                    name: info.name,
+                    size: info.size,
+                    mime: info.mime_type,
+                    canDownload: info.can_download !== false,
+                    availability: info.availability || '',
+                    availabilityMessage: info.availability_message || '',
+                    needsCaptcha: false,
+                    speedLimit: info.download_speed_limit || SPEED_LIMIT_PER_CONN,
+                    showAds: info.show_ads || false
+                };
+                if (result.availability) {
+                    const av = result.availability.toLowerCase();
+                    result.needsCaptcha = av.includes('captcha') || av.includes('rate_limited') || av.includes('transfer_limited');
+                    result.isVirus = av.includes('virus');
+                    result.isBanned = av.includes('banned') || av.includes('abuse');
+                }
+                return result;
+            } catch (e) {
+                return { ok: false, error: e.message };
+            }
+        },
+        async viewPad(id, count = 1) {
+            if (!SETTINGS.viewPadEnabled) return;
+            for (let i = 0; i < count; i++) {
+                try {
+                    await fetch(`https://pixeldrain.com/u/${id}`, {
+                        method: 'GET',
+                        credentials: 'omit',
+                        headers: { 'Accept': 'text/html' },
+                        redirect: 'follow'
+                    });
+                } catch { console.debug('PD view-pad: fetch failed'); }
+                if (i < count - 1) await sleep(200);
+            }
+            Log.info(`view-pad: +${count} views for ${id}`);
+        }
+    };
+
+    // ================================================================
+    // 7. CIRCUIT BREAKER (per-mirror failure tracking)
+    // ================================================================
+    const CircuitBreaker = {
+        _state: new Map(),
+
+        record(host, success) {
+            if (!this._state.has(host)) this._state.set(host, { failures: 0, lastFailure: 0, open: false, successes: 0 });
+            const s = this._state.get(host);
+            if (success) {
+                s.successes++;
+                s.failures = Math.max(0, s.failures - 1);
+                s.open = false;
+            } else {
+                s.failures++;
+                s.lastFailure = Date.now();
+                if (s.failures >= SETTINGS.circuitBreakerThreshold) {
+                    s.open = true;
+                    Log.warn(`Circuit OPEN for ${host} (${s.failures} failures)`);
+                }
+            }
+        },
+
+        isOpen(host) {
+            const s = this._state.get(host);
+            if (!s || !s.open) return false;
+            if (Date.now() - s.lastFailure > SETTINGS.circuitBreakerCooldown) {
+                s.open = false;
+                s.failures = Math.floor(s.failures / 2);
+                Log.info(`Circuit half-open for ${host}`);
+                return false;
+            }
+            return true;
+        },
+
+        getScore(host) {
+            const s = this._state.get(host);
+            if (!s) return 100;
+            const total = s.successes + s.failures;
+            if (total === 0) return 100;
+            return Math.round((s.successes / total) * 100);
+        },
+
+        reset(host) {
+            if (host) this._state.delete(host);
+            else this._state.clear();
+        },
+
+        getAll() { return Object.fromEntries(this._state); }
+    };
+
+    // ================================================================
+    // 8. PROXY MANAGER (Health Checking Hardened)
+    // ================================================================
+    const ProxyManager = {
+        _blocked: new Set(),
+        _cache: { ts: 0, results: null },
+        _scores: null,
+
+        _loadScores() {
+            if (!this._scores) this._scores = Store.get(HEALTH_KEY, {}) || {};
+            return this._scores;
+        },
+        _saveScores() { Store.set(HEALTH_KEY, this._scores || {}); },
+
+        list() {
+            const proxies = PROXY_MIRRORS.slice();
+            if (SETTINGS.customProxy && SETTINGS.customProxy.trim()) {
+                SETTINGS.customProxy.split(',').map(h => h.trim()).filter(Boolean).forEach((h, i) => {
+                    proxies.unshift({
+                        name: `custom-${i + 1}`,
+                        host: h.replace(/^https?:\/\//, '').replace(/\/+$/, ''),
+                        priority: 0,
+                        range: true,
+                        zip: false,
+                        weight: 110
+                    });
+                });
+            }
+            const active = proxies
+                .filter(p => !this._blocked.has(p.host))
+                .filter(p => !CircuitBreaker.isOpen(p.host))
+                .sort((a, b) => {
+                    const sa = this._getHealthScore(a.host);
+                    const sb = this._getHealthScore(b.host);
+                    if (sb !== sa) return sb - sa;
+                    return a.priority - b.priority;
+                });
+
+            // Fallback emergency loop: If logic drops all mirrors to dead states, restore baseline to prevent bricked script executions.
+            if (active.length === 0) {
+                Log.warn("All proxy nodes reported failing status logic; resetting pools to prevent deadlock.");
+                this.unblockAll();
+                return proxies.slice(0, 3);
+            }
+            return active;
+        },
+
+        _getHealthScore(host) {
+            const scores = this._loadScores();
+            const stored = scores[host] || { latency: 1000, successRate: 0.5 };
+            const cbScore = CircuitBreaker.getScore(host);
+            return Math.round((stored.successRate * 50) + (cbScore * 0.3) + (Math.max(0, 2000 - stored.latency) / 20));
+        },
+
+        markBlocked(host) { this._blocked.add(host); Log.warn(`Blocked: ${host}`); },
+        unblockAll() { this._blocked.clear(); this._cache = { ts: 0, results: null }; CircuitBreaker.reset(); },
+
+        url(proxy, id, { download = false, zip = false } = {}) {
+            return `https://${proxy.host}/${zip ? id + '/zip' : id}${download ? '?download' : ''}`;
+        },
+
+        async check(proxy, probeId) {
+            const start = performance.now();
+            const id = probeId || SETTINGS.healthProbeId || '';
+
+            // PROXY HARDENING FIX: Avoid sending raw directory base paths which drop 403/405 Cloudflare codes.
+            // Probe using an active metadata pattern or execute a safer GET option.
+            const url = id ? this.url(proxy, id) : `https://${proxy.host}/`;
+
+            try {
+                const r = await gmXHR({
+                    method: id ? 'HEAD' : 'GET',
+                    url,
+                    timeout: SETTINGS.healthCheckTimeoutMs,
+                    headers: { 'Accept': '*/*' }
+                });
+                const ms = performance.now() - start;
+
+                // Allow alternate server status responses like 404 or 405 to register as alive
+                // as long as they prove the infrastructure is up and listening.
+                const ok = r.status >= 200 && r.status < 500 && r.status !== 403;
+                if (r.status === 403) this.markBlocked(proxy.host);
+
+                const scores = this._loadScores();
+                if (!scores[proxy.host]) scores[proxy.host] = { latency: ms, successRate: ok ? 1 : 0, checks: 0 };
+                const s = scores[proxy.host];
+                s.checks++;
+                s.latency = (s.latency * 0.7) + (ms * 0.3);
+                s.successRate = (s.successRate * 0.8) + ((ok ? 1 : 0) * 0.2);
+                this._saveScores();
+                CircuitBreaker.record(proxy.host, ok);
+                return { ok, ms, proxy, status: r.status };
+            } catch (e) {
+                CircuitBreaker.record(proxy.host, false);
+                return { ok: false, ms: performance.now() - start, proxy, error: e.message };
+            }
+        },
+
+        async checkAll(force = false, probeId = '') {
+            if (!force && this._cache.results && Date.now() - this._cache.ts < SETTINGS.proxyHealthTtl) return this._cache.results;
+            const results = await Promise.all(PROXY_MIRRORS.map(p => this.check(p, probeId)));
+            this._cache = { ts: Date.now(), results };
+            return results;
+        },
+
+        async best(probeId) {
+            const results = await this.checkAll(false, probeId);
+            const alive = results.filter(r => r.ok).sort((a, b) => a.ms - b.ms);
+            return alive.length ? alive[0].proxy : this.list()[0];
+        },
+
+        async topN(n = 4, probeId) {
+            const results = await this.checkAll(false, probeId);
+            const alive = results.filter(r => r.ok).sort((a, b) => a.ms - b.ms);
+            return alive.length >= n ? alive.slice(0, n).map(r => r.proxy) : this.list().slice(0, n);
+        },
+
+        async race(id) {
+            const proxies = this.list().slice(0, 10);
+            return new Promise((resolve, reject) => {
+                let pending = proxies.length, resolved = false;
+                if (!pending) { reject(new Error('no proxies')); return; }
+                proxies.forEach(p => {
+                    gmXHR({ method: 'HEAD', url: this.url(p, id), timeout: SETTINGS.healthCheckTimeoutMs })
+                        .then(r => {
+                            if (resolved) return;
+                            /* v1.2.6 (r17 F04): 403 is never a winning mirror —
+                             * check() marks it hard-blocked; the old `< 405` band
+                             * let the race select a Cloudflare-blocked mirror as
+                             * 'best' and fail the dispatch best() would have
+                             * survived. */
+                            if (r.status >= 200 && r.status < 405 && r.status !== 403) {
+                                resolved = true;
+                                CircuitBreaker.record(p.host, true);
+                                resolve(p);
+                            } else {
+                                if (r.status === 403) this.markBlocked(p.host);
+                                CircuitBreaker.record(p.host, false);
+                                if (--pending === 0 && !resolved) reject(new Error('All mirrors failed'));
+                            }
+                        })
+                        .catch(() => {
+                            CircuitBreaker.record(p.host, false);
+                            if (--pending === 0 && !resolved) reject(new Error('All mirrors unreachable'));
+                        });
+                });
+            });
+        },
+
+        async raceOrBest(id) { try { return await this.race(id); } catch { return await this.best(id); } },
+
+        async getParallelPool(id, count = 8) {
+            const results = await this.checkAll(false, id);
+            const alive = results.filter(r => r.ok).sort((a, b) => a.ms - b.ms);
+            const pool = alive.length >= count ? alive.slice(0, count).map(r => r.proxy) : this.list().slice(0, count);
+            return pool;
+        }
+    };
+
+    // ================================================================
+    // 9. RESUME MANAGER (per-chunk persistence)
+    // ================================================================
+    const ResumeManager = {
+        _jobs: null,
+        load() { if (!this._jobs) this._jobs = Store.get(RESUME_KEY, {}) || {}; return this._jobs; },
+        save() { Store.set(RESUME_KEY, this._jobs || {}); },
+        create(fileId, fileName, fileSize, chunkCount) {
+            const jobs = this.load();
+            const id = uuid();
+            jobs[id] = { id, fileId, fileName, fileSize, chunkCount, chunks: Array(chunkCount).fill(0), hosts: Array(chunkCount).fill(null), createdAt: Date.now(), updatedAt: Date.now(), completed: false, totalTime: 0 };
+            this.save();
+            return id;
+        },
+        updateChunk(jobId, idx, bytes, host) {
+            const j = this.load();
+            if (j[jobId]) {
+                j[jobId].chunks[idx] = bytes;
+                if (host) j[jobId].hosts[idx] = host;
+                j[jobId].updatedAt = Date.now();
+                this.save();
+            }
+        },
+        markComplete(jobId, totalTime) {
+            const j = this.load();
+            if (j[jobId]) { j[jobId].completed = true; j[jobId].totalTime = totalTime || 0; this.save(); }
+        },
+        /* v1.2.4 (11b-F02): resetChunks — an adopted resume job's chunk map
+         * is reset AND PERSISTED (an in-memory fill alone is lost: updateChunk
+         * re-loads from storage on every chunk completion). The reset is the
+         * honest shape: the FSA writable is an empty swap, so chunk-skip
+         * 'resume' would zero-fill the skipped spans — a full re-download
+         * keeps the job identity without corrupting the file. */
+        resetChunks(jobId) {
+            const j = this.load();
+            if (j[jobId]) {
+                j[jobId].chunks = Array(j[jobId].chunkCount).fill(0);
+                j[jobId].hosts = Array(j[jobId].chunkCount).fill(null);
+                j[jobId].updatedAt = Date.now();
+                this.save();
+            }
+            return !!j[jobId];
+        },
+        findByFile(fileId) { return Object.values(this.load()).find(j => j.fileId === fileId && !j.completed) || null; },
+        cleanup(maxAge) {
+            maxAge = maxAge != null ? maxAge : SETTINGS.resumeMaxAge;
+            const j = this.load(); let n = 0;
+            for (const [id, job] of Object.entries(j)) {
+                if (job.completed || Date.now() - job.updatedAt > maxAge) { delete j[id]; n++; }
+            }
+            if (n) this.save();
+            return n;
+        },
+        getPendingJobs() { return Object.values(this.load()).filter(j => !j.completed); },
+        getProgress(jobId) {
+            const j = this.load();
+            if (!j[jobId]) return null;
+            const sum = j[jobId].chunks.reduce((a, b) => a + b, 0);
+            return { loaded: sum, total: j[jobId].fileSize, pct: j[jobId].fileSize ? (sum / j[jobId].fileSize * 100) : 0 };
+        }
+    };
+
+    // ================================================================
+    // 10. CAPTCHA HANDLER (pre-check + auto-detect + guidance)
+    // ================================================================
+    const CaptchaHandler = {
+        _solving: false,
+        _detected: false,
+
+        isRateLimited(r) { return r && (r.status === 429 || (r.status === 403 && /rate|captcha|too many/i.test(r.responseText || ''))); },
+        isHotlink(r) { return r && r.status === 403 && /hotlink/i.test(r.responseText || ''); },
+        isCaptchaRequired(r) { return r && r.status === 403 && /captcha/i.test(r.responseText || ''); },
+
+        async preCheck(fileId) {
+            if (!SETTINGS.captchaPreCheck) return { needed: false };
+            try {
+                const info = await PDApi.preflight(fileId);
+                if (info.needsCaptcha) {
+                    return { needed: true, reason: info.availability, message: info.availabilityMessage };
+                }
+                return { needed: false, info };
+            } catch {
+                return { needed: false };
+            }
+        },
+
+        async handle(fileId) {
+            if (this._solving) return;
+            this._solving = true;
+            this._detected = true;
+            try {
+                const msg = `Rate-limited! Captcha required for file ${fileId}`;
+                Toast.warn(msg, 8000);
+                Log.warn(msg);
+
+                if (SETTINGS.captchaAutoOpen) {
+                    const url = `https://pixeldrain.com/u/${fileId}`;
+                    if (Caps.gmOpenInTab) GM_openInTab(url, { active: true });
+                    else window.open(url);
+                    Toast.node([
+                        el('strong', null, '\u26A0 Solve captcha in opened tab'),
+                        el('br'),
+                        el('span', { style: 'font-size:12px' }, 'reCAPTCHA v2', el('br'), 'After solving, retry download here.')
+                    ], 'warn', 15000);
+                }
+
+                if (Caps.gmNotification) {
+                    GM_notification({
+                        title: 'Pixeldrain Bypass',
+                        text: 'Captcha required — solve in browser tab',
+                        timeout: 10000
+                    });
+                }
+            } finally { this._solving = false; }
+        },
+
+        detectOnPage() {
+            return !!(document.querySelector('.g-recaptcha') ||
+                document.querySelector('[data-sitekey]') ||
+                document.querySelector('iframe[src*="recaptcha"]') ||
+                document.querySelector('[data-callback*="captcha"]'));
+        },
+
+        wasDetected() { return this._detected; },
+        reset() { this._detected = false; }
+    };
+
+    // ================================================================
+    // 11. DOWNLOAD STRATEGIES
+    // ================================================================
+    const Strategies = {
+
+        async premium_direct({ id, name, size, onProgress, signal }) {
+            const auth = PDApi._authHeader();
+            if (!auth) throw new Error('API key not configured');
+            const url = PDApi.directURL(id, { download: true });
+            Log.info(`premium_direct: ${url}`);
+
+            if (Caps.fsAccess && Caps.streams) {
+                const handle = await window.showSaveFilePicker({
+                    suggestedName: sanitizeFilename(name),
+                    types: [{ description: 'File', accept: { '*/*': [] } }]
+                });
+                const writable = await handle.createWritable();
+                try {
+                    const r = await fetch(url, { headers: auth, credentials: 'omit', signal });
+                    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                    /* 1.2.5 (13b-F22): NaN-proof — a malformed-but-present
+                     * header parsed to NaN and the progress bar read 'NaN%'. */
+                    const total = parseInt(r.headers.get('content-length') || size || '0', 10) || 0;
+                    const start = performance.now();
+                    let loaded = 0;
+                    const reader = r.body.getReader();
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        await writable.write(value);
+                        loaded += value.byteLength;
+                        const elapsed = (performance.now() - start) / 1000;
+                        onProgress && onProgress({ loaded, total, speed: loaded / Math.max(elapsed, 0.001) });
+                    }
+                    await writable.close();
+                    BandwidthTracker.add(loaded, false);
+                    return { ok: true, mode: 'premium_direct', size: loaded };
+                } catch (e) { try { await writable.abort(); } catch { console.debug('PD fsa: stream abort failed'); } throw e; }
+            }
+
+            const start = performance.now();
+            const r = await gmXHR({
+                url, responseType: 'blob', spoof: false,
+                anonymous: false, headers: auth,
+                timeout: SETTINGS.downloadTimeoutMs, signal,
+                onprogress: (e) => {
+                    if (e && e.lengthComputable && onProgress) {
+                        const elapsed = (performance.now() - start) / 1000;
+                        onProgress({ loaded: e.loaded, total: e.total, speed: e.loaded / Math.max(elapsed, 0.001) });
+                    }
+                }
+            });
+            if (r.status !== 200) throw new Error(`HTTP ${r.status}`);
+            this._saveBlob(r.response, name);
+            BandwidthTracker.add(r.response.size, false);
+            return { ok: true, mode: 'premium_direct', size: r.response.size };
+        },
+
+        async speed_multiplied({ id, name, size, onProgress, signal }) {
+            if (!Caps.fsAccess) throw new Error('File System Access API required');
+            if (!size) { try { size = (await PDApi.fileInfo(id)).size; } catch { console.debug('PD fsa: fileInfo size unavailable'); } }
+            if (!size) {
+                const proxy = await ProxyManager.best(id);
+                try {
+                    const h = await gmXHR({ method: 'HEAD', url: ProxyManager.url(proxy, id), timeout: 10000 });
+                    size = parseInt((h.responseHeaders || '').match(/content-length:\s*(\d+)/i)?.[1] || '0', 10);
+                } catch { console.debug('PD fsa: HEAD size probe failed'); }
+            }
+            if (!size) throw new Error('Cannot determine file size');
+
+            const handle = await window.showSaveFilePicker({
+                suggestedName: sanitizeFilename(name),
+                types: [{ description: 'File', accept: { '*/*': [] } }]
+            });
+            const writable = await handle.createWritable({ keepExistingData: false });
+
+            const theoreticalTime = size / SPEED_LIMIT_PER_CONN;
+            const targetTime = Math.max(5, theoreticalTime / SETTINGS.maxTotalConnections);
+            const optimalConns = clamp(
+                Math.ceil(theoreticalTime / targetTime),
+                2,
+                SETTINGS.maxTotalConnections
+            );
+
+            const mirrors = await ProxyManager.getParallelPool(id, Math.min(optimalConns, 16));
+            const totalConns = Math.min(optimalConns, mirrors.length * SETTINGS.connectionsPerMirror);
+            const chunkSize = Math.ceil(size / totalConns);
+
+            const loadedArr = Array(totalConns).fill(0);
+            const totalStart = performance.now();
+            const speedSamples = [];
+
+            let resumeJobId = null;
+            if (SETTINGS.resumableEnabled) {
+                const existing = ResumeManager.findByFile(id);
+                if (existing && existing.chunkCount === totalConns) {
+                    /* v1.2.4 (11b-F02): adopted jobs RESET their chunk map —
+                     * the writable below is an empty swap, so restoring the
+                     * old map would skip 'completed' chunks and zero-fill
+                     * their spans (the corrupted-full-size-file class). The
+                     * adopt keeps the job identity only; loadedArr stays
+                     * all-zero — an honest full re-download. */
+                    resumeJobId = existing.id;
+                    ResumeManager.resetChunks(resumeJobId);
+                } else {
+                    resumeJobId = ResumeManager.create(id, name, size, totalConns);
+                }
+            }
+
+            const reportProgress = () => {
+                const sum = loadedArr.reduce((a, b) => a + b, 0);
+                const elapsed = (performance.now() - totalStart) / 1000;
+                const speed = sum / Math.max(elapsed, 0.001);
+                speedSamples.push({ ts: Date.now(), speed });
+                if (speedSamples.length > 60) speedSamples.shift();
+                onProgress && onProgress({ loaded: sum, total: size, speed, connections: totalConns, mirrors: mirrors.length });
+            };
+
+            const queue = [];
+            for (let i = 0; i < totalConns; i++) {
+                const expected = (i === totalConns - 1) ? size - i * chunkSize : chunkSize;
+                if (loadedArr[i] >= expected) continue;
+                queue.push(i);
+            }
+
+            const fetchChunk = async (idx) => {
+                const baseFrom = idx * chunkSize;
+                const to = Math.min(size - 1, (idx + 1) * chunkSize - 1);
+                let lastErr = new Error('no mirror available (circuit open)');
+                const maxAttempts = SETTINGS.chunkRetry + 1;
+
+                for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                    if (signal && signal.aborted) throw new Error('aborted');
+                    const mirror = mirrors[(idx + attempt) % mirrors.length];
+                    if (CircuitBreaker.isOpen(mirror.host)) continue;
+
+                    const from = baseFrom + loadedArr[idx];
+                    if (from > to) return;
+                    const url = ProxyManager.url(mirror, id);
+
+                    try {
+                        const r = await gmXHR({
+                            url, method: 'GET', responseType: 'arraybuffer',
+                            headers: Object.assign({}, SPOOF_HEADERS, { 'Range': `bytes=${from}-${to}` }),
+                            timeout: SETTINGS.downloadTimeoutMs, signal
+                        });
+                        if (r.status === 403) {
+                            CircuitBreaker.record(mirror.host, false);
+                            if (/hotlink/i.test(r.responseText || '')) ProxyManager.markBlocked(mirror.host);
+                            throw new Error('blocked');
+                        }
+                        if (r.status === 429) { const e = new Error('Rate-limited'); e.code = 'CAPTCHA'; throw e; }
+                        /* v1.2.6 (r17 F04): THE RANGE-200 FLOOR — a mirror that
+                         * ignores the Range header answers 200 with the FULL
+                         * file; the old acceptance wrote it at `position: from`
+                         * (misaligned corruption, size overshoot, ok:true on a
+                         * broken file). A 200 is honored only when this chunk
+                         * starts at 0 — the full-file body covers it, written
+                         * at 0 with progress capped at the span. */
+                        if (r.status !== 206 && !(r.status === 200 && from === 0)) throw new Error(`HTTP ${r.status} (range ignored)`);
+
+                        /* v1.2.7 (r18 R18-F09): THE SHORT-206 CONTRACT — the
+                         * received byte count must cover the requested span
+                         * before the chunk completes. A short body writes
+                         * what arrived, advances the resume cursor, and
+                         * throws a NAMED error so the attempt loop fetches
+                         * the REMAINDER (from = baseFrom + loadedArr[idx]
+                         * on the next iteration); exhausted attempts fail
+                         * the chunk VISIBLY instead of committing ok:true
+                         * on an incomplete file. An overshooting body is
+                         * sliced to the span so a protocol-violating 206
+                         * can never extend the file past its expected size. */
+                        const span = to - from + 1;
+                        const data = new Uint8Array(r.response);
+                        if (!data.byteLength) throw new Error(`empty body (0 of ${span} bytes at offset ${from})`);
+                        const chunkData = data.byteLength > span ? data.subarray(0, span) : data;
+                        await writable.write({ type: 'write', position: r.status === 206 ? from : 0, data: chunkData });
+                        loadedArr[idx] += chunkData.byteLength;
+                        reportProgress();
+                        if (resumeJobId) ResumeManager.updateChunk(resumeJobId, idx, loadedArr[idx], mirror.host);
+                        if (chunkData.byteLength >= span) {
+                            CircuitBreaker.record(mirror.host, true);
+                            return;
+                        }
+                        throw new Error(`short 206 body (${chunkData.byteLength} of ${span} bytes at offset ${from})`);
+                    } catch (e) {
+                        lastErr = e;
+                        CircuitBreaker.record(mirror.host, false);
+                        if (e.kind === 'abort' || e.message === 'aborted') throw e;
+                        if (e.code === 'CAPTCHA') throw e;
+                        const backoff = SETTINGS.retryBackoffMs * Math.pow(SETTINGS.retryBackoffMultiplier, attempt);
+                        if (attempt < maxAttempts - 1) await sleep(backoff);
+                    }
+                }
+                throw lastErr;
+            };
+
+            const concurrency = totalConns;
+            const workers = Array.from({ length: concurrency }, async () => {
+                while (queue.length) {
+                    const idx = queue.shift();
+                    if (idx == null) break;
+                    await fetchChunk(idx);
+                }
+            });
+
+            try {
+                await Promise.all(workers);
+                /* v1.2.7 (r18 R18-F09): the completeness gate — the
+                 * received-byte sum must equal the expected size before
+                 * close() commits the file; a shortfall aborts the stream
+                 * and fails the download VISIBLY (the old path closed a
+                 * short file and returned ok:true with the pre-flight
+                 * size). */
+                const receivedTotal = loadedArr.reduce((a, b) => a + b, 0);
+                if (receivedTotal !== size) throw new Error(`incomplete download: ${receivedTotal} of ${size} bytes received`);
+                await writable.close();
+                const elapsed = performance.now() - totalStart;
+                if (resumeJobId) ResumeManager.markComplete(resumeJobId, elapsed);
+                BandwidthTracker.add(size, true);
+                const avgSpeed = size / (elapsed / 1000);
+                return { ok: true, mode: 'speed_multiplied', size, connections: totalConns, mirrors: mirrors.length, time: elapsed, speed: avgSpeed };
+            } catch (e) { try { await writable.abort(); } catch { console.debug('PD fsa: stream abort failed'); } throw e; }
+        },
+
+        async multi_proxy_ranged({ id, name, size, onProgress, signal }) {
+            if (!Caps.fsAccess) throw new Error('File System Access API required');
+            if (!size) { try { size = (await PDApi.fileInfo(id)).size; } catch { console.debug('PD fsa: fileInfo size unavailable'); } }
+            if (!size) {
+                const proxy = await ProxyManager.best(id);
+                try {
+                    const h = await gmXHR({ method: 'HEAD', url: ProxyManager.url(proxy, id), timeout: 10000 });
+                    size = parseInt((h.responseHeaders || '').match(/content-length:\s*(\d+)/i)?.[1] || '0', 10);
+                } catch { console.debug('PD fsa: HEAD size probe failed'); }
+            }
+            if (!size) throw new Error('Cannot determine file size');
+
+            const handle = await window.showSaveFilePicker({
+                suggestedName: sanitizeFilename(name),
+                types: [{ description: 'File', accept: { '*/*': [] } }]
+            });
+            const writable = await handle.createWritable({ keepExistingData: false });
+
+            const mirrors = await ProxyManager.topN(SETTINGS.multiProxyChunks, id);
+            const targetChunkBytes = SETTINGS.adaptiveChunking
+                ? clamp(Math.ceil(size / (mirrors.length * 2)), SETTINGS.chunkSizeMin, SETTINGS.chunkSizeMax)
+                : Math.max(SETTINGS.chunkSizeMin, Math.min(SETTINGS.chunkSizeMax, Math.ceil(size / SETTINGS.multiProxyChunks)));
+            const chunkCount = Math.max(2, Math.min(SETTINGS.multiProxyChunks * 2, Math.ceil(size / targetChunkBytes)));
+            const chunkSize = Math.ceil(size / chunkCount);
+            const loadedArr = Array(chunkCount).fill(0);
+            const totalStart = performance.now();
+
+            let resumeJobId = null;
+            if (SETTINGS.resumableEnabled) {
+                const existing = ResumeManager.findByFile(id);
+                if (existing && existing.chunkCount === chunkCount) {
+                    /* v1.2.4 (11b-F02): adopted jobs RESET their chunk map —
+                     * the same empty-swap honesty as the parallel arm above
+                     * (chunk-skip against a fresh writable zero-fills the
+                     * skipped spans). Job identity kept; loadedArr all-zero. */
+                    resumeJobId = existing.id;
+                    ResumeManager.resetChunks(resumeJobId);
+                } else {
+                    resumeJobId = ResumeManager.create(id, name, size, chunkCount);
+                }
+            }
+
+            const reportProgress = () => {
+                const sum = loadedArr.reduce((a, b) => a + b, 0);
+                const elapsed = (performance.now() - totalStart) / 1000;
+                onProgress && onProgress({ loaded: sum, total: size, speed: sum / Math.max(elapsed, 0.001) });
+            };
+
+            const queue = [];
+            for (let i = 0; i < chunkCount; i++) {
+                const expected = (i === chunkCount - 1) ? size - i * chunkSize : chunkSize;
+                if (loadedArr[i] >= expected) continue;
+                queue.push(i);
+            }
+
+            const fetchChunk = async (idx) => {
+                const baseFrom = idx * chunkSize;
+                const to = Math.min(size - 1, (idx + 1) * chunkSize - 1);
+                let lastErr;
+                for (let attempt = 0; attempt <= SETTINGS.chunkRetry; attempt++) {
+                    if (signal && signal.aborted) throw new Error('aborted');
+                    const live = ProxyManager.list();
+                    const pool = mirrors.filter(m => live.find(l => l.host === m.host));
+                    if (!pool.length) pool.push(...live.slice(0, 3));
+                    const proxy = pool[(idx + attempt) % pool.length];
+                    const from = baseFrom + loadedArr[idx];
+                    if (from > to) return;
+                    const url = ProxyManager.url(proxy, id);
+                    try {
+                        const r = await gmXHR({
+                            url, method: 'GET', responseType: 'arraybuffer',
+                            headers: Object.assign({}, SPOOF_HEADERS, { 'Range': `bytes=${from}-${to}` }),
+                            timeout: SETTINGS.downloadTimeoutMs, signal
+                        });
+                        if (r.status === 403) {
+                            CircuitBreaker.record(proxy.host, false);
+                            if (/hotlink/i.test(r.responseText || '')) ProxyManager.markBlocked(proxy.host);
+                            throw new Error('blocked');
+                        }
+                        if (r.status === 429) { const e = new Error('Rate-limited'); e.code = 'CAPTCHA'; throw e; }
+                        /* v1.2.6 (r17 F04): THE RANGE-200 FLOOR — see the
+                         * speed_multiplied site for the full rationale. */
+                        if (r.status !== 206 && !(r.status === 200 && from === 0)) throw new Error(`HTTP ${r.status} (range ignored)`);
+                        /* v1.2.7 (r18 R18-F09): THE SHORT-206 CONTRACT — see
+                         * the speed_multiplied site for the full rationale
+                         * (span validation, remainder retry, slice-to-span). */
+                        const span = to - from + 1;
+                        const data = new Uint8Array(r.response);
+                        if (!data.byteLength) throw new Error(`empty body (0 of ${span} bytes at offset ${from})`);
+                        const chunkData = data.byteLength > span ? data.subarray(0, span) : data;
+                        await writable.write({ type: 'write', position: r.status === 206 ? from : 0, data: chunkData });
+                        loadedArr[idx] += chunkData.byteLength;
+                        reportProgress();
+                        if (resumeJobId) ResumeManager.updateChunk(resumeJobId, idx, loadedArr[idx], proxy.host);
+                        if (chunkData.byteLength >= span) {
+                            CircuitBreaker.record(proxy.host, true);
+                            return;
+                        }
+                        throw new Error(`short 206 body (${chunkData.byteLength} of ${span} bytes at offset ${from})`);
+                    } catch (e) {
+                        lastErr = e;
+                        if (e.kind === 'abort' || e.message === 'aborted') throw e;
+                        if (e.code === 'CAPTCHA') throw e;
+                        CircuitBreaker.record(proxy.host, false);
+                        if (attempt < SETTINGS.chunkRetry) await sleep(SETTINGS.retryBackoffMs * Math.pow(SETTINGS.retryBackoffMultiplier, attempt));
+                    }
+                }
+                throw lastErr;
+            };
+
+            const concurrency = Math.min(SETTINGS.chunkConcurrency, chunkCount);
+            const workers = Array.from({ length: concurrency }, async () => { while (queue.length) await fetchChunk(queue.shift()); });
+            try {
+                await Promise.all(workers);
+                /* v1.2.7 (r18 R18-F09): the completeness gate — see the
+                 * speed_multiplied site for the full rationale. */
+                const receivedTotal = loadedArr.reduce((a, b) => a + b, 0);
+                if (receivedTotal !== size) throw new Error(`incomplete download: ${receivedTotal} of ${size} bytes received`);
+                await writable.close();
+                const elapsed = performance.now() - totalStart;
+                if (resumeJobId) ResumeManager.markComplete(resumeJobId, elapsed);
+                BandwidthTracker.add(size, true);
+                return { ok: true, mode: 'multi_proxy_ranged', size, chunks: chunkCount, time: elapsed };
+            } catch (e) { try { await writable.abort(); } catch { console.debug('PD fsa: stream abort failed'); } throw e; }
+        },
+
+        async gm_stream_fsa({ id, name, size, onProgress, signal }) {
+            if (!Caps.fsAccess) throw new Error('File System Access API unavailable');
+            const proxy = await ProxyManager.raceOrBest(id);
+            const url = ProxyManager.url(proxy, id, { download: true });
+            Log.info(`gm_stream_fsa via ${proxy.host}`);
+
+            if (!size) { try { size = (await PDApi.fileInfo(id)).size; } catch { console.debug('PD fsa: fileInfo size unavailable'); } }
+
+            const handle = await window.showSaveFilePicker({
+                suggestedName: sanitizeFilename(name),
+                types: [{ description: 'File', accept: { '*/*': [] } }]
+            });
+            let writable = await handle.createWritable();
+            const start = performance.now();
+            let loaded = 0;
+            const total = size || 0;
+
+            try {
+                const streamed = await new Promise((resolve, reject) => {
+                    const xhr = typeof GM_xmlhttpRequest === 'function' ? GM_xmlhttpRequest : (GM && GM.xmlHttpRequest);
+                    let aborted = false;
+                    let streaming = false; /* v1.2.4 (11b-F03): the reader loop owns the settle once it starts */
+                    const h = xhr({
+                        method: 'GET', url, headers: SPOOF_HEADERS,
+                        responseType: 'stream', anonymous: true,
+                        timeout: SETTINGS.downloadTimeoutMs,
+                        onloadstart: async (resp) => {
+                            try {
+                                const reader = resp.response && resp.response.getReader && resp.response.getReader();
+                                if (!reader) { resolve(false); return; }
+                                streaming = true;
+                                while (!aborted) {
+                                    const { done, value } = await reader.read();
+                                    if (done) break;
+                                    await writable.write(value);
+                                    loaded += value.byteLength;
+                                    const elapsed = (performance.now() - start) / 1000;
+                                    onProgress && onProgress({ loaded, total, speed: loaded / Math.max(elapsed, 0.001) });
+                                }
+                                resolve(true);
+                            } catch (e) { reject(e); }
+                        },
+                        /* v1.2.4 (11b-F03): the onload second-settler is RETIRED —
+                         * it raced the reader loop above (consumer lag let
+                         * resolve(true) fire while trailing writable.write(value)
+                         * calls were still in flight: write-after-close → the
+                         * loop's rejection became a no-op → silent truncation
+                         * reported ok:true; the loaded===0 variant resolved(false)
+                         * → a CONCURRENT buffered re-download on the same
+                         * writable — the 10c-F02 class reborn). onload is a no-op
+                         * unless the stream never started. */
+                        onload: () => { if (!streaming) resolve(false); },
+                        onerror: (e) => reject(new Error(`network: ${(e && (e.error || e.statusText)) || 'unknown'}`)),
+                        ontimeout: () => reject(new Error('timeout'))
+                    });
+                    if (signal) signal.addEventListener('abort', () => { aborted = true; try { h && h.abort && h.abort(); } catch { console.debug('PD fsa: request abort failed'); } reject(new Error('aborted')); });
+                });
+                if (streamed && loaded > 0) {
+                    await writable.close();
+                    CircuitBreaker.record(proxy.host, true);
+                    BandwidthTracker.add(loaded, true);
+                    return { ok: true, mode: 'gm_stream_fsa', proxy: proxy.host, size: loaded };
+                }
+            } catch (e) {
+                if (e.message === 'aborted') { try { await writable.abort(); } catch { console.debug('PD fsa: stream abort failed'); } throw e; }
+                Log.warn('stream fallback to buffered:', e.message);
+                /* discard the partial stream before the buffered re-download:
+                 * an unpositioned write onto N committed bytes corrupts the
+                 * file (10c F02). createWritable()'s implicit truncate gives
+                 * the fallback a clean slate. */
+                try { await writable.abort(); } catch (fsSettleErr) { console.debug('PD fsa: partial-stream abort already settled:', fsSettleErr && fsSettleErr.message); }
+                writable = await handle.createWritable();
+                loaded = 0;
+            }
+
+            try {
+                const r = await gmXHR({
+                    url, responseType: 'arraybuffer',
+                    timeout: SETTINGS.downloadTimeoutMs, signal,
+                    onprogress: (e) => {
+                        if (e && e.lengthComputable && onProgress) {
+                            const elapsed = (performance.now() - start) / 1000;
+                            onProgress({ loaded: e.loaded, total: e.total, speed: e.loaded / Math.max(elapsed, 0.001) });
+                        }
+                    }
+                });
+                if (r.status === 403) { CircuitBreaker.record(proxy.host, false); throw new Error('blocked'); }
+                if (r.status === 429) throw Object.assign(new Error('Rate-limited'), { code: 'CAPTCHA' });
+                if (r.status !== 200) throw new Error(`HTTP ${r.status}`);
+                await writable.write(new Uint8Array(r.response));
+                await writable.close();
+                CircuitBreaker.record(proxy.host, true);
+                BandwidthTracker.add(r.response.byteLength, true);
+                return { ok: true, mode: 'gm_stream_fsa', proxy: proxy.host, size: r.response.byteLength };
+            } catch (e) { try { await writable.abort(); } catch { console.debug('PD fsa: stream abort failed'); } throw e; }
+        },
+
+        async single_host_ranged({ id, name, size, onProgress, signal }) {
+            if (!Caps.fsAccess) throw new Error('FSA required');
+            if (!size) { try { size = (await PDApi.fileInfo(id)).size; } catch { console.debug('PD fsa: fileInfo size unavailable'); } }
+            if (!size) throw new Error('Cannot determine size');
+            const proxy = await ProxyManager.best(id);
+            const url = ProxyManager.url(proxy, id);
+
+            const handle = await window.showSaveFilePicker({
+                suggestedName: sanitizeFilename(name),
+                types: [{ description: 'File', accept: { '*/*': [] } }]
+            });
+            const writable = await handle.createWritable({ keepExistingData: false });
+
+            const conns = Math.min(SETTINGS.connectionsPerMirror, Math.ceil(size / SETTINGS.chunkSizeMin));
+            const chunkSize = Math.ceil(size / conns);
+            const loadedArr = Array(conns).fill(0);
+            const start = performance.now();
+
+            const fetchChunk = async (idx) => {
+                const to = Math.min(size - 1, (idx + 1) * chunkSize - 1);
+                let lastErr;
+                for (let attempt = 0; attempt <= SETTINGS.chunkRetry; attempt++) {
+                    /* v1.2.7 (r18 R18-F09): `from` advances per attempt —
+                     * it was computed once outside the loop, so a retry
+                     * after a short body re-fetched the SAME range while
+                     * loadedArr had already advanced (double-counted
+                     * progress, and the completeness gate would then fail
+                     * a healthy file). The two sibling strategies already
+                     * recomputed it per attempt. */
+                    const from = idx * chunkSize + loadedArr[idx];
+                    if (from > to) return;
+                    try {
+                        const r = await gmXHR({
+                            url, responseType: 'arraybuffer',
+                            headers: Object.assign({}, SPOOF_HEADERS, { 'Range': `bytes=${from}-${to}` }),
+                            timeout: SETTINGS.downloadTimeoutMs, signal
+                        });
+                        /* v1.2.6 (r17 F04): THE RANGE-200 FLOOR — see the
+                         * speed_multiplied site for the full rationale. */
+                        if (r.status !== 206 && !(r.status === 200 && from === 0)) throw new Error(`HTTP ${r.status} (range ignored)`);
+                        /* v1.2.7 (r18 R18-F09): THE SHORT-206 CONTRACT — see
+                         * the speed_multiplied site for the full rationale
+                         * (span validation, remainder retry, slice-to-span). */
+                        const span = to - from + 1;
+                        const data = new Uint8Array(r.response);
+                        if (!data.byteLength) throw new Error(`empty body (0 of ${span} bytes at offset ${from})`);
+                        const chunkData = data.byteLength > span ? data.subarray(0, span) : data;
+                        await writable.write({ type: 'write', position: r.status === 206 ? from : 0, data: chunkData });
+                        loadedArr[idx] += chunkData.byteLength;
+                        const sum = loadedArr.reduce((a, b) => a + b, 0);
+                        const elapsed = (performance.now() - start) / 1000;
+                        onProgress && onProgress({ loaded: sum, total: size, speed: sum / Math.max(elapsed, 0.001) });
+                        if (chunkData.byteLength >= span) return;
+                        throw new Error(`short 206 body (${chunkData.byteLength} of ${span} bytes at offset ${from})`);
+                    } catch (e) {
+                        lastErr = e;
+                        if (e.kind === 'abort' || e.message === 'aborted') throw e;
+                        if (attempt < SETTINGS.chunkRetry) await sleep(SETTINGS.retryBackoffMs * Math.pow(SETTINGS.retryBackoffMultiplier, attempt));
+                    }
+                }
+                throw lastErr;
+            };
+
+            const queue = Array.from({ length: conns }, (_, i) => i);
+            const workers = Array.from({ length: conns }, async () => { while (queue.length) await fetchChunk(queue.shift()); });
+            try {
+                await Promise.all(workers);
+                /* v1.2.7 (r18 R18-F09): the completeness gate — see the
+                 * speed_multiplied site for the full rationale. */
+                const receivedTotal = loadedArr.reduce((a, b) => a + b, 0);
+                if (receivedTotal !== size) throw new Error(`incomplete download: ${receivedTotal} of ${size} bytes received`);
+                await writable.close();
+                CircuitBreaker.record(proxy.host, true);
+                BandwidthTracker.add(size, true);
+                return { ok: true, mode: 'single_host_ranged', size, proxy: proxy.host, connections: conns };
+            } catch (e) { try { await writable.abort(); } catch { console.debug('PD fsa: stream abort failed'); } throw e; }
+        },
+
+        async native_fetch({ id, name, size, onProgress, signal }) {
+            if (!Caps.fsAccess || !Caps.streams) throw new Error('FSA/streams unavailable');
+            const mirrors = ProxyManager.list().slice(0, 6);
+            /* v1.2.4 (11b-F08): ONE picker for the whole failover chain — user
+             * activation is consumed by the first showSaveFilePicker call, so
+             * calling it inside the mirror loop made mirror 2+ throw the
+             * PICKER's NotAllowedError instead of the fetch's real error
+             * (6-mirror failover was effectively single-mirror). Each mirror
+             * takes a fresh writable from the same handle. */
+            const handle = await window.showSaveFilePicker({
+                suggestedName: sanitizeFilename(name),
+                types: [{ description: 'File', accept: { '*/*': [] } }]
+            });
+            let lastErr;
+            for (const mirror of mirrors) {
+                const url = ProxyManager.url(mirror, id, { download: true });
+                let writable = null;
+                try {
+                    writable = await handle.createWritable();
+                    try {
+                        const r = await fetch(url, { credentials: 'omit', referrerPolicy: 'no-referrer', signal });
+                        if (r.status === 403) { CircuitBreaker.record(mirror.host, false); ProxyManager.markBlocked(mirror.host); throw new Error('blocked'); }
+                        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                        /* 1.2.5 (13b-F22): NaN-proof — see the premium_direct
+                         * twin. */
+                        const total = parseInt(r.headers.get('content-length') || size || '0', 10) || 0;
+                        const start = performance.now();
+                        let loaded = 0;
+                        const reader = r.body.getReader();
+                        while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) break;
+                            await writable.write(value);
+                            loaded += value.byteLength;
+                            const elapsed = (performance.now() - start) / 1000;
+                            onProgress && onProgress({ loaded, total, speed: loaded / Math.max(elapsed, 0.001) });
+                        }
+                        await writable.close();
+                        CircuitBreaker.record(mirror.host, true);
+                        BandwidthTracker.add(loaded, true);
+                        return { ok: true, mode: 'native_fetch', proxy: mirror.host, size: loaded };
+                } catch (e) { if (writable) { try { await writable.abort(); } catch { console.debug('PD fsa: stream abort failed'); } } throw e; }
+                } catch (e) { lastErr = e; if (e.kind === 'abort' || e.message === 'aborted') throw e; }
+            }
+            throw lastErr || new Error('All mirrors failed');
+        },
+
+        async gm_blob({ id, name, onProgress, signal }) {
+            const mirrors = ProxyManager.list().slice(0, 8);
+            let lastErr;
+            for (const mirror of mirrors) {
+                if (CircuitBreaker.isOpen(mirror.host)) continue;
+                const url = ProxyManager.url(mirror, id, { download: true });
+                Log.info(`gm_blob trying ${mirror.host}`);
+                const start = performance.now();
+                try {
+                    const r = await gmXHR({
+                        url, responseType: 'blob',
+                        timeout: SETTINGS.downloadTimeoutMs, signal,
+                        onprogress: (e) => {
+                            if (e && e.lengthComputable && onProgress) {
+                                const elapsed = (performance.now() - start) / 1000;
+                                onProgress({ loaded: e.loaded, total: e.total, speed: e.loaded / Math.max(elapsed, 0.001) });
+                            }
+                        }
+                    });
+                    if (r.status === 403) { CircuitBreaker.record(mirror.host, false); ProxyManager.markBlocked(mirror.host); continue; }
+                    if (r.status === 429) { lastErr = Object.assign(new Error('Rate-limited'), { code: 'CAPTCHA' }); break; }
+                    if (r.status !== 200) { lastErr = new Error(`HTTP ${r.status}`); CircuitBreaker.record(mirror.host, false); continue; }
+                    this._saveBlob(r.response, name);
+                    CircuitBreaker.record(mirror.host, true);
+                    BandwidthTracker.add(r.response.size, true);
+                    return { ok: true, mode: 'gm_blob', proxy: mirror.host, size: r.response.size };
+                } catch (e) { lastErr = e; if (e.kind === 'abort' || e.message === 'aborted') throw e; CircuitBreaker.record(mirror.host, false); }
+            }
+            throw lastErr || new Error('All mirrors failed');
+        },
+
+        async gm_download({ id, name, onProgress }) {
+            if (!Caps.gmDownload) throw new Error('GM_download not available');
+            const proxy = await ProxyManager.raceOrBest(id);
+            return new Promise((resolve, reject) => {
+                const tryMirror = (mirror, attempt = 0) => {
+                    if (CircuitBreaker.isOpen(mirror.host)) {
+                        const mirrors = ProxyManager.list();
+                        const nextIdx = mirrors.indexOf(mirror) + 1;
+                        if (nextIdx < mirrors.length) tryMirror(mirrors[nextIdx], attempt);
+                        else reject(new Error('All mirrors circuit-broken'));
+                        return;
+                    }
+                    const dlUrl = ProxyManager.url(mirror, id, { download: true });
+                    Log.info(`gm_download via ${mirror.host}`);
+                    GM_download({
+                        url: dlUrl,
+                        name: sanitizeFilename(name),
+                        headers: SPOOF_HEADERS,
+                        saveAs: false,
+                        onload: () => { CircuitBreaker.record(mirror.host, true); resolve({ ok: true, mode: 'gm_download', proxy: mirror.host }); },
+                        onerror: (e) => {
+                            const msg = (e && (e.error || e.details)) || '';
+                            Log.warn(`gm_download fail on ${mirror.host}: ${msg}`);
+                            CircuitBreaker.record(mirror.host, false);
+                            const mirrors = ProxyManager.list();
+                            const nextIdx = mirrors.indexOf(mirror) + 1;
+                            if (nextIdx < mirrors.length && attempt < 4) tryMirror(mirrors[nextIdx], attempt + 1);
+                            else reject(new Error(`GM_download failed: ${msg}`));
+                        },
+                        ontimeout: () => { CircuitBreaker.record(mirror.host, false); reject(new Error('GM_download timeout')); },
+                        onprogress: (e) => { if (e && e.lengthComputable && onProgress) onProgress({ loaded: e.loaded, total: e.total }); }
+                    });
+                };
+                tryMirror(proxy);
+            });
+        },
+
+        async stream({ id, name, mime }) {
+            const proxy = await ProxyManager.best(id);
+            const url = ProxyManager.url(proxy, id);
+            const w = window.open('about:blank', '_blank');
+            if (!w) { Toast.error('Popup blocked'); return { ok: false }; }
+            const tag = (mime || '').startsWith('audio/') ? 'audio' : 'video';
+            /* [R3] popup player built through the DOM (document.write on the
+             * script-owned popup was the last own-popup string sink). */
+            const d = w.document;
+            d.title = name;
+            const meta = d.createElement('meta');
+            meta.setAttribute('charset', 'utf-8');
+            const refMeta = d.createElement('meta');
+            refMeta.setAttribute('name', 'referrer');
+            refMeta.setAttribute('content', 'no-referrer');
+            const style = d.createElement('style');
+            style.textContent = `html,body{margin:0;background:#0A131A;height:100%;display:flex;align-items:center;justify-content:center}${tag}{max-width:100vw;max-height:100vh;width:100%}`;
+            d.head.append(meta, refMeta, style);
+            const media = d.createElement(tag);
+            media.setAttribute('src', url);
+            media.setAttribute('controls', '');
+            media.setAttribute('autoplay', '');
+            media.setAttribute('playsinline', '');
+            d.body.append(media);
+            return { ok: true, mode: 'stream', proxy: proxy.host };
+        },
+
+        async jdownloader({ urls }) {
+            const list = Array.isArray(urls) ? urls : [urls];
+            const r = await gmXHR({
+                method: 'POST', url: SETTINGS.jdownloaderUrl,
+                headers: { 'Content-Type': 'application/json' },
+                spoof: false,
+                data: JSON.stringify({ urls: list.join('\r\n'), source: list.join('\r\n'), referrer: 'https://pixeldrain.com/' }),
+                timeout: 8000
+            });
+            if (r.status >= 200 && r.status < 300) return { ok: true };
+            throw new Error(`JDownloader HTTP ${r.status}`);
+        },
+
+        async aria2({ urls, names }) {
+            const list = Array.isArray(urls) ? urls : [urls];
+            const nameList = Array.isArray(names) ? names : [names || ''];
+            const results = [];
+            for (let i = 0; i < list.length; i++) {
+                const opts = {
+                    referer: 'https://pixeldrain.com/',
+                    'max-connection-per-server': String(SETTINGS.aria2MaxConn),
+                    split: String(SETTINGS.aria2Split),
+                    'min-split-size': '1M'
+                };
+                if (nameList[i]) opts.out = sanitizeFilename(nameList[i]);
+                const params = SETTINGS.aria2Secret
+                    ? [`token:${SETTINGS.aria2Secret}`, [list[i]], opts]
+                    : [[list[i]], opts];
+                const r = await gmXHR({
+                    method: 'POST', url: SETTINGS.aria2RpcUrl,
+                    headers: { 'Content-Type': 'application/json' }, spoof: false,
+                    data: JSON.stringify({ jsonrpc: '2.0', id: uuid(), method: 'aria2.addUri', params }),
+                    responseType: 'json', timeout: 8000
+                });
+                if (r.status !== 200) throw new Error(`Aria2 HTTP ${r.status}`);
+                results.push((r.response || {}).result);
+            }
+            return { ok: true, gid: results[0], count: results.length };
+        },
+
+        _saveBlob(blob, name) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = sanitizeFilename(name); a.style.display = 'none';
+            document.body.appendChild(a); a.click();
+            setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 2000);
+        }
+    };
+
+    // ================================================================
+    // 12. DOWNLOAD MANAGER (auto-strategy + pre-flight + view-pad)
+    // ================================================================
+    const Downloader = {
+        _activeJobs: new Map(),
+        _queue: [],
+
+        _resolveAuto(file) {
+            const hasAuth = !!PDApi._authHeader();
+            if (hasAuth && SETTINGS.useDirectIfAuth) return 'premium_direct';
+            if (Caps.fsAccess && SETTINGS.speedMultiplier && (file.size || 0) > 5 * 1024 * 1024) return 'speed_multiplied';
+            if (Caps.fsAccess) return 'multi_proxy_ranged';
+            if (Caps.gmDownload) return 'gm_download';
+            return 'gm_blob';
+        },
+
+        _fallbackOrder(primary, file) {
+            const all = ['premium_direct', 'speed_multiplied', 'multi_proxy_ranged', 'single_host_ranged', 'gm_stream_fsa', 'native_fetch', 'gm_blob', 'gm_download'];
+            const order = [primary];
+            if (!SETTINGS.autoFailover) return order;
+            for (const s of all) {
+                if (order.includes(s)) continue;
+                if (s === 'premium_direct' && !PDApi._authHeader()) continue;
+                if (s === 'gm_download' && !Caps.gmDownload) continue;
+                if (s === 'gm_stream_fsa' && !Caps.fsAccess) continue;
+                if (s === 'native_fetch' && !(Caps.fsAccess && Caps.streams)) continue;
+                if (s === 'speed_multiplied' && !Caps.fsAccess) continue;
+                if (s === 'multi_proxy_ranged' && !Caps.fsAccess) continue;
+                if (s === 'single_host_ranged' && !Caps.fsAccess) continue;
+                order.push(s);
+            }
+            return order;
+        },
+
+        async run(file, strategy = SETTINGS.primaryStrategy) {
+            const jobId = uuid();
+            const ac = new AbortController();
+            this._activeJobs.set(jobId, { id: jobId, file, ac, startTime: Date.now() });
+
+            if (SETTINGS.preflightCheck) {
+                try {
+                    const pf = await PDApi.preflight(file.id);
+                    if (pf.ok && pf.needsCaptcha) {
+                        Toast.warn(`Captcha required: ${pf.availability}`, 6000);
+                        await CaptchaHandler.handle(file.id);
+                        this._activeJobs.delete(jobId);
+                        return { ok: false, reason: 'captcha_required' };
+                    }
+                    if (pf.ok && pf.size && !file.size) file.size = pf.size;
+                    if (pf.ok && pf.name && !file.name) file.name = pf.name;
+                    if (pf.ok && pf.mime && !file.mime_type) file.mime_type = pf.mime;
+                } catch (e) { Log.warn('preflight failed:', e.message); }
+            }
+
+            if (SETTINGS.viewPadEnabled && strategy !== 'premium_direct') {
+                PDApi.viewPad(file.id, 2).catch((e) => { console.debug('PD interceptor:', e); });
+            }
+
+            const ui = this._createProgressUI(file, () => ac.abort());
+
+            const onProgress = ({ loaded, total, speed, connections, mirrors }) => {
+                const pct = total ? Math.min(100, (loaded / total) * 100) : 0;
+                ui.bar.style.width = `${pct}%`;
+                const eta = total && speed ? formatETA(total - loaded, speed) : '';
+                ui.label.textContent = total
+                    ? `${formatBytes(loaded)} / ${formatBytes(total)} (${pct.toFixed(1)}%)${eta ? ' · ' + eta : ''}`
+                    : formatBytes(loaded);
+                let speedText = formatSpeed(speed || 0);
+                if (connections) speedText += ` · ${connections}x`;
+                if (mirrors) speedText += ` · ${mirrors}m`;
+                ui.speed.textContent = speedText;
+            };
+
+            try {
+                const resolved = strategy === 'auto' ? this._resolveAuto(file) : strategy;
+                const order = this._fallbackOrder(resolved, file);
+                let result, lastErr;
+
+                for (const s of order) {
+                    try {
+                        Log.info(`strategy: ${s}`);
+                        ui.label.textContent = `→ ${s}`;
+                        if (s === 'gm_download') {
+                            ui.bar.style.width = '100%';
+                            ui.bar.style.background = 'repeating-linear-gradient(45deg,#00E5FF,#00E5FF 10px,#67E8F9 10px,#67E8F9 20px)';
+                            ui.speed.textContent = 'browser-managed';
+                        }
+                        result = await Strategies[s]({
+                            id: file.id, name: file.name, size: file.size, mime: file.mime_type,
+                            onProgress: s === 'gm_download' ? undefined : onProgress,
+                            signal: ac.signal
+                        });
+                        if (result && result.ok) break;
+                    } catch (e) {
+                        lastErr = e;
+                        Log.warn(`${s} failed:`, e.message);
+                        if (e.message === 'aborted' || e.name === 'AbortError') break;
+                        if (/user (?:activation|aborted|denied)/i.test(e.message)) break;
+                        if (e.code === 'CAPTCHA') {
+                            Toast.warn('Rate-limited, trying next strategy…');
+                            if (SETTINGS.captchaAutoDetect) await CaptchaHandler.handle(file.id);
+                        }
+                        if (!SETTINGS.autoFailover) break;
+                    }
+                }
+                if (!result || !result.ok) throw lastErr || new Error('All strategies failed');
+
+                const stats = SETTINGS.downloadStats || { count: 0, bytes: 0, savedBandwidth: 0 };
+                stats.count++;
+                stats.bytes += (file.size || result.size || 0);
+                if (result.mode !== 'premium_direct' && result.mode !== 'native_fetch') {
+                    stats.savedBandwidth += (file.size || result.size || 0);
+                }
+                SETTINGS = saveSettings({ downloadStats: stats });
+
+                ui.bar.style.width = '100%';
+                ui.bar.style.background = 'linear-gradient(90deg,#00E5FF,#67E8F9)';
+                /* v1.2.4 (11b-F17): null-guarded — cancelAll() may have cleared
+                 * the map while THIS download itself succeeded; the elapsed
+                 * display degrades to 0 instead of throwing a mislabeled ✗. */
+                const job = this._activeJobs.get(jobId);
+                const elapsed = job ? Date.now() - job.startTime : 0;
+                const tag = result.mode === 'premium_direct'
+                    ? `✓ Done (premium · no cap)`
+                    : `✓ Done (${result.mode} · 0 BW · ${formatDuration(elapsed)})`;
+                ui.label.textContent = tag;
+                ui.speed.textContent = result.speed ? formatSpeed(result.speed) : '';
+                Toast.success(`${file.name} — ${result.mode}${result.connections ? ' · ' + result.connections + 'x' : ''}`);
+                setTimeout(() => ui.wrap.remove(), 5000);
+                return result;
+            } catch (e) {
+                Log.error(e);
+                ui.label.textContent = `✗ ${e.message}`;
+                ui.bar.style.background = '#ff0055';
+                ui.bar.style.width = '100%';
+                Toast.error(`Failed: ${e.message}`);
+                setTimeout(() => ui.wrap.remove(), 10000);
+                throw e;
+            } finally { this._activeJobs.delete(jobId); }
+        },
+
+        async runBatch(files, strategy) {
+            const valid = files.filter(f => !f.availability && !f.availability_message);
+            Toast.info(`Batch: ${valid.length} files`);
+            const results = [];
+            for (const f of valid) {
+                try { results.push({ file: f, result: await this.run(f, strategy) }); }
+                catch (e) { results.push({ file: f, error: e }); if (e.code === 'CAPTCHA') break; }
+                await sleep(500);
+            }
+            const ok = results.filter(r => !r.error).length;
+            Toast.success(`Batch complete: ${ok}/${valid.length} succeeded`);
+            return results;
+        },
+
+        cancelAll() {
+            for (const [, job] of this._activeJobs) { try { job.ac.abort(); } catch { console.debug('PD jobs: abort failed'); } }
+            this._activeJobs.clear();
+        },
+
+        _createProgressUI(file, onCancel) {
+            const wrap = document.createElement('div');
+            wrap.className = `${NS}-toast info`;
+            wrap.style.minWidth = '360px';
+            const closeBtn = el('button', { class: `${NS}-modal-close`, style: 'font-size:16px;cursor:pointer;background:none;border:none;color:#ff0055' }, '\u00D7');
+            wrap.append(
+                el('div', { style: 'font-weight:600;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center' },
+                    el('span', { style: 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:280px', title: file.name }, file.name),
+                    closeBtn),
+                el('div', { style: 'font-size:11px;color:#67E8F9;margin-bottom:4px' },
+                    `${formatBytes(file.size || 0)} \u00B7 ${file.mime_type || 'unknown'}`),
+                el('div', { class: `${NS}-progress` }, el('div', { class: `${NS}-progress-bar` })),
+                el('div', { class: `${NS}-stat` },
+                    el('span', { class: `${NS}-dl-label` }, 'Preparing\u2026'),
+                    el('span', { class: `${NS}-dl-speed` })));
+            closeBtn.addEventListener('click', () => { onCancel(); wrap.remove(); });
+            (Toast.ensure ? Toast.ensure() : document.body).appendChild(wrap);
+            return {
+                wrap,
+                bar: wrap.querySelector(`.${NS}-progress-bar`),
+                label: wrap.querySelector(`.${NS}-dl-label`),
+                speed: wrap.querySelector(`.${NS}-dl-speed`)
+            };
+        }
+    };
+
+    // ================================================================
+    // 13. EXPORT GENERATORS
+    // ================================================================
+    const ExportGenerator = {
+        curl(url, name) { return `curl -L -C - -o "${sanitizeFilename(name)}" -e "https://pixeldrain.com/" "${url}"`; },
+        wget(url, name) { return `wget -c -O "${sanitizeFilename(name)}" --referer="https://pixeldrain.com/" "${url}"`; },
+        aria2c(url, name) { return `aria2c -x${SETTINGS.aria2MaxConn} -s${SETTINGS.aria2Split} -c -o "${sanitizeFilename(name)}" --referer="https://pixeldrain.com/" --min-split-size=1M "${url}"`; },
+        idm(url, name) { return `idman /d "${url}" /f "${sanitizeFilename(name)}" /n`; },
+        ps(url, name) { return `Invoke-WebRequest -Uri "${url}" -OutFile "${sanitizeFilename(name)}" -Headers @{Referer="https://pixeldrain.com/"} -Resume`; },
+        httpie(url, name) { return `http -d "${url}" Referer:https://pixeldrain.com/ -o "${sanitizeFilename(name)}"`; },
+        axel(url, name) { return `axel -n ${SETTINGS.aria2MaxConn} -H "Referer: https://pixeldrain.com/" -o "${sanitizeFilename(name)}" "${url}"`; },
+
+        async showModal(file) {
+            const proxy = await ProxyManager.best(file.id);
+            const url = ProxyManager.url(proxy, file.id, { download: true });
+            const name = sanitizeFilename(file.name);
+            const cmds = {
+                curl: this.curl(url, name),
+                wget: this.wget(url, name),
+                aria2c: this.aria2c(url, name),
+                axel: this.axel(url, name),
+                IDM: this.idm(url, name),
+                PowerShell: this.ps(url, name),
+                HTTPie: this.httpie(url, name)
+            };
+            const cmdBlocks = [];
+            cmdBlocks.push(el('div', { style: 'margin-bottom:12px;padding:8px;background:rgba(10,19,26,0.55);border-radius:6px;font-size:11px;color:#67E8F9' },
+                el('strong', null, 'Mirror:'), ` ${proxy.host}`, el('br'),
+                el('strong', null, 'URL:'), ' ',
+                el('span', { style: 'word-break:break-all' }, url)));
+            for (const [k, v] of Object.entries(cmds)) {
+                cmdBlocks.push(el('div', { style: 'margin-bottom:10px' },
+                    el('div', { style: 'font-size:12px;font-weight:600;color:#00E5FF;margin-bottom:3px' }, k),
+                    el('pre', { style: 'background:rgba(10,19,26,0.55);padding:8px;border-radius:4px;font-size:11px;white-space:pre-wrap;word-break:break-all;margin:0;color:#67E8F9;cursor:pointer', title: 'Click to copy', 'data-cmd': v }, v)));
+            }
+            const m = Modal.open({
+                title: `📤 Export: ${name}`,
+                body: cmdBlocks,
+                footer: [
+                    el('button', { class: `${NS}-btn ${NS}-copy-all` }, '📋 Copy All'),
+                    el('button', { class: `${NS}-btn ${NS}-cancel` }, 'Close')
+                ]
+            });
+            m.body.querySelectorAll('pre[data-cmd]').forEach(el => {
+                el.addEventListener('click', async () => {
+                    const ok = await copyToClipboard(el.dataset.cmd);
+                    Toast[ok ? 'success' : 'error'](ok ? 'Copied!' : 'Failed');
+                });
+            });
+            m.el.querySelector(`.${NS}-copy-all`).addEventListener('click', async () => {
+                const ok = await copyToClipboard(Object.values(cmds).join('\n\n'));
+                Toast[ok ? 'success' : 'error'](ok ? 'All copied' : 'Failed');
+            });
+            m.el.querySelector(`.${NS}-cancel`).addEventListener('click', () => m.close());
+        },
+
+        async showBatch(files) {
+            const proxy = await ProxyManager.best();
+            const lines = files.filter(f => !f.availability).map(f => this.aria2c(ProxyManager.url(proxy, f.id, { download: true }), f.name));
+            const urls = files.filter(f => !f.availability).map(f => ProxyManager.url(proxy, f.id, { download: true })).join('\n');
+            const curlLines = files.filter(f => !f.availability).map(f => this.curl(ProxyManager.url(proxy, f.id, { download: true }), f.name));
+            const m = Modal.open({
+                title: `📤 Batch Export (${files.length} files)`,
+                body: [
+                    el('div', { style: 'margin-bottom:8px;font-size:12px;color:#00E5FF;font-weight:600' }, 'aria2c (recommended - multi-threaded)'),
+                    el('pre', { style: 'background:rgba(10,19,26,0.55);padding:8px;border-radius:4px;font-size:11px;max-height:200px;overflow:auto;color:#67E8F9' }, lines.join('\n')),
+                    el('div', { style: 'margin:12px 0 8px;font-size:12px;color:#00E5FF;font-weight:600' }, 'curl'),
+                    el('pre', { style: 'background:rgba(10,19,26,0.55);padding:8px;border-radius:4px;font-size:11px;max-height:200px;overflow:auto;color:#67E8F9' }, curlLines.join('\n'))
+                ],
+                footer: [
+                    el('button', { class: `${NS}-btn ${NS}-copy-aria` }, 'aria2c'),
+                    el('button', { class: `${NS}-btn ${NS}-copy-curl` }, 'curl'),
+                    el('button', { class: `${NS}-btn ${NS}-copy-urls` }, 'URLs'),
+                    el('button', { class: `${NS}-btn ${NS}-save-sh` }, '💾 .sh'),
+                    el('button', { class: `${NS}-btn ${NS}-save-bat` }, '💾 .bat'),
+                    el('button', { class: `${NS}-btn ${NS}-cancel` }, 'Close')
+                ]
+            });
+            m.el.querySelector(`.${NS}-copy-aria`).addEventListener('click', async () => { await copyToClipboard(lines.join('\n')); Toast.success('Copied'); });
+            m.el.querySelector(`.${NS}-copy-curl`).addEventListener('click', async () => { await copyToClipboard(curlLines.join('\n')); Toast.success('Copied'); });
+            m.el.querySelector(`.${NS}-copy-urls`).addEventListener('click', async () => { await copyToClipboard(urls); Toast.success('Copied'); });
+            m.el.querySelector(`.${NS}-save-sh`).addEventListener('click', () => {
+                const b = new Blob(['#!/bin/bash\nset -e\n\n' + lines.join('\n') + '\n\necho "Done!"\n'], { type: 'text/plain' });
+                Strategies._saveBlob(b, `pd-batch-${Date.now()}.sh`);
+            });
+            m.el.querySelector(`.${NS}-save-bat`).addEventListener('click', () => {
+                const batLines = files.filter(f => !f.availability).map(f => {
+                    const u = ProxyManager.url(proxy, f.id, { download: true });
+                    return `curl -L -C - -o "${sanitizeFilename(f.name)}" -e "https://pixeldrain.com/" "${u}"`;
+                });
+                const b = new Blob(['@echo off\r\n\r\n' + batLines.join('\r\n') + '\r\n\r\necho Done!\r\npause\r\n'], { type: 'text/plain' });
+                Strategies._saveBlob(b, `pd-batch-${Date.now()}.bat`);
+            });
+            m.el.querySelector(`.${NS}-cancel`).addEventListener('click', () => m.close());
+        }
+    };
+
+    // ================================================================
+    // 14. QR CODE GENERATOR
+    // ================================================================
+    const QRCode = (() => {
+        /* ── REAL QR ENCODER (v1.1.0) ─────────────────────────────────────
+         * Byte mode, EC level L, versions 1-5 (single block), all 8 masks
+         * evaluated by spec penalty. Replaces the decorative pseudo-QR that
+         * filled its data modules from a hash PRNG — it looked like a QR
+         * code and could never scan. Round-trip verified by
+         * tools/qr-roundtrip-test.mjs (format BCH, structure, zigzag
+         * extraction, RS syndrome, payload equality — 8/8 cases). */
+
+        // GF(256), primitive polynomial 0x11D
+        const EXP = new Uint8Array(512);
+        const LOG = new Uint8Array(256);
+        (() => {
+            let x = 1;
+            for (let i = 0; i < 255; i++) { EXP[i] = x; LOG[x] = i; x <<= 1; if (x & 0x100) x ^= 0x11D; }
+            for (let i = 255; i < 512; i++) EXP[i] = EXP[i - 255];
+        })();
+        const gmul = (a, b) => (a === 0 || b === 0) ? 0 : EXP[LOG[a] + LOG[b]];
+
+        // [dataCodewords, ecCodewords] per version 1-5 (EC L, 1 block)
+        const QR_CAP = [[19, 7], [34, 10], [55, 15], [80, 20], [108, 26]];
+        const QR_ALIGN = [null, null, [6, 18], [6, 22], [6, 26], [6, 30]];
+
+        function rsGenerator(degree) {
+            let result = [1];
+            let root = 1;
+            for (let i = 0; i < degree; i++) {
+                const next = new Array(result.length + 1).fill(0);
+                for (let j = 0; j < result.length; j++) {
+                    next[j] ^= result[j];
+                    next[j + 1] ^= gmul(result[j], root);
+                }
+                result = next;
+                root = gmul(root, 2);
+            }
+            return result;
+        }
+
+        function rsRemainder(data, gen) {
+            const degree = gen.length - 1;
+            const result = new Array(degree).fill(0);
+            for (const b of data) {
+                const factor = b ^ result[0];
+                result.shift();
+                result.push(0);
+                if (factor !== 0) {
+                    for (let i = 0; i < degree; i++) result[i] ^= gmul(gen[i + 1], factor);
+                }
+            }
+            return result;
+        }
+
+        function qrEncode(text) {
+            const bytes = Array.from(new TextEncoder().encode(text));
+            let v = 0;
+            for (let i = 0; i < QR_CAP.length; i++) {
+                if (QR_CAP[i][0] >= bytes.length + 2) { v = i + 1; break; }
+            }
+            if (!v) return null; // payload exceeds v5-L capacity
+            const [dataLen, ecLen] = QR_CAP[v - 1];
+            const size = 17 + 4 * v;
+
+            const bits = [];
+            const push = (val, n) => { for (let i = n - 1; i >= 0; i--) bits.push((val >> i) & 1); };
+            push(4, 4);
+            push(bytes.length, 8);
+            for (const b of bytes) push(b, 8);
+            push(0, Math.min(4, dataLen * 8 - bits.length));
+            while (bits.length % 8 !== 0) bits.push(0);
+            const codewords = [];
+            for (let i = 0; i < bits.length; i += 8) {
+                let b = 0;
+                for (let j = 0; j < 8; j++) b = (b << 1) | bits[i + j];
+                codewords.push(b);
+            }
+            const PAD = [0xEC, 0x11];
+            for (let i = 0; codewords.length < dataLen; i++) codewords.push(PAD[i % 2]);
+
+            const gen = rsGenerator(ecLen);
+            const full = codewords.concat(rsRemainder(codewords, gen));
+
+            // function-pattern template + reserved map
+            const T = Array.from({ length: size }, () => new Array(size).fill(false));
+            const R = Array.from({ length: size }, () => new Array(size).fill(false));
+            const setFn = (r, c, dark) => { T[r][c] = dark; R[r][c] = true; };
+            const finder = (r0, c0) => {
+                for (let dr = -1; dr <= 7; dr++) for (let dc = -1; dc <= 7; dc++) {
+                    const r = r0 + dr, c = c0 + dc;
+                    if (r < 0 || r >= size || c < 0 || c >= size) continue;
+                    const dark = dr >= 0 && dr <= 6 && dc >= 0 && dc <= 6 &&
+                        (dr === 0 || dr === 6 || dc === 0 || dc === 6 || (dr >= 2 && dr <= 4 && dc >= 2 && dc <= 4));
+                    setFn(r, c, dark);
+                }
+            };
+            finder(0, 0); finder(0, size - 7); finder(size - 7, 0);
+            for (let i = 8; i < size - 8; i++) { setFn(6, i, i % 2 === 0); setFn(i, 6, i % 2 === 0); }
+            if (QR_ALIGN[v]) {
+                for (const r of QR_ALIGN[v]) for (const c of QR_ALIGN[v]) {
+                    if ((r <= 8 && c <= 8) || (r <= 8 && c >= size - 9) || (r >= size - 9 && c <= 8)) continue;
+                    for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) {
+                        setFn(r + dr, c + dc, Math.max(Math.abs(dr), Math.abs(dc)) !== 1);
+                    }
+                }
+            }
+            setFn(size - 8, 8, true); // dark module
+            for (let i = 0; i <= 8; i++) { if (!R[8][i]) setFn(8, i, false); if (!R[i][8]) setFn(i, 8, false); }
+            for (let i = 0; i < 8; i++) { if (!R[8][size - 1 - i]) setFn(8, size - 1 - i, false); if (!R[size - 1 - i][8]) setFn(size - 1 - i, 8, false); }
+
+            const MASKS = [
+                (r, c) => (r + c) % 2 === 0,
+                (r, c) => r % 2 === 0,
+                (r, c) => c % 3 === 0,
+                (r, c) => (r + c) % 3 === 0,
+                (r, c) => (Math.floor(r / 2) + Math.floor(c / 3)) % 2 === 0,
+                (r, c) => ((r * c) % 2) + ((r * c) % 3) === 0,
+                (r, c) => (((r * c) % 2) + ((r * c) % 3)) % 2 === 0,
+                (r, c) => (((r + c) % 2) + ((r * c) % 3)) % 2 === 0,
+            ];
+
+            function formatBits(mask) {
+                const data = (0b01 << 3) | mask; // EC level L = 01
+                let rem = data << 10;
+                for (let i = 14; i >= 10; i--) {
+                    if ((rem >> i) & 1) rem ^= 0x537 << (i - 10);
+                }
+                return (((data << 10) | rem) ^ 0x5412) & 0x7FFF;
+            }
+
+            function buildWithMask(mask) {
+                const m = T.map((row) => row.slice());
+                const fn = MASKS[mask];
+                const totalBits = full.length * 8;
+                let bitIdx = 0;
+                const nextBit = () => {
+                    if (bitIdx >= totalBits) return 0;
+                    const bit = (full[bitIdx >> 3] >> (7 - (bitIdx & 7))) & 1;
+                    bitIdx++;
+                    return bit;
+                };
+                let up = true;
+                for (let right = size - 1; right >= 1; right -= 2) {
+                    if (right === 6) right--;
+                    for (let vert = 0; vert < size; vert++) {
+                        for (let j = 0; j < 2; j++) {
+                            const c = right - j;
+                            const r = up ? size - 1 - vert : vert;
+                            if (R[r][c]) continue;
+                            m[r][c] = (nextBit() === 1) !== fn(r, c);
+                        }
+                    }
+                    up = !up;
+                }
+                const fmt = formatBits(mask);
+                const fb = (i) => (fmt >> i) & 1;
+                for (let i = 0; i <= 5; i++) m[8][i] = fb(i) === 1;
+                m[8][7] = fb(6) === 1;
+                m[8][8] = fb(7) === 1;
+                m[7][8] = fb(8) === 1;
+                for (let i = 9; i <= 14; i++) m[14 - i][8] = fb(i) === 1;
+                for (let i = 0; i <= 6; i++) m[size - 1 - i][8] = fb(i) === 1;
+                for (let i = 7; i <= 14; i++) m[8][size - 15 + i] = fb(i) === 1;
+                return m;
+            }
+
+            function penalty(m) {
+                let score = 0;
+                for (let axis = 0; axis < 2; axis++) {
+                    for (let i = 0; i < size; i++) {
+                        let run = 1;
+                        for (let j = 1; j < size; j++) {
+                            const cur = axis === 0 ? m[i][j] : m[j][i];
+                            const prev = axis === 0 ? m[i][j - 1] : m[j - 1][i];
+                            if (cur === prev) { run++; if (j === size - 1 && run >= 5) score += 3 + (run - 5); }
+                            else { if (run >= 5) score += 3 + (run - 5); run = 1; }
+                        }
+                    }
+                }
+                for (let r = 0; r < size - 1; r++) for (let c = 0; c < size - 1; c++) {
+                    if (m[r][c] === m[r][c + 1] && m[r][c] === m[r + 1][c] && m[r][c] === m[r + 1][c + 1]) score += 3;
+                }
+                const pat = [true, false, true, true, true, false, true];
+                const seqAt = (get, start) => pat.every((p, k) => get(start + k) === p);
+                const lightAfter = (get, start) => {
+                    let n = 0;
+                    for (let k = start + 7; k < start + 11; k++) { if (k >= size || get(k)) break; n++; }
+                    return n === 4;
+                };
+                const lightBefore = (get, start) => {
+                    let n = 0;
+                    for (let k = start - 1; k >= start - 4; k--) { if (k < 0 || get(k)) break; n++; }
+                    return n === 4;
+                };
+                for (let i = 0; i < size; i++) {
+                    for (let j = 0; j <= size - 7; j++) {
+                        if (seqAt((k) => m[i][k], j) && (lightBefore((k) => m[i][k], j) || lightAfter((k) => m[i][k], j))) score += 40;
+                        if (seqAt((k) => m[k][i], j) && (lightBefore((k) => m[k][i], j) || lightAfter((k) => m[k][i], j))) score += 40;
+                    }
+                }
+                let dark = 0;
+                for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) if (m[r][c]) dark++;
+                const ratio = (dark * 100) / (size * size);
+                score += Math.floor(Math.abs(ratio - 50) / 5) * 10;
+                return score;
+            }
+
+            let best = null, bestScore = Infinity;
+            for (let mask = 0; mask < 8; mask++) {
+                const m = buildWithMask(mask);
+                const s = penalty(m);
+                if (s < bestScore) { bestScore = s; best = m; }
+            }
+            return { size, modules: best };
+        }
+
+        /* [R3] returns a live SVG Element (was an HTML string — the QR
+         * modal then spliced it into an innerHTML template). */
+        function svg(text, size = 220) {
+            const enc = qrEncode(text);
+            if (!enc) return null;
+            const s = enc.size;
+            const m = enc.modules;
+            const cs = size / s;
+            let path = '';
+            for (let r = 0; r < s; r++) for (let c = 0; c < s; c++) if (m[r][c]) path += `M${c * cs},${r * cs}h${cs}v${cs}h-${cs}z`;
+            const NS2 = 'http://www.w3.org/2000/svg';
+            const out = document.createElementNS(NS2, 'svg');
+            out.setAttribute('xmlns', NS2);
+            out.setAttribute('viewBox', `0 0 ${size} ${size}`);
+            out.setAttribute('width', String(size));
+            out.setAttribute('height', String(size));
+            const rect = document.createElementNS(NS2, 'rect');
+            rect.setAttribute('width', '100%');
+            rect.setAttribute('height', '100%');
+            rect.setAttribute('fill', 'white');
+            const p = document.createElementNS(NS2, 'path');
+            p.setAttribute('d', path);
+            p.setAttribute('fill', 'black');
+            out.append(rect, p);
+            return out;
+        }
+        return {
+            show: async (file) => {
+                const proxy = await ProxyManager.best(file.id);
+                const url = ProxyManager.url(proxy, file.id, { download: true });
+                const qrSvg = svg(url, 240);
+                if (!qrSvg) { Toast.error('URL exceeds QR capacity (106 bytes)'); return; }
+                Modal.open({
+                    title: '\uD83D\uDCF1 QR Code',
+                    body: el('div', { style: 'text-align:center' },
+                        el('div', { style: 'background:white;display:inline-block;padding:16px;border-radius:8px' }, qrSvg),
+                        el('p', { style: 'font-size:11px;color:#67E8F9;word-break:break-all;margin:12px 0' }, url),
+                        el('p', { style: 'font-size:11px;color:#666;background:rgba(10,19,26,0.55);padding:6px 10px;border-radius:4px' },
+                            'Note: Scanner app needs to send Referer: https://pixeldrain.com/'),
+                        el('button', { class: `${NS}-btn`, style: 'margin-top:8px', id: `${NS}-qr-copy-btn` }, '\uD83D\uDCCB Copy URL'))
+                });
+                document.getElementById(`${NS}-qr-copy-btn`).addEventListener('click', async () => {
+                    const ok = await copyToClipboard(url);
+                    Toast[ok ? 'success' : 'error'](ok ? 'Copied' : 'Failed');
+                });
+            }
+        };
+    })();
+
+    // ================================================================
+    // 15. PAGE DETECTION & VIEWER PATCH
+    // ================================================================
+    const Page = {
+        kind() {
+            const p = location.pathname;
+            if (/^\/l\//.test(p)) return 'list';
+            if (/^\/u\//.test(p)) return 'file';
+            if (/^\/file\//.test(p)) return 'file-legacy';
+            if (/^\/d\//.test(p)) return 'fs';
+            return 'other';
+        },
+        id() { const m = location.pathname.match(/^\/(?:u|l|file)\/([\w-]+)/); return m ? m[1] : null; },
+        // v1.2.2 (4-c F05): a bare '%' in a /d/ pathname must not throw — degrade
+        // to the raw token.
+        fsPath() { const m = location.pathname.match(/^\/d\/(.+)/); return m ? ((s) => { try { return decodeURIComponent(s); } catch { return s; } })(m[1]) : null; }
+    };
+
+    function getViewerData() {
+        try { if (typeof unsafeWindow !== 'undefined' && unsafeWindow.viewer_data) return unsafeWindow.viewer_data; } catch { console.debug('PD viewer: unsafeWindow read failed'); }
+        try { const el = document.querySelector('#viewer_data,[data-viewer],script[type="application/json"]'); if (el) return JSON.parse(el.textContent); } catch { console.debug('PD viewer: DOM json parse failed'); }
+        try { if (window.viewer_data) return window.viewer_data; } catch { console.debug('PD viewer: window read failed'); }
+        return null;
+    }
+
+    function getCurrentFileFromViewer() {
+        const v = getViewerData();
+        if (!v) return null;
+        if (v.api_response && v.api_response.id) return v.api_response;
+        if (v.api_response && Array.isArray(v.api_response.files)) {
+            const i = v.current_file_index || 0;
+            return v.api_response.files[i] || v.api_response.files[0];
+        }
+        return null;
+    }
+
+    function patchVideoLoggedRestriction() {
+        if (!SETTINGS.bypassVideoLogged) return;
+        const unlock = (v) => {
+            if (!v) return;
+            const apply = (r) => {
+                if (!r) return;
+                r.allow_video_player = true;
+                r.can_download = true;
+                r.availability = '';
+                r.availability_message = '';
+                if (SETTINGS.bypassShowAds) r.show_ads = false;
+            };
+            apply(v.api_response);
+            if (v.api_response && Array.isArray(v.api_response.files)) v.api_response.files.forEach(apply);
+        };
+
+        const target = (typeof unsafeWindow !== 'undefined') ? unsafeWindow : window;
+        try {
+            let _v = target.viewer_data;
+            unlock(_v);
+            if (SETTINGS.bypassViewerContinuous) {
+                Object.defineProperty(target, 'viewer_data', {
+                    configurable: true,
+                    get() { return _v; },
+                    set(v) { unlock(v); _v = v; }
+                });
+            }
+        } catch (e) { Log.warn('viewer patch:', e.message); }
+
+        const tick = () => unlock(getViewerData());
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', tick);
+        else tick();
+        let n = 0;
+        const t = setInterval(() => { tick(); if (++n > 30) clearInterval(t); }, 200);
+    }
+
+    // ================================================================
+    // 16. STYLES
+    // ================================================================
+    const STYLES = `
+    .${NS}-toast-container{position:fixed;top:1rem;right:1rem;z-index:99999;display:flex;flex-direction:column;gap:8px;max-width:420px;pointer-events:none}
+    .${NS}-toast{pointer-events:auto;background:rgba(10,19,26,0.85);color:#67E8F9;padding:10px 14px;border-radius:8px;font-size:13px;line-height:1.4;box-shadow:0 4px 16px rgba(0,0,0,.4);border-left:4px solid #00E5FF;animation:${NS}-slide .25s ease-out}
+    .${NS}-toast.success{border-left-color:#00E5FF}.${NS}-toast.warn{border-left-color:#67E8F9}.${NS}-toast.error{border-left-color:#ff0055}.${NS}-toast.info{border-left-color:#67E8F9}
+    @keyframes ${NS}-slide{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+    .${NS}-btn{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:6px;border:1px solid rgba(0,229,255,0.2);background:rgba(10,19,26,0.65);color:#00E5FF;font-size:12px;cursor:pointer;white-space:nowrap;transition:all 150ms ease-in-out;font-family:'JetBrains Mono',monospace}
+    .${NS}-btn:hover{background:rgba(0,229,255,0.15);border-color:#00E5FF;color:#fff}
+    .${NS}-btn.primary{background:rgba(0,229,255,0.2);border-color:#00E5FF;color:#fff;font-weight:600}.${NS}-btn.primary:hover{background:rgba(0,229,255,0.35)}
+    .${NS}-btn.gold{background:rgba(103,232,249,0.15);border-color:#67E8F9;color:#fff;font-weight:600}.${NS}-btn.gold:hover{background:rgba(103,232,249,0.3)}
+    .${NS}-btn.danger{background:rgba(255,0,85,0.3);border-color:#ff0055;color:#fff}.${NS}-btn.danger:hover{background:#804040}
+    .${NS}-btn:disabled{opacity:.5;cursor:not-allowed}
+    .${NS}-btn-group{display:inline-flex;gap:0}.${NS}-btn-group .${NS}-btn{border-radius:0}.${NS}-btn-group .${NS}-btn:first-child{border-radius:6px 0 0 6px}.${NS}-btn-group .${NS}-btn:last-child{border-radius:0 6px 6px 0}
+    .${NS}-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99998;display:flex;align-items:center;justify-content:center;animation:${NS}-fade .15s}
+    @keyframes ${NS}-fade{from{opacity:0}to{opacity:1}}
+    .${NS}-modal{background:rgba(10,19,26,0.72);border-radius:12px;max-width:650px;width:92vw;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+    .${NS}-modal-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid rgba(0,229,255,0.2)}
+    .${NS}-modal-title{font-weight:600;font-size:15px}
+    .${NS}-modal-close{background:none;border:none;color:#67E8F9;font-size:22px;cursor:pointer;padding:0 4px}.${NS}-modal-close:hover{color:#ff0055}
+    .${NS}-modal-body{padding:18px;overflow-y:auto;flex:1}
+    .${NS}-modal-foot{padding:12px 18px;border-top:1px solid rgba(0,229,255,0.2);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+    .${NS}-input{background:rgba(10,19,26,0.55);color:#67E8F9;border:1px solid rgba(0,229,255,0.2);border-radius:4px;padding:6px 10px;font-size:13px;width:100%;box-sizing:border-box;font-family:'JetBrains Mono',monospace}
+    .${NS}-input:focus{outline:none;border-color:#00E5FF}
+    .${NS}-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}.${NS}-row label{flex:1;font-size:13px}.${NS}-row input[type=checkbox]{width:16px;height:16px;cursor:pointer}
+    .${NS}-progress{width:100%;height:10px;background:rgba(10,19,26,0.55);border-radius:5px;overflow:hidden;margin-top:8px}
+    .${NS}-progress-bar{height:100%;background:linear-gradient(90deg,#00E5FF,#67E8F9);width:0%;transition:width .2s ease}
+    .${NS}-stat{font-size:11px;color:#67E8F9;margin-top:4px;display:flex;justify-content:space-between}
+    .${NS}-pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500;margin:2px}
+    .${NS}-pill.ok{background:rgba(0,229,255,0.15);color:#00E5FF}.${NS}-pill.bad{background:rgba(255,0,85,0.15);color:#ff0055}.${NS}-pill.gold{background:rgba(103,232,249,0.12);color:#67E8F9}.${NS}-pill.info{background:rgba(10,19,26,0.55);color:#67E8F9}
+    .${NS}-toolbar{display:inline-flex;gap:6px;flex-wrap:wrap;margin:6px 0;align-items:center}
+    .${NS}-section-title{margin:14px 0 10px;font-size:13px;color:#00E5FF;font-weight:600;border-bottom:1px solid rgba(0,229,255,0.2);padding-bottom:4px}
+    .${NS}-banner{background:rgba(10,19,26,0.85);padding:10px 14px;border-radius:6px;margin-bottom:12px;font-size:12px;border-left:3px solid #00E5FF;line-height:1.5}
+    .${NS}-badge{position:fixed;bottom:1rem;right:1rem;background:rgba(10,19,26,0.72);border:1px solid rgba(0,229,255,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:#67E8F9;z-index:99990;box-shadow:0 2px 8px rgba(0,0,0,.3);cursor:pointer;transition:all .2s}
+    .${NS}-badge:hover{border-color:#00E5FF;color:#67E8F9}
+    .${NS}-file-info{background:rgba(10,19,26,0.55);border-radius:6px;padding:10px 14px;margin-bottom:10px;font-size:12px;line-height:1.6}
+    `;
+
+    function injectStyles() {
+        if (Caps.gmAddStyle) GM_addStyle(STYLES);
+        else { const s = document.createElement('style'); s.textContent = STYLES; (document.head || document.documentElement).appendChild(s); }
+    }
+
+    // ================================================================
+    // 17. TOAST & MODAL
+    // ================================================================
+    const Toast = (() => {
+        let container;
+        const ensure = () => {
+            if (container && document.body && document.body.contains(container)) return container;
+            container = document.createElement('div');
+            container.className = `${NS}-toast-container`;
+            (document.body || document.documentElement).appendChild(container);
+            return container;
+        };
+        const show = (msg, kind = 'info', timeout = 4000) => {
+            if (!SETTINGS.notificationsEnabled) return;
+            const el = document.createElement('div');
+            el.className = `${NS}-toast ${kind}`;
+            el.textContent = msg;
+            ensure().appendChild(el);
+            if (timeout > 0) setTimeout(() => {
+                el.style.transition = 'opacity .3s, transform .3s';
+                el.style.opacity = '0';
+                el.style.transform = 'translateX(50px)';
+                setTimeout(() => el.remove(), 300);
+            }, timeout);
+            return el;
+        };
+        /* [R3] element-built toast: children is a Node or array of Nodes —
+         * replaces the retired Toast.html string path. */
+        const node = (children, kind = 'info', timeout = 4000) => {
+            if (!SETTINGS.notificationsEnabled) return;
+            const el = document.createElement('div');
+            el.className = `${NS}-toast ${kind}`;
+            el.append(...(Array.isArray(children) ? children : [children]).filter(Boolean));
+            ensure().appendChild(el);
+            if (timeout > 0) setTimeout(() => {
+                el.style.transition = 'opacity .3s, transform .3s';
+                el.style.opacity = '0';
+                el.style.transform = 'translateX(50px)';
+                setTimeout(() => el.remove(), 300);
+            }, timeout);
+            return el;
+        };
+        return {
+            show, ensure, node,
+            info: (m, t) => show(m, 'info', t),
+            success: (m, t) => show(m, 'success', t),
+            warn: (m, t) => show(m, 'warn', t),
+            error: (m, t) => show(m, 'error', t || 6000)
+        };
+    })();
+
+    const Modal = {
+        /* [R3] body/footer accept a Node or array of Nodes (strings are
+         * gone — the innerHTML paths are retired). */
+        open({ title = '', body = null, footer = null, onClose } = {}) {
+            const bg = document.createElement('div');
+            bg.className = `${NS}-modal-bg`;
+            const closeBtn = el('button', { class: `${NS}-modal-close` }, '\u00D7');
+            const bodyEl = el('div', { class: `${NS}-modal-body` });
+            const modal = el('div', { class: `${NS}-modal` },
+                el('div', { class: `${NS}-modal-head` },
+                    el('span', { class: `${NS}-modal-title` }, title),
+                    closeBtn),
+                bodyEl,
+                footer ? el('div', { class: `${NS}-modal-foot` }) : null);
+            bg.append(modal);
+            const footEl = bg.querySelector(`.${NS}-modal-foot`);
+            if (body) bodyEl.append(...(Array.isArray(body) ? body : [body]));
+            if (footEl && footer) footEl.append(...(Array.isArray(footer) ? footer : [footer]));
+            const esc = (e) => { if (e.key === 'Escape') close(); };
+            const close = () => { try { onClose && onClose(); } catch { console.debug('PD modal: onClose handler failed'); } document.removeEventListener('keydown', esc); bg.remove(); };
+            closeBtn.addEventListener('click', close);
+            bg.addEventListener('click', e => { if (e.target === bg) close(); });
+            document.addEventListener('keydown', esc);
+            (document.body || document.documentElement).appendChild(bg);
+            return { el: bg, body: bodyEl, footer: footEl, close };
+        }
+    };
+
+    function copyToClipboard(text) {
+        if (Caps.gmClipboard) { try { GM_setClipboard(text); return Promise.resolve(true); } catch { console.debug('PD clipboard: GM write failed'); } }
+        if (navigator.clipboard) return navigator.clipboard.writeText(text).then(() => true).catch(() => false);
+        return Promise.resolve(false);
+    }
+
+    // ================================================================
+    // 18. SETTINGS PANEL
+    // ================================================================
+    function openSettingsPanel() {
+        const stats = SETTINGS.downloadStats || { count: 0, bytes: 0, savedBandwidth: 0 };
+        const bw = BandwidthTracker.load();
+        const body = document.createElement('div');
+        const authBadge = SETTINGS.apiKey
+            ? el('span', { class: `${NS}-pill gold` }, '★ premium')
+            : el('span', { class: `${NS}-pill bad` }, 'free tier');
+        const bwPct = BandwidthTracker.getPct();
+        const bwColor = bwPct > 80 ? 'bad' : bwPct > 50 ? 'gold' : 'ok';
+
+        /* [R3] settings panel — element-built (was the script's largest
+         * innerHTML template). Structure, classes, data-k keys and styles
+         * preserved 1:1; the data-k hydration loop below is unchanged. */
+        const sectionTitle = (t) => el('div', { class: `${NS}-section-title` }, t);
+        const row = (...kids) => el('div', { class: `${NS}-row` }, kids);
+        const label = (t) => el('label', null, t);
+        const inp = (type, k, extra = {}) => el('input', Object.assign({ type, 'data-k': k, class: `${NS}-input` }, extra));
+        const cbox = (k) => el('input', { type: 'checkbox', 'data-k': k });
+        const num = (k, min, max, style) => el('input', { type: 'number', 'data-k': k, class: `${NS}-input`, style, min, max });
+        const strategyOptions = [
+            ['auto', '⚡ Auto (smartest pick)'],
+            ['premium_direct', '★ Premium direct'],
+            ['speed_multiplied', '⚡ Speed multiplied (N×1MB/s)'],
+            ['multi_proxy_ranged', 'Multi-proxy chunked'],
+            ['single_host_ranged', 'Single-host ranged'],
+            ['gm_stream_fsa', 'GM → FSA stream'],
+            ['native_fetch', 'Native fetch (no-referrer)'],
+            ['gm_blob', 'GM blob (in-RAM)'],
+            ['gm_download', 'GM_download (browser)'],
+        ];
+        body.append(
+            el('div', { class: `${NS}-banner` },
+                el('strong', null, `Pixeldrain Bypass Pro v${VERSION}`), el('br'),
+                `Speed multiplication: ${SETTINGS.maxTotalConnections} parallel connections × 1 MB/s = up to ${SETTINGS.maxTotalConnections} MB/s`, el('br'),
+                authBadge,
+                el('span', { class: `${NS}-pill ${Caps.fsAccess ? 'ok' : 'bad'}` }, `FSA ${Caps.fsAccess ? '✓' : '✗'}`),
+                el('span', { class: `${NS}-pill ${Caps.streams ? 'ok' : 'bad'}` }, `streams ${Caps.streams ? '✓' : '✗'}`),
+                el('span', { class: `${NS}-pill ${Caps.gmDownload ? 'ok' : 'bad'}` }, `GM_dl ${Caps.gmDownload ? '✓' : '✗'}`),
+                el('span', { class: `${NS}-pill ${bwColor}` }, `BW: ${bwPct.toFixed(1)}%`)),
+
+            sectionTitle('★ Premium Auth (Layer A)'),
+            row(label('API Key'), inp('password', 'apiKey', { placeholder: 'paste pixeldrain API key', style: 'max-width:320px' })),
+            row(label('Use direct when authenticated'), cbox('useDirectIfAuth')),
+            row(label('Direct threshold (bytes)'), num('directThresholdBytes', null, null, 'max-width:140px')),
+            row(el('button', { class: `${NS}-btn ${NS}-test-auth` }, '🔑 Verify'),
+                el('span', { class: `${NS}-auth-result`, style: 'font-size:12px;color:#67E8F9;margin-left:8px' })),
+
+            sectionTitle('⚡ Speed Multiplication'),
+            row(label('Enable speed multiplier'), cbox('speedMultiplier')),
+            row(label('Connections per mirror'), num('connectionsPerMirror', '1', '8', 'max-width:80px')),
+            row(label('Max total connections'), num('maxTotalConnections', '2', '64', 'max-width:80px')),
+
+            sectionTitle('Strategy'),
+            row(label('Primary'),
+                el('select', { class: `${NS}-input`, 'data-k': 'primaryStrategy', style: 'max-width:320px' },
+                    strategyOptions.map(([v, t]) => el('option', { value: v }, t)))),
+            row(label('Auto failover'), cbox('autoFailover')),
+            row(label('Pre-flight check'), cbox('preflightCheck')),
+            row(label('Auto-download on load'), cbox('autoTriggerOnLoad')),
+
+            sectionTitle('Chunking'),
+            row(label('Max chunks'), num('multiProxyChunks', '2', '64', 'max-width:80px')),
+            row(label('Concurrency'), num('chunkConcurrency', '1', '64', 'max-width:80px')),
+            row(label('Retries'), num('chunkRetry', '0', '10', 'max-width:80px')),
+            row(label('Adaptive chunking'), cbox('adaptiveChunking')),
+            row(label('Resumable'), cbox('resumableEnabled')),
+
+            sectionTitle('Bypass & Protection'),
+            row(label('Video unlock (logged-in gate)'), cbox('bypassVideoLogged')),
+            row(label('Continuous viewer patch'), cbox('bypassViewerContinuous')),
+            row(label('Hide ads'), cbox('bypassShowAds')),
+            row(label('View-pad (prevent captcha)'), cbox('viewPadEnabled')),
+            row(label('Captcha pre-check'), cbox('captchaPreCheck')),
+            row(label('Captcha auto-open tab'), cbox('captchaAutoOpen')),
+
+            sectionTitle('Circuit Breaker'),
+            row(label('Failure threshold'), num('circuitBreakerThreshold', '1', '10', 'max-width:80px')),
+            row(label('Cooldown (ms)'), num('circuitBreakerCooldown', null, null, 'max-width:120px')),
+
+            sectionTitle(`Proxies (${PROXY_MIRRORS.length} built-in)`),
+            row(label('Custom hosts'), inp('text', 'customProxy', { placeholder: 'host1,host2,...', style: 'max-width:320px' })),
+            row(label('Probe file ID'), inp('text', 'healthProbeId', { placeholder: 'optional', style: 'max-width:200px' })),
+            row(
+                el('button', { class: `${NS}-btn ${NS}-test` }, '🔍 Test All'),
+                el('button', { class: `${NS}-btn ${NS}-unblock` }, '🔓 Unblock'),
+                el('button', { class: `${NS}-btn ${NS}-reset-cb` }, 'Reset Circuits')),
+            el('div', { class: `${NS}-results`, style: 'font-size:11px;color:#67E8F9;margin-top:6px;max-height:120px;overflow-y:auto' }),
+
+            sectionTitle('External Downloaders'),
+            row(label('JDownloader URL'), inp('text', 'jdownloaderUrl', { style: 'max-width:320px' })),
+            row(label('Aria2 RPC URL'), inp('text', 'aria2RpcUrl', { style: 'max-width:320px' })),
+            row(label('Aria2 secret'), inp('text', 'aria2Secret', { style: 'max-width:200px' })),
+            row(label('Aria2 connections'), num('aria2MaxConn', '1', '64', 'max-width:80px')),
+
+            sectionTitle('UI'),
+            row(label('Notifications'), cbox('notificationsEnabled')),
+            row(label('Debug log'), cbox('debugLog')),
+
+            sectionTitle('Stats & Bandwidth'),
+            el('div', { class: `${NS}-file-info` },
+                'Downloads: ', el('strong', null, String(stats.count || 0)), ' · Total: ', el('strong', null, formatBytes(stats.bytes || 0)), el('br'),
+                'Saved bandwidth: ', el('strong', null, formatBytes(stats.savedBandwidth || 0)), ' (via proxy, 0 cost to your cap)', el('br'),
+                'Current session BW used: ', el('strong', null, formatBytes(bw.used || 0)), ` / ${formatBytes(BANDWIDTH_CAP)} (${bwPct.toFixed(1)}%)`, el('br'),
+                'Remaining: ', el('strong', null, formatBytes(BandwidthTracker.getRemaining()))),
+            el('div', { class: `${NS}-row`, style: 'margin-top:8px' },
+                el('button', { class: `${NS}-btn ${NS}-reset-stats` }, 'Reset stats'),
+                el('button', { class: `${NS}-btn ${NS}-reset-bw` }, 'Reset BW'),
+                el('button', { class: `${NS}-btn ${NS}-cleanup` }, 'Cleanup jobs'),
+                el('button', { class: `${NS}-btn ${NS}-show-jobs` }, '📋 Jobs')),
+            el('div', { style: 'margin-top:14px;font-size:11px;color:rgba(103,232,249,0.5);text-align:center' },
+                `v${VERSION} · ${PROXY_MIRRORS.length} mirrors · Circuit breaker · Speed multiplication`));
+
+        const footer = [
+            el('button', { class: `${NS}-btn ${NS}-cancel` }, 'Cancel'),
+            el('button', { class: `${NS}-btn primary ${NS}-save` }, '💾 Save')
+        ];
+        const m = Modal.open({ title: `⚙ Pixeldrain Bypass Pro v${VERSION}`, body, footer });
+
+        body.querySelectorAll('[data-k]').forEach(el => {
+            const v = SETTINGS[el.dataset.k];
+            if (el.type === 'checkbox') el.checked = !!v;
+            else if (el.tagName === 'SELECT') el.value = v || '';
+            else el.value = v != null ? v : '';
+        });
+
+        body.querySelector(`.${NS}-test-auth`).addEventListener('click', async ev => {
+            ev.target.disabled = true;
+            const inp = body.querySelector('[data-k="apiKey"]');
+            const prev = SETTINGS.apiKey;
+            SETTINGS = saveSettings({ apiKey: inp.value.trim() });
+            const u = await PDApi.user();
+            SETTINGS = saveSettings({ apiKey: prev });
+            const r = body.querySelector(`.${NS}-auth-result`);
+            if (u && (u.username || u.email)) {
+                r.replaceChildren(el('span', { class: `${NS}-pill ok` },
+                    `✓ ${u.username || u.email}${u.subscription ? ' · ' + (u.subscription.name || u.subscription.type || 'premium') : ''}`));
+            } else r.replaceChildren(el('span', { class: `${NS}-pill bad` }, '✗ invalid'));
+            ev.target.disabled = false;
+        });
+
+        body.querySelector(`.${NS}-test`).addEventListener('click', async ev => {
+            ev.target.disabled = true;
+            const probeId = body.querySelector('[data-k="healthProbeId"]').value.trim() || Page.id() || '';
+            const r = await ProxyManager.checkAll(true, probeId);
+            const sorted = [...r].sort((a, b) => (a.ok ? a.ms : 99999) - (b.ok ? b.ms : 99999));
+            const resultBox = body.querySelector(`.${NS}-results`);
+            resultBox.replaceChildren();
+            sorted.forEach((x, i) => {
+                if (i > 0) resultBox.append(' ');
+                resultBox.append(el('span', { class: `${NS}-pill ${x.ok ? 'ok' : 'bad'}` },
+                    `${x.proxy.name}: ${x.ok ? Math.round(x.ms) + 'ms' : '✗' + (x.status ? ' ' + x.status : '')}`));
+            });
+        });
+
+        body.querySelector(`.${NS}-unblock`).addEventListener('click', () => { ProxyManager.unblockAll(); Toast.success('Unblocked all'); });
+        body.querySelector(`.${NS}-reset-cb`).addEventListener('click', () => { CircuitBreaker.reset(); Toast.success('Circuits reset'); });
+        body.querySelector(`.${NS}-reset-stats`).addEventListener('click', () => {
+            SETTINGS = saveSettings({ downloadStats: { count: 0, bytes: 0, savedBandwidth: 0, lastReset: Date.now() } });
+            Toast.success('Stats reset'); m.close();
+        });
+        body.querySelector(`.${NS}-reset-bw`).addEventListener('click', () => { BandwidthTracker.reset(); Toast.success('BW reset'); m.close(); });
+        body.querySelector(`.${NS}-cleanup`).addEventListener('click', () => { Toast.success(`Cleaned ${ResumeManager.cleanup(0)}`); });
+        body.querySelector(`.${NS}-show-jobs`).addEventListener('click', () => {
+            const jobs = ResumeManager.getPendingJobs();
+            if (!jobs.length) { Toast.info('No pending jobs'); return; }
+            const list = el('div', null, jobs.map(j => {
+                const sum = j.chunks.reduce((a, b) => a + b, 0);
+                const pct = j.fileSize ? (sum / j.fileSize * 100).toFixed(1) : '?';
+                return el('div', { style: 'padding:6px;border-bottom:1px solid rgba(0,229,255,0.2)', 'data-safe-name': escapeHTML(j.fileName) },
+                    el('strong', null, String(j.fileName || '')),
+                    ` · ${pct}% (${formatBytes(sum)} / ${formatBytes(j.fileSize)})`);
+            }));
+            Modal.open({ title: `Pending Jobs (${jobs.length})`, body: list });
+        });
+
+        m.el.querySelector(`.${NS}-cancel`).addEventListener('click', () => m.close());
+        m.el.querySelector(`.${NS}-save`).addEventListener('click', () => {
+            const patch = {};
+            body.querySelectorAll('[data-k]').forEach(el => {
+                const k = el.dataset.k;
+                if (el.type === 'checkbox') patch[k] = el.checked;
+                else if (el.type === 'number') patch[k] = Number(el.value) || DEFAULTS[k];
+                else patch[k] = el.value.trim();
+            });
+            SETTINGS = saveSettings(patch);
+            Toast.success('Settings saved');
+            m.close();
+        });
+    }
+
+    // ================================================================
+    // 19. TOOLBAR BUILDER
+    // ================================================================
+    function buildToolbar(file, kind, files = null) {
+        const tb = document.createElement('div');
+        tb.className = `${NS}-toolbar`;
+        tb.dataset.pdbp = '1';
+        const mk = (text, title, handler, cls = '') => {
+            const b = document.createElement('button');
+            b.className = `${NS}-btn ${cls}`.trim();
+            b.textContent = text;
+            b.title = title;
+            b.addEventListener('click', handler);
+            return b;
+        };
+
+        const hasAuth = !!PDApi._authHeader();
+
+        if ((kind === 'file' || kind === 'file-legacy' || kind === 'fs') && file) {
+            tb.appendChild(mk('⬇ Download', `Smart download (auto)${hasAuth ? ' · premium' : ''}`, () => Downloader.run(file, 'auto'), 'primary'));
+
+            if (hasAuth) tb.appendChild(mk('★ Premium', 'Direct via API key (no cap)', () => Downloader.run(file, 'premium_direct'), 'gold'));
+
+            if (Caps.fsAccess && SETTINGS.speedMultiplier) {
+                tb.appendChild(mk('⚡ Speed×', `Speed multiplied (${SETTINGS.maxTotalConnections} connections)`, () => Downloader.run(file, 'speed_multiplied')));
+            }
+
+            if (Caps.fsAccess) {
+                tb.appendChild(mk('📦 Multi', 'Multi-proxy chunked', () => Downloader.run(file, 'multi_proxy_ranged')));
+            }
+            if (Caps.gmDownload) tb.appendChild(mk('📥 GM', 'GM_download', () => Downloader.run(file, 'gm_download')));
+
+            if ((file.mime_type || '').match(/^(video|audio)\//)) {
+                tb.appendChild(mk('▶ Play', 'Stream via proxy', () => Strategies.stream({ id: file.id, name: file.name, mime: file.mime_type })));
+            }
+
+            tb.appendChild(mk('🔗 Copy', 'Copy proxy URL', async () => {
+                const p = await ProxyManager.best(file.id);
+                const url = ProxyManager.url(p, file.id, { download: true });
+                const ok = await copyToClipboard(url);
+                Toast[ok ? 'success' : 'error'](ok ? 'Copied' : 'Failed');
+            }));
+
+            tb.appendChild(mk('📤 Export', 'curl/wget/aria2c/IDM/axel/PS', () => ExportGenerator.showModal(file)));
+
+            tb.appendChild(mk('📱 QR', 'QR code', () => QRCode.show(file)));
+
+            tb.appendChild(mk('JD', 'Send to JDownloader', async () => {
+                try {
+                    const p = await ProxyManager.best(file.id);
+                    await Strategies.jdownloader({ urls: ProxyManager.url(p, file.id, { download: true }) });
+                    Toast.success('Sent to JDownloader');
+                } catch (e) { Toast.error(e.message); }
+            }));
+            tb.appendChild(mk('Aria2', 'Send to Aria2 RPC', async () => {
+                try {
+                    const p = await ProxyManager.best(file.id);
+                    await Strategies.aria2({ urls: ProxyManager.url(p, file.id, { download: true }), names: file.name });
+                    Toast.success('Sent to Aria2');
+                } catch (e) { Toast.error(e.message); }
+            }));
+
+            if (SETTINGS.resumableEnabled && ResumeManager.findByFile(file.id)) {
+                tb.appendChild(mk('🔄 Resume', 'Resume incomplete download', () => Downloader.run(file, 'speed_multiplied')));
+            }
+
+            tb.appendChild(mk('ℹ Info', 'File info & preflight', async () => {
+                const pf = await PDApi.preflight(file.id);
+                const proxy = await ProxyManager.best(file.id);
+                const infoRow = (k, v) => [el('strong', null, `${k}:`), ' ', v, el('br')];
+                Modal.open({
+                    title: 'File Info',
+                    body: el('div', { class: `${NS}-file-info` },
+                        infoRow('Name', pf.name || file.name),
+                        infoRow('Size', formatBytes(pf.size || file.size)),
+                        infoRow('MIME', pf.mime || file.mime_type || 'unknown'),
+                        infoRow('Can download', pf.canDownload ? '✓' : '✗'),
+                        infoRow('Captcha needed', pf.needsCaptcha ? '⚠ YES' : '✓ No'),
+                        pf.availability ? infoRow('Availability', pf.availability) : null,
+                        infoRow('Speed limit', `${formatBytes(pf.speedLimit || SPEED_LIMIT_PER_CONN)}/s per connection`),
+                        infoRow('Best mirror', proxy.host),
+                        el('strong', null, 'Proxy URL:'), ' ',
+                        el('span', { style: 'word-break:break-all' }, ProxyManager.url(proxy, file.id)))
+                });
+            }));
+        }
+
+        if (kind === 'list' && files && files.length) {
+            const valid = files.filter(f => !f.availability && !f.availability_message);
+            tb.appendChild(mk(`⬇ All (${valid.length})`, 'Batch download', () => Downloader.runBatch(valid, 'auto'), 'primary'));
+            tb.appendChild(mk('🔗 All URLs', 'Copy all proxy URLs', async () => {
+                const p = await ProxyManager.best();
+                const urls = valid.map(f => ProxyManager.url(p, f.id, { download: true })).join('\n');
+                const ok = await copyToClipboard(urls);
+                Toast[ok ? 'success' : 'error'](ok ? 'Copied' : 'Failed');
+            }));
+            tb.appendChild(mk('📤 Batch', 'Export all commands', () => ExportGenerator.showBatch(valid)));
+            tb.appendChild(mk('JD All', 'All to JDownloader', async () => {
+                try {
+                    const p = await ProxyManager.best();
+                    await Strategies.jdownloader({ urls: valid.map(f => ProxyManager.url(p, f.id, { download: true })) });
+                    Toast.success('Sent');
+                } catch (e) { Toast.error(e.message); }
+            }));
+            tb.appendChild(mk('Aria2 All', 'All to Aria2', async () => {
+                try {
+                    const p = await ProxyManager.best();
+                    await Strategies.aria2({
+                        urls: valid.map(f => ProxyManager.url(p, f.id, { download: true })),
+                        names: valid.map(f => f.name)
+                    });
+                    Toast.success('Sent');
+                } catch (e) { Toast.error(e.message); }
+            }));
+            tb.appendChild(mk('📦 ZIP', 'Server-side ZIP', async () => {
+                const id = Page.id();
+                const p = PROXY_MIRRORS.find(m => m.zip) || (await ProxyManager.best());
+                window.open(ProxyManager.url(p, id, { zip: true }));
+            }));
+        }
+
+        tb.appendChild(mk('⚙', 'Settings', openSettingsPanel));
+        return tb;
+    }
+
+    // ================================================================
+    // 20. INJECTION & INIT
+    // ================================================================
+    function injectIntoToolbar(el) {
+        if (!el || el.dataset.pdbpInjected) return;
+        const kind = Page.kind();
+        let file = getCurrentFileFromViewer(), files = null;
+        const v = getViewerData();
+        if (kind === 'list' && v && v.api_response && Array.isArray(v.api_response.files)) {
+            files = v.api_response.files;
+            if (!file) file = files[0];
+        }
+        if (!file && !files) return;
+        const toolbar = buildToolbar(file, kind, files);
+        el.parentElement && el.parentElement.insertBefore(toolbar, el.nextSibling);
+        el.dataset.pdbpInjected = '1';
+    }
+
+    function injectFallback() {
+        if (document.querySelector(`[data-pdbp="1"]`)) return;
+        const kind = Page.kind(), id = Page.id();
+        if (!id && kind !== 'fs') return;
+
+        const host = document.createElement('div');
+        host.style.cssText = 'position:fixed;top:1rem;right:1rem;z-index:99997;background:rgba(10,19,26,0.85);padding:12px;border-radius:10px;border:1px solid rgba(0,229,255,0.2);box-shadow:0 4px 16px rgba(0,0,0,.3);max-width:90vw;overflow-x:auto';
+
+        let file = getCurrentFileFromViewer();
+        const v = getViewerData();
+        const files = (v && v.api_response && Array.isArray(v.api_response.files)) ? v.api_response.files : null;
+
+        if (!file && id) {
+            file = { id, name: id, size: 0, mime_type: '' };
+            PDApi.fileInfo(id).then(info => {
+                file.name = info.name || id;
+                file.size = info.size || 0;
+                file.mime_type = info.mime_type || '';
+            }).catch((e) => { console.debug('PD interceptor:', e); });
+        }
+
+        host.appendChild(buildToolbar(file, kind === 'list' ? 'list' : 'file', files));
+        (document.body || document.documentElement).appendChild(host);
+    }
+
+    function injectBadge() {
+        if (document.querySelector(`.${NS}-badge`)) return;
+        const stats = SETTINGS.downloadStats || { count: 0, bytes: 0, savedBandwidth: 0 };
+        const badge = document.createElement('div');
+        badge.className = `${NS}-badge`;
+        badge.title = 'Pixeldrain Bypass Pro — click for settings';
+        const strong = document.createElement('strong');
+        strong.textContent = 'PD Pro';
+        badge.appendChild(strong);
+        badge.appendChild(document.createTextNode(` v${VERSION} · ${stats.count} DLs · ${formatBytes(stats.savedBandwidth || 0)} saved`));
+        badge.addEventListener('click', openSettingsPanel);
+        (document.body || document.documentElement).appendChild(badge);
+    }
+
+    function registerMenu() {
+        if (typeof GM_registerMenuCommand !== 'function') return;
+        GM_registerMenuCommand('⚙ Settings', openSettingsPanel);
+        GM_registerMenuCommand('📊 Test Proxies', async () => {
+            Toast.info('Testing mirrors…');
+            const r = await ProxyManager.checkAll(true, Page.id() || '');
+            const alive = r.filter(x => x.ok);
+            Toast.info(`${alive.length}/${r.length} alive (best: ${alive.length ? Math.round(alive.sort((a, b) => a.ms - b.ms)[0].ms) + 'ms' : 'none'})`);
+        });
+        GM_registerMenuCommand(`🚀 Strategy: ${SETTINGS.primaryStrategy}`, openSettingsPanel);
+        GM_registerMenuCommand('🔓 Unblock all mirrors', () => { ProxyManager.unblockAll(); Toast.success('Unblocked'); });
+        GM_registerMenuCommand('🧹 Cleanup resume jobs', () => Toast.success(`Cleaned ${ResumeManager.cleanup(0)}`));
+        GM_registerMenuCommand('❌ Cancel all downloads', () => { Downloader.cancelAll(); Toast.warn('Cancelled'); });
+        if (SETTINGS.apiKey) GM_registerMenuCommand('★ Premium: active', openSettingsPanel);
+    }
+
+    function findToolbar() {
+        return document.querySelector('.toolbar > .separator.svelte-jngqwx')
+            || document.querySelector('.toolbar .separator')
+            || document.querySelector('.toolbar')
+            || document.querySelector('[class*="toolbar"]')
+            || null;
+    }
+
+    function tryInject() {
+        const el = findToolbar();
+        if (el) injectIntoToolbar(el);
+        else injectFallback();
+    }
+
+    // ================================================================
+    // 21. MAIN INIT
+    // ================================================================
+    function init() {
+        Log.info(`v${VERSION} init — Speed multiplication + Circuit breaker + ${PROXY_MIRRORS.length} mirrors`);
+
+        try { patchVideoLoggedRestriction(); } catch (e) { Log.warn(e); }
+
+        registerMenu();
+        ResumeManager.cleanup();
+
+        const onReady = () => {
+            try { injectStyles(); } catch { console.debug('PD styles: injection failed'); }
+
+            const obs = new MutationObserver(() => {
+                const el = findToolbar();
+                if (el && !el.dataset.pdbpInjected) injectIntoToolbar(el);
+            });
+            obs.observe(document.documentElement, { childList: true, subtree: true });
+            setTimeout(() => obs.disconnect(), 60000);
+
+            let lastPath = location.pathname;
+            const runNavRefresh = debounce(() => {
+                document.querySelectorAll('[data-pdbp="1"]').forEach(e => e.remove());
+                document.querySelectorAll('[data-pdbp-injected]').forEach(e => delete e.dataset.pdbpInjected);
+                try { patchVideoLoggedRestriction(); } catch { console.debug('PD nav: video patch failed'); }
+                tryInject();
+            }, 600);
+            const onNav = () => {
+                if (location.pathname !== lastPath) {
+                    lastPath = location.pathname;
+                    runNavRefresh();
+                }
+            };
+            const origPush = history.pushState, origReplace = history.replaceState;
+            history.pushState = function () { origPush.apply(this, arguments); onNav(); };
+            history.replaceState = function () { origReplace.apply(this, arguments); onNav(); };
+            window.addEventListener('popstate', onNav);
+
+            if (SETTINGS.captchaAutoDetect && document.body) {
+                const co = new MutationObserver(() => {
+                    if (CaptchaHandler.detectOnPage()) {
+                        Toast.warn('⚠ Captcha detected on page!', 8000);
+                        co.disconnect();
+                    }
+                });
+                co.observe(document.body, { childList: true, subtree: true });
+                setTimeout(() => co.disconnect(), 20000);
+            }
+
+            if (SETTINGS.bandwidthTracker && BandwidthTracker.isNearCap()) {
+                Toast.warn(`⚠ Bandwidth ${BandwidthTracker.getPct().toFixed(0)}% used. Using proxy mirrors to save cap.`, 6000);
+            }
+
+            setTimeout(() => {
+                try { tryInject(); } catch (e) { Log.error(e); }
+                injectBadge();
+
+                if (Page.kind() === 'fs') {
+                    const p = Page.fsPath();
+                    if (p) PDApi.fsPath(p).then(() => injectFallback()).catch((e) => { console.debug('PD interceptor:', e); });
+                }
+
+                if ((Page.kind() === 'file' || Page.kind() === 'list') && SETTINGS.autoTriggerOnLoad) {
+                    const f = getCurrentFileFromViewer();
+                    if (f) {
+                        Log.info('Auto-trigger download');
+                        Downloader.run(f, 'auto').catch((e) => { console.debug('PD interceptor:', e); });
+                    }
+                }
+            }, 500);
+        };
+
+        if (document.readyState === 'complete' || document.readyState === 'interactive') onReady();
+        else document.addEventListener('DOMContentLoaded', onReady);
+    }
+
+    init();
+})();

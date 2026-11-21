@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
  * broke when the tool was invoked from any directory other than the repo
  * root (the only such tool in the suite). */
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const canon = fs.readFileSync(path.join(ROOT, "canon", "_sovereign", "4ndr0tools - Pixeldrain++.user.js"), "utf8");
+const canon = fs.readFileSync(path.join(ROOT, "src", "4ndr0tools - Pixeldrain++.user.js"), "utf8");
 const start = canon.indexOf("    const QRCode = (() => {");
 const svgStart = canon.indexOf("        function svg(text, size = 220) {", start);
 if (start === -1 || svgStart === -1) throw new Error("QRCode module not found in canon");

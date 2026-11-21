@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Images++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      4.1.0
+// @version      4.1.1
 // @description  Shows images/videos behind links via mouseover, with an integrated mode to collapse all page images for performance. Collapse-mode hotkey is configurable.
 // @author       4ndr0666
 // @match        *://*/*
@@ -83,7 +83,7 @@
 // rule and getFileName decodes degrade losslessly on malformed
 // percent-escapes instead of throwing inside the mpiv engine (4-c F05).
 // 4.0.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Images++.user v4.1.0 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Images++.user v4.1.1 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 /* ═══ v4.0.0 — SUITE CONSOLIDATION MERGE (GUP superset gate) ═════════════════
    Base:      Images++ v3.0.0 stable — the universal mouseover-preview lineage
@@ -1651,6 +1651,18 @@ const Popup = {
   getSafeMediaSrc(src) {
     try {
       const u = new URL(`${src}`, location.href);
+      /* v4.1.1 (r18 R18-F05): `data:` media URLs minted by the script's own
+       * privileged transport (Req.blobToDataUrl over GM-fetched bytes) and
+       * the rule-less inline data:-image fallback are admitted when the
+       * MIME is image/* or video/* — the transport's xhr:true / xhr:'data'
+       * modes and the CSP-forced 'data' mode produce exactly these URLs,
+       * and the popup then refused to render its OWN fetched content
+       * ("Blocked unsafe popup URL" on every xhr-mode preview). data:text/
+       * html and every other scheme stay refused — the redirect-safety
+       * contract the filter was built for is unchanged; only validated
+       * media MIME types are admitted. */
+      if (/^data:$/i.test(u.protocol))
+        return /^data:(image|video)\/[a-z0-9.+-]+/i.test(u.href) ? u.href : null;
       return /^(https?:|blob:)$/i.test(u.protocol) ? u.href : null;
     } catch {
       return null;
