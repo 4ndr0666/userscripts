@@ -187,3 +187,4 @@ OPERATOR-MANUAL.md
 # stay untracked so application clean-worktree checks are meaningful (protocol
 # v8.2.0 git hygiene; the README and worklog describe .4ndr0/ as gitignored).
 .4ndr0/
+userscripts-round-8.bundle
