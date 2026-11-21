@@ -65,7 +65,7 @@ export async function runFamilyFixtureSmoke(root = ROOT) {
 
     /* ── 1. Zai Exporter Contract Fixture Battery (Wave 1.4) ─────────────── */
     const zaiSrc = fs.readFileSync(
-        path.join(root, "canon", "_sovereign", "4ndr0tools - Zai Exporter.user.js"),
+        path.join(root, "src", "4ndr0tools - Zai Exporter.user.js"),
         "utf8"
     );
     const zaiFns = [
@@ -430,7 +430,7 @@ export async function runFamilyFixtureSmoke(root = ROOT) {
     /* ── 3. GUP v7.0.0 Stepwise Gap Mitigation Fixtures (suite v1.7.1) ───── */
     // 3A. Youtube Removed Video Revealer: extractIDsFullView + createRestoreButton + ButtonClickActionFullView
     const yrvrSrc = fs.readFileSync(
-        path.join(root, "canon", "_sovereign", "4ndr0tools - Youtube Removed Video Revealer.user.js"),
+        path.join(root, "src", "4ndr0tools - Youtube Removed Video Revealer.user.js"),
         "utf8"
     );
     const yrvrFns = [
@@ -522,7 +522,7 @@ export async function runFamilyFixtureSmoke(root = ROOT) {
     assert("Youtube Removed Video Revealer #TitleRestoredBtn wires ButtonClickActionFullView & dispatches format=1 on playlist view", processClickCalls.length === 2 && processClickCalls[1].fmt === 1);
 
     // 3B. HostWarp Gemini forceImmediateAnswer on contenteditable div[role="textbox"]
-    const hwSrc = fs.readFileSync(path.join(root, "modules", "hostwarp", "body.js"), "utf8");
+    const hwSrc = fs.readFileSync(path.join(root, "src", "hostwarp", "body.js"), "utf8");
     const fiaStart = hwSrc.indexOf("const forceImmediateAnswer = () => {");
     const fiaEnd = hwSrc.indexOf("    const createAnswerNowButton = () => {");
     const fiaCode = hwSrc.slice(fiaStart, fiaEnd);
@@ -579,17 +579,11 @@ forceImmediateAnswer();`, hwCtx);
     assert("TDZ self-shadowing red control: `const isFF = isFF` throws ReferenceError and is absent from suite", tdzCaught);
 
     /* ── 4. GUP v7.0.1 Stepwise Gap Mitigation Fixtures (suite v1.7.2) ───── */
-    // 4A. sink-census codeOnly template literal delimiter + interpolation token separation
-    const { codeOnly } = await import("./sink-census.mjs");
-    const tplView = codeOnly("const tag = `✓ Done (${result.mode} · ${formatDuration(elapsed)})`;\nsetTimeout(`alert(1)`, 10);");
-    assert(
-        "sink-census codeOnly preserves token separation across adjacent ${...} interpolations and emits template backtick delimiters",
-        tplView.includes("` result.mode  formatDuration(elapsed) `") && /setTimeout\s*\(\s*`/.test(tplView)
-    );
+    // 4A. (retired GUP sink-census check superseded by unified 4ndr0neering scan-kit)
 
     // 4B. Pixeldrain++ v1.2.1: Pending Jobs modal builds real DOM nodes (not raw HTML string) & escapeHTML is pure string sanitizer
     const pdSrc = fs.readFileSync(
-        path.join(root, "canon", "_sovereign", "4ndr0tools - Pixeldrain++.user.js"),
+        path.join(root, "src", "4ndr0tools - Pixeldrain++.user.js"),
         "utf8"
     );
     const pdEscapeCode = extractFn(pdSrc, "escapeHTML");
@@ -608,7 +602,7 @@ forceImmediateAnswer();`, hwCtx);
 
     // 4C. Forums++ v1.10.2: gofile.io/d status check + trailing slash, cyberfile lookbehind + public folder gate, cyberdrop http param, GM_download Blob URL, interval cleanup
     const fppSrc = fs.readFileSync(
-        path.join(root, "canon", "_sovereign", "4ndr0tools - Forums++.user.js"),
+        path.join(root, "src", "4ndr0tools - Forums++.user.js"),
         "utf8"
     );
     const cyberfileMatch = [..."func('folder', 'cf98765')".matchAll(/(?<='folder',\s').*?(?=')/gis)].map((m) => m[0])[0];
@@ -625,7 +619,7 @@ forceImmediateAnswer();`, hwCtx);
 
     // 4D. LinkMasterΨ v6.3.2: jpg6.su non-destructive spoiler candidates, cyberdrop single-scheme rewrite, cyberfile null-safe folderId regex
     const lmSrc = fs.readFileSync(
-        path.join(root, "canon", "_merged", "4ndr0tools - LinkMasterΨ.user.js"),
+        path.join(root, "src", "4ndr0tools - LinkMasterΨ.user.js"),
         "utf8"
     );
     const sampleSpoilers = ["postSecret123"];
@@ -651,7 +645,7 @@ forceImmediateAnswer();`, hwCtx);
     // bytes from the field report — plus a synthetic full roundtrip, the
     // negative controls, and the vault wiring tripwires.
     const hailuoSrc = fs.readFileSync(
-        path.join(root, "canon", "_promoted", "4ndr0tools - Hailuo++.user.js"),
+        path.join(root, "src", "4ndr0tools - Hailuo++.user.js"),
         "utf8"
     );
     const bsStart = hailuoSrc.indexOf("const BlobSanitizer = {");
@@ -923,7 +917,7 @@ forceImmediateAnswer();`, hwCtx);
     // firing on every hover). The gate pair: a live upload session + the
     // control-token refusal.
     const cbSrc = fs.readFileSync(
-        path.join(root, "canon", "_promoted", "4ndr0tools - Confirmation Bypass.user.js"),
+        path.join(root, "src", "4ndr0tools - Confirmation Bypass.user.js"),
         "utf8"
     );
     const CB_RECV_MARKER = "const receivePostMessage = (e) => {";
@@ -1280,7 +1274,7 @@ forceImmediateAnswer();`, hwCtx);
     // for a different player — the first announcement and the re-entry
     // contract preserved.
     const mamSrc = fs.readFileSync(
-        path.join(root, "canon", "_sovereign", "4ndr0tools - Maximize_Any_Media.user.js"),
+        path.join(root, "src", "4ndr0tools - Maximize_Any_Media.user.js"),
         "utf8"
     );
     const sliceBraceBlock = (src, marker) => {
@@ -1368,7 +1362,7 @@ forceImmediateAnswer();`, hwCtx);
     let reentered = 0;
     hostsApi.on("imagetwist.com", () => { reentered++; const inner = hostsApi.run(); if (inner !== 0) throw new Error("re-entry returned handlers"); }, { id: "reentrant" });
     hostsApi.run();
-    const hwR18Src = fs.readFileSync(path.join(root, "modules", "hostwarp", "body.js"), "utf8");
+    const hwR18Src = fs.readFileSync(path.join(root, "src", "hostwarp", "body.js"), "utf8");
     assert(
         "7A. the hosts retry contract (r18 R18-F01), EXECUTED from kernel/hosts.js: the document-start dispatch of a DOM-incomplete handler (returns false) does NOT latch it — the DOMContentLoaded re-run re-dispatches and completes it (first=0, second=1, third=0 with exactly 2 dispatches); an undefined-return handler settles on FIRST dispatch (the superset); a throwing handler is retried on the next run (2 dispatches, never latched); a handler calling hosts.run() re-enters through the guard (no loop); and the hostwarp body propagates the signal (return handler()) with the sync click-through shapes",
         hostsFirst === 0 && hostsSecond === 1 && hostsThird === 0 && hostDispatches === 2 &&
@@ -1624,7 +1618,7 @@ ${lmAllocBody}
     // getSafeMediaSrc — the transport's own data:image/video URLs are
     // admitted; data:text/html and javascript: stay refused; http/https/blob
     // hold (the redirect-safety contract unchanged).
-    const igpSrc = fs.readFileSync(path.join(root, "canon", "_merged", "4ndr0tools - Images++.user.js"), "utf8");
+    const igpSrc = fs.readFileSync(path.join(root, "src", "4ndr0tools - Images++.user.js"), "utf8");
     const gsmStart = igpSrc.indexOf("  getSafeMediaSrc(src) {");
     let gsmDepth = 0, gsmEnd = -1;
     for (let i = igpSrc.indexOf("{", gsmStart); i < igpSrc.length; i++) {
@@ -1659,7 +1653,7 @@ ${lmAllocBody}
     // shipped Akasha seed/perturb/blindedScratch — repeated serializes of
     // the SAME canvas produce byte-identical perturbed pixels; distinct
     // canvases diverge; the scratch-keyed seed reconstructed diverges.
-    const akSrc = fs.readFileSync(path.join(root, "canon", "_merged", "4ndr0tools - Akasha Silence.user.js"), "utf8");
+    const akSrc = fs.readFileSync(path.join(root, "src", "4ndr0tools - Akasha Silence.user.js"), "utf8");
     const akSliceFn = (name) => {
         const i = akSrc.indexOf("function " + name + "(");
         if (i < 0) throw new Error("Akasha fn missing: " + name);
@@ -1730,7 +1724,7 @@ ${lmAllocBody}
     // 7G-1 (R18-F07): the individual-export import gate, EXECUTED from the
     // shipped processAndSavePrompts — a single exported prompt OBJECT
     // imports; an array imports; garbage still refuses.
-    const pmSrc = fs.readFileSync(path.join(root, "canon", "_sovereign", "4ndr0tools - Prompt Master.user.js"), "utf8");
+    const pmSrc = fs.readFileSync(path.join(root, "src", "4ndr0tools - Prompt Master.user.js"), "utf8");
     const pmProcessStart = pmSrc.indexOf("async function processAndSavePrompts(e) {");
     let pmDepth = 0, pmProcessEnd = -1;
     for (let j = pmSrc.indexOf("{", pmProcessStart); j < pmSrc.length; j++) {
@@ -1813,7 +1807,7 @@ ${lmAllocBody}
     // advances the resume cursor, and the retry fetches the REMAINDER; a
     // stuck-short server exhausts the attempts and fails VISIBLY; the
     // completeness gate stands in all three strategies.
-    const pdR18Src = fs.readFileSync(path.join(root, "canon", "_sovereign", "4ndr0tools - Pixeldrain++.user.js"), "utf8");
+    const pdR18Src = fs.readFileSync(path.join(root, "src", "4ndr0tools - Pixeldrain++.user.js"), "utf8");
     const pdFetchChunkStart = pdR18Src.indexOf("const fetchChunk = async (idx) => {", pdR18Src.indexOf("async single_host_ranged("));
     let pdDepth = 0, pdFetchChunkEnd = -1;
     for (let j = pdR18Src.indexOf("{", pdFetchChunkStart); j < pdR18Src.length; j++) {
@@ -1897,7 +1891,7 @@ ${lmAllocBody}
     // 7I (R18-F10): the rebased verifier, EXECUTED from the shipped
     // runAndVerifyBatch with YouTube-dedupe semantics — a duplicate-add
     // batch reports HONESTLY; the stale-baseline reconstruction overcounts.
-    const ytSrc = fs.readFileSync(path.join(root, "canon", "_sovereign", "4ndr0tools - YouTube Playlist Master.user.js"), "utf8");
+    const ytSrc = fs.readFileSync(path.join(root, "src", "4ndr0tools - YouTube Playlist Master.user.js"), "utf8");
     const ytVerifyStart = ytSrc.indexOf("async function runAndVerifyBatch(");
     let ytDepth = 0, ytVerifyEnd = -1;
     for (let j = ytSrc.indexOf("{", ytVerifyStart); j < ytSrc.length; j++) {
@@ -1951,7 +1945,7 @@ assert(
     // 7J (R18-F11): the Yandex same-tranche viewer replacement, EXECUTED
     // from the shipped checkViewer — removals before additions + the
     // reconciliation pass keep the controller alive across a swap.
-    const ydxSrc = fs.readFileSync(path.join(root, "canon", "_sovereign", "4ndr0tools - YandexImageSearch++.user.js"), "utf8");
+    const ydxSrc = fs.readFileSync(path.join(root, "src", "4ndr0tools - YandexImageSearch++.user.js"), "utf8");
     const ydxCheckStart = ydxSrc.indexOf("const checkViewer = () => {");
     let ydxDepth = 0, ydxCheckEnd = -1;
     for (let j = ydxSrc.indexOf("{", ydxCheckStart); j < ydxSrc.length; j++) {
@@ -2009,7 +2003,7 @@ assert(
     // 7K (R18-F12): the Recon message hook identity contract, EXECUTED from
     // the shipped hook against a native-dedup EventTarget — one wrapper per
     // (listener, capture), receiver forwarded, removal complete.
-    const rcnSrc = fs.readFileSync(path.join(root, "canon", "_sovereign", "4ndr0tools - Recon.user.js"), "utf8");
+    const rcnSrc = fs.readFileSync(path.join(root, "src", "4ndr0tools - Recon.user.js"), "utf8");
     const rcnHookStart = rcnSrc.indexOf("hookPostMessage() {");
     let rcnDepth = 0, rcnHookEnd = -1;
     for (let j = rcnSrc.indexOf("{", rcnHookStart); j < rcnSrc.length; j++) {
@@ -2089,7 +2083,7 @@ assert(
 
 
 /* ── 7L (R18-F13/F14): MPC vnode retention + identity ────────────────── */
-const mpcSrc = fs.readFileSync(path.join(root, "canon", "_promoted", "4ndr0tools - Media Player Controller.user.js"), "utf8");
+const mpcSrc = fs.readFileSync(path.join(root, "src", "4ndr0tools - Media Player Controller.user.js"), "utf8");
 const mpcBlockStart = mpcSrc.indexOf("const nodeNonces = new WeakMap();");
 const mpcBlockEnd = mpcSrc.indexOf("function purgeOrphanVNodes()");
 const mpcBlock = mpcSrc.slice(mpcBlockStart, mpcBlockEnd);
@@ -2155,7 +2149,7 @@ assert("7L. MPC vnode retention + identity (r18 R18-F13/F14), EXECUTED from the 
     oldIdA === oldIdB && oldIdA === "src__video_mp4");
 
 /* ── 7M (R18-F15): FLX aggregation ───────────────────────────────────── */
-const flxSrc = fs.readFileSync(path.join(root, "canon", "_promoted", "4ndr0tools - Forum Link Xtractor.user.js"), "utf8");
+const flxSrc = fs.readFileSync(path.join(root, "src", "4ndr0tools - Forum Link Xtractor.user.js"), "utf8");
 const flxThreadStart = flxSrc.indexOf("function currentThreadName() {");
 let d = 0, flxThreadEnd = -1;
 for (let j = flxSrc.indexOf("{", flxThreadStart); j < flxSrc.length; j++) {
@@ -2225,7 +2219,7 @@ assert("7M. FLX aggregation (r18 R18-F15), EXECUTED from the shipped currentThre
     unionIdx > filterIdx);
 
 /* ── 7N (R18-F16): m3u8 facade decode ────────────────────────────────── */
-const m3u8Src = fs.readFileSync(path.join(root, "canon", "_promoted", "4ndr0tools - m3u8++.user.js"), "utf8");
+const m3u8Src = fs.readFileSync(path.join(root, "src", "4ndr0tools - m3u8++.user.js"), "utf8");
 const m3u8DecodeStart = m3u8Src.indexOf("const decodeText = () => {");
 const m3u8ResolveEnd = m3u8Src.indexOf("});", m3u8DecodeStart);
 const m3u8Block = m3u8Src.slice(m3u8DecodeStart, m3u8ResolveEnd + 3);
@@ -2253,78 +2247,7 @@ assert("7N. m3u8 facade decode (r18 R18-F16), EXECUTED from the shipped onload f
     new Uint8Array(m3u8Ab).length === m3u8JsonBytes.length && m3u8Blob instanceof Blob && m3u8Blob.size === m3u8JsonBytes.length &&
     m3u8EdgeText === "edge-text");
 
-/* ── 7O (R18-F17): ingest provenance ─────────────────────────────────── */
-const { ingestOperatorReport } = await import(path.join(root, "tools", "operator-battery.mjs"));
-const resultsBefore = fs.readFileSync(path.join(root, "tools", "operator-battery", "results.json"), "utf8");
-const mkReport = (over) => {
-    const base = {
-        header: "## OPERATOR BATTERY REPORT — suite 1.26.0 @ 050e7bd7b770969fb2ac48cc408df95c5d16f07b",
-        env: "ENV: Chrome 130 / Tampermonkey 5.5 / Win11 / dist @ 050e7bd7b770969fb2ac48cc408df95c5d16f07b / date 2026-11-04",
-        ...(over || {}),
-    };
-    return [
-        base.header,
-        base.env,
-        "",
-        "| test | status (PASS/FAIL/BLOCKED) | evidence (link/inline) | note (failure mode if FAIL/BLOCKED) |",
-        "|---|---|---|---|",
-        "| FPP-RES-09 | PASS | inline | |",
-        "",
-        "FREE-FORM FINDINGS:",
-        "- none",
-    ].join("\n");
-};
-/* r18a: the scratch reports live in a fresh OS temp dir (os.tmpdir honors
- * TMPDIR — machine-independent by construction). The round-18 original
- * named the authoring machine's home directory as a string literal: green
- * through every battery on that machine (the directory existed there),
- * then ENOENT-dead on the operator's the moment the gate chain ran outside
- * it. validate.mjs now refuses this literal class repo-wide (the
- * machine-independence scan). */
-const tmpReportDir = fs.mkdtempSync(path.join(os.tmpdir(), "wo01-ffsmoke-"));
-const tmpReports = [];
-const writeReport = (text) => { const p = path.join(tmpReportDir, "r18-report-" + tmpReports.length + ".md"); fs.writeFileSync(p, text); tmpReports.push(p); return p; };
-const ingNoHeader = ingestOperatorReport(writeReport(mkReport({ header: "## OPERATOR BATTERY REPORT" })), {});
-const ingZeroSha = ingestOperatorReport(writeReport(mkReport({ header: "## OPERATOR BATTERY REPORT — suite 1.26.0 @ 0000000000000000000000000000000000000000" })), {});
-const ingNoEnv = ingestOperatorReport(writeReport(mkReport({ env: "" })), {});
-const ingNoDate = ingestOperatorReport(writeReport(mkReport({ env: "ENV: Chrome 130 / TM 5.5 / Win11 / dist @ 050e7bd / " })), {});
-const ingWrongSuite = ingestOperatorReport(writeReport(mkReport({ header: "## OPERATOR BATTERY REPORT — suite 9.9.9 @ 050e7bd7b770969fb2ac48cc408df95c5d16f07b" })), {});
-const resultsAfter = fs.readFileSync(path.join(root, "tools", "operator-battery", "results.json"), "utf8");
-try { fs.rmSync(tmpReportDir, { recursive: true, force: true }); } catch {}
-assert("7O. ingest provenance (r18 R18-F17), EXECUTED against the shipped ingestOperatorReport: a report with NO suite header is refused by name; an all-zero git sha (the unfilled template placeholder) is refused; a missing ENV line is refused; a missing stated date is refused (never machine-fabricated); a wrong suite still refuses (the 10a-F06b contract); and every refusal left results.json BYTE-IDENTICAL (refusals never write)",
-    ingNoHeader.problems.length > 0 && /suite <version> @ <git sha>/.test(ingNoHeader.problems.join(" ")) &&
-    ingZeroSha.problems.length > 0 && /all zeros/.test(ingZeroSha.problems.join(" ")) &&
-    ingNoEnv.problems.length > 0 && /no ENV line/.test(ingNoEnv.problems.join(" ")) &&
-    ingNoDate.problems.length > 0 && /date YYYY-MM-DD/.test(ingNoDate.problems.join(" ")) &&
-    ingWrongSuite.problems.length > 0 && /suite 9\.9\.9/.test(ingWrongSuite.problems.join(" ")) &&
-    resultsBefore === resultsAfter);
-
-/* ── 7P (R18-F18): the score writes last ─────────────────────────────── */
-const vSrc = fs.readFileSync(path.join(root, "tools", "validate.mjs"), "utf8");
-const scoreWriteIdx = vSrc.indexOf("const score = runProductionScore(ROOT, scoreCtx);");
-const scoreCtxIdx = vSrc.indexOf("const scoreCtx = {");
-const lastGateIdx = vSrc.indexOf("MIGRATION.md successor table verified");
-const lateGateFailures = [
-    vSrc.indexOf("canon-kernel wiring:"),
-    vSrc.indexOf("kernel-boundary smoke:"),
-    vSrc.indexOf("family-fixture smoke:"),
-    vSrc.indexOf("norm-symmetry smoke:"),
-    vSrc.indexOf("tt browser smoke:"),
-];
-const orderingHolds = scoreWriteIdx > lastGateIdx && scoreCtxIdx > lastGateIdx && lateGateFailures.every((i) => i < scoreCtxIdx);
-/* 7P-red: the pre-r18 order reconstructed — the score block moved BEFORE
- * the canon-kernel gate trips the ordering check. */
-const scoreBlockStart = vSrc.indexOf("/* r18 (R18-F18): the production score — computed and persisted HERE,");
-const scoreBlockEnd = vSrc.indexOf("score determinism check failed:", scoreBlockStart);
-const scoreBlockEndFull = vSrc.indexOf("}", vSrc.indexOf("}", scoreBlockEnd) + 1) + 1;
-const scoreBlock = vSrc.slice(scoreBlockStart, scoreBlockEndFull);
-const vSabotaged = vSrc.slice(0, scoreBlockStart) + vSrc.slice(scoreBlockEndFull);
-const canonKernelIdx = vSabotaged.indexOf("// Canon-kernel wiring (suite v1.4.3)");
-const vOldOrder = vSabotaged.slice(0, canonKernelIdx) + scoreBlock + "\n" + vSabotaged.slice(canonKernelIdx);
-const oldScoreIdx = vOldOrder.indexOf("const score = runProductionScore(ROOT, scoreCtx);");
-const oldLastGateIdx = vOldOrder.indexOf("MIGRATION.md successor table verified");
-assert("7P. the score writes last (r18 R18-F18), machine-checked against the shipped validate.mjs: the score computation+write AND its ctx sit AFTER the final gate (MIGRATION) and after every late gate's failure site (canon-kernel, kernel-boundary, family-fixture, norm-symmetry, tt) — a late failure is priced into otherGateFailures and can never leave an unqualified 100/100 on disk; the pre-r18 order reconstructed (score block before canon-kernel) fails the same ordering check — the position is load-bearing",
-    orderingHolds && oldScoreIdx < oldLastGateIdx && vOldOrder !== vSrc);
+    // 7O & 7P retired with GUP operator-battery / production-score in v2.0.0
 
     return { problems, passed, total };
 }

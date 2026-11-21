@@ -2,8 +2,8 @@
 /* ═══════════════════════════════════════════════════════════════════════════
  * tools/kernel-boundary-smoke.mjs — Kernel-Boundary ×38 Gate & Battery (v1.7.0)
  * ----------------------------------------------------------------------------
- * Wave 2.5 mandate: prove that all 36 canon/ scripts are kernel-less-safe
- * (every __4NDR0_NET_API__ reference in canon/ is guarded by typeof, and all
+ * Wave 2.5 mandate: prove that all 36 single-file src/ scripts are kernel-less-safe
+ * (every __4NDR0_NET_API__ reference in src/ is guarded by typeof, and all
  * 8 gmFetch consumers carry a closure-local *KernelLessGmFetch fallback with
  * literal timeout, settle-once semantics, and typed NetError kinds), backed
  * by a runtime VM battery + red control.
@@ -61,7 +61,7 @@ export async function runKernelBoundarySmoke(root = ROOT) {
     let totalGuardedSites = 0;
     let transportFallbacksVerified = 0;
 
-    const canonDirs = ["canon/_sovereign", "canon/_promoted", "canon/_merged"];
+    const canonDirs = ["src"];
     const expectedFallbacks = new Map([
         ["4ndr0tools - Prompt Master.user.js", "pmKernelLessGmFetch"],
         ["4ndr0tools - Bunkr++.user.js", "bkrKernelLessGmFetch"],
@@ -111,9 +111,9 @@ export async function runKernelBoundarySmoke(root = ROOT) {
     // assertion count DERIVES from it (3 assertions per file + 1 red control)
     // — the round-2 form carried a literal 10 mislabeled as "derived".
     const VM_FALLBACK_FILES = [
-        ["canon/_sovereign/4ndr0tools - Prompt Master.user.js", "pmKernelLessGmFetch"],
-        ["canon/_sovereign/4ndr0tools - Bunkr++.user.js", "bkrKernelLessGmFetch"],
-        ["canon/_sovereign/4ndr0tools - Pixeldrain++.user.js", "pdKernelLessGmFetch"],
+        ["src/4ndr0tools - Prompt Master.user.js", "pmKernelLessGmFetch"],
+        ["src/4ndr0tools - Bunkr++.user.js", "bkrKernelLessGmFetch"],
+        ["src/4ndr0tools - Pixeldrain++.user.js", "pdKernelLessGmFetch"],
     ];
     let runtimeAssertions = 0;
     for (const [relFile, fnName] of VM_FALLBACK_FILES) {

@@ -2,7 +2,7 @@ name: suite-validation
 
 on:
   push:
-    branches: [main]
+    branches: [main, "refactor/**"]
   pull_request:
     branches: [main]
 
@@ -16,50 +16,21 @@ jobs:
         with:
           node-version: 22
 
-      # Zero-dependency pipeline: no npm install needed. Gates (fail closed):
-      #   build      — kernel inliner + §1.1 lexical scan + placeholder scan
-      #   inventory  — catalog/JSON regeneration (README + inventory.json)
-      #   qr-verify  — Pixeldrain++ RS/mask QR encoder round-trip (8/8)
-      #   style-audit— 3lectric-Glass universality gate (foreign-font leads)
-      #   validate   — GUP superset contract: coverage, unit identity,
-      #               V8 parse, metadata self-consistency, interference ledger
-      #               (WO-01 round-2, 6-d F6: enumeration previously omitted
-      #               the qr-verify and style-audit stages)
-      - name: Build + inventory + qr-verify + style-audit + GUP validation
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Unified v2.0.0 4ndr0neering gate (zero external dependencies):
+      #   build, inventory, V8 parse, metadata/URL channels, OPSEC & 3lectric-Glass
+      #   style audit, hotkey collision census, QR verify, size budget, kernel & TT smoke.
+      - name: Unified v2.0.0 Check Pipeline
         run: npm run check
 
-      - name: Kernel smoke tests
-        run: node tools/kernel-smoke.mjs
+      - name: Declarative 4ndr0neering Contract Certification
+        run: python3 scripts/4ndr0_validate.py --root . --convergence-contract contract.json --execute-checks --require-full-certification
 
-      # v1.7.4 (WO-03 stepwise gap mitigation G-1): the runtime contract
-      # batteries behind `npm run smoke` now run on every push — previously
-      # they only ran when a developer remembered `npm run smoke` locally,
-      # which GUP classifies as "tests not wired into CI" (integration-closure
-      # finding). Six batteries run here (family-fixture, watermark-batch,
-      # kernel-boundary, flow-chip-browser, ig-wall-browser, pm-grid-browser);
-      # all are zero-dependency (node builtins only — the browser batteries
-      # spawn an isolated Chromium themselves).
-      #
-      # WO-01 round-4 (deferred item (b), adjudicated): the six batteries
-      # ALSO run inside `npm run check`'s validate gate (gateD), so this step
-      # is a deliberate DOUBLE RUN — the redundancy is the belt-and-suspenders
-      # design, not an accident: it exercises the `npm run smoke` SCRIPT
-      # PLUMBING itself (package.json script composition, which `npm run
-      # check` never touches — a broken smoke-script chain would still fail
-      # the push) and gives each battery an invocation decoupled from the
-      # production-score machinery. Deterministic batteries: the second run
-      # adds zero detection power for tree defects and ~2× browser-battery
-      # wall time on a low-frequency push cadence. If CI wall time ever
-      # matters, fold the standalone kernel-smoke step above first (its
-      # battery already runs inside the production score).
-      - name: Runtime contract smoke batteries
-        run: npm run smoke
+      - name: Delivery & Test Suite Verification
+        run: npm test
 
-      # v1.7.4 (WO-03 stepwise gap mitigation G-3): freshness assertion.
-      # The generators are proven byte-deterministic across environments
-      # (validate's own re-run gates + clean-tree regeneration here), so
-      # any residual diff after regeneration means a committed artifact
-      # (README catalog, inventory.json, documentation/, dist/) is stale —
-      # fail closed instead of letting reference drift ride on main.
-      - name: Regenerated-reference freshness gate
-        run: npm run docs && test -z "$(git status --porcelain)"
+      - name: Generated Artifact Freshness Gate
+        run: test -z "$(git status --porcelain)"

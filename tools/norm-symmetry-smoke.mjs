@@ -111,7 +111,7 @@ function extractPropFn(src, propName) {
 }
 
 const readCanon = (tier, name) =>
-    fs.readFileSync(path.join(ROOT, "canon", tier, `4ndr0tools - ${name}.user.js`), "utf8");
+    fs.readFileSync(path.join(ROOT, "src", `4ndr0tools - ${name}.user.js`), "utf8");
 
 export async function runNormSymmetrySmoke(root = ROOT) {
     const problems = [];

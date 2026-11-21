@@ -53,7 +53,7 @@ export function runWatermarkBatchSmoke(root = ROOT) {
      * the hardcoded 15 printed an impossible 16/15 the moment a check was
      * added (the 3-a F01 class this battery's own header derides). */
     let total = 0;
-    const canonPath = path.join(root, "canon", "_sovereign", "4ndr0tools - Watermark++.user.js");
+    const canonPath = path.join(root, "src", "4ndr0tools - Watermark++.user.js");
     if (!fs.existsSync(canonPath)) {
         return { problems: ["Watermark++ canon file missing"], passed: 0, total: 0 };
     }

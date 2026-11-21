@@ -18,9 +18,9 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20PageCraft.user.js
 // ==/UserScript==
 
-/* 4ndr0tools - PageCraft v1.1.4 — built from modules/pagecraft + kernel {brand, core, glass, store, hotkeys}
+/* 4ndr0tools - PageCraft v1.1.4 — built from src/pagecraft + kernel {brand, core, glass, store, hotkeys}
  * All-sites page utility belt: bulk checkbox control with range/alt-hover selection (de-jQueryed), broken-image auto-repair with cache-busting + frame broadcast, hover-collapse image I/O governor, and Brave infinite scroll — one engine, glass settings console, zero runtime dependencies.
- * This is a generated file; edit modules/ and run `npm run build`.
+ * This is a generated file; edit src/ and run `npm run build`.
  */
 
 (function () {

@@ -197,7 +197,7 @@ def scan(root:Path, output:Path)->int:
 def main()->int:
     parser=argparse.ArgumentParser(description=__doc__)
     sub=parser.add_subparsers(dest='action',required=True)
-    run=sub.add_parser('run');run.add_argument('--root',default='.');run.add_argument('--contract',required=True);run.add_argument('--output',required=True)
+    run=sub.add_parser('run');run.add_argument('--root',default='.');run.add_argument('--contract',default='contract.json');run.add_argument('--output',required=True)
     eva=sub.add_parser('evaluate');eva.add_argument('--baseline-samples',required=True,help='JSON array in a file');eva.add_argument('--candidate-samples',required=True,help='JSON array in a file');eva.add_argument('--max-regression-pct',type=float,default=5);eva.add_argument('--output',required=True)
     chk=sub.add_parser('scan');chk.add_argument('--root',default='.');chk.add_argument('--output',required=True)
     args=parser.parse_args()

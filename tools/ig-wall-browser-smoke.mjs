@@ -73,7 +73,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 const DIST_IG = path.join(ROOT, "dist", "4ndr0tools - Instagram++.user.js");
-const CANON_IG = path.join(ROOT, "canon", "_sovereign", "4ndr0tools - Instagram++.user.js");
+const CANON_IG = path.join(ROOT, "src", "4ndr0tools - Instagram++.user.js");
 
 function probeChromium() {
   const fixed = [
@@ -395,7 +395,7 @@ export async function runIgWallBrowserBattery() {
   if (!CHROMIUM_BIN) {
     // Structural fallback on hosts without a local Chromium binary — SAME
     // fail-closed contract as the live path (clean === failed.length === 0).
-    assert("1. version header present & canon/dist parity",
+    assert("1. version header present & src/dist parity",
       !!distVersion && distVersion === canonVersion, `dist=${distVersion}, canon=${canonVersion}`);
     assert("2. structural tripwire: prune isOffscreen gate present (canon+dist)",
       distSource.includes(GATE_LINE) && canonSource.includes(GATE_LINE));
@@ -481,6 +481,7 @@ export async function runIgWallBrowserBattery() {
         "--no-sandbox",
         "--disable-gpu",
         "--disable-dev-shm-usage",
+        "--no-proxy-server",
         "--no-first-run",
         "--no-default-browser-check",
         `--user-data-dir=${path.join(tmpDir, "ud")}`,

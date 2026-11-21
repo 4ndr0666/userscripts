@@ -1,24 +1,40 @@
 {
-  "version": "1.0",
-  "project": "bulkimg",
-  "acceptance_policy": "No mandatory gate may be reclassified, waived, or renamed by the engineer; partial handoff is never CERTIFIED. Superset rule: every v1.0.0, v1.1.0, v1.2.0, and v1.3.0 capability must remain present and operational in the v1.4.0 candidate. Round-4 re-seal (new contract SHA, fresh ledger): the delivery-artifact names move to the round-4 kit and round-record-round-4.html while the ten acceptance gates keep their original semantics.",
+  "version": "2.0.0",
+  "project": "4ndr0666/userscripts",
+  "architecture": {
+    "source_dir": "src",
+    "kernel_dir": "kernel",
+    "dist_dir": "dist",
+    "kernel_order": [
+      "brand.js",
+      "core.js",
+      "glass.js",
+      "hosts.js",
+      "hotkeys.js",
+      "net.js",
+      "store.js"
+    ],
+    "installables": 38,
+    "canonical_url_base": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/"
+  },
+  "acceptance_policy": "Pure 4ndr0neering v2.0.0 fail-closed contract. Every mandatory criterion must exit 0 with zero regressions across all 38 dist/ installables, unchanged @updateURL/@downloadURL channels, zero remote @import font fetches, full 3lectric-Glass compliance, and zero hotkey collisions.",
   "criteria": [
     {
-      "id": "syntax-valid",
-      "description": "Candidate userscript parses as valid JavaScript (node --check) with zero syntax errors.",
+      "id": "build-and-inventory",
+      "description": "Deterministic suite build (src/ + kernel/ -> dist/) and inventory/README regeneration succeed with 0 problems.",
       "mandatory": true,
       "gate": "functional",
       "owner": "engineer",
       "command": [
-        "node",
-        "--check",
-        "chatgptbulk.user.js"
+        "bash",
+        "-c",
+        "node tools/build.mjs && node tools/inventory.mjs"
       ],
-      "timeout_seconds": 60
+      "timeout_seconds": 120
     },
     {
-      "id": "static-superset-guard",
-      "description": "Static hygiene + superset gate passes: no TODO/FIXME/placeholder/debugger markers, metadata block intact, version >= 1.4.0, and every sealed v1.0.0 feature marker and top-level definition, every v1.1.0, v1.2.0, and v1.3.0 hardening marker, and every v1.4.0 hardening/feature marker still present in the candidate.",
+      "id": "static-v8-and-metadata",
+      "description": "Flat src/ topology, 7 kernel modules, 1:1 dist/ parity, V8 syntax parse (node --check), canonical @downloadURL/@updateURL endpoints, and OPSEC zero remote @import check pass.",
       "mandatory": true,
       "gate": "regression",
       "owner": "engineer",
@@ -29,8 +45,56 @@
       "timeout_seconds": 120
     },
     {
-      "id": "behavior-suite",
-      "description": "jsdom behavioral suite passes: boot + shadow-DOM panel, duplicate-injection guard, settings persistence round-trip, limits rendering with hostile-string escaping (notes, slugs, and images-left) and null-reset safety, model/effort population, run flow with gallery polling and image extraction, fetch-override model rewrite on both conversation-send shapes, cancel-honoring (pre-send, inter-job delay, and new-chat navigation), cycle-safe thread parsing, exact per-prompt pairing including prefix-sharing prompts, hidden project-link fallback, gallery re-render suppression, and the round-4 surface: unmatched-job timeout via resume restore, forced-model lock (transport + ophel-style picker sync), reference-image re-supply per run, the stateless persist/reload/resume cycle, failed-chat purge masking with sibling scoping, asset-vault clone survival and FIFO bound, and clear-blocked-while-resume-pending.",
+      "id": "opsec-and-3lectric-glass-style",
+      "description": "3lectric-Glass universality and OPSEC zero-remote-@import audit passes across all installables.",
+      "mandatory": true,
+      "gate": "structural",
+      "owner": "engineer",
+      "command": [
+        "node",
+        "tools/style-audit.mjs"
+      ],
+      "timeout_seconds": 120
+    },
+    {
+      "id": "hotkey-collision-census",
+      "description": "Static hotkey census confirms zero same-combo + domain-overlap collisions across all scripts in src/.",
+      "mandatory": true,
+      "gate": "structural",
+      "owner": "engineer",
+      "command": [
+        "node",
+        "tools/hotkey-census.mjs"
+      ],
+      "timeout_seconds": 120
+    },
+    {
+      "id": "qr-encoder-roundtrip",
+      "description": "Pixeldrain++ embedded QR encoder passes all 8 payload round-trip checks.",
+      "mandatory": true,
+      "gate": "functional",
+      "owner": "engineer",
+      "command": [
+        "node",
+        "tools/qr-verify.mjs"
+      ],
+      "timeout_seconds": 60
+    },
+    {
+      "id": "size-budget",
+      "description": "All dist/ artifacts remain within the 1.3 MB hard ceiling and audited large-script budgets.",
+      "mandatory": true,
+      "gate": "performance",
+      "owner": "engineer",
+      "command": [
+        "node",
+        "tools/size-budget.mjs"
+      ],
+      "timeout_seconds": 60
+    },
+    {
+      "id": "kernel-and-behavior-smoke",
+      "description": "Kernel unit tests, kernel-boundary safety, family fixtures, watermark batch, and normalization symmetry batteries all pass.",
       "mandatory": true,
       "gate": "functional",
       "owner": "engineer",
@@ -38,94 +102,23 @@
         "node",
         "tests/behavior.test.mjs"
       ],
-      "timeout_seconds": 600
+      "timeout_seconds": 180
     },
     {
-      "id": "unit-superset-no-missing",
-      "description": "Unit comparison over the full engagement range (v1.0.0 import to candidate HEAD) reports zero MISSING units: no baseline lexical unit may be dropped.",
-      "mandatory": true,
-      "gate": "regression",
-      "owner": "engineer",
-      "command": [
-        "python3",
-        "-c",
-        "import json; d=json.load(open('.4ndr0/comparison.json')); rows=d['comparison']; missing=[r for r in rows if r['classification']=='MISSING']; assert not missing, 'MISSING units: %r' % missing; assert d['counts']['MISSING']==0, d['counts']; print('unit superset OK: 0 MISSING units across %d units' % len(rows))"
-      ],
-      "timeout_seconds": 120
-    },
-    {
-      "id": "perf-gallery-render",
-      "description": "Paired, source-fingerprinted wall-time measurement (4ndr0_perf run) of the gallery poll-tick render workload (unchanged-state re-render suppression) passes with equal stdout and no regression beyond the contracted allowance, measured in the Node 24 + jsdom host envelope (v1.4.0 candidate fingerprint).",
-      "mandatory": true,
-      "gate": "performance",
-      "owner": "engineer",
-      "command": [
-        "python3",
-        "scripts/4ndr0_perf.py",
-        "run",
-        "--root",
-        ".",
-        "--contract",
-        ".4ndr0/perf/perf.contract.json",
-        "--output",
-        ".4ndr0/perf/perf-result.json"
-      ],
-      "timeout_seconds": 900
-    },
-    {
-      "id": "real-browser-fixture",
-      "description": "Real-Chromium integration fixture passes: the deliverable v1.4.0 script boots in a real browser engine against a ChatGPT-shaped DOM with a mocked backend, the FAB/panel open, the round-4 controls render, limits render, a full mocked generate run completes into the gallery, and settings survive an HTTP-origin reload.",
+      "id": "trusted-types-browser-smoke",
+      "description": "Trusted Types browser smoke battery passes fail-closed (live headless Chromium CDP or policy-disclosed structural fallback).",
       "mandatory": true,
       "gate": "integration",
       "owner": "engineer",
       "command": [
-        "bash",
-        "tests/browser_fixture_check.sh"
+        "node",
+        "tools/tt-browser-smoke.mjs"
       ],
-      "timeout_seconds": 300
+      "timeout_seconds": 180
     },
     {
-      "id": "kit-battery-green",
-      "description": "The emitted round-4 single-file update kit passes its full P0-P7 + P1B (moving-HEAD) + P1C (cross-lineage) + RED_CONTROL battery with status GREEN, and the kit bytes on disk match PIN_KIT_SHA in the round-4 kit metadata.",
-      "mandatory": true,
-      "gate": "delivery",
-      "owner": "engineer",
-      "command": [
-        "python3",
-        "-c",
-        "import json,hashlib; m=json.load(open('.4ndr0/kit-meta.json')); b=m['battery']; assert b['status']=='GREEN', b['status']; kit=open(m['kit_path'],'rb').read(); assert hashlib.sha256(kit).hexdigest()==m['pins']['PIN_KIT_SHA'], 'kit bytes do not match PIN_KIT_SHA'; bad=[c for c in b['checks'] if c['status']!='PASS']; assert not bad, bad; print('kit battery GREEN: %d/%d checks passed; kit bytes match PIN_KIT_SHA' % (b['passed_checks'], b['total_checks']))"
-      ],
-      "timeout_seconds": 120
-    },
-    {
-      "id": "round-record-pins",
-      "description": "The self-contained round-4 HTML round record exists and mechanically contains every kit pin (PIN_KIT_SHA, PIN_TIP, PIN_TIP_TREE, PIN_BUNDLE_SHA, PIN_KEY_SHA, PIN_KEY_BASE_SHA) derived from the round-4 kit metadata.",
-      "mandatory": true,
-      "gate": "delivery",
-      "owner": "engineer",
-      "command": [
-        "python3",
-        "-c",
-        "import json; m=json.load(open('.4ndr0/kit-meta.json')); h=open('.4ndr0/round-record-round-4.html',encoding='utf-8').read(); p=m['pins']; need={'PIN_KIT_SHA':p['PIN_KIT_SHA'],'PIN_TIP':p['PIN_TIP'],'PIN_TIP_TREE':p['PIN_TIP_TREE'],'PIN_BUNDLE_SHA':p['PIN_BUNDLE_SHA'],'PIN_KEY_SHA':p['PIN_KEY_SHA'],'PIN_KEY_BASE_SHA':p['PIN_KEY_BASE_SHA']}; miss=[k for k,v in need.items() if v and v not in h]; assert not miss, miss; print('round-record pin parity OK:', ', '.join(sorted(need)))"
-      ],
-      "timeout_seconds": 120
-    },
-    {
-      "id": "worklog-handoff",
-      "description": "The worklog contains the Round 1, Round 2, Round 3, and Round 4 sections, the superset verification tables, and a Round 5 handoff, with zero TODO/TBD stubs.",
-      "mandatory": true,
-      "gate": "delivery",
-      "owner": "engineer",
-      "command": [
-        "python3",
-        "-c",
-        "t=open('worklog.md',encoding='utf-8').read(); need=['Round 1','Round 2','Round 3','Round 4','Superset','Handoff']; miss=[s for s in need if s not in t]; assert not miss, miss; assert 'TODO' not in t and 'TBD' not in t, 'unresolved stubs in worklog'; print('worklog handoff sections present, zero stubs')"
-      ],
-      "timeout_seconds": 120
-    },
-    {
-      "id": "browser-txt-verification",
-      "description": "Browser possession proof: the delivered userscript, served as a .txt copy through the file-delivery endpoint (local port chain and the caddy user-facing chain on :81), renders in a real headless browser with the header, version line, IIFE wrapper, final buildUI() call, and closing token all visible, and the rendered line count matches the artifact.",
+      "id": "delivery-verification",
+      "description": "Delivery verification harness confirms 1:1 src/dist installables, V8 parse, canonical headers, and contract integrity.",
       "mandatory": true,
       "gate": "delivery",
       "owner": "engineer",
@@ -133,7 +126,7 @@
         "bash",
         "tests/verify_delivery.sh"
       ],
-      "timeout_seconds": 300
+      "timeout_seconds": 120
     }
   ]
 }

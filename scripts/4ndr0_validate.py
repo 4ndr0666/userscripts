@@ -122,16 +122,108 @@ def resolve_ref_path(root: Path, evidence_dir: Path, raw_path: str) -> Path:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=".", help="Repository root")
-    parser.add_argument("--evidence", required=True, help="Path to 4ndr0neering/GUP evidence JSON")
+    parser.add_argument("--evidence", default=None, help="Optional path to legacy 4ndr0neering evidence JSON (omit for direct contract.json mode)")
     parser.add_argument("--output", help="Optional path to write validation report JSON")
     parser.add_argument("--execute-checks", action="store_true", help="Actively run acceptance commands and test commands")
-    parser.add_argument("--convergence-contract", help="Mandatory immutable acceptance contract for protocol v8.2.0")
+    parser.add_argument("--convergence-contract", default="contract.json", help="Declarative 4ndr0neering acceptance contract (default: contract.json)")
     parser.add_argument("--convergence-ledger", help="Mandatory evidence-linked convergence ledger for protocol v8.2.0")
     parser.add_argument("--require-full-certification", action="store_true", help="Exit non-zero on BOUNDED_PASS (require 0 UNVERIFIED and 0 BLOCKED)")
     args = parser.parse_args()
 
+
     root = Path(args.root).resolve()
+
+    # Pure 4ndr0neering v2.0.0 direct contract certification mode (no legacy GUP evidence required)
+    if not args.evidence:
+        contract_path = Path(args.convergence_contract)
+        if not contract_path.is_absolute():
+            contract_path = (root / contract_path).resolve()
+        if not contract_path.exists():
+            print(f"FAIL_DEFECT: convergence contract not found: {contract_path}", file=sys.stderr)
+            return 1
+        try:
+            contract = json.loads(contract_path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            print(f"FAIL_DEFECT: invalid contract JSON: {exc}", file=sys.stderr)
+            return 1
+
+        criteria = contract.get("criteria")
+        if not isinstance(criteria, list) or not criteria:
+            print("FAIL_DEFECT: contract.json contains no criteria", file=sys.stderr)
+            return 1
+
+        results = []
+        defects: List[str] = []
+        unverified: List[str] = []
+
+        for item in criteria:
+            cid = item.get("id", "<unnamed>")
+            cmd = item.get("command")
+            mandatory = bool(item.get("mandatory", True))
+            timeout = int(item.get("timeout_seconds", 120))
+            if not isinstance(cmd, list) or not cmd:
+                defects.append(f"{cid}: missing executable command")
+                results.append({"id": cid, "status": "DEFECT", "mandatory": mandatory})
+                continue
+            if not args.execute_checks:
+                unverified.append(f"{cid}: not executed (pass --execute-checks)")
+                results.append({"id": cid, "status": "UNVERIFIED", "mandatory": mandatory})
+                continue
+            try:
+                sub_env = {k: v for k, v in os.environ.items() if k != 'BASH_ENV'}
+                proc = subprocess.run(
+                    cmd,
+                    cwd=str(root),
+                    env=sub_env,
+                    text=True,
+                    encoding="utf-8",
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    timeout=timeout,
+                    check=False,
+                )
+                if proc.returncode == 0:
+                    print(f"  ✓ [{cid}] PASS")
+                    results.append({"id": cid, "status": "VERIFIED", "returncode": 0, "mandatory": mandatory})
+                else:
+                    tail = ((proc.stdout or "") + "\n" + (proc.stderr or "")).strip()[-300:]
+                    print(f"  ✗ [{cid}] FAIL (rc={proc.returncode}): {tail}", file=sys.stderr)
+                    defects.append(f"{cid}: exited {proc.returncode}")
+                    results.append({"id": cid, "status": "DEFECT", "returncode": proc.returncode, "mandatory": mandatory})
+            except Exception as exc:
+                print(f"  ✗ [{cid}] ERROR: {exc}", file=sys.stderr)
+                defects.append(f"{cid}: {exc}")
+                results.append({"id": cid, "status": "DEFECT", "error": str(exc), "mandatory": mandatory})
+
+        if defects:
+            status = "FAIL_DEFECT"
+            rc = 1
+        elif unverified:
+            status = "BOUNDED_PASS"
+            rc = 1 if args.require_full_certification else 0
+        else:
+            status = "CERTIFIED"
+            rc = 0
+
+        report = {
+            "protocol": "4ndr0neering",
+            "version": contract.get("version", "2.0.0"),
+            "project": contract.get("project", root.name),
+            "contract": str(contract_path),
+            "status": status,
+            "passed": sum(1 for r in results if r["status"] == "VERIFIED"),
+            "total": len(results),
+            "defects": defects,
+            "unverified": unverified,
+            "results": results,
+        }
+        if args.output:
+            atomic_write(Path(args.output).resolve(), json.dumps(report, indent=2) + "\n")
+        print(f"4NDR0NEERING VALIDATE: {status} ({report['passed']}/{report['total']} criteria verified)")
+        return rc
+
     ev_path = Path(args.evidence).resolve()
+
     ev_dir = ev_path.parent
 
     defects: List[str] = []

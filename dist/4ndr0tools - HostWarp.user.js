@@ -18,9 +18,9 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20HostWarp.user.js
 // ==/UserScript==
 
-/* 4ndr0tools - HostWarp v1.1.7 — built from modules/hostwarp + kernel {brand, core, glass, store, hotkeys, hosts}
+/* 4ndr0tools - HostWarp v1.1.7 — built from src/hostwarp + kernel {brand, core, glass, store, hotkeys, hosts}
  * Per-host warp drive: bypasses image-host interstitials (imagetwist/imgspice/turboimagehost/acidimg/imx/pixhost/imagebam/imgbox/kropic/vipr/imagevenue), MEGA embed redirect + autoplay, PlanetSuzy mobile skin, t.me Web button, SearXNG sticky preferences, Gemini Answer Now — one engine, glass settings console, every module toggleable.
- * This is a generated file; edit modules/ and run `npm run build`.
+ * This is a generated file; edit src/ and run `npm run build`.
  */
 
 (function () {

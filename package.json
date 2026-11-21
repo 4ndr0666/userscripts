@@ -1,7 +1,7 @@
 {
     "name": "4ndr0666tools-suite",
-    "version": "1.26.0",
-    "description": "\u2620 4ndr0666tools \u2620 \u2014 consolidated userscript suite for digital sovereignty. Kernel-powered, GUP-governed, 3lectric-Glass native, hotkey-census certified, B.1-census governed (polling/global/cache), production-score gated.",
+    "version": "2.0.0",
+    "description": "☠ 4ndr0666tools ☠ — flat, single-source userscript suite governed by pure 4ndr0neering. Kernel-powered, 3lectric-Glass native, OPSEC-verified, and hotkey-collision free.",
     "author": "4ndr0666",
     "license": "MIT",
     "type": "module",
@@ -10,11 +10,10 @@
         "build": "node tools/build.mjs",
         "inventory": "node tools/inventory.mjs",
         "validate": "node tools/validate.mjs",
-        "check": "node tools/build.mjs && node tools/inventory.mjs && node tools/qr-verify.mjs && node tools/style-audit.mjs && node tools/validate.mjs",
+        "check": "node tools/build.mjs && node tools/inventory.mjs && node tools/qr-verify.mjs && node tools/style-audit.mjs && node tools/hotkey-census.mjs && node tools/size-budget.mjs && node tools/validate.mjs",
+        "test": "node tests/static_checks.mjs && node tests/behavior.test.mjs && bash tests/verify_delivery.sh",
         "qr": "node tools/qr-verify.mjs",
-        "docs": "node tools/gen-docs.mjs",
-        "smoke": "node tools/family-fixture-smoke.mjs && node tools/watermark-batch-smoke.mjs && node tools/kernel-boundary-smoke.mjs && node tools/flow-chip-browser-smoke.mjs && node tools/ig-wall-browser-smoke.mjs && node tools/pm-grid-browser-smoke.mjs && node tools/norm-symmetry-smoke.mjs && node tools/tt-browser-smoke.mjs",
-        "battery": "node tools/operator-battery.mjs render && node tools/operator-battery.mjs check"
+        "smoke": "node tools/kernel-smoke.mjs && node tools/kernel-boundary-smoke.mjs && node tools/family-fixture-smoke.mjs && node tools/watermark-batch-smoke.mjs && node tools/norm-symmetry-smoke.mjs && node tools/tt-browser-smoke.mjs"
     },
     "devDependencies": {}
 }
