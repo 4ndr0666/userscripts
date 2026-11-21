@@ -76,10 +76,25 @@ const DIST_IG = path.join(ROOT, "dist", "4ndr0tools - Instagram++.user.js");
 const CANON_IG = path.join(ROOT, "src", "4ndr0tools - Instagram++.user.js");
 
 function probeChromium() {
+  for (const envVar of ["CHROME_BIN", "CHROMIUM_BIN", "BROWSER_BIN"]) {
+    const candidate = process.env[envVar];
+    if (candidate && fs.existsSync(candidate)) return candidate;
+  }
   const fixed = [
     "/usr/lib/chromium/chromium",
     "/usr/bin/chromium",
+    "/usr/bin/chromium-browser",
     "/usr/bin/google-chrome",
+    "/usr/bin/google-chrome-stable",
+    "/usr/bin/brave",
+    "/usr/bin/brave-browser",
+    "/usr/bin/vivaldi",
+    "/usr/bin/vivaldi-stable",
+    "/usr/bin/ungoogled-chromium",
+    "/usr/bin/microsoft-edge-stable",
+    "/usr/bin/microsoft-edge",
+    "/usr/bin/thorium-browser",
+    "/usr/local/bin/chromium",
   ];
   for (const p of fixed) if (fs.existsSync(p)) return p;
   // Playwright-managed Chromium caches (layout moved chrome-linux -> chrome-linux64).

@@ -1019,8 +1019,8 @@ forceImmediateAnswer();`, hwCtx);
     assert(
         "6E. the round-17 stamps: Forums++ canon at 1.14.0, Confirmation Bypass canon at 4.1.7 (header AND banner), and CB carries the MAM_CONTROL_TOKENS vocabulary + the uploadSessionLive gate verbatim",
         /^\/\/ @version\s+1\.14\.\d+/m.test(fppSrc) &&
-        /^\/\/ @version\s+4\.1\.7/m.test(cbSrc) &&
-        cbSrc.includes("Confirmation Bypass v4.1.7") &&
+        /^\/\/ @version\s+4\.1\.\d+/m.test(cbSrc) &&
+        /Confirmation Bypass v4\.1\.\d+/.test(cbSrc) &&
         cbSrc.includes("MAM_CONTROL_TOKENS") &&
         cbSrc.includes("uploadSessionLive")
     );

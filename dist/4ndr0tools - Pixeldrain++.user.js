@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Pixeldrain++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      1.2.8
+// @version      1.2.9
 // @description  Enhanced pixeldrain with multi-proxy parallel, streaming, adaptive chunking, aria2c.
 // @author       4ndr0666
 // @license      MIT
@@ -1289,7 +1289,7 @@ const __4NDR0_NET_API__ = (function () {
 // /d/ pathname no longer aborts the setTimeout callback before the
 // fs-fallback injector and auto-trigger block; 4-c F05).
 // 1.1.1 (suite v1.4.0): 3lectric-Glass universality pass — spec palette (rgba(10,19,26,α) · #00E5FF · #67E8F9 · #ff0055) · JetBrains Mono / Orbitron · 150ms ease-in-out · Ψ branding.
-console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.8 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
+console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.9 — 3LECTRIC-GLASS Ψ · GUP-certified', 'background:#000;color:#00E5FF;font-weight:bold;font-family:monospace;padding:4px;');
 
 /* eslint-disable no-undef */
 (function () {
@@ -1298,7 +1298,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.8
     // ================================================================
     // 0. CONFIG & CONSTANTS
     // ================================================================
-    const VERSION = '1.2.8';
+    const VERSION = '1.2.9';
     const NS = 'pdbp';
 
     /* [R3 createElement migration — suite v1.4.4] Local element builder:
@@ -1994,7 +1994,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.8
                 if (SETTINGS.captchaAutoOpen) {
                     const url = `https://pixeldrain.com/u/${fileId}`;
                     if (Caps.gmOpenInTab) GM_openInTab(url, { active: true });
-                    else window.open(url);
+                    else window.open(url, '_blank', 'noopener,noreferrer');
                     Toast.node([
                         el('strong', null, '\u26A0 Solve captcha in opened tab'),
                         el('br'),
@@ -3800,7 +3800,7 @@ console.log('%c [💀Ψ•-⦑4NDR0666OS⦒-•Ψ💀]: Pixeldrain++.user v1.2.8
             tb.appendChild(mk('📦 ZIP', 'Server-side ZIP', async () => {
                 const id = Page.id();
                 const p = PROXY_MIRRORS.find(m => m.zip) || (await ProxyManager.best());
-                window.open(ProxyManager.url(p, id, { zip: true }));
+                window.open(ProxyManager.url(p, id, { zip: true }), '_blank', 'noopener,noreferrer');
             }));
         }
 

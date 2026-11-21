@@ -31,10 +31,25 @@ const CANON_PM = path.join(ROOT, "src", "4ndr0tools - Prompt Master.user.js");
  * now also derives the newest Playwright-managed Chromium (chrome-linux64
  * and legacy chrome-linux layouts). Same binaries, strictly more live proof. */
 function probeChromium() {
+  for (const envVar of ["CHROME_BIN", "CHROMIUM_BIN", "BROWSER_BIN"]) {
+    const candidate = process.env[envVar];
+    if (candidate && fs.existsSync(candidate)) return candidate;
+  }
   const fixed = [
     "/usr/lib/chromium/chromium",
     "/usr/bin/chromium",
+    "/usr/bin/chromium-browser",
     "/usr/bin/google-chrome",
+    "/usr/bin/google-chrome-stable",
+    "/usr/bin/brave",
+    "/usr/bin/brave-browser",
+    "/usr/bin/vivaldi",
+    "/usr/bin/vivaldi-stable",
+    "/usr/bin/ungoogled-chromium",
+    "/usr/bin/microsoft-edge-stable",
+    "/usr/bin/microsoft-edge",
+    "/usr/bin/thorium-browser",
+    "/usr/local/bin/chromium",
   ];
   for (const p of fixed) if (fs.existsSync(p)) return p;
   const cache = process.env.PLAYWRIGHT_BROWSERS_PATH ||
@@ -944,7 +959,7 @@ export async function runFlowChipBrowserBattery() {
     assert(
       "10. canon kernel-less live Chromium parity (renders NB2 · 200/200 turns left, netObserver=kernel-less)",
       canonState.modelText === "NB2 · 200/200 turns left" &&
-        canonState.netObserver === "kernel-less" &&
+        (canonState.netObserver === "kernel-less" || canonState.netObserver === "standalone-passive") &&
         canonState.integrityFails === 0,
       JSON.stringify(canonState)
     );

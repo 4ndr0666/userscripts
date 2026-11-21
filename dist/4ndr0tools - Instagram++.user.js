@@ -2,7 +2,7 @@
 // @name         4ndr0tools - Instagram++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666
-// @version      13.3.0
+// @version      13.3.1
 // @description  Tab-Bar + Dock Integration. Hotkey trigger (Alt+I). Ad-Blocking. Deep-Stack Recovery. Resilient cursor-based pagination. Stories support. Image/video download engine.
 // @license      MIT
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Instagram++.user.js
@@ -1973,7 +1973,7 @@ const __4NDR0_NET_API__ = (function () {
                         log(`Downloaded: ${filename}`);
                     } catch (err) {
                         log(`Download failed for ${filename}: ${err.message}`);
-                        try { window.open(url, '_blank'); } catch (_) { console.debug('IG interceptor:', _);}
+                        try { window.open(url, '_blank', 'noopener,noreferrer'); } catch (_) { console.debug('IG interceptor:', _);}
                     }
                     await new Promise(r => setTimeout(r, CFG.DOWNLOAD_STAGGER_MS));
                 }

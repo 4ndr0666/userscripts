@@ -179,3 +179,31 @@ conversations via navigation queueing (currently deliberately conservative).
 
 **State:** `main` advanced with Round 8 mitigations (`Pixeldrain++ v1.2.8`, `Zai Exporter v1.0.3`, `Forum Link Xtractor v3.2.6`, `Forums++ v1.14.2`, `Hailuo++ v6.2.1`, `BypassPaywalls v0.1.9`, automated version-parity & `@grant` static gates, grant-scoped 39-script VM load harness, `smoke:fixture` script); all 9 validation gates, 7 behavior suites, and 9 declarative contract criteria green with `0 MISSING` units.
 **Remaining live-site boundary:** Live authenticated browser testing in Tampermonkey/Violentmonkey and running `npm run smoke:browser` / `npm run smoke:fixture` on an unrestricted host (where `127.0.0.1` is permitted by Chromium policy) remain operator verification steps.
+---
+
+## Round 9 — Browser-Smoke Binary Discovery & OPSEC `window.open` Hardening
+
+**Baseline:** `787064e` (`main`, Round 8 close).
+**Method:** `4ndr0neering` silent stepwise gap mitigation under strict **Superset Protocol** (`0 MISSING` units vs `787064e`).
+
+### Findings ledger
+
+| ID | Area | Severity | Root cause & fix | Verification |
+|---|---|---|---|---|
+| **R9-1** | `tools/flow-chip-browser-smoke.mjs`, `tools/ig-wall-browser-smoke.mjs`, `tools/pm-grid-browser-smoke.mjs`, `tools/tt-browser-smoke.mjs` | Medium | Operator debrief on Arch Linux (`theworkpc`) hit `[mode=structural-fallback (no-chromium)]` across browser smoke harnesses because `findChromium`/`probeChromium` only probed 3 hardcoded paths (`/usr/lib/chromium/chromium`, `/usr/bin/chromium`, `/usr/bin/google-chrome`) plus `~/.cache/ms-playwright`, ignoring `CHROME_BIN`/`CHROMIUM_BIN`/`BROWSER_BIN` env overrides and common Chromium-family binaries (`google-chrome-stable`, `chromium-browser`, `brave`, `brave-browser`, `vivaldi`, `vivaldi-stable`, `ungoogled-chromium`, `microsoft-edge-stable`, `thorium-browser`). Expanded binary discovery in all four drivers while preserving existing function names for zero-regression unit parity. | `npm run smoke:browser` & `BASH_ENV= npm run smoke:fixture` PASS (all 4 harnesses green). |
+| **R9-2** | `src/4ndr0tools - Bunkr++.user.js` (`v7.7.2` → `v7.7.3`), `src/4ndr0tools - ChatGPT++.user.js` (`v1.8.2` → `v1.8.3`), `src/4ndr0tools - Confirmation Bypass.user.js` (`v4.1.7` → `v4.1.8`), `src/4ndr0tools - Instagram++.user.js` (`v13.3.0` → `v13.3.1`), `src/4ndr0tools - Login Form Autofiller.user.js` (`v2.0.11` → `v2.0.12`), `src/4ndr0tools - Pixeldrain++.user.js` (`v1.2.8` → `v1.2.9`), `src/4ndr0tools - Prompt Master.user.js` (`v29.0.4` → `v29.0.5`) | Medium | 12 fire-and-forget external `window.open(...)` calls across 7 scripts omitted `'noopener,noreferrer'`, exposing `window.opener` and referrer metadata to external destinations. Added `'noopener,noreferrer'` to all 12 sites while intentionally preserving `Gofile++:571` (`if (!win) blocked++` popup-blocker detector) and `Pixeldrain++:1502` (`about:blank` handle write). Synced all `@version`, internal `VERSION`/`SCRIPT_VERSION`, and console banners and rebuilt `dist/`, `inventory.json`, and `README.md`. | `node tests/static_checks.mjs` (`Version-surface parity 39/39`, `Explicit @grant 39/39`) · `node tools/r6-load-harness.mjs` (`39/39 PASS`). |
+
+### Verification summary (Round 9)
+
+| Check | Outcome |
+|---|---|
+| `npm run check` | `VALIDATION: CERTIFIED (9/9 gates PASS, 39/39 scripts)` |
+| `BASH_ENV= npm test` | `STATIC CHECKS: PASS` · `BEHAVIOR SUITE: ALL PASS (7/7)` · `DELIVERY VERIFICATION: PASS` |
+| `npm run smoke:browser` & `BASH_ENV= npm run smoke:fixture` | `ALL PASS` — **live headless Chromium** unlocked: Flow Chip `13/13` · IG Wall `23/23` (`dist+canon+sabotage+layout-red-control`) · PM Grid `15/15` (`dist`) · TT `6/6` (`structural-fallback (host-policy-blocked-localhost)`) |
+| `scripts/4ndr0_validate.py --execute-checks --require-full-certification` | `4NDR0NEERING VALIDATE: CERTIFIED (9/9 criteria verified)` |
+| `scripts/4ndr0_hash.py --baseline-rev 787064e` | `0 MISSING` units (strict Superset Protocol verified) |
+
+### Handoff — priming Round 10
+
+**State:** `main` advanced with Round 9 mitigations (Chromium-family + `CHROME_BIN` discovery in all 4 browser smoke harnesses; `'noopener,noreferrer'` OPSEC hardening across 7 scripts); all 9 validation gates, 7 behavior suites, and 9 declarative contract criteria green with `0 MISSING` units.
+**Operator next step:** Pull & push the Round 9 bundle, then run `npm run smoke:browser` (or `CHROME_BIN=/path/to/your-browser npm run smoke:browser`) on `theworkpc` to confirm live headless Chromium execution.
