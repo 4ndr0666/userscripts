@@ -26,7 +26,7 @@ every other installable is fully self-contained and follows the 3lectric-Glass d
 
 ```text
 kernel/       7 shared runtime modules (brand · core · glass · store · hotkeys · hosts · net)
-src/          Flat source tree for all 38 scripts (36 single-file + hostwarp/ & pagecraft/)
+src/          Flat source tree for all 39 scripts (36 single-file + hostwarp/ & pagecraft/)
 plugins/      Host companion utilities (bridge.py, autopage.json)
 dist/         Built standalone installables (@updateURL / @downloadURL target)
 scripts/      Unified 4ndr0neering Python toolchain (validate, align, converge, hash, perf, report)
@@ -53,6 +53,7 @@ executes the full declarative 4ndr0neering contract.
 | Blob2URL | v7.3.1 | media & links | [4ndr0tools - Blob2URL.user.js](./dist/4ndr0tools%20-%20Blob2URL.user.js) | Universal blob exfiltration, universal media URL sniffer + wire capture + URL vault (Alt+Shift+V), interactive asset sniffing, CSP/CORS bypass. |
 | Bunkr++ | v7.7.2 | media & links | [4ndr0tools - Bunkr++.user.js](./dist/4ndr0tools%20-%20Bunkr++.user.js) | Direct URL routing, auto-sort, hide visited, bypass dl gateway, bulk download, m3u8/CDN URL aggregation (page-context net-hook + per-item stream glyphs + album-wide STREAMS aggregation), broken-link repair, power-user hotkeys, LinkMaster-grade m3u8 stream resolution with gateway fallback, MPV dispatch (URI/bridge), web-archive dead-CDN resurrection (archive.org / archive.is), captcha-aware transport retry |
 | Bypass Paywalls | v0.1.8 | privacy & security | [4ndr0tools - BypassPaywalls.user.js](./dist/4ndr0tools%20-%20BypassPaywalls.user.js) | A way to bypass paywalls for popular news sites |
+| ChatGPT++ | v1.8.0 | sovereign platforms | [4ndr0tools - ChatGPT++.user.js](./dist/4ndr0tools%20-%20ChatGPT++.user.js) | Send one image prompt (with held reference images, smart stop, auto-model alternation, auto-clarification, failed-thread cleanup, and accurate live usage limits) to ChatGPT many times, pick model/effort, watch usage limits, and see the images in a live gallery. |
 | Confirmation Bypass | v4.1.7 | forums | [4ndr0tools - Confirmation Bypass.user.js](./dist/4ndr0tools%20-%20Confirmation%20Bypass.user.js) | Reveals forum invisi-text, view all replies, rewrite redirect links. Download Gate: bypass all confirmation pages on all sites, glass overlay copy/download URL (incl. vidara embeds on xcandid), auto-solve Altcha, auto-click download. Turbo: embed routing, upload injector. Util: external link safety, right-click scrollbar to top. |
 | Filester++ | v7.6.3 | media & links | [4ndr0tools - Filester++.user.js](./dist/4ndr0tools%20-%20Filester++.user.js) | Dynamic stream extraction + folder enumeration for any media on Filester.me. Network proxy + glyph injection. |
 | Forum Link Xtractor | v3.2.5 | forums | [4ndr0tools - Forum Link Xtractor.user.js](./dist/4ndr0tools%20-%20Forum%20Link%20Xtractor.user.js) | Link xtractor, Invisitext revealer, and inline post reply viewer. |

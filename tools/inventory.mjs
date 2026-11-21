@@ -47,7 +47,7 @@ const FAMILIES = [
     [/forum|confirmation|modelsearch|planetsuzy/i, "forums"],
     [/akasha|anti|counter|purge|serviceguard|recon|bypass\s*paywalls/i, "privacy & security"],
     [/hostwarp|pagecraft|alwaysnew|selectall|autotranslate|searxng|telegram|gemini|infinitebrave|control panel|login form/i, "ux utilities"],
-    [/prompt|watermark|hailuo|instagram|zai/i, "sovereign platforms"],
+    [/prompt|watermark|hailuo|instagram|zai|chatgpt/i, "sovereign platforms"],
 ];
 
 function familyOf(name) {

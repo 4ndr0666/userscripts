@@ -414,6 +414,32 @@
    }
   },
   {
+   "file": "4ndr0tools - ChatGPT++.user.js",
+   "name": "4ndr0tools - ChatGPT++",
+   "version": "1.8.0",
+   "description": "Send one image prompt (with held reference images, smart stop, auto-model alternation, auto-clarification, failed-thread cleanup, and accurate live usage limits) to ChatGPT many times, pick model/effort, watch usage limits, and see the images in a live gallery.",
+   "family": "sovereign platforms",
+   "sha256": "cb1a8e935e186d14b39579eee1e4b9998d79e238d54e72f24eebf102d7da1b68",
+   "lines": 1735,
+   "bytes": 82477,
+   "matches": [
+    "https://chatgpt.com/*"
+   ],
+   "includes": [],
+   "excludes": [],
+   "grants": [
+    "none"
+   ],
+   "requires": [],
+   "connects": [],
+   "runAt": "document-idle",
+   "noframes": true,
+   "urls": {
+    "update": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20ChatGPT++.user.js",
+    "download": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20ChatGPT++.user.js"
+   }
+  },
+  {
    "file": "4ndr0tools - Confirmation Bypass.user.js",
    "name": "4ndr0tools - Confirmation Bypass",
    "version": "4.1.7",
@@ -1680,5 +1706,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "95ef9f9f8edcbc64a036dfa88b9e87852b8c8105f3f212618d0aefb0702666d0"
+ "digest": "39af502fc91145b998a4e17adf0c6794da62e7f0dfe365a8620ff7094c16e1b0"
 }
