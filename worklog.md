@@ -118,3 +118,33 @@ them. Candidate deferred improvements: a general all-39-script load harness
 (richer DOM stubs); Attribution of Flow generation responses by request-id
 correlation rather than FIFO; a clarify-answer path for non-active ChatGPT
 conversations via navigation queueing (currently deliberately conservative).
+---
+
+## Round 7 — Suite-Wide VM Load Coverage, Timer/Navigation Hygiene & Smoke Wiring
+
+**Baseline:** `c413673` (`main`, Round 6 close).
+**Method:** `4ndr0neering` silent stepwise gap mitigation under strict **Superset Protocol** (`0 MISSING` units vs `c413673`).
+
+### Findings ledger
+
+| ID | Area | Severity | Root cause & fix | Verification |
+|---|---|---|---|---|
+| **R7-1** | `src/4ndr0tools - ChatGPT++.user.js` (`v1.8.1` → `v1.8.2`), `src/4ndr0tools - Prompt Master.user.js` (`v29.0.3` → `v29.0.4`) | Medium | `maybeAnswerPendingClarification` only checked `convIdOf(location.pathname) === job.convId` before entering its multi-turn loop, risking sending a follow-up turn into a different chat if the user navigated away mid-clarification; both ChatGPT++ `attach()` and Prompt Master Flow++ `buildUI()` ran unbounded `setInterval(..., 2000)` DOM probes even in hidden tabs without `pagehide` teardown. Added per-turn `convIdOf(location.pathname) === job.convId` re-check inside the clarification loop, `document.hidden` short-circuit on both probes, `attachTimer` handles, and `pagehide` listeners clearing `attachTimer` and `pollTimer`; synced Prompt Master `@version` and fallback `VERSION` constants to `29.0.4`. | Rebuilt `dist/` + `inventory.json` (`39/39 CLEAN`); `tools/r6-load-harness.mjs` asserts `pagehide` registration, per-turn `convId` check, and `attachTimer` markers. |
+| **R7-2** | `tools/r6-load-harness.mjs` | High | Round 6's load harness checked only 2 scripts and used a vacuous `__pmLoadedGuarantor` bypass for Prompt Master. Removed the bypass, added real contract assertions for `ChatGPT++` on `https://chatgpt.com/` and `Prompt Master` on `https://flow.google.com/` (verifying `__4NDR0_NET_API__`, `pollPendingJobs`, `attachTimer`), and expanded the isolated VM load sweep with richer DOM/prototype stubs (`Element`, `Node`, `HTMLCanvasElement`, `WebGLRenderingContext`, `AudioContext`, `GM_*`) to cover **all 39 `dist/*.user.js` installables**. | `node tools/r6-load-harness.mjs` → `LOAD HARNESS: PASS (39/39 scripts)` with zero uncaught throws. |
+| **R7-3** | `package.json` | Low | Four standalone browser smoke scripts (`flow-chip-browser-smoke.mjs`, `ig-wall-browser-smoke.mjs`, `pm-grid-browser-smoke.mjs`, `tt-browser-smoke.mjs`) were unlinked from `package.json` npm scripts. Added `"smoke:browser"` chaining all four so no smoke harness is orphaned. | `npm run check` (`9/9 gates PASS`), `npm test` (`7/7 PASS`), `npm run smoke` (`ALL PASS`). |
+
+### Verification summary (Round 7)
+
+| Check | Outcome |
+|---|---|
+| `npm run check` | `VALIDATION: CERTIFIED (9/9 gates PASS, 39/39 scripts)` |
+| `BASH_ENV= npm test` | `STATIC CHECKS: PASS` · `BEHAVIOR SUITE: ALL PASS (7/7)` · `DELIVERY VERIFICATION: PASS` |
+| `node tools/r6-load-harness.mjs` | `LOAD HARNESS: PASS (39/39 scripts)` |
+| `npm run smoke` | `ALL PASS` (`tt-browser-smoke.mjs` runs `6/6 PASS` via `structural-fallback` in sandbox where Chromium policy blocks `127.0.0.1`) |
+| `scripts/4ndr0_validate.py --execute-checks --require-full-certification` | `4NDR0NEERING VALIDATE: CERTIFIED (9/9 criteria verified)` |
+| `scripts/4ndr0_hash.py --baseline-rev c413673` | `0 MISSING` units (strict Superset Protocol verified) |
+
+### Handoff — priming Round 8
+
+**State:** `main` advanced with Round 7 mitigations (`ChatGPT++ v1.8.2`, `Prompt Master v29.0.4`, all-39-script VM load harness, `smoke:browser` script); all 9 validation gates, 7 behavior suites, and 9 declarative contract criteria green with `0 MISSING` units.
+**Remaining live-site boundary:** Authenticated live testing of ChatGPT++ (`v1.8.2`) and Prompt Master Flow++ (`v29.0.4`) in a real browser profile (Tampermonkey/Violentmonkey) and running `npm run smoke:browser` on an unrestricted host remain operator verification steps.

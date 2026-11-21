@@ -416,12 +416,12 @@
   {
    "file": "4ndr0tools - ChatGPT++.user.js",
    "name": "4ndr0tools - ChatGPT++",
-   "version": "1.8.1",
+   "version": "1.8.2",
    "description": "Send one image prompt (with held reference images, smart stop, auto-model alternation, auto-clarification, failed-thread cleanup, and accurate live usage limits) to ChatGPT many times, pick model/effort, watch usage limits, and see the images in a live gallery.",
    "family": "sovereign platforms",
-   "sha256": "9861b90ec19f1a1e939862801bb6f24781bbafbc476c8f52e46632ca6b60598a",
-   "lines": 1852,
-   "bytes": 88698,
+   "sha256": "931067c33995c78f72a8f84139256a6ad11edc084d408985a1f46e4504ac4d56",
+   "lines": 1860,
+   "bytes": 89095,
    "matches": [
     "https://chatgpt.com/*"
    ],
@@ -1208,12 +1208,12 @@
   {
    "file": "4ndr0tools - Prompt Master.user.js",
    "name": "4ndr0tools - Prompt Master",
-   "version": "29.0.3",
+   "version": "29.0.4",
    "description": "Google Flow prompt manager toolkit (works on any AI, just add url) - persisted unit ledger meters every generation click, organization engine: collections, saved views, favorites, ratings, archive, group-by, and insights for large prompt libraries, dedupe, media slideshow, ai prompt enhancer, auto gist syncing, hotkeys, much more.",
    "family": "sovereign platforms",
-   "sha256": "64b644eca217a89ee65935e39411156a99a19fcd8003c0637527d90874b5724d",
-   "lines": 25899,
-   "bytes": 1260562,
+   "sha256": "7704d58f607a473449151f870252334ca967b70f47f75b12ef8b655a475412e6",
+   "lines": 25906,
+   "bytes": 1260903,
    "matches": [
     "*://geminigen.ai/*",
     "*://gist.github.com/*",
@@ -1706,5 +1706,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "ace23c4eb4ea1571693af705a97d9f6b30318b57f2d232521c1e8b85aaa94317"
+ "digest": "400228b1f89ca85139ea0f9405bfbb7288914c5e34ae48bffe13f63c68e82f0b"
 }
