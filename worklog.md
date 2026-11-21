@@ -75,6 +75,8 @@ was removed or weakened.
 | delivery-verification | delivery | 39/39 v2.0.0 installables verified |
 | declarative contract | regression | `4NDR0NEERING VALIDATE: CERTIFIED (9/9 criteria verified)` — now including the R6-6 architecture cross-check (RED-verified fail-closed on stale counts and kernel_order drift) |
 | unified gate | regression | `VALIDATION: CERTIFIED (9/9 gates PASS, 39/39 scripts)` |
+| kit battery | delivery | `update-4ndr0666tools-suite-round-6.sh` over the round range: P1 clean git-am on PIN_BASE (tree bit-identical to PIN_TIP_TREE) · P2 idempotent re-run exits 0 · P3 adaptive 3-way over a moved HEAD with markers verified · P4 corrupted payload fails closed with HEAD untouched · P5 dirty worktree stashed and restored; the kit-applied clone re-certified end-to-end (9/9 + 7/7 + 9/9) with delivered dist digests equal to the kit pins |
+| browser-txt-verification | delivery | all four delivery artifacts rendered in a real browser through the charset-faithful endpoint: ChatGPT++ v1.8.1 `.txt` (1,852 lines / 88,636 chars, UTF-8, R6-1/R6-3/R6-4 markers visible), Prompt Master v29.0.3 `.txt` (25,899 lines / 1,257,952 chars, UTF-8, R6-2/FIFO/mediaExt markers visible), the kit `.txt` (1,776 lines, PIN_BASE/PIN_TIP/PIN_PAYLOAD_SHA rendered, payload section present), and the worklog `.txt` (119 lines, Round 6 ledger + handoff rendered) |
 
 ### Known boundaries (BOUNDED, not waived)
 
