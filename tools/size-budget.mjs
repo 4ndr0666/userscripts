@@ -21,7 +21,7 @@ const AUDIT_LINE = 1_000_000;
 /* Explicitly audited large-asset installables (>= 1.0 MB) and their ceilings */
 const AUDITED_LARGE_SCRIPTS = {
     "4ndr0tools - Prompt Master.user.js": {
-        maxBytes: 1_250_000,
+        maxBytes: 1_300_000,
         rationale: "Embedded prompt library templates, UI assets, and NetHook kernel",
     },
     "4ndr0tools - Watermark++.user.js": {

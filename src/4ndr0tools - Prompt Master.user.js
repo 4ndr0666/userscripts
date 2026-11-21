@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name                4ndr0tools - Prompt Master
-// @namespace    https://github.com/4ndr0666/userscripts
-// @version             28.9.1
+// @namespace           https://github.com/4ndr0666/userscripts
+// @version             29.0.2
 // @author              4ndr0666
 // @icon                data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @license             MIT
@@ -12074,7 +12074,140 @@
     // passive network readings are off, and the export's netObserver
     // field carries the mode for one-paste diagnosis.
     if (typeof __4NDR0_NET_API__ === "undefined") {
-      flowCreditNetMode = "kernel-less";
+      // v29.0.1: standalone passive network observer for the token chip counter.
+      // When kernel/net.js is not inlined, passively inspect read-only clones of
+      // Flow fetch/XHR responses (including HTTP 429 / RESOURCE_EXHAUSTED) so
+      // #pm-flow-credit-chip receives live wallet, quota, and rate-limit updates
+      // without ever blocking or mutating Flow's own requests.
+      flowCreditNetMode = "standalone-passive";
+      try {
+        const netWin =
+          typeof unsafeWindow !== "undefined" && unsafeWindow
+            ? unsafeWindow
+            : window;
+        const ingestNetBody = function (bodyText, urlStr, statusNum) {
+          try {
+            let added = 0;
+            if (bodyText && typeof bodyText === "string") {
+              added = scanFlowCreditStructured(
+                bodyText,
+                String(urlStr || "fetch").slice(0, 100),
+              );
+              flowCreditNetCount += added;
+            }
+            const isRateLimited =
+              statusNum === 429 ||
+              (typeof bodyText === "string" &&
+                bodyText.length <= 4000 &&
+                /RESOURCE_EXHAUSTED|RATE_LIMIT_EXCEEDED|too many requests|quota exceeded/i.test(
+                  bodyText,
+                ));
+            if (isRateLimited && flowCreditState) {
+              const activeKey =
+                (flowCreditModel && flowCreditModel.key) ||
+                (flowCreditLastGen && flowCreditLastGen.model) ||
+                null;
+              if (activeKey) {
+                const wallUnits = flowCreditLedgerWallCharge(activeKey);
+                if (wallUnits > 0) persistFlowCreditState();
+              }
+              renderFlowCreditChip();
+            } else if (added > 0) {
+              flowCreditTick();
+            }
+          } catch (e) {
+            console.debug("PM interceptor:", e);
+          }
+        };
+        if (netWin && typeof netWin.fetch === "function" && !netWin.__pmFlowCreditFetchWrapped) {
+          netWin.__pmFlowCreditFetchWrapped = !0;
+          const origFetch = netWin.fetch.bind(netWin);
+          netWin.fetch = function () {
+            const args = arguments;
+            const reqUrl =
+              typeof args[0] === "string"
+                ? args[0]
+                : args[0] && args[0].url
+                  ? args[0].url
+                  : "";
+            const p = origFetch.apply(netWin, args);
+            try {
+              if (p && typeof p.then === "function") {
+                p.then(function (res) {
+                  try {
+                    if (!res || typeof res.clone !== "function") return;
+                    const st = typeof res.status === "number" ? res.status : 0;
+                    if (st !== 429 && (st < 200 || st >= 300)) return;
+                    const ct =
+                      res.headers && typeof res.headers.get === "function"
+                        ? res.headers.get("content-type") || ""
+                        : "";
+                    if (st !== 429 && ct && !/json|text|javascript|plain/i.test(ct))
+                      return;
+                    res
+                      .clone()
+                      .text()
+                      .then(function (t) {
+                        ingestNetBody(t, reqUrl, st);
+                      })
+                      .catch(function () {});
+                  } catch (e) {
+                    console.debug("PM interceptor:", e);
+                  }
+                }).catch(function () {});
+              }
+            } catch (e) {
+              console.debug("PM interceptor:", e);
+            }
+            return p;
+          };
+        }
+        if (
+          netWin &&
+          netWin.XMLHttpRequest &&
+          netWin.XMLHttpRequest.prototype &&
+          !netWin.__pmFlowCreditXhrWrapped
+        ) {
+          netWin.__pmFlowCreditXhrWrapped = !0;
+          const origOpen = netWin.XMLHttpRequest.prototype.open;
+          const origSend = netWin.XMLHttpRequest.prototype.send;
+          netWin.XMLHttpRequest.prototype.open = function (m, u) {
+            try {
+              this.__pmFcUrl = String(u || "");
+            } catch (e) {}
+            return origOpen.apply(this, arguments);
+          };
+          netWin.XMLHttpRequest.prototype.send = function () {
+            try {
+              const xhr = this;
+              const onLoad = function () {
+                try {
+                  xhr.removeEventListener("load", onLoad);
+                  const rt = xhr.responseType;
+                  if (rt && rt !== "text" && rt !== "json") return;
+                  const txt =
+                    rt === "json"
+                      ? xhr.response != null
+                        ? JSON.stringify(xhr.response)
+                        : ""
+                      : typeof xhr.responseText === "string"
+                        ? xhr.responseText
+                        : "";
+                  ingestNetBody(txt, xhr.__pmFcUrl || "xhr", xhr.status);
+                } catch (e) {
+                  console.debug("PM interceptor:", e);
+                }
+              };
+              xhr.addEventListener("load", onLoad);
+            } catch (e) {
+              console.debug("PM interceptor:", e);
+            }
+            return origSend.apply(this, arguments);
+          };
+        }
+      } catch (e) {
+        console.debug("PM interceptor:", e);
+      }
       return;
     }
     flowCreditNetMode = "installed";
@@ -12095,22 +12228,24 @@
     // parity: the hub observes every page exchange, but the script's own
     // fetches are indistinguishable from the host app's (both are page
     // traffic) — the scanner is read-only, so re-observation is inert.
-    __4NDR0_NET_API__.onTraffic(function (ev) {
-      try {
-        if (ev.phase !== "response") return;
-        if (ev.kind === "fetch") {
-          if (typeof ev.status === "number" && (ev.status < 200 || ev.status >= 300)) return;
-          const ct = ev.contentType || "";
-          if (ct && !/json|text|javascript|plain/i.test(ct)) return;
-        }
-        const t = ev.body;
-        if (t)
-          flowCreditNetCount += scanFlowCreditStructured(
-            t,
-            String(ev.url || "fetch").slice(0, 100),
-          );
-      } catch (e) { console.debug("PM interceptor:", e);}
-    });
+    if (typeof __4NDR0_NET_API__ !== 'undefined' && typeof __4NDR0_NET_API__.onTraffic === 'function') {
+      __4NDR0_NET_API__.onTraffic(function (ev) {
+        try {
+          if (ev.phase !== "response") return;
+          if (ev.kind === "fetch") {
+            if (typeof ev.status === "number" && (ev.status < 200 || ev.status >= 300)) return;
+            const ct = ev.contentType || "";
+            if (ct && !/json|text|javascript|plain/i.test(ct)) return;
+          }
+          const t = ev.body;
+          if (t)
+            flowCreditNetCount += scanFlowCreditStructured(
+              t,
+              String(ev.url || "fetch").slice(0, 100),
+            );
+        } catch (e) { console.debug("PM interceptor:", e);}
+      });
+    }
   }
   function sweepFlowCreditStorage() {
     let found = 0;
@@ -18415,7 +18550,7 @@
     GM_info.script &&
     GM_info.script.version
       ? GM_info.script.version
-      : "28.9.1"; // v28.9.0: the fallback stays stamped with the release
+      : "29.0.2"; // v29.0.1: TrustedHTML fix, zero UI changes, standalone token-chip net observer
   // v27.0.12: canonical backup snapshot helper. The beta's Gist push
   // called snapshotKeys() before it existed anywhere, so every "Sync Now"
   // threw a ReferenceError; takeAutoBackup() now shares this one helper
@@ -22894,6 +23029,1539 @@
       isInitializing = false;
     });
   }
+
+  // =========================================================================
+  // v29.0.0: Integrated Google Flow++ Bulk Automation Engine
+  // (Stateless Held Ingredients, Smart Stop, Auto-Model Alternation,
+  //  Auto-Clarification, Failed-Run Cleanup, Live Credits & 429 Sniffing)
+  // =========================================================================
+  function openFlowPPPanel(forceOpen) {
+    try {
+      const w = typeof unsafeWindow !== "undefined" && unsafeWindow ? unsafeWindow : window;
+      if (!w.__flowppLoaded) initFlowPPAutomation();
+      if (typeof w.__flowppToggle === "function") w.__flowppToggle(forceOpen);
+    } catch (err) {
+      console.warn("[Prompt Master] Flow++ panel toggle error:", err);
+    }
+  }
+
+  function initFlowPPAutomation() {
+const pageWin = typeof unsafeWindow !== 'undefined' && unsafeWindow ? unsafeWindow : window;
+
+  // Double-injection guard: never stack a second panel or double-patch window.fetch.
+  if (pageWin.__flowppLoaded) return;
+  pageWin.__flowppLoaded = true;
+
+  const TAG = '[Flow++]';
+  const VERSION = typeof SCRIPT_VERSION !== 'undefined' ? SCRIPT_VERSION : '29.0.0';
+  const STORE_KEY = 'flowpp:settings';
+  const HELD_ATTACH_KEY = 'flowpp:held-attachments';
+  const HELD_FILES_KEY = 'flowpp:held-files';
+  const KEEP = '';
+  const CURRENT_PROJECT = '__current__';
+  const MAX_DL_RETRIES = 3;
+  const MAX_HELD_IMAGES = 10;
+  const MAX_CLARIFY_RETRIES = 2;
+  const DEFAULT_CLARIFY_REPLY = 'Use a 4-panel (2x2) cinematic grid layout and your best creative judgment. Proceed immediately and generate the media now without asking further questions.';
+
+  const DEFAULT_FLOW_MODELS = [
+    { id: 'veo-3.1-fast', name: 'Veo 3.1 Fast', media: 'video', slugs: ['veo_3_1_fast', 'veo-3.1-fast', 'veo_3_1_t2v_fast_ultra'], presets: [{ title: 'Fast', model: 'veo-3.1-fast' }, { title: 'Quality', model: 'veo-3.1-quality' }] },
+    { id: 'veo-3.1-quality', name: 'Veo 3.1 Quality', media: 'video', slugs: ['veo_3_1_quality', 'veo-3.1-quality', 'veo_3_1_t2v'], presets: [{ title: 'Quality', model: 'veo-3.1-quality' }] },
+    { id: 'veo-3.1-lite', name: 'Veo 3.1 Lite', media: 'video', slugs: ['veo_3_1_lite', 'veo-3.1-lite'], presets: [{ title: 'Lite', model: 'veo-3.1-lite' }] },
+    { id: 'imagen-4', name: 'Imagen 4', media: 'image', slugs: ['imagen-4', 'imagen_4', 'IMAGEN_4'], presets: [{ title: 'Standard', model: 'imagen-4' }, { title: 'Ultra', model: 'imagen-4-ultra' }] },
+    { id: 'nano-banana', name: 'Nano Banana (Gemini Image)', media: 'image', slugs: ['nano-banana', 'gemini-image', 'GEM_PIX'], presets: [{ title: 'Standard', model: 'nano-banana' }] },
+  ];
+
+  // ---------- small helpers ----------
+  const SEL = {
+    editor: 'textarea[placeholder*="Generate" i], textarea[placeholder*="Describe" i], textarea[placeholder*="prompt" i], div[contenteditable="true"][role="textbox"], div.ProseMirror[contenteditable="true"], textarea',
+    send: 'button[aria-label*="Create" i], button[aria-label*="Generate" i], button[aria-label*="Send" i], button[aria-label*="Submit" i], button[data-testid*="generate" i], button[data-testid*="submit" i], button[type="submit"]',
+    stop: 'button[aria-label*="Stop" i], button[aria-label*="Cancel" i], [role="progressbar"][aria-label*="Generating" i], [data-testid*="generating" i]',
+    fileInput: 'form input[type="file"], main input[type="file"], input[type="file"][accept*="image"], input[type="file"]',
+    uploading: 'form [role="progressbar"], [data-testid*="upload-progress" i], [aria-label*="Uploading" i]',
+    mediaOut: 'main img[src*="googleusercontent.com"], main img[src*="storage.googleapis.com"], main img[src^="blob:"], main video[src], main video source[src], [data-testid*="generation" i] img, [data-testid*="generation" i] video',
+    newProject: 'a[href*="/project/new"], button[aria-label*="New project" i], a[aria-label*="New project" i], button[data-testid*="new-project" i]',
+  };
+  const $ = (s) => document.querySelector(s);
+  const $$ = (s) => [...document.querySelectorAll(s)];
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const visible = (el) => !!el && el.getClientRects().length > 0;
+  const firstVisible = (s) => $$(s).find(visible);
+  const sleepUnless = async (ms, isCancelled) => {
+    const end = Date.now() + ms;
+    while (Date.now() < end) {
+      if (isCancelled()) return;
+      await sleep(Math.min(250, end - Date.now()));
+    }
+  };
+  const generating = () => $$(SEL.stop).some(visible);
+
+  // Google Flow project URLs:
+  // - https://flow.google.com/project/<id>
+  // - https://labs.google/fx/tools/flow/project/<id>
+  // - https://labs.google/fx/en/tools/flow/project/<id>
+  const projectIdOf = (path) => (String(path || '').match(/\/project\/([a-zA-Z0-9_-]{6,})/i) || [])[1] || null;
+  const baseProjectIdOf = (idOrPath) => projectIdOf(idOrPath) || (String(idOrPath || '').match(/^([a-zA-Z0-9_-]{6,})$/) || [])[1] || null;
+  const sceneIdOf = (path) => (String(path || '').match(/\/(?:scene|clip|edit|generation)\/([a-zA-Z0-9_-]{6,})/i) || [])[1] || null;
+
+  const ESC_MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ESC_MAP[c]);
+
+  async function waitFor(fn, timeoutMs, stepMs = 250) {
+    const t0 = Date.now();
+    for (;;) {
+      const v = fn();
+      if (v) return v;
+      if (Date.now() - t0 > timeoutMs) return null;
+      await sleep(stepMs);
+    }
+  }
+
+  function normalizeResetIso(raw) {
+    if (raw == null || raw === '') return null;
+    if (typeof raw === 'number' && isFinite(raw)) {
+      if (raw <= 0) return new Date(Date.now()).toISOString();
+      if (raw < 1e9) return new Date(Date.now() + raw * 1000).toISOString();
+      if (raw < 1e11) return new Date(raw * 1000).toISOString();
+      return new Date(raw).toISOString();
+    }
+    const str = String(raw).trim();
+    if (!str) return null;
+    if (/^\d+(?:\.\d+)?$/.test(str)) {
+      return normalizeResetIso(parseFloat(str));
+    }
+    const parsed = new Date(str);
+    if (!isNaN(parsed.getTime())) return parsed.toISOString();
+    return str;
+  }
+
+  function rel(iso) {
+    if (!iso) return '';
+    const normIso = normalizeResetIso(iso);
+    const d = new Date(normIso || iso);
+    if (isNaN(d.getTime())) return String(iso);
+    const ms = d.getTime() - Date.now();
+    if (ms <= 0) return 'now';
+    const m = Math.round(ms / 60000), h = Math.floor(m / 60), days = Math.floor(h / 24);
+    return days >= 1 ? `in ${days}d ${h % 24}h` : h >= 1 ? `in ${h}h ${m % 60}m` : `in ${m}m`;
+  }
+  const when = (iso) => {
+    if (!iso) return 'an unknown time';
+    const normIso = normalizeResetIso(iso);
+    const d = new Date(normIso || iso);
+    if (isNaN(d.getTime())) return String(iso);
+    return d.toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' });
+  };
+  const resets = (iso) => (!iso ? 'later' : rel(iso));
+
+  // ---------- settings & persistent JSON helpers ----------
+  const defaults = {
+    prompt: '',
+    count: 4,
+    mode: 'same',
+    delay: 3,
+    version: KEEP,
+    effort: KEEP,
+    aspectRatio: KEEP,
+    project: CURRENT_PROJECT,
+    wait: true,
+    force: false,
+    holdImages: true,
+    smartStop: true,
+    autoAltModel: true,
+    autoCleanFailed: true,
+    autoClarify: true,
+    clarifyReply: DEFAULT_CLARIFY_REPLY,
+  };
+  const loadJSON = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
+  const saveJSON = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+  const load = () => {
+    const s = { ...defaults, ...loadJSON(STORE_KEY, {}) };
+    if (s.mode !== 'same' && s.mode !== 'new') s.mode = 'same';
+    if (typeof s.holdImages !== 'boolean') s.holdImages = true;
+    if (typeof s.smartStop !== 'boolean') s.smartStop = true;
+    if (typeof s.autoAltModel !== 'boolean') s.autoAltModel = true;
+    if (typeof s.autoCleanFailed !== 'boolean') s.autoCleanFailed = true;
+    if (typeof s.autoClarify !== 'boolean') s.autoClarify = true;
+    if (typeof s.clarifyReply !== 'string' || !s.clarifyReply.trim()) s.clarifyReply = DEFAULT_CLARIFY_REPLY;
+    return s;
+  };
+
+  // ---------- Stateless Held Input Images / Flow Ingredients (zero snowballing across runs) ----------
+  function purgeLegacyHeldStorage() {
+    try {
+      if (typeof localStorage.removeItem === 'function') {
+        localStorage.removeItem(HELD_ATTACH_KEY);
+        localStorage.removeItem(HELD_FILES_KEY);
+      } else {
+        localStorage.setItem(HELD_ATTACH_KEY, 'null');
+        localStorage.setItem(HELD_FILES_KEY, 'null');
+      }
+    } catch {}
+  }
+  purgeLegacyHeldStorage();
+
+  const heldFiles = []; // [{ key, name, type, size, file, dataUrl }]
+  let heldAttachments = { mediaIds: [], references: [] }; // locked to the single user-input batch
+  let isInternalAttach = false;
+  let holdEnabled = load().holdImages !== false;
+  let onHeldChange = () => {};
+  let running = false;
+  let cancelled = false;
+  let limits = null;
+  let onLimitsUpdated = () => {};
+  const sessionStats = { promptsSent: 0, mediaGenerated: 0 };
+
+  function findComposerFileInput() {
+    const ed = $(SEL.editor);
+    const form = ed && typeof ed.closest === 'function' ? ed.closest('form') : null;
+    if (form && typeof form.querySelector === 'function') {
+      const formInp = form.querySelector('input[type="file"]');
+      if (formInp) return formInp;
+    }
+    const candidates = $$(SEL.fileInput).filter((inp) => {
+      if (!inp || inp.id === 'refInput') return false;
+      const aria = String(inp.getAttribute?.('aria-label') || '').toLowerCase();
+      if (aria.includes('library') || aria.includes('import project')) return false;
+      return true;
+    });
+    return candidates[candidates.length - 1] || null;
+  }
+
+  function dataUrlToFile(dataUrl, name, mimeType) {
+    try {
+      const parts = String(dataUrl || '').split(',');
+      if (parts.length < 2) return null;
+      const mime = mimeType || (parts[0].match(/:(.*?);/) || [])[1] || 'image/png';
+      const bin = typeof atob === 'function' ? atob(parts[1]) : '';
+      const arr = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      if (typeof File === 'function') {
+        return new File([arr], name || 'held-ingredient.png', { type: mime });
+      }
+      return { name: name || 'held-ingredient.png', type: mime, size: arr.length, dataUrl };
+    } catch {
+      return null;
+    }
+  }
+
+  function fileToDataUrl(file) {
+    return new Promise((resolve) => {
+      if (!file) return resolve('');
+      if (typeof file.dataUrl === 'string' && file.dataUrl) return resolve(file.dataUrl);
+      if (typeof FileReader !== 'function') return resolve('');
+      try {
+        const reader = new FileReader();
+        reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+        reader.onerror = () => resolve('');
+        reader.readAsDataURL(file);
+      } catch {
+        resolve('');
+      }
+    });
+  }
+
+  function persistHeldState() {
+    purgeLegacyHeldStorage();
+  }
+
+  async function ingestHeldFiles(fileList, replaceExisting = false) {
+    if (!fileList || isInternalAttach) return;
+    const items = [...fileList].filter((f) => f && (!f.type || String(f.type).startsWith('image/') || /\.(?:png|jpe?g|webp|gif|bmp|svg|avif)$/i.test(f.name || '')));
+    if (!items.length) return;
+    if (replaceExisting) {
+      heldFiles.length = 0;
+    }
+    let changed = false;
+    for (const f of items) {
+      if (heldFiles.length >= MAX_HELD_IMAGES) break;
+      const name = f.name || `ingredient-${heldFiles.length + 1}.png`;
+      const size = Number(f.size) || 0;
+      const type = f.type || 'image/png';
+      const key = `${name}:${size}:${type}`;
+      if (heldFiles.some((x) => x.key === key)) continue;
+      const dataUrl = await fileToDataUrl(f);
+      heldFiles.push({ key, name, type, size, file: f, dataUrl });
+      changed = true;
+    }
+    if (changed) {
+      heldAttachments = { mediaIds: [], references: [] };
+      persistHeldState();
+      onHeldChange();
+    }
+  }
+
+  function capturePageComposerFiles() {
+    if (running || isInternalAttach) return;
+    const inp = findComposerFileInput();
+    if (inp && inp.files && inp.files.length > 0) {
+      ingestHeldFiles(inp.files, false);
+    }
+  }
+
+  function clearComposerFileInputs() {
+    for (const inp of $$(SEL.fileInput)) {
+      if (!inp) continue;
+      try { inp.value = ''; } catch {}
+      try { inp.files = []; } catch {}
+    }
+  }
+
+  function clearHeldImages() {
+    heldFiles.length = 0;
+    heldAttachments = { mediaIds: [], references: [] };
+    clearComposerFileInputs();
+    persistHeldState();
+    onHeldChange();
+  }
+
+  function removeHeldImageAt(index) {
+    const hadFiles = index >= 0 && index < heldFiles.length;
+    if (hadFiles) {
+      heldFiles.splice(index, 1);
+      if (index < heldAttachments.references.length) heldAttachments.references.splice(index, 1);
+      if (index < heldAttachments.mediaIds.length) heldAttachments.mediaIds.splice(index, 1);
+    } else if (index >= 0 && index < heldAttachments.references.length) {
+      heldAttachments.references.splice(index, 1);
+      if (index < heldAttachments.mediaIds.length) heldAttachments.mediaIds.splice(index, 1);
+    }
+    if (heldFiles.length === 0 && (!hadFiles ? heldAttachments.references.length === 0 : true)) {
+      heldAttachments = { mediaIds: [], references: [] };
+      clearComposerFileInputs();
+    }
+    persistHeldState();
+    onHeldChange();
+  }
+
+  function hasHeldImages() {
+    return heldFiles.length > 0 || heldAttachments.references.length > 0 || heldAttachments.mediaIds.length > 0;
+  }
+
+  // Capture Flow reference/ingredient media descriptors from outgoing generation requests (batchGenerate, video:batchAsyncGenerate, etc.)
+  function captureAttachmentsFromBody(b) {
+    if (!holdEnabled || !b || typeof b !== 'object') return false;
+    if (heldAttachments.references.length > 0 || heldAttachments.mediaIds.length > 0) return false;
+
+    const reqList = Array.isArray(b.requests) ? b.requests : [b];
+    const refs = [];
+    const ids = [];
+    for (const req of reqList) {
+      if (!req || typeof req !== 'object') continue;
+      for (const field of ['referenceImages', 'ingredients', 'imageInputs', 'startImage', 'endImage']) {
+        const val = req[field];
+        if (Array.isArray(val) && val.length) {
+          for (const item of val) {
+            refs.push({ field, value: JSON.parse(JSON.stringify(item)) });
+            const mid = item?.mediaId || item?.mediaGenerationId || item?.name || item?.id;
+            if (mid) ids.push(String(mid));
+          }
+        } else if (val && typeof val === 'object') {
+          refs.push({ field, value: JSON.parse(JSON.stringify(val)) });
+          const mid = val.mediaId || val.mediaGenerationId || val.name || val.id;
+          if (mid) ids.push(String(mid));
+        }
+      }
+    }
+    if (!refs.length) return false;
+
+    const cap = heldFiles.length > 0 ? Math.min(MAX_HELD_IMAGES, heldFiles.length) : MAX_HELD_IMAGES;
+    heldAttachments = {
+      mediaIds: [...new Set(ids)].slice(0, cap),
+      references: refs.slice(0, cap),
+    };
+    onHeldChange();
+    return true;
+  }
+
+  function injectHeldAttachmentsIntoBody(b) {
+    if (!holdEnabled || !b || typeof b !== 'object') return false;
+    if (!heldAttachments.references.length) return false;
+    const reqList = Array.isArray(b.requests) ? b.requests : [b];
+    let mutated = false;
+    for (const req of reqList) {
+      if (!req || typeof req !== 'object') continue;
+      const alreadyHasRefs = ['referenceImages', 'ingredients', 'imageInputs', 'startImage'].some((f) => {
+        const v = req[f];
+        return Array.isArray(v) ? v.length > 0 : !!(v && typeof v === 'object');
+      });
+      if (alreadyHasRefs) continue;
+      for (const ref of heldAttachments.references) {
+        if (ref.field === 'startImage' || ref.field === 'endImage') {
+          req[ref.field] = JSON.parse(JSON.stringify(ref.value));
+          mutated = true;
+        } else {
+          if (!Array.isArray(req[ref.field])) req[ref.field] = [];
+          req[ref.field].push(JSON.parse(JSON.stringify(ref.value)));
+          mutated = true;
+        }
+      }
+    }
+    return mutated;
+  }
+
+  async function attachHeldImagesToComposer(isCancelled = () => false) {
+    if (!holdEnabled || !heldFiles.length || isCancelled()) return false;
+    const filesToAttach = heldFiles
+      .slice(0, MAX_HELD_IMAGES)
+      .map((entry) => entry.file || dataUrlToFile(entry.dataUrl, entry.name, entry.type))
+      .filter(Boolean);
+    if (!filesToAttach.length) return false;
+
+    let attached = false;
+    isInternalAttach = true;
+    try {
+      const fileInput = findComposerFileInput();
+      if (fileInput) {
+        if (fileInput.files && fileInput.files.length === filesToAttach.length) {
+          return true;
+        }
+        if (typeof DataTransfer === 'function') {
+          const dt = new DataTransfer();
+          for (const f of filesToAttach) {
+            try { dt.items.add(f); } catch {}
+          }
+          try { fileInput.files = dt.files; } catch {
+            Object.defineProperty(fileInput, 'files', { configurable: true, value: dt.files });
+          }
+        } else {
+          try { fileInput.files = filesToAttach; } catch {
+            Object.defineProperty(fileInput, 'files', { configurable: true, value: filesToAttach });
+          }
+        }
+        const Evt = typeof Event === 'function' ? Event : function (type) { this.type = type; };
+        fileInput.dispatchEvent(new Evt('change', { bubbles: true }));
+        attached = true;
+      } else {
+        const ed = $(SEL.editor);
+        if (ed && typeof DataTransfer === 'function' && typeof ClipboardEvent === 'function') {
+          const dt = new DataTransfer();
+          for (const f of filesToAttach) {
+            try { dt.items.add(f); } catch {}
+          }
+          ed.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: dt }));
+          attached = true;
+        }
+      }
+    } catch (e) {
+      console.warn(TAG, 'composer image attach fallback to fetch replay', e);
+    } finally {
+      isInternalAttach = false;
+    }
+
+    if (attached) {
+      await sleep(300);
+      await waitFor(() => isCancelled() || !$$(SEL.uploading).some(visible), 30_000, 250);
+    }
+    return attached;
+  }
+
+  try {
+    document.addEventListener('change', (e) => {
+      const t = e && e.target;
+      if (!isInternalAttach && !running && t && t.tagName === 'INPUT' && t.type === 'file' && t.files && t.files.length) {
+        const composerInput = findComposerFileInput();
+        if (!composerInput || t === composerInput) {
+          ingestHeldFiles(t.files, true);
+        }
+      }
+    }, true);
+    document.addEventListener('paste', (e) => {
+      if (!isInternalAttach && !running && e && e.clipboardData && e.clipboardData.files && e.clipboardData.files.length) {
+        ingestHeldFiles(e.clipboardData.files, false);
+      }
+    }, true);
+    document.addEventListener('drop', (e) => {
+      if (!isInternalAttach && !running && e && e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+        ingestHeldFiles(e.dataTransfer.files, false);
+      }
+    }, true);
+  } catch {}
+
+  // ---------- Google Flow Backend, Auth Header Harvesting & Live Credits/Quota ----------
+  const pageFetch = pageWin.fetch.bind(pageWin);
+  let tok = { t: null, at: 0 };
+  const capturedFlowHeaders = {};
+  let lastQuotaUrl = null;
+  let lastGenerationResponse = null;
+
+  function harvestHeadersFromInit(init) {
+    if (!init || !init.headers) return;
+    try {
+      const entries = typeof init.headers.entries === 'function'
+        ? [...init.headers.entries()]
+        : Array.isArray(init.headers)
+          ? init.headers
+          : Object.entries(init.headers);
+      for (const [rawK, rawV] of entries) {
+        if (!rawK || rawV == null) continue;
+        const k = String(rawK).toLowerCase();
+        const v = String(rawV);
+        if (k === 'authorization' && /^(?:Bearer|SAPISIDHASH)\s+\S+/i.test(v)) {
+          tok = { t: v, at: Date.now() };
+        } else if (k.startsWith('x-goog-') || k.startsWith('x-client-')) {
+          capturedFlowHeaders[k] = v;
+        }
+      }
+    } catch {}
+  }
+
+  async function api(path, opts = {}) {
+    const r = await pageFetch(path, {
+      credentials: 'same-origin',
+      ...opts,
+      headers: {
+        ...capturedFlowHeaders,
+        ...(opts.headers || {}),
+        ...(tok.t ? { Authorization: tok.t } : {}),
+        ...(opts.body ? { 'Content-Type': 'application/json' } : {}),
+      },
+    });
+    if (r.status === 401) tok.t = null;
+    if (!r.ok) throw new Error(`${String(path).split('?')[0]} → ${r.status}`);
+    return r.json();
+  }
+
+  // Model catalog (starts with canonical Google Flow models + dynamically augments from DOM/API)
+  let versions = DEFAULT_FLOW_MODELS.map((v) => ({ ...v, slugs: [...v.slugs], presets: [...v.presets] }));
+  async function loadVersions() {
+    // Also discover any live model options present in Flow's DOM model selector
+    const domModels = $$('button[role="option"], [role="menuitemradio"], select option')
+      .map((el) => String(el.textContent || '').trim())
+      .filter((t) => /\b(?:Veo|Imagen|Nano\s+Banana|Gemini)\b/i.test(t) && t.length < 48);
+    for (const label of new Set(domModels)) {
+      const id = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      if (id && !versions.some((v) => v.id === id || v.name.toLowerCase() === label.toLowerCase())) {
+        versions.push({
+          id,
+          name: label,
+          media: /imagen|banana|image/i.test(label) ? 'image' : 'video',
+          slugs: [id, label],
+          presets: [{ title: 'Default', model: id }],
+        });
+      }
+    }
+    return versions;
+  }
+
+  function readCreditsFromDom() {
+    // Scan Flow header/toolbar badges for "50 credits", "1,000 AI credits", etc.
+    const nodes = $$('header *, nav *, [data-testid*="credit" i], [aria-label*="credit" i]');
+    for (const el of nodes) {
+      if (!el || !visible(el)) continue;
+      const txt = String(el.getAttribute?.('aria-label') || el.textContent || '').replace(/\s+/g, ' ').trim();
+      const m = txt.match(/(\d[\d,]*)\s*(?:AI\s+|Flow\s+)?credits?\b/i);
+      if (m) {
+        const val = parseInt(m[1].replace(/,/g, ''), 10);
+        if (isFinite(val)) return val;
+      }
+    }
+    return null;
+  }
+
+  function parseLimitsPayload(j, baseLimits = null) {
+    const prev = baseLimits || limits || { creditsLeft: null, creditsMax: null, creditsReset: null, lockedModels: [], notes: [], planTier: null, checkedOk: false };
+    if (!j || typeof j !== 'object') return prev;
+
+    // Unwrap tRPC / Google Labs envelopes ({ result: { data: { json: ... } } })
+    const root = j.result?.data?.json || j.result?.data || j.data || j;
+    if (!root || typeof root !== 'object') return prev;
+
+    let creditsLeft = root.credits ?? root.creditsRemaining ?? root.remainingCredits ?? root.remaining_credits ??
+      root.userPaygateTier?.credits ?? root.quota?.remaining ?? root.balance ?? null;
+    const creditsMax = root.maxCredits ?? root.monthlyCredits ?? root.quota?.limit ?? root.dailyCredits ?? null;
+    const rawReset = root.resetTime ?? root.reset_after ?? root.resets_at ?? root.nextRefillTime ?? root.quota?.resetTime ?? null;
+    const planTier = root.userPaygateTier?.name || root.planTier || root.subscriptionTier || root.tier || prev.planTier || null;
+
+    if (typeof creditsLeft === 'string' && /^\d+$/.test(creditsLeft)) creditsLeft = parseInt(creditsLeft, 10);
+
+    const lockedMap = new Map((prev.lockedModels || []).map((m) => [m.slug, m]));
+    for (const ml of (Array.isArray(root.lockedModels || root.model_limits) ? (root.lockedModels || root.model_limits) : [])) {
+      const slug = ml?.slug || ml?.model || ml?.model_slug;
+      if (slug) lockedMap.set(slug, { slug, until: normalizeResetIso(ml.until || ml.resets_after || ml.resetTime || null) });
+    }
+
+    const noteSet = new Set(prev.notes || []);
+    for (const n of (Array.isArray(root.warnings || root.notes) ? (root.warnings || root.notes) : [])) {
+      if (typeof n === 'string' && n.trim()) noteSet.add(n.trim());
+    }
+
+    return {
+      creditsLeft: typeof creditsLeft === 'number' && isFinite(creditsLeft) ? Math.max(0, creditsLeft) : prev.creditsLeft,
+      creditsMax: typeof creditsMax === 'number' && isFinite(creditsMax) ? creditsMax : prev.creditsMax,
+      creditsReset: rawReset ? normalizeResetIso(rawReset) : prev.creditsReset,
+      lockedModels: [...lockedMap.values()],
+      notes: [...noteSet],
+      planTier: planTier ? String(planTier).replace(/_/g, ' ') : prev.planTier,
+      checkedOk: true,
+    };
+  }
+
+  function applyRateLimitErrorToLimits(errPayload, status) {
+    const err = errPayload?.error || errPayload?.detail || errPayload || {};
+    const msg = String(err.message || err.status || (typeof errPayload?.detail === 'string' ? errPayload.detail : '') || '').trim();
+    const isQuota = status === 429 || /RESOURCE_EXHAUSTED|RATE_LIMIT|QUOTA|CREDITS|TOO_MANY/i.test(String(err.status || err.code || msg));
+    if (!isQuota) return;
+    if (!limits) {
+      limits = { creditsLeft: null, creditsMax: null, creditsReset: null, lockedModels: [], notes: [], planTier: null, checkedOk: true };
+    }
+    const rawReset = err.retryAfter ?? err.reset_after ?? err.clears_in ?? null;
+    if (rawReset) limits.creditsReset = normalizeResetIso(rawReset);
+    if (/credit|balance|insufficient/i.test(msg)) limits.creditsLeft = 0;
+    const modelSlug = err.model || err.model_slug || (override && override.version) || null;
+    if (modelSlug && !limits.lockedModels.some((m) => m.slug === modelSlug)) {
+      limits.lockedModels.push({ slug: modelSlug, until: limits.creditsReset });
+    }
+    if (msg && !limits.notes.includes(msg)) limits.notes.push(msg);
+    onLimitsUpdated(limits);
+  }
+
+  async function loadLimits() {
+    const endpoints = [
+      ...(lastQuotaUrl ? [lastQuotaUrl] : []),
+      '/api/trpc/user.getCreditStatus',
+      '/fx/api/trpc/user.getCreditStatus',
+    ];
+    for (const ep of endpoints) {
+      try {
+        const j = await api(ep);
+        limits = parseLimitsPayload(j, limits);
+        return limits;
+      } catch {}
+    }
+    // DOM fallback: read live Flow credits directly from the top-bar credit pill
+    const domCredits = readCreditsFromDom();
+    limits = {
+      ...(limits || { creditsLeft: null, creditsMax: null, creditsReset: null, lockedModels: [], notes: [], planTier: null }),
+      creditsLeft: domCredits !== null ? domCredits : (limits ? limits.creditsLeft : null),
+      checkedOk: true,
+    };
+    return limits;
+  }
+
+  function lockFor(versionId, effort) {
+    if (!versions || !limits) return null;
+    if (versionId) {
+      const slugs = versions.filter((v) => v.id === versionId).flatMap((v) => [v.id, ...v.slugs, ...v.presets.map((p) => p.model)]);
+      return limits.lockedModels.find((l) => slugs.includes(l.slug)) || null;
+    }
+    if (effort) {
+      const slugs = versions.flatMap((v) => v.presets.filter((p) => p.title === effort).map((p) => p.model));
+      return limits.lockedModels.find((l) => slugs.includes(l.slug)) || null;
+    }
+    return null;
+  }
+
+  // ---------- Nuance 1: Automatic Model Selector Alternation on Failed Run ----------
+  let modelAltCursor = 0;
+  const failedModelIds = new Set();
+
+  function selectAlternateModel(currentVerId, currentEffort) {
+    const avail = (versions || []).filter((v) => v && v.id);
+    if (!avail.length) return null;
+    const activeVerId = currentVerId || avail[0].id;
+    failedModelIds.add(activeVerId);
+
+    const isUnlocked = (v) => !lockFor(v.id, '');
+    let pool = avail.filter((v) => v.id !== activeVerId && !failedModelIds.has(v.id) && isUnlocked(v));
+    if (!pool.length) {
+      failedModelIds.clear();
+      failedModelIds.add(activeVerId);
+      pool = avail.filter((v) => v.id !== activeVerId && isUnlocked(v));
+    }
+    if (!pool.length) {
+      pool = avail.filter((v) => v.id !== activeVerId);
+    }
+    if (!pool.length) return { version: avail[0].id, name: avail[0].name, effort: currentEffort || KEEP };
+    const chosen = pool[modelAltCursor % pool.length];
+    modelAltCursor += 1;
+    const effortStillValid = currentEffort && (chosen.presets || []).some((p) => p.title === currentEffort);
+    return {
+      version: chosen.id,
+      name: chosen.name || chosen.id,
+      effort: effortStillValid ? currentEffort : KEEP,
+    };
+  }
+
+  async function alternateModelOnFailure(s = null, ui = null) {
+    if (!versions || !versions.length) await loadVersions().catch(() => null);
+    const curVer = (override && override.version) || (s && s.version) || '';
+    const curEffort = (override && override.effort) || (s && s.effort) || '';
+    const next = selectAlternateModel(curVer, curEffort);
+    if (!next) return null;
+    override = { version: next.version, effort: next.effort, aspectRatio: s ? s.aspectRatio : KEEP };
+    if (s) {
+      s.version = next.version;
+      s.effort = next.effort;
+    }
+    if (ui && typeof ui.setModelSelection === 'function') {
+      ui.setModelSelection(next.version, next.effort);
+    }
+    console.log(TAG, `auto-alternated Flow model → ${next.name}`);
+    return next;
+  }
+
+  // ---------- Nuance 3: Auto-Answer Assistant / Workflow Clarification Prompts ----------
+  const CLARIFY_RE = /\?|clarif|how\s+many\s+panel|panel\s+amount|grid\s+composite|layout|aspect\s+ratio|which\s+(?:one|style|version|option|layout|camera)|would\s+you\s+(?:like|prefer)|do\s+you\s+(?:want|prefer)|please\s+(?:specify|confirm|let\s+me\s+know)|before\s+I\s+(?:generate|create|render)|should\s+I\s+(?:use|make|include)/i;
+  const HARD_REFUSAL_RE = /\b(?:violates?\s+our\s+(?:content\s+)?polic(?:y|ies)|cannot\s+generate\s+(?:explicit|nsfw|harmful)|safety\s+filters?)\b/i;
+
+  function isAssistantClarificationQuestion(text) {
+    const t = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!t) return false;
+    if (HARD_REFUSAL_RE.test(t) && !t.includes('?')) return false;
+    return CLARIFY_RE.test(t);
+  }
+
+  function buildClarificationReply(questionText, customTemplate) {
+    const base = (typeof customTemplate === 'string' && customTemplate.trim())
+      ? customTemplate.trim()
+      : DEFAULT_CLARIFY_REPLY;
+    if (/panel|grid|composite/i.test(String(questionText || '')) && !/\b\d+\s*-?\s*panel/i.test(base)) {
+      return `Use a 4-panel (2x2) grid composite layout. ${base}`;
+    }
+    return base;
+  }
+
+  // ---------- Outgoing Flow Request Rewrite & Live Response Sniffing ----------
+  const FLOW_GEN_PATH_RE = /(?:batchGenerate|batchAsyncGenerate|generateImage|generateVideo|video:batch|image:batch|\/api\/(?:generate|flow|trpc\/flow))/i;
+  const FLOW_QUOTA_PATH_RE = /(?:getCredit|creditStatus|credits|quota|entitlement|paygate)/i;
+
+  let override = null; // { version, effort, aspectRatio }
+  function rewriteBody(b) {
+    if (!b || typeof b !== 'object') return false;
+    let mutated = false;
+
+    captureAttachmentsFromBody(b);
+    if (injectHeldAttachmentsIntoBody(b)) mutated = true;
+
+    if (override) {
+      const reqList = Array.isArray(b.requests) ? b.requests : [b];
+      const ver = override.version ? versions.find((v) => v.id === override.version) : null;
+      const targetModel = ver ? (ver.presets.find((p) => p.title === override.effort)?.model || ver.slugs[0] || ver.id) : null;
+
+      for (const req of reqList) {
+        if (!req || typeof req !== 'object') continue;
+        if (targetModel) {
+          if ('videoModelKey' in req) { req.videoModelKey = targetModel; mutated = true; }
+          else if ('imageModelName' in req) { req.imageModelName = targetModel; mutated = true; }
+          else if ('model' in req) { req.model = targetModel; mutated = true; }
+          else if ('modelKey' in req) { req.modelKey = targetModel; mutated = true; }
+        }
+        if (override.aspectRatio) {
+          if ('aspectRatio' in req) { req.aspectRatio = override.aspectRatio; mutated = true; }
+          else if ('imageAspectRatio' in req) { req.imageAspectRatio = override.aspectRatio; mutated = true; }
+        }
+      }
+    }
+    return mutated;
+  }
+
+  function extractMediaFromApiResponse(json) {
+    const out = [];
+    const seen = new Set();
+    const visit = (node) => {
+      if (!node || typeof node !== 'object') return;
+      if (Array.isArray(node)) {
+        for (const x of node) visit(x);
+        return;
+      }
+      const url = node.fifeUrl || node.downloadUrl || node.videoUrl || node.imageUrl ||
+        (typeof node.uri === 'string' && /^https?:\/\//.test(node.uri) ? node.uri : null) ||
+        (typeof node.url === 'string' && /\.(?:png|jpe?g|webp|mp4|webm)(?:\?|$)/i.test(node.url) ? node.url : null);
+      if (url && !seen.has(url)) {
+        seen.add(url);
+        const isVideo = /\.mp4|\.webm|video/i.test(url) || Boolean(node.videoUrl) || /video/i.test(String(node.mimeType || ''));
+        out.push({
+          id: String(node.mediaGenerationId || node.mediaId || node.name || node.id || `media_${out.length + 1}`),
+          url,
+          kind: isVideo ? 'video' : 'image',
+        });
+      }
+      for (const v of Object.values(node)) {
+        if (v && typeof v === 'object') visit(v);
+      }
+    };
+    visit(json);
+    return out;
+  }
+
+  const patchedFetch = async function (input, init) {
+    harvestHeadersFromInit(init);
+    let originalInit = init;
+    let wasRewritten = false;
+    let urlStr = '';
+    try {
+      const method = ((init && init.method) || (typeof input === 'object' && input && input.method) || 'GET').toUpperCase();
+      urlStr = typeof input === 'string' ? input : (input && typeof input.url === 'string' ? input.url : String(input));
+      if (FLOW_QUOTA_PATH_RE.test(urlStr)) lastQuotaUrl = urlStr;
+      if (init && typeof init.body === 'string' && method === 'POST' && FLOW_GEN_PATH_RE.test(urlStr)) {
+        const b = JSON.parse(init.body);
+        if (rewriteBody(b)) {
+          wasRewritten = true;
+          init = { ...init, body: JSON.stringify(b) };
+          console.log(TAG, 'Flow request rewritten →', override?.version || 'keep', `held_refs=${heldAttachments.references.length}`);
+        }
+      }
+    } catch (e) { console.warn(TAG, 'rewrite skipped', e); }
+
+    try {
+      const res = await pageFetch(input, init);
+      if (res && res.ok && typeof res.clone === 'function') {
+        if (FLOW_QUOTA_PATH_RE.test(urlStr)) {
+          res.clone().json().then((j) => {
+            limits = parseLimitsPayload(j, limits);
+            onLimitsUpdated(limits);
+          }).catch(() => {});
+        } else if (FLOW_GEN_PATH_RE.test(urlStr)) {
+          res.clone().json().then((j) => {
+            const media = extractMediaFromApiResponse(j);
+            const errText = j?.error?.message || j?.operations?.find?.((o) => o?.error)?.error?.message || null;
+            const clarifyText = j?.clarificationQuestion || j?.assistantMessage || null;
+            lastGenerationResponse = { at: Date.now(), media, errText, clarifyText, raw: j };
+            if (j?.remainingCredits != null || j?.credits != null) {
+              limits = parseLimitsPayload(j, limits);
+              onLimitsUpdated(limits);
+            }
+          }).catch(() => {});
+        }
+      } else if (res && !res.ok && (res.status === 429 || res.status === 402 || res.status === 403)) {
+        if (typeof res.clone === 'function') {
+          res.clone().json().then((errJson) => applyRateLimitErrorToLimits(errJson, res.status)).catch(() => {});
+        }
+      }
+      if (wasRewritten && res && !res.ok && res.status >= 400) {
+        console.warn(TAG, `masked failed rewritten Flow POST (${res.status}); retrying statelessly`);
+        heldAttachments = { mediaIds: [], references: [] };
+        onHeldChange();
+        return await pageFetch(input, originalInit);
+      }
+      return res;
+    } catch (fetchErr) {
+      if (wasRewritten) {
+        console.warn(TAG, 'masked fetch exception on rewritten Flow POST; retrying statelessly', fetchErr);
+        return await pageFetch(input, originalInit);
+      }
+      throw fetchErr;
+    }
+  };
+  pageWin.fetch = patchedFetch;
+  if (pageWin !== window) window.fetch = patchedFetch;
+
+  // ---------- Flow Composer, Navigation & DOM Media Capture ----------
+  function setPrompt(text) {
+    const ed = $(SEL.editor);
+    if (!ed) throw new Error('Flow prompt composer not found');
+    ed.focus();
+    if (ed.tagName === 'TEXTAREA' || ed.tagName === 'INPUT') {
+      const proto = ed.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement?.prototype : window.HTMLInputElement?.prototype;
+      const setter = proto && Object.getOwnPropertyDescriptor(proto, 'value')?.set;
+      if (setter) setter.call(ed, text); else ed.value = text;
+      ed.dispatchEvent(new InputEvent('input', { bubbles: true, data: text, inputType: 'insertText' }));
+      return;
+    }
+    let ok = false;
+    try {
+      document.execCommand('selectAll');
+      ok = document.execCommand('insertText', false, text);
+    } catch { ok = false; }
+    if (!ok) {
+      ed.textContent = text;
+      ed.dispatchEvent(new InputEvent('input', { bubbles: true, data: text, inputType: 'insertText' }));
+    }
+  }
+
+  function resetComposerStateless() {
+    try {
+      const inp = findComposerFileInput();
+      if (inp) { try { inp.value = ''; } catch {} }
+    } catch {}
+  }
+
+  function snapshotDomMediaUrls() {
+    const urls = new Set();
+    for (const el of $$(SEL.mediaOut)) {
+      const u = el.src || el.getAttribute?.('src');
+      if (u) urls.add(u);
+    }
+    return urls;
+  }
+
+  function collectNewDomMedia(beforeUrls) {
+    const found = [];
+    for (const el of $$(SEL.mediaOut)) {
+      const u = el.src || el.getAttribute?.('src');
+      if (u && !beforeUrls.has(u)) {
+        const isVideo = el.tagName === 'VIDEO' || el.tagName === 'SOURCE' || /\.mp4|\.webm/i.test(u);
+        found.push({ id: `dom_${found.length + 1}_${Date.now()}`, url: u, kind: isVideo ? 'video' : 'image' });
+      }
+    }
+    return found;
+  }
+
+  async function sendPrompt(text, isCancelled, waitForFinish, skipHeldAttach = false) {
+    if (!(await waitFor(() => isCancelled() || ($(SEL.editor) && !generating()), 60_000))) {
+      throw new Error('Flow composer never became ready');
+    }
+    if (isCancelled()) return null;
+    if (!skipHeldAttach && holdEnabled && heldFiles.length > 0) {
+      await attachHeldImagesToComposer(isCancelled);
+      if (isCancelled()) return null;
+    }
+    const beforeUrls = snapshotDomMediaUrls();
+    const sentAt = Date.now();
+    lastGenerationResponse = null;
+
+    setPrompt(text);
+    const send = await waitFor(() => isCancelled() || $$(SEL.send).find((b) => visible(b) && !b.disabled), 10_000);
+    if (isCancelled()) return null;
+    if (!send) throw new Error('Flow Generate/Create button not available');
+    send.click();
+
+    await waitFor(generating, 8_000);
+    if (waitForFinish) {
+      if (!(await waitFor(() => isCancelled() || !generating(), 10 * 60_000, 1000))) {
+        throw new Error('timed out waiting for Flow generation');
+      }
+    } else {
+      await sleep(500);
+    }
+    return {
+      projectId: projectIdOf(location.pathname) || 'current',
+      sceneId: sceneIdOf(location.pathname) || null,
+      beforeUrls,
+      sentAt,
+    };
+  }
+
+  async function newProject(isCancelled = () => false) {
+    if (isCancelled()) return;
+    const prevPath = location.pathname;
+    const btn = firstVisible(SEL.newProject) ||
+      $$('button, a').find((b) => visible(b) && /^new project$/i.test(String(b.textContent || '').trim()));
+    if (!btn) {
+      // If already on a blank project page, continue cleanly
+      if (!projectIdOf(prevPath)) return;
+      throw new Error('could not find a New project button in Google Flow');
+    }
+    btn.click();
+    await sleep(800);
+    const ready = () => $(SEL.editor) && !generating();
+    if (!(await waitFor(() => isCancelled() || ready(), 15_000))) {
+      throw new Error('new Flow project did not open');
+    }
+    if (isCancelled()) return;
+    await sleep(400);
+  }
+
+  // ---------- Failed Run Cleanup (Nuance 4) ----------
+  const jobs = []; // { n, projectId, prompt, sentAt, state, media: [{ id, url, kind }], clarifyCount, pendingClarification, cleanedUp, note }
+  let onGalleryChange = () => {};
+
+  async function cleanupFailedGeneration(projectId, job = null) {
+    if (job && job.cleanedUp) return true;
+    // Never delete a project if another job in the same project produced media
+    if (projectId && projectId !== 'current' && jobs.some((j) => j.projectId === projectId && (j.state === 'done' || (j.media && j.media.length > 0)))) {
+      return false;
+    }
+    let cleaned = false;
+    // 1. Try API deletion for an isolated failed project
+    if (projectId && projectId !== 'current') {
+      try {
+        await api(`/api/trpc/project.deleteProject`, {
+          method: 'POST',
+          body: JSON.stringify({ json: { projectId } }),
+        });
+        cleaned = true;
+      } catch {
+        try {
+          await api(`/fx/api/trpc/project.deleteProject`, {
+            method: 'POST',
+            body: JSON.stringify({ json: { projectId } }),
+          });
+          cleaned = true;
+        } catch {}
+      }
+    }
+    // 2. Fallback: click visible failed-card delete button in Flow DOM
+    if (!cleaned) {
+      const delBtn = firstVisible('[data-testid*="failed" i] button[aria-label*="Delete" i], [data-testid*="error" i] button[aria-label*="Delete" i], button[aria-label*="Remove failed" i]');
+      if (delBtn) {
+        try { delBtn.click(); cleaned = true; } catch {}
+      }
+    }
+    if (cleaned && job) {
+      job.cleanedUp = true;
+      if (job.note && !job.note.includes('[cleaned]')) job.note = `${job.note} [cleaned]`;
+      console.log(TAG, 'auto-cleaned failed Flow run →', projectId || job.n);
+    }
+    return cleaned;
+  }
+
+  function trackJob(job) {
+    jobs.push({ clarifyCount: 0, pendingClarification: null, cleanedUp: false, ...job });
+    onGalleryChange();
+    return jobs[jobs.length - 1];
+  }
+
+  // ---------- Runner: Smart Stop, Auto-Clarify, Auto-Alternate Model & Failed Cleanup ----------
+  function maskFailedRunStep(stepIndex, totalCount, err) {
+    console.warn(TAG, `Masked failed Flow run ${stepIndex}/${totalCount}:`, err);
+    resetComposerStateless();
+  }
+
+  async function evaluateFlowJob(job, sendMeta, s, ui, isCancelled, stepIdx, totalCount) {
+    if (!job || isCancelled()) return;
+    const inspectOnce = () => {
+      const apiMedia = (lastGenerationResponse && lastGenerationResponse.at >= sendMeta.sentAt - 500)
+        ? lastGenerationResponse.media || []
+        : [];
+      const domMedia = collectNewDomMedia(sendMeta.beforeUrls);
+      const merged = [...apiMedia, ...domMedia];
+      for (const m of merged) {
+        if (!job.media.some((x) => x.url === m.url)) {
+          job.media.push(m);
+          sessionStats.mediaGenerated += 1;
+        }
+      }
+      if (job.media.length > 0) {
+        job.state = 'done';
+        job.pendingClarification = null;
+        return;
+      }
+      const clarifyMsg = lastGenerationResponse?.clarifyText || '';
+      if (s.autoClarify !== false && (job.clarifyCount || 0) < MAX_CLARIFY_RETRIES && isAssistantClarificationQuestion(clarifyMsg)) {
+        job.pendingClarification = clarifyMsg;
+        return;
+      }
+      if (lastGenerationResponse?.errText) {
+        job.state = 'failed';
+        job.note = String(lastGenerationResponse.errText).slice(0, 300);
+        return;
+      }
+      if (s.wait) {
+        job.state = 'failed';
+        job.note = 'No image or video output detected.';
+      }
+    };
+
+    inspectOnce();
+    while (
+      !isCancelled() &&
+      job.state === 'pending' &&
+      job.pendingClarification &&
+      s.autoClarify !== false &&
+      (job.clarifyCount || 0) < MAX_CLARIFY_RETRIES
+    ) {
+      const question = job.pendingClarification;
+      job.pendingClarification = null;
+      job.clarifyCount = (job.clarifyCount || 0) + 1;
+      const reply = buildClarificationReply(question, s.clarifyReply);
+      ui.status(`Auto-answering Flow clarification (${job.clarifyCount}/${MAX_CLARIFY_RETRIES}) on ${stepIdx}/${totalCount}…`);
+      const nextMeta = await sendPrompt(reply, isCancelled, true, true);
+      if (isCancelled() || !nextMeta) return;
+      sendMeta = nextMeta;
+      inspectOnce();
+    }
+    onGalleryChange();
+  }
+
+  async function run(ui) {
+    const s = ui.read();
+    holdEnabled = !!s.holdImages;
+    saveJSON(STORE_KEY, s);
+    if (!s.prompt.trim()) return ui.status('Enter a prompt first.');
+    capturePageComposerFiles();
+    running = true; cancelled = false; ui.setRunning(true);
+    let count = s.count;
+    let sentOk = 0;
+    let maskedFailures = 0;
+    let smartStoppedAt = 0;
+    const runJobNumbers = new Set();
+    try {
+      await loadVersions().catch(() => null);
+      limits = await loadLimits().catch(() => limits);
+      ui.renderLimits(limits);
+
+      const lock = lockFor(s.version, s.effort);
+      if (lock && !s.force) {
+        if (s.autoAltModel !== false && versions.length > 1) {
+          await alternateModelOnFailure(s, ui);
+        } else {
+          throw new Error(`${s.version || lock.slug} is rate-limited until ${when(lock.until)}. Tick "Send anyway" to try regardless.`);
+        }
+      }
+      if (limits?.creditsLeft === 0 && !s.force) {
+        throw new Error(`Flow credits depleted (0 left). Resets ${resets(limits.creditsReset)}.`);
+      }
+
+      override = (s.version || s.effort || s.aspectRatio)
+        ? { version: s.version, effort: s.effort, aspectRatio: s.aspectRatio }
+        : null;
+
+      for (let i = 1; i <= count && !cancelled; i++) {
+        if (s.smartStop !== false && jobs.some((j) => runJobNumbers.has(j.n) && j.media.length > 0)) {
+          smartStoppedAt = i - 1;
+          break;
+        }
+        try {
+          if (s.mode === 'new') {
+            ui.status(`Opening Flow project ${i}/${count}…`);
+            await newProject(() => cancelled);
+          }
+          const heldCount = heldFiles.length || heldAttachments.references.length;
+          const heldTag = holdEnabled && heldCount > 0 ? ` (+${heldCount} held img)` : '';
+          ui.status(s.wait ? `Generating ${i}/${count}${heldTag}…` : `Sending ${i}/${count}${heldTag}…`);
+          const sendMeta = await sendPrompt(s.prompt, () => cancelled, s.wait);
+          if (!sendMeta) {
+            if (cancelled) break;
+            maskedFailures += 1;
+            maskFailedRunStep(i, count, new Error('send cancelled or blocked'));
+            if (s.autoAltModel !== false) await alternateModelOnFailure(s, ui);
+            continue;
+          }
+          sentOk += 1;
+          sessionStats.promptsSent += 1;
+          const trackedJob = trackJob({
+            n: jobs.length + 1,
+            projectId: sendMeta.projectId,
+            prompt: s.prompt,
+            sentAt: sendMeta.sentAt,
+            state: 'pending',
+            media: [],
+            note: '',
+          });
+          runJobNumbers.add(trackedJob.n);
+
+          await evaluateFlowJob(trackedJob, sendMeta, s, ui, () => cancelled, i, count);
+
+          if (trackedJob.state === 'failed') {
+            maskedFailures += 1;
+            if (s.autoCleanFailed !== false && !trackedJob.cleanedUp) {
+              await cleanupFailedGeneration(trackedJob.projectId, trackedJob);
+            }
+            if (s.autoAltModel !== false) {
+              const alt = await alternateModelOnFailure(s, ui);
+              if (alt) ui.status(`Run ${i}/${count} failed → alternated model to ${alt.name}`);
+            }
+          } else if (
+            s.smartStop !== false &&
+            (trackedJob.media.length > 0 || jobs.some((j) => runJobNumbers.has(j.n) && j.media.length > 0))
+          ) {
+            smartStoppedAt = i;
+            break;
+          }
+
+          limits = await loadLimits().catch(() => limits);
+          ui.renderLimits(limits);
+          if (limits?.creditsLeft === 0 && !s.force && i < count) {
+            ui.status(`Flow credits depleted after ${i}. Resets ${resets(limits.creditsReset)}.`);
+            return;
+          }
+        } catch (iterErr) {
+          if (cancelled) break;
+          maskedFailures += 1;
+          maskFailedRunStep(i, count, iterErr);
+          const pid = projectIdOf(location.pathname);
+          if (s.mode === 'new' && pid && s.autoCleanFailed !== false) {
+            await cleanupFailedGeneration(pid);
+          }
+          if (s.autoAltModel !== false) await alternateModelOnFailure(s, ui);
+          if (count === 1) throw iterErr;
+        }
+        if (i < count && !cancelled) await sleepUnless(s.delay * 1000, () => cancelled);
+      }
+
+      if (smartStoppedAt > 0) {
+        ui.status(`Smart stop engaged: media generated on run ${smartStoppedAt}/${count}.`);
+      } else {
+        const maskedNote = maskedFailures > 0 ? ` (${maskedFailures} failed run${maskedFailures > 1 ? 's' : ''} masked)` : '';
+        ui.status(cancelled ? 'Stopped.' : `Done: sent ${sentOk || count} prompts${maskedNote}.`);
+      }
+    } catch (e) {
+      console.error(TAG, e);
+      ui.status(`Error: ${e.message}`);
+    } finally {
+      override = null;
+      resetComposerStateless();
+      running = false; ui.setRunning(false);
+    }
+  }
+
+  // ---------- UI (shadow DOM so Google Flow's CSS can't touch it) ----------
+  function buildUI() {
+    if (document.getElementById('flowpp-host')) return;
+    const host = document.createElement('div');
+    host.id = 'flowpp-host';
+    host.style.cssText = 'position:fixed;right:16px;bottom:76px;z-index:2147483645;';
+    const root = host.attachShadow({ mode: 'open' });
+    const styleEl = document.createElement("style");
+    styleEl.textContent = `
+        :host { all: initial; }
+        * { box-sizing: border-box; font: 13px/1.4 system-ui, -apple-system, sans-serif; }
+        .fab { width: 44px; height: 44px; border-radius: 50%; border: 1px solid #00E5FF; background: #181c24; color: #00E5FF; cursor: pointer; font-size: 18px; box-shadow: 0 4px 14px rgba(0,0,0,.45); }
+        .panel { display: none; width: 370px; max-height: calc(100vh - 160px); overflow-y: auto; margin-bottom: 8px; padding: 12px; border-radius: 12px; background: #14171f; color: #eee; border: 1px solid #2e3748; box-shadow: 0 8px 28px rgba(0,0,0,.55); }
+        .panel.open { display: block; }
+        h3 { margin: 0 0 8px; font-size: 14px; font-weight: 600; }
+        h4 { margin: 12px 0 6px; font-size: 12px; font-weight: 600; color: #aaa; display: flex; justify-content: space-between; align-items: center; }
+        label { display: block; margin: 8px 0 4px; color: #aaa; font-size: 12px; }
+        textarea, input, select { width: 100%; padding: 6px 8px; border-radius: 8px; border: 1px solid #3a4254; background: #1e2330; color: #eee; }
+        textarea { min-height: 76px; resize: vertical; }
+        .row { display: flex; gap: 8px; align-items: flex-end; }
+        .row > div { flex: 1; min-width: 0; }
+        .check { display: flex; gap: 6px; align-items: center; margin: 8px 0 0; color: #ccc; cursor: pointer; }
+        .check input { width: auto; margin: 0; }
+        .actions { display: flex; gap: 8px; margin-top: 10px; }
+        button.go, button.stop { flex: 1; padding: 8px; border-radius: 8px; border: 0; cursor: pointer; font-weight: 600; }
+        button.go { background: #00E5FF; color: #0b0e14; }
+        button.stop { background: #333a4a; color: #eee; }
+        button:disabled { opacity: .4; cursor: default; }
+        .link { background: none; border: 0; color: #7cd8ff; cursor: pointer; padding: 0; font-size: 12px; }
+        .hidden { display: none !important; }
+        .status { margin-top: 8px; min-height: 18px; color: #7cd8ff; font-size: 12px; }
+        .limits { font-size: 12px; color: #ccc; background: #1c212d; border-radius: 8px; padding: 6px 8px; }
+        .limits div { margin: 2px 0; }
+        .warn { color: #f0b46c; }
+        .ref-box { margin-top: 8px; padding: 8px; border-radius: 8px; border: 1px dashed #3f4a61; background: #1b202b; }
+        .ref-head { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #bbb; }
+        .ref-actions { display: flex; gap: 8px; align-items: center; }
+        .ref-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+        .ref-chip { position: relative; width: 48px; height: 48px; border-radius: 6px; overflow: hidden; border: 1px solid #444; background: #12151c; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #aaa; text-align: center; padding: 2px; }
+        .ref-chip img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .ref-rm { position: absolute; right: 2px; top: 2px; width: 16px; height: 16px; border-radius: 50%; border: 0; background: rgba(0,0,0,.75); color: #fff; font-size: 11px; line-height: 16px; padding: 0; cursor: pointer; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .tile { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; background: #1e2330; display: flex; align-items: center; justify-content: center; color: #888; font-size: 12px; cursor: pointer; text-align: center; padding: 4px; }
+        .tile img, .tile video { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .tile .n { position: absolute; left: 4px; top: 4px; background: rgba(0,0,0,.65); color: #fff; border-radius: 6px; padding: 0 5px; font-size: 11px; }
+        .tile.failed { color: #f0b46c; }
+        .spin { width: 18px; height: 18px; border: 2px solid #555; border-top-color: #00E5FF; border-radius: 50%; animation: s 1s linear infinite; }
+        @keyframes s { to { transform: rotate(360deg); } }
+        .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.88); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; z-index: 1; }
+        .lightbox img, .lightbox video { max-width: 90vw; max-height: 80vh; border-radius: 8px; }
+        .lightbox .bar { display: flex; gap: 8px; }
+        .lightbox a, .lightbox button { background: #fff; color: #000; border: 0; border-radius: 8px; padding: 6px 12px; font-weight: 600; cursor: pointer; text-decoration: none; }
+      `;
+    const bodyWrap = document.createElement("div");
+    setSafeInnerHTML(bodyWrap, `
+      <div class="panel">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><h3 style="margin:0">⚡ Flow++ Bulk Runner <span style="color:#67E8F9;font-weight:400;font-size:11px">v${VERSION}</span></h3><button type="button" class="link" id="flowppClose" title="Close (Esc)" style="font-size:16px;line-height:1;color:#67E8F9">×</button></div>
+        <label for="p">Prompt</label>
+        <textarea id="p" placeholder="Describe cinematic scene or image…"></textarea>
+        <div class="ref-box" id="refBox">
+          <div class="ref-head">
+            <span id="refTitle">Held ingredients / images (0)</span>
+            <div class="ref-actions">
+              <button type="button" class="link" id="addRefBtn">+ add images</button>
+              <button type="button" class="link hidden" id="clearRef">clear</button>
+            </div>
+          </div>
+          <input id="refInput" type="file" accept="image/*" multiple class="hidden">
+          <div class="ref-grid hidden" id="refGrid"></div>
+          <label class="check"><input id="holdImages" type="checkbox"> Hold input images for every generation &amp; repeated runs</label>
+        </div>
+        <div class="row">
+          <div><label for="n">How many</label><input id="n" type="number" min="1" max="50"></div>
+          <div><label for="d">Delay (s)</label><input id="d" type="number" min="0" max="600"></div>
+        </div>
+        <div class="row">
+          <div><label for="ver">Model</label><select id="ver"></select></div>
+          <div><label for="aspect">Aspect</label><select id="aspect">
+            <option value="">Keep current</option>
+            <option value="16:9">16:9 Landscape</option>
+            <option value="9:16">9:16 Portrait</option>
+            <option value="1:1">1:1 Square</option>
+            <option value="4:3">4:3 Classic</option>
+            <option value="3:4">3:4 Editorial</option>
+          </select></div>
+        </div>
+        <div class="row">
+          <div><label for="effort">Preset / Quality</label><select id="effort"></select></div>
+          <div><label for="m">Mode</label><select id="m">
+            <option value="same">All in this project</option>
+            <option value="new">New project per run</option>
+          </select></div>
+        </div>
+        <label class="check hidden" id="forceRow"><input id="force" type="checkbox"> <span id="forceText">Send anyway (rate-limited)</span></label>
+        <label class="check"><input id="wait" type="checkbox"> Wait for each generation before starting the next</label>
+        <label class="check"><input id="smartStop" type="checkbox"> Smart stop once media is generated</label>
+        <label class="check"><input id="autoAltModel" type="checkbox"> Auto-alternate model on failed run</label>
+        <label class="check"><input id="autoCleanFailed" type="checkbox"> Auto-clean failed run projects / cards</label>
+        <label class="check"><input id="autoClarify" type="checkbox"> Auto-answer clarification questions</label>
+        <div id="clarifyRow">
+          <label for="clarifyReply">Auto-clarification reply</label>
+          <input id="clarifyReply" type="text" placeholder="Use a 4-panel (2x2) grid layout and generate now…">
+        </div>
+        <div class="actions">
+          <button class="go">Generate</button>
+          <button class="stop" disabled>Stop</button>
+        </div>
+        <div class="status"></div>
+        <h4>Flow credits &amp; limits <button class="link" id="refreshLimits">refresh</button></h4>
+        <div class="limits">Loading…</div>
+        <div id="gal" class="hidden">
+          <h4><span id="galTitle">Outputs</span> <button class="link" id="clearGal">clear</button></h4>
+          <div class="grid"></div>
+        </div>
+      </div>
+
+      <div class="lightbox hidden"><img alt=""><video controls class="hidden"></video><div class="bar"><a id="lbDl" download>Download</a><button id="lbClose">Close</button></div></div>`);
+    root.replaceChildren(styleEl, bodyWrap);
+
+    const q = (s) => root.querySelector(s);
+    const panel = q('.panel');
+    const s = load();
+
+    const fill = (sel, options, value) => {
+      sel.replaceChildren(...options.map(([v, t]) => new Option(t, v)));
+      sel.value = options.some(([v]) => v === value) ? value : options[0][0];
+    };
+    const fillVersions = (value) => fill(q('#ver'), [[KEEP, 'Keep current'], ...(versions || []).map((v) => [v.id, v.name])], value);
+    const fillEfforts = (value) => {
+      const vers = q('#ver').value ? (versions || []).filter((v) => v.id === q('#ver').value) : versions || [];
+      const titles = [...new Set(vers.flatMap((v) => v.presets.map((p) => p.title)))];
+      const opts = titles.length ? titles.map((t) => [t, t]) : value ? [[value, value]] : [];
+      fill(q('#effort'), [[KEEP, 'Keep current'], ...opts], value);
+      syncForce();
+    };
+    const syncForce = () => {
+      const lock = lockFor(q('#ver').value, q('#effort').value);
+      q('#forceRow').classList.toggle('hidden', !lock);
+      if (lock) {
+        const verOpt = q('#ver').selectedOptions && q('#ver').selectedOptions[0];
+        const label = q('#effort').value || (q('#ver').value && verOpt ? verOpt.textContent : '') || lock.slug || 'this model';
+        q('#forceText').textContent = `Send anyway (Flow says ${label} is rate-limited until ${when(lock.until)})`;
+      }
+    };
+    const syncClarify = () => q('#clarifyRow').classList.toggle('hidden', !q('#autoClarify').checked);
+
+    q('#p').value = s.prompt; q('#n').value = s.count; q('#d').value = s.delay; q('#m').value = s.mode;
+    q('#aspect').value = s.aspectRatio || KEEP;
+    q('#wait').checked = s.wait !== false; q('#force').checked = !!s.force;
+    q('#holdImages').checked = s.holdImages !== false;
+    q('#smartStop').checked = s.smartStop !== false;
+    q('#autoAltModel').checked = s.autoAltModel !== false;
+    q('#autoCleanFailed').checked = s.autoCleanFailed !== false;
+    q('#autoClarify').checked = s.autoClarify !== false;
+    q('#clarifyReply').value = s.clarifyReply || DEFAULT_CLARIFY_REPLY;
+    holdEnabled = q('#holdImages').checked;
+    fillVersions(s.version); fillEfforts(s.effort); syncClarify();
+
+    onHeldChange = () => {
+      const fileCount = heldFiles.length;
+      const refCount = heldAttachments.references.length;
+      const totalHeld = fileCount > 0 ? fileCount : refCount;
+      q('#refTitle').textContent = `Held ingredients / images (${totalHeld})`;
+      q('#clearRef').classList.toggle('hidden', totalHeld === 0);
+      const refGrid = q('#refGrid');
+      refGrid.classList.toggle('hidden', totalHeld === 0);
+      if (fileCount > 0) {
+        refGrid.replaceChildren(...heldFiles.map((item, idx) => {
+          const chip = document.createElement('div');
+          chip.className = 'ref-chip';
+          chip.title = item.name;
+          if (item.dataUrl) {
+            setSafeInnerHTML(chip, `<img alt="${esc(item.name)}"><button type="button" class="ref-rm" title="Remove">×</button>`);
+            chip.querySelector('img').src = item.dataUrl;
+          } else {
+            setSafeInnerHTML(chip, `<span>${esc(item.name.slice(0, 8))}</span><button type="button" class="ref-rm" title="Remove">×</button>`);
+          }
+          const rmBtn = chip.querySelector('.ref-rm');
+          if (rmBtn) rmBtn.addEventListener('click', (e) => { e.stopPropagation(); removeHeldImageAt(idx); });
+          return chip;
+        }));
+      } else if (refCount > 0) {
+        refGrid.replaceChildren(...heldAttachments.references.map((ref, idx) => {
+          const chip = document.createElement('div');
+          chip.className = 'ref-chip';
+          chip.title = ref.field;
+          setSafeInnerHTML(chip, `<span>${esc(`ref #${idx + 1}`)}</span><button type="button" class="ref-rm" title="Remove">×</button>`);
+          const rmBtn = chip.querySelector('.ref-rm');
+          if (rmBtn) rmBtn.addEventListener('click', (e) => { e.stopPropagation(); removeHeldImageAt(idx); });
+          return chip;
+        }));
+      } else {
+        refGrid.replaceChildren();
+      }
+    };
+    onHeldChange();
+
+    q('#addRefBtn').addEventListener('click', () => q('#refInput').click());
+    q('#refInput').addEventListener('change', (e) => {
+      if (e.target && e.target.files && e.target.files.length) {
+        ingestHeldFiles(e.target.files, false);
+        e.target.value = '';
+      }
+    });
+    q('#clearRef').addEventListener('click', () => clearHeldImages());
+    q('#holdImages').addEventListener('change', () => {
+      holdEnabled = q('#holdImages').checked;
+      saveJSON(STORE_KEY, ui.read());
+    });
+    q('#autoClarify').addEventListener('change', () => {
+      syncClarify();
+      saveJSON(STORE_KEY, ui.read());
+    });
+    q('#refBox').addEventListener('dragover', (e) => { e.preventDefault(); });
+    q('#refBox').addEventListener('drop', (e) => {
+      e.preventDefault();
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+        ingestHeldFiles(e.dataTransfer.files, false);
+      }
+    });
+
+    const ui = {
+      read: () => ({
+        prompt: q('#p').value,
+        count: Math.max(1, Math.min(50, parseInt(q('#n').value, 10) || 1)),
+        delay: Math.max(0, Math.min(600, parseFloat(q('#d').value) || 0)),
+        mode: q('#m').value,
+        version: q('#ver').value,
+        effort: q('#effort').value,
+        aspectRatio: q('#aspect').value,
+        wait: q('#wait').checked,
+        force: q('#force').checked,
+        holdImages: q('#holdImages').checked,
+        smartStop: q('#smartStop').checked,
+        autoAltModel: q('#autoAltModel').checked,
+        autoCleanFailed: q('#autoCleanFailed').checked,
+        autoClarify: q('#autoClarify').checked,
+        clarifyReply: q('#clarifyReply').value.trim() || DEFAULT_CLARIFY_REPLY,
+      }),
+      setModelSelection: (verId, effortTitle) => {
+        fillVersions(verId);
+        fillEfforts(effortTitle);
+      },
+      status: (t) => { q('.status').textContent = t; console.log(TAG, t); },
+      setRunning: (on) => { q('.go').disabled = on; q('.stop').disabled = !on; },
+      renderLimits: (l) => {
+        const box = q('.limits');
+        if (!l) {
+          box.textContent = 'Could not load Flow credits.';
+          return;
+        }
+        const rows = [];
+        if (l.creditsLeft != null) {
+          const maxPart = l.creditsMax != null ? ` / ${esc(l.creditsMax)}` : '';
+          const resetPart = l.creditsReset ? ` · resets ${esc(resets(l.creditsReset))}` : '';
+          rows.push([`Flow credits: <b>${esc(l.creditsLeft)}</b>${maxPart}${resetPart}`, l.creditsLeft < 20]);
+        } else if (l.checkedOk) {
+          const planTag = l.planTier ? ` · ${esc(l.planTier)}` : '';
+          rows.push([`Flow credits: <b>Available</b> (no active cap${planTag})`, false]);
+        }
+        if (sessionStats.promptsSent > 0 || sessionStats.mediaGenerated > 0) {
+          rows.push([`Session usage: <b>${esc(sessionStats.mediaGenerated)}</b> generated · <b>${esc(sessionStats.promptsSent)}</b> sent`, false]);
+        }
+        for (const m of (l.lockedModels || [])) rows.push([`${esc(m.slug)} rate-limited until ${esc(when(m.until))}${m.until ? ` (${esc(rel(m.until))})` : ''}`, true]);
+        if (!l.lockedModels || !l.lockedModels.length) rows.push(['No models rate-limited.', false]);
+        for (const n of (l.notes || [])) rows.push([esc(n), true]);
+        setSafeInnerHTML(box, rows.map(([t, w]) => `<div class="${w ? 'warn' : ''}">${t}</div>`).join(''));
+      },
+    };
+    onLimitsUpdated = (newLimits) => {
+      ui.renderLimits(newLimits);
+      syncForce();
+    };
+
+    const lb = q('.lightbox');
+    const openLightbox = (job, item) => {
+      const lbImg = lb.querySelector('img');
+      const lbVid = lb.querySelector('video');
+      if (item.kind === 'video') {
+        lbImg.classList.add('hidden');
+        lbVid.classList.remove('hidden');
+        lbVid.src = item.url;
+      } else {
+        lbVid.classList.add('hidden');
+        lbImg.classList.remove('hidden');
+        lbImg.src = item.url;
+      }
+      q('#lbDl').href = item.url;
+      q('#lbDl').download = `flow-${job.n}.${item.kind === 'video' ? 'mp4' : 'png'}`;
+      lb.classList.remove('hidden');
+    };
+    const closeLightbox = () => lb.classList.add('hidden');
+    lb.addEventListener('click', (e) => { if (e.target === lb) closeLightbox(); });
+    q('#lbClose').addEventListener('click', closeLightbox);
+    root.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (!lb.classList.contains('hidden')) closeLightbox(); else togglePanel(false); } });
+
+    let galSnap = null;
+    onGalleryChange = () => {
+      q('#gal').classList.toggle('hidden', !jobs.length);
+      const done = jobs.filter((j) => j.state !== 'pending').length;
+      q('#galTitle').textContent = `Outputs ${done}/${jobs.length}`;
+      const snap = JSON.stringify(jobs.map((j) => [j.state, j.note, j.media.map((i) => i.url)]));
+      if (snap === galSnap) return;
+      galSnap = snap;
+      const grid = q('.grid');
+      grid.replaceChildren(...jobs.flatMap((job) => {
+        if (job.media.length) {
+          return job.media.map((item) => {
+            const t = document.createElement('div');
+            t.className = 'tile';
+            if (item.kind === 'video') {
+              setSafeInnerHTML(t, `<video muted playsinline></video><span class="n">${job.n}</span>`);
+              t.querySelector('video').src = item.url;
+            } else {
+              setSafeInnerHTML(t, `<img alt="Output ${job.n}" loading="lazy"><span class="n">${job.n}</span>`);
+              t.querySelector('img').src = item.url;
+            }
+            t.addEventListener('click', () => openLightbox(job, item));
+            return t;
+          });
+        }
+        const t = document.createElement('div');
+        t.className = `tile ${job.state}`;
+        t.title = job.state === 'failed' ? job.note : 'Generating…';
+        setSafeInnerHTML(t, job.state === 'failed' ? `⚠︎ Failed<span class="n">${job.n}</span>` : `<div class="spin"></div><span class="n">${job.n}</span>`);
+        return [t];
+      }));
+    };
+    q('#clearGal').addEventListener('click', () => { jobs.length = 0; galSnap = null; onGalleryChange(); });
+
+    const refreshLimits = async () => { limits = await loadLimits().catch(() => limits); ui.renderLimits(limits); syncForce(); };
+    const refreshVersions = async () => {
+      try { await loadVersions(); fillVersions(q('#ver').value); fillEfforts(q('#effort').value); } catch (e) { console.warn(TAG, e); }
+    };
+
+    const togglePanel = (forceOpen) => {
+      const opening = typeof forceOpen === 'boolean' ? forceOpen : !panel.classList.contains('open');
+      panel.classList.toggle('open', opening);
+      if (!opening) return;
+      capturePageComposerFiles();
+      refreshVersions();
+      if (!running) refreshLimits();
+    };
+    pageWin.__flowppToggle = togglePanel;
+    const closeBtn = q('#flowppClose');
+    if (closeBtn) closeBtn.addEventListener('click', () => togglePanel(false));
+    q('#refreshLimits').addEventListener('click', refreshLimits);
+    q('#ver').addEventListener('change', () => fillEfforts(q('#effort').value));
+    q('#effort').addEventListener('change', syncForce);
+    q('.go').addEventListener('click', () => { if (!running) run(ui); });
+    q('.stop').addEventListener('click', () => { cancelled = true; ui.status('Stopping after the current one…'); });
+    root.addEventListener('keydown', (e) => e.stopPropagation());
+    q('#p').addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !running) run(ui); });
+
+    const attach = () => {
+      try {
+        if (document.body && !document.body.contains(host)) document.body.appendChild(host);
+      } catch (e) { console.warn(TAG, 'attach deferred', e); }
+    };
+    attach();
+    setInterval(attach, 2000);
+  }
+    buildUI();
+    return {
+      open: (forceOpen) => pageWin.__flowppToggle && pageWin.__flowppToggle(forceOpen),
+      getState: () => ({
+        version: VERSION,
+        running,
+        heldFilesCount: heldFiles.length,
+        heldRefsCount: heldAttachments.references.length,
+        sessionStats: Object.assign({}, sessionStats),
+        limits,
+      }),
+    };
+  }
+
   async function start() {
     installAutoBackupProxy();
     // v28.1.0: the restore outcome is finally user-visible — the value
@@ -22937,6 +24605,7 @@
       toggleSlideshow();
     });
     if (detectPlatform() === "flow") {
+      GM_registerMenuCommand("⚡ Flow++ Bulk Runner", () => openFlowPPPanel(true));
       // v27.3.0: wipes the persisted per-model credit state (see
       // startFlowCreditTracker); the live harvest re-fills it on the next
       // tick. Registered only on Flow — the tracker is a Flow feature.
