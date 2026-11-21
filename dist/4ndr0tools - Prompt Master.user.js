@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name                4ndr0tools - Prompt Master
 // @namespace           https://github.com/4ndr0666/userscripts
-// @version             29.0.2
+// @version             29.0.3
 // @author              4ndr0666
 // @icon                data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @license             MIT
@@ -19718,7 +19718,7 @@ const __4NDR0_NET_API__ = (function () {
     GM_info.script &&
     GM_info.script.version
       ? GM_info.script.version
-      : "29.0.2"; // v29.0.1: TrustedHTML fix, zero UI changes, standalone token-chip net observer
+      : "29.0.3"; // v29.0.3: Flow++ pending-job poller (R6-2), dead-shim removal (R6-5), honest download extensions (R6-8)
   // v27.0.12: canonical backup snapshot helper. The beta's Gist push
   // called snapshotKeys() before it existed anywhere, so every "Sync Now"
   // threw a ReferenceError; takeAutoBackup() now shares this one helper
@@ -24221,7 +24221,7 @@ const pageWin = typeof unsafeWindow !== 'undefined' && unsafeWindow ? unsafeWind
   pageWin.__flowppLoaded = true;
 
   const TAG = '[Flow++]';
-  const VERSION = typeof SCRIPT_VERSION !== 'undefined' ? SCRIPT_VERSION : '29.0.0';
+  const VERSION = typeof SCRIPT_VERSION !== 'undefined' ? SCRIPT_VERSION : '29.0.3';
   const STORE_KEY = 'flowpp:settings';
   const HELD_ATTACH_KEY = 'flowpp:held-attachments';
   const HELD_FILES_KEY = 'flowpp:held-files';
@@ -24274,6 +24274,12 @@ const pageWin = typeof unsafeWindow !== 'undefined' && unsafeWindow ? unsafeWind
 
   const ESC_MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ESC_MAP[c]);
+  // (R6-8) Derive the download extension from the asset URL instead of
+  // hardcoding it — .webm outputs used to download named *.mp4.
+  const mediaExt = (url, fallback) => {
+    const m = String(url || '').split('?')[0].match(/\.(mp4|webm|mov|jpe?g|png|webp|gif|bmp|avif)$/i);
+    return m ? m[1].toLowerCase() : fallback;
+  };
 
   async function waitFor(fn, timeoutMs, stepMs = 250) {
     const t0 = Date.now();
@@ -24429,10 +24435,6 @@ const pageWin = typeof unsafeWindow !== 'undefined' && unsafeWindow ? unsafeWind
     });
   }
 
-  function persistHeldState() {
-    purgeLegacyHeldStorage();
-  }
-
   async function ingestHeldFiles(fileList, replaceExisting = false) {
     if (!fileList || isInternalAttach) return;
     const items = [...fileList].filter((f) => f && (!f.type || String(f.type).startsWith('image/') || /\.(?:png|jpe?g|webp|gif|bmp|svg|avif)$/i.test(f.name || '')));
@@ -24454,7 +24456,7 @@ const pageWin = typeof unsafeWindow !== 'undefined' && unsafeWindow ? unsafeWind
     }
     if (changed) {
       heldAttachments = { mediaIds: [], references: [] };
-      persistHeldState();
+      purgeLegacyHeldStorage();
       onHeldChange();
     }
   }
@@ -24479,7 +24481,7 @@ const pageWin = typeof unsafeWindow !== 'undefined' && unsafeWindow ? unsafeWind
     heldFiles.length = 0;
     heldAttachments = { mediaIds: [], references: [] };
     clearComposerFileInputs();
-    persistHeldState();
+    purgeLegacyHeldStorage();
     onHeldChange();
   }
 
@@ -24497,13 +24499,13 @@ const pageWin = typeof unsafeWindow !== 'undefined' && unsafeWindow ? unsafeWind
       heldAttachments = { mediaIds: [], references: [] };
       clearComposerFileInputs();
     }
-    persistHeldState();
+    purgeLegacyHeldStorage();
     onHeldChange();
   }
 
-  function hasHeldImages() {
-    return heldFiles.length > 0 || heldAttachments.references.length > 0 || heldAttachments.mediaIds.length > 0;
-  }
+  // (R6-5) The stateless Flow++ design keeps held ingredients in memory
+  // only; the legacy persistence shim (persistHeldState) and the uncalled
+  // hasHeldImages() were removed — zero dead code, zero misleading stubs.
 
   // Capture Flow reference/ingredient media descriptors from outgoing generation requests (batchGenerate, video:batchAsyncGenerate, etc.)
   function captureAttachmentsFromBody(b) {
@@ -24651,6 +24653,10 @@ const pageWin = typeof unsafeWindow !== 'undefined' && unsafeWindow ? unsafeWind
   const capturedFlowHeaders = {};
   let lastQuotaUrl = null;
   let lastGenerationResponse = null;
+  // (R6-2) FIFO log of sniffed generation responses so the pending-job
+  // poller can attribute late-arriving media to the job that sent it (the
+  // single lastGenerationResponse slot could only ever serve the newest).
+  const generationResponseLog = [];
 
   function harvestHeadersFromInit(init) {
     if (!init || !init.headers) return;
@@ -24985,6 +24991,8 @@ const pageWin = typeof unsafeWindow !== 'undefined' && unsafeWindow ? unsafeWind
             const errText = j?.error?.message || j?.operations?.find?.((o) => o?.error)?.error?.message || null;
             const clarifyText = j?.clarificationQuestion || j?.assistantMessage || null;
             lastGenerationResponse = { at: Date.now(), media, errText, clarifyText, raw: j };
+            generationResponseLog.push(lastGenerationResponse);
+            if (generationResponseLog.length > 32) generationResponseLog.shift();
             if (j?.remainingCredits != null || j?.credits != null) {
               limits = parseLimitsPayload(j, limits);
               onLimitsUpdated(limits);
@@ -25167,7 +25175,78 @@ const pageWin = typeof unsafeWindow !== 'undefined' && unsafeWindow ? unsafeWind
   function trackJob(job) {
     jobs.push({ clarifyCount: 0, pendingClarification: null, cleanedUp: false, ...job });
     onGalleryChange();
+    if (!pollTimer) pollTimer = setInterval(pollPendingJobs, 4000);
     return jobs[jobs.length - 1];
+  }
+
+  // ---------- (R6-2) pending-job poller ----------
+  // With "Wait for each generation" unchecked the runner used to fire every
+  // prompt and then abandon every job: inspectOnce ran once, 500 ms after
+  // the send, and NOTHING ever looked again (the Flow++ port shipped no
+  // poller at all — non-wait jobs spun as 'pending' forever, the gallery
+  // never resolved, and smart-stop was structurally blind to async
+  // results). The poller re-runs the DOM-delta harvest plus FIFO response
+  // attribution for every pending job until it resolves, errors, or times
+  // out at the same 15-minute bound the ChatGPT++ engine uses.
+  let pollTimer = null;
+  let polling = false;
+  async function pollPendingJobs() {
+    if (polling) return;
+    polling = true;
+    try {
+      const cfg = load();
+      for (const job of jobs) {
+        if (job.state !== 'pending' || job.clarifyBusy) continue;
+        try {
+          // 1. FIFO attribution of sniffed generation responses
+          const entry = generationResponseLog.find((r) => r.at >= job.sentAt - 500 && !r.claimedBy);
+          if (entry) {
+            entry.claimedBy = job.n;
+            for (const m of (entry.media || [])) {
+              if (!job.media.some((x) => x.url === m.url)) {
+                job.media.push(m);
+                sessionStats.mediaGenerated += 1;
+              }
+            }
+            if (entry.errText && job.media.length === 0) {
+              job.state = 'failed';
+              job.note = String(entry.errText).slice(0, 300);
+            }
+          }
+          // 2. DOM-delta harvest (covers 'same project' mode, where the
+          //    media lands in the page the job was sent from)
+          if (job.state === 'pending' && job.beforeUrls) {
+            for (const m of collectNewDomMedia(job.beforeUrls)) {
+              if (!job.media.some((x) => x.url === m.url)) {
+                job.media.push(m);
+                sessionStats.mediaGenerated += 1;
+              }
+            }
+          }
+          if (job.state === 'pending' && job.media.length > 0) {
+            job.state = 'done';
+            job.pendingClarification = null;
+          } else if (job.state === 'pending' && Date.now() - job.sentAt > 15 * 60_000) {
+            if (job.pendingClarification) {
+              // A clarification the sync loop could not answer is a
+              // recoverable run — report it, never auto-delete it.
+              job.state = 'failed';
+              job.note = `Clarification needed (unanswered — reply in the composer): ${String(job.pendingClarification).slice(0, 200)}`;
+            } else {
+              job.state = 'failed';
+              job.note = 'Timed out after 15 minutes.';
+              if (cfg.autoCleanFailed !== false && !job.cleanedUp) {
+                await cleanupFailedGeneration(job.projectId, job);
+              }
+            }
+          }
+        } catch (e) { console.warn(TAG, 'pending-job poll failed for #' + job.n, e); }
+      }
+    } finally {
+      polling = false;
+      onGalleryChange();
+      if (!jobs.some((j) => j.state === 'pending')) { clearInterval(pollTimer); pollTimer = null; }
+    }
   }
 
   // ---------- Runner: Smart Stop, Auto-Clarify, Auto-Alternate Model & Failed Cleanup ----------
@@ -25212,22 +25291,28 @@ const pageWin = typeof unsafeWindow !== 'undefined' && unsafeWindow ? unsafeWind
     };
 
     inspectOnce();
-    while (
-      !isCancelled() &&
-      job.state === 'pending' &&
-      job.pendingClarification &&
-      s.autoClarify !== false &&
-      (job.clarifyCount || 0) < MAX_CLARIFY_RETRIES
-    ) {
-      const question = job.pendingClarification;
-      job.pendingClarification = null;
-      job.clarifyCount = (job.clarifyCount || 0) + 1;
-      const reply = buildClarificationReply(question, s.clarifyReply);
-      ui.status(`Auto-answering Flow clarification (${job.clarifyCount}/${MAX_CLARIFY_RETRIES}) on ${stepIdx}/${totalCount}…`);
-      const nextMeta = await sendPrompt(reply, isCancelled, true, true);
-      if (isCancelled() || !nextMeta) return;
-      sendMeta = nextMeta;
-      inspectOnce();
+    // (R6-2) keep the poller off this job while its clarify loop owns the composer
+    job.clarifyBusy = true;
+    try {
+      while (
+        !isCancelled() &&
+        job.state === 'pending' &&
+        job.pendingClarification &&
+        s.autoClarify !== false &&
+        (job.clarifyCount || 0) < MAX_CLARIFY_RETRIES
+      ) {
+        const question = job.pendingClarification;
+        job.pendingClarification = null;
+        job.clarifyCount = (job.clarifyCount || 0) + 1;
+        const reply = buildClarificationReply(question, s.clarifyReply);
+        ui.status(`Auto-answering Flow clarification (${job.clarifyCount}/${MAX_CLARIFY_RETRIES}) on ${stepIdx}/${totalCount}…`);
+        const nextMeta = await sendPrompt(reply, isCancelled, true, true);
+        if (isCancelled() || !nextMeta) return;
+        sendMeta = nextMeta;
+        inspectOnce();
+      }
+    } finally {
+      job.clarifyBusy = false;
     }
     onGalleryChange();
   }
@@ -25293,6 +25378,7 @@ const pageWin = typeof unsafeWindow !== 'undefined' && unsafeWindow ? unsafeWind
             projectId: sendMeta.projectId,
             prompt: s.prompt,
             sentAt: sendMeta.sentAt,
+            beforeUrls: sendMeta.beforeUrls,
             state: 'pending',
             media: [],
             note: '',
@@ -25642,7 +25728,7 @@ const pageWin = typeof unsafeWindow !== 'undefined' && unsafeWindow ? unsafeWind
         lbImg.src = item.url;
       }
       q('#lbDl').href = item.url;
-      q('#lbDl').download = `flow-${job.n}.${item.kind === 'video' ? 'mp4' : 'png'}`;
+      q('#lbDl').download = `flow-${job.n}.${mediaExt(item.url, item.kind === 'video' ? 'mp4' : 'png')}`;
       lb.classList.remove('hidden');
     };
     const closeLightbox = () => lb.classList.add('hidden');

@@ -2,7 +2,8 @@
 /**
  * tests/behavior.test.mjs — v2.0.0 Behavioral & Runtime Smoke Suite
  * Runs kernel unit tests, kernel-boundary safety, family fixtures,
- * watermark batch, normalization symmetry, and QR round-trip checks.
+ * watermark batch, normalization symmetry, QR round-trip checks, and the
+ * dist load harness (modified installables evaluated headless).
  */
 
 import path from "node:path";
@@ -18,6 +19,7 @@ const SUITES = [
     ["watermark-batch-smoke", "tools/watermark-batch-smoke.mjs"],
     ["norm-symmetry-smoke", "tools/norm-symmetry-smoke.mjs"],
     ["qr-verify", "tools/qr-verify.mjs"],
+    ["dist-load-harness", "tools/r6-load-harness.mjs"],
 ];
 
 console.log("── tests/behavior.test.mjs (v2.0.0) ───────────────────────────────");

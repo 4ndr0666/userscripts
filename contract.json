@@ -14,10 +14,10 @@
       "net.js",
       "store.js"
     ],
-    "installables": 38,
+    "installables": 39,
     "canonical_url_base": "https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/"
   },
-  "acceptance_policy": "Pure 4ndr0neering v2.0.0 fail-closed contract. Every mandatory criterion must exit 0 with zero regressions across all 38 dist/ installables, unchanged @updateURL/@downloadURL channels, zero remote @import font fetches, full 3lectric-Glass compliance, and zero hotkey collisions.",
+  "acceptance_policy": "Pure 4ndr0neering v2.0.0 fail-closed contract. Every mandatory criterion must exit 0 with zero regressions across all 39 dist/ installables, unchanged @updateURL/@downloadURL channels, zero remote @import font fetches, full 3lectric-Glass compliance, and zero hotkey collisions.",
   "criteria": [
     {
       "id": "build-and-inventory",

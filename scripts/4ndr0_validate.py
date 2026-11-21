@@ -152,6 +152,42 @@ def main() -> int:
             print("FAIL_DEFECT: contract.json contains no criteria", file=sys.stderr)
             return 1
 
+        # Architecture cross-verification (R6-6): the contract's architecture
+        # block used to be decorative — nothing compared it to the repository
+        # it governed, so a stale installables count (38 declared vs the real
+        # 39 after ChatGPT++ landed) still certified clean. The declarative
+        # contract now fail-closes on drift: dirs must exist, kernel_order
+        # must match kernel/ contents, and the declared installables count
+        # must equal the dist/ population it claims to govern.
+        arch = contract.get("architecture") or {}
+        arch_defects: List[str] = []
+        dist_dir = root / str(arch.get("dist_dir", "dist"))
+        src_dir = root / str(arch.get("source_dir", "src"))
+        kernel_dir = root / str(arch.get("kernel_dir", "kernel"))
+        if not dist_dir.is_dir():
+            arch_defects.append(f"architecture.dist_dir '{dist_dir.name}/' not found")
+        if not src_dir.is_dir():
+            arch_defects.append(f"architecture.source_dir '{src_dir.name}/' not found")
+        if not kernel_dir.is_dir():
+            arch_defects.append(f"architecture.kernel_dir '{kernel_dir.name}/' not found")
+        expected_kernel = arch.get("kernel_order") or []
+        actual_kernel = sorted(p.name for p in kernel_dir.glob("*.js")) if kernel_dir.is_dir() else []
+        if expected_kernel and sorted(expected_kernel) != actual_kernel:
+            arch_defects.append(
+                f"architecture.kernel_order {expected_kernel} != kernel/ contents {actual_kernel}"
+            )
+        if dist_dir.is_dir():
+            dist_count = len(list(dist_dir.glob("*.user.js")))
+            declared = arch.get("installables")
+            if isinstance(declared, int) and declared != dist_count:
+                arch_defects.append(
+                    f"architecture.installables={declared} but dist/ holds {dist_count} installables"
+                )
+        for d in arch_defects:
+            print(f"FAIL_DEFECT: contract architecture drift: {d}", file=sys.stderr)
+        if arch_defects:
+            return 1
+
         results = []
         defects: List[str] = []
         unverified: List[str] = []

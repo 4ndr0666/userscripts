@@ -2,7 +2,7 @@
 // @name         4ndr0tools - ChatGPT++
 // @namespace    https://github.com/4ndr0666/userscripts
 // @author       4ndr0666
-// @version      1.8.0
+// @version      1.8.1
 // @description  Send one image prompt (with held reference images, smart stop, auto-model alternation, auto-clarification, failed-thread cleanup, and accurate live usage limits) to ChatGPT many times, pick model/effort, watch usage limits, and see the images in a live gallery.
 // @icon         data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20128%20128%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @downloadURL  https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20ChatGPT++.user.js
@@ -26,7 +26,7 @@
   pageWin.__bulkimgLoaded = true;
 
   const TAG = '[BulkImg]';
-  const VERSION = '1.8.0';
+  const VERSION = '1.8.1';
   const STORE_KEY = 'bulkimg:settings';
   const HELD_ATTACH_KEY = 'bulkimg:held-attachments';
   const HELD_FILES_KEY = 'bulkimg:held-files';
@@ -120,6 +120,12 @@
     return d.toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' });
   };
   const resets = (iso) => (!iso ? 'later' : rel(iso));
+  // (R6-3) Signed asset URLs carry an extension; derive it honestly instead
+  // of hardcoding .png (webp/jpeg assets used to download named *.png).
+  const assetExt = (url, fallback = 'png') => {
+    const m = String(url || '').split('?')[0].match(/\.(jpe?g|png|webp|gif|bmp|avif)$/i);
+    return m ? m[1].toLowerCase() : fallback;
+  };
 
   // ---------- settings & persistent JSON helpers ----------
   const defaults = {
@@ -227,14 +233,6 @@
     });
   }
 
-  function persistHeldState() {
-    purgeLegacyHeldStorage();
-  }
-
-  function restoreHeldFilesFromStorage() {
-    purgeLegacyHeldStorage();
-  }
-
   async function ingestHeldFiles(fileList, replaceExisting = false) {
     if (!fileList || isInternalAttach) return;
     const items = [...fileList].filter((f) => f && (!f.type || String(f.type).startsWith('image/') || /\.(?:png|jpe?g|webp|gif|bmp|svg|avif)$/i.test(f.name || '')));
@@ -256,7 +254,7 @@
     }
     if (changed) {
       heldAttachments = { pointers: [], attachments: [] };
-      persistHeldState();
+      purgeLegacyHeldStorage();
       onHeldChange();
     }
   }
@@ -281,7 +279,7 @@
     heldFiles.length = 0;
     heldAttachments = { pointers: [], attachments: [] };
     clearComposerFileInputs();
-    persistHeldState();
+    purgeLegacyHeldStorage();
     onHeldChange();
   }
 
@@ -311,13 +309,14 @@
       heldAttachments = { pointers: [], attachments: [] };
       clearComposerFileInputs();
     }
-    persistHeldState();
+    purgeLegacyHeldStorage();
     onHeldChange();
   }
 
-  function hasHeldImages() {
-    return heldFiles.length > 0 || heldAttachments.pointers.length > 0;
-  }
+  // (R6-5) The stateless v1.6+ design keeps held images in memory only; the
+  // legacy persistence shims (persistHeldState / restoreHeldFilesFromStorage /
+  // hasHeldImages) were removed — the first two were no-op stubs whose names
+  // lied about the design, the third had zero callers.
 
   function captureAttachmentsFromBody(b) {
     if (!holdEnabled || !b || !Array.isArray(b.messages) || !b.messages.length) return false;
@@ -1167,8 +1166,18 @@
                   job.note = 'Image asset generated, but signed download URL request was blocked or failed.';
                 }
               } else if (job.images.length > 0) {
-                job.state = 'done';
-                job.pendingClarification = null;
+                // (R6-4) Partial download failure: MAX_DL_RETRIES exists for
+                // exactly this window, but the old branch required
+                // images.length === 0 to arm it — a job that fetched 1 of 2
+                // images went straight to done with the second silently
+                // missing. Stay pending while the retry budget lasts so the
+                // next tick re-fetches only the missing ids.
+                if (dlFailed && (job.dlRetries || 0) < MAX_DL_RETRIES) {
+                  job.dlRetries = (job.dlRetries || 0) + 1;
+                } else {
+                  job.state = 'done';
+                  job.pendingClarification = null;
+                }
               } else {
                 const assistantText = textOf([...activeSeg].reverse().find((m) => m.author?.role === 'assistant' && textOf(m)) || { content: {} });
                 if (
@@ -1177,6 +1186,10 @@
                   isAssistantClarificationQuestion(assistantText)
                 ) {
                   job.pendingClarification = assistantText;
+                  // (R6-1) The poller is the only consumer left standing in
+                  // the default non-wait mode — evaluateJobAfterSend's loop
+                  // has long returned by the time the question lands.
+                  maybeAnswerPendingClarification(job, cfg);
                 } else {
                   job.state = 'failed';
                   job.note = assistantText.slice(0, 300) || 'No image returned.';
@@ -1186,9 +1199,17 @@
                 }
               }
             } else if (Date.now() - job.sentAt > 15 * 60_000) {
-              job.state = 'failed'; job.note = 'Timed out after 15 minutes.';
-              if (cfg.autoCleanFailed !== false && !job.cleanedUp) {
-                await cleanupFailedConversation(convId, job);
+              if (job.pendingClarification) {
+                // (R6-1) An unanswered clarification is a recoverable
+                // thread, not a dead one — report it honestly and NEVER
+                // auto-delete it out from under the operator.
+                job.state = 'failed';
+                job.note = `Clarification needed (unanswered — open the chat to reply): ${String(job.pendingClarification).slice(0, 200)}`;
+              } else {
+                job.state = 'failed'; job.note = 'Timed out after 15 minutes.';
+                if (cfg.autoCleanFailed !== false && !job.cleanedUp) {
+                  await cleanupFailedConversation(convId, job);
+                }
               }
             }
           } catch (e) { console.warn(TAG, 'poll failed for job #' + job.n, e); }
@@ -1208,6 +1229,62 @@
     onGalleryChange();
     if (!pollTimer) pollTimer = setInterval(pollGallery, 4000);
     return jobs[jobs.length - 1];
+  }
+
+  // ---------- (R6-1) asynchronous clarification consumer ----------
+  // evaluateJobAfterSend's clarify loop only lives while the run loop is
+  // still standing on the job's chat. In the default non-wait mode ("New
+  // chat for each image" + no wait) the page moves on within ~1 s, the
+  // question lands tens of seconds later, and the poller used to set
+  // job.pendingClarification that nothing ever consumed: a 15-minute spin
+  // ending in a failure whose auto-clean then DELETED a perfectly
+  // recoverable thread — while "Auto-answer clarification questions" was
+  // ticked on. The poller now answers asynchronously whenever the page is
+  // actually sitting on the question's conversation and no run owns the
+  // composer (the run loop's own evaluateJobAfterSend covers the in-run
+  // window); every other case resolves through the timeout branch's honest
+  // clarify note with the thread left alive.
+  const clarifyInFlight = new Set();
+  function maybeAnswerPendingClarification(job, cfg) {
+    if (!job || !job.pendingClarification) return;
+    if (running || clarifyInFlight.has(job.n)) return;
+    if (cfg && cfg.autoClarify === false) return;
+    if ((job.clarifyCount || 0) >= MAX_CLARIFY_RETRIES) return;
+    if (convIdOf(location.pathname) !== job.convId) return; // not on this chat — cannot use the composer
+    clarifyInFlight.add(job.n);
+    (async () => {
+      let lastQuestion = null;
+      try {
+        while (
+          !running &&
+          job.state === 'pending' &&
+          job.pendingClarification &&
+          (cfg || load()).autoClarify !== false &&
+          (job.clarifyCount || 0) < MAX_CLARIFY_RETRIES
+        ) {
+          const question = job.pendingClarification;
+          lastQuestion = question;
+          job.pendingClarification = null;
+          job.clarifyCount = (job.clarifyCount || 0) + 1;
+          const reply = buildClarificationReply(question, (cfg || load()).clarifyReply);
+          if (!job.clarifyNorms) job.clarifyNorms = new Set();
+          job.clarifyNorms.add(norm(reply));
+          console.log(TAG, `auto-answering clarification (${job.clarifyCount}/${MAX_CLARIFY_RETRIES}) on job #${job.n} (async)`);
+          await sendPrompt(reply, () => false, true, true);
+          await pollGallery();
+        }
+      } catch (e) {
+        // The question was consumed but not answered — put it back so the
+        // timeout branch reports a clarify-pending thread (and keeps it).
+        if (job.state === 'pending' && !job.pendingClarification && lastQuestion) {
+          job.pendingClarification = lastQuestion;
+        }
+        console.warn(TAG, 'async clarification failed for job #' + job.n, e);
+      } finally {
+        clarifyInFlight.delete(job.n);
+        onGalleryChange();
+      }
+    })();
   }
 
   // ---------- runner (with Smart Stop, Auto-Clarify, Auto-Alternate Model & Failed Thread Cleanup) ----------
@@ -1649,12 +1726,52 @@
     // Gallery
     const lb = q('.lightbox');
     let lbJob = null;
-    const openLightbox = (job, img) => { lbJob = job; lb.querySelector('img').src = img.url; q('#lbDl').href = img.url; q('#lbDl').download = `bulk-${job.n}-${job.images.indexOf(img) + 1}.png`; lb.classList.remove('hidden'); };
+    let lbImg = null;
+    const resignLightboxUrl = async () => {
+      if (!lbJob || !lbImg) return;
+      try {
+        const d = await api(`/backend-api/files/download/${lbImg.id}?conversation_id=${lbJob.convId}&inline=false`);
+        if (d && d.download_url && d.download_url !== lbImg.url) {
+          lbImg.url = d.download_url;
+          q('#lbDl').href = d.download_url;
+          const shown = lb.querySelector('img');
+          if (shown && !lb.classList.contains('hidden')) shown.src = d.download_url;
+        }
+      } catch (err) { console.warn(TAG, 'signed-URL refresh failed; using last known URL', err); }
+    };
+    const openLightbox = (job, img) => {
+      lbJob = job; lbImg = img;
+      const shown = lb.querySelector('img');
+      shown.dataset.retried = '';
+      shown.onerror = async () => {
+        if (shown.dataset.retried === '1') return;
+        shown.dataset.retried = '1';
+        await resignLightboxUrl();
+        if (lbImg && lbImg.url) shown.src = lbImg.url;
+      };
+      shown.src = img.url;
+      q('#lbDl').href = img.url;
+      q('#lbDl').download = `bulk-${job.n}-${job.images.indexOf(img) + 1}.${assetExt(img.url)}`;
+      lb.classList.remove('hidden');
+    };
     const closeLightbox = () => lb.classList.add('hidden');
     lb.addEventListener('click', (e) => { if (e.target === lb) closeLightbox(); });
     q('#lbClose').addEventListener('click', closeLightbox);
     q('#lbChat').addEventListener('click', () => { if (lbJob) window.open(`/c/${lbJob.convId}`, '_blank'); });
     root.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLightbox(); });
+    // (R6-3) The download anchor used to navigate with whatever signed URL
+    // the tile happened to capture — open a gallery hours later and the
+    // browser just fails on an expired link (the v1.4 asset-vault
+    // "downloads never die" guarantee, weakened by the v1.6 rewrite).
+    // The click now re-signs first, then navigates on the fresh URL.
+    q('#lbDl').addEventListener('click', async (e) => {
+      if (!lbImg) return;
+      if (q('#lbDl').dataset.resigned === '1') { delete q('#lbDl').dataset.resigned; return; }
+      e.preventDefault();
+      await resignLightboxUrl();
+      q('#lbDl').dataset.resigned = '1';
+      q('#lbDl').click();
+    });
 
     let galSnap = null;
     onGalleryChange = () => {
