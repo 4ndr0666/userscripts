@@ -1,0 +1,164 @@
+{
+  "version": "1.0",
+  "contract_id": "userscripts-pr-triage",
+  "description": "4ndr0neering v8.3.0 System One decision-boundary contract (DB-001..DB-012) for advisory contributor PR & suite triage on 4ndr0666/userscripts. Final merge acceptance remains deterministically enforced by contract.json and npm run check.",
+  "questions_module": {
+    "path": "tools/pr-triage-questions.mjs",
+    "sha256": "da30f03c086bd483eb34e5fc220db6321180cab8af10af67662b26677b28c739"
+  },
+  "on_api_error": "escalate",
+  "log_request_payloads": true,
+  "state_fields": [
+    "pr_title",
+    "pr_body",
+    "pr_diff_summary",
+    "changed_paths"
+  ],
+  "questions": [
+    {
+      "id": "touches_dist_only",
+      "primitive": "noul",
+      "request_group": "pr_triage_bundle",
+      "prompt": "Does `pr_diff_summary` edit generated `dist/` userscripts without corresponding upstream edits in `src/` or `kernel/`?",
+      "true_criterion": "The diff modifies one or more files in `dist/` while leaving matching `src/` and `kernel/` sources untouched.",
+      "false_criterion": "The diff edits upstream `src/`, `kernel/`, `tools/`, `tests/`, or `scripts/` sources (with or without regenerated `dist/` artifacts).",
+      "low_threshold": 0.3,
+      "high_threshold": 0.7
+    },
+    {
+      "id": "touches_kernel_module",
+      "primitive": "noul",
+      "request_group": "pr_triage_bundle",
+      "prompt": "Does `pr_diff_summary` modify shared runtime code inside `kernel/`?",
+      "true_criterion": "At least one of the 7 kernel modules (`brand.js`, `core.js`, `glass.js`, `hosts.js`, `hotkeys.js`, `net.js`, `store.js`) is modified.",
+      "false_criterion": "All changed files reside outside the `kernel/` directory.",
+      "low_threshold": 0.3,
+      "high_threshold": 0.7
+    },
+    {
+      "id": "adds_new_script",
+      "primitive": "noul",
+      "request_group": "pr_triage_bundle",
+      "prompt": "Does `pr_diff_summary` introduce a brand-new installable userscript in `src/`?",
+      "true_criterion": "A new `src/4ndr0tools - <Name>.user.js` file or new modular `src/<name>/meta.json` directory is added.",
+      "false_criterion": "The PR only updates existing scripts, tooling, tests, or documentation without adding a new installable.",
+      "low_threshold": 0.3,
+      "high_threshold": 0.7
+    },
+    {
+      "id": "target_family",
+      "primitive": "choice",
+      "request_group": "pr_triage_bundle",
+      "speculative": true,
+      "null_guard_noul_id": "adds_new_script",
+      "prompt": "Which canonical `userscripts` suite family best matches the new script described in `pr_diff_summary`?",
+      "options": [
+        {
+          "name": "media_and_links",
+          "criterion": "Link extraction, streaming, file hosts, or media-download utilities."
+        },
+        {
+          "name": "images",
+          "criterion": "Image galleries, reverse image search, or image host enhancements."
+        },
+        {
+          "name": "video_and_players",
+          "criterion": "Video player controls, filters, or video platform utilities."
+        },
+        {
+          "name": "forums",
+          "criterion": "Forum navigation, thread extraction, confirmation bypass, or model search utilities."
+        },
+        {
+          "name": "privacy_and_security",
+          "criterion": "Ad/tracker blocking, purge, service guard, recon, or paywall bypass utilities."
+        },
+        {
+          "name": "ux_utilities",
+          "criterion": "General browser UX, windowing, translation, login autofill, HostWarp, or PageCraft utilities."
+        },
+        {
+          "name": "sovereign_platforms",
+          "criterion": "AI/LLM platform suites and creative studio tools."
+        }
+      ]
+    },
+    {
+      "id": "risk_severity",
+      "primitive": "score",
+      "request_group": "pr_triage_bundle",
+      "prompt": "What is the blast radius of the changes described in `pr_diff_summary`?",
+      "levels": [
+        {
+          "name": "low_cosmetic",
+          "criterion": "Documentation, comments, metadata wording, or isolated single-script CSS/UI tweaks."
+        },
+        {
+          "name": "medium_single_script",
+          "criterion": "Behavioral logic change confined to one userscript in `src/` with no shared kernel or build changes."
+        },
+        {
+          "name": "high_kernel_or_build",
+          "criterion": "Changes to `kernel/`, `tools/build.mjs`, `contract.json`, or cross-cutting security/OPSEC gates affecting all 39 installables."
+        }
+      ]
+    }
+  ],
+  "truth_table": {
+    "default_action": "escalate_to_maintainer_review",
+    "rules": [
+      {
+        "id": "dist_only_pr_port_required",
+        "when": {
+          "touches_dist_only": "yes"
+        },
+        "action": "request_port_to_src_before_merge",
+        "rationale": "dist/ is a derived build artifact; edits must be ported into src/ or kernel/ and rebuilt via npm run check."
+      },
+      {
+        "id": "bimodal_risk_escalate",
+        "when": {
+          "risk_severity": "bimodal"
+        },
+        "action": "escalate_to_maintainer_review",
+        "rationale": "Bimodal score distribution indicates conflicting blast-radius signals; require human maintainer review."
+      },
+      {
+        "id": "uncertain_dist_or_kernel",
+        "when": {
+          "touches_dist_only": "uncertain"
+        },
+        "action": "escalate_to_maintainer_review",
+        "rationale": "Indeterminate Noul middle band routes fail-closed to maintainer review."
+      },
+      {
+        "id": "kernel_change_full_audit",
+        "when": {
+          "touches_dist_only": "no",
+          "touches_kernel_module": "yes"
+        },
+        "action": "require_full_audit_and_kernel_smoke",
+        "rationale": "Kernel modifications affect all 16+ NetHook/modular consumers and require gh 4ndr0tools audit."
+      },
+      {
+        "id": "new_script_onboarding",
+        "when": {
+          "touches_dist_only": "no",
+          "adds_new_script": "yes"
+        },
+        "action": "register_family_and_bump_contract_installables",
+        "rationale": "New installable requires FAMILIES registration in tools/inventory.mjs and architecture.installables bump in contract.json."
+      },
+      {
+        "id": "standard_src_update",
+        "when": {
+          "touches_dist_only": "no",
+          "touches_kernel_module": "no",
+          "adds_new_script": "no"
+        },
+        "action": "run_standard_check_and_bump_version",
+        "rationale": "Routine src/ or tooling update governed by npm run check + npm test."
+      }
+    ]
+  }
+}

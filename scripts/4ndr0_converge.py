@@ -8,9 +8,9 @@ from __future__ import annotations
 import argparse, hashlib, json, os, re, subprocess, sys, tempfile
 from pathlib import Path
 
-VERSION='8.2.0'
+VERSION='8.3.0'
 STATUSES={'PENDING','VERIFIED','DEFECT','UNVERIFIED','BLOCKED'}
-GATES={'functional','regression','performance','security','reliability','persistence','provenance','integration','delivery','other'}
+GATES={'functional','regression','performance','decision','structural','security','reliability','persistence','provenance','integration','delivery','other'}
 OWNERS={'engineer','user','external'}
 
 def sha(raw:bytes)->str:return hashlib.sha256(raw).hexdigest()
@@ -30,7 +30,7 @@ def inside(root:Path,name:str)->Path:
     return result
 
 def validate_contract(doc:dict)->None:
-    if not isinstance(doc,dict) or doc.get('version')!='1.0':raise ValueError('contract.version must be 1.0')
+    if not isinstance(doc,dict) or doc.get('version') not in {'1.0','2.0.0'}:raise ValueError('contract.version must be 1.0 or 2.0.0')
     items=doc.get('criteria')
     if not isinstance(items,list) or not items:raise ValueError('contract.criteria must be a non-empty array')
     ids=set();mandatory_count=0

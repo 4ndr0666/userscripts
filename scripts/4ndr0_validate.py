@@ -55,7 +55,7 @@ argon_hash = _load_sibling("ndr0_hash", "4ndr0_hash.py")
 argon_align = _load_sibling("ndr0_align", "4ndr0_align.py")
 
 PROTOCOL = "4NDR0-GUP-8.0"
-VERSION = "8.2.0"
+VERSION = "8.3.0"
 
 TIER_SURFACES: Dict[str, set[str]] = {
     "T0": {"entry_points", "tests"},
@@ -282,8 +282,8 @@ def main() -> int:
         if delivery_mode not in {"WIP_CHECKPOINT", "BOUNDED_HANDOFF", "CERTIFIED_RELEASE"}:
             defects.append(f"invalid delivery_mode '{delivery_mode}'")
 
-        if e.get("protocol_version") not in {"8.0.0", "8.1.0", "8.2.0"}:
-            defects.append(f"protocol_version must be '8.0.0', '8.1.0', or '8.2.0' (got {e.get('protocol_version')!r})")
+        if e.get("protocol_version") not in {"8.0.0", "8.1.0", "8.2.0", "8.3.0"}:
+            defects.append(f"protocol_version must be '8.0.0', '8.1.0', '8.2.0', or '8.3.0' (got {e.get('protocol_version')!r})")
 
         try:
             head = git(root, "rev-parse", "HEAD")
@@ -596,7 +596,7 @@ def main() -> int:
         # v8.2 completion gate: legacy file-backed evidence success is not task
         # completion unless every MANDATORY acceptance-contract gate is verified.
         acceptance_state = None
-        if e.get("protocol_version") == "8.2.0":
+        if e.get("protocol_version") in {"8.2.0", "8.3.0"}:
             if not args.convergence_contract or not args.convergence_ledger:
                 defects.append("v8.2 requires --convergence-contract and --convergence-ledger; no implicit acceptance waiver")
             else:
@@ -644,7 +644,7 @@ def main() -> int:
             "verified_claims": verified_claims,
             "bounded_claims": bounded_claims,
             "acceptance_state": acceptance_state,
-            "task_complete": bool(overall_status == "CERTIFIED" and acceptance_state and acceptance_state.get("release_eligible")) if e.get("protocol_version") == "8.2.0" else None,
+            "task_complete": bool(overall_status == "CERTIFIED" and acceptance_state and acceptance_state.get("release_eligible")) if e.get("protocol_version") in {"8.2.0", "8.3.0"} else None,
         }
         encoded = json.dumps(result, indent=2, sort_keys=True) + "\n"
         if args.output:
@@ -656,7 +656,7 @@ def main() -> int:
             return 1
         if args.require_full_certification and overall_status != "CERTIFIED":
             return 1
-        if e.get("protocol_version") == "8.2.0" and not result["task_complete"]:
+        if e.get("protocol_version") in {"8.2.0", "8.3.0"} and not result["task_complete"]:
             return 1  # v8.2 never uses a bounded pass as a success exit for mandatory work.
         return 0
     except (OSError, ValueError, json.JSONDecodeError, RuntimeError, subprocess.SubprocessError) as exc:

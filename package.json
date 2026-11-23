@@ -1,7 +1,7 @@
 {
   "name": "4ndr0666tools-suite",
   "version": "8.0.0",
-  "description": "\u2620 4ndr0666tools \u2620 \u2014 flat, single-source userscript suite governed by pure 4ndr0neering. Kernel-powered, 3lectric-Glass native, OPSEC-verified, and hotkey-collision free.",
+  "description": "☠ 4ndr0666tools ☠ — flat, single-source userscript suite governed by pure 4ndr0neering. Kernel-powered, 3lectric-Glass native, OPSEC-verified, and hotkey-collision free.",
   "author": "4ndr0666",
   "license": "MIT",
   "type": "module",
@@ -16,7 +16,8 @@
     "smoke": "node tools/kernel-smoke.mjs && node tools/kernel-boundary-smoke.mjs && node tools/family-fixture-smoke.mjs && node tools/watermark-batch-smoke.mjs && node tools/norm-symmetry-smoke.mjs && node tools/tt-browser-smoke.mjs",
     "smoke:browser": "node tools/flow-chip-browser-smoke.mjs && node tools/ig-wall-browser-smoke.mjs && node tools/pm-grid-browser-smoke.mjs && node tools/tt-browser-smoke.mjs",
     "smoke:fixture": "bash tests/browser_fixture_check.sh",
-    "perf": "python3 scripts/4ndr0_perf.py run --root . --contract perf.contract.json --output /tmp/4ndr0-perf-result.json"
+    "perf": "python3 scripts/4ndr0_perf.py run --root . --contract perf.contract.json --output /tmp/4ndr0-perf-result.json",
+    "decision": "node tools/decision-triage-smoke.mjs"
   },
   "devDependencies": {}
 }

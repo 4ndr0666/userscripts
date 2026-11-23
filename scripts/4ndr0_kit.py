@@ -371,7 +371,7 @@ if [ "$ALREADY" -eq 0 ]; then
         fi
         git -C "$REPO_DIR" add -f -- "${dest_abs#"$REPO_DIR/"}"
       fi
-    done < <(git -C "$TMP_DIR/bundle_repo" diff --name-only "$PIN_BASE" "$PIN_TIP")
+    done < <(git -C "$TMP_DIR/bundle_repo" -c core.quotePath=false diff --name-only "$PIN_BASE" "$PIN_TIP")
 
     COMMIT_MSG="$(git -C "$TMP_DIR/bundle_repo" log -1 --format=%B "$PIN_TIP")"
     if ! git -C "$REPO_DIR" diff --cached --quiet; then
@@ -697,7 +697,7 @@ def run_battery(repo_root: Path, kit_path: Path) -> dict:
             subprocess.run(["git", "-C", str(c_p1c), "config", "user.name", "HostUser"], check=True)
             subprocess.run(["git", "-C", str(c_p1c), "config", "user.email", "host@example.com"], check=True)
             # Copy all baseline files into c_p1c/scr/
-            for rel_f in git(c_p1, "ls-tree", "-r", "--name-only", pin_base).splitlines():
+            for rel_f in git(c_p1, "-c", "core.quotePath=false", "ls-tree", "-r", "--name-only", pin_base).splitlines():
                 if not rel_f:
                     continue
                 dest_f = c_p1c_sub / rel_f

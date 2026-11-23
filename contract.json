@@ -127,6 +127,18 @@
         "tests/verify_delivery.sh"
       ],
       "timeout_seconds": 120
+    },
+    {
+      "id": "decision-boundary-contract",
+      "description": "System One PR triage decision contract (DB-001..DB-012), DRY questions_module SHA-256, and offline truth-table fixtures pass fail-closed.",
+      "mandatory": true,
+      "gate": "decision",
+      "owner": "engineer",
+      "command": [
+        "node",
+        "tools/decision-triage-smoke.mjs"
+      ],
+      "timeout_seconds": 60
     }
   ]
 }
