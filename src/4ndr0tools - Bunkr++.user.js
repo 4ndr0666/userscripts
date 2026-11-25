@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Bunkr++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      7.7.3
+// @version      7.7.4
 // @author       4ndr0666
 // @description  Direct URL routing, auto-sort, hide visited, bypass dl gateway, bulk download, m3u8/CDN URL aggregation (page-context net-hook + per-item stream glyphs + album-wide STREAMS aggregation), broken-link repair, power-user hotkeys, LinkMaster-grade m3u8 stream resolution with gateway fallback, MPV dispatch (URI/bridge), web-archive dead-CDN resurrection (archive.org / archive.is), captcha-aware transport retry
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -27,6 +27,20 @@
 // @updateURL    https://github.com/4ndr0666/userscripts/raw/refs/heads/main/dist/4ndr0tools%20-%20Bunkr++.user.js
 // @license      MIT
 // ==/UserScript==
+// v7.7.4: Bunkr advanced-view (?advanced=1) vs pagination-view DOM/API
+// update: (1) activateAdvancedView now detects active ?advanced=1 /
+// #resultsCounter / window.albumFiles state, targets .mode-toggle-btn
+// and a[href*="advanced=1"] while excluding #advToggle/.adv-btn (the
+// filter drawer), preserves sort=size&order=desc, and falls back to
+// ?advanced=1 when .pagination is present; (2) forceLargestFirst waits
+// for #galleryGrid .theItem hydration in advanced view before clicking
+// .btnSize; (3) ITEM_SEL, importVisited, and diagnostic gridItemsCount
+// scope to #galleryGrid/.grid-images/.theItem so <main class="grid">
+// children are never matched as cards; (4) extractGridItemName reads
+// .theName / .grid-images_box-txt p / title instead of empty overlay <a>;
+// (5) scanFiles reads full window.albumFiles in advanced view (respecting
+// #advFilterInput) so items beyond the initial 100 lazy-rendered cards
+// are included in bulk download and stream aggregation.
 // v7.7.2 (WO-01 round 17): THE PRISTINE-SNAPSHOT GUARD — the broken-link
 // fixer stored psiOrigSrc UNCONDITIONALLY on every error event, so the
 // second error (whose src is already the REWRITTEN canonical-domain
@@ -242,7 +256,7 @@
         _sentinelRoot.setAttribute(_SENTINEL_ATTR, String(Date.now()));
     } catch (_) { console.debug('BUNKR interceptor:', _); /* EAFP — proceed; guards below absorb re-runs */ }
 
-    const SCRIPT_VERSION = '7.7.3';
+    const SCRIPT_VERSION = '7.7.4';
     console.log(`%c[4NDR0tools] Bunkr++ v${SCRIPT_VERSION}-Ψ`, 'color:#00E5FF; font-family:monospace; font-weight:bold;');
 
     // =========================================================================
@@ -1129,12 +1143,65 @@
     // =========================================================================
     // MODULE 4: STATE-AWARE SORT HIJACK (Polled)
     // =========================================================================
+    const GRID_ITEM_SEL = '#galleryGrid > .theItem, .grid-images > .theItem, .theItem, .grid-images_box';
+
+    function getAlbumFilesData() {
+        try {
+            if (typeof unsafeWindow !== 'undefined' && Array.isArray(unsafeWindow.albumFiles) && unsafeWindow.albumFiles.length > 0) {
+                return unsafeWindow.albumFiles;
+            }
+        } catch (_) { /* EAFP: cross-compartment sandbox */ }
+        try {
+            if (Array.isArray(window.albumFiles) && window.albumFiles.length > 0) {
+                return window.albumFiles;
+            }
+        } catch (_) { /* EAFP */ }
+        return null;
+    }
+
+    function isAdvancedViewActive() {
+        try {
+            if (new URLSearchParams(window.location.search).get('advanced') === '1') return true;
+        } catch (_) { /* EAFP */ }
+        return !!(document.getElementById('resultsCounter') || getAlbumFilesData());
+    }
+
+    function extractGridItemName(el, link) {
+        if (el) {
+            const nameEl = el.querySelector('.theName, .grid-images_box-txt p');
+            if (nameEl && nameEl.textContent.trim()) return nameEl.textContent.trim();
+            const elTitle = el.getAttribute('title');
+            if (elTitle && elTitle.trim()) return elTitle.trim();
+        }
+        if (link) {
+            const linkTitle = link.getAttribute('title');
+            if (linkTitle && linkTitle.trim()) return linkTitle.trim();
+            const img = link.querySelector('img');
+            const alt = img ? (img.alt || '').trim() : '';
+            if (alt && !/^(image|thumbnail|icon)$/i.test(alt)) return alt;
+            const sp = link.querySelector('p, span');
+            if (sp && sp.textContent.trim()) return sp.textContent.trim();
+        }
+        if (el) {
+            const fallbackP = el.querySelector('p:not(.theSize):not(.theDate)');
+            if (fallbackP && fallbackP.textContent.trim()) return fallbackP.textContent.trim();
+        }
+        return '';
+    }
+
     function forceLargestFirst() {
         if (!currentAlbumMatch()) return;
         if (_sortExecuted) return;
         let attempts = 0;
         const sortInterval = setInterval(() => {
             attempts++;
+            // In ?advanced=1 mode, #galleryGrid starts empty in HTML until
+            // Bunkr's inline script hydrates window.albumFiles into .theItem
+            // cards; wait for hydration before clicking .btnSize.
+            if (isAdvancedViewActive() && attempts < 10) {
+                const gridEl = document.getElementById('galleryGrid') || document.querySelector('.grid-images');
+                if (gridEl && !gridEl.querySelector('.theItem')) return;
+            }
             const sizeBtn =
                 document.querySelector('.btnSize, button[title*="size"], a[href*="sort=size"]') ||
                 Array.from(document.querySelectorAll('a, button')).find(
@@ -1166,27 +1233,53 @@
 
     function activateAdvancedView() {
         if (!currentAlbumMatch()) return;
+        if (isAdvancedViewActive()) return;
         let avAttempts = 0;
         const avInterval = setInterval(() => {
             avAttempts++;
+            if (isAdvancedViewActive()) { clearInterval(avInterval); return; }
             const hasPagination = document.querySelector(
-                '.pagination, [aria-label="Pagination"], nav.pagination'
+                '.pagination, [aria-label="Pagination"], nav.pagination, .album-toolbar .pagination'
             );
             if (!hasPagination) { clearInterval(avInterval); return; }
 
-            let advBtn = document.querySelector('body > main > div.album-toolbar > div > a');
+            let advBtn = document.querySelector(
+                '.album-toolbar a.mode-toggle-btn[href*="advanced=1"], ' +
+                '.album-toolbar a[href*="advanced=1"], ' +
+                'a.mode-toggle-btn[href*="advanced"], ' +
+                'a[href*="advanced=1"], ' +
+                'body > main > div.album-toolbar > div > a[href*="advanced"]'
+            );
             if (!advBtn) {
                 advBtn = Array.from(
-                    document.querySelectorAll('.album-toolbar a, [class*="toolbar"] a')
-                ).find(a => /advanced|infinite|grid/i.test(a.textContent));
+                    document.querySelectorAll('.album-toolbar a, .album-toolbar .mode-toggle-btn, [class*="toolbar"] a')
+                ).find(el =>
+                    el.id !== 'advToggle' &&
+                    !el.classList.contains('adv-btn') &&
+                    /advanced\s*view|all\s*files|infinite|load\s*all|full\s*view/i.test(el.textContent)
+                );
             }
             if (advBtn) {
                 clearInterval(avInterval);
                 console.log('[Ψ-4NDR0666] Advanced view anchor found. Activating infinite scroll.');
-                advBtn.click();
+                if (advBtn.tagName === 'A' && advBtn.href) {
+                    const advUrl = new URL(advBtn.href, window.location.href);
+                    advUrl.searchParams.set('advanced', '1');
+                    advUrl.searchParams.set('sort', 'size');
+                    advUrl.searchParams.set('order', 'desc');
+                    window.location.replace(advUrl.href);
+                } else {
+                    advBtn.click();
+                }
             } else if (avAttempts > 20) {
                 clearInterval(avInterval);
-                console.log('[Ψ-4NDR0666] Advanced view anchor not found after 20 cycles. Aborting.');
+                console.log('[Ψ-4NDR0666] Advanced view anchor not found on paginated album; routing directly to ?advanced=1.');
+                const advUrl = new URL(window.location.href);
+                advUrl.searchParams.delete('page');
+                advUrl.searchParams.set('advanced', '1');
+                advUrl.searchParams.set('sort', 'size');
+                advUrl.searchParams.set('order', 'desc');
+                window.location.replace(advUrl.href);
             }
         }, 500);
         window.addEventListener('beforeunload', () => clearInterval(avInterval), { once: true });
@@ -1365,12 +1458,12 @@
                 // Re-tag any grid items already rendered on the current page
                 // so the imported registry takes visible effect immediately,
                 // without requiring a reload.
-                document.querySelectorAll(
-                    '.grid > div, .grid-images_box, .theItem, main.grid > div, main[class*="grid"] > div'
-                ).forEach(el => {
-                    const link = el.querySelector('a[href^="/f/"], a[href^="/v/"], a[href*="/d/"]');
-                    if (!link) return;
-                    const alphaId = link.getAttribute('href').split('/').pop();
+                document.querySelectorAll(GRID_ITEM_SEL).forEach(el => {
+                    const links = el.querySelectorAll('a[href^="/f/"], a[href^="/v/"], a[href*="/d/"]');
+                    if (!links.length) return;
+                    const hrefs = new Set([...links].map(a => a.getAttribute('href')));
+                    if (hrefs.size > 1) return;
+                    const alphaId = links[0].getAttribute('href').split('/').pop();
                     if (cache.has(alphaId)) el.classList.add('psi-visited');
                 });
 
@@ -2873,7 +2966,7 @@
         // thumbnail+title anchor pair that both point at the *same* file,
         // which is normal markup).
         const LINK_SEL = 'a[href^="/f/"], a[href^="/v/"], a[href*="/d/"]';
-        const ITEM_SEL = '.theItem, .grid-images_box, .grid > div, main.grid > div, main[class*="grid"] > div';
+        const ITEM_SEL = `${GRID_ITEM_SEL}, #galleryGrid > div, .grid-images > div`;
         const seenEls  = new Set();
 
         document.querySelectorAll(LINK_SEL).forEach(link => {
@@ -2938,9 +3031,7 @@
 
                     try {
                         // Name extraction mirrors scanFiles() logic
-                        let name = link.getAttribute('title') || '';
-                        if (!name) { const img = link.querySelector('img'); name = img ? (img.alt || '') : ''; }
-                        if (!name) { const sp  = el.querySelector('p,span'); name = sp ? sp.textContent.trim() : ''; }
+                        const name = extractGridItemName(el, link);
 
                         const item   = { filePageURL: link.href, slug: alphaId, name: name || alphaId };
                         const { cdnURL, fname } = await resolveBulkFile(item);
@@ -3002,9 +3093,7 @@
                         // Tier B: signed 3-hop pipeline
                         try {
                             // Name extraction mirrors scanFiles() logic
-                            let name = link.getAttribute('title') || '';
-                            if (!name) { const img = link.querySelector('img'); name = img ? (img.alt || '') : ''; }
-                            if (!name) { const sp  = el.querySelector('p,span'); name = sp ? sp.textContent.trim() : ''; }
+                            const name = extractGridItemName(el, link);
 
                             const item   = { filePageURL: link.href, slug: alphaId, name: name || alphaId };
                             const result = await resolveBulkFile(item);
@@ -3139,6 +3228,11 @@
             timestamp:       new Date().toISOString(),
             url:             window.location.href,
             topology:        currentAlbumMatch() ? 'GRID_VIEW' : 'SINGLE_ASSET_VIEW',
+            viewMode:        currentAlbumMatch()
+                ? (isAdvancedViewActive()
+                    ? 'ADVANCED'
+                    : (document.querySelector('.pagination, [aria-label="Pagination"], nav.pagination') ? 'PAGINATED' : 'STANDARD'))
+                : 'N/A',
             scripts:         Array.from(document.querySelectorAll('script[data-file-id]'))
                                .map(s => s.outerHTML),
             nativeDls:       Array.from(document.querySelectorAll(
@@ -3149,7 +3243,9 @@
                                text:      a.innerText.trim(),
                                id:        a.id,
                              })),
-            gridItemsCount:  document.querySelectorAll('.grid > div, .grid-images_box, .theItem').length,
+            gridItemsCount:  document.querySelectorAll(GRID_ITEM_SEL).length ||
+                             document.querySelectorAll('#galleryGrid > div, .grid-images > div').length,
+            albumFilesCount: (getAlbumFilesData() || []).length,
             lastCdnMedia:    _lastCdnMedia || 'none',
             lastStreamUrl:   _lastStreamUrl || 'none', // v7.4.0: MPV dispatch surface
             signedPipelineArmed: !!resolveBulkFile, // v7.1.0 (GAP 21): armed on every page now
@@ -3457,15 +3553,43 @@
         function scanFiles() {
             const seen  = new Set();
             const files = [];
+
+            // v7.7.4: in ?advanced=1 view, Bunkr renders only the first 100
+            // items in #galleryGrid and lazy-appends 50-item batches via
+            // IntersectionObserver, while window.albumFiles holds the complete
+            // album inventory. Read window.albumFiles first (respecting any
+            // active #advFilterInput query) so bulk ops see every file.
+            const albumData = getAlbumFilesData();
+            if (albumData) {
+                const filterInput = document.getElementById('advFilterInput');
+                const q = filterInput ? (filterInput.value || '').trim().toLowerCase() : '';
+                const origin = window.location.origin;
+                for (const item of albumData) {
+                    try {
+                        if (!item || !item.slug) continue;
+                        const orig = String(item.original || '').trim();
+                        const fname = String(item.name || '').trim();
+                        if (q && !orig.toLowerCase().includes(q) && !fname.toLowerCase().includes(q)) continue;
+                        const pathname = `/f/${item.slug}`;
+                        if (seen.has(pathname)) continue;
+                        seen.add(pathname);
+                        files.push({
+                            filePageURL: `${origin}${pathname}`,
+                            slug:        String(item.slug),
+                            name:        orig || fname || String(item.slug),
+                        });
+                    } catch (_) { console.debug('BUNKR interceptor:', _); /* EAFP */ }
+                }
+            }
+
             for (const a of document.querySelectorAll('a[href*="/f/"], a[href*="/v/"], a[href*="/d/"]')) {
                 try {
                     const url = new URL(a.href);
                     if (!/^\/[fvd]\//.test(url.pathname) || seen.has(url.pathname)) continue;
                     seen.add(url.pathname);
                     const slug = url.pathname.split('/').pop();
-                    let name = a.getAttribute('title') || '';
-                    if (!name) { const img = a.querySelector('img');  name = img ? (img.alt || '') : ''; }
-                    if (!name) { const sp  = a.querySelector('p,span'); name = sp ? sp.textContent.trim() : ''; }
+                    const card = a.closest(GRID_ITEM_SEL);
+                    const name = extractGridItemName(card, a);
                     files.push({ filePageURL: a.href, slug, name: name || slug });
                 } catch (_) { console.debug('BUNKR interceptor:', _); /* EAFP */ }
             }

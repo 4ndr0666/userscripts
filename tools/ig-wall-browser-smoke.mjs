@@ -214,6 +214,7 @@ function connectCDP(wsUrl) {
       let buf = head && head.length ? Buffer.from(head) : Buffer.alloc(0);
       let nextId = 1;
       const pending = new Map();
+      const eventWaiters = new Map();
 
       function processBuffer() {
         while (buf.length >= 2) {
@@ -248,6 +249,13 @@ function connectCDP(wsUrl) {
               pending.delete(msg.id);
               if (msg.error) rejFn(new Error(JSON.stringify(msg.error)));
               else resFn(msg.result);
+            } else if (!msg.id && msg.method && eventWaiters.has(msg.method)) {
+              const waiters = eventWaiters.get(msg.method);
+              eventWaiters.delete(msg.method);
+              for (const w of waiters) {
+                clearTimeout(w.timer);
+                w.resolve(msg.params || {});
+              }
             }
           } else if (opcode === 0x09) {
             sendFrame(0x0a, payload);
@@ -296,9 +304,31 @@ function connectCDP(wsUrl) {
         });
       }
 
+      function waitForEvent(method, timeoutMs = 30000) {
+        return new Promise((resFn, rejFn) => {
+          const entry = { resolve: resFn, reject: rejFn, timer: null };
+          entry.timer = setTimeout(() => {
+            const list = eventWaiters.get(method);
+            if (list) {
+              const idx = list.indexOf(entry);
+              if (idx !== -1) list.splice(idx, 1);
+              if (list.length === 0) eventWaiters.delete(method);
+            }
+            rejFn(new Error(`Timed out waiting for CDP event ${method} (${timeoutMs}ms)`));
+          }, timeoutMs);
+          if (!eventWaiters.has(method)) eventWaiters.set(method, []);
+          eventWaiters.get(method).push(entry);
+        });
+      }
+
       resolve({
         send,
+        waitForEvent,
         close() {
+          for (const waiters of eventWaiters.values()) {
+            for (const w of waiters) clearTimeout(w.timer);
+          }
+          eventWaiters.clear();
           try { socket.destroy(); } catch (_) {}
         },
       });
@@ -515,15 +545,32 @@ export async function runIgWallBrowserBattery() {
     });
 
     async function evalInPage(expr) {
-      const res = await cdp.send("Runtime.evaluate", {
-        expression: expr,
-        returnByValue: true,
-        awaitPromise: true,
-      });
-      if (res.exceptionDetails) {
-        throw new Error(`Page evaluation error: ${JSON.stringify(res.exceptionDetails)}`);
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const res = await cdp.send("Runtime.evaluate", {
+            expression: expr,
+            returnByValue: true,
+            awaitPromise: true,
+          });
+          if (res.exceptionDetails) {
+            throw new Error(`Page evaluation error: ${JSON.stringify(res.exceptionDetails)}`);
+          }
+          return res.result ? res.result.value : undefined;
+        } catch (err) {
+          const msg = err && err.message ? err.message : String(err);
+          if (attempt < 2 && msg.includes("Execution context was destroyed")) {
+            await new Promise((r) => setTimeout(r, 250));
+            continue;
+          }
+          throw err;
+        }
       }
-      return res.result ? res.result.value : undefined;
+    }
+
+    async function reloadAndWait() {
+      const loaded = cdp.waitForEvent("Page.loadEventFired", 30000);
+      await cdp.send("Page.reload", { ignoreCache: true });
+      await loaded;
     }
 
     const rafSettle = `await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));`;
@@ -823,7 +870,7 @@ export async function runIgWallBrowserBattery() {
     /* v13.3.0 THE WALL SNAPSHOT — restore path: a reload (the accidental-
      * navigation case) reopens the wall AT THE SNAPSHOT POSITION, instantly,
      * with the seeded catalog and zero duplicates. */
-    await cdp.send("Page.reload", { ignoreCache: true });
+    await reloadAndWait();
     const snapRestore = await evalInPage(`(async function() {
       let dock = null;
       for (let i = 0; i < 120; i++) {
@@ -915,7 +962,7 @@ export async function runIgWallBrowserBattery() {
 
     /* Canon kernel-less parity — same fixture, canon source. */
     mode = "canon";
-    await cdp.send("Page.reload", { ignoreCache: true });
+    await reloadAndWait();
     const canonState = await evalInPage(`(async function() {
       let dock = null;
       for (let i = 0; i < 120; i++) {
@@ -997,7 +1044,7 @@ export async function runIgWallBrowserBattery() {
      * report reconstructed on purpose: the native feed ghosting through a
      * translucent wall, never hidden. */
     mode = "sabotage";
-    await cdp.send("Page.reload", { ignoreCache: true });
+    await reloadAndWait();
     const sabotageState = await evalInPage(`(async function() {
       let dock = null;
       for (let i = 0; i < 120; i++) {
@@ -1043,7 +1090,7 @@ export async function runIgWallBrowserBattery() {
      * Assertions 13/13b are exactly what reject this state; the guard also
      * fails closed if the sabotage replace ever stops matching the source. */
     mode = "sabotage-layout";
-    await cdp.send("Page.reload", { ignoreCache: true });
+    await reloadAndWait();
     const layoutSabState = await evalInPage(`(async function() {
       let dock = null;
       for (let i = 0; i < 120; i++) {

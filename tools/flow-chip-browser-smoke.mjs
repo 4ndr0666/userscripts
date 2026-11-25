@@ -204,6 +204,7 @@ function connectCDP(wsUrl) {
       let buf = head && head.length ? Buffer.from(head) : Buffer.alloc(0);
       let nextId = 1;
       const pending = new Map();
+      const eventWaiters = new Map();
 
       function processBuffer() {
         while (buf.length >= 2) {
@@ -238,6 +239,13 @@ function connectCDP(wsUrl) {
               pending.delete(msg.id);
               if (msg.error) rejFn(new Error(JSON.stringify(msg.error)));
               else resFn(msg.result);
+            } else if (!msg.id && msg.method && eventWaiters.has(msg.method)) {
+              const waiters = eventWaiters.get(msg.method);
+              eventWaiters.delete(msg.method);
+              for (const w of waiters) {
+                clearTimeout(w.timer);
+                w.resolve(msg.params || {});
+              }
             }
           } else if (opcode === 0x09) {
             // Ping -> send Pong
@@ -287,9 +295,31 @@ function connectCDP(wsUrl) {
         });
       }
 
+      function waitForEvent(method, timeoutMs = 30000) {
+        return new Promise((resFn, rejFn) => {
+          const entry = { resolve: resFn, reject: rejFn, timer: null };
+          entry.timer = setTimeout(() => {
+            const list = eventWaiters.get(method);
+            if (list) {
+              const idx = list.indexOf(entry);
+              if (idx !== -1) list.splice(idx, 1);
+              if (list.length === 0) eventWaiters.delete(method);
+            }
+            rejFn(new Error(`Timed out waiting for CDP event ${method} (${timeoutMs}ms)`));
+          }, timeoutMs);
+          if (!eventWaiters.has(method)) eventWaiters.set(method, []);
+          eventWaiters.get(method).push(entry);
+        });
+      }
+
       resolve({
         send,
+        waitForEvent,
         close() {
+          for (const waiters of eventWaiters.values()) {
+            for (const w of waiters) clearTimeout(w.timer);
+          }
+          eventWaiters.clear();
           try {
             socket.destroy();
           } catch (_) {}
@@ -527,17 +557,34 @@ export async function runFlowChipBrowserBattery() {
     });
 
     async function evalInPage(expr) {
-      const res = await cdp.send("Runtime.evaluate", {
-        expression: expr,
-        returnByValue: true,
-        awaitPromise: true,
-      });
-      if (res.exceptionDetails) {
-        throw new Error(
-          `Page evaluation error: ${JSON.stringify(res.exceptionDetails)}`
-        );
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const res = await cdp.send("Runtime.evaluate", {
+            expression: expr,
+            returnByValue: true,
+            awaitPromise: true,
+          });
+          if (res.exceptionDetails) {
+            throw new Error(
+              `Page evaluation error: ${JSON.stringify(res.exceptionDetails)}`
+            );
+          }
+          return res.result ? res.result.value : undefined;
+        } catch (err) {
+          const msg = err && err.message ? err.message : String(err);
+          if (attempt < 2 && msg.includes("Execution context was destroyed")) {
+            await new Promise((r) => setTimeout(r, 250));
+            continue;
+          }
+          throw err;
+        }
       }
-      return res.result ? res.result.value : undefined;
+    }
+
+    async function reloadAndWait() {
+      const loaded = cdp.waitForEvent("Page.loadEventFired", 30000);
+      await cdp.send("Page.reload", { ignoreCache: true });
+      await loaded;
     }
 
     // Wait for #pm-flow-credit-chip to mount and render
@@ -904,7 +951,7 @@ export async function runFlowChipBrowserBattery() {
 
     // Step 6: Test canon kernel-less parity in live Chromium
     mode = "canon";
-    await cdp.send("Page.reload", { ignoreCache: true });
+    await reloadAndWait();
     const canonState = await evalInPage(`(async function() {
       for (let i = 0; i < 50; i++) {
         const chip = document.getElementById("pm-flow-credit-chip");

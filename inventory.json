@@ -184,12 +184,12 @@
   {
    "file": "4ndr0tools - Bunkr++.user.js",
    "name": "4ndr0tools - Bunkr++",
-   "version": "7.7.3",
+   "version": "7.7.4",
    "description": "Direct URL routing, auto-sort, hide visited, bypass dl gateway, bulk download, m3u8/CDN URL aggregation (page-context net-hook + per-item stream glyphs + album-wide STREAMS aggregation), broken-link repair, power-user hotkeys, LinkMaster-grade m3u8 stream resolution with gateway fallback, MPV dispatch (URI/bridge), web-archive dead-CDN resurrection (archive.org / archive.is), captcha-aware transport retry",
    "family": "media & links",
-   "sha256": "625ce62b16d6b010db4d6ed06717c616bfe492192a5e897397b57a7aa37348a9",
-   "lines": 5106,
-   "bytes": 271869,
+   "sha256": "a80e246dbec1e7e532be66221f28de73e350502585de45d072a36f02e0be4497",
+   "lines": 5229,
+   "bytes": 278184,
    "matches": [],
    "includes": [
     "/^[^:]*?:\\/\\/bunkr{1,3}\\.[^/]*?\\/.*?$/",
@@ -1708,5 +1708,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "c2ff1e73eb60d50c6f2f3fc4afad74b992a06ddabf093b400eb8d955d55a5fa4"
+ "digest": "29d81e788faaa41f3699a164967a559b88a0582acd67b5d6450d57d2e6621d28"
 }
