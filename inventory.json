@@ -184,12 +184,12 @@
   {
    "file": "4ndr0tools - Bunkr++.user.js",
    "name": "4ndr0tools - Bunkr++",
-   "version": "7.7.4",
+   "version": "7.8.0",
    "description": "Direct URL routing, auto-sort, hide visited, bypass dl gateway, bulk download, m3u8/CDN URL aggregation (page-context net-hook + per-item stream glyphs + album-wide STREAMS aggregation), broken-link repair, power-user hotkeys, LinkMaster-grade m3u8 stream resolution with gateway fallback, MPV dispatch (URI/bridge), web-archive dead-CDN resurrection (archive.org / archive.is), captcha-aware transport retry",
    "family": "media & links",
-   "sha256": "a80e246dbec1e7e532be66221f28de73e350502585de45d072a36f02e0be4497",
-   "lines": 5229,
-   "bytes": 278184,
+   "sha256": "d69bcd34e2e6503f85f00b196d6746b2e398ac10b6238902c4be6d5c57ef3c8f",
+   "lines": 5241,
+   "bytes": 278992,
    "matches": [],
    "includes": [
     "/^[^:]*?:\\/\\/bunkr{1,3}\\.[^/]*?\\/.*?$/",
@@ -1210,12 +1210,12 @@
   {
    "file": "4ndr0tools - Prompt Master.user.js",
    "name": "4ndr0tools - Prompt Master",
-   "version": "29.0.5",
+   "version": "29.0.6",
    "description": "Google Flow prompt manager toolkit (works on any AI, just add url) - persisted unit ledger meters every generation click, organization engine: collections, saved views, favorites, ratings, archive, group-by, and insights for large prompt libraries, dedupe, media slideshow, ai prompt enhancer, auto gist syncing, hotkeys, much more.",
    "family": "sovereign platforms",
-   "sha256": "73f43f75b2794f7292ecd5f0596688001fa8d5fe48518b5fdc48d34511c12183",
-   "lines": 25908,
-   "bytes": 1261008,
+   "sha256": "0ab9a6c65e70244e09caf9f59ce988cc3292807509d905f5cd6b05b4e8cf998c",
+   "lines": 25951,
+   "bytes": 1261817,
    "matches": [
     "*://geminigen.ai/*",
     "*://gist.github.com/*",
@@ -1708,5 +1708,5 @@
   "4ndr0tools - Website Control Panel",
   "4ndr0tools - m3u8++"
  ],
- "digest": "29d81e788faaa41f3699a164967a559b88a0582acd67b5d6450d57d2e6621d28"
+ "digest": "0d93354d3aa469fb4f45b21f42ed4a92f6e90bd331e4174d20bf6d35b666266f"
 }

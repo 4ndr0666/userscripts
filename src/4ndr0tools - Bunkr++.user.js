@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         4ndr0tools - Bunkr++
 // @namespace    https://github.com/4ndr0666/userscripts
-// @version      7.7.4
+// @version      7.8.0
 // @author       4ndr0666
 // @description  Direct URL routing, auto-sort, hide visited, bypass dl gateway, bulk download, m3u8/CDN URL aggregation (page-context net-hook + per-item stream glyphs + album-wide STREAMS aggregation), broken-link repair, power-user hotkeys, LinkMaster-grade m3u8 stream resolution with gateway fallback, MPV dispatch (URI/bridge), web-archive dead-CDN resurrection (archive.org / archive.is), captcha-aware transport retry
 // @icon         data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
@@ -256,7 +256,7 @@
         _sentinelRoot.setAttribute(_SENTINEL_ATTR, String(Date.now()));
     } catch (_) { console.debug('BUNKR interceptor:', _); /* EAFP — proceed; guards below absorb re-runs */ }
 
-    const SCRIPT_VERSION = '7.7.4';
+    const SCRIPT_VERSION = '7.8.0';
     console.log(`%c[4NDR0tools] Bunkr++ v${SCRIPT_VERSION}-Ψ`, 'color:#00E5FF; font-family:monospace; font-weight:bold;');
 
     // =========================================================================
@@ -961,12 +961,15 @@
     // rejected at the content-type gate BEFORE any clone()/text() call so
     // media streams are never teed into memory just to look for strings.
     const _MEDIA_URL_RE = /(?:(?:https?:)?\/\/)[^\s"'<>\\]+?\.(?:m3u8|mp4|webm|mkv|mov|zip|rar|7z)(?:\?[^\s"'<>\\]*)?/gi;
+    function normalizeSniffText(text) {
+        return text.replace(/\\\//g, '/').replace(/\\u0026/gi, '&').replace(/&amp;/g, '&');
+    }
     function sniffResponseBodyText(text, baseUrl) {
         try {
             if (!text || typeof text !== 'string') return;
-            const scan = text.slice(0, 262144); // 256 KB bound
+            const scan = normalizeSniffText(text.slice(0, 262144)); // 256 KB bound, JSON-escape aware
             for (const raw of scan.match(_MEDIA_URL_RE) || []) {
-                let url = raw.replace(/&amp;/g, '&').replace(/[.,;]+$/, '');
+                let url = raw.replace(/[.,;]+$/, '');
                 if (url.startsWith('//')) {
                     try { url = new URL(url, baseUrl || 'https://bunkr.invalid').href; }
                     catch (_) { continue; }
@@ -1751,29 +1754,38 @@
             return targetUrl;
         }
 
-        // Also check M3 passive intercept cache — epoch-gated (GAP 26):
-        // without the timestamp gate, an SPA route to a different asset
-        // replayed the PREVIOUS asset's sniffed URL through this fast path
-        // (the _ledgerEpoch watermark guarded playlist lookups only).
-        if (
-            _lastCdnMedia &&
-            _lastCdnMediaTs >= _ledgerEpoch &&
-            (isCdnUrl(_lastCdnMedia) || isMediaPlaylist(_lastCdnMedia))
-        ) {
-            console.log('[Ψ-4NDR0666] M3 passive intercept fast-path hit.');
-            recordUrl(_lastCdnMedia, 'dom');
-            return _lastCdnMedia;
-        }
+        // v7.8.0: passive sniffer fast-paths belong strictly to the CURRENT
+        // page — album grid glyphs and STREAMS bulk runs resolve foreign
+        // targetUrls and must never inherit the album page's _lastCdnMedia
+        // or ledger playlist. When preferPlaylist is true, check the ledger's
+        // m3u8 BEFORE _lastCdnMedia and never short-circuit on a non-playlist.
+        const isCurrentPageTarget = (() => {
+            try {
+                const a = new URL(String(targetUrl), location.href);
+                const b = new URL(location.href);
+                return a.origin === b.origin && a.pathname === b.pathname;
+            } catch (_) { return false; }
+        })();
 
-        // Playlist preference: the freshest playlist sniffed for THIS page
-        // epoch outranks every file-URL tier (hls.js only surfaces the m3u8
-        // through network traffic the Module 3 sniffer captures).
-        if (preferPlaylist) {
+        if (isCurrentPageTarget && preferPlaylist) {
             const live = latestPlaylistFromLedger(_ledgerEpoch);
             if (live) {
                 console.log('[Ψ-4NDR0666] Ledger m3u8 fast-path hit.');
                 return live;
             }
+        }
+
+        if (
+            isCurrentPageTarget &&
+            _lastCdnMedia &&
+            _lastCdnMediaTs >= _ledgerEpoch &&
+            (preferPlaylist
+                ? isMediaPlaylist(_lastCdnMedia)
+                : (isCdnUrl(_lastCdnMedia) || isMediaPlaylist(_lastCdnMedia)))
+        ) {
+            console.log('[Ψ-4NDR0666] M3 passive intercept fast-path hit.');
+            recordUrl(_lastCdnMedia, 'dom');
+            return _lastCdnMedia;
         }
 
         // [LM-B3] resolve every raw candidate against the page it came from
@@ -1834,10 +1846,11 @@
         // (//cdn…/file.m3u8 — resolved against the page via absResolve).
         const sweepScriptTextForPlaylist = (doc, base) => {
             for (const s of doc.querySelectorAll('script:not([src])')) {
-                const text = s.textContent || '';
-                const m = text.match(/(?:https?:)?\/\/[^\s"'<>\\]+\.m3u8[^\s"'<>\\]*/i);
-                if (m) {
-                    const abs = absResolve(m[0], base);
+                const text = normalizeSniffText(s.textContent || '');
+                const matches = text.match(/(?:https?:)?\/\/[^\s"'<>\\]+\.m3u8[^\s"'<>\\]*/gi) || [];
+                for (const raw of matches) {
+                    const cleaned = raw.replace(/[.,;]+$/, '');
+                    const abs = absResolve(cleaned, base);
                     if (abs && isMediaPlaylist(abs)) return abs;
                 }
             }
@@ -1865,62 +1878,47 @@
             if (res && res.status >= 200 && res.status < 300) {
                 const doc = parsePage(res.responseText);
 
-                // Tier 1: OG video meta — [LM-B3] resolved against the source
-                // page. v7.4.0: the full OG/Twitter player meta family is
-                // honored (og:video:url, og:video:secure_url,
-                // twitter:player:stream) — a page that only emits the
-                // :secure_url variant previously fell through every tier.
-                // Every candidate still passes the accept() gate.
                 const ogVideo = doc.querySelector(
                     "meta[property='og:video'], meta[property='og:video:url'], " +
                     "meta[property='og:video:secure_url'], meta[name='twitter:player:stream']"
                 );
                 const ogAbs   = ogVideo ? accept(ogVideo.getAttribute('content'), targetUrl) : null;
-                if (ogAbs) {
-                    recordUrl(ogAbs, 'dom');
-                    return ogAbs;
-                }
-
-                // Tier 2: explicit HLS source declaration
-                const hlsSrc = doc.querySelector(
-                    "source[type='application/x-mpegURL'][src], source[type='vnd.apple.mpegURL'][src]"
-                );
-                const hlsAbs = hlsSrc ? accept(hlsSrc.getAttribute('src'), targetUrl) : null;
-                if (hlsAbs) {
-                    recordUrl(hlsAbs, 'dom');
-                    return hlsAbs;
-                }
-
-                // Tier 3: plain <video>/<source> src (blob: rejected by accept)
+                const hlsSrc  = doc.querySelector("source[type*='mpegurl' i][src]");
+                const hlsAbs  = hlsSrc ? accept(hlsSrc.getAttribute('src'), targetUrl) : null;
                 const videoSrc = doc.querySelector('source[src], video[src]');
                 const vidAbs   = videoSrc ? accept(videoSrc.getAttribute('src'), targetUrl) : null;
-                if (vidAbs) {
-                    recordUrl(vidAbs, 'dom');
-                    return vidAbs;
-                }
-
-                // Tier 4 (playlist-priority placement): embedded m3u8
-                if (preferPlaylist) {
-                    const embedded = sweepScriptTextForPlaylist(doc, targetUrl);
-                    if (embedded) {
-                        recordUrl(embedded, 'dom');
-                        return embedded;
-                    }
-                }
-
-                // Tier 5: [LM-G8] CDN anchor chain — first VALID candidate in
-                // document order (a non-CDN a[download] match can no longer
-                // shadow a later valid CDN anchor).
+                let firstAnchorAbs = null;
+                let playlistAnchorAbs = null;
                 for (const anchor of doc.querySelectorAll(CDN_ANCHOR_SEL)) {
                     const abs = accept(anchor.getAttribute('href'), targetUrl);
-                    if (abs) {
-                        recordUrl(abs, 'dom');
-                        return abs;
+                    if (!abs) continue;
+                    if (!firstAnchorAbs) firstAnchorAbs = abs;
+                    if (!playlistAnchorAbs && isMediaPlaylist(abs)) playlistAnchorAbs = abs;
+                }
+
+                // v7.8.0: when preferPlaylist is true, exhaust EVERY m3u8 tier
+                // (HLS <source>, JSON-unescaped inline scripts, m3u8 meta/video/anchor)
+                // BEFORE settling on a non-playlist file URL.
+                if (preferPlaylist) {
+                    const m3u8Hit =
+                        (hlsAbs && isMediaPlaylist(hlsAbs) ? hlsAbs : null) ||
+                        sweepScriptTextForPlaylist(doc, targetUrl) ||
+                        (ogAbs && isMediaPlaylist(ogAbs) ? ogAbs : null) ||
+                        (vidAbs && isMediaPlaylist(vidAbs) ? vidAbs : null) ||
+                        playlistAnchorAbs ||
+                        hlsAbs;
+                    if (m3u8Hit) {
+                        recordUrl(m3u8Hit, 'dom');
+                        return m3u8Hit;
                     }
                 }
 
-                // Tier 4 (file-priority placement): embedded m3u8 as the final
-                // in-page resort — better than returning null.
+                const fileHit = ogAbs || hlsAbs || vidAbs || firstAnchorAbs;
+                if (fileHit) {
+                    recordUrl(fileHit, 'dom');
+                    return fileHit;
+                }
+
                 if (!preferPlaylist) {
                     const embedded = sweepScriptTextForPlaylist(doc, targetUrl);
                     if (embedded) {
@@ -1949,6 +1947,20 @@
         const resp = await fetchPageHop(gatewayUrl, initialReferer);
         if (!resp || resp.status < 200 || resp.status >= 300) return null;
         const doc = parsePage(resp.responseText);
+        // v7.8.0: sweep gateway DOM for m3u8 playlists (HLS <source>,
+        // JSON-unescaped inline scripts, og:video) before falling back to
+        // non-playlist file anchors.
+        if (preferPlaylist) {
+            const gwHls = doc.querySelector("source[type*='mpegurl' i][src]");
+            const gwHlsAbs = gwHls ? accept(gwHls.getAttribute('src'), gatewayUrl) : null;
+            const gwEmbedded = sweepScriptTextForPlaylist(doc, gatewayUrl);
+            const gwPl = (gwHlsAbs && isMediaPlaylist(gwHlsAbs) ? gwHlsAbs : null) || gwEmbedded;
+            if (gwPl) {
+                console.log(`[Ψ-4NDR0666] Gateway m3u8 resolved: ${gwPl}`);
+                recordUrl(gwPl, 'gateway');
+                return gwPl;
+            }
+        }
         // [LM-G8] query-tolerant gateway extraction — signed CDN
         // links (?token=…) can never match href$='.ext' alone.
         const GW_ANCHOR_SEL = [
