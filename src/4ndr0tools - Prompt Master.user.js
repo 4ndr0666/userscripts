@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name                4ndr0tools - Prompt Master
 // @namespace           https://github.com/4ndr0666/userscripts
-// @version             29.0.6
+// @version             29.0.7
 // @author              4ndr0666
 // @icon                data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M%2064%2C12%20A%2052%2C52%200%201%201%2063.9%2C12%20Z%22%20stroke-dasharray%3D%2221.78%2021.78%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M%2064%2C20%20A%2044%2C44%200%201%201%2063.9%2C20%20Z%22%20stroke-dasharray%3D%2210%2010%22%20stroke-width%3D%221.5%22%20opacity%3D%220.7%22%2F%3E%3Cpath%20d%3D%22M64%2030%20L91.3%2047%20L91.3%2081%20L64%2098%20L36.7%2081%20L36.7%2047%20Z%22%2F%3E%3Ctext%20x%3D%2264%22%20y%3D%2267%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%2300E5FF%22%20stroke%3D%22none%22%20font-size%3D%2256%22%20font-weight%3D%22700%22%20font-family%3D%22Cinzel%20Decorative%2C%20serif%22%3E%CE%A8%3C%2Ftext%3E%3C%2Fsvg%3E
 // @license             MIT
@@ -46,6 +46,19 @@
   let __mpSortMode;
   let __apCustomShortcutsMap;
 
+// 29.0.7 (Flow credit/token chip live-metering fix): (1) Unified
+// dist/ (__4NDR0_NET_API__.onTraffic) and src/ (standalone-passive)
+// network ingestion through flowCreditIngestNetResponse so dist/
+// catches HTTP 429 / RESOURCE_EXHAUSTED wall charges, refreshes the
+// chip on structured readings, and meters real image-generation API
+// responses (batchGenerateImages / generateImages / runImageFx /
+// imagePanels / generatedImages) with exact server image counts;
+// (2) Added capture-phase Enter / Ctrl+Enter / Cmd+Enter composer
+// submit detection alongside click detection; (3) Widened
+// flowCreditGenButtonOK for icon-only Flow submit buttons
+// (arrow_forward / send / submit) inside the composer; (4) Widened
+// FLOW_CREDIT_MODELS regexes for Nano Banana 2.1 and abbreviated
+// NB2 / NB2 Lite / NB Pro pills.
 // 29.0.6 (4ndr0neering API alignment): (1) Replaced non-existent
 // default Gemini model "gemini-3.5-flash" with active "gemini-3.8-flash"
 // and refreshed Google Gemini / Hugging Face / OpenRouter model
@@ -11074,9 +11087,9 @@
   // per-model image count (flowCreditCountGens) — the number that
   // actually tracks the hidden daily limit.
   const FLOW_CREDIT_MODELS = [
-    { key: "nb2lite", label: "Nano Banana 2 Lite", badge: "NB2 Lite", re: /nano\s*banana\s*2\s*lite/i },
-    { key: "pro", label: "Nano Banana Pro", badge: "Pro", re: /nano\s*banana\s*pro/i },
-    { key: "nb2", label: "Nano Banana 2", badge: "NB2", re: /nano\s*banana\s*2(?!\s*(?:lite|pro))/i },
+    { key: "nb2lite", label: "Nano Banana 2 Lite", badge: "NB2 Lite", re: /(?:nano\s*banana|\bnb)\s*2(?:\.\d+)?\s*lite\b/i },
+    { key: "pro", label: "Nano Banana Pro", badge: "Pro", re: /(?:nano\s*banana|\bnb)\s*pro\b/i },
+    { key: "nb2", label: "Nano Banana 2", badge: "NB2", re: /(?:nano\s*banana|\bnb)\s*2(?:\.\d+)?(?![\w.]*\s*(?:lite|pro))\b/i },
   ];
   const FLOW_CREDIT_STORAGE_KEY = "pm_flow_credit_state";
   // v28.3.0: THE OFFICIAL WALL — the Google AI Pro compute-unit budget,
@@ -12107,64 +12120,110 @@
     }
     return found;
   }
+  function flowCreditParseNetGen(bodyText, urlStr) {
+    if (!bodyText || typeof bodyText !== "string") return null;
+    const u = String(urlStr || "");
+    const isGenUrl = /batchGenerateImages|generateImages|runImageFx|generateImage/i.test(u);
+    const hasGenMarkers = /"imagePanels"|"generatedImages"|"mediaGenerationId"/.test(bodyText);
+    if (!isGenUrl && !hasGenMarkers) return null;
+    let imgCount = 0;
+    let modelHint = null;
+    try {
+      const parsed = JSON.parse(bodyText);
+      if (parsed && Array.isArray(parsed.imagePanels)) {
+        for (const panel of parsed.imagePanels) {
+          if (panel && Array.isArray(panel.generatedImages)) {
+            imgCount += panel.generatedImages.length;
+          }
+        }
+      } else if (parsed && Array.isArray(parsed.generatedImages)) {
+        imgCount = parsed.generatedImages.length;
+      } else if (parsed && Array.isArray(parsed.media)) {
+        imgCount = parsed.media.length;
+      }
+    } catch (_) {
+      const m = bodyText.match(/"mediaGenerationId"/g);
+      if (m) imgCount = m.length;
+    }
+    const probe = (u + " " + bodyText.slice(0, 1500)).toLowerCase();
+    if (/nano[_\s-]?banana[_\s-]?2(?:\.\d+)?[_\s-]?lite|3\.1-flash-lite-image|gem_pix_lite/.test(probe)) {
+      modelHint = FLOW_CREDIT_MODELS.find(function (x) { return x.key === "nb2lite"; }) || null;
+    } else if (/nano[_\s-]?banana[_\s-]?pro|3-pro-image|gem_pix_pro/.test(probe)) {
+      modelHint = FLOW_CREDIT_MODELS.find(function (x) { return x.key === "pro"; }) || null;
+    } else if (/nano[_\s-]?banana[_\s-]?2(?:\.\d+)?|3\.1-flash-image|gem_pix/.test(probe)) {
+      modelHint = FLOW_CREDIT_MODELS.find(function (x) { return x.key === "nb2"; }) || null;
+    }
+    return {
+      imgCount: imgCount > 0 ? Math.min(16, imgCount) : null,
+      model: modelHint,
+    };
+  }
+  function flowCreditIngestNetResponse(bodyText, urlStr, statusNum) {
+    try {
+      let added = 0;
+      if (bodyText && typeof bodyText === "string") {
+        added = scanFlowCreditStructured(
+          bodyText,
+          String(urlStr || "fetch").slice(0, 100),
+        );
+        flowCreditNetCount += added;
+      }
+      const isRateLimited =
+        statusNum === 429 ||
+        (typeof bodyText === "string" &&
+          bodyText.length <= 4000 &&
+          /RESOURCE_EXHAUSTED|RATE_LIMIT_EXCEEDED|too many requests|quota exceeded/i.test(
+            bodyText,
+          ));
+      if (isRateLimited && flowCreditState) {
+        const activeKey =
+          (flowCreditModel && flowCreditModel.key) ||
+          (flowCreditLastGen && flowCreditLastGen.model) ||
+          null;
+        if (activeKey) {
+          const wallUnits = flowCreditLedgerWallCharge(activeKey);
+          if (wallUnits > 0) persistFlowCreditState();
+        }
+        renderFlowCreditChip();
+        return;
+      }
+      if (
+        flowCreditEngineActive &&
+        currentPlatform === "flow" &&
+        (!statusNum || (statusNum >= 200 && statusNum < 300))
+      ) {
+        const netGen = flowCreditParseNetGen(bodyText, urlStr);
+        if (netGen) {
+          const m = netGen.model || detectFlowSelectedModel() || flowCreditModel;
+          if (m) {
+            const prevArm = flowCreditGenArm[m.key];
+            if (prevArm && Date.now() - prevArm.from < 10000) {
+              if (netGen.imgCount > 0) {
+                flowCreditLedgerRevise(m.key, netGen.imgCount);
+                persistFlowCreditState();
+                renderFlowCreditChip();
+              }
+            } else {
+              flowCreditArmGeneration(null, m, netGen.imgCount);
+            }
+          }
+        }
+      }
+      if (added > 0) flowCreditTick();
+    } catch (e) {
+      console.debug("PM interceptor:", e);
+    }
+  }
   function installFlowCreditNetObserver() {
     if (flowCreditNetInstalled) return;
     flowCreditNetInstalled = !0;
-    // v28.7.1: the kernel boundary is now load-bearing. The canon file
-    // runs kernel-less by design (tools/build.mjs inlines kernel/net.js
-    // into the dist only), and v28.7.0's bare __4NDR0_NET_API__ reference
-    // here threw at boot — the boot IIFE's swallow-all ate the
-    // ReferenceError and the engine (chip, tick, poll, observer, the gen
-    // click hook) never started. A kernel-less run degrades honestly
-    // instead: every DOM, storage, and click source stays live; only
-    // passive network readings are off, and the export's netObserver
-    // field carries the mode for one-paste diagnosis.
     if (typeof __4NDR0_NET_API__ === "undefined") {
-      // v29.0.1: standalone passive network observer for the token chip counter.
-      // When kernel/net.js is not inlined, passively inspect read-only clones of
-      // Flow fetch/XHR responses (including HTTP 429 / RESOURCE_EXHAUSTED) so
-      // #pm-flow-credit-chip receives live wallet, quota, and rate-limit updates
-      // without ever blocking or mutating Flow's own requests.
       flowCreditNetMode = "standalone-passive";
       try {
         const netWin =
           typeof unsafeWindow !== "undefined" && unsafeWindow
             ? unsafeWindow
             : window;
-        const ingestNetBody = function (bodyText, urlStr, statusNum) {
-          try {
-            let added = 0;
-            if (bodyText && typeof bodyText === "string") {
-              added = scanFlowCreditStructured(
-                bodyText,
-                String(urlStr || "fetch").slice(0, 100),
-              );
-              flowCreditNetCount += added;
-            }
-            const isRateLimited =
-              statusNum === 429 ||
-              (typeof bodyText === "string" &&
-                bodyText.length <= 4000 &&
-                /RESOURCE_EXHAUSTED|RATE_LIMIT_EXCEEDED|too many requests|quota exceeded/i.test(
-                  bodyText,
-                ));
-            if (isRateLimited && flowCreditState) {
-              const activeKey =
-                (flowCreditModel && flowCreditModel.key) ||
-                (flowCreditLastGen && flowCreditLastGen.model) ||
-                null;
-              if (activeKey) {
-                const wallUnits = flowCreditLedgerWallCharge(activeKey);
-                if (wallUnits > 0) persistFlowCreditState();
-              }
-              renderFlowCreditChip();
-            } else if (added > 0) {
-              flowCreditTick();
-            }
-          } catch (e) {
-            console.debug("PM interceptor:", e);
-          }
-        };
         if (netWin && typeof netWin.fetch === "function" && !netWin.__pmFlowCreditFetchWrapped) {
           netWin.__pmFlowCreditFetchWrapped = !0;
           const origFetch = netWin.fetch.bind(netWin);
@@ -12194,7 +12253,7 @@
                       .clone()
                       .text()
                       .then(function (t) {
-                        ingestNetBody(t, reqUrl, st);
+                        flowCreditIngestNetResponse(t, reqUrl, st);
                       })
                       .catch(function () {});
                   } catch (e) {
@@ -12239,7 +12298,7 @@
                       : typeof xhr.responseText === "string"
                         ? xhr.responseText
                         : "";
-                  ingestNetBody(txt, xhr.__pmFcUrl || "xhr", xhr.status);
+                  flowCreditIngestNetResponse(txt, xhr.__pmFcUrl || "xhr", xhr.status);
                 } catch (e) {
                   console.debug("PM interceptor:", e);
                 }
@@ -12257,38 +12316,17 @@
       return;
     }
     flowCreditNetMode = "installed";
-    // v28.4.0 (suite v1.4.7): the bespoke pageWin.fetch wrap + XHR
-    // open/send taps are retired; the flow-credit scanner rides
-    // kernel/net.js onTraffic response events — one shared page-realm
-    // wrap per co-install (LLM hosts co-install with the rest of the
-    // suite; the v1.4.3 sink census measured the stacking surface).
-    //
-    // Superset notes (GUP): the baseline's gates are preserved per kind —
-    // fetch was res.ok + textual-content-type gated, XHR was ungated
-    // (any load status, any content type) — so the gates move here
-    // unchanged, split by ev.kind. The baseline XHR listener was
-    // responseType text-only and re-added a one-shot listener per send
-    // (v28.1.0 fix); the hub's single wrap delivers text bodies plus
-    // json bodies pre-stringified — strictly more coverage, and reused
-    // XHR objects can no longer re-stack listeners at all. Own-probe
-    // parity: the hub observes every page exchange, but the script's own
-    // fetches are indistinguishable from the host app's (both are page
-    // traffic) — the scanner is read-only, so re-observation is inert.
     if (typeof __4NDR0_NET_API__ !== 'undefined' && typeof __4NDR0_NET_API__.onTraffic === 'function') {
       __4NDR0_NET_API__.onTraffic(function (ev) {
         try {
           if (ev.phase !== "response") return;
+          const st = typeof ev.status === "number" ? ev.status : 0;
           if (ev.kind === "fetch") {
-            if (typeof ev.status === "number" && (ev.status < 200 || ev.status >= 300)) return;
+            if (st !== 429 && (st < 200 || st >= 300)) return;
             const ct = ev.contentType || "";
-            if (ct && !/json|text|javascript|plain/i.test(ct)) return;
+            if (st !== 429 && ct && !/json|text|javascript|plain/i.test(ct)) return;
           }
-          const t = ev.body;
-          if (t)
-            flowCreditNetCount += scanFlowCreditStructured(
-              t,
-              String(ev.url || "fetch").slice(0, 100),
-            );
+          flowCreditIngestNetResponse(ev.body || "", ev.url || "fetch", st);
         } catch (e) { console.debug("PM interceptor:", e);}
       });
     }
@@ -13585,11 +13623,21 @@
       // a look-alike near the top of the page is not it.
       if (r.top + r.height / 2 < window.innerHeight * 0.4) return !1;
       const name = flowCreditGenButtonName(btn);
-      return (
-        /^(start\s+generation|generate(?:\s+now)?|create(?:\s+now)?|run)$/i.test(
+      if (
+        /^(start\s+generation|generate(?:\s+now)?|create(?:\s+(?:now|image|video))?|run|submit|send)$/i.test(
           name,
-        ) || /\b(start\s+generation|generate)\b/i.test(name)
-      );
+        ) ||
+        /\b(start\s+generation|generate)\b/i.test(name)
+      )
+        return !0;
+      // Icon-only submit button inside Flow's composer (Material symbol ligatures)
+      if (
+        /^(arrow_forward|arrow_upward|send|spark|auto_awesome)$/i.test(name) &&
+        ((flowCreditComposerEl && flowCreditComposerEl.contains(btn)) ||
+          btn.getAttribute("type") === "submit")
+      )
+        return !0;
+      return !1;
     } catch (e) {
       return !1;
     }
@@ -13638,9 +13686,9 @@
     } catch (e) { console.debug("PM interceptor:", e);}
     return null;
   }
-  function flowCreditArmGeneration(btn) {
+  function flowCreditArmGeneration(btn, overrideModel, overrideBatch) {
     try {
-      const model = detectFlowSelectedModel() || flowCreditModel;
+      const model = overrideModel || detectFlowSelectedModel() || flowCreditModel;
       const now = Date.now();
       flowCreditClicksTotal++;
       if (!model) {
@@ -13665,7 +13713,7 @@
       // generation is still in flight — one generation, one turn.
       const prevArm = flowCreditGenArm[model.key];
       if (prevArm && now - prevArm.from < 10000) return;
-      const batch = flowCreditReadBatchHint(model);
+      const batch = overrideBatch > 0 ? overrideBatch : flowCreditReadBatchHint(model);
       flowCreditGenArm[model.key] = { from: now, to: now + 150000 };
       const e = flowCreditEntry(flowCreditState, model.key);
       // v27.3.17: the model's OWN period key — anchor-aware when a
@@ -13744,6 +13792,27 @@
             target && target.closest ? target.closest("button") : null;
           if (!btn || !flowCreditGenButtonOK(btn)) return;
           flowCreditArmGeneration(btn);
+        } catch (e) { console.debug("PM interceptor:", e);}
+      },
+      !0,
+    );
+    document.addEventListener(
+      "keydown",
+      function (ev) {
+        try {
+          if (!flowCreditEngineActive || currentPlatform !== "flow") return;
+          if (ev.key !== "Enter" || ev.shiftKey || ev.altKey || ev.isComposing) return;
+          const t = ev.target;
+          if (!t || !t.closest) return;
+          if (t.closest(FLOW_CREDIT_EXCLUDE.full)) return;
+          const inEditor =
+            (flowCreditEditorEl && (t === flowCreditEditorEl || flowCreditEditorEl.contains(t))) ||
+            (flowCreditComposerEl && flowCreditComposerEl.contains(t)) ||
+            (t.tagName === "TEXTAREA" || t.isContentEditable);
+          if (!inEditor) return;
+          const txt = (t.tagName === "TEXTAREA" || t.tagName === "INPUT" ? t.value : t.textContent) || "";
+          if (!txt.trim()) return;
+          flowCreditArmGeneration(null);
         } catch (e) { console.debug("PM interceptor:", e);}
       },
       !0,
@@ -18596,7 +18665,7 @@
     GM_info.script &&
     GM_info.script.version
       ? GM_info.script.version
-      : "29.0.6"; // v29.0.6: 4ndr0neering AI Enhancer API & model-catalog alignment
+      : "29.0.7"; // v29.0.7: Flow credit/token chip live-metering & dist onTraffic parity
   // v27.0.12: canonical backup snapshot helper. The beta's Gist push
   // called snapshotKeys() before it existed anywhere, so every "Sync Now"
   // threw a ReferenceError; takeAutoBackup() now shares this one helper
@@ -23099,7 +23168,7 @@ const pageWin = typeof unsafeWindow !== 'undefined' && unsafeWindow ? unsafeWind
   pageWin.__flowppLoaded = true;
 
   const TAG = '[Flow++]';
-  const VERSION = typeof SCRIPT_VERSION !== 'undefined' ? SCRIPT_VERSION : '29.0.6';
+  const VERSION = typeof SCRIPT_VERSION !== 'undefined' ? SCRIPT_VERSION : '29.0.7';
   const STORE_KEY = 'flowpp:settings';
   const HELD_ATTACH_KEY = 'flowpp:held-attachments';
   const HELD_FILES_KEY = 'flowpp:held-files';
